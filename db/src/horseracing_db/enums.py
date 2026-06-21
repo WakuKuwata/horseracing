@@ -64,7 +64,8 @@ class JobStatus:
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     PARTIAL = "partial"
-    ALL = (QUEUED, RUNNING, SUCCEEDED, FAILED, PARTIAL)
+    SKIPPED = "skipped"  # added in migration 0004 (e.g. JRA-VAN <2007 files)
+    ALL = (QUEUED, RUNNING, SUCCEEDED, FAILED, PARTIAL, SKIPPED)
 
 
 class AdoptionStatus:

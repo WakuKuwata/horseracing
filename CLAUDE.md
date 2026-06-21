@@ -1,9 +1,10 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/001-core-db-schema/plan.md` (active feature: Core DB スキーマと基盤テーブル契約).
+`specs/002-jra-van-ingest/plan.md` (active feature: JRA-VAN 過去データ取込 2007+).
 Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers.
-Shared data package lives at `db/` (`horseracing-db`).
+Shared data package: `db/` (`horseracing-db`). Ingest package: `ingest/` (`horseracing-ingest`).
+JRA-VAN raw = Shift_JIS CSV, 73 cols, 1 file/year under `raw_data/jra-van/` (gitignored).
 <!-- SPECKIT END -->
 
 ## Codex agent の使用方針

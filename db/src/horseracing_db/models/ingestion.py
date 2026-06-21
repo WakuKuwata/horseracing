@@ -17,6 +17,7 @@ from sqlalchemy import (
     Uuid,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import Base
@@ -82,3 +83,8 @@ class IngestionJob(TimestampMixin, Base):
     started_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
     error_message: Mapped[str | None] = mapped_column(Text)
+    # Audit counts (migration 0004): job-time totals, not recoverable from core tables.
+    processed_rows: Mapped[int | None] = mapped_column(Integer)
+    skipped_rows: Mapped[int | None] = mapped_column(Integer)
+    error_count: Mapped[int | None] = mapped_column(Integer)
+    summary: Mapped[dict | None] = mapped_column(JSONB)
