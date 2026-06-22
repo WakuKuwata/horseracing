@@ -1,10 +1,10 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/003-eval-harness/plan.md` (active feature: 評価ハーネスと baseline).
-Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy + scikit-learn for eval.
-Packages: `db/` (`horseracing-db`), `ingest/` (`horseracing-ingest`), `eval/` (`horseracing-eval`).
-Eval: expanding-window walk-forward, Predictor Protocol, baselines (market 1/odds+Harville, uniform), metrics incl. ECE; baseline results in model_versions.metrics_summary.
+`specs/004-feature-engineering/plan.md` (active feature: 特徴量生成).
+Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy/scikit-learn/pandas for ML.
+Packages: `db/` (`horseracing-db`), `ingest/` (`horseracing-ingest`), `eval/` (`horseracing-eval`), `features/` (`horseracing-features`).
+Features: leak-safe as-of (race_date < R, same-day excluded), fixed-schema FeatureMatrix, FeatureRegistry (source/timing/missing, fail-fast), Unknown=null≠0; result-time odds/popularity NOT model features.
 <!-- SPECKIT END -->
 
 ## Codex agent の使用方針
