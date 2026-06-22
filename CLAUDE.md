@@ -1,10 +1,10 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/002-jra-van-ingest/plan.md` (active feature: JRA-VAN 過去データ取込 2007+).
-Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers.
-Shared data package: `db/` (`horseracing-db`). Ingest package: `ingest/` (`horseracing-ingest`).
-JRA-VAN raw = Shift_JIS CSV, 73 cols, 1 file/year under `raw_data/jra-van/` (gitignored).
+`specs/003-eval-harness/plan.md` (active feature: 評価ハーネスと baseline).
+Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy + scikit-learn for eval.
+Packages: `db/` (`horseracing-db`), `ingest/` (`horseracing-ingest`), `eval/` (`horseracing-eval`).
+Eval: expanding-window walk-forward, Predictor Protocol, baselines (market 1/odds+Harville, uniform), metrics incl. ECE; baseline results in model_versions.metrics_summary.
 <!-- SPECKIT END -->
 
 ## Codex agent の使用方針
