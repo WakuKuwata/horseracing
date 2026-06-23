@@ -12,8 +12,13 @@ from .predictor import Prediction, RaceContext
 _EPS = 1e-12
 
 
-def _harville_topk(win: list[float]) -> tuple[list[float], list[float]]:
-    """Derive P(top2)/P(top3) from win probs (Plackett-Luce / Harville)."""
+def harville_topk(win: list[float]) -> tuple[list[float], list[float]]:
+    """Derive P(top2)/P(top3) from win probs (Plackett-Luce / Harville).
+
+    Public so feature-based predictors (Feature 005) derive top2/top3 identically
+    to the market baseline (research R8). The race-normalized win vector must sum
+    to ~1 for the result to satisfy probability consistency.
+    """
     n = len(win)
     top2 = [0.0] * n
     top3 = [0.0] * n
@@ -82,7 +87,7 @@ class MarketBaseline:
         weights = [x if x is not None else floor for x in implied]
         total = sum(weights)
         win = [w / total for w in weights]
-        top2, top3 = _harville_topk(win)
+        top2, top3 = harville_topk(win)
         return {
             h.horse_id: Prediction(win=win[i], top2=top2[i], top3=top3[i])
             for i, h in enumerate(horses)

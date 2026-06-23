@@ -1,10 +1,10 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/004-feature-engineering/plan.md` (active feature: 特徴量生成).
-Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy/scikit-learn/pandas for ML.
-Packages: `db/` (`horseracing-db`), `ingest/` (`horseracing-ingest`), `eval/` (`horseracing-eval`), `features/` (`horseracing-features`).
-Features: leak-safe as-of (race_date < R, same-day excluded), fixed-schema FeatureMatrix, FeatureRegistry (source/timing/missing, fail-fast), Unknown=null≠0; result-time odds/popularity NOT model features.
+`specs/005-model-training/plan.md` (active feature: モデルトレーニングと校正).
+Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy/scikit-learn/pandas/lightgbm for ML.
+Packages: `db/`, `ingest/`, `eval/`, `features/`, `training/` (`horseracing-training`).
+Training: single win LightGBM as Feature 003 Predictor; raw→calibrate(Platt, train-only held-out, no valid leak)→clip→race-normalize→Harville; started-all/DNF=0 labels; adoption gate (baseline LogLoss + ECE) -> model_versions; no schema change.
 <!-- SPECKIT END -->
 
 ## Codex agent の使用方針

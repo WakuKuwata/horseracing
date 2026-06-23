@@ -15,6 +15,9 @@ build/
 # Raw data (large local JRA-VAN files — not version controlled)
 raw_data/
 
+# Trained model artifacts (model.txt / calibrator.pkl / metadata.json — regenerable)
+artifacts/
+
 # Environment
 .env
 .env.*
