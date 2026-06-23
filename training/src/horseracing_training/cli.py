@@ -49,14 +49,22 @@ def train_evaluate(
     model_version: str,
     artifacts_dir: str,
     seed: int = 42,
+    hpo: bool = False,
+    target_encode_cols: tuple[str, ...] = (),
 ) -> dict:
     eval_races = _load_eval_races(session)
 
-    predictor = LightGBMPredictor(session, seed=seed, calibration=calibration)
+    def _make() -> LightGBMPredictor:
+        return LightGBMPredictor(
+            session, seed=seed, calibration=calibration,
+            hpo=hpo, target_encode_cols=target_encode_cols,
+        )
+
+    predictor = _make()
     result = evaluate(predictor, eval_races, first_valid_year=first_valid_year)
 
     # final serving model: fit on the full available history
-    final = LightGBMPredictor(session, seed=seed, calibration=calibration)
+    final = _make()
     final.fit([er.context for er in eval_races])
 
     baseline_row = session.get(ModelVersion, baseline)
@@ -114,11 +122,22 @@ def main(argv: list[str] | None = None) -> int:
     te.add_argument("--model-version", default="lightgbm-win-v1")
     te.add_argument("--artifacts-dir", default="artifacts")
     te.add_argument("--seed", type=int, default=42)
+    te.add_argument(
+        "--hpo", action="store_true", help="US4: train-internal CV hyperparameter search"
+    )
+    te.add_argument(
+        "--target-encode",
+        nargs="?",
+        const="jockey_id,trainer_id,venue_code",
+        default="",
+        help="US4: OOF target-encode these columns (comma-separated; bare flag uses defaults)",
+    )
     te.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)
     if args.command == "train-evaluate":
         engine = create_db_engine(args.database_url)
+        te_cols = tuple(c for c in args.target_encode.split(",") if c)
         with Session(engine) as session:
             summary = train_evaluate(
                 session,
@@ -129,6 +148,8 @@ def main(argv: list[str] | None = None) -> int:
                 model_version=args.model_version,
                 artifacts_dir=args.artifacts_dir,
                 seed=args.seed,
+                hpo=args.hpo,
+                target_encode_cols=te_cols,
             )
         _print_summary(summary)
         return 0

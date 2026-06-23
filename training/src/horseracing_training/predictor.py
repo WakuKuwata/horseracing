@@ -30,6 +30,14 @@ from .calibration import (
     split_train_by_time,
 )
 from .dataset import RACE_DATE, WIN_LABEL, TrainingMatrix, build_training_matrix
+from .hpo import select_params_cv
+from .target_encoding import (
+    DEFAULT_SMOOTHING,
+    TargetEncoder,
+    apply_encoded_columns,
+    fit_target_encoder,
+    oof_target_encode,
+)
 from .win_model import WinModel
 
 
@@ -46,6 +54,11 @@ class LightGBMPredictor:
         ece_clip: float = DEFAULT_CLIP,
         params: dict | None = None,
         calib_frac: float = DEFAULT_CALIB_FRAC,
+        hpo: bool = False,
+        param_grid: list[dict] | None = None,
+        hpo_splits: int = 3,
+        target_encode_cols: tuple[str, ...] = (),
+        te_smoothing: float = DEFAULT_SMOOTHING,
     ) -> None:
         self.session = session
         self.seed = seed
@@ -53,11 +66,19 @@ class LightGBMPredictor:
         self.ece_clip = ece_clip
         self.params = params
         self.calib_frac = calib_frac
+        # US4 (P2), opt-in. Defaults preserve the validated MVP path bit-for-bit.
+        self.hpo = hpo
+        self.param_grid = param_grid
+        self.hpo_splits = hpo_splits
+        self.target_encode_cols = tuple(target_encode_cols)
+        self.te_smoothing = te_smoothing
 
         self._data: TrainingMatrix | None = None
         self.win_model_: WinModel | None = None
         self.calibrator_: Calibrator | None = None
         self.feature_cols_: list[str] | None = None
+        self.encoders_: dict[str, TargetEncoder] = {}
+        self.te_cols_: tuple[str, ...] = ()
         self.fit_info_: dict | None = None
 
     # --- data (built once, reused across folds) ------------------------------
@@ -80,18 +101,47 @@ class LightGBMPredictor:
         model_mask, calib_mask = split_train_by_time(
             train_df["race_id"].to_numpy(), race_dates, calib_frac=self.calib_frac
         )
+        model_df = train_df[model_mask].reset_index(drop=True)
+        calib_df = train_df[calib_mask].reset_index(drop=True)
+        y_model = model_df[WIN_LABEL].to_numpy()
 
-        X = train_df[data.feature_cols]
-        y = train_df[WIN_LABEL].to_numpy()
+        # --- target encoding (opt-in): encoders fit on model-fit rows only --------------
+        self.te_cols_ = tuple(c for c in self.target_encode_cols if c in data.feature_cols)
+        self.encoders_ = {}
+        cat_for_model = [c for c in data.categorical_cols if c not in self.te_cols_]
+        model_X = model_df[data.feature_cols].copy()
+        calib_X = calib_df[data.feature_cols].copy()
+        if self.te_cols_:
+            prior = float(y_model.mean())  # shared by OOF / final encoder / predict fallback
+            model_enc: dict[str, np.ndarray] = {}
+            calib_enc: dict[str, np.ndarray] = {}
+            for col in self.te_cols_:
+                self.encoders_[col] = fit_target_encoder(
+                    model_df, col, label_col=WIN_LABEL, prior=prior, smoothing=self.te_smoothing
+                )
+                # training rows: out-of-fold (a row is never encoded by its own label)
+                model_enc[col] = oof_target_encode(
+                    model_df, col, race_id_col="race_id", race_date_col=RACE_DATE,
+                    label_col=WIN_LABEL, prior=prior, smoothing=self.te_smoothing,
+                ).to_numpy()
+                # held-out calibration rows: apply the final (model-fit) encoder
+                if not calib_df.empty:
+                    calib_enc[col] = self.encoders_[col].transform(calib_df[col])
+            model_X = apply_encoded_columns(model_X, model_enc, data.feature_cols)
+            if not calib_df.empty:
+                calib_X = apply_encoded_columns(calib_X, calib_enc, data.feature_cols)
 
-        self.win_model_ = WinModel(seed=self.seed, params=self._resolved_params()).fit(
-            X[model_mask], y[model_mask], categorical_cols=data.categorical_cols
+        # --- hyperparameter selection (opt-in): train-internal CV, valid never seen ------
+        params = self._select_params(model_df, data, cat_for_model)
+
+        self.win_model_ = WinModel(seed=self.seed, params=params).fit(
+            model_X, y_model, categorical_cols=cat_for_model
         )
 
         if calib_mask.any():
-            raw_c = self.win_model_.predict(X[calib_mask])
+            raw_c = self.win_model_.predict(calib_X)
             self.calibrator_ = fit_calibrator(
-                raw_c, y[calib_mask], method=self.calibration, clip=self.ece_clip
+                raw_c, calib_df[WIN_LABEL].to_numpy(), method=self.calibration, clip=self.ece_clip
             )
         else:
             self.calibrator_ = Calibrator(method="identity", clip=self.ece_clip, identity=True)
@@ -101,6 +151,9 @@ class LightGBMPredictor:
             "params": self.win_model_.params,
             "calibration": self.calibrator_.method,
             "calib_frac": self.calib_frac,
+            "hpo": self.hpo,
+            "target_encode_cols": list(self.te_cols_),
+            "te_smoothing": self.te_smoothing if self.te_cols_ else None,
             "n_train_rows": int(len(train_df)),
             "n_model_rows": int(model_mask.sum()),
             "n_calib_rows": int(calib_mask.sum()),
@@ -108,8 +161,25 @@ class LightGBMPredictor:
             "calibrator_degenerate": self.calibrator_.identity,
             "train_through": _max_date(train_df[RACE_DATE]),
             "feature_cols": list(data.feature_cols),
-            "categorical_cols": list(data.categorical_cols),
+            "categorical_cols": list(cat_for_model),
         }
+
+    def _select_params(self, model_df, data: TrainingMatrix, cat_for_model: list[str]) -> dict:
+        if not self.hpo:
+            return self._resolved_params()
+        grid = self.param_grid
+        if grid is None:
+            from .hpo import DEFAULT_GRID
+
+            grid = DEFAULT_GRID
+        result = select_params_cv(
+            model_df, data.feature_cols,
+            race_id_col="race_id", race_date_col=RACE_DATE, label_col=WIN_LABEL,
+            grid=grid, categorical_cols=data.categorical_cols,
+            target_encode_cols=self.te_cols_, te_smoothing=self.te_smoothing,
+            seed=self.seed, n_splits=self.hpo_splits,
+        )
+        return result.best_params
 
     def _resolved_params(self) -> dict:
         from .win_model import DEFAULT_PARAMS
@@ -128,7 +198,10 @@ class LightGBMPredictor:
             .set_index("horse_id")
             .reindex(started_ids)  # exact coverage + started order; missing -> NaN features
         )
-        X = rows[data.feature_cols]
+        X = rows[data.feature_cols].copy()
+        if self.encoders_:  # apply the train-fit target encoders (category -> float)
+            encoded = {col: enc.transform(rows[col]) for col, enc in self.encoders_.items()}
+            X = apply_encoded_columns(X, encoded, data.feature_cols)
 
         raw = self.win_model_.predict(X)
         cal = self.calibrator_.transform(raw)

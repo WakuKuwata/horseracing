@@ -1,10 +1,10 @@
-"""US4 (P2): hyperparameter search inside train, and out-of-fold target encoding.
+"""US4 (P2): hyperparameter search inside TRAIN only (valid/test never enter).
 
-Both tools operate strictly on TRAIN rows the caller supplies — valid/test never enter
-(INV-T3 generalized to model selection). ``select_params_cv`` uses an expanding,
-race-level, chronological CV so no race straddles a fold boundary. ``oof_target_encode``
-produces out-of-fold means so a row's encoding is never fit on its own label
-(fit-all-train -> apply-all-train would leak each row into its own feature).
+Expanding, race-level, chronological CV — no race straddles a fold boundary. When target
+encoding is enabled, the encoder is **refit on each CV train fold** and only *applied* to the
+validation fold (codex's #1 trap: pre-encoding the whole frame then splitting leaks the
+validation labels into their own encodings and inflates the CV score). The per-fold validation
+score is therefore leak-free.
 """
 
 from __future__ import annotations
@@ -15,22 +15,39 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import log_loss
 
+from .folds import chronological_race_folds
+from .target_encoding import DEFAULT_SMOOTHING, apply_encoded_columns, fit_target_encoder
 from .win_model import DEFAULT_PARAMS, WinModel
 
-
-def _chronological_race_folds(race_ids, race_dates, n_splits: int) -> list[set[str]]:
-    uniq = sorted({rid: race_dates[rid] for rid in race_ids}.items(), key=lambda kv: (kv[1], kv[0]))
-    race_order = [rid for rid, _ in uniq]
-    if len(race_order) < n_splits + 1:
-        n_splits = max(1, len(race_order) - 1)
-    chunks = np.array_split(race_order, n_splits + 1)
-    return [set(c.tolist()) for c in chunks]
+_CLIP = 1e-15
 
 
 @dataclass(frozen=True)
 class CVResult:
     best_params: dict
     scores: dict  # repr(params) -> mean log_loss
+
+
+def _encode_fold(
+    tr: pd.DataFrame,
+    va: pd.DataFrame,
+    feature_cols: list[str],
+    te_cols: tuple[str, ...],
+    label_col: str,
+    smoothing: float,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Fit TE on the train fold only; transform both folds. va is never used to fit (no leak)."""
+    tr_x, va_x = tr[feature_cols].copy(), va[feature_cols].copy()
+    if te_cols:
+        prior = float(tr[label_col].mean())
+        tr_enc, va_enc = {}, {}
+        for col in te_cols:
+            enc = fit_target_encoder(tr, col, label_col=label_col, prior=prior, smoothing=smoothing)
+            tr_enc[col] = enc.transform(tr[col])
+            va_enc[col] = enc.transform(va[col])
+        tr_x = apply_encoded_columns(tr_x, tr_enc, feature_cols)
+        va_x = apply_encoded_columns(va_x, va_enc, feature_cols)
+    return tr_x, va_x
 
 
 def select_params_cv(
@@ -42,12 +59,16 @@ def select_params_cv(
     label_col: str,
     grid: list[dict],
     categorical_cols: list[str] | None = None,
+    target_encode_cols: tuple[str, ...] | None = None,
+    te_smoothing: float = DEFAULT_SMOOTHING,
     seed: int = 42,
     n_splits: int = 3,
 ) -> CVResult:
     """Pick params minimizing mean expanding-CV log_loss over TRAIN only."""
     race_dates = dict(zip(df[race_id_col], df[race_date_col], strict=True))
-    folds = _chronological_race_folds(df[race_id_col].to_numpy(), race_dates, n_splits)
+    folds = chronological_race_folds(df[race_id_col].to_numpy(), race_dates, n_splits)
+    te_cols = tuple(target_encode_cols or ())
+    cat_for_model = [c for c in (categorical_cols or []) if c not in te_cols]
 
     scores: dict[str, float] = {}
     for params in grid:
@@ -59,10 +80,11 @@ def select_params_cv(
             va = df[df[race_id_col].isin(valid_races)]
             if tr.empty or va.empty or va[label_col].nunique() < 2:
                 continue
+            tr_x, va_x = _encode_fold(tr, va, feature_cols, te_cols, label_col, te_smoothing)
             model = WinModel(seed=seed, params={**DEFAULT_PARAMS, **params}).fit(
-                tr[feature_cols], tr[label_col].to_numpy(), categorical_cols=categorical_cols
+                tr_x, tr[label_col].to_numpy(), categorical_cols=cat_for_model
             )
-            p = np.clip(model.predict(va[feature_cols]), 1e-15, 1 - 1e-15)
+            p = np.clip(model.predict(va_x), _CLIP, 1 - _CLIP)
             fold_losses.append(log_loss(va[label_col].to_numpy(), p, labels=[0, 1]))
         scores[repr(params)] = float(np.mean(fold_losses)) if fold_losses else float("inf")
 
@@ -70,32 +92,9 @@ def select_params_cv(
     return CVResult(best_params={**DEFAULT_PARAMS, **best}, scores=scores)
 
 
-def oof_target_encode(
-    df: pd.DataFrame,
-    col: str,
-    *,
-    race_id_col: str,
-    race_date_col: str,
-    label_col: str,
-    n_splits: int = 5,
-    smoothing: float = 10.0,
-) -> pd.Series:
-    """Out-of-fold mean target encoding for a categorical column (no self-leak).
-
-    Each race-level fold's rows are encoded using the *other* folds' label means only,
-    blended toward the global prior with ``smoothing`` (handles unseen/rare categories).
-    """
-    race_dates = dict(zip(df[race_id_col], df[race_date_col], strict=True))
-    folds = _chronological_race_folds(df[race_id_col].to_numpy(), race_dates, n_splits)
-    prior = float(df[label_col].mean())
-    out = pd.Series(np.full(len(df), prior, dtype=float), index=df.index)
-
-    for held in folds:
-        held_mask = df[race_id_col].isin(held)
-        rest = df[~held_mask]
-        if rest.empty:
-            continue
-        agg = rest.groupby(col, observed=True)[label_col].agg(["sum", "count"])
-        enc = (agg["sum"] + smoothing * prior) / (agg["count"] + smoothing)
-        out.loc[held_mask] = df.loc[held_mask, col].map(enc).fillna(prior).to_numpy()
-    return out
+#: small default grid used when HPO is enabled from the CLI (kept tiny for runtime).
+DEFAULT_GRID: list[dict] = [
+    {"num_leaves": 15, "learning_rate": 0.05},
+    {"num_leaves": 31, "learning_rate": 0.05},
+    {"num_leaves": 63, "learning_rate": 0.03},
+]

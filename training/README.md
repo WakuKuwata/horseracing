@@ -39,6 +39,23 @@ uv run python -m horseracing_training train-evaluate \
 walk-forward で fold ごとに LightGBM 学習 + train-only 校正 → harness 評価 → baseline と比較 →
 採用判定 → `model_versions` + artifacts に保存。label 別指標と採用結果を表示。
 
+### US4: ハイパラ探索 + OOF target encoding（opt-in）
+
+```bash
+uv run python -m horseracing_training train-evaluate \
+    --first-valid-year 2008 --hpo --target-encode \
+    --baseline baseline-uniform-v1 --model-version lightgbm-win-us4
+```
+
+- `--hpo`: model-fit 行だけで expanding・race-level CV を回しハイパラ選択（valid/test 不使用）。
+- `--target-encode [COLS]`: 指定列（既定 `jockey_id,trainer_id,venue_code`）を **leak-safe** に
+  target-encode。学習行は OOF（自分のラベルで自分を encode しない）、校正/推論行は model-fit のみで
+  fit した最終エンコーダを apply。prior（model-fit の win 率）を OOF/最終/推論で共有。**HPO の CV では
+  各 fold の train 側だけで TE を再 fit**（fold 漏れ防止）。学習ラベルは started-all/DNF=0（評価採点の
+  finished-only TE は流用しない）。
+- 既定は両方 OFF（検証済み MVP 経路を bit 単位で維持）。実データ 2007→2008 では HPO+OOF が MVP に対し
+  win LogLoss 0.2388→0.2281、top2/top3 も改善（2 回実行で指標完全一致＝決定論）。
+
 ## テスト
 
 ```bash

@@ -7,7 +7,8 @@ import datetime
 import numpy as np
 import pandas as pd
 
-from horseracing_training.hpo import oof_target_encode, select_params_cv
+from horseracing_training.hpo import _encode_fold, select_params_cv
+from horseracing_training.target_encoding import oof_target_encode
 
 
 def _learnable_df(n_races: int = 12, field: int = 6) -> pd.DataFrame:
@@ -69,3 +70,20 @@ def test_oof_encoding_does_not_leak_a_rows_own_label():
     # encoding for the solo row is the prior fallback, NOT its own label (1.0)
     assert abs(enc.loc[solo_idx] - prior) < 1e-9
     assert enc.loc[solo_idx] < 0.9
+
+
+def test_cv_fold_encoding_does_not_leak_validation_labels():
+    # codex's #1 trap: a category that appears ONLY in the validation fold with label 1 must be
+    # encoded by the train-fold encoder as the prior — never as its own (validation) label.
+    tr = pd.DataFrame(
+        {"race_id": ["r0", "r0", "r1"], "win": [1, 0, 0], "g": ["A", "B", "A"], "x": [1.0, 0.0, 0.0]}
+    )
+    va = pd.DataFrame(
+        {"race_id": ["r2", "r2"], "win": [1, 1], "g": ["Z", "Z"], "x": [1.0, 1.0]}  # 'Z' unseen in tr
+    )
+    tr_x, va_x = _encode_fold(tr, va, ["x", "g"], ("g",), "win", smoothing=1.0)
+    prior = float(tr["win"].mean())
+    # validation 'Z' rows fall back to the train prior, not their own label
+    assert (abs(va_x["g"].to_numpy() - prior) < 1e-9).all()
+    # train encodings are derived from train labels only and stay finite
+    assert np.isfinite(tr_x["g"].to_numpy()).all()
