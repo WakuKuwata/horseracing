@@ -1,10 +1,10 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/005-model-training/plan.md` (active feature: モデルトレーニングと校正).
+`specs/006-prediction-serving/plan.md` (active feature: 予測 serving).
 Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy/scikit-learn/pandas/lightgbm for ML.
-Packages: `db/`, `ingest/`, `eval/`, `features/`, `training/` (`horseracing-training`).
-Training: single win LightGBM as Feature 003 Predictor; raw→calibrate(Platt, train-only held-out, no valid leak)→clip→race-normalize→Harville; started-all/DNF=0 labels; adoption gate (baseline LogLoss + ECE) -> model_versions; no schema change.
+Packages: `db/`, `ingest/`, `eval/`, `features/`, `training/`, `serving/` (`horseracing-serving`).
+Serving: load active model+calibrator+preprocessor(preprocessor.pkl: encoders/feature-order/categorical) from artifacts; build as-of leak-safe features for target races (future/result-pending OK); raw→calibrate→clip→race-normalize→Harville; persist prediction_runs/race_predictions/feature_snapshots (append-only); fail-fast on feature_hash/feature_version mismatch; no ResultMarket/race_results in model input; no schema change. Training artifacts extended (non-breaking) to save preprocessor.pkl.
 <!-- SPECKIT END -->
 
 ## Codex agent の使用方針

@@ -44,6 +44,25 @@ def _write_model(predictor: LightGBMPredictor, path: Path) -> None:
         path.write_text(json.dumps({"degenerate_constant_win": const}))
 
 
+def build_preprocessor(predictor: LightGBMPredictor, feature_version: str) -> dict:
+    """Serving-side preprocessing state (Feature 006): everything needed to rebuild the
+    exact model-input matrix outside the training session — feature column order, native
+    categorical columns, and the fitted target encoders. Stored as a plain dict (unpickled
+    by ``horseracing_serving`` which path-depends on training, so TargetEncoder resolves)."""
+    info = predictor.fit_info_ or {}
+    fcols = info.get("feature_cols", predictor.feature_cols_ or [])
+    return {
+        "feature_cols": list(fcols),
+        "categorical_cols": list(info.get("categorical_cols", [])),
+        "target_encode_cols": list(predictor.te_cols_),
+        "te_smoothing": predictor.te_smoothing,
+        "encoders": dict(predictor.encoders_),  # col -> TargetEncoder (empty if no TE)
+        "feature_version": feature_version,
+        "feature_hash": feature_hash(fcols),
+        "model_degenerate": bool(info.get("model_degenerate")),
+    }
+
+
 def save_model_version(
     session: Session,
     *,
@@ -65,12 +84,15 @@ def save_model_version(
     art_dir.mkdir(parents=True, exist_ok=True)
     model_path = art_dir / "model.txt"
     calib_path = art_dir / "calibrator.pkl"
+    prep_path = art_dir / "preprocessor.pkl"
     meta_path = art_dir / "metadata.json"
 
     # 1. artifacts to disk
     _write_model(predictor, model_path)
     with calib_path.open("wb") as fh:
         pickle.dump(predictor.calibrator_, fh)
+    with prep_path.open("wb") as fh:  # Feature 006 serving: preprocessing state
+        pickle.dump(build_preprocessor(predictor, feature_version), fh)
 
     metadata = {
         "model_version": model_version,
@@ -82,6 +104,8 @@ def save_model_version(
         "fold_boundaries": list(eval_result.valid_years),
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
+        "target_encode_cols": list(predictor.te_cols_),  # serving backward-compat detection
+        "te_smoothing": predictor.te_smoothing if predictor.te_cols_ else None,
         "git_sha": git_sha,
         "train_through": info.get("train_through"),
         "n_model_rows": info.get("n_model_rows"),
