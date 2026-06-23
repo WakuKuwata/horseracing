@@ -18,6 +18,9 @@ raw_data/
 # Trained model artifacts (model.txt / calibrator.pkl / metadata.json — regenerable)
 artifacts/
 
+# netkeiba scrape local HTTP cache
+.scrape_cache/
+
 # Environment
 .env
 .env.*

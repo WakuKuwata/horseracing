@@ -1,10 +1,10 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/007-win-bet-recommendation/plan.md` (active feature: 単勝 EV 推奨と疑似ROIバックテスト).
-Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy/scikit-learn/pandas/lightgbm for ML.
-Packages: `db/`, `ingest/`, `eval/`, `features/`, `training/`, `serving/`, `betting/` (`horseracing-betting`).
-Betting: single win EV = win_prob×odds from Feature 006 predictions; recommend EV>=threshold to recommendations (append-only, bet_type='win', pseudo_odds=1/p, pseudo_roi=p*odds-1); exclude scratched/null-odds/zero-prob and re-normalize remaining win_prob; bet selection never reads race_results (leak boundary); pseudo-ROI backtest (recovery/hit/skip/maxDD/streak) vs ROI baselines (favorite/uniform) same-condition; ALL eval is pseudo evaluation (closing-oracle settled odds). No schema change. Exotics/estimated-odds deferred (P0).
+`specs/008-netkeiba-scraping/plan.md` (active feature: netkeiba スクレイピング取り込み).
+Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy/scikit-learn/pandas/lightgbm for ML; httpx + selectolax/bs4 for scraping.
+Packages: `db/`, `ingest/`, `eval/`, `features/`, `training/`, `serving/`, `betting/`, `scrape/` (`horseracing-scrape`).
+Scrape: polite netkeiba fetch (robots/rate-limit/cache/UA/backoff) of entries+odds+results into existing core tables; netkeiba IDs map to JRA-VAN via id_mappings only (no guess-join) — mapped→canonical_id, unmapped→unique `nk:{id}` surrogate + UNMAPPED queue (debut/leak-safe); future race_id must be a valid JRA-VAN 12-digit or no row written (no fake IDs); results backfill is INSERT-ONLY (never overwrite JRA-VAN); pre-race odds overwrite ONLY result-pending races (protect JRA-VAN final odds); idempotent + ingestion_jobs audit; parsers tested on saved HTML fixtures (network-free). No schema change. Odds never a model feature. 2007+.
 <!-- SPECKIT END -->
 
 ## Codex agent の使用方針
