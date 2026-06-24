@@ -49,3 +49,26 @@ def seed_predicted_race(
                                    win_prob=d, top2_prob=d, top3_prob=d))
     session.commit()
     return run.prediction_run_id
+
+
+def seed_odds_race(
+    session: Session,
+    *,
+    race_id: str,
+    win_odds: dict[str, float],
+    finish: dict[str, int],
+    race_date: datetime.date = datetime.date(2008, 6, 1),
+) -> None:
+    """Race + started horses with WIN odds + finished results (no predictions). For market tests."""
+    session.merge(Race(race_id=race_id, race_number=int(race_id[-2:]), race_date=race_date,
+                       venue_code=race_id[4:6]))
+    for hid in win_odds:
+        session.merge(Horse(horse_id=hid, horse_name=hid))
+    session.flush()
+    for hid, o in win_odds.items():
+        session.add(RaceHorse(race_id=race_id, horse_id=hid, horse_number=finish.get(hid),
+                              odds=Decimal(str(o)), entry_status=EntryStatus.STARTED))
+        if hid in finish:
+            session.add(RaceResult(race_id=race_id, horse_id=hid, finish_order=finish[hid],
+                                   result_status=ResultStatus.FINISHED))
+    session.commit()
