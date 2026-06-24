@@ -5,17 +5,33 @@ from __future__ import annotations
 import argparse
 import datetime
 
-from horseracing_db.models import PredictionRun
+from horseracing_db.models import PredictionRun, Recommendation
 from horseracing_db.session import create_db_engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .backtest import run_backtest
+from .exotic_backtest import run_exotic_backtest
+from .exotic_recommend import (
+    DEFAULT_ODDS_CAP,
+    DEFAULT_TOP_K,
+    generate_exotic_recommendations,
+)
+from .exotic_roi import TOTAL
+from .exotic_types import ALL_EXOTIC
 from .recommend import DEFAULT_STAKE, DEFAULT_THRESHOLD, generate_recommendations
+
+_DOUBLE_PSEUDO = "二重疑似(モデル確率 × 推定市場オッズ / PL 外挿)"
 
 
 def _parse_date(s: str) -> datetime.date:
     return datetime.date.fromisoformat(s)
+
+
+def _parse_bet_types(s: str | None) -> tuple[str, ...]:
+    if not s:
+        return ALL_EXOTIC
+    return tuple(t.strip() for t in s.split(",") if t.strip())
 
 
 def _resolve_run(session: Session, race_id: str):
@@ -56,6 +72,54 @@ def _cmd_backtest(session: Session, args) -> int:
     return 0
 
 
+def _cmd_exotic_recommend(session: Session, args) -> int:
+    run_id = args.prediction_run or _resolve_run(session, args.race_id)
+    ids = generate_exotic_recommendations(
+        session, prediction_run_id=run_id, threshold=args.threshold, top_k=args.top_k,
+        stake=args.stake, bet_types=_parse_bet_types(args.bet_types), odds_cap=args.odds_cap,
+    )
+    recs = session.scalars(
+        select(Recommendation).where(Recommendation.prediction_run_id == run_id)
+    ).all()
+    recent = [r for r in recs if r.recommendation_id in set(ids)]
+    by_type: dict[str, int] = {}
+    for r in recent:
+        by_type[r.bet_type] = by_type.get(r.bet_type, 0) + 1
+    print(f"prediction_run={run_id} exotic recommendations={len(ids)}  [{_DOUBLE_PSEUDO}]")
+    print("  is_estimated_odds=true / market_odds_used=null (no real exotic odds)")
+    for bt in ALL_EXOTIC:
+        if bt in by_type:
+            print(f"  {bt:<9} {by_type[bt]:>3} bets")
+    for r in sorted(recent, key=lambda x: float(x.pseudo_roi), reverse=True)[:10]:
+        ev = float(r.pseudo_roi) + 1.0
+        print(
+            f"    {r.bet_type:<9} {r.selection}  EV={ev:.3f}  "
+            f"O_est={float(r.estimated_market_odds_used):.2f}"
+        )
+    return 0
+
+
+def _cmd_exotic_backtest(session: Session, args) -> int:
+    reports = run_exotic_backtest(
+        session, date_from=args.from_, date_to=args.to, threshold=args.threshold,
+        top_k=args.top_k, stake=args.stake, bet_types=_parse_bet_types(args.bet_types),
+        odds_cap=args.odds_cap, model_version=args.model_version,
+    )
+    print(f"exotic-backtest {args.from_}..{args.to}  [{_DOUBLE_PSEUDO} 評価]")
+    print(
+        f"{'strategy':<12} {'roi':>8} {'hit':>7} {'skip':>7} "
+        f"{'bets':>6} {'maxDD':>10} {'streak':>7}"
+    )
+    for name in ("ev", "lowest_oest", "uniform"):
+        r = reports[name][TOTAL]
+        print(
+            f"{name:<12} {r.roi:>8.3f} {r.hit_rate:>7.3f} {r.skip_rate:>7.3f} "
+            f"{r.n_bets:>6} {r.max_drawdown:>10.0f} {r.max_consecutive_losses:>7}"
+        )
+    print("  success = EV が各 baseline の roi を上回ること(絶対 >1.0 ではない)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="horseracing_betting")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -75,6 +139,27 @@ def main(argv: list[str] | None = None) -> int:
     bt.add_argument("--model-version", default=None)
     bt.add_argument("--database-url", default=None)
 
+    xr = sub.add_parser("exotic-recommend", help="generate exotic EV recommendations")
+    xr.add_argument("--prediction-run", default=None)
+    xr.add_argument("--race-id", default=None)
+    xr.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
+    xr.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    xr.add_argument("--stake", type=float, default=DEFAULT_STAKE)
+    xr.add_argument("--bet-types", default=None, help="comma list, e.g. trifecta,trio")
+    xr.add_argument("--odds-cap", type=float, default=DEFAULT_ODDS_CAP)
+    xr.add_argument("--database-url", default=None)
+
+    xb = sub.add_parser("exotic-backtest", help="exotic pseudo-ROI backtest vs baselines (pseudo)")
+    xb.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    xb.add_argument("--to", type=_parse_date, required=True)
+    xb.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
+    xb.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    xb.add_argument("--stake", type=float, default=DEFAULT_STAKE)
+    xb.add_argument("--bet-types", default=None, help="comma list, e.g. trifecta,trio")
+    xb.add_argument("--odds-cap", type=float, default=DEFAULT_ODDS_CAP)
+    xb.add_argument("--model-version", default=None)
+    xb.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
@@ -84,6 +169,12 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_recommend(session, args)
         if args.command == "backtest":
             return _cmd_backtest(session, args)
+        if args.command == "exotic-recommend":
+            if (args.prediction_run is None) == (args.race_id is None):
+                parser.error("exactly one of --prediction-run or --race-id is required")
+            return _cmd_exotic_recommend(session, args)
+        if args.command == "exotic-backtest":
+            return _cmd_exotic_backtest(session, args)
     return 1
 
 

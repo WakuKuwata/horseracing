@@ -192,6 +192,7 @@ dependencies = [
     { name = "horseracing-db" },
     { name = "horseracing-eval" },
     { name = "horseracing-features" },
+    { name = "horseracing-probability" },
     { name = "horseracing-serving" },
     { name = "numpy" },
     { name = "pandas" },
@@ -211,6 +212,7 @@ requires-dist = [
     { name = "horseracing-db", editable = "../db" },
     { name = "horseracing-eval", editable = "../eval" },
     { name = "horseracing-features", editable = "../features" },
+    { name = "horseracing-probability", editable = "../probability" },
     { name = "horseracing-serving", editable = "../serving" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
@@ -297,6 +299,34 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "pyarrow", specifier = ">=14" },
+    { name = "sqlalchemy", specifier = ">=2.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "ruff", specifier = ">=0.6" },
+    { name = "testcontainers", extras = ["postgres"], specifier = ">=4.0" },
+]
+
+[[package]]
+name = "horseracing-probability"
+version = "0.1.0"
+source = { editable = "../probability" }
+dependencies = [
+    { name = "horseracing-db" },
+    { name = "horseracing-eval" },
+    { name = "numpy" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "horseracing-db", editable = "../db" },
+    { name = "horseracing-eval", editable = "../eval" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "sqlalchemy", specifier = ">=2.0" },
 ]
 
