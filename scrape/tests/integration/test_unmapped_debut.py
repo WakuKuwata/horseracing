@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import datetime
+
 import pytest
 from horseracing_features.builder import build_feature_matrix
-
-import datetime
 
 from horseracing_scrape.pipeline import scrape_entries
 from tests._synth import RACE_ID, fixture_fetcher, seed_finished_race

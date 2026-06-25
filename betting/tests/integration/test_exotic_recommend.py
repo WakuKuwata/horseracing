@@ -50,7 +50,7 @@ def test_exotic_recommend_persists_double_pseudo_with_audit(session, tmp_path):
         assert rec.market_odds_used is None
         assert rec.estimated_market_odds_used is not None and rec.estimated_market_odds_used > 0
         assert rec.pseudo_odds is not None and rec.pseudo_roi is not None
-        assert "exotic_ev=P_model(009;p)*O_est(010;q)" in rec.logic_version
+        assert "exotic_ev=P_model(009;p)*odds[real_exotic>est_O_est(010;q)]" in rec.logic_version
         assert "qsrc=market_win_odds" in rec.logic_version
         per_type[rec.bet_type] = per_type.get(rec.bet_type, 0) + 1
 

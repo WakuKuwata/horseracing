@@ -14,11 +14,11 @@ from horseracing_db.session import create_db_engine
 from sqlalchemy.orm import Session
 
 from .fetch import HttpFetcher
-from .pipeline import scrape_entries, scrape_odds, scrape_results
+from .pipeline import scrape_entries, scrape_exotic_odds, scrape_odds, scrape_results
 
 _USER_AGENT = "horseracing-scrape/0.1 (personal use; contact via repo)"
 _COMMANDS = {"scrape-entries": scrape_entries, "scrape-odds": scrape_odds,
-             "scrape-results": scrape_results}
+             "scrape-results": scrape_results, "scrape-exotic-odds": scrape_exotic_odds}
 
 
 def main(argv: list[str] | None = None) -> int:

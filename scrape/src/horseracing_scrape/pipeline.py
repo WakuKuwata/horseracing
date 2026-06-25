@@ -17,9 +17,16 @@ from sqlalchemy.orm import Session
 from . import SCRAPE_PARSER_VERSION
 from .fetch import PoliteFetcher
 from .parse.entries import parse_entries
+from .parse.exotic_odds import parse_exotic_odds
 from .parse.odds import parse_odds
 from .parse.results import parse_results
-from .upsert import Counts, backfill_results, update_odds, upsert_entries
+from .upsert import (
+    Counts,
+    backfill_results,
+    update_odds,
+    upsert_entries,
+    upsert_exotic_odds,
+)
 from .venues import build_race_id
 
 
@@ -113,6 +120,26 @@ def scrape_odds(
         return _aggregate(parts)
 
     return _run_job(session, job_type="odds", scope="urls", scope_value=scope_value, work=work)
+
+
+def scrape_exotic_odds(
+    session: Session, *, urls: list[str], fetcher: PoliteFetcher, scope_value: str | None = None
+) -> JobSummary:
+    """Ingest REAL exotic odds (012). race_id via build_race_id (handles <2007 / unknown venue ->
+    skip, no fake IDs). Idempotent overwrite; audited as job_type='exotic_odds'."""
+    def work() -> Counts:
+        parts: list[Counts] = []
+        for u in urls:
+            scraped = parse_exotic_odds(fetcher.get(u))
+            race_id = _race_id_of(scraped.key)
+            if race_id is None:  # <2007 or unknown venue — no fake IDs
+                parts.append(Counts(skipped=1, error_messages=["race_id not constructible"]))
+                continue
+            parts.append(upsert_exotic_odds(session, race_id, scraped))
+        return _aggregate(parts)
+
+    return _run_job(session, job_type="exotic_odds", scope="urls", scope_value=scope_value,
+                    work=work)
 
 
 def scrape_results(

@@ -22,8 +22,9 @@ def test_exotic_recommend_cli(session, tmp_path, capsys, database_url):
     assert rc == 0
     out = capsys.readouterr().out
     assert "exotic recommendations=" in out
+    # no exotic_odds in DB -> all estimated (double-pseudo) fallback
     assert "二重疑似" in out
-    assert "is_estimated_odds=true" in out
+    assert "0 real-odds" in out
 
 
 def test_exotic_backtest_cli(session, tmp_path, capsys, database_url):

@@ -12,7 +12,9 @@ BETTING_LOGIC_VERSION = "betting-0.1.0"
 
 # Exotic public API (imported after the constant to avoid a circular import).
 from .exotic_backtest import run_exotic_backtest  # noqa: E402
+from .exotic_divergence import exotic_divergence  # noqa: E402
 from .exotic_ev import candidate_bets, canonical_field, exotic_ev_bets  # noqa: E402
+from .exotic_market import load_real_exotic_odds  # noqa: E402
 from .exotic_recommend import generate_exotic_recommendations  # noqa: E402
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "exotic_ev_bets",
     "generate_exotic_recommendations",
     "run_exotic_backtest",
+    "load_real_exotic_odds",
+    "exotic_divergence",
 ]

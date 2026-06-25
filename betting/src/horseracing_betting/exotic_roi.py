@@ -18,19 +18,37 @@ TOTAL = "__total__"
 
 
 def score_exotic(
-    bets: Iterable[ExoticBet], outcome: ExoticRaceOutcome, *, stake: float
+    bets: Iterable[ExoticBet],
+    outcome: ExoticRaceOutcome,
+    *,
+    stake: float,
+    real_odds: dict[tuple[str, tuple[int, ...]], float] | None = None,
+    scratched: set[int] | None = None,
 ) -> tuple[list[ScoredBet], int]:
-    """Score each bet; returns (scored, n_unscoreable). Unscoreable = dead-heat-ambiguous skip."""
+    """Score each bet; returns (scored, n_skipped).
+
+    payout uses the REAL dividend when ``real_odds`` has the selection (pseudo=False, real ROI),
+    else the estimated O_est (pseudo=True, double-pseudo). A bet whose selection includes a
+    post-recommendation ``scratched`` horse is VOIDED (skipped, no payout). Dead-heat-ambiguous
+    ordered/set bets (is_hit None) are also skipped (audit).
+    """
+    real_odds = real_odds or {}
+    scratched = scratched or set()
     scored: list[ScoredBet] = []
-    unscoreable = 0
+    skipped = 0
     for b in bets:
+        if any(n in scratched for n in b.selection):
+            skipped += 1  # post-recommendation scratch -> void (do not pay, do not estimate)
+            continue
         hit = is_hit(b.bet_type, b.selection, outcome.finish_pos, field_size=outcome.field_size)
         if hit is None:
-            unscoreable += 1  # ordered/set bet not scoreable (dead-heat) -> audit skip
+            skipped += 1  # ordered/set bet not scoreable (dead-heat) -> audit skip
             continue
-        payout = stake * b.o_est if hit else 0.0
-        scored.append(ScoredBet(bet=b, stake=stake, hit=bool(hit), payout=payout))
-    return scored, unscoreable
+        real = real_odds.get((b.bet_type, tuple(b.selection)))
+        odds_used, pseudo = (b.o_est, True) if real is None else (real, False)
+        payout = stake * odds_used if hit else 0.0
+        scored.append(ScoredBet(bet=b, stake=stake, hit=bool(hit), payout=payout, pseudo=pseudo))
+    return scored, skipped
 
 
 def _metrics(
@@ -65,7 +83,8 @@ def _metrics(
         skip_rate=(skipped / opportunities) if opportunities else 0.0,
         max_drawdown=max_dd,
         max_consecutive_losses=max_streak,
-        pseudo=True,
+        # real ROI only when EVERY payout used a real dividend; any estimated => double-pseudo label
+        pseudo=any(s.pseudo for s in scored) if scored else True,
     )
 
 

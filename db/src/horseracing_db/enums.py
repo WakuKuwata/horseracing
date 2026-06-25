@@ -88,3 +88,13 @@ class BetType:
     TRIO = "trio"  # 3連複
     TRIFECTA = "trifecta"  # 3連単
     ALL = (WIN, PLACE, QUINELLA, EXACTA, WIDE, TRIO, TRIFECTA)
+    #: exotic bet types (win excluded) — the only ones with a real exotic odds pool (012).
+    EXOTIC = (PLACE, QUINELLA, EXACTA, WIDE, TRIO, TRIFECTA)
+
+
+class CoverageScope:
+    """exotic_odds.coverage_scope — 取得グリッドの完全性 (012)."""
+
+    FULL = "full"  # 期待件数テストで完全グリッドを証明
+    PARTIAL = "partial"  # 部分取得 (欠損は推定フォールバック)
+    ALL = (FULL, PARTIAL)

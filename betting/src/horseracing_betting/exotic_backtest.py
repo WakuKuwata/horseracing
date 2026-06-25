@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .exotic_ev import candidate_bets, canonical_field, exotic_ev_bets
+from .exotic_market import load_real_exotic_odds
 from .exotic_roi import aggregate_roi, score_exotic
 from .exotic_strategies import lowest_oest_baseline, uniform_baseline
 from .exotic_types import (
@@ -119,6 +120,9 @@ def run_exotic_backtest(
         field, outcome = _field_and_outcome(session, model, race_id, feature_rows)
         if field is None or not field.p_norm:
             continue
+        # real final dividends — used for PAYOUT/scoring ONLY, never as a selection input (no
+        # lookahead: past-race exotic_odds has been overwritten to the final dividend).
+        real_odds = load_real_exotic_odds(session, race_id)
         avail = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates,
                                odds_cap=odds_cap)  # bet types with >=1 candidate (opportunity)
         for s in strategies:
@@ -129,7 +133,7 @@ def run_exotic_backtest(
                 opp[s][bt] = opp[s].get(bt, 0) + 1
                 if bt not in placed_types:  # opportunity existed but strategy bet nothing
                     skip[s][bt] = skip[s].get(bt, 0) + 1
-            scored, _unscoreable = score_exotic(bets, outcome, stake=stake)
+            scored, _skipped = score_exotic(bets, outcome, stake=stake, real_odds=real_odds)
             acc[s].extend(scored)
 
     return {

@@ -9,6 +9,7 @@ from __future__ import annotations
 from .enums import (
     AdoptionStatus,
     BetType,
+    CoverageScope,
     EntityType,
     EntryStatus,
     JobStatus,
@@ -53,3 +54,7 @@ PROB_MONOTONIC = (
 
 # recommendations
 BET_TYPE = _in_list("bet_type", BetType.ALL)
+
+# exotic_odds (012): win excluded (no exotic pool); coverage full/partial
+EXOTIC_BET_TYPE = _in_list("bet_type", BetType.EXOTIC)
+COVERAGE_SCOPE = _in_list("coverage_scope", CoverageScope.ALL)

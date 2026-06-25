@@ -73,7 +73,8 @@ class ScoredBet:
     bet: ExoticBet
     stake: float
     hit: bool
-    payout: float  # stake * o_est if hit else 0 (DOUBLE-pseudo)
+    payout: float       # stake * odds_used if hit else 0
+    pseudo: bool = True  # True = estimated O_est payout (double-pseudo); False = real dividend
 
     @property
     def profit(self) -> float:
@@ -85,6 +86,21 @@ class ExoticRaceOutcome:
     race_id: str
     finish_pos: dict[int, int]  # horse_number -> finishing rank (1-based), finished horses only
     field_size: int             # canonical field_size used at generation (NOT actual starters)
+
+
+@dataclass(frozen=True)
+class DivergenceReport:
+    """Estimated (010/011) vs REAL exotic odds divergence per bet type (Feature 012, eval-first)."""
+
+    bet_type: str
+    n_estimated: int          # estimated candidates priced this bet type
+    n_pairs: int              # candidates that ALSO have a real odds (matched)
+    coverage_rate: float      # n_pairs / n_estimated
+    log_ratio_median: float   # median of log(real / estimated) over matched pairs
+    log_ratio_mae: float      # mean |log(real / estimated)|
+    log_ratio_p90: float      # 90th percentile of |log(real / estimated)|
+    baseline: str = "estimated(010/011)"
+    pseudo_baseline: bool = True  # the estimated side is double-pseudo
 
 
 @dataclass(frozen=True)

@@ -18,13 +18,39 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import BETTING_LOGIC_VERSION
-from .exotic_ev import canonical_field, exotic_ev_bets
-from .exotic_types import ALL_EXOTIC
+from .exotic_ev import _EPS, _k_for, candidate_bets, canonical_field
+from .exotic_market import load_real_exotic_odds
+from .exotic_selection import selection_key
+from .exotic_types import ALL_EXOTIC, ExoticBet
 
 DEFAULT_THRESHOLD = 1.0
 DEFAULT_TOP_K = 5
 DEFAULT_STAKE = 100.0
 DEFAULT_ODDS_CAP = 10000.0
+
+
+def _blended_bets(field, real_odds, *, threshold, top_k, bet_types, payout_rates, odds_cap):
+    """EV candidates with real odds preferred per selection, else estimated O_est (011).
+
+    Returns (bet, odds_used, is_estimated, ev) tuples, EV≥threshold, top-K by (−EV, selection_key).
+    EV uses the chosen odds so real-priced bets are ranked on their real EV (row-level distinction).
+    """
+    cands = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap)
+    out: list[tuple[ExoticBet, float, bool, float]] = []
+    for bt, bets in cands.items():
+        k = _k_for(top_k, bt)
+        if k <= 0:
+            continue
+        scored: list[tuple[ExoticBet, float, bool, float]] = []
+        for b in bets:
+            real = real_odds.get((b.bet_type, tuple(b.selection)))
+            odds_used, is_est = (b.o_est, True) if real is None else (real, False)
+            ev = b.p_model * odds_used
+            if ev >= threshold - _EPS:
+                scored.append((b, odds_used, is_est, ev))
+        scored.sort(key=lambda x: (-x[3], selection_key(x[0].bet_type, x[0].selection)))
+        out.extend(scored[:k])
+    return out
 
 
 def default_exotic_logic_version(
@@ -37,7 +63,8 @@ def default_exotic_logic_version(
 ) -> str:
     rates = ",".join(f"{k}={payout_rates[k]}" for k in sorted(payout_rates))
     return (
-        f"exotic_ev=P_model(009;p)*O_est(010;q);thr={threshold};topk={top_k};stake={stake};"
+        f"exotic_ev=P_model(009;p)*odds[real_exotic>est_O_est(010;q)];"
+        f"thr={threshold};topk={top_k};stake={stake};"
         f"takeout[{rates}];qsrc=market_win_odds;cap={odds_cap};"
         f"pop=canonical(valid_p&valid_odds;renorm);v={BETTING_LOGIC_VERSION}"
     )
@@ -81,6 +108,7 @@ def generate_exotic_recommendations(
     bet_types=ALL_EXOTIC,
     payout_rates: dict[str, float] | None = None,
     odds_cap: float = DEFAULT_ODDS_CAP,
+    use_real_odds: bool = True,
     logic_version: str | None = None,
 ) -> list[uuid.UUID]:
     run = session.get(PredictionRun, prediction_run_id)
@@ -98,23 +126,25 @@ def generate_exotic_recommendations(
     field = canonical_field(
         race_id, predictions, odds, scratched=scratched, number_to_id=number_to_id
     )
-    bets = exotic_ev_bets(
-        field, threshold=threshold, top_k=top_k, bet_types=bet_types,
+    # real exotic odds preferred per selection; estimated O_est (011) as row-level fallback.
+    real_odds = load_real_exotic_odds(session, race_id) if use_real_odds else {}
+    blended = _blended_bets(
+        field, real_odds, threshold=threshold, top_k=top_k, bet_types=bet_types,
         payout_rates=rates, odds_cap=odds_cap,
     )
 
     ids: list[uuid.UUID] = []
-    for b in bets:
+    for b, odds_used, is_est, ev in blended:
         rec = Recommendation(
             prediction_run_id=prediction_run_id,
             race_id=race_id,
             bet_type=b.bet_type,
-            selection=list(b.selection),         # JSONB-safe array (no frozenset/tuple)
-            market_odds_used=None,                # no real exotic odds
-            estimated_market_odds_used=Decimal(str(b.o_est)),
-            is_estimated_odds=True,               # DOUBLE-pseudo (est. odds + PL extrapolation)
+            selection=list(b.selection),               # JSONB-safe array (no frozenset/tuple)
+            market_odds_used=None if is_est else Decimal(str(odds_used)),   # real exotic odds
+            estimated_market_odds_used=Decimal(str(odds_used)) if is_est else None,
+            is_estimated_odds=is_est,                  # est=true → DOUBLE-pseudo; false → real ROI
             pseudo_odds=Decimal(str(b.pseudo_odds)),   # 1 / P_model
-            pseudo_roi=Decimal(str(b.pseudo_roi)),     # EV − 1
+            pseudo_roi=Decimal(str(ev - 1.0)),         # EV − 1 (EV on the chosen odds)
             logic_version=lv,
         )
         session.add(rec)

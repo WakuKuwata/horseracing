@@ -11,17 +11,19 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from horseracing_db.enums import EntryStatus, ResultStatus
-from horseracing_db.models import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
-from sqlalchemy import exists, select, update
+from horseracing_db.enums import BetType, CoverageScope, EntryStatus, ResultStatus
+from horseracing_db.models import ExoticOdds, Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
+from horseracing_db.selection import canonical_selection
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from .idmap import resolve_entity
-from .models import ScrapedEntry, ScrapedOdds, ScrapedResult
+from .models import ScrapedEntry, ScrapedExoticOdds, ScrapedOdds, ScrapedResult
 from .venues import build_race_id
 
 
@@ -148,4 +150,74 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
             ).on_conflict_do_nothing(index_elements=["race_id", "horse_id"])
         )
         c.written += 1
+    return c
+
+
+# --- exotic odds (012) ------------------------------------------------------
+def _expected_count(bet_type: str, n: int) -> int:
+    """Full-grid combination count for n started horses (drives coverage_scope)."""
+    if n <= 0:
+        return 0
+    if bet_type == BetType.PLACE:
+        return n                              # per-horse 複勝 odds
+    if bet_type in (BetType.QUINELLA, BetType.WIDE):
+        return math.comb(n, 2)
+    if bet_type == BetType.EXACTA:
+        return n * (n - 1)
+    if bet_type == BetType.TRIO:
+        return math.comb(n, 3)
+    if bet_type == BetType.TRIFECTA:
+        return n * (n - 1) * (n - 2)
+    return 0
+
+
+def upsert_exotic_odds(session: Session, race_id: str, scraped: ScrapedExoticOdds) -> Counts:
+    """Store REAL exotic odds with the single-latest-value overwrite (constitution V).
+
+    selection is the db canonical array (same as 011 to_selection); combos are 馬番 so no
+    id-mapping is needed. ON CONFLICT overwrites the latest value (pre-race -> final dividend),
+    even after results exist (netkeiba is the sole source — nothing to protect). coverage_scope is
+    full when a bet type's observed combos equal the expected full-grid count, else partial.
+    """
+    c = Counts()
+    n_started = session.scalar(
+        select(func.count())
+        .select_from(RaceHorse)
+        .where(RaceHorse.race_id == race_id, RaceHorse.entry_status == EntryStatus.STARTED)
+    ) or 0
+
+    # group valid rows by bet type to decide coverage from observed-vs-expected counts
+    by_type: dict[str, list[tuple[list[int], float]]] = {}
+    for row in scraped.rows:
+        c.processed += 1
+        if row.odds is None or row.odds <= 0:
+            c.skipped += 1
+            continue
+        try:
+            selection = canonical_selection(row.bet_type, row.numbers)
+        except ValueError as exc:
+            c.errors += 1
+            c.error_messages.append(str(exc))
+            continue
+        by_type.setdefault(row.bet_type, []).append((selection, float(row.odds)))
+
+    for bet_type, items in by_type.items():
+        # dedupe by selection (keep last seen) so observed count matches stored rows
+        deduped: dict[tuple[int, ...], float] = {tuple(sel): odds for sel, odds in items}
+        expected = _expected_count(bet_type, n_started)
+        scope = (
+            CoverageScope.FULL
+            if expected > 0 and len(deduped) == expected
+            else CoverageScope.PARTIAL
+        )
+        for sel_tuple, odds in deduped.items():
+            stmt = insert(ExoticOdds).values(
+                race_id=race_id, bet_type=bet_type, selection=list(sel_tuple),
+                odds=Decimal(str(odds)), coverage_scope=scope, source="netkeiba",
+            ).on_conflict_do_update(
+                constraint="uq_exotic_odds_race_bettype_selection",
+                set_={"odds": Decimal(str(odds)), "coverage_scope": scope},
+            )
+            session.execute(stmt)
+            c.written += 1
     return c

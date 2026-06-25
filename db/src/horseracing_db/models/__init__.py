@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from .ingestion import IdMapping, IngestionJob
+from .market import ExoticOdds
 from .prediction import (
     FeatureSnapshot,
     ModelVersion,
@@ -21,6 +22,7 @@ __all__ = [
     "RaceResult",
     "IdMapping",
     "IngestionJob",
+    "ExoticOdds",
     "ModelVersion",
     "PredictionRun",
     "RacePrediction",

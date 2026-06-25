@@ -77,3 +77,16 @@ class ScrapedResultRow:
 class ScrapedResult:
     key: ScrapedRaceKey
     rows: tuple[ScrapedResultRow, ...]
+
+
+@dataclass(frozen=True)
+class ScrapedExoticRow:
+    bet_type: str               # place/quinella/exacta/wide/trio/trifecta
+    numbers: tuple[int, ...]    # horse_number combination (race-local 馬番, no id-mapping needed)
+    odds: float | None
+
+
+@dataclass(frozen=True)
+class ScrapedExoticOdds:
+    key: ScrapedRaceKey
+    rows: tuple[ScrapedExoticRow, ...]
