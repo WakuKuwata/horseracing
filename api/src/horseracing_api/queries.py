@@ -1,0 +1,118 @@
+"""ORM read queries (Feature 014) — SELECT only, never commit. The single place that touches the DB.
+
+Race listing uses a total stable order (race_date DESC NULLS LAST, venue_code NULLS LAST,
+race_number NULLS LAST, race_id) and computes total/has_next on the FILTERED query. Recommendations
+are restricted to exotic bet types (win recommendations store a dict selection — out of this
+endpoint's list[int] contract).
+"""
+
+from __future__ import annotations
+
+import datetime
+
+from horseracing_db.enums import BetType, EntryStatus
+from horseracing_db.models import (
+    ExoticOdds,
+    Race,
+    RaceHorse,
+    RacePrediction,
+    Recommendation,
+)
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+
+def _filtered_races(date: datetime.date | None, venue: str | None):
+    stmt = select(Race)
+    if date is not None:
+        stmt = stmt.where(Race.race_date == date)
+    if venue is not None:
+        stmt = stmt.where(Race.venue_code == venue)
+    return stmt
+
+
+def list_races(
+    session: Session, *, date: datetime.date | None, venue: str | None, page: int, page_size: int
+) -> tuple[list[Race], int]:
+    base = _filtered_races(date, venue)
+    total = session.scalar(select(func.count()).select_from(base.subquery())) or 0
+    rows = session.scalars(
+        base.order_by(
+            Race.race_date.desc().nulls_last(),
+            Race.venue_code.asc().nulls_last(),
+            Race.race_number.asc().nulls_last(),
+            Race.race_id.asc(),
+        )
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).all()
+    return list(rows), int(total)
+
+
+def get_race(session: Session, race_id: str) -> Race | None:
+    return session.get(Race, race_id)
+
+
+def race_horses(session: Session, race_id: str) -> list[RaceHorse]:
+    return list(
+        session.scalars(
+            select(RaceHorse)
+            .where(RaceHorse.race_id == race_id)
+            .order_by(RaceHorse.horse_number.asc().nulls_last(), RaceHorse.horse_id.asc())
+        )
+    )
+
+
+def run_predictions(session: Session, *, run_id, race_id: str):
+    """(horse_number, horse_id, entry_status, win, top2, top3) for the run's started horses."""
+    return session.execute(
+        select(
+            RaceHorse.horse_number, RaceHorse.horse_id, RaceHorse.entry_status,
+            RacePrediction.win_prob, RacePrediction.top2_prob, RacePrediction.top3_prob,
+        )
+        .join(RacePrediction, RacePrediction.horse_id == RaceHorse.horse_id)
+        .where(RaceHorse.race_id == race_id)
+        .where(RacePrediction.prediction_run_id == run_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+        .order_by(RaceHorse.horse_number.asc().nulls_last(), RaceHorse.horse_id.asc())
+    ).all()
+
+
+def win_odds(session: Session, race_id: str):
+    """(horse_number, horse_id, odds, updated_at) for started horses with odds."""
+    return session.execute(
+        select(RaceHorse.horse_number, RaceHorse.horse_id, RaceHorse.odds, RaceHorse.updated_at)
+        .where(RaceHorse.race_id == race_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+        .order_by(RaceHorse.horse_number.asc().nulls_last(), RaceHorse.horse_id.asc())
+    ).all()
+
+
+def canonical_win_odds(session: Session, race_id: str) -> dict[int, float]:
+    """{horse_number -> win odds} for started horses with valid (>0) odds (010 input population)."""
+    out: dict[int, float] = {}
+    for horse_number, _hid, odds, _u in win_odds(session, race_id):
+        if horse_number is None or odds is None or float(odds) <= 0.0:
+            continue
+        out[int(horse_number)] = float(odds)
+    return out
+
+
+def real_exotic_odds(session: Session, race_id: str) -> list[ExoticOdds]:
+    return list(
+        session.scalars(
+            select(ExoticOdds).where(ExoticOdds.race_id == race_id).order_by(ExoticOdds.bet_type)
+        )
+    )
+
+
+def exotic_recommendations(session: Session, race_id: str) -> list[Recommendation]:
+    """Persisted exotic recommendations only (win recs have a dict selection — excluded)."""
+    return list(
+        session.scalars(
+            select(Recommendation)
+            .where(Recommendation.race_id == race_id)
+            .where(Recommendation.bet_type.in_(BetType.EXOTIC))
+            .order_by(Recommendation.bet_type, Recommendation.computed_at.desc())
+        )
+    )
