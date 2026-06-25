@@ -65,10 +65,20 @@ def estimate_market_odds(
     field_size: int | None = None,
     payout_rates: dict[str, float] | None = None,
     odds_cap: float = DEFAULT_ODDS_CAP,
+    calibrator=None,
 ) -> EstimatedOdds:
+    """Estimated exotic odds from WIN odds. With ``calibrator`` (Feature 013), the market vote
+    share q is FL-bias-corrected to q' before the 009 engine; without it, raw q (backward
+    compatible). q'/q are market-derived, never the model p (p≠q)."""
     rates = {**DEFAULT_PAYOUT_RATES, **(payout_rates or {})}
-    q = market_implied_win_probs(win_odds)         # market vote share (NOT model p)
-    jp = joint_probabilities(q, field_size=field_size)  # Feature 009 engine on q
+    if calibrator is not None:
+        from .fl_bias import apply_calibrator  # lazy: avoid import cycle
+        cp = apply_calibrator(calibrator, win_odds)
+        q = cp.q_prime                              # FL-corrected market prob (still NOT model p)
+        field_size = field_size if field_size is not None else cp.field_size
+    else:
+        q = market_implied_win_probs(win_odds)     # raw market vote share (NOT model p)
+    jp = joint_probabilities(q, field_size=field_size)  # Feature 009 engine on q (or q')
 
     def conv(d, rate_key):
         if d is None:

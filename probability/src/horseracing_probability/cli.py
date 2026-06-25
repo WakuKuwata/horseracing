@@ -131,6 +131,39 @@ def _cmd_validate_odds(session: Session, args) -> int:
     return 0
 
 
+def _cmd_fl_fit(session: Session, args) -> int:
+    from .fl_bias import fit_fl_calibrator, load_samples
+    samples = load_samples(session, date_from=args.train_from, date_to=args.train_to)
+    cal = fit_fl_calibrator([(wo, w) for _, _, wo, w in samples], method=args.method,
+                            train_window=(args.train_from, args.train_to))
+    print(f"fl-fit method={cal.method}  [market q→q' calibrator]")
+    print(f"  gamma={cal.params.get('gamma'):.5f}  window={args.train_from}..{args.train_to}")
+    print(f"  n_races={cal.n_races} n_informative={cal.n_samples} "
+          f"q_range=({cal.odds_range[0]:.4f},{cal.odds_range[1]:.4f}) sufficient={cal.sufficient}")
+    return 0
+
+
+def _cmd_fl_evaluate(session: Session, args) -> int:
+    from .fl_bias import fit_fl_calibrator, load_samples
+    from .market_calibration import evaluate_q_vs_qprime
+    if not (args.train_to < args.eval_from):  # strictly-before: no leak / no overlap
+        raise SystemExit("eval window must start strictly after train window (walk-forward)")
+    train = load_samples(session, date_from=args.train_from, date_to=args.train_to)
+    cal = fit_fl_calibrator([(wo, w) for _, _, wo, w in train], method=args.method,
+                            train_window=(args.train_from, args.train_to))
+    ev = load_samples(session, date_from=args.eval_from, date_to=args.eval_to)
+    rep = evaluate_q_vs_qprime([(wo, w) for _, _, wo, w in ev], cal)
+    print(f"fl-evaluate train={args.train_from}..{args.train_to} "
+          f"eval={args.eval_from}..{args.eval_to}"
+          f"  [PSEUDO 疑似 / 採否=勝率校正]  gamma={cal.params['gamma']:.4f}")
+    print(f"  {'metric':<8} {'raw q':>10} {'corr q′':>10}")
+    print(f"  {'NLL':<8} {rep.nll_q:>10.5f} {rep.nll_qp:>10.5f}")
+    print(f"  {'Brier':<8} {rep.brier_q:>10.5f} {rep.brier_qp:>10.5f}")
+    print(f"  {'ECE':<8} {rep.ece_q:>10.5f} {rep.ece_qp:>10.5f}")
+    print(f"  races={rep.n_races}  improved(q′ beats q on NLL)={rep.improved}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="horseracing_probability")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -157,6 +190,20 @@ def main(argv: list[str] | None = None) -> int:
     vo.add_argument("--to", type=_parse_date, required=True)
     vo.add_argument("--database-url", default=None)
 
+    ff = sub.add_parser("fl-fit", help="fit favorite-longshot bias calibrator q→q' (walk-forward)")
+    ff.add_argument("--train-from", type=_parse_date, required=True)
+    ff.add_argument("--train-to", type=_parse_date, required=True)
+    ff.add_argument("--method", default="power")
+    ff.add_argument("--database-url", default=None)
+
+    fe = sub.add_parser("fl-evaluate", help="q vs q' win-rate calibration (adoption gate, pseudo)")
+    fe.add_argument("--train-from", type=_parse_date, required=True)
+    fe.add_argument("--train-to", type=_parse_date, required=True)
+    fe.add_argument("--eval-from", type=_parse_date, required=True)
+    fe.add_argument("--eval-to", type=_parse_date, required=True)
+    fe.add_argument("--method", default="power")
+    fe.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
@@ -170,6 +217,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_estimate_odds(session, args)
         if args.command == "validate-odds":
             return _cmd_validate_odds(session, args)
+        if args.command == "fl-fit":
+            return _cmd_fl_fit(session, args)
+        if args.command == "fl-evaluate":
+            return _cmd_fl_evaluate(session, args)
     return 1
 
 

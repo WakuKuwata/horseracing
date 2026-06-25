@@ -29,13 +29,16 @@ DEFAULT_STAKE = 100.0
 DEFAULT_ODDS_CAP = 10000.0
 
 
-def _blended_bets(field, real_odds, *, threshold, top_k, bet_types, payout_rates, odds_cap):
+def _blended_bets(field, real_odds, *, threshold, top_k, bet_types, payout_rates, odds_cap,
+                  calibrator=None):
     """EV candidates with real odds preferred per selection, else estimated O_est (011).
 
     Returns (bet, odds_used, is_estimated, ev) tuples, EV≥threshold, top-K by (−EV, selection_key).
     EV uses the chosen odds so real-priced bets are ranked on their real EV (row-level distinction).
+    ``calibrator`` (013, opt-in) FL-corrects the estimated O_est used for the fallback.
     """
-    cands = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap)
+    cands = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap,
+                           calibrator=calibrator)
     out: list[tuple[ExoticBet, float, bool, float]] = []
     for bt, bets in cands.items():
         k = _k_for(top_k, bt)
@@ -109,6 +112,7 @@ def generate_exotic_recommendations(
     payout_rates: dict[str, float] | None = None,
     odds_cap: float = DEFAULT_ODDS_CAP,
     use_real_odds: bool = True,
+    calibrator=None,
     logic_version: str | None = None,
 ) -> list[uuid.UUID]:
     run = session.get(PredictionRun, prediction_run_id)
@@ -130,7 +134,7 @@ def generate_exotic_recommendations(
     real_odds = load_real_exotic_odds(session, race_id) if use_real_odds else {}
     blended = _blended_bets(
         field, real_odds, threshold=threshold, top_k=top_k, bet_types=bet_types,
-        payout_rates=rates, odds_cap=odds_cap,
+        payout_rates=rates, odds_cap=odds_cap, calibrator=calibrator,
     )
 
     ids: list[uuid.UUID] = []

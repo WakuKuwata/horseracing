@@ -90,8 +90,12 @@ def exotic_divergence(
     payout_rates: dict[str, float] | None = None,
     odds_cap: float = 10000.0,
     model_version: str | None = None,
+    calibrator=None,
 ) -> dict[str, DivergenceReport]:
-    """Per-bet-type divergence of 011 estimated O_est vs real exotic_odds over the period."""
+    """Per-bet-type divergence of estimated O_est vs real exotic_odds over the period.
+
+    ``calibrator`` (Feature 013, opt-in) FL-bias-corrects the market q before O_est (compare
+    raw-q vs corrected-q' divergence); None = raw q."""
     model = load_serving_model(session, model_version)
     feature_rows = build_feature_matrix(session, end_date=date_to)
     present = set(feature_rows["race_id"].unique())
@@ -111,7 +115,7 @@ def exotic_divergence(
         if field is None or not field.p_norm:
             continue
         est = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates,
-                             odds_cap=odds_cap)
+                             odds_cap=odds_cap, calibrator=calibrator)
         real = load_real_exotic_odds(session, race_id)
         for bt, bets in est.items():
             for b in bets:
@@ -121,3 +125,46 @@ def exotic_divergence(
                     log_ratios.setdefault(bt, []).append(math.log(r / b.o_est))
 
     return {bt: summarize_divergence(bt, n_est[bt], log_ratios.get(bt, [])) for bt in n_est}
+
+
+def compare_divergence(
+    session: Session,
+    *,
+    date_from: datetime.date,
+    date_to: datetime.date,
+    calibrator,
+    bet_types=ALL_EXOTIC,
+    payout_rates: dict[str, float] | None = None,
+    odds_cap: float = 10000.0,
+    model_version: str | None = None,
+):
+    """Estimated-vs-real exotic divergence BEFORE (raw q) vs AFTER (FL-corrected q') — 013.
+
+    Runs exotic_divergence twice over the same period; returns {bet_type: DivergenceDeltaReport}.
+    DIAGNOSTIC only — the FL adoption gate is the win-rate calibration
+    (probability.evaluate_q_vs_qprime); real exotic pools carry their own takeout/bias."""
+    from horseracing_probability.market_calibration import DivergenceDeltaReport
+
+    raw = exotic_divergence(
+        session, date_from=date_from, date_to=date_to, bet_types=bet_types,
+        payout_rates=payout_rates, odds_cap=odds_cap, model_version=model_version,
+    )
+    corr = exotic_divergence(
+        session, date_from=date_from, date_to=date_to, bet_types=bet_types,
+        payout_rates=payout_rates, odds_cap=odds_cap, model_version=model_version,
+        calibrator=calibrator,
+    )
+    out: dict[str, DivergenceDeltaReport] = {}
+    for bt in raw:
+        rq, cq = raw[bt], corr.get(bt)
+        out[bt] = DivergenceDeltaReport(
+            bet_type=bt,
+            coverage_rate=rq.coverage_rate,
+            logratio_median_q=rq.log_ratio_median,
+            logratio_mae_q=rq.log_ratio_mae,
+            logratio_p90_q=rq.log_ratio_p90,
+            logratio_median_qp=(cq.log_ratio_median if cq else 0.0),
+            logratio_mae_qp=(cq.log_ratio_mae if cq else 0.0),
+            logratio_p90_qp=(cq.log_ratio_p90 if cq else 0.0),
+        )
+    return out

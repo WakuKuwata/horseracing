@@ -12,4 +12,15 @@ from __future__ import annotations
 PROBABILITY_LOGIC_VERSION = "probability-0.1.0"
 MARKET_LOGIC_VERSION = "market-0.1.0"
 
-__all__ = ["PROBABILITY_LOGIC_VERSION", "MARKET_LOGIC_VERSION"]
+# FL bias correction public API (Feature 013); imported after constants.
+from .fl_bias import apply_calibrator, fit_fl_calibrator, load_samples  # noqa: E402
+from .market_calibration import evaluate_q_vs_qprime  # noqa: E402
+
+__all__ = [
+    "PROBABILITY_LOGIC_VERSION",
+    "MARKET_LOGIC_VERSION",
+    "fit_fl_calibrator",
+    "apply_calibrator",
+    "load_samples",
+    "evaluate_q_vs_qprime",
+]

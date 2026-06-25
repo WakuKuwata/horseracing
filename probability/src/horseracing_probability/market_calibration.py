@@ -38,6 +38,41 @@ class QCalibrationReport:
     pseudo: bool = True
 
 
+@dataclass(frozen=True)
+class QvsQpReport:
+    """FL correction win-rate calibration: raw q vs corrected q' (Feature 013, adoption gate)."""
+
+    scope: str                 # "overall" or a popularity-band label
+    n_races: int
+    n_samples: int
+    nll_q: float
+    brier_q: float
+    ece_q: float
+    nll_qp: float
+    brier_qp: float
+    ece_qp: float
+    reliability_q: list         # list of (mean_pred, empirical_rate, n) per fixed bin
+    reliability_qp: list
+    improved: bool              # q' beats q on NLL (adoption signal)
+    pseudo: bool = True
+
+
+@dataclass(frozen=True)
+class DivergenceDeltaReport:
+    """Estimated-vs-real exotic divergence before/after FL correction (013, DIAGNOSTIC only)."""
+
+    bet_type: str
+    coverage_rate: float
+    logratio_median_q: float
+    logratio_mae_q: float
+    logratio_p90_q: float
+    logratio_median_qp: float
+    logratio_mae_qp: float
+    logratio_p90_qp: float
+    baseline: str = "estimated raw q"
+    pseudo: bool = True
+
+
 def recover_win_odds(win_odds: dict[str, float], *, payout_rate_win: float) -> dict[str, float]:
     q = market_implied_win_probs(win_odds)
     return {h: payout_rate_win / qh for h, qh in q.items()}
@@ -104,6 +139,87 @@ def _race_winodds_and_winner(session: Session, race_id: str) -> tuple[dict[str, 
     )
     winner = winners[0] if len(winners) == 1 else None  # dead heat -> no single winner
     return win_odds, winner
+
+
+#: fixed default reliability/ECE bin edges (deterministic, call-site independent).
+DEFAULT_BINS: tuple[float, ...] = tuple(i / 10.0 for i in range(11))  # 10 equal-width [0,0.1,…,1.0]
+
+
+def _reliability_and_ece(pred_winner_pairs, bins):
+    """pred_winner_pairs: list of (prob_of_actual_winner, n_field). Returns (reliability, ece).
+
+    For each fixed bin we accumulate the winner-probability mass vs the empirical hit rate. A
+    horse-level reliability would need every horse's prob; here we score the WINNER's predicted
+    prob against the realized outcome (=1), which is the calibration signal for the win market.
+    """
+    # bins over predicted winner prob; empirical rate = fraction that actually won (always 1 here),
+    # so we instead bin ALL horses' predicted probs vs their realized win indicator.
+    nb = len(bins) - 1
+    sum_pred = [0.0] * nb
+    sum_obs = [0.0] * nb
+    cnt = [0] * nb
+    for prob, won in pred_winner_pairs:
+        b = min(nb - 1, max(0, int(prob * nb)))
+        if prob >= 1.0:
+            b = nb - 1
+        sum_pred[b] += prob
+        sum_obs[b] += 1.0 if won else 0.0
+        cnt[b] += 1
+    reliability = []
+    total = sum(cnt)
+    ece = 0.0
+    for b in range(nb):
+        if cnt[b] == 0:
+            reliability.append((0.0, 0.0, 0))
+            continue
+        mp = sum_pred[b] / cnt[b]
+        er = sum_obs[b] / cnt[b]
+        reliability.append((mp, er, cnt[b]))
+        ece += (cnt[b] / total) * abs(mp - er) if total else 0.0
+    return reliability, ece
+
+
+def evaluate_q_vs_qprime(
+    samples, calibrator, *, bins: tuple[float, ...] = DEFAULT_BINS
+) -> QvsQpReport:
+    """Win-rate calibration of raw q vs FL-corrected q' on the ACTUAL winner (013 adoption gate).
+
+    Per race, score every horse's predicted win prob (q and q') against its realized win indicator;
+    NLL/Brier use the winner. ECE/reliability use the fixed ``bins`` on the normalized q'. Dead
+    heats / no-winner races are excluded (counted). q' beats q => ``improved``. All pseudo.
+    """
+    from .fl_bias import apply_g
+
+    gamma = calibrator.params["gamma"]
+    nll_q = brier_q = nll_qp = brier_qp = 0.0
+    n = 0
+    pairs_q: list[tuple[float, bool]] = []
+    pairs_qp: list[tuple[float, bool]] = []
+    for win_odds, winner in samples:
+        valid = _valid(win_odds)
+        if len(valid) < 2 or winner is None or winner not in valid:
+            continue
+        q = market_implied_win_probs(valid)
+        qp = apply_g(calibrator.method, {"gamma": gamma}, q)
+        n += 1
+        nll_q += -math.log(max(q[winner], _EPS))
+        nll_qp += -math.log(max(qp[winner], _EPS))
+        brier_q += 1.0 - 2.0 * q[winner] + sum(v * v for v in q.values())
+        brier_qp += 1.0 - 2.0 * qp[winner] + sum(v * v for v in qp.values())
+        for h in valid:
+            pairs_q.append((q[h], h == winner))
+            pairs_qp.append((qp[h], h == winner))
+    if n == 0:
+        raise ValueError("no informative races for q-vs-q' evaluation (insufficient data)")
+    rel_q, ece_q = _reliability_and_ece(pairs_q, bins)
+    rel_qp, ece_qp = _reliability_and_ece(pairs_qp, bins)
+    return QvsQpReport(
+        scope="overall", n_races=n, n_samples=n,
+        nll_q=nll_q / n, brier_q=brier_q / n, ece_q=ece_q,
+        nll_qp=nll_qp / n, brier_qp=brier_qp / n, ece_qp=ece_qp,
+        reliability_q=rel_q, reliability_qp=rel_qp,
+        improved=(nll_qp < nll_q),  # adoption gate: lower winner NLL on the normalized q'
+    )
 
 
 def evaluate_market_odds(
