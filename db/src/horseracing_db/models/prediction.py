@@ -116,6 +116,8 @@ class Recommendation(TimestampMixin, Base):
     )
     pseudo_odds: Mapped[Decimal | None] = mapped_column(Numeric)
     pseudo_roi: Mapped[Decimal | None] = mapped_column(Numeric)
+    # Kelly effective bet-size fraction (Feature 016); NULL for flat (011/012) rows.
+    stake_fraction: Mapped[Decimal | None] = mapped_column(Numeric)
     logic_version: Mapped[str] = mapped_column(Text, nullable=False)
     computed_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
