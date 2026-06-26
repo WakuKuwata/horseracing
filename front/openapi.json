@@ -1,0 +1,1159 @@
+{
+  "components": {
+    "schemas": {
+      "EstimatedOddsRow": {
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "bet_type": {
+            "title": "Bet Type",
+            "type": "string"
+          },
+          "is_estimated": {
+            "const": true,
+            "default": true,
+            "title": "Is Estimated",
+            "type": "boolean"
+          },
+          "odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds"
+          },
+          "odds_source": {
+            "const": "estimated",
+            "default": "estimated",
+            "title": "Odds Source",
+            "type": "string"
+          },
+          "pseudo": {
+            "const": true,
+            "default": true,
+            "title": "Pseudo",
+            "type": "boolean"
+          },
+          "selection": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Selection",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bet_type",
+          "selection",
+          "as_of"
+        ],
+        "title": "EstimatedOddsRow",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HorseEntry": {
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "entry_status": {
+            "title": "Entry Status",
+            "type": "string"
+          },
+          "horse_id": {
+            "title": "Horse Id",
+            "type": "string"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
+          }
+        },
+        "required": [
+          "horse_id",
+          "entry_status"
+        ],
+        "title": "HorseEntry",
+        "type": "object"
+      },
+      "HorsePrediction": {
+        "properties": {
+          "horse_id": {
+            "title": "Horse Id",
+            "type": "string"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "top2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top2"
+          },
+          "top3": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top3"
+          },
+          "win": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win"
+          }
+        },
+        "required": [
+          "horse_id"
+        ],
+        "title": "HorsePrediction",
+        "type": "object"
+      },
+      "JointEntry": {
+        "properties": {
+          "prob": {
+            "title": "Prob",
+            "type": "number"
+          },
+          "selection": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Selection",
+            "type": "array"
+          }
+        },
+        "required": [
+          "selection",
+          "prob"
+        ],
+        "title": "JointEntry",
+        "type": "object"
+      },
+      "OddsResponse": {
+        "properties": {
+          "estimated": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EstimatedOddsRow"
+            },
+            "title": "Estimated",
+            "type": "array"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "real_exotic": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RealExoticOddsRow"
+            },
+            "title": "Real Exotic",
+            "type": "array"
+          },
+          "win": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/WinOddsRow"
+            },
+            "title": "Win",
+            "type": "array"
+          }
+        },
+        "required": [
+          "race_id"
+        ],
+        "title": "OddsResponse",
+        "type": "object"
+      },
+      "Page_RaceSummary_": {
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RaceSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "has_next"
+        ],
+        "title": "Page[RaceSummary]",
+        "type": "object"
+      },
+      "PredictionResponse": {
+        "properties": {
+          "horses": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/HorsePrediction"
+            },
+            "title": "Horses",
+            "type": "array"
+          },
+          "joint": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/JointEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joint"
+          },
+          "joint_bet_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joint Bet Type"
+          },
+          "joint_logic_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joint Logic Version"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunAudit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "race_id"
+        ],
+        "title": "PredictionResponse",
+        "type": "object"
+      },
+      "RaceDetail": {
+        "properties": {
+          "distance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance"
+          },
+          "horses": {
+            "items": {
+              "$ref": "#/components/schemas/HorseEntry"
+            },
+            "title": "Horses",
+            "type": "array"
+          },
+          "race_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Class"
+          },
+          "race_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Date"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "race_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Number"
+          },
+          "track_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Type"
+          },
+          "venue_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Code"
+          }
+        },
+        "required": [
+          "race_id",
+          "horses"
+        ],
+        "title": "RaceDetail",
+        "type": "object"
+      },
+      "RaceSummary": {
+        "properties": {
+          "distance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance"
+          },
+          "race_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Class"
+          },
+          "race_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Date"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "race_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Number"
+          },
+          "track_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Type"
+          },
+          "venue_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Code"
+          }
+        },
+        "required": [
+          "race_id"
+        ],
+        "title": "RaceSummary",
+        "type": "object"
+      },
+      "RealExoticOddsRow": {
+        "properties": {
+          "bet_type": {
+            "title": "Bet Type",
+            "type": "string"
+          },
+          "coverage_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Scope"
+          },
+          "is_estimated": {
+            "const": false,
+            "default": false,
+            "title": "Is Estimated",
+            "type": "boolean"
+          },
+          "odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds"
+          },
+          "odds_source": {
+            "const": "real",
+            "default": "real",
+            "title": "Odds Source",
+            "type": "string"
+          },
+          "selection": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Selection",
+            "type": "array"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "bet_type",
+          "selection"
+        ],
+        "title": "RealExoticOddsRow",
+        "type": "object"
+      },
+      "RecommendationResponse": {
+        "properties": {
+          "items": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RecommendationRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "race_id"
+        ],
+        "title": "RecommendationResponse",
+        "type": "object"
+      },
+      "RecommendationRow": {
+        "properties": {
+          "bet_type": {
+            "title": "Bet Type",
+            "type": "string"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "double_pseudo": {
+            "title": "Double Pseudo",
+            "type": "boolean"
+          },
+          "estimated_market_odds_used": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Market Odds Used"
+          },
+          "is_estimated_odds": {
+            "title": "Is Estimated Odds",
+            "type": "boolean"
+          },
+          "logic_version": {
+            "title": "Logic Version",
+            "type": "string"
+          },
+          "market_odds_used": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Odds Used"
+          },
+          "prediction_run_id": {
+            "title": "Prediction Run Id",
+            "type": "string"
+          },
+          "pseudo_odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pseudo Odds"
+          },
+          "pseudo_roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pseudo Roi"
+          },
+          "selection": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Selection",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bet_type",
+          "selection",
+          "is_estimated_odds",
+          "double_pseudo",
+          "logic_version",
+          "computed_at",
+          "prediction_run_id"
+        ],
+        "title": "RecommendationRow",
+        "type": "object"
+      },
+      "RunAudit": {
+        "properties": {
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "logic_version": {
+            "title": "Logic Version",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "prediction_run_id": {
+            "title": "Prediction Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prediction_run_id",
+          "model_version",
+          "logic_version",
+          "computed_at"
+        ],
+        "title": "RunAudit",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WinOddsRow": {
+        "properties": {
+          "horse_id": {
+            "title": "Horse Id",
+            "type": "string"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "is_estimated": {
+            "const": false,
+            "default": false,
+            "title": "Is Estimated",
+            "type": "boolean"
+          },
+          "odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds"
+          },
+          "odds_source": {
+            "const": "real",
+            "default": "real",
+            "title": "Odds Source",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "horse_id"
+        ],
+        "title": "WinOddsRow",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Read-only JSON serving of races / predictions / odds / recommendations (014).",
+    "title": "horseracing prediction-serving API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Health Api V1 Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/v1/races": {
+      "get": {
+        "operationId": "races_api_v1_races_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "venue",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Venue"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RaceSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Races",
+        "tags": [
+          "races"
+        ]
+      }
+    },
+    "/api/v1/races/{race_id}": {
+      "get": {
+        "operationId": "race_detail_api_v1_races__race_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RaceDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "race not found"
+          },
+          "422": {
+            "description": "bad race_id"
+          }
+        },
+        "summary": "Race Detail",
+        "tags": [
+          "races"
+        ]
+      }
+    },
+    "/api/v1/races/{race_id}/odds": {
+      "get": {
+        "operationId": "odds_api_v1_races__race_id__odds_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bet_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bet Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "top",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Top",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OddsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Odds",
+        "tags": [
+          "odds"
+        ]
+      }
+    },
+    "/api/v1/races/{race_id}/predictions": {
+      "get": {
+        "operationId": "predictions_api_v1_races__race_id__predictions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bet_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bet Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "top",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Top",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predictions",
+        "tags": [
+          "predictions"
+        ]
+      }
+    },
+    "/api/v1/races/{race_id}/recommendations": {
+      "get": {
+        "operationId": "recommendations_api_v1_races__race_id__recommendations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recommendations",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    }
+  }
+}
