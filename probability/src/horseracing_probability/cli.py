@@ -143,6 +143,35 @@ def _cmd_fl_fit(session: Session, args) -> int:
     return 0
 
 
+def _cmd_calibrate_eval(session: Session, args) -> int:
+    from .model_calibration import evaluate_calibration_db
+    cal, rep, joint = evaluate_calibration_db(
+        session, date_from=args.from_, date_to=args.to, method=args.method,
+        min_races=args.min_races, min_wins=args.min_wins, train_frac=args.train_frac,
+        base_model_version=args.model_version,
+    )
+    print(f"calibrate-eval method={cal.method}  [model p→p'; compare=power vs identity]")
+    print(f"  gamma={cal.params.get('gamma'):.5f}  sufficient={cal.sufficient}  "
+          f"n_train={cal.n_races} n_info={cal.n_samples}")
+    print(f"  eval n_races={rep.n_races} dead_heat_excluded={rep.n_dead_heat_excluded}")
+    print(f"  {'metric':<14}{'raw p':>12}{'cal p_prime':>14}")
+    print(f"  {'NLL(主)':<14}{rep.nll_p:>12.4f}{rep.nll_pp:>14.4f}")
+    print(f"  {'Brier(主)':<14}{rep.brier_p:>12.4f}{rep.brier_pp:>14.4f}")
+    print(f"  {'ECE(補助)':<14}{rep.ece_p:>12.4f}{rep.ece_pp:>14.4f}")
+    print(f"  {'rel.slope':<14}{rep.reliability_slope_p:>12.4f}{rep.reliability_slope_pp:>14.4f}")
+    print(f"  {'top ovr/und':<14}{rep.over_under_top_p:>12.4f}{rep.over_under_top_pp:>14.4f}")
+    print(f"  {'cal-in-large':<14}{rep.cal_in_large_p:>12.4f}{rep.cal_in_large_pp:>14.4f}")
+    print(f"  marginal improved (NLL): {rep.improved}")
+    print("  009後 joint reliability (非悪化が必須ゲート):")
+    for bt, jr in joint.items():
+        print(f"    {bt:<9} NLL raw={jr.nll_p:.4f} p'={jr.nll_pp:.4f} "
+              f"not_degraded={jr.not_degraded} (n={jr.n_races})")
+    adopt = rep.improved and all(jr.not_degraded for jr in joint.values())
+    print(f"  ADOPT(主NLL改善 かつ joint 非悪化)={adopt}")
+    print("  ※Kelly リスク非悪化は kelly-calibration-compare で別途確認")
+    return 0
+
+
 def _cmd_fl_evaluate(session: Session, args) -> int:
     from .fl_bias import fit_fl_calibrator, load_samples
     from .market_calibration import evaluate_q_vs_qprime
@@ -196,6 +225,16 @@ def main(argv: list[str] | None = None) -> int:
     ff.add_argument("--method", default="power")
     ff.add_argument("--database-url", default=None)
 
+    ce = sub.add_parser("calibrate-eval", help="model p→p' calibration eval (walk-forward, 017)")
+    ce.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    ce.add_argument("--to", type=_parse_date, required=True)
+    ce.add_argument("--method", default="power")
+    ce.add_argument("--train-frac", dest="train_frac", type=float, default=0.5)
+    ce.add_argument("--min-races", dest="min_races", type=int, default=50)
+    ce.add_argument("--min-wins", dest="min_wins", type=int, default=30)
+    ce.add_argument("--model-version", default=None)
+    ce.add_argument("--database-url", default=None)
+
     fe = sub.add_parser("fl-evaluate", help="q vs q' win-rate calibration (adoption gate, pseudo)")
     fe.add_argument("--train-from", type=_parse_date, required=True)
     fe.add_argument("--train-to", type=_parse_date, required=True)
@@ -217,6 +256,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_estimate_odds(session, args)
         if args.command == "validate-odds":
             return _cmd_validate_odds(session, args)
+        if args.command == "calibrate-eval":
+            return _cmd_calibrate_eval(session, args)
         if args.command == "fl-fit":
             return _cmd_fl_fit(session, args)
         if args.command == "fl-evaluate":

@@ -112,6 +112,22 @@ def _cfg_from_args(args) -> KellyConfig:
         cap_bet=args.cap_bet, cap_total=args.cap_total, o_min=args.o_min,
         bankroll=args.bankroll, allocation=args.allocation,
         enable_estimated=args.enable_estimated,
+        haircut_type=getattr(args, "haircut_type", "none"),
+        haircut=getattr(args, "haircut", 0.0),
+    )
+
+
+def _p_calibrator_from_args(args):
+    """Build a PCalibrator from --p-gamma (explicit power) or None. (017)"""
+    gamma = getattr(args, "p_gamma", None)
+    if gamma is None:
+        return None
+    from horseracing_probability.model_calibration import PCalibrator
+    return PCalibrator(
+        method="power", params={"gamma": float(gamma)}, train_window=None, n_races=0,
+        n_samples=0, prob_range=(0.0, 1.0), select="explicit", base_model_version=None,
+        logic_version=f"pcal=power(p^gamma);gamma={float(gamma):.5f};select=explicit",
+        sufficient=True,
     )
 
 
@@ -121,7 +137,7 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
     ids = generate_kelly_recommendations(
         session, prediction_run_id=run_id, cfg=cfg, threshold=args.threshold,
         top_k=args.top_k, bet_types=_parse_bet_types(args.bet_types), odds_cap=args.odds_cap,
-        use_real_odds=args.use_real_odds,
+        use_real_odds=args.use_real_odds, p_calibrator=_p_calibrator_from_args(args),
     )
     recs = session.scalars(
         select(Recommendation).where(Recommendation.prediction_run_id == run_id)
@@ -144,6 +160,37 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
             f"    {r.bet_type:<9} {r.selection}  f={frac:.4f} stake={frac * cfg.bankroll:.2f} "
             f"edge={float(r.pseudo_roi):.3f}  {tag}"
         )
+    return 0
+
+
+def _cmd_kelly_calibration_compare(session: Session, args) -> int:
+    from horseracing_probability.model_calibration import fit_p_calibrator, load_p_samples
+
+    from .calibration_eval import compare_calibration_modes
+    cfg = _cfg_from_args(args)
+    p_calibrator = _p_calibrator_from_args(args)
+    if p_calibrator is None and args.p_train_from is not None:
+        samples = load_p_samples(session, date_from=args.p_train_from, date_to=args.p_train_to)
+        p_calibrator = fit_p_calibrator(
+            [(p, w) for (_rid, _d, p, w, _dh) in samples], method="power",
+            train_window=(args.p_train_from, args.p_train_to),
+        )
+    report = compare_calibration_modes(
+        session, date_from=args.from_, date_to=args.to, cfg=cfg, p_calibrator=p_calibrator,
+        threshold=args.threshold, top_k=args.top_k, bet_types=_parse_bet_types(args.bet_types),
+        odds_cap=args.odds_cap, model_version=args.model_version,
+        ruin_threshold=args.ruin_threshold, bootstrap_blocks=args.bootstrap_blocks, seed=args.seed,
+    )
+    print(f"kelly-calibration-compare {args.from_}..{args.to}  [校正は p 系統のみ(p≠q)]")
+    print(f"  {'mode':<14}{'term_bank':>10}{'logGrow':>9}{'maxDD':>8}{'ruin':>6}"
+          f"{'var':>9}{'bets':>6}  risk_ok over_cons")
+    for r in report.results:
+        s = r.segment
+        print(f"  {r.mode:<14}{s.terminal_bankroll:>10.2f}{s.log_growth_rate:>9.4f}"
+              f"{s.max_drawdown:>8.2f}{s.ruin_probability:>6.2f}{s.variance:>9.5f}{s.n_bets:>6}"
+              f"   {str(r.risk_not_worse):<6} {r.over_conservative}")
+    print(f"  {report.verdict}")
+    print("  success = 校正で Kelly リスク非悪化(最大DD/破産非悪化)かつ成長維持。ROI>1 単独不可")
     return 0
 
 
@@ -275,6 +322,12 @@ def main(argv: list[str] | None = None) -> int:
         sp.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
         sp.add_argument("--bet-types", default=None, help="comma list, e.g. trifecta,trio")
         sp.add_argument("--odds-cap", type=float, default=DEFAULT_ODDS_CAP)
+        # Feature 017: edge haircut + explicit model-p calibrator (power gamma).
+        sp.add_argument("--haircut-type", dest="haircut_type",
+                        choices=["none", "relative", "absolute"], default="none")
+        sp.add_argument("--haircut", type=float, default=0.0)
+        sp.add_argument("--p-gamma", dest="p_gamma", type=float, default=None,
+                        help="model-p power calibrator exponent (017); omit for raw p")
 
     kr = sub.add_parser("kelly-recommend", help="generate Kelly-sized exotic recommendations")
     kr.add_argument("--prediction-run", default=None)
@@ -283,6 +336,20 @@ def main(argv: list[str] | None = None) -> int:
     kr.add_argument("--no-real-odds", dest="use_real_odds", action="store_false")
     kr.set_defaults(use_real_odds=True)
     kr.add_argument("--database-url", default=None)
+
+    kc = sub.add_parser("kelly-calibration-compare",
+                        help="raw / cal / cal+haircut Kelly risk comparison (017)")
+    kc.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    kc.add_argument("--to", type=_parse_date, required=True)
+    _add_kelly_knobs(kc)
+    kc.add_argument("--p-train-from", dest="p_train_from", type=_parse_date, default=None,
+                    help="fit model-p calibrator on [p-train-from, p-train-to] (walk-forward)")
+    kc.add_argument("--p-train-to", dest="p_train_to", type=_parse_date, default=None)
+    kc.add_argument("--ruin-threshold", dest="ruin_threshold", type=float, default=0.0)
+    kc.add_argument("--bootstrap-blocks", dest="bootstrap_blocks", type=int, default=200)
+    kc.add_argument("--seed", type=int, default=20260626)
+    kc.add_argument("--model-version", default=None)
+    kc.add_argument("--database-url", default=None)
 
     kb = sub.add_parser("kelly-backtest", help="bankroll backtest (Kelly vs flat, double-pseudo)")
     kb.add_argument("--from", dest="from_", type=_parse_date, required=True)
@@ -320,6 +387,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_kelly_recommend(session, args)
         if args.command == "kelly-backtest":
             return _cmd_kelly_backtest(session, args)
+        if args.command == "kelly-calibration-compare":
+            return _cmd_kelly_calibration_compare(session, args)
         if args.command == "exotic-backtest":
             return _cmd_exotic_backtest(session, args)
         if args.command == "exotic-divergence":

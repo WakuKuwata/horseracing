@@ -26,9 +26,20 @@ class KellyConfig:
     bankroll: float = 100.0        # current bankroll the stake is proportional to
     allocation: str = "exact"      # "exact" (expected-log-growth max) | "heuristic"
     enable_estimated: bool = True  # if False, estimated-odds bets get no Kelly stake
+    # edge haircut (Feature 017): residual-risk shrink applied to edge BEFORE f*. Role-separated
+    # from probability calibration (calibration = systematic overconfidence; haircut = residual).
+    haircut_type: str = "none"     # "none" | "relative" (edge·(1−h)) | "absolute" (edge−h)
+    haircut: float = 0.0           # h
 
     def lam(self, *, is_estimated: bool) -> float:
         return self.lambda_est if is_estimated else self.lambda_real
+
+    def apply_haircut(self, edge: float) -> float:
+        if self.haircut_type == "relative":
+            return edge * (1.0 - self.haircut)
+        if self.haircut_type == "absolute":
+            return edge - self.haircut
+        return edge
 
     def min_edge_for(self, *, is_estimated: bool) -> float:
         return self.min_edge_est if is_estimated else self.min_edge
@@ -43,6 +54,7 @@ def kelly_logic_version(cfg: KellyConfig, *, odds_cap: float, threshold: float) 
         f"cap_bet={cfg.cap_bet};cap_tot={cfg.cap_total};"
         f"omin={cfg.o_min};min_edge={cfg.min_edge};min_edge_est={cfg.min_edge_est};"
         f"bank={cfg.bankroll};est={int(cfg.enable_estimated)};"
+        f"haircut={cfg.haircut_type}:{cfg.haircut};"
         f"thr={threshold};cap={odds_cap};"
         f"prob=P_model(009;p);odds=real_exotic>est(010;q);"
         f"v={BETTING_LOGIC_VERSION}"

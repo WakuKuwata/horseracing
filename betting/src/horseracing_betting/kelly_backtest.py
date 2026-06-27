@@ -111,9 +111,10 @@ def _field_and_outcome(session, model, race_id, feature_rows):
 
 
 def _placed_bets_for_race(field, outcome, real_odds, *, cfg, threshold, top_k, bet_types,
-                          payout_rates, odds_cap):
+                          payout_rates, odds_cap, q_calibrator=None):
     """Kelly-eligible bets for one race (sized on estimated O_est; payout source recorded)."""
-    cands = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap)
+    cands = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap,
+                           calibrator=q_calibrator)
     placed: list[_PlacedBet] = []
     for bt, bets in cands.items():
         from .exotic_ev import _k_for
@@ -251,6 +252,8 @@ def run_bankroll_backtest(
     bootstrap_blocks: int = 200,
     seed: int = 20260626,
     flat_stake: float | None = None,
+    p_calibrator=None,
+    q_calibrator=None,
 ) -> BankrollBacktestReport:
     cfg = cfg or KellyConfig()
     # flat baseline bets a fixed amount per bet (011/012 semantics): cap_bet × bankroll0 by default.
@@ -271,10 +274,18 @@ def run_bankroll_backtest(
         field, outcome = _field_and_outcome(session, model, race_id, feature_rows)
         if field is None or not field.p_norm:
             continue
+        if p_calibrator is not None:  # Feature 017: calibrate model p before 009/Kelly (p≠q)
+            import dataclasses
+
+            from horseracing_probability.model_calibration import apply_p_calibrator
+            field = dataclasses.replace(
+                field, p_norm=apply_p_calibrator(field.p_norm, p_calibrator)
+            )
         real_odds = load_real_exotic_odds(session, race_id)  # final dividend → PAYOUT only
         races_bets.append(_placed_bets_for_race(
             field, outcome, real_odds, cfg=cfg, threshold=threshold, top_k=top_k,
             bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap,
+            q_calibrator=q_calibrator,
         ))
 
     segments: list[BankrollSegment] = []

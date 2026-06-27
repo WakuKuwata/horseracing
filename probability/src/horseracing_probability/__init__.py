@@ -16,6 +16,16 @@ MARKET_LOGIC_VERSION = "market-0.1.0"
 from .fl_bias import apply_calibrator, fit_fl_calibrator, load_samples  # noqa: E402
 from .market_calibration import evaluate_q_vs_qprime  # noqa: E402
 
+# Model p→p' calibration public API (Feature 017).
+from .model_calibration import (  # noqa: E402
+    PCalibrator,
+    apply_p_calibrator,
+    evaluate_calibration_db,
+    evaluate_p_vs_pprime,
+    fit_p_calibrator,
+    load_p_samples,
+)
+
 __all__ = [
     "PROBABILITY_LOGIC_VERSION",
     "MARKET_LOGIC_VERSION",
@@ -23,4 +33,10 @@ __all__ = [
     "apply_calibrator",
     "load_samples",
     "evaluate_q_vs_qprime",
+    "PCalibrator",
+    "fit_p_calibrator",
+    "apply_p_calibrator",
+    "evaluate_p_vs_pprime",
+    "evaluate_calibration_db",
+    "load_p_samples",
 ]

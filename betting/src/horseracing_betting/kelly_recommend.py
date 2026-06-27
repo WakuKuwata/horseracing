@@ -43,6 +43,7 @@ def generate_kelly_recommendations(
     odds_cap: float = DEFAULT_ODDS_CAP,
     use_real_odds: bool = True,
     calibrator=None,
+    p_calibrator=None,
     logic_version: str | None = None,
 ) -> list[uuid.UUID]:
     cfg = cfg or KellyConfig()
@@ -52,6 +53,8 @@ def generate_kelly_recommendations(
     race_id = race_id or run.race_id
     rates = {**DEFAULT_PAYOUT_RATES, **(payout_rates or {})}
     lv = logic_version or kelly_logic_version(cfg, odds_cap=odds_cap, threshold=threshold)
+    if p_calibrator is not None:  # Feature 017: record the model-p calibrator in logic_version
+        lv = f"{lv};{p_calibrator.logic_version}"
 
     predictions, odds, scratched, number_to_id = _load_field_inputs(
         session, prediction_run_id, race_id
@@ -59,6 +62,11 @@ def generate_kelly_recommendations(
     field = canonical_field(
         race_id, predictions, odds, scratched=scratched, number_to_id=number_to_id
     )
+    if p_calibrator is not None:  # calibrate model p (009 input); q/odds untouched (p≠q)
+        import dataclasses
+
+        from horseracing_probability.model_calibration import apply_p_calibrator
+        field = dataclasses.replace(field, p_norm=apply_p_calibrator(field.p_norm, p_calibrator))
     real_odds = load_real_exotic_odds(session, race_id) if use_real_odds else {}
     blended = _blended_bets(
         field, real_odds, threshold=threshold, top_k=top_k, bet_types=bet_types,

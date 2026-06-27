@@ -11,6 +11,10 @@ from __future__ import annotations
 BETTING_LOGIC_VERSION = "betting-0.1.0"
 
 # Exotic public API (imported after the constant to avoid a circular import).
+from .calibration_eval import (  # noqa: E402
+    compare_calibration_modes,
+    compare_pq_grid,
+)
 from .exotic_backtest import run_exotic_backtest  # noqa: E402
 from .exotic_divergence import exotic_divergence  # noqa: E402
 from .exotic_ev import candidate_bets, canonical_field, exotic_ev_bets  # noqa: E402
@@ -32,4 +36,6 @@ __all__ = [
     "generate_kelly_recommendations",
     "run_bankroll_backtest",
     "KellyConfig",
+    "compare_calibration_modes",
+    "compare_pq_grid",
 ]

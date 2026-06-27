@@ -36,9 +36,12 @@ def single_kelly(
     if odds_used <= 1.0 + _EPS:  # no upside — cannot bet
         return None
     edge = p_model * odds_used - 1.0
-    if edge <= cfg.min_edge_for(is_estimated=is_estimated) + _EPS:
+    # edge haircut (Feature 017): shrink edge for residual/model risk BEFORE f*. The reported edge
+    # (pseudo_roi) stays the raw edge; only sizing uses the haircut-adjusted edge.
+    edge_adj = cfg.apply_haircut(edge)
+    if edge_adj <= cfg.min_edge_for(is_estimated=is_estimated) + _EPS:
         return None
-    raw = edge / (odds_used - 1.0)
+    raw = edge_adj / (odds_used - 1.0)
     lam = cfg.lam(is_estimated=is_estimated)
     effective = min(max(lam * raw, 0.0), cfg.cap_bet)
     if effective <= 0.0:
