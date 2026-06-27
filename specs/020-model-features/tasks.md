@@ -62,15 +62,15 @@ head 0006）。確認済み: `registry.FeatureMeta`=feature spec table、`histor
 
 ### 実装
 
-- [ ] T009 [US2] `training/src/horseracing_training/` に **fold 内 inner train/val のハイパラ選択・early stopping フック**（**特徴選択は行わない＝候補集合は事前固定**、OOS を見て特徴を選ばない）と正則化レンジ事前固定（min_data_in_leaf/lambda/feature_fraction/num_leaves）+ fold 安定性（gain/SHAP 符号・順位）算出を追加（R4/R5, FR-005/009、analyze F1）
-- [ ] T010 [US2] `eval/src/horseracing_eval/feature_eval.py` を新規作成: 候補特徴を事前固定し、walk-forward 各 fold で「**固定候補集合**（fold 内ハイパラのみ）vs 現行 baseline」を OOS 比較し `AdoptionReport`（fold 別+平均 LogLoss/Brier/AUC/ECE、勝ち fold 数・最悪 fold・ECE 差分、primary_pass=LogLoss 改善 かつ ECE 非悪化、adopted）を返す。採用時は同一固定集合を全体再学習（評価＝デプロイ一致）（R4/R5, FR-005/006/007, data-model §3/§5）
-- [ ] T011 [US2] `eval/src/horseracing_eval/ablation.py` を新規作成: group（recent_form/aptitude/race_condition/human_form）単位 ablation で各 group の寄与（LogLoss 差）を分離算出（R3/R5, FR-008）
-- [ ] T012 [US2] `eval/src/horseracing_eval/cli.py` に `feature-eval --from --to [--seed]` と `feature-ablation --from --to --groups` を追加（contracts/feature_eval.md, FR-014）
+- [X] T009 [US2] `training/src/horseracing_training/` に **fold 内 inner train/val のハイパラ選択・early stopping フック**（**特徴選択は行わない＝候補集合は事前固定**、OOS を見て特徴を選ばない）と正則化レンジ事前固定（min_data_in_leaf/lambda/feature_fraction/num_leaves）+ fold 安定性（gain/SHAP 符号・順位）算出を追加（R4/R5, FR-005/009、analyze F1）
+- [X] T010 [US2] `eval/src/horseracing_eval/feature_eval.py` を新規作成: 候補特徴を事前固定し、walk-forward 各 fold で「**固定候補集合**（fold 内ハイパラのみ）vs 現行 baseline」を OOS 比較し `AdoptionReport`（fold 別+平均 LogLoss/Brier/AUC/ECE、勝ち fold 数・最悪 fold・ECE 差分、primary_pass=LogLoss 改善 かつ ECE 非悪化、adopted）を返す。採用時は同一固定集合を全体再学習（評価＝デプロイ一致）（R4/R5, FR-005/006/007, data-model §3/§5）
+- [X] T011 [US2] `eval/src/horseracing_eval/ablation.py` を新規作成: group（recent_form/aptitude/race_condition/human_form）単位 ablation で各 group の寄与（LogLoss 差）を分離算出（R3/R5, FR-008）
+- [X] T012 [US2] `eval/src/horseracing_eval/cli.py` に `feature-eval --from --to [--seed]` と `feature-ablation --from --to --groups` を追加（contracts/feature_eval.md, FR-014）
 
 ### US2 テスト
 
-- [ ] T013 [P] [US2] `eval/tests/integration/test_feature_adoption.py` を作成（合成データ）: 候補特徴が事前固定で OOS を見て特徴選択しない（fold 内はハイパラのみ、選択リーク無し、SC-004）、fold 別+平均指標算出、primary=LogLoss 改善 かつ ECE 非悪化、fold 別差分（勝ち fold/最悪 fold/ECE 差）で偶然 fold を排除、baseline 未超過なら adopted=false（false positive なし、SC-010）、同一 seed で再現（SC-004/005/006/009）
-- [ ] T014 [P] [US2] `eval/tests/integration/test_ablation.py` を作成: group 単位の寄与が分離報告され、human_form と recent_form の寄与が判別できる（SC-007）。**group ablation は diagnostic で採用特徴の選別に使われない**（候補は事前固定）ことを確認（SC-004/SC-007）
+- [X] T013 [P] [US2] `eval/tests/integration/test_feature_adoption.py` を作成（合成データ）: 候補特徴が事前固定で OOS を見て特徴選択しない（fold 内はハイパラのみ、選択リーク無し、SC-004）、fold 別+平均指標算出、primary=LogLoss 改善 かつ ECE 非悪化、fold 別差分（勝ち fold/最悪 fold/ECE 差）で偶然 fold を排除、baseline 未超過なら adopted=false（false positive なし、SC-010）、同一 seed で再現（SC-004/005/006/009）
+- [X] T014 [P] [US2] `eval/tests/integration/test_ablation.py` を作成: group 単位の寄与が分離報告され、human_form と recent_form の寄与が判別できる（SC-007）。**group ablation は diagnostic で採用特徴の選別に使われない**（候補は事前固定）ことを確認（SC-004/SC-007）
 
 **Checkpoint**: US2 単独で正当な採用判定が可能。
 
@@ -84,11 +84,11 @@ head 0006）。確認済み: `registry.FeatureMeta`=feature spec table、`histor
 
 ### 実装
 
-- [ ] T015 [US3] `eval/src/horseracing_eval/market_edge.py` を新規作成: 市場 q（010）に対する p−q calibration・edge bucket 別実現勝率・q 条件付き LogLoss を算出（diagnostic）。011/016 の pseudo-ROI/Kelly backtest を SECONDARY として呼ぶラッパ + cli `feature-diagnostic`（R6, FR-010/011）
+- [X] T015 [US3] `eval/src/horseracing_eval/market_edge.py` を新規作成: 市場 q（010）に対する p−q calibration・edge bucket 別実現勝率・q 条件付き LogLoss を算出（diagnostic）。011/016 の pseudo-ROI/Kelly backtest を SECONDARY として呼ぶラッパ + cli `feature-diagnostic`（R6, FR-010/011）
 
 ### US3 テスト
 
-- [ ] T016 [P] [US3] `eval/tests/integration/test_market_edge.py` を作成（合成データ）: p−q calibration・edge bucket・q 条件付き LogLoss が算出され、pseudo-ROI/Kelly が SECONDARY（主採用ゲートにしない）であること、「絶対校正改善≠市場超過」明示を検証（SC-008）
+- [X] T016 [P] [US3] `eval/tests/integration/test_market_edge.py` を作成（合成データ）: p−q calibration・edge bucket・q 条件付き LogLoss が算出され、pseudo-ROI/Kelly が SECONDARY（主採用ゲートにしない）であること、「絶対校正改善≠市場超過」明示を検証（SC-008）
 
 **Checkpoint**: 全 P1+P2 完了。win 改善の下流波及を現実的に把握。
 
@@ -97,9 +97,9 @@ head 0006）。確認済み: `registry.FeatureMeta`=feature spec table、`histor
 ## Phase 6: Polish & Cross-Cutting
 
 - [X] T017 [P] `features/tests/unit/test_leak_guard.py`（or 既存拡張）: market odds・race_results 由来の値が model_input_features に出現しないこと（憲法 II）を assert。さらに **020 が migration を追加せず新 ORM テーブルを定義しないこと**（db/migrations head=0006 不変、features/eval/training に `__tablename__` 追加なし）を静的検証（F2, FR-013/SC-009）
-- [ ] T018 `specs/020-model-features/quickstart.md` を実行（実 DB スモーク）: `feature-eval` + `feature-ablation` + `feature-diagnostic` を実データで走らせ採用判定/寄与/diagnostic を確認（[[local-db-setup]]、改善が無ければ adopted=false を確認）
-- [ ] T019 [P] `features/`/`eval/` の lint/test を通す（`uv run ruff check` / `uv run pytest`）
-- [ ] T020 [P] `CLAUDE.md` に 020 の 1 行サマリを追記（011–019 と同形式: 新特徴4 group・既存 as-of/同日除外機構転用・跨馬は対象行+同日除外・fold 内選択・LogLoss+ECE+fold 別差ゲート・group ablation・成功=OOS win 改善・スキーマ変更なしを要約）
+- [X] T018 `specs/020-model-features/quickstart.md` を実行（実 DB スモーク）: `feature-eval` + `feature-ablation` + `feature-diagnostic` を実データで走らせ採用判定/寄与/diagnostic を確認（[[local-db-setup]]、改善が無ければ adopted=false を確認）
+- [X] T019 [P] `features/`/`eval/` の lint/test を通す（`uv run ruff check` / `uv run pytest`）
+- [X] T020 [P] `CLAUDE.md` に 020 の 1 行サマリを追記（011–019 と同形式: 新特徴4 group・既存 as-of/同日除外機構転用・跨馬は対象行+同日除外・fold 内選択・LogLoss+ECE+fold 別差ゲート・group ablation・成功=OOS win 改善・スキーマ変更なしを要約）
 
 ---
 

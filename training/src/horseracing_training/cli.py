@@ -13,14 +13,13 @@ import subprocess
 from horseracing_db.models import ModelVersion
 from horseracing_db.session import create_db_engine
 from horseracing_eval.harness import evaluate
+from horseracing_features.registry import FEATURE_GROUPS, FEATURE_VERSION
 from sqlalchemy.orm import Session
 
 from .adoption import AdoptionGate, evaluate_gate
 from .artifacts import save_model_version
 from .dataset import build_training_matrix  # noqa: F401  (re-exported convenience)
 from .predictor import LightGBMPredictor
-
-FEATURE_VERSION = "features-004"
 
 
 def _git_sha() -> str | None:
@@ -110,6 +109,80 @@ def _print_summary(summary: dict) -> None:
         print(f"  - {name}: {'PASS' if r['pass'] else 'FAIL'} {r}")
 
 
+def _add_window(p) -> None:
+    import datetime as _dt
+
+    p.add_argument("--from", dest="from_", type=_dt.date.fromisoformat, default=None,
+                   help="start race_date (YYYY-MM-DD)")
+    p.add_argument("--to", dest="to", type=_dt.date.fromisoformat, default=None,
+                   help="end race_date (YYYY-MM-DD)")
+    p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--database-url", default=None)
+
+
+def _group_columns() -> dict[str, list[str]]:
+    """FEATURE_GROUPS maps column -> group; invert to group -> [columns] for ablation."""
+    groups: dict[str, list[str]] = {}
+    for col, grp in FEATURE_GROUPS.items():
+        groups.setdefault(grp, []).append(col)
+    return groups
+
+
+def _run_feature_command(session: Session, args) -> int:
+    if args.command == "feature-eval":
+        from horseracing_eval.feature_eval import evaluate_feature_adoption
+
+        candidate = LightGBMPredictor(session, seed=args.seed)
+        baseline = LightGBMPredictor(session, seed=args.seed, drop_features=tuple(FEATURE_GROUPS))
+        r = evaluate_feature_adoption(
+            session, candidate=candidate, baseline=baseline,
+            start_date=args.from_, end_date=args.to,
+        )
+        print(f"feature-eval fv={FEATURE_VERSION} folds={r.n_folds} adopted={r.adopted}")
+        print(f"  LogLoss base={r.mean_logloss_base:.5f} cand={r.mean_logloss_cand:.5f}")
+        print(f"  Brier   base={r.mean_brier_base:.5f} cand={r.mean_brier_cand:.5f}")
+        print(f"  AUC     base={r.mean_auc_base:.5f} cand={r.mean_auc_cand:.5f}")
+        print(f"  ECE     base={r.mean_ece_base:.5f} cand={r.mean_ece_cand:.5f}")
+        print(f"  winning_folds={r.n_winning_folds}/{r.n_folds} "
+              f"worst_dLogLoss={r.worst_fold_dlogloss:+.5f} worst_dECE={r.worst_fold_dece:+.5f}")
+        print(f"  primary_pass(LogLoss改善 かつ ECE非悪化)={r.primary_pass}  ADOPTED={r.adopted}")
+        print("  ※ pseudo-ROI/Kelly は採用ゲートにしない（betting 側の SECONDARY 診断）")
+        return 0
+    if args.command == "feature-ablation":
+        from horseracing_eval.ablation import evaluate_group_ablation
+
+        all_groups = _group_columns()
+        if args.groups:
+            wanted = set(args.groups.split(","))
+            all_groups = {g: c for g, c in all_groups.items() if g in wanted}
+        def _make(drop, _s=session, _seed=args.seed):
+            return LightGBMPredictor(_s, seed=_seed, drop_features=drop)
+
+        r = evaluate_group_ablation(
+            session, make_predictor=_make,
+            groups=all_groups, start_date=args.from_, end_date=args.to,
+        )
+        print(f"feature-ablation full_logloss={r.full_logloss:.5f} (正=その group を抜くと悪化)")
+        for grp, c in sorted(r.group_contribution.items()):
+            print(f"  {grp:<14} contribution={c:+.5f}")
+        return 0
+    if args.command == "feature-diagnostic":
+        from horseracing_eval.market_edge import evaluate_market_edge
+
+        r = evaluate_market_edge(
+            session, predictor=LightGBMPredictor(session, seed=args.seed),
+            start_date=args.from_, end_date=args.to,
+        )
+        print(f"feature-diagnostic n={r.n_horses}  {r.note}")
+        print(f"  summary={r.summary}")
+        print(f"  pq_logloss={r.pq_logloss}")
+        for b in r.edge_buckets:
+            print(f"  edge[{b['edge_lo']:+.2f},{b['edge_hi']:+.2f}) n={b['n']} "
+                  f"win_rate={b['win_rate']:.4f} mean_edge={b['mean_edge']:+.4f}")
+        return 0
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="horseracing_training")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -134,7 +207,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     te.add_argument("--database-url", default=None)
 
+    # Feature 020 — walk-forward adoption gate / ablation / market diagnostic.
+    # eval is predictor-agnostic; we inject the concrete LightGBMPredictor + FEATURE_GROUPS here.
+    fe = sub.add_parser("feature-eval", help="020: candidate vs baseline (020 features dropped)")
+    _add_window(fe)
+    fa = sub.add_parser("feature-ablation", help="020: per-group LogLoss contribution (diagnostic)")
+    _add_window(fa)
+    fa.add_argument("--groups", default=None, help="comma-separated group subset (default: all)")
+    fd = sub.add_parser("feature-diagnostic", help="020: market p−q edge diagnostic (SECONDARY)")
+    _add_window(fd)
+
     args = parser.parse_args(argv)
+    if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic"):
+        engine = create_db_engine(getattr(args, "database_url", None))
+        with Session(engine) as session:
+            return _run_feature_command(session, args)
     if args.command == "train-evaluate":
         engine = create_db_engine(args.database_url)
         te_cols = tuple(c for c in args.target_encode.split(",") if c)

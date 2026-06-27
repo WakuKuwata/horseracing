@@ -59,6 +59,7 @@ class LightGBMPredictor:
         hpo_splits: int = 3,
         target_encode_cols: tuple[str, ...] = (),
         te_smoothing: float = DEFAULT_SMOOTHING,
+        drop_features: tuple[str, ...] = (),
     ) -> None:
         self.session = session
         self.seed = seed
@@ -72,6 +73,9 @@ class LightGBMPredictor:
         self.hpo_splits = hpo_splits
         self.target_encode_cols = tuple(target_encode_cols)
         self.te_smoothing = te_smoothing
+        # Feature 020: exclude these feature columns (e.g. to build a baseline without the new
+        # features). Empty = no-op (validated MVP path unchanged bit-for-bit).
+        self.drop_features = tuple(drop_features)
 
         self._data: TrainingMatrix | None = None
         self.win_model_: WinModel | None = None
@@ -84,7 +88,18 @@ class LightGBMPredictor:
     # --- data (built once, reused across folds) ------------------------------
     def _ensure_data(self) -> TrainingMatrix:
         if self._data is None:
-            self._data = build_training_matrix(self.session)
+            full = build_training_matrix(self.session)
+            if self.drop_features:
+                # Feature 020: drop excluded columns from feature_cols (frame keeps them, unused).
+                # All downstream uses data.feature_cols, so a single filter propagates everywhere.
+                import dataclasses
+                keep = [c for c in full.feature_cols if c not in self.drop_features]
+                full = dataclasses.replace(
+                    full,
+                    feature_cols=keep,
+                    categorical_cols=[c for c in full.categorical_cols if c in keep],
+                )
+            self._data = full
         return self._data
 
     # --- fit -----------------------------------------------------------------
