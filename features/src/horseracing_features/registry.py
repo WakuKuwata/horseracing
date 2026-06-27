@@ -76,7 +76,37 @@ REGISTRY: dict[str, FeatureMeta] = {
     "is_debut": FeatureMeta("history", _T.PRE_ENTRY, _M.ZERO_OK),
     "past_race_count": FeatureMeta("history", _T.PRE_ENTRY, _M.ZERO_OK),
     "is_low_history": FeatureMeta("history", _T.PRE_ENTRY, _M.ZERO_OK),
+    # --- Feature 020: recent form (as-of, rolling last-N finished) ---
+    "avg_last3_finish": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "recent_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 020: aptitude (as-of, conditional cumulative before) ---
+    "dist_band_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "dist_band_avg_finish": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "surface_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 020: race condition ---
+    "class_transition": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "field_size": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.ZERO_OK),
+    # --- Feature 020: human form (cross-horse as-of, target-row + same-day excluded) ---
+    "jockey_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "trainer_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
 }
+
+#: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
+#: is fixed a priori). Pre-existing Feature-004 columns are implicitly group "base".
+FEATURE_GROUPS: dict[str, str] = {
+    "avg_last3_finish": "recent_form",
+    "recent_win_rate": "recent_form",
+    "dist_band_win_rate": "aptitude",
+    "dist_band_avg_finish": "aptitude",
+    "surface_win_rate": "aptitude",
+    "class_transition": "race_condition",
+    "field_size": "race_condition",
+    "jockey_win_rate": "human_form",
+    "trainer_win_rate": "human_form",
+}
+
+#: feature schema version bumped by Feature 020 (passed to model_versions at train time).
+FEATURE_VERSION = "features-005"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")

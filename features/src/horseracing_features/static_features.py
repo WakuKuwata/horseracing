@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+from horseracing_db.enums import EntryStatus
 
 from .loader import Frames
 
@@ -17,4 +18,9 @@ _HORSE_COLS = [
 def build_static_features(frames: Frames) -> pd.DataFrame:
     races = frames.races[["race_id", *_RACE_COLS]]
     rh = frames.race_horses[["race_id", "horse_id", *_HORSE_COLS]]
-    return rh.merge(races, on="race_id", how="left")
+    out = rh.merge(races, on="race_id", how="left")
+    # Feature 020: field_size = number of started horses in the race (the race's own entries; no
+    # result leak — entries are known pre-race).
+    started = frames.race_horses[frames.race_horses["entry_status"] == EntryStatus.STARTED]
+    field_size = started.groupby("race_id").size().rename("field_size").reset_index()
+    return out.merge(field_size, on="race_id", how="left")
