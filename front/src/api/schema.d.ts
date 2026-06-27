@@ -11,7 +11,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health */
+        /**
+         * Health
+         * @description Read-only readiness: DB connectivity + alembic schema-at-head (Feature 018, fail-closed).
+         *
+         *     503 when the DB is unreachable OR applied migration != bundled head, so the deploy healthcheck
+         *     blocks serving on an un-migrated DB. SELECT-only — no write path added (014 stays read-only).
+         */
         get: operations["health_api_v1_health_get"];
         put?: never;
         post?: never;
@@ -403,9 +409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": unknown;
                 };
             };
         };

@@ -1,0 +1,72 @@
+# Feature 018: single-host production-ish stack. postgres → migrate(one-shot) → api → nginx with
+# fail-closed ordering (FR-004). Only nginx is published. compose postgres is local/staging; for
+# production point DATABASE_URL/DATABASE_URL_OWNER at an external managed DB.
+name: horseracing
+
+services:
+  db:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    image: horseracing-api:local
+    command: ["python", "/app/deploy/scripts/migrate.py"]
+    restart: "no"   # one-shot
+    environment:
+      DATABASE_URL_OWNER: ${DATABASE_URL_OWNER}
+      APP_RO_USER: ${APP_RO_USER}
+      APP_RO_PASSWORD: ${APP_RO_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      ALEMBIC_SCRIPT_LOCATION: /app/db/migrations
+    volumes:
+      - ./scripts:/app/deploy/scripts:ro   # migrate.py (kept out of the image)
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: horseracing-api:local      # reuse the image built by `migrate`
+    environment:
+      DATABASE_URL: ${DATABASE_URL}    # read-only serving role (app_ro)
+      ALEMBIC_SCRIPT_LOCATION: /app/db/migrations
+    healthcheck:
+      test: ["CMD-SHELL",
+             "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/v1/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    depends_on:
+      migrate:
+        condition: service_completed_successfully   # fail-closed: no migrate success → no api
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: deploy/front.Dockerfile
+    image: horseracing-front:local
+    ports:
+      - "8080:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

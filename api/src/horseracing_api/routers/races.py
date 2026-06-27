@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import datetime
+import functools
+import pathlib
 import re
 
 from fastapi import APIRouter, Depends, Query
@@ -35,10 +37,56 @@ def _summary(r) -> RaceSummary:
     )
 
 
-@router.get("/health", tags=["meta"])
-def health(session: Session = Depends(get_session)) -> dict:
-    session.execute(text("SELECT 1"))  # DB readiness
-    return {"status": "ok", "api_version": API_VERSION, "schema_version": SCHEMA_VERSION}
+@functools.lru_cache(maxsize=1)
+def _alembic_head() -> str | None:
+    """Migration head bundled in the image (read from db/migrations). Cached (cheap, file scan).
+
+    Resolves db/ relative to the editable-installed horseracing_db package
+    (.../db/src/horseracing_db → parents[2] = db/). Feature 018: lets /health detect a DB whose
+    schema is not at head — read-only, no schema dependency added.
+    """
+    import os
+
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    loc = os.getenv("ALEMBIC_SCRIPT_LOCATION")  # set in the deploy image; robust to install mode
+    if not loc:
+        import horseracing_db
+
+        loc = str(pathlib.Path(horseracing_db.__file__).resolve().parents[2] / "migrations")
+    cfg = Config()
+    cfg.set_main_option("script_location", loc)
+    return ScriptDirectory.from_config(cfg).get_current_head()
+
+
+@router.get("/health", tags=["meta"], response_model=None)
+def health(session: Session = Depends(get_session)) -> JSONResponse | dict:
+    """Read-only readiness: DB connectivity + alembic schema-at-head (Feature 018, fail-closed).
+
+    503 when the DB is unreachable OR applied migration != bundled head, so the deploy healthcheck
+    blocks serving on an un-migrated DB. SELECT-only — no write path added (014 stays read-only).
+    """
+    head = _alembic_head()
+    try:
+        session.execute(text("SELECT 1"))
+        current = session.execute(text("SELECT version_num FROM alembic_version")).scalar()
+        db_ok = True
+    except Exception:
+        current, db_ok = None, False
+    in_sync = bool(db_ok and current == head)
+    body = {
+        "status": "ok" if in_sync else "unhealthy",
+        "api_version": API_VERSION,
+        "schema_version": SCHEMA_VERSION,
+        "db": db_ok,
+        "alembic_current": current,
+        "alembic_head": head,
+        "schema_in_sync": in_sync,
+    }
+    if not in_sync:
+        return JSONResponse(status_code=503, content=body)
+    return body
 
 
 @router.get("/races", response_model=Page[RaceSummary], tags=["races"])

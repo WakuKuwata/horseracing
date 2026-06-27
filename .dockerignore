@@ -1,0 +1,20 @@
+# Repo-root build context excludes (API image builds from here; keep context small + secret-free).
+.git
+.gitignore
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/dist
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+front/dist
+specs
+artifacts
+raw_data
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+.DS_Store
