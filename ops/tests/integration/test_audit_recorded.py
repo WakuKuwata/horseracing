@@ -26,11 +26,12 @@ def test_refresh_job_audit_fields(session, fixture_fetcher):
     assert job.job_type == "refresh_race" and job.scope_value == RID
     assert job.status == "succeeded"
     assert job.processed_rows is not None and job.error_count == 0
-    assert job.summary["kind"] == "entries+odds"
+    assert job.summary["kind"] == "entries+results+odds"
     assert job.started_at is not None and job.completed_at is not None
 
-    # the underlying scrape calls are independently audited too (entries + odds)
+    # the underlying scrape calls are independently audited too (entries + results + odds)
     scrape_types = set(session.scalars(
-        select(IngestionJob.job_type).where(IngestionJob.job_type.in_(["entries", "odds"]))
+        select(IngestionJob.job_type).where(
+            IngestionJob.job_type.in_(["entries", "results", "odds"]))
     ))
-    assert {"entries", "odds"} <= scrape_types
+    assert {"entries", "results", "odds"} <= scrape_types

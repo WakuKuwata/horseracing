@@ -10,11 +10,12 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from horseracing_db.enums import JobStatus
 from horseracing_db.models import IngestionJob
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import JOB_TYPE_RACE
+from .. import JOB_TYPE_DAY, JOB_TYPE_RACE
 from ..deps import get_session
 from ..enqueue import batch_status
 from ..schemas import Batch, ErrorBody, Job
@@ -55,19 +56,28 @@ def get_batch(trace_id: str, session: Session = Depends(get_session)):
         .where(IngestionJob.job_type == JOB_TYPE_RACE)
         .order_by(IngestionJob.scope_value.asc())
     ).all()
-    if not children:
-        return _err(404, "batch_not_found", f"batch {trace_id} not found")
-    statuses = [c.status for c in children]
-    from horseracing_db.enums import JobStatus
-    parent_date = None
+    # the parent refresh_day exists from the moment the POST is accepted — BEFORE the worker has
+    # discovered/fanned-out children. Recognise it so polling never 404s during that window.
+    parent = None
     try:
-        parent = session.get(IngestionJob, uuid.UUID(trace_id))
-        parent_date = parent.scope_value if parent is not None else None
+        cand = session.get(IngestionJob, uuid.UUID(trace_id))
+        if cand is not None and cand.job_type == JOB_TYPE_DAY:
+            parent = cand
     except ValueError:
-        parent_date = None
+        parent = None
+    if not children and parent is None:
+        return _err(404, "batch_not_found", f"batch {trace_id} not found")
+
+    statuses = [c.status for c in children]
+    # with children, aggregate them; before discovery, reflect the parent's own status (queued/
+    # running) so a not-yet-discovered batch isn't reported done prematurely.
+    if children:
+        status = batch_status(statuses)
+    else:  # before discovery: reflect the parent's own status (don't report done prematurely)
+        status = parent.status if parent is not None else JobStatus.SUCCEEDED
     return Batch(
-        trace_id=trace_id, status=batch_status(statuses),
-        scope_value=parent_date,
+        trace_id=trace_id, status=status,
+        scope_value=parent.scope_value if parent is not None else None,
         total=len(children),
         succeeded=sum(1 for s in statuses if s == JobStatus.SUCCEEDED),
         failed=sum(1 for s in statuses if s == JobStatus.FAILED),

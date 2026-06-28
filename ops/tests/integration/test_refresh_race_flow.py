@@ -1,4 +1,4 @@
-"""T012 (US1): enqueue -> worker -> terminal, with kind decided at run time from result-pending."""
+"""T012 (US1, A): enqueue -> worker -> terminal. A refresh does a FULL pass (entries+results+odds)."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ pytestmark = pytest.mark.integration
 RID = "202406050911"
 
 
-def test_pending_race_fetches_entries_and_odds(session, fixture_fetcher):
-    seed_race(session, race_id=RID)  # no race_results -> pending
+def test_full_refresh_ingests_entries_results_odds(session, fixture_fetcher):
+    seed_race(session, race_id=RID)
     job, reused = enqueue_race(session, RID)
     session.commit()
     assert reused is False
@@ -26,32 +26,29 @@ def test_pending_race_fetches_entries_and_odds(session, fixture_fetcher):
 
     session.refresh(job)
     assert job.status == "succeeded"
-    assert job.summary["kind"] == "entries+odds"
-    # entries actually ingested (18-horse fixture)
-    n = session.scalar(select(func.count()).select_from(RaceHorse).where(RaceHorse.race_id == RID))
-    assert n == 18
+    assert job.summary["kind"] == "entries+results+odds"   # one full pass
+    # entries actually ingested (18-horse fixture), and results too
+    n_horses = session.scalar(
+        select(func.count()).select_from(RaceHorse).where(RaceHorse.race_id == RID))
+    n_results = session.scalar(
+        select(func.count()).select_from(RaceResult).where(RaceResult.race_id == RID))
+    assert n_horses == 18 and n_results == 18
 
 
-def test_finished_race_fetches_results(session, fixture_fetcher):
-    # realistic order: entries first (pending), then the race runs and results land.
+def test_results_insert_only_protects_jravan(session, fixture_fetcher):
+    # a pre-existing (JRA-VAN) result row must survive the full refresh (INSERT-only).
     seed_race(session, race_id=RID)
-    first, _ = enqueue_race(session, RID)
-    session.commit()
-    drain(session, fetcher=fixture_fetcher)  # entries+odds while pending
-    session.refresh(first)
-    assert first.summary["kind"] == "entries+odds"
+    mark_finished(session, race_id=RID)  # seeds a seedH result row
 
-    mark_finished(session, race_id=RID)  # race_results present -> no longer pending
-    job, _ = enqueue_race(session, RID, force=True)  # force past freshness
+    job, _ = enqueue_race(session, RID)
     session.commit()
-
     drain(session, fetcher=fixture_fetcher)
+
     session.refresh(job)
-    assert job.summary["kind"] == "results"
+    assert job.summary["kind"] == "entries+results+odds"
     assert job.status in ("succeeded", "partial")
-    # the seeded JRA-VAN result row is not destroyed (INSERT-only protection)
     kept = session.scalar(
         select(func.count()).select_from(RaceResult)
         .where(RaceResult.race_id == RID).where(RaceResult.horse_id == "seedH")
     )
-    assert kept == 1
+    assert kept == 1  # seeded JRA-VAN result not destroyed

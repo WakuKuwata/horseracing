@@ -1,43 +1,42 @@
-"""T021 (US2): POST /ops/v1/days/{date}/refresh + GET /ops/v1/batches/{trace_id} contract."""
+"""T021 (US2, A): POST /ops/v1/days/{date}/refresh + GET /ops/v1/batches/{trace_id} contract.
+
+Day refresh now returns 202 immediately with NO children — the worker discovers the day's races
+from netkeiba and fans out children later; the front polls the batch for progress."""
 
 from __future__ import annotations
 
 import pytest
 
-from tests._synth import seed_race
-
 pytestmark = pytest.mark.integration
 
 DATE = "2024-12-28"
-RID1 = "202406050911"
-RID2 = "202406050912"
 
 
-def test_refresh_day_accepts_batch(client, session):
-    seed_race(session, race_id=RID1)
-    seed_race(session, race_id=RID2)
+def test_refresh_day_accepts_batch(client):
+    # any date is accepted (discovery, not the DB, decides the race set) — children come later.
     r = client.post(f"/ops/v1/days/{DATE}/refresh")
     assert r.status_code == 202
     body = r.json()
     assert body["scope"] == "day" and body["scope_value"] == DATE
-    assert len(body["children"]) == 2
+    assert body["children"] == []                      # not discovered yet (worker fans out)
+    assert body["status"] == "queued"
     assert body["poll_url"] == f"/ops/v1/batches/{body['trace_id']}"
-    assert {c["scope_value"] for c in body["children"]} == {RID1, RID2}
 
 
-def test_batch_status_readable(client, session):
-    seed_race(session, race_id=RID1)
+def test_batch_poll_readable_before_discovery(client):
+    # polling right after POST must NOT 404 — the parent is recognised with 0 children.
     trace_id = client.post(f"/ops/v1/days/{DATE}/refresh").json()["trace_id"]
     r = client.get(f"/ops/v1/batches/{trace_id}")
     assert r.status_code == 200
     body = r.json()
     assert body["trace_id"] == trace_id and body["scope_value"] == DATE
-    assert body["total"] == 1 and len(body["children"]) == 1
+    assert body["total"] == 0 and body["children"] == [] and body["status"] == "queued"
 
 
-def test_empty_day_404(client):
+def test_unknown_day_still_accepted(client):
+    # a day with no DB races is no longer a 404 — it's accepted; the worker discovers (or finds 0).
     r = client.post("/ops/v1/days/2030-01-01/refresh")
-    assert r.status_code == 404 and r.json()["code"] == "no_races_on_date"
+    assert r.status_code == 202 and r.json()["scope_value"] == "2030-01-01"
 
 
 def test_bad_date_422(client):

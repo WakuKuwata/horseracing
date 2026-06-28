@@ -18,10 +18,13 @@ from horseracing_db.models import IngestionJob
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from . import JOB_TYPE_RACE
+from . import JOB_TYPE_DAY, JOB_TYPE_RACE
 from .config import CONFIG
 from .deps import create_ops_engine
-from .runner import make_fetcher, run_one
+from .runner import make_fetcher, run_day, run_one
+
+#: job types the worker drains (refresh_day discovers + fans out; refresh_race does the scrape).
+_CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY)
 
 #: a RUNNING job older than this (no progress) is presumed orphaned by a crashed worker.
 STALE_RUNNING_SECONDS = CONFIG.stale_running_seconds
@@ -38,7 +41,7 @@ def recover_stale(session: Session, *, stale_seconds: int = STALE_RUNNING_SECOND
     cutoff = _now() - datetime.timedelta(seconds=stale_seconds)
     stale = session.scalars(
         select(IngestionJob)
-        .where(IngestionJob.job_type == JOB_TYPE_RACE)
+        .where(IngestionJob.job_type.in_(_CLAIMABLE))
         .where(IngestionJob.status == JobStatus.RUNNING)
         .where(IngestionJob.started_at.is_not(None))
         .where(IngestionJob.started_at < cutoff)
@@ -57,10 +60,13 @@ def recover_stale(session: Session, *, stale_seconds: int = STALE_RUNNING_SECOND
 
 
 def claim_one(session: Session) -> IngestionJob | None:
-    """Atomically claim the oldest queued refresh_race job (FOR UPDATE SKIP LOCKED)."""
+    """Atomically claim the oldest queued refresh job (FOR UPDATE SKIP LOCKED).
+
+    Claims both refresh_day (discovery/fanout) and refresh_race (scrape). Oldest-first naturally
+    processes a parent before the children it creates."""
     job = session.scalars(
         select(IngestionJob)
-        .where(IngestionJob.job_type == JOB_TYPE_RACE)
+        .where(IngestionJob.job_type.in_(_CLAIMABLE))
         .where(IngestionJob.status == JobStatus.QUEUED)
         .order_by(IngestionJob.created_at.asc())
         .with_for_update(skip_locked=True)
@@ -75,8 +81,9 @@ def claim_one(session: Session) -> IngestionJob | None:
 
 
 def _run_claimed(session: Session, job: IngestionJob, *, fetcher=None) -> None:
+    runner = run_day if job.job_type == JOB_TYPE_DAY else run_one
     try:
-        run_one(session, job, fetcher=fetcher)
+        runner(session, job, fetcher=fetcher)
     except Exception as exc:  # noqa: BLE001 — one bad job must not kill the worker
         session.rollback()
         if job.retry_count < job.max_retry:

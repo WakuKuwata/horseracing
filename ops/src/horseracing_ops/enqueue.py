@@ -91,6 +91,20 @@ def list_race_ids_for_day(session: Session, date: datetime.date) -> list[str]:
     return [r for r in rows if is_valid_race_id(r)]
 
 
+def enqueue_day_parent(session: Session, date: datetime.date) -> IngestionJob:
+    """Create just the parent refresh_day job (QUEUED) and return it; the worker discovers the
+    day's races from netkeiba and fans out refresh_race children (so the POST returns 202 without a
+    netkeiba round-trip). Accepts any date — even one with no DB races yet (worker discovers)."""
+    parent = IngestionJob(
+        source=Source.NETKEIBA, job_type=JOB_TYPE_DAY, scope="day",
+        scope_value=date.isoformat(), status=JobStatus.QUEUED,
+    )
+    session.add(parent)
+    session.flush()
+    parent.trace_id = str(parent.ingestion_job_id)
+    return parent
+
+
 def enqueue_day(
     session: Session, date: datetime.date, *, force: bool = False,
     fresh_seconds: int = DEFAULT_FRESH_SECONDS,
