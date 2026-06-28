@@ -32,8 +32,8 @@ def _err(status: int, code: str, detail: str) -> JSONResponse:
 def _summary(r) -> RaceSummary:
     return RaceSummary(
         race_id=r.race_id, race_date=r.race_date, venue_code=r.venue_code,
-        race_number=r.race_number, race_class=r.race_class, distance=r.distance,
-        track_type=r.track_type,
+        race_number=r.race_number, race_name=r.race_name, race_class=r.race_class,
+        distance=r.distance, track_type=r.track_type,
     )
 
 
@@ -113,8 +113,14 @@ def race_detail(race_id: str, session: Session = Depends(get_session)):
     if r is None:
         return _err(404, "race_not_found", f"race {race_id} not found")
     horses = [
-        HorseEntry(horse_number=h.horse_number, horse_id=h.horse_id, entry_status=h.entry_status,
-                   age=h.age, sex=h.sex)
+        HorseEntry(
+            horse_number=h.horse_number, frame=h.frame, horse_id=h.horse_id,
+            horse_name=h.horse_name, entry_status=h.entry_status, age=h.age, sex=h.sex,
+            jockey_name=h.jockey_name, trainer_name=h.trainer_name,
+            jockey_weight=float(h.jockey_weight) if h.jockey_weight is not None else None,
+            weight=h.weight, weight_diff=h.weight_diff,
+            odds=float(h.odds) if h.odds is not None else None, popularity=h.popularity,
+        )
         for h in race_horses(session, race_id)
     ]
     return RaceDetail(**_summary(r).model_dump(), horses=horses)

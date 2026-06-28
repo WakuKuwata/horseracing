@@ -236,12 +236,30 @@ export interface components {
             age?: number | null;
             /** Entry Status */
             entry_status: string;
+            /** Frame */
+            frame?: number | null;
             /** Horse Id */
             horse_id: string;
+            /** Horse Name */
+            horse_name?: string | null;
             /** Horse Number */
             horse_number?: number | null;
+            /** Jockey Name */
+            jockey_name?: string | null;
+            /** Jockey Weight */
+            jockey_weight?: number | null;
+            /** Odds */
+            odds?: number | null;
+            /** Popularity */
+            popularity?: number | null;
             /** Sex */
             sex?: string | null;
+            /** Trainer Name */
+            trainer_name?: string | null;
+            /** Weight */
+            weight?: number | null;
+            /** Weight Diff */
+            weight_diff?: number | null;
         };
         /** HorsePrediction */
         HorsePrediction: {
@@ -337,6 +355,8 @@ export interface components {
             race_date?: string | null;
             /** Race Id */
             race_id: string;
+            /** Race Name */
+            race_name?: string | null;
             /** Race Number */
             race_number?: number | null;
             /** Track Type */
@@ -354,6 +374,8 @@ export interface components {
             race_date?: string | null;
             /** Race Id */
             race_id: string;
+            /** Race Name */
+            race_name?: string | null;
             /** Race Number */
             race_number?: number | null;
             /** Track Type */

@@ -13,12 +13,15 @@ import datetime
 from horseracing_db.enums import BetType, EntryStatus
 from horseracing_db.models import (
     ExoticOdds,
+    Horse,
+    Jockey,
     ModelVersion,
     Race,
     RaceHorse,
     RacePrediction,
     RaceResult,
     Recommendation,
+    Trainer,
 )
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -55,14 +58,29 @@ def get_race(session: Session, race_id: str) -> Race | None:
     return session.get(Race, race_id)
 
 
-def race_horses(session: Session, race_id: str) -> list[RaceHorse]:
-    return list(
-        session.scalars(
-            select(RaceHorse)
-            .where(RaceHorse.race_id == race_id)
-            .order_by(RaceHorse.horse_number.asc().nulls_last(), RaceHorse.horse_id.asc())
+def race_horses(session: Session, race_id: str):
+    """Entry rows joined with horse/jockey/trainer NAMES (so the UI shows names, not ids).
+
+    LEFT join jockey/trainer (a row may lack them). Returns SQLAlchemy rows exposing both the
+    RaceHorse columns and horse_name/jockey_name/trainer_name.
+    """
+    return session.execute(
+        select(
+            RaceHorse.horse_number, RaceHorse.horse_id, RaceHorse.frame,
+            RaceHorse.entry_status, RaceHorse.age, RaceHorse.sex,
+            RaceHorse.weight, RaceHorse.weight_diff, RaceHorse.jockey_weight,
+            RaceHorse.odds, RaceHorse.popularity,
+            Horse.horse_name,
+            Jockey.jockey_name,
+            Trainer.trainer_name,
         )
-    )
+        .select_from(RaceHorse)
+        .outerjoin(Horse, Horse.horse_id == RaceHorse.horse_id)
+        .outerjoin(Jockey, Jockey.jockey_id == RaceHorse.jockey_id)
+        .outerjoin(Trainer, Trainer.trainer_id == RaceHorse.trainer_id)
+        .where(RaceHorse.race_id == race_id)
+        .order_by(RaceHorse.horse_number.asc().nulls_last(), RaceHorse.horse_id.asc())
+    ).all()
 
 
 def run_predictions(session: Session, *, run_id, race_id: str):

@@ -240,7 +240,7 @@ th.num {
   gap: 0.1rem;
   min-width: 0;
 }
-.race-card__class {
+.race-card__title {
   font-size: 0.9rem;
   font-weight: 600;
   white-space: nowrap;
@@ -275,4 +275,77 @@ th.num {
 .day-update__status {
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+/* --- race detail: sortable entries table --- */
+.entries-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.entries-table th.sortable:hover {
+  color: var(--text);
+}
+.entries-table .cell-main {
+  display: block;
+  font-weight: 600;
+}
+.entries-table .cell-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.entries-table .umaban-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.entries-table .umaban-no {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.entries-table .odds-low {
+  color: #ff5d5d;
+  font-weight: 700;
+}
+.entries-table tr.entry--cancelled {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* JRA 枠番カラー (1白 2黒 3赤 4青 5黄 6緑 7橙 8桃) */
+.waku {
+  display: inline-block;
+  min-width: 1.5rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.waku-1 { background: #f5f5f5; color: #111; border: 1px solid #bbb; }
+.waku-2 { background: #222; color: #fff; }
+.waku-3 { background: #e53935; color: #fff; }
+.waku-4 { background: #1e88e5; color: #fff; }
+.waku-5 { background: #fdd835; color: #111; }
+.waku-6 { background: #43a047; color: #fff; }
+.waku-7 { background: #fb8c00; color: #111; }
+.waku-8 { background: #ec407a; color: #fff; }
+.waku-0 { background: var(--panel); color: var(--muted); }
+
+.race-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+.race-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.table-hint {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
 }

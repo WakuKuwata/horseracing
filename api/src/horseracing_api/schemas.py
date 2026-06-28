@@ -34,6 +34,7 @@ class RaceSummary(BaseModel):
     race_date: datetime.date | None = None
     venue_code: str | None = None
     race_number: int | None = None
+    race_name: str | None = None
     race_class: str | None = None
     distance: int | None = None
     track_type: str | None = None
@@ -41,10 +42,19 @@ class RaceSummary(BaseModel):
 
 class HorseEntry(BaseModel):
     horse_number: int | None = None
+    frame: int | None = None
     horse_id: str
+    horse_name: str | None = None
     entry_status: str
     age: int | None = None
     sex: str | None = None
+    jockey_name: str | None = None
+    trainer_name: str | None = None
+    jockey_weight: float | None = None   # 斤量 (carried weight)
+    weight: int | None = None            # 馬体重 (body weight)
+    weight_diff: int | None = None       # 増減
+    odds: float | None = None            # 単勝オッズ (real, latest)
+    popularity: int | None = None        # 人気
 
 
 class RaceDetail(RaceSummary):
