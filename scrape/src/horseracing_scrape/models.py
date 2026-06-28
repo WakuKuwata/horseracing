@@ -28,6 +28,9 @@ class ScrapedRace:
     going: str | None
     weather: str | None
     race_class: str | None
+    race_name: str | None = None
+    grade: str | None = None                       # G1/G2/G3 (None if not graded)
+    post_time: datetime.datetime | None = None      # 発走時刻 (JST-aware)
 
 
 @dataclass(frozen=True)
@@ -40,7 +43,9 @@ class ScrapedEntryHorse:
     jockey_name: str | None
     netkeiba_trainer_id: str | None
     trainer_name: str | None
-    weight: int | None
+    weight: int | None          # 馬体重 (body weight)
+    weight_diff: int | None      # 馬体重増減 (signed; None when 計不/new)
+    jockey_weight: float | None  # 斤量 (impost, kg)
     sex: str | None
     age: int | None
     entry_status: str
@@ -73,6 +78,8 @@ class ScrapedResultRow:
     finish_order: int | None
     result_status: str
     finish_time: str | None
+    last_3f: float | None = None                    # 後3F / 上がり3ハロン
+    corner_orders: tuple[str, ...] | None = None     # コーナー通過順 ("7-7-4-3" -> (7,7,4,3))
 
 
 @dataclass(frozen=True)

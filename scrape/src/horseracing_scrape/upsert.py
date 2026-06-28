@@ -88,7 +88,8 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
         "race_number": scraped.race.key.race_no, "venue_code": race_id[4:6],
         "distance": scraped.race.distance, "track_type": scraped.race.track_type,
         "going": scraped.race.going, "weather": scraped.race.weather,
-        "race_class": scraped.race.race_class,
+        "race_class": scraped.race.race_class, "race_name": scraped.race.race_name,
+        "grade": scraped.race.grade, "post_time": scraped.race.post_time,
     }, ("race_id",))
 
     for h in scraped.horses:
@@ -116,7 +117,8 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
         _upsert(session, RaceHorse, {
             "race_id": race_id, "horse_id": horse_id, "frame": h.frame,
             "horse_number": h.horse_number, "jockey_id": jockey_id, "trainer_id": trainer_id,
-            "weight": h.weight, "sex": h.sex, "age": h.age,
+            "weight": h.weight, "weight_diff": h.weight_diff, "jockey_weight": h.jockey_weight,
+            "sex": h.sex, "age": h.age,
             "entry_status": h.entry_status or EntryStatus.STARTED,
         }, ("race_id", "horse_id"))
         c.written += 1
@@ -125,25 +127,58 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
 
 # --- odds -------------------------------------------------------------------
 def update_odds(session: Session, race_id: str, scraped: ScrapedOdds) -> Counts:
+    """Update win odds + popularity from netkeiba (single-latest, constitution V).
+
+    Two write modes keep the JRA-VAN final-odds protection while still capturing odds for both
+    upcoming and finished netkeiba races (the confirmed odds JSON serves both):
+    - result-pending race  -> overwrite (latest pre-race value).
+    - result-finalized race -> fill ONLY where odds IS NULL. This lets a netkeiba-only finished
+      race get its confirmed odds, but NEVER clobbers an existing (JRA-VAN) final odds value.
+    netkeiba win-odds JSON is keyed by 馬番 → match race_horses by (race_id, horse_number); no
+    id_mapping needed (Feature 022 I1)."""
     c = Counts()
     has_results = session.scalar(select(exists().where(RaceResult.race_id == race_id)))
-    if has_results:  # result-finalized race -> protect JRA-VAN final odds
-        c.skipped += 1
-        c.error_messages.append("race has results (final odds protected); odds not updated")
-        return c
     for row in scraped.rows:
-        c.processed += 1
         if row.odds is None or row.odds <= 0:
             continue
-        # netkeiba win-odds JSON is keyed by 馬番 → match the existing race_horses row by
-        # (race_id, horse_number); no id_mapping needed (Feature 022 I1). Also persist popularity.
-        res = session.execute(
+        c.processed += 1
+        stmt = (
             update(RaceHorse)
             .where(RaceHorse.race_id == race_id, RaceHorse.horse_number == row.horse_number)
-            .values(odds=Decimal(str(row.odds)), popularity=row.popularity)
         )
-        c.written += res.rowcount or 0
+        if has_results:  # finalized: fill-if-null, never overwrite existing (JRA-VAN) odds
+            stmt = stmt.where(RaceHorse.odds.is_(None))
+        res = session.execute(stmt.values(odds=Decimal(str(row.odds)), popularity=row.popularity))
+        if res.rowcount:
+            c.written += res.rowcount
+        elif has_results:  # existing odds protected (or no matching horse)
+            c.skipped += 1
     return c
+
+
+def _derive_running_style(corner_orders, field_size: int) -> str | None:
+    """Derive 脚質 from the FIRST-corner position relative to field size (netkeiba has no official
+    脚質 column). Mapped to JRA-VAN's vocabulary so 023's front/closer features stay consistent:
+    逃げ(先頭) / 先行(前1/4) / 中団 / 差し(後1/4) / 追込(最後方). Heuristic — used only to fill a
+    NULL running_style (never clobbers an authoritative JRA-VAN value)."""
+    if not corner_orders or field_size <= 0:
+        return None
+    try:
+        pos1 = int(corner_orders[0])
+    except (TypeError, ValueError):
+        return None
+    if pos1 <= 0:
+        return None
+    if pos1 == 1:
+        return "逃げ"
+    r = pos1 / field_size
+    if r <= 0.25:
+        return "先行"
+    if r <= 0.50:
+        return "中団"
+    if r <= 0.75:
+        return "差し"
+    return "追込"
 
 
 # --- results ----------------------------------------------------------------
@@ -156,6 +191,11 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
             .where(RaceHorse.entry_status == EntryStatus.STARTED)
         )
     )
+    field_size = len(started)
+    # winner time anchors finish_time_diff (seconds behind winner — JRA-VAN-consistent interval)
+    winner_td = next(
+        (parse_netkeiba_time(r.finish_time) for r in scraped.rows if r.finish_order == 1), None
+    )
     for row in scraped.rows:
         c.processed += 1
         horse_id = resolve_entity(session, entity_type="horse", netkeiba_id=row.netkeiba_horse_id)
@@ -166,14 +206,26 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
             c.errors += 1  # finished requires finish_order (DB constraint) — fail-close
             c.error_messages.append(f"finished without finish_order: {horse_id}")
             continue
+        own_td = parse_netkeiba_time(row.finish_time)
+        diff = own_td - winner_td if (own_td is not None and winner_td is not None) else None
         # INSERT-ONLY: never overwrite an existing (JRA-VAN) race_results row
         session.execute(
             insert(RaceResult).values(
                 race_id=race_id, horse_id=horse_id, finish_order=row.finish_order,
-                result_status=row.result_status,
-                finish_time=parse_netkeiba_time(row.finish_time),
+                result_status=row.result_status, finish_time=own_td, finish_time_diff=diff,
+                last_3f=row.last_3f,
+                corner_orders=list(row.corner_orders) if row.corner_orders else None,
             ).on_conflict_do_nothing(index_elements=["race_id", "horse_id"])
         )
+        # B: fill-if-null derived 脚質 (never clobbers a JRA-VAN running_style)
+        style = _derive_running_style(row.corner_orders, field_size)
+        if style is not None:
+            session.execute(
+                update(RaceHorse)
+                .where(RaceHorse.race_id == race_id, RaceHorse.horse_id == horse_id,
+                       RaceHorse.running_style.is_(None))
+                .values(running_style=style)
+            )
         c.written += 1
     return c
 

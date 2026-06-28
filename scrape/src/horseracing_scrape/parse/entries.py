@@ -5,9 +5,10 @@ Waku* (枠) / Umaban* (馬番) / HorseInfo (馬名 + /horse/{id}) / Barei (性�
 / Jockey (/jockey/.../{id}) / Trainer (区 + /trainer/.../{id}). Race meta from
 ``RaceData01`` (発走/距離/馬場/天候), ``RaceData02`` (回/場/日次/クラス/頭数), <title> (開催日).
 
-weight = 馬体重 (body weight) to match JRA-VAN ``race_horses.weight``; 斤量 (jockey_weight) and
-増減 (weight_diff) are NOT carried by ScrapedEntryHorse (deferred — needs a model/upsert change).
-Pre-race upcoming races show no body weight ("計不") -> weight is None (Unknown, constitution IV).
+weight = 馬体重 (body weight) to match JRA-VAN ``race_horses.weight``; 増減 (weight_diff, signed)
+comes from the same Weight cell, and 斤量 (jockey_weight) from the cell after 性齢. All map to
+existing ``race_horses`` columns (no schema change). Pre-race upcoming races show no body weight
+("計不") -> weight/weight_diff are None (Unknown, constitution IV).
 fail-close: ParseError on missing table / required fields. race_id parsed from body; the caller
 re-checks it against the URL race_id.
 """
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 import datetime
 import re
+from zoneinfo import ZoneInfo
 
 from ..models import ParseError, ScrapedEntry, ScrapedEntryHorse, ScrapedRace
 from ._common import (
@@ -32,6 +34,13 @@ _WEATHER_RE = re.compile(r"天候\s*[:：]\s*(\S+)")
 _GOING_RE = re.compile(r"馬場\s*[:：]\s*(\S+)")
 _DATE_RE = re.compile(r"(\d{4})年(\d{1,2})月(\d{1,2})日")
 _BODYWEIGHT_RE = re.compile(r"(\d{3})")
+_WEIGHT_DIFF_RE = re.compile(r"\(([-+]?\d+)\)")  # "484 (0)" / "520(+4)" / "498(-6)"
+_POST_TIME_RE = re.compile(r"(\d{1,2}):(\d{2})\s*発走")  # "15:40発走"
+_GRADE_ICON_RE = re.compile(r"Icon_GradeType(\d+)")
+_JST = ZoneInfo("Asia/Tokyo")
+#: netkeiba grade-icon suffix -> JRA grade label (only the central G1–G3 are mapped; other
+#: suffixes = listed/重賞/特別/障害等 are left None — `race_class` already carries the class).
+_GRADE_BY_ICON = {"1": "G1", "2": "G2", "3": "G3"}
 _CLASS_TOKENS = ("新馬", "未勝利", "３勝", "3勝", "２勝", "2勝", "１勝", "1勝",
                  "オープン", "Ｇ", "G1", "G2", "G3")
 
@@ -60,10 +69,31 @@ def _race_meta(soup, key) -> ScrapedRace:
         race_date = datetime.date(int(dm.group(1)), int(dm.group(2)), int(dm.group(3)))
 
     race_class = next((t for t in _CLASS_TOKENS if t in rd02), None)
+    race_name_el = soup.select_one(".RaceName")
+    race_name = _text(race_name_el) or None
+
+    # grade icon MUST be scoped to THIS race's name element — a page-wide search picks up other
+    # races' grade icons in the nav/sidebar (e.g. a maiden page carries a stray Icon_GradeType3).
+    grade = None
+    gi = race_name_el.select_one('[class*="Icon_GradeType"]') if race_name_el else None
+    if gi is not None:
+        gm = next((_GRADE_ICON_RE.search(c) for c in (gi.get("class") or [])
+                   if _GRADE_ICON_RE.search(c)), None)
+        if gm:
+            grade = _GRADE_BY_ICON.get(gm.group(1))
+
+    post_time = None
+    pm = _POST_TIME_RE.search(rd01)
+    if pm and race_date is not None:
+        post_time = datetime.datetime(
+            race_date.year, race_date.month, race_date.day,
+            int(pm.group(1)), int(pm.group(2)), tzinfo=_JST,
+        )
 
     return ScrapedRace(
         key=key, race_date=race_date, distance=distance, track_type=track_type,
         going=going, weather=weather, race_class=race_class,
+        race_name=race_name, grade=grade, post_time=post_time,
     )
 
 
@@ -77,6 +107,19 @@ def _entry_status(row) -> str:
 def _body_weight(cell_text: str) -> int | None:
     m = _BODYWEIGHT_RE.search(cell_text)  # "484 (0)" -> 484 ; "計不"/"--" -> None
     return int(m.group(1)) if m else None
+
+
+def _weight_diff(cell_text: str) -> int | None:
+    m = _WEIGHT_DIFF_RE.search(cell_text)  # "484 (0)" -> 0 ; "520(+4)" -> 4 ; "計不" -> None
+    return int(m.group(1)) if m else None
+
+
+def _jockey_weight(text: str) -> float | None:
+    """斤量 (impost). The cell holds a plain number like '56.0'."""
+    try:
+        return float(text) if text else None
+    except ValueError:
+        return None
 
 
 def parse_entries(html: str) -> ScrapedEntry:
@@ -105,8 +148,14 @@ def parse_entries(html: str) -> ScrapedEntry:
         horse_number = required_int(_text(umaban), "horse_number")
         frame = int(_text(waku)) if waku and _text(waku).isdigit() else None
 
-        sex, age = parse_sex_age(_text(row.select_one("td.Barei")))
-        weight = _body_weight(_text(row.select_one("td.Weight")))
+        barei = row.select_one("td.Barei")
+        sex, age = parse_sex_age(_text(barei))
+        # 斤量 (impost) is the cell right after 性齢; class names vary so use sibling position.
+        jw_cell = barei.find_next_sibling("td") if barei else None
+        jockey_weight = _jockey_weight(_text(jw_cell))
+        weight_text = _text(row.select_one("td.Weight"))
+        weight = _body_weight(weight_text)
+        weight_diff = _weight_diff(weight_text)
 
         jockey = row.select_one("td.Jockey")
         jockey_link = jockey.find("a", href=True) if jockey else None
@@ -127,6 +176,8 @@ def parse_entries(html: str) -> ScrapedEntry:
                     trainer_link["href"] if trainer_link else None, "trainer"),
                 trainer_name=trainer_name,
                 weight=weight,
+                weight_diff=weight_diff,
+                jockey_weight=jockey_weight,
                 sex=sex,
                 age=age,
                 entry_status=_entry_status(row),

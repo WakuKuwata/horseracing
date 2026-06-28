@@ -31,7 +31,9 @@ def test_odds_and_popularity_update_when_pending(session):
     assert odds == Decimal("19.1") and pop == 6
 
 
-def test_odds_protected_when_results_exist(session):
+def test_finished_race_fills_null_odds_but_protects_existing(session):
+    # finished race: an EXISTING (JRA-VAN) odds value must be protected, while a horse whose odds
+    # is still NULL gets filled from netkeiba's confirmed odds (netkeiba-only finished races).
     ef, eurls = real_entries_fetcher()
     scrape_entries(session, urls=eurls, fetcher=ef)
     session.add(RaceResult(race_id=REAL_RID, horse_id=H_NUM1, finish_order=1,
@@ -42,6 +44,8 @@ def test_odds_protected_when_results_exist(session):
 
     of, ourls = real_odds_fetcher()
     summary = scrape_odds(session, urls=ourls, fetcher=of)
-    assert summary.skipped == 1  # race has results -> odds protected
+    assert summary.skipped == 1            # only H_NUM1 (already had odds) protected
     odds, _ = _row(session, H_NUM1)
-    assert odds == Decimal("9.9")  # JRA-VAN final odds untouched
+    assert odds == Decimal("9.9")          # existing (JRA-VAN) final odds untouched
+    # a different horse whose odds was NULL is now filled from netkeiba confirmed odds
+    assert summary.written >= 1

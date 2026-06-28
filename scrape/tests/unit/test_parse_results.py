@@ -24,6 +24,8 @@ def test_parse_results_real():
     first = r.rows[0]
     assert first.finish_order == 1 and first.result_status == ResultStatus.FINISHED
     assert first.netkeiba_horse_id == "2022105102" and first.finish_time == "2:00.5"
+    assert first.last_3f == 34.9                       # 後3F
+    assert first.corner_orders == ("7", "7", "4", "3")  # コーナー通過順
 
 
 def test_finish_time_to_timedelta():

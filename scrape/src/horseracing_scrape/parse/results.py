@@ -1,9 +1,12 @@
 """結果 (results) parser: real netkeiba result HTML -> ScrapedResult (Feature 022).
 
-Real markup: ``table.RaceTable01`` rows; columns 着順/枠/馬番/馬名(+/horse/{id})/性齢/斤量/騎手/
-タイム(例 "2:00.5")/着差/人気/単勝/後3F. result_status maps to the existing enum
-(finished/stopped/disqualified); 取消/除外 (non-starters) are skipped (no result row, handled at
-upsert too). Dead heats share a finish_order. race_id parsed from body (caller re-checks vs URL).
+Real markup: ``table.RaceTable01`` rows; column order (verified live 2026-06-28):
+0 着順 / 1 枠 / 2 馬番 / 3 馬名(+/horse/{id}) / 4 性齢 / 5 斤量 / 6 騎手 / 7 タイム /
+8 着差 / 9 人気 / 10 単勝 / 11 後3F / 12 コーナー通過順 / 13 厩舎 / 14 馬体重.
+We extract finish_order/status/finish_time + last_3f(後3F) + corner_orders(通過順);
+finish_time_diff is computed at upsert from per-horse times (interval, JRA-VAN-consistent).
+result_status maps to the enum (finished/stopped/disqualified); 取消/除外 (non-starters) are
+skipped. Dead heats share a finish_order. race_id parsed from body (caller re-checks vs URL).
 fail-close: ParseError on missing table / unknown status / missing horse id.
 """
 
@@ -22,6 +25,21 @@ _NON_STARTER = ("除", "取")  # 除外 / 取消 → result 行なし（skip）
 
 def _text(el) -> str:
     return " ".join(el.get_text(" ", strip=True).split()) if el else ""
+
+
+def _to_float(s: str | None) -> float | None:
+    try:
+        return float(s) if s else None
+    except ValueError:
+        return None
+
+
+def _corner_orders(s: str | None) -> tuple[str, ...] | None:
+    """"7-7-4-3" -> ("7","7","4","3"); empty/"-" -> None (matches JRA-VAN _corner_orders shape)."""
+    if not s:
+        return None
+    parts = [p.strip() for p in s.split("-") if p.strip() and p.strip() != "0"]
+    return tuple(parts) or None
 
 
 def parse_results(html: str) -> ScrapedResult:
@@ -56,12 +74,16 @@ def parse_results(html: str) -> ScrapedResult:
             raise ParseError(f"unknown result status in 着順: {order_txt!r}")
 
         finish_time = cells[7] if len(cells) > 7 and cells[7] else None
+        last_3f = _to_float(cells[11]) if len(cells) > 11 else None
+        corner_orders = _corner_orders(cells[12]) if len(cells) > 12 else None
         out.append(
             ScrapedResultRow(
                 netkeiba_horse_id=horse_id,
                 finish_order=finish_order,
                 result_status=status,
                 finish_time=finish_time,
+                last_3f=last_3f,
+                corner_orders=corner_orders,
             )
         )
     if not out:

@@ -116,7 +116,7 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 - **FR-004**: 抽出結果は既存の取得層 (`HttpFetcher`)・ID 解決 (`id_mappings` 経由、未マップは surrogate `nk:` + UNMAPPED キュー)・race_id 構築 (`build_race_id`)・DB 書き込み (`upsert.py`) に接続しなければならない (MUST)。新たな DB スキーマ変更は行わない (MUST NOT)。
 - **FR-005**: netkeiba の 馬/騎手/調教師 ID は `id_mappings` 経由でのみ JRA-VAN と対応付け、推測結合してはならない (MUST NOT)。未来 race は有効な JRA-VAN 12桁 race_id を構築できる場合のみ書き込み、構築不能なら行を書かない (MUST)。
 - **FR-006**: 必須要素を取得できない場合、システムは fail-close し誤データを作らず、`ingestion_jobs` に job 種別・scope・件数・status・時刻・parser/logic バージョン・errors を記録しなければならない (MUST)。
-- **FR-007**: 単勝オッズの取り込みは **result-pending な race のみ** を対象とし、結果のある race の odds は上書きしてはならない (MUST NOT)。オッズはスナップショット履歴を保存せず最新値で上書きし `updated_at` のみ保持する (MUST)。
+- **FR-007**: 単勝オッズ取り込みの書き込みモードは race の状態で分岐する。result-pending な race は最新値で**上書き**する (MUST、スナップショット履歴は保存せず `updated_at` のみ)。result-finalized な race は **odds が NULL の馬にのみ補完**し、既存 (JRA-VAN 由来含む) の odds 値は上書きしてはならない (MUST NOT)。これにより netkeiba 単独の確定済みレースでも確定単勝オッズ・人気を取得でき (netkeiba 確定オッズ JSON は upcoming/finished 双方を返す)、かつ JRA-VAN 最終オッズは保護される (旧「結果ありレースは一律スキップ」を 2026-06-28 に改訂)。
 - **FR-008**: 結果の取り込みは INSERT-only とし、既存 (JRA-VAN 由来含む) の結果行を上書きしてはならない (MUST NOT)。
 - **FR-009**: netkeiba から取得した odds・結果は、モデルの入力特徴量に再投入してはならない (リーク境界、MUST NOT)。この不変条件は leak-guard テストで担保する (MUST)。
 - **FR-010**: パーサは**保存済みの実 netkeiba HTML フィクスチャ**に対する単体テストでネットワーク非依存に検証できなければならない (MUST)。フィクスチャは実ページ由来とし、合成 data-* スキーマを置換する (MUST)。
@@ -126,6 +126,8 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 - **FR-014** (US4, 追補): システムは開催日 (YYYYMMDD) を指定して、その日の全 race_id を列挙できなければならない (MUST)。取得は JS 描画の top ページではなく**サーバ描画フラグメントを静的取得**して race_id を抽出する (FR-013 整合)。列挙は重複排除・出現順とし、12桁として無効な ID を除外する (MUST)。列挙自体は読み取り専用で、コア表を変更しない (MUST NOT)。JRA 開催の無い日は空リストを返し (エラーにしない)、ペイロードが空/取得失敗なら fail-close する (MUST)。
 - **FR-015** (US5, 追補): システムは馬の db.netkeiba.com から**識別・血統属性のみ** (性別 / 生年 / 父・母・母父の ID・名) を抽出し、`horses` の **NULL 列のみ**に補完できなければならない (MUST)。識別 (馬名/性別/生年) は本体ページ `/horse/{id}/` から、血統は専用ページ `/horse/ped/{id}/` (サーバ描画 `blood_table`) から取得する (本体ページの血統は JS 描画のため、FR-013 整合で 2 ページ静的取得)。既存値 (JRA-VAN 由来含む) を上書きしてはならない (MUST NOT)。血統馬 ID も `id_mappings` 経由で解決し推測結合しない (MUST NOT)。補完は既定で起動せず、オペレーターの明示起動でのみ実行する (opt-in, MUST)。`ingestion_jobs` に job_type='horse_profile' で記録する (MUST)。騎手・調教師は補完すべき列が無く対象外とする。
 - **FR-017** (US5, 追補): 取得層は対象ページの文字エンコーディングを正しく扱わなければならない (MUST)。Content-Type に charset が無い場合は本文の `<meta charset>` を見て明示デコードする (db.netkeiba.com は EUC-JP・charset ヘッダ無し)。これにより取り込み文字列の文字化けを防ぐ (MUST)。
+- **FR-018** (追補): 出馬表から 斤量 (jockey_weight)・馬体重増減 (weight_diff)、結果から 上がり3F (last_3f)・コーナー通過順 (corner_orders) を抽出して既存列に永続化しなければならない (MUST、スキーマ変更なし)。着差 (finish_time_diff, interval) は netkeiba の馬身差表記でなく**各馬の絶対タイムから勝ち馬との差を算出**して埋める (JRA-VAN の秒数 interval と整合)。脚質 (running_style) は netkeiba に専用列が無いため**コーナー通過順の初角位置×頭数から JRA-VAN 語彙 (逃げ/先行/中団/差し/追込) に導出**し、NULL の場合のみ補完する (既存 JRA-VAN 値は上書きしない、ヒューリスティック明示)。これらは 023 のペース/時計特徴 (features-006) の入力であり、netkeiba 取り込みレースの予測品質を JRA-VAN と揃える。
+- **FR-019** (追補): 出馬表からレース名 (race_name)・グレード (grade=G1/G2/G3)・発走時刻 (post_time, JST) を抽出して既存列に永続化しなければならない (MUST)。grade アイコンは**当該レースの `.RaceName` 要素内に限定**して読む (ページ全体検索は nav/sidebar の他レースのグレードアイコンを誤検出する — 実レースで未勝利が G3 と誤判定される回帰を確認済み)。
 - **FR-016** (US5, 追補): プロフィール補完は**競走成績 (通算成績・勝率・賞金・近走着順等) を一切読み込んでも保存してもならない** (リーク境界、MUST NOT)。解析結果の型に成績フィールドが存在しないことで構造的に担保し、leak-guard テストで検証する (MUST)。
 
 ### Key Entities *(include if feature involves data)*
@@ -176,5 +178,12 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 ## 追補メモ (2026-06-28)
 
 US4 (開催日レース一覧取得) と US5 (馬プロフィール識別・血統補完) は、本 feature の当初スコープ (entries/results/odds の実パーサ置換) の **後追い追補**として追加した。きっかけは外部設計ドキュメント (Obsidian `data-sources.md` / `scraping-netkeiba.md`) と実装の整合確認で、ドキュメントが挙げる「開催日一覧ページ」「未登録エンティティのプロフィール補完」が未実装と判明したため。Playwright / オッズ URL に関するドキュメント記述は本 spec の FR-013 (静的取得ハイブリッド、Playwright 不採用) と相違するが、これは**外部ドキュメント側が古い**ものであり、repo spec・実装の修正は不要 (外部ドキュメントは本リポジトリの管理対象外)。設計方針は codex の second opinion を取得済み (特に US5 のリーク境界 = 競走成績を読まない方針)。
+
+**データ網羅性パス (2026-06-28)**: 実レース 1 件 (202505040301、東京 未勝利、10頭) を end-to-end 取り込み中に未取り込み列を洗い出し、entries/results パーサを完全化した (全て既存列・スキーマ変更なし)。実レースで全列が埋まることを確認:
+- 斤量 (jockey_weight)・馬体重増減 (weight_diff) — entries パーサで抽出 (FR-018)。斤量は FR-001 が既に要求していた取りこぼしの解消。
+- 単勝オッズ・人気 — odds ルールを FR-007 改訂で確定済みレースも fill-if-null 補完 (確定オッズ JSON が finished も返す)。
+- 着差・上がり3F・通過順 (race_results) + 脚質 (race_horses, 導出) — results パーサで抽出/算出 (FR-018)。**023 ペース/時計特徴 (features-006) の入力**で、これが無いと netkeiba レースは識別力が落ちる。着差は絶対タイム差で算出 (JRA-VAN 秒 interval 整合)、脚質は通過順初角位置から JRA 語彙へ導出 (fill-if-null)。
+- レース名・グレード・発走時刻 (races) — entries パーサで抽出 (FR-019)。grade は `.RaceName` 内限定 (ページ全体検索で未勝利が G3 と誤判定される回帰を発見・修正)。
+- 残: real exotic odds (D, 合成スタブのまま=別段)、race_name_short / race_status (軽微)。
 
 **実 netkeiba selector 検証 (2026-06-28 実施)**: polite fetcher で実ページを最小限取得し US4/US5 のパーサを実 markup で検証。結果フィクスチャを `scrape/tests/fixtures/real/` に保存 (race_list_20241228 / horse_profile_2022103995 / pedigree_2022103995) し、ネットワーク非依存テストに組み込んだ。検証で判明した実装修正 = (a) **db.netkeiba.com は EUC-JP・charset ヘッダ無し**で文字化け → 取得層に meta charset デコードを追加 (FR-017)、(b) 馬本体ページの**血統は JS 描画** (空 `#horse_pedigree_box`) → 血統は `/horse/ped/{id}/` のサーバ描画 `blood_table` から取得する 2 ページ方式へ、(c) 実 blood_table の class は `b_ml`(父系)/`b_fml`(母系) で母父は母セル後の最初の `b_ml` (当初の `b_fl` 仮定は誤り)。識別 (馬名/性別/生年) と一覧抽出は当初 selector のまま実 markup で成立。

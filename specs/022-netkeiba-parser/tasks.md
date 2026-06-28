@@ -163,7 +163,14 @@ description: "Task list for 022 実 netkeiba パーサ"
 - [x] T037 取得層エンコーディング修正（FR-017）：`fetch._resolve_text` で charset ヘッダ無し時に `<meta charset>` を見て EUC-JP デコード（db.netkeiba.com 文字化け解消、UTF-8 ページは無影響）。回帰テスト追加
 - [x] T038 血統取得を 2 ページ方式へ修正：本体ページ血統は JS 描画のため `urls.horse_pedigree_url`＋`parse._profile.parse_horse_pedigree`（`blood_table`、父系 `b_ml`/母系 `b_fml`、母父=母セル後の最初の `b_ml`）を追加、`complete_profiles` で識別＋血統をマージ、`capture-fixture` に `pedigree` kind 追加
 
-**Checkpoint**: surrogate 馬の血統/識別が leak-safe に補完され、036 系特徴の入力が揃う。実 markup で全パーサ検証済み（54 tests green）。
+### データ網羅性: entries/results パーサ完全化 (2026-06-28, FR-018/019)
+
+- [x] T039 entries 拡張：斤量 (jockey_weight, 性齢の次セル)・馬体重増減 (weight_diff)・レース名・グレード (`.RaceName` 内限定)・発走時刻 (JST) を抽出。`ScrapedEntryHorse`/`ScrapedRace` 拡張＋`upsert_entries` 永続化
+- [x] T040 results 拡張：上がり3F (last_3f)・通過順 (corner_orders) 抽出、着差 (finish_time_diff) を絶対タイム差で算出、脚質 (running_style) を通過順初角位置から JRA 語彙へ導出 (fill-if-null)。`ScrapedResultRow` 拡張＋`backfill_results`
+- [x] T041 odds ルール改訂 (FR-007)：結果ありレースは全スキップ→ odds NULL の馬のみ補完 (既存=JRA-VAN 値は保護)。確定済み/未来 両レースでオッズ取得。`update_odds` ＋テスト更新
+- [x] T042 実レース 202505040301 で end-to-end 検証：全列 (斤量/増減/単勝/人気/着差/上がり/通過/脚質/レース名/grade/発走) が正しく埋まることを確認。grade 誤検出 (未勝利→G3) を `.RaceName` スコープ化で修正＋回帰テスト
+
+**Checkpoint**: surrogate 馬の血統/識別が leak-safe に補完され、036 系特徴の入力が揃う。entries/results パーサは netkeiba の利用可能列を網羅 (real exotic odds=D のみ別段 deferred)。実 markup で全パーサ検証済み（55 tests green）。
 
 ---
 
