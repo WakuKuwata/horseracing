@@ -89,6 +89,16 @@ REGISTRY: dict[str, FeatureMeta] = {
     # --- Feature 020: human form (cross-horse as-of, target-row + same-day excluded) ---
     "jockey_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
     "trainer_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 023: pace/time (as-of past races only; in-race relative normalization) ---
+    "rel_last3f_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "rel_last3f_best": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "rel_time_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "finish_diff_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "finish_diff_best": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 023: position/style (optional, ablation-gated; past races only) ---
+    "rel_corner_pos_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "front_runner_rate": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "closer_rate": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -103,10 +113,20 @@ FEATURE_GROUPS: dict[str, str] = {
     "field_size": "race_condition",
     "jockey_win_rate": "human_form",
     "trainer_win_rate": "human_form",
+    # Feature 023: pace/time (MVP main group)
+    "rel_last3f_avg": "pace_time",
+    "rel_last3f_best": "pace_time",
+    "rel_time_avg": "pace_time",
+    "finish_diff_avg": "pace_time",
+    "finish_diff_best": "pace_time",
+    # Feature 023: position/style (optional, ablation-gated)
+    "rel_corner_pos_avg": "position_style",
+    "front_runner_rate": "position_style",
+    "closer_rate": "position_style",
 }
 
-#: feature schema version bumped by Feature 020 (passed to model_versions at train time).
-FEATURE_VERSION = "features-005"
+#: feature schema version. 020→021 unchanged; bumped by Feature 023 (pace/time features).
+FEATURE_VERSION = "features-006"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")

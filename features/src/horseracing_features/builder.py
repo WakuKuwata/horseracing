@@ -13,6 +13,7 @@ from .extra_features import build_extra_features
 from .history import build_history_features
 from .human_form import build_human_form_features
 from .loader import Frames, load_frames
+from .pace_features import build_pace_features
 from .registry import validate_columns
 from .schema import ALL_COLUMNS, DEFAULT_LOW_HISTORY_MAX
 from .static_features import build_static_features
@@ -34,10 +35,12 @@ def assemble_feature_matrix(
     history = build_history_features(frames, low_history_max=low_history_max)
     extra = build_extra_features(frames)            # Feature 020: recent form / aptitude / class
     human = build_human_form_features(frames)        # Feature 020: jockey / trainer as-of form
+    pace = build_pace_features(frames)               # Feature 023: pace/time (as-of, in-race rel)
     fm = (static
           .merge(history, on=["race_id", "horse_id"], how="left")
           .merge(extra, on=["race_id", "horse_id"], how="left")
-          .merge(human, on=["race_id", "horse_id"], how="left"))
+          .merge(human, on=["race_id", "horse_id"], how="left")
+          .merge(pace, on=["race_id", "horse_id"], how="left"))
 
     races = frames.races[["race_id", "race_date"]].copy()
     races["race_date"] = pd.to_datetime(races["race_date"])

@@ -17,7 +17,7 @@ _RACE_DEFAULTS = dict(
 # horse-level (race_horses) defaults
 _HORSE_DEFAULTS = dict(
     age=3, sex="牡", frame=1, horse_number=1, jockey_id="J1", trainer_id="T1",
-    weight=460, weight_diff=0,
+    weight=460, weight_diff=0, running_style=None,
 )
 
 
@@ -41,10 +41,16 @@ def make_frames(specs: list[dict]) -> Frames:
             })
             result_status = h.get("result_status", ResultStatus.FINISHED if entry == EntryStatus.STARTED else None)
             if result_status is not None:  # DNS (cancel/exclude) -> no race_results row
+                finished = result_status == ResultStatus.FINISHED
+                ft = h.get("finish_time", 95.0)  # seconds (Feature 023); stored as timedelta like DB
+                fd = h.get("finish_time_diff", 0.0)
                 rr_rows.append({
                     "race_id": rid, "horse_id": h["horse_id"],
-                    "finish_order": h.get("finish_order", 1) if result_status == ResultStatus.FINISHED else None,
-                    "last_3f": h.get("last_3f", 35.0) if result_status == ResultStatus.FINISHED else None,
+                    "finish_order": h.get("finish_order", 1) if finished else None,
+                    "last_3f": h.get("last_3f", 35.0) if finished else None,
+                    "finish_time": datetime.timedelta(seconds=ft) if finished else None,
+                    "finish_time_diff": datetime.timedelta(seconds=fd) if finished else None,
+                    "corner_orders": h.get("corner_orders") if finished else None,
                     "result_status": result_status,
                 })
     return Frames(
