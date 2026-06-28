@@ -86,9 +86,9 @@ description: "Task list — ペース/時計シグナルの特徴量化 (023)"
 
 - [X] T017 [P] `features/tests/unit/test_feature023_leak_guard.py`: pace_time/position_style の全特徴が odds・今走結果由来でない（`model_input_features` に出現する name が leak 源でない）こと、market odds が特徴にないことを assert（憲法 II）
 - [X] T018 [P] no-schema-change test: db migration head 不変、features に `__tablename__` 追加なし（FR-016, SC-006）
-- [ ] T019 実 DB スモーク（[quickstart.md](quickstart.md)）: `feature-eval`（features-006 vs 005）+ `feature-ablation` + `feature-diagnostic` を実データで実行し、採用判定/group 寄与/市場超過診断を確認（改善が無ければ adopted=false、市場超過ゼロでも想定内）
-- [ ] T020 [P] lint/test ゲート: `uv run ruff check` + `uv run pytest`（features/eval/training）緑
-- [ ] T021 [P] `CLAUDE.md` に 023 の 1 行サマリを追記（014–022 と同形式: 既存 result-time データの as-of 特徴・レース内相対正規化・loader 拡張がリーク危険点・採用ゲート strict majority+条件別差分・market_edge 診断・スキーマ変更なし features-006・market 超過は努力目標を要約）
+- [X] T019 実 DB スモーク（[quickstart.md](quickstart.md)）: `feature-eval`（features-006 vs 005）+ `feature-ablation` + `feature-diagnostic` を実データで実行し、採用判定/group 寄与/市場超過診断を確認（改善が無ければ adopted=false、市場超過ゼロでも想定内）
+- [X] T020 [P] lint/test ゲート: `uv run ruff check` + `uv run pytest`（features/eval/training）緑
+- [X] T021 [P] `CLAUDE.md` に 023 の 1 行サマリを追記（014–022 と同形式: 既存 result-time データの as-of 特徴・レース内相対正規化・loader 拡張がリーク危険点・採用ゲート strict majority+条件別差分・market_edge 診断・スキーマ変更なし features-006・market 超過は努力目標を要約）
 
 ---
 
