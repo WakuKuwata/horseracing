@@ -25,7 +25,7 @@ class RobotsDisallowed(FetchError):
 
 @runtime_checkable
 class PoliteFetcher(Protocol):
-    def get(self, url: str) -> str: ...
+    def get(self, url: str, *, use_cache: bool = True) -> str: ...
 
 
 class FixtureFetcher:
@@ -34,7 +34,7 @@ class FixtureFetcher:
     def __init__(self, pages: dict[str, str]):
         self._pages = dict(pages)
 
-    def get(self, url: str) -> str:
+    def get(self, url: str, *, use_cache: bool = True) -> str:
         if url not in self._pages:
             raise FetchError(f"no fixture for {url}")
         return self._pages[url]
@@ -73,15 +73,19 @@ class HttpFetcher:
         self._robots: dict[str, RobotFileParser | None] = {}
 
     # --- public -------------------------------------------------------------
-    def get(self, url: str) -> str:
-        cached = self._cache_read(url)
-        if cached is not None:
-            return cached
+    def get(self, url: str, *, use_cache: bool = True) -> str:
+        # use_cache=False for volatile data (odds, constitution V single-latest): never serve or
+        # write a stale cached value.
+        if use_cache:
+            cached = self._cache_read(url)
+            if cached is not None:
+                return cached
         if self._respect_robots and not self._robot_allows(url):
             raise RobotsDisallowed(url)
         self._rate_limit(_domain(url))
         text = self._fetch_with_backoff(url)
-        self._cache_write(url, text)
+        if use_cache:
+            self._cache_write(url, text)
         return text
 
     # --- robots -------------------------------------------------------------

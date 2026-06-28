@@ -1,0 +1,31 @@
+{
+  "fixtures": [
+    {
+      "page_kind": "entries",
+      "file": "entries_202406050911.html",
+      "url": "https://race.netkeiba.com/race/shutuba.html?race_id=202406050911",
+      "race_id": "202406050911",
+      "fetched_at": "2026-06-28",
+      "sha256": "f54a87467911acfe3eaa4e4ba68302dbb96dfcba0f3e4c7a1e81793f9bb5d4ef",
+      "trim_note": "title+canonical+RaceName+RaceData01/02+Shutuba_Table; scripts/styles stripped"
+    },
+    {
+      "page_kind": "results",
+      "file": "results_202406050911.html",
+      "url": "https://race.netkeiba.com/race/result.html?race_id=202406050911",
+      "race_id": "202406050911",
+      "fetched_at": "2026-06-28",
+      "sha256": "93205afe7c178a491f727fd20d68aa722851832ce80c0c6e6cb3c14c21b09fe2",
+      "trim_note": "title+canonical+RaceName+RaceData01/02+RaceTable01; scripts/styles stripped"
+    },
+    {
+      "page_kind": "win_odds",
+      "file": "odds_202406050911.json",
+      "url": "https://race.netkeiba.com/api/api_get_jra_odds.html?race_id=202406050911&type=1",
+      "race_id": "202406050911",
+      "fetched_at": "2026-06-28",
+      "sha256": "b490af1ed3eb48a0bc585d1c6b56bc5120c64089a58389e21a5eda3c4d3c0cea",
+      "trim_note": "raw JSON response (type=1 win/place), no trim"
+    }
+  ]
+}

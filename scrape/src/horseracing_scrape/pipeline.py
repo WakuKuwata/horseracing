@@ -7,6 +7,7 @@ as status=FAILED with completed_at + error_message (codex: never leave a job stu
 from __future__ import annotations
 
 import datetime
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -16,9 +17,9 @@ from sqlalchemy.orm import Session
 
 from . import SCRAPE_PARSER_VERSION
 from .fetch import PoliteFetcher
+from .odds_adapter import fetch_win_odds
 from .parse.entries import parse_entries
 from .parse.exotic_odds import parse_exotic_odds
-from .parse.odds import parse_odds
 from .parse.results import parse_results
 from .upsert import (
     Counts,
@@ -111,11 +112,13 @@ def scrape_odds(
     def work() -> Counts:
         parts: list[Counts] = []
         for u in urls:
-            scraped = parse_odds(fetcher.get(u))
-            race_id = _race_id_of(scraped.key)
-            if race_id is None:
-                parts.append(Counts(skipped=1, error_messages=["race_id not constructible"]))
+            m = re.search(r"race_id=(\d{12})", u)
+            if not m:
+                parts.append(Counts(skipped=1, error_messages=["no race_id in url"]))
                 continue
+            race_id = m.group(1)
+            # win-odds JSON, fetched no-cache (single-latest, constitution V) via the adapter
+            scraped = fetch_win_odds(fetcher, race_id)
             parts.append(update_odds(session, race_id, scraped))
         return _aggregate(parts)
 

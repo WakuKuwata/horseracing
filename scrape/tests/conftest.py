@@ -21,6 +21,25 @@ def fixture_html(name: str) -> str:
     return (FIXTURES / f"{name}.html").read_text(encoding="utf-8")
 
 
+def real_fixture(name: str) -> str:
+    """Load a saved REAL netkeiba fixture from fixtures/real/ (Feature 022)."""
+    return (FIXTURES / "real" / name).read_text(encoding="utf-8")
+
+
+@pytest.fixture(autouse=True)
+def _block_network(request, monkeypatch):
+    """Unit/parser tests MUST be network-free (FR-010/SC-006). Block outbound TCP unless the
+    test is an integration test (testcontainers needs real sockets)."""
+    if request.node.get_closest_marker("integration") is not None:
+        return
+    import socket
+
+    def _deny(*_a, **_k):
+        raise RuntimeError("network access blocked in non-integration tests")
+
+    monkeypatch.setattr(socket.socket, "connect", _deny)
+
+
 @pytest.fixture(scope="session")
 def pg_container():
     with PostgresContainer("postgres:16", driver="psycopg") as container:
