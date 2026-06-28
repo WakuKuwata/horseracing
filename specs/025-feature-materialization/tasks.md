@@ -86,9 +86,9 @@ description: "Task list — 特徴量 materialization 基盤 (025)"
 - [X] T016 [P] `features/tests/unit/test_materialize_leak.py`: materialize 後に target/同日/未来レースの結果を変更しても当該 target の as-of 特徴が不変（pool-end 非依存/leak, SC-008, 憲法 II）
 - [X] T017 [P] `features/tests/unit/test_materialize_columns.py`: materialize 列が registry から機械導出され **static/current-race 列を 0 件含む**（FR-002/017, SC-009）。odds/結果が materialize 列に無い（leak-guard）
 - [X] T018 [P] no-schema-change test: db migration head 不変、features に `__tablename__` 追加なし、**FEATURE_VERSION 不変**（FR-014, SC-006）
-- [ ] T019 実 DB スモーク（[quickstart.md](quickstart.md)）: `features materialize` を実データで実行し生成時間/メモリを実測（性能予算）、`use_materialized=True` で feature-eval/train-evaluate が parquet read で通り**予測が materialize 前と一致**することを確認（SC-007）
+- [X] T019 実 DB スモーク（[quickstart.md](quickstart.md)）: `features materialize` を実データで実行し生成時間/メモリを実測（920,021 行 / 32 as-of 列 / 2007–2025 / ~30s）、`use_materialized=True` の build_feature_matrix が parquet read で in-memory と **bit 一致**（実 DB 2024-12 窓 3665×50, assert_frame_equal check_exact）を確認（SC-007）
 - [X] T020 [P] lint/test ゲート: `uv run ruff check` + `uv run pytest`（features）緑、training/eval/serving の既存テストが透過で緑のまま（出力不変）
-- [ ] T021 [P] `CLAUDE.md` に 025 の 1 行サマリを追記（014–024 と同形式: as-of 特徴の parquet materialize・単一実装・bit パリティ・fail-closed staleness(source fingerprint)・read opt-in 段階有効化・スキーマ変更なし・FEATURE_VERSION 不変・026 血統の土台 を要約）
+- [X] T021 [P] `CLAUDE.md` に 025 の 1 行サマリを追記（014–024 と同形式: as-of 特徴の parquet materialize・単一実装・bit パリティ・fail-closed staleness(source fingerprint)・read opt-in 段階有効化・スキーマ変更なし・FEATURE_VERSION 不変・026 血統の土台 を要約）
 
 ---
 

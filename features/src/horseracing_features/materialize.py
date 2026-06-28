@@ -58,8 +58,15 @@ class Manifest:
 
 
 def _hash_frame(df: pd.DataFrame, cols: list[str]) -> str:
-    """Deterministic hash of a frame's projected columns (row-order independent via sorted keys)."""
-    sub = df[cols].sort_values([c for c in _KEYS if c in cols] or cols, kind="stable")
+    """Deterministic hash of a frame's projected columns (row-order independent via sorted keys).
+
+    object columns may hold unhashable cells (e.g. race_results.corner_orders is a list), so they
+    are stringified before hashing — deterministic and sufficient for change detection.
+    """
+    sub = df[cols].sort_values([c for c in _KEYS if c in cols] or cols, kind="stable").copy()
+    for c in sub.columns:
+        if sub[c].dtype == object:
+            sub[c] = sub[c].map(lambda v: "" if v is None else str(v))
     return hashlib.sha256(
         pd.util.hash_pandas_object(sub, index=False).values.tobytes()
     ).hexdigest()

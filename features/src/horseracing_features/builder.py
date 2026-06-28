@@ -94,7 +94,12 @@ def build_feature_matrix(
     materialized_path: Path | None = None,
     use_materialized: bool = False,
 ) -> pd.DataFrame:
-    frames = load_frames(session, end_date=end_date)
+    # With materialization, load the FULL source pool so the staleness fingerprint covers the whole
+    # materialized range (manifest was generated over the full pool); end_date is applied only as the
+    # final row filter. as-of values for races <= end_date are identical either way (they look
+    # strictly before each race), so parity holds. Without materialization, restrict by end_date.
+    load_end = None if use_materialized else end_date
+    frames = load_frames(session, end_date=load_end)
     return assemble_feature_matrix(
         frames, start_date=start_date, end_date=end_date, low_history_max=low_history_max,
         materialized_path=materialized_path, use_materialized=use_materialized,

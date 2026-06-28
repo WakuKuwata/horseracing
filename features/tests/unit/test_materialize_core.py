@@ -47,6 +47,20 @@ def test_generate_deterministic_with_manifest(tmp_path):
     assert (tmp_path / "a.manifest.json").exists()
 
 
+def test_fingerprint_handles_list_columns(tmp_path):
+    # race_results.corner_orders is a list column — fingerprint must not choke on unhashable cells
+    specs = [
+        {"race_id": "200801010101", "race_date": "2008-01-01", "horses": [
+            {"horse_id": "H", "horse_number": 1, "last_3f": 34.0, "corner_orders": ["3", "2"],
+             "finish_order": 1},
+            {"horse_id": "X", "horse_number": 2, "last_3f": 36.0, "corner_orders": ["5", "6"],
+             "finish_order": 2}]},
+    ]
+    frames = make_frames(specs)
+    m = write_materialized(tmp_path / "c.parquet", frames)  # must not raise
+    assert m.source_fingerprint and m.n_rows == 2
+
+
 def test_parity_materialized_equals_inmemory(tmp_path):
     frames = make_frames(_specs())
     path = tmp_path / "features.parquet"
