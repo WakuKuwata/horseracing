@@ -55,6 +55,7 @@ def evaluate_feature_adoption(
     first_valid_year: int = FIRST_VALID_YEAR,
     ece_tol: float = 1e-3,
     worst_fold_ece_tol: float = 2e-3,
+    worst_fold_dll_tol: float = 5e-3,
     label: str = "win",
     start_date: datetime.date | None = None,
     end_date: datetime.date | None = None,
@@ -85,14 +86,21 @@ def evaluate_feature_adoption(
     m_ll_c, m_ll_b = co["log_loss"], bo["log_loss"]
     m_ece_c, m_ece_b = co["ece"], bo["ece"]
     primary = (m_ll_c < m_ll_b) and (m_ece_c <= m_ece_b + ece_tol)
-    # fold guards: majority of folds win on LogLoss AND no single fold's ECE materially worse.
+    # fold guards: STRICT majority of folds win on LogLoss (n_win > n_folds/2, so an even fold count
+    # cannot pass on a mere half) AND no single fold's ECE or LogLoss materially worse (Feature 023
+    # codex P0: pace/time is condition-dependent, so a strict per-fold floor matters).
     # The per-fold worst-ECE tolerance is intentionally LOOSER than the mean ece_tol: the mean ECE
     # non-degradation (the strict primary gate) is what matters operationally, while a single fold's
     # small ECE blip — especially if it sits in low/mid-probability bins rather than the Kelly-
     # sensitive high-probability region — should not veto an otherwise consistent improvement
     # (020 real-data study: worst fold 2022 dECE +0.00169 was a mid-bin artifact; p>=0.2 favorites
     # stayed equal-or-better calibrated). Mean gate strict, single-fold gate lenient.
-    fold_guard = (len(years) > 0 and n_win * 2 >= len(years) and worst_dece <= worst_fold_ece_tol)
+    fold_guard = (
+        len(years) > 0
+        and n_win * 2 > len(years)                      # strict majority (codex P0)
+        and worst_dece <= worst_fold_ece_tol
+        and worst_dll <= worst_fold_dll_tol             # no fold's LogLoss materially worse
+    )
     return AdoptionReport(
         label=label, n_folds=len(years),
         mean_logloss_base=m_ll_b, mean_logloss_cand=m_ll_c,

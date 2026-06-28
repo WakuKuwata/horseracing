@@ -69,14 +69,14 @@ description: "Task list — ペース/時計シグナルの特徴量化 (023)"
 **Independent Test**: feature-eval が strict majority・worst-fold LogLoss 上限・条件別差分込みで判定、baseline 未超過なら adopted=false、ablation/market_edge が算出される。
 
 ### 実装
-- [ ] T011 [US3] `eval/src/horseracing_eval/feature_eval.py`: AdoptionReport に **strict majority**（`n_win > n_folds/2`、偶数 fold で半数通過しない）・**worst-fold LogLoss 悪化上限**・**条件別（距離帯/芝ダ/going/開催年/q bucket）LogLoss・ECE 差分** を追加（research R5/FR-011/011a）
-- [ ] T012 [US3] `eval/src/horseracing_eval/ablation.py`（020 既存）を本特徴に適用できることを確認/微修正: pace_time / position_style group の寄与分離（diagnostic、採否に使わない、FR-012）
-- [ ] T013 [US3] position_style group（任意）を `pace_features.py`/`position_features.py` に実装（**FR-008 はこの任意 group に属する**, analyze G1）: 通過順位の頭数正規化（pos/field_size・最終コーナー相対・位置取り変化）+ 過去脚質分布。**ablation で寄与が無ければ採用しない（検証先行、欠損 0 代入禁止）**（research R3）
-- [ ] T014 [US3] `training/cli.py`（020 の feature-eval/feature-ablation/feature-diagnostic）が baseline=`drop_features=(pace_time+position_style 全列)` で features-006 を評価できることを確認/結線
+- [X] T011 [US3] `eval/src/horseracing_eval/feature_eval.py`: AdoptionReport に **strict majority**（`n_win > n_folds/2`、偶数 fold で半数通過しない）・**worst-fold LogLoss 悪化上限**・**条件別（距離帯/芝ダ/going/開催年/q bucket）LogLoss・ECE 差分** を追加（research R5/FR-011/011a）
+- [X] T012 [US3] `eval/src/horseracing_eval/ablation.py`（020 既存）を本特徴に適用できることを確認/微修正: pace_time / position_style group の寄与分離（diagnostic、採否に使わない、FR-012）
+- [X] T013 [US3] position_style group（任意）を `pace_features.py`/`position_features.py` に実装（**FR-008 はこの任意 group に属する**, analyze G1）: 通過順位の頭数正規化（pos/field_size・最終コーナー相対・位置取り変化）+ 過去脚質分布。**ablation で寄与が無ければ採用しない（検証先行、欠損 0 代入禁止）**（research R3）
+- [X] T014 [US3] `training/cli.py`（020 の feature-eval/feature-ablation/feature-diagnostic）が baseline=`drop_features=(pace_time+position_style 全列)` で features-006 を評価できることを確認/結線
 
 ### US3 テスト
-- [ ] T015 [P] [US3] `eval/tests/integration/test_pace_adoption.py`（合成データ, fake predictor）: strict majority（偶数 fold で半数通過を弾く）・worst-fold LogLoss 上限・条件別差分が機能、baseline 未超過なら adopted=false（false positive なし, SC-004）
-- [ ] T016 [P] [US3] `eval/tests/integration/test_pace_ablation_marketedge.py`: pace_time/position_style 寄与が分離報告され、market_edge が p−q gap/edge bucket を算出（「絶対改善≠市場超過」明示, SC-005）
+- [X] T015 [P] [US3] `eval/tests/integration/test_pace_adoption.py`（合成データ, fake predictor）: strict majority（偶数 fold で半数通過を弾く）・worst-fold LogLoss 上限・条件別差分が機能、baseline 未超過なら adopted=false（false positive なし, SC-004）
+- [X] T016 [P] [US3] `eval/tests/integration/test_pace_ablation_marketedge.py`: pace_time/position_style 寄与が分離報告され、market_edge が p−q gap/edge bucket を算出（「絶対改善≠市場超過」明示, SC-005）
 
 **Checkpoint**: 全 P1+P2 完了。OOS 改善ゲートと市場超過診断が成立。
 

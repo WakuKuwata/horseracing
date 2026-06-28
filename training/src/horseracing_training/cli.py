@@ -132,14 +132,20 @@ def _run_feature_command(session: Session, args) -> int:
     if args.command == "feature-eval":
         from horseracing_eval.feature_eval import evaluate_feature_adoption
 
+        # baseline = candidate MINUS the groups under test. Default = Feature 023 groups, so the
+        # baseline is features-005 (004+020) and feature-eval measures 023's marginal value.
+        gcols = _group_columns()
+        drop_groups = (args.drop_groups or "pace_time,position_style").split(",")
+        drop = tuple(c for g in drop_groups for c in gcols.get(g, []))
         candidate = LightGBMPredictor(session, seed=args.seed)
-        baseline = LightGBMPredictor(session, seed=args.seed, drop_features=tuple(FEATURE_GROUPS))
+        baseline = LightGBMPredictor(session, seed=args.seed, drop_features=drop)
         r = evaluate_feature_adoption(
             session, candidate=candidate, baseline=baseline,
             ece_tol=args.ece_tol, worst_fold_ece_tol=args.worst_fold_ece_tol,
             start_date=args.from_, end_date=args.to,
         )
-        print(f"feature-eval fv={FEATURE_VERSION} folds={r.n_folds} adopted={r.adopted}")
+        print(f"feature-eval fv={FEATURE_VERSION} drop_groups={drop_groups} "
+              f"folds={r.n_folds} adopted={r.adopted}")
         print(f"  LogLoss base={r.mean_logloss_base:.5f} cand={r.mean_logloss_cand:.5f}")
         print(f"  Brier   base={r.mean_brier_base:.5f} cand={r.mean_brier_cand:.5f}")
         print(f"  AUC     base={r.mean_auc_base:.5f} cand={r.mean_auc_cand:.5f}")
@@ -210,11 +216,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # Feature 020 — walk-forward adoption gate / ablation / market diagnostic.
     # eval is predictor-agnostic; we inject the concrete LightGBMPredictor + FEATURE_GROUPS here.
-    fe = sub.add_parser("feature-eval", help="020: candidate vs baseline (020 features dropped)")
+    fe = sub.add_parser("feature-eval", help="candidate vs baseline (groups-under-test dropped)")
     _add_window(fe)
     fe.add_argument("--ece-tol", type=float, default=1e-3, help="mean ECE non-degradation tol")
     fe.add_argument("--worst-fold-ece-tol", type=float, default=2e-3,
                     help="looser per-fold worst ECE tol (single-fold blip should not veto)")
+    fe.add_argument("--drop-groups", default=None,
+                    help="comma-separated groups the baseline drops (default: 023 pace_time,"
+                         "position_style → baseline=features-005)")
     fa = sub.add_parser("feature-ablation", help="020: per-group LogLoss contribution (diagnostic)")
     _add_window(fa)
     fa.add_argument("--groups", default=None, help="comma-separated group subset (default: all)")

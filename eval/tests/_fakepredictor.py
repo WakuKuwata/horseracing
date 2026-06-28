@@ -42,6 +42,32 @@ class FakePredictor:
         }
 
 
+class YearSkillFakePredictor:
+    """Feature 023: skill varies by the VALID race's year, so the candidate can win some folds and
+    lose others — lets tests exercise the strict-majority and worst-fold-LogLoss guards."""
+
+    is_leaky_reference = False
+
+    def __init__(self, skill_by_year: dict[int, float], default_skill: float = 8.0) -> None:
+        self.skill_by_year = skill_by_year
+        self.default_skill = default_skill
+
+    def fit(self, train_races: list[RaceContext]) -> None:  # noqa: ARG002
+        return None
+
+    def predict_race(self, race: RaceContext) -> dict[str, Prediction]:
+        skill = max(self.skill_by_year.get(race.race_date.year, self.default_skill), 1.0)
+        horses = race.started_horses
+        raw = [skill if h.horse_number == 1 else 1.0 for h in horses]
+        s = sum(raw)
+        win = [min(max(r / s, _EPS), 1.0 - _EPS) for r in raw]
+        top2, top3 = harville_topk(win)
+        return {
+            h.horse_id: Prediction(win=win[i], top2=top2[i], top3=top3[i])
+            for i, h in enumerate(horses)
+        }
+
+
 # Per-column "importance" used by the ablation factory below: dropping a column lowers skill by its
 # weight. human_form columns are made more important than recent_form so the ablation contributions
 # are distinguishable (T014 / SC-007).
@@ -55,6 +81,11 @@ _COL_WEIGHT = {
     "surface_win_rate": 0.5,   # aptitude total = 2.0
     "class_transition": 0.5,
     "field_size": 0.5,         # race_condition total = 1.0
+    # Feature 023: pace_time total = 4.0 (heavier) vs position_style total = 0.7 (lighter),
+    # so ablation can distinguish the two 023 groups.
+    "rel_last3f_avg": 1.0, "rel_last3f_best": 0.5, "rel_time_avg": 1.0,
+    "finish_diff_avg": 1.0, "finish_diff_best": 0.5,
+    "rel_corner_pos_avg": 0.3, "front_runner_rate": 0.2, "closer_rate": 0.2,
 }
 
 
