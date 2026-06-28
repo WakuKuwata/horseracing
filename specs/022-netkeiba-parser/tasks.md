@@ -169,6 +169,7 @@ description: "Task list for 022 実 netkeiba パーサ"
 - [x] T040 results 拡張：上がり3F (last_3f)・通過順 (corner_orders) 抽出、着差 (finish_time_diff) を絶対タイム差で算出、脚質 (running_style) を通過順初角位置から JRA 語彙へ導出 (fill-if-null)。`ScrapedResultRow` 拡張＋`backfill_results`
 - [x] T041 odds ルール改訂 (FR-007)：結果ありレースは全スキップ→ odds NULL の馬のみ補完 (既存=JRA-VAN 値は保護)。確定済み/未来 両レースでオッズ取得。`update_odds` ＋テスト更新
 - [x] T042 実レース 202505040301 で end-to-end 検証：全列 (斤量/増減/単勝/人気/着差/上がり/通過/脚質/レース名/grade/発走) が正しく埋まることを確認。grade 誤検出 (未勝利→G3) を `.RaceName` スコープ化で修正＋回帰テスト
+- [x] T043 (FR-016b) entries 取り込み後の**自動プロフィール補完**：`scrape_entries(complete_profiles_after=True 既定)` が当該レースの surrogate 馬 (NULL 属性のみ) に `complete_profiles(race_id=...)` を自動実行。entries commit 後に独立ジョブ・失敗隔離。CLI `--no-complete-profiles` で無効化。新馬戦 202508030305 で 18/18 頭が血統まで自動補完されることを実データ確認＋実 fixture 統合テスト追加
 
 **Checkpoint**: surrogate 馬の血統/識別が leak-safe に補完され、036 系特徴の入力が揃う。entries/results パーサは netkeiba の利用可能列を網羅 (real exotic odds=D のみ別段 deferred)。実 markup で全パーサ検証済み（55 tests green）。
 

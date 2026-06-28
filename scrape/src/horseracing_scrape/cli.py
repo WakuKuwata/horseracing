@@ -98,6 +98,9 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--cache-dir", default=".scrape_cache")
         p.add_argument("--min-interval", type=float, default=1.0)
         p.add_argument("--database-url", default=None)
+        if name == "scrape-entries":
+            p.add_argument("--no-complete-profiles", action="store_true",
+                           help="skip the automatic horse identity/pedigree completion")
 
     # ③ day discovery: list a day's race_ids (read-only; operator feeds them to scrape-*)
     lr = sub.add_parser("list-races", help="list a day's race_ids from netkeiba (kaisai_date)")
@@ -155,8 +158,11 @@ def main(argv: list[str] | None = None) -> int:
     fn = _COMMANDS[args.command]
     fetcher = _make_fetcher(args.min_interval, args.cache_dir)
     engine = create_db_engine(args.database_url)
+    kwargs = {"urls": args.url, "fetcher": fetcher, "scope_value": args.url[0]}
+    if args.command == "scrape-entries":
+        kwargs["complete_profiles_after"] = not args.no_complete_profiles
     with Session(engine) as session:
-        summary = fn(session, urls=args.url, fetcher=fetcher, scope_value=args.url[0])
+        summary = fn(session, **kwargs)
     print(
         f"{summary.job_type}: status={summary.status} processed={summary.processed} "
         f"written={summary.written} skipped={summary.skipped} errors={summary.errors}"

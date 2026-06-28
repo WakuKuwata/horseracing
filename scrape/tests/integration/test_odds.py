@@ -23,7 +23,7 @@ def _row(session, horse_id):
 
 def test_odds_and_popularity_update_when_pending(session):
     ef, eurls = real_entries_fetcher()
-    scrape_entries(session, urls=eurls, fetcher=ef)
+    scrape_entries(session, urls=eurls, fetcher=ef, complete_profiles_after=False)
     of, ourls = real_odds_fetcher()
     summary = scrape_odds(session, urls=ourls, fetcher=of)
     assert summary.status == "succeeded"
@@ -35,7 +35,7 @@ def test_finished_race_fills_null_odds_but_protects_existing(session):
     # finished race: an EXISTING (JRA-VAN) odds value must be protected, while a horse whose odds
     # is still NULL gets filled from netkeiba's confirmed odds (netkeiba-only finished races).
     ef, eurls = real_entries_fetcher()
-    scrape_entries(session, urls=eurls, fetcher=ef)
+    scrape_entries(session, urls=eurls, fetcher=ef, complete_profiles_after=False)
     session.add(RaceResult(race_id=REAL_RID, horse_id=H_NUM1, finish_order=1,
                            result_status=ResultStatus.FINISHED))
     session.execute(RaceHorse.__table__.update().where(

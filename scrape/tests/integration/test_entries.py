@@ -19,7 +19,8 @@ def test_entries_mapped_and_unmapped(session):
     map_horse(session, netkeiba_id="2022103995", canonical_id="2020000001")  # 馬番1 mapped
     fetcher, urls = real_entries_fetcher()
 
-    summary = scrape_entries(session, urls=urls, fetcher=fetcher)
+    summary = scrape_entries(session, urls=urls, fetcher=fetcher,
+                             complete_profiles_after=False)
     assert summary.status == "succeeded"
 
     assert session.get(Race, REAL_RID) is not None
@@ -42,10 +43,10 @@ def test_entries_mapped_and_unmapped(session):
 
 def test_entries_idempotent(session):
     fetcher, urls = real_entries_fetcher()
-    scrape_entries(session, urls=urls, fetcher=fetcher)
+    scrape_entries(session, urls=urls, fetcher=fetcher, complete_profiles_after=False)
     n1 = session.scalar(select(func.count()).select_from(RaceHorse))
     fetcher2, urls2 = real_entries_fetcher()
-    scrape_entries(session, urls=urls2, fetcher=fetcher2)
+    scrape_entries(session, urls=urls2, fetcher=fetcher2, complete_profiles_after=False)
     n2 = session.scalar(select(func.count()).select_from(RaceHorse))
     assert n1 == n2 == 18  # re-run: no duplicates
 
@@ -62,6 +63,7 @@ def test_unknown_venue_writes_no_row(session):
         '<td class="HorseInfo"><a href="https://db.netkeiba.com/horse/2022103995">馬</a></td>'
         "</tr></table></body></html>"
     )
-    summary = scrape_entries(session, urls=["u"], fetcher=FixtureFetcher({"u": html}))
+    summary = scrape_entries(session, urls=["u"], fetcher=FixtureFetcher({"u": html}),
+                             complete_profiles_after=False)
     assert summary.skipped == 1
     assert session.scalar(select(func.count()).select_from(Race)) == 0

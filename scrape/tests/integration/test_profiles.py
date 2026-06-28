@@ -9,8 +9,9 @@ from horseracing_db.models import Horse, IngestionJob
 from sqlalchemy import select
 
 from horseracing_scrape.fetch import FixtureFetcher
-from horseracing_scrape.pipeline import complete_profiles
+from horseracing_scrape.pipeline import complete_profiles, scrape_entries
 from horseracing_scrape.urls import horse_pedigree_url, horse_profile_url
+from tests.conftest import real_fixture
 
 pytestmark = pytest.mark.integration
 
@@ -78,3 +79,24 @@ def test_complete_profiles_skips_horse_not_in_db(session):
     )
     assert summary.skipped == 1
     assert summary.written == 0
+
+
+def test_scrape_entries_auto_completes_profiles(session):
+    # entries ingestion auto-completes identity/pedigree for the surrogate horses it creates.
+    # Horse 2022103995 (Giovanni) is 馬番1 of the entries fixture and has profile+ped fixtures;
+    # the other 17 lack fixtures (their fetch fails, isolated) and stay null.
+    fetcher = FixtureFetcher({
+        "u": real_fixture("entries_202406050911.html"),
+        horse_profile_url("2022103995"): real_fixture("horse_profile_2022103995.html"),
+        horse_pedigree_url("2022103995"): real_fixture("pedigree_2022103995.html"),
+    })
+    summary = scrape_entries(session, urls=["u"], fetcher=fetcher)  # auto-complete ON (default)
+    assert summary.status == JobStatus.SUCCEEDED   # entries unaffected by per-horse fetch failures
+
+    horse = session.get(Horse, "nk:2022103995")
+    assert horse.sex == "牡" and horse.birth_year == 2022
+    assert "エピファネイア" in (horse.sire_name or "")   # pedigree auto-filled from the detail pages
+    # a horse_profile completion job was recorded (audit)
+    assert session.scalar(
+        select(IngestionJob).where(IngestionJob.job_type == "horse_profile")
+    ) is not None

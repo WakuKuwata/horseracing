@@ -17,7 +17,7 @@ pytestmark = pytest.mark.integration
 
 def test_backfill_finish_order_and_time(session):
     ef, eurls = real_entries_fetcher()
-    scrape_entries(session, urls=eurls, fetcher=ef)  # 18 started
+    scrape_entries(session, urls=eurls, fetcher=ef, complete_profiles_after=False)  # 18 started
     rf, rurls = real_results_fetcher()
     summary = scrape_results(session, urls=rurls, fetcher=rf)
     assert summary.status == "succeeded"
@@ -42,7 +42,7 @@ def test_backfill_finish_order_and_time(session):
 
 def test_backfill_does_not_overwrite_jravan(session):
     ef, eurls = real_entries_fetcher()
-    scrape_entries(session, urls=eurls, fetcher=ef)
+    scrape_entries(session, urls=eurls, fetcher=ef, complete_profiles_after=False)
     # seed a JRA-VAN result with a DIFFERENT finish_order for the winner
     session.add(RaceResult(race_id=REAL_RID, horse_id=H_WINNER, finish_order=5,
                            result_status=ResultStatus.FINISHED))

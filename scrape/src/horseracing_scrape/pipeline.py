@@ -12,7 +12,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 
 from horseracing_db.enums import JobStatus, Source
-from horseracing_db.models import Horse, IngestionJob
+from horseracing_db.models import Horse, IngestionJob, RaceHorse
 from horseracing_db.validation import is_valid_race_id
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -100,12 +100,34 @@ def _aggregate(parts: list[Counts]) -> Counts:
 
 
 def scrape_entries(
-    session: Session, *, urls: list[str], fetcher: PoliteFetcher, scope_value: str | None = None
+    session: Session, *, urls: list[str], fetcher: PoliteFetcher, scope_value: str | None = None,
+    complete_profiles_after: bool = True,
 ) -> JobSummary:
-    def work() -> Counts:
-        return _aggregate([upsert_entries(session, parse_entries(fetcher.get(u))) for u in urls])
+    """Ingest entries, then (default) auto-complete leak-safe identity/pedigree for the surrogate
+    horses just created — debut/未登録 horses get their sex/birth/血統 without a separate command.
 
-    return _run_job(session, job_type="entries", scope="urls", scope_value=scope_value, work=work)
+    The completion runs AFTER the entries job commits, scoped to each race's surrogate horses that
+    still lack attributes, as its own audited job. It is isolated: a profile-fetch failure records
+    a horse_profile job error but never rolls back or fails the entries ingestion (codex: keep the
+    entry write deterministic). Set complete_profiles_after=False for entries-only ingestion."""
+    scraped_race_ids: list[str] = []
+
+    def work() -> Counts:
+        parts: list[Counts] = []
+        for u in urls:
+            entry = parse_entries(fetcher.get(u))
+            rid = _race_id_of(entry.race.key)
+            if rid is not None:
+                scraped_race_ids.append(rid)
+            parts.append(upsert_entries(session, entry))
+        return _aggregate(parts)
+
+    summary = _run_job(session, job_type="entries", scope="urls", scope_value=scope_value,
+                       work=work)
+    if complete_profiles_after and summary.status != JobStatus.FAILED:
+        for rid in scraped_race_ids:  # only surrogate horses still missing attrs are fetched
+            complete_profiles(session, fetcher=fetcher, race_id=rid)
+    return summary
 
 
 def _race_id_of(key) -> str | None:
@@ -167,14 +189,15 @@ def discover_races(fetcher: PoliteFetcher, date: str) -> ScrapedRaceList:
 
 def complete_profiles(
     session: Session, *, fetcher: PoliteFetcher,
-    netkeiba_horse_ids: list[str] | None = None, limit: int | None = None,
+    netkeiba_horse_ids: list[str] | None = None, race_id: str | None = None,
+    limit: int | None = None,
 ) -> JobSummary:
-    """Opt-in post-pass (④): fill leak-safe identity/pedigree for surrogate horses.
+    """Fill leak-safe identity/pedigree (④) for surrogate horses.
 
-    Targets ``nk:`` surrogate horses still missing identity/pedigree (sex/birth_year/sire) — or an
-    explicit netkeiba-id list — fetches each db.netkeiba.com profile, and fills NULL columns only
-    (never clobbers JRA-VAN, never reads career stats). Default-off: invoked only via the
-    ``complete-profiles`` CLI command, never as part of entry/odds/result ingestion."""
+    Targets ``nk:`` surrogate horses still missing identity/pedigree (sex/birth_year/sire) — an
+    explicit netkeiba-id list, optionally scoped to one ``race_id`` — fetches each db.netkeiba.com
+    profile, and fills NULL columns only (never clobbers JRA-VAN, never reads career stats). Invoked
+    via the ``complete-profiles`` CLI or automatically after ``scrape_entries`` (race-scoped)."""
     def work() -> Counts:
         if netkeiba_horse_ids is not None:
             targets = [(f"{SURROGATE_PREFIX}{nk}", nk) for nk in netkeiba_horse_ids]
@@ -186,6 +209,12 @@ def complete_profiles(
                            Horse.sire_id.is_(None)))
                 .order_by(Horse.horse_id)
             )
+            if race_id is not None:  # scope to one race's surrogate horses (auto-after-entries)
+                stmt = stmt.where(
+                    Horse.horse_id.in_(
+                        select(RaceHorse.horse_id).where(RaceHorse.race_id == race_id)
+                    )
+                )
             if limit is not None:
                 stmt = stmt.limit(limit)
             targets = [(hid, hid[len(SURROGATE_PREFIX):]) for hid in session.scalars(stmt)]

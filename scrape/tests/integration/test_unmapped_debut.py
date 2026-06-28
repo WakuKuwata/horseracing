@@ -18,7 +18,8 @@ def test_unmapped_horse_is_debut(session):
     seed_finished_race(session, race_id="202405020311", horse_id="2019000099",
                        race_date=datetime.date(2024, 6, 1))
     fetcher, urls = real_entries_fetcher()
-    scrape_entries(session, urls=urls, fetcher=fetcher)  # all 18 unmapped (nk:)
+    scrape_entries(session, urls=urls, fetcher=fetcher,  # all 18 unmapped (nk:)
+                   complete_profiles_after=False)
 
     fm = build_feature_matrix(session)
     rows = fm[fm["race_id"] == REAL_RID].set_index("horse_id")
