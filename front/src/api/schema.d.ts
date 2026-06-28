@@ -347,6 +347,11 @@ export interface components {
         RaceDetail: {
             /** Distance */
             distance?: number | null;
+            /**
+             * Has Results
+             * @default false
+             */
+            has_results: boolean;
             /** Horses */
             horses: components["schemas"]["HorseEntry"][];
             /** Race Class */
@@ -368,6 +373,11 @@ export interface components {
         RaceSummary: {
             /** Distance */
             distance?: number | null;
+            /**
+             * Has Results
+             * @default false
+             */
+            has_results: boolean;
             /** Race Class */
             race_class?: string | null;
             /** Race Date */

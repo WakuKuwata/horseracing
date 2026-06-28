@@ -38,6 +38,9 @@ class RaceSummary(BaseModel):
     race_class: str | None = None
     distance: int | None = None
     track_type: str | None = None
+    # Feature 014: results-confirmed flag — True once race_results rows exist (race run & official),
+    # False while result-pending. Lets the list distinguish 確定後 vs 確定前 without a detail fetch.
+    has_results: bool = False
 
 
 class HorseEntry(BaseModel):

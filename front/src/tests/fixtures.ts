@@ -21,6 +21,7 @@ export const racePage: RacePage = {
       race_class: "G1",
       track_type: "芝",
       distance: 2400,
+      has_results: true,
     },
   ],
   page: 1,
@@ -37,6 +38,7 @@ export const raceDetail: RaceDetail = {
   race_class: "G1",
   track_type: "芝",
   distance: 2400,
+  has_results: true,
   horses: [
     { horse_id: "h1", horse_number: 1, entry_status: "active", age: 4, sex: "牡" },
     { horse_id: "h2", horse_number: 2, entry_status: "active", age: 5, sex: "牝" },

@@ -661,6 +661,11 @@
             ],
             "title": "Distance"
           },
+          "has_results": {
+            "default": false,
+            "title": "Has Results",
+            "type": "boolean"
+          },
           "horses": {
             "items": {
               "$ref": "#/components/schemas/HorseEntry"
@@ -759,6 +764,11 @@
               }
             ],
             "title": "Distance"
+          },
+          "has_results": {
+            "default": false,
+            "title": "Has Results",
+            "type": "boolean"
           },
           "race_class": {
             "anyOf": [

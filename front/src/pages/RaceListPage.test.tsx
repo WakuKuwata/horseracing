@@ -20,6 +20,18 @@ describe("RaceListPage", () => {
       "href",
       "/races/200806010111",
     );
+    // result-status badge: fixture has_results=true -> 結果確定
+    expect(screen.getByText("結果確定")).toBeInTheDocument();
+  });
+
+  it("marks a result-pending race as 結果待ち", async () => {
+    const pending = {
+      ...racePage,
+      items: [{ ...racePage.items[0], has_results: false }],
+    };
+    server.use(http.get(`${BASE}/races`, () => HttpResponse.json(pending)));
+    renderWithProviders(<RaceListPage />);
+    expect(await screen.findByText("結果待ち")).toBeInTheDocument();
   });
 
   it("shows the empty state (distinct from error) on 200 with no rows", async () => {

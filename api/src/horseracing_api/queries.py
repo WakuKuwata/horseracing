@@ -154,6 +154,16 @@ def race_has_results(session: Session, race_id: str) -> bool:
     ) not in (None, 0)
 
 
+def race_ids_with_results(session: Session, race_ids: list[str]) -> set[str]:
+    """The subset of race_ids that have any race_results (bulk, one query for a listing page)."""
+    if not race_ids:
+        return set()
+    rows = session.scalars(
+        select(RaceResult.race_id).where(RaceResult.race_id.in_(race_ids)).distinct()
+    ).all()
+    return set(rows)
+
+
 def win_odds_as_of(session: Session, race_id: str):
     """Max updated_at across started-horse win odds (Feature 021 odds audit), or None."""
     return session.scalar(

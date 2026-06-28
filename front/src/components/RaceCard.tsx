@@ -20,12 +20,19 @@ export function RaceCard({ race }: { race: RaceSummary }) {
     .filter(Boolean)
     .join(" · ");
 
+  const confirmed = race.has_results === true;
+
   return (
     <Link to={`/races/${race.race_id}`} className="race-card">
       <span className="race-card__no">{race.race_number ?? PLACEHOLDER}R</span>
       <span className="race-card__body">
         <span className="race-card__title">{raceTitle(race)}</span>
         <span className="race-card__meta">{meta || PLACEHOLDER}</span>
+      </span>
+      <span
+        className={`race-status race-status--${confirmed ? "confirmed" : "pending"}`}
+      >
+        {confirmed ? "結果確定" : "結果待ち"}
       </span>
     </Link>
   );

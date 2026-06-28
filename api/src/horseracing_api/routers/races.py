@@ -14,7 +14,13 @@ from sqlalchemy.orm import Session
 
 from .. import API_VERSION, SCHEMA_VERSION
 from ..deps import get_session
-from ..queries import get_race, list_races, race_horses
+from ..queries import (
+    get_race,
+    list_races,
+    race_has_results,
+    race_horses,
+    race_ids_with_results,
+)
 from ..schemas import HorseEntry, Page, RaceDetail, RaceSummary
 
 router = APIRouter()
@@ -29,11 +35,11 @@ def _err(status: int, code: str, detail: str) -> JSONResponse:
     )
 
 
-def _summary(r) -> RaceSummary:
+def _summary(r, *, has_results: bool = False) -> RaceSummary:
     return RaceSummary(
         race_id=r.race_id, race_date=r.race_date, venue_code=r.venue_code,
         race_number=r.race_number, race_name=r.race_name, race_class=r.race_class,
-        distance=r.distance, track_type=r.track_type,
+        distance=r.distance, track_type=r.track_type, has_results=has_results,
     )
 
 
@@ -98,8 +104,10 @@ def races(
     session: Session = Depends(get_session),
 ) -> Page[RaceSummary]:
     rows, total = list_races(session, date=date, venue=venue, page=page, page_size=page_size)
+    with_results = race_ids_with_results(session, [r.race_id for r in rows])
     return Page[RaceSummary](
-        items=[_summary(r) for r in rows], page=page, page_size=page_size,
+        items=[_summary(r, has_results=r.race_id in with_results) for r in rows],
+        page=page, page_size=page_size,
         total=total, has_next=(page * page_size) < total,
     )
 
@@ -123,4 +131,5 @@ def race_detail(race_id: str, session: Session = Depends(get_session)):
         )
         for h in race_horses(session, race_id)
     ]
-    return RaceDetail(**_summary(r).model_dump(), horses=horses)
+    summary = _summary(r, has_results=race_has_results(session, race_id))
+    return RaceDetail(**summary.model_dump(), horses=horses)

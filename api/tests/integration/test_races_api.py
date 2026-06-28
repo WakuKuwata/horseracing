@@ -39,6 +39,24 @@ def test_races_filter_and_pagination(client, session):
     assert ids == sorted(ids)  # same date -> race_number/race_id ascending, stable
 
 
+def test_has_results_flag(client, session):
+    """has_results: True once race_results exist (確定後), False while result-pending (確定前)."""
+    seed_model(session)
+    seed_race(session, race_id="200806010101", race_number=1,
+              horses={1: {"win": 0.5, "odds": 2.0, "finish": 1},
+                      2: {"win": 0.5, "odds": 3.0, "finish": 2}})  # has results
+    seed_race(session, race_id="200806010102", race_number=2, horses=_HORSES)  # pending
+
+    body = client.get("/api/v1/races", params={"date": "2008-06-01", "venue": "05"}).json()
+    flags = {it["race_id"]: it["has_results"] for it in body["items"]}
+    assert flags["200806010101"] is True
+    assert flags["200806010102"] is False
+
+    # detail mirrors the same flag
+    assert client.get("/api/v1/races/200806010101").json()["has_results"] is True
+    assert client.get("/api/v1/races/200806010102").json()["has_results"] is False
+
+
 def test_page_size_max_enforced(client):
     r = client.get("/api/v1/races", params={"page_size": 5000})
     assert r.status_code == 422  # exceeds max page_size
