@@ -132,6 +132,23 @@ FEATURE_VERSION = "features-006"
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
 
 
+#: Feature 025: current-race/static features computed by build_static_features (NOT materialized —
+#: they come from the target race row only and are cheap). Everything else in REGISTRY is an as-of /
+#: past-derived feature that the materialization phase precomputes.
+STATIC_COLUMNS: tuple[str, ...] = (
+    "venue_code", "distance", "track_type", "going", "weather", "race_class", "race_number",
+    "age", "sex", "frame", "horse_number", "jockey_id", "trainer_id", "weight", "weight_diff",
+    "field_size",
+)
+
+
+def materialized_columns() -> list[str]:
+    """Feature 025: as-of/past-derived feature columns to materialize (registry order, static
+    excluded). Mechanically derived so a new as-of feature is materialized by default and a static
+    one never is."""
+    return [name for name in REGISTRY if name not in STATIC_COLUMNS]
+
+
 def model_input_features() -> list[str]:
     """Registered features excluding post_result timing (INV-F5) and identifiers."""
     return [

@@ -3,20 +3,44 @@
 from __future__ import annotations
 
 import datetime
+from pathlib import Path
 
 import pandas as pd
 from horseracing_db.enums import EntryStatus
 from horseracing_db.validation import INGEST_SCOPE_START
 from sqlalchemy.orm import Session
 
-from .extra_features import build_extra_features
-from .history import build_history_features
-from .human_form import build_human_form_features
 from .loader import Frames, load_frames
-from .pace_features import build_pace_features
+from .materialize import (
+    assert_fresh,
+    build_asof_features,
+    has_future_rows,
+    read_materialized,
+)
 from .registry import validate_columns
 from .schema import ALL_COLUMNS, DEFAULT_LOW_HISTORY_MAX
 from .static_features import build_static_features
+
+
+def _asof_block(
+    frames: Frames, *, low_history_max: int, start_date, end_date,
+    materialized_path: Path | None, use_materialized: bool,
+):
+    """The as-of feature block: from materialized parquet (fast, opt-in) or computed in-memory.
+
+    Feature 025: a single as-of source (`build_asof_features`) is used for both the in-memory path
+    and the fallback, so generator/builder/fallback never drift. When ``use_materialized`` is on,
+    the parquet is fail-closed-verified (fingerprint over the materialized range); any in-range
+    change/backfill raises, while in-scope races BEYOND the materialized range (serving new races)
+    fall back to the same in-memory computation.
+    """
+    if use_materialized and materialized_path is not None:
+        df, manifest = read_materialized(materialized_path)   # raises if missing
+        assert_fresh(manifest, frames)                        # fail-closed on in-range change
+        if has_future_rows(frames, manifest, start_date=start_date, end_date=end_date):
+            return build_asof_features(frames, low_history_max=low_history_max)  # serving fallback
+        return df                                             # parquet fast path
+    return build_asof_features(frames, low_history_max=low_history_max)
 
 
 def assemble_feature_matrix(
@@ -25,22 +49,24 @@ def assemble_feature_matrix(
     start_date: datetime.date = INGEST_SCOPE_START,
     end_date: datetime.date | None = None,
     low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
+    materialized_path: Path | None = None,
+    use_materialized: bool = False,
 ) -> pd.DataFrame:
     """Build the fixed-schema FeatureMatrix from in-memory Frames (DB-independent).
 
     Population = started horses of target races in [start_date, end_date]. History uses
     the full pool (as-of race_date < R). Deterministic (stable sort by race_id, horse_id).
+
+    Feature 025: ``use_materialized`` reads the as-of block from ``materialized_path`` (parquet)
+    when fresh & covered; otherwise/by default it is computed in-memory. Output is identical
+    either way (parity gate) — static/current-race features are always computed here.
     """
     static = build_static_features(frames)
-    history = build_history_features(frames, low_history_max=low_history_max)
-    extra = build_extra_features(frames)            # Feature 020: recent form / aptitude / class
-    human = build_human_form_features(frames)        # Feature 020: jockey / trainer as-of form
-    pace = build_pace_features(frames)               # Feature 023: pace/time (as-of, in-race rel)
-    fm = (static
-          .merge(history, on=["race_id", "horse_id"], how="left")
-          .merge(extra, on=["race_id", "horse_id"], how="left")
-          .merge(human, on=["race_id", "horse_id"], how="left")
-          .merge(pace, on=["race_id", "horse_id"], how="left"))
+    asof = _asof_block(
+        frames, low_history_max=low_history_max, start_date=start_date, end_date=end_date,
+        materialized_path=materialized_path, use_materialized=use_materialized,
+    )
+    fm = static.merge(asof, on=["race_id", "horse_id"], how="left")
 
     races = frames.races[["race_id", "race_date"]].copy()
     races["race_date"] = pd.to_datetime(races["race_date"])
@@ -65,8 +91,11 @@ def build_feature_matrix(
     start_date: datetime.date = INGEST_SCOPE_START,
     end_date: datetime.date | None = None,
     low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
+    materialized_path: Path | None = None,
+    use_materialized: bool = False,
 ) -> pd.DataFrame:
     frames = load_frames(session, end_date=end_date)
     return assemble_feature_matrix(
-        frames, start_date=start_date, end_date=end_date, low_history_max=low_history_max
+        frames, start_date=start_date, end_date=end_date, low_history_max=low_history_max,
+        materialized_path=materialized_path, use_materialized=use_materialized,
     )
