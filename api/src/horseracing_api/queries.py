@@ -13,9 +13,11 @@ import datetime
 from horseracing_db.enums import BetType, EntryStatus
 from horseracing_db.models import (
     ExoticOdds,
+    ModelVersion,
     Race,
     RaceHorse,
     RacePrediction,
+    RaceResult,
     Recommendation,
 )
 from sqlalchemy import func, select
@@ -96,6 +98,30 @@ def canonical_win_odds(session: Session, race_id: str) -> dict[int, float]:
             continue
         out[int(horse_number)] = float(odds)
     return out
+
+
+def race_has_results(session: Session, race_id: str) -> bool:
+    """True if any race_results exist (Feature 021: odds_source final vs prerace)."""
+    return session.scalar(
+        select(func.count()).select_from(RaceResult).where(RaceResult.race_id == race_id)
+    ) not in (None, 0)
+
+
+def win_odds_as_of(session: Session, race_id: str):
+    """Max updated_at across started-horse win odds (Feature 021 odds audit), or None."""
+    return session.scalar(
+        select(func.max(RaceHorse.updated_at))
+        .where(RaceHorse.race_id == race_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    )
+
+
+def model_metrics_summary(session: Session, model_version: str) -> tuple[bool, dict | None]:
+    """(exists, metrics_summary) for a model_version (Feature 021 US2 calibration read-only)."""
+    row = session.get(ModelVersion, model_version)
+    if row is None:
+        return False, None
+    return True, (row.metrics_summary or None)
 
 
 def real_exotic_odds(session: Session, race_id: str) -> list[ExoticOdds]:

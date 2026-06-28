@@ -27,6 +27,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models/{model_version}/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Calibration */
+        get: operations["calibration_api_v1_models__model_version__calibration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/races": {
         parameters: {
             query?: never;
@@ -116,6 +133,66 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CalibrationBin */
+        CalibrationBin: {
+            /** Count */
+            count: number;
+            /** Pred Hi */
+            pred_hi: number;
+            /** Pred Lo */
+            pred_lo: number;
+            /** Pred Mean */
+            pred_mean?: number | null;
+            /** Realized Ci High */
+            realized_ci_high?: number | null;
+            /** Realized Ci Low */
+            realized_ci_low?: number | null;
+            /** Realized Rate */
+            realized_rate?: number | null;
+            /**
+             * Suppressed
+             * @default false
+             */
+            suppressed: boolean;
+        };
+        /** CalibrationResponse */
+        CalibrationResponse: {
+            /**
+             * Bins
+             * @default []
+             */
+            bins: components["schemas"]["CalibrationBin"][];
+            /** Ece */
+            ece?: number | null;
+            /**
+             * Label
+             * @default win
+             */
+            label: string;
+            /** Model Version */
+            model_version: string;
+            /**
+             * N Total
+             * @default 0
+             */
+            n_total: number;
+            /**
+             * Oos
+             * @default true
+             */
+            oos: boolean;
+            /**
+             * Source
+             * @default walk_forward_oos
+             * @constant
+             */
+            source: "walk_forward_oos";
+            /**
+             * Valid Years
+             * @default []
+             */
+            valid_years: number[];
+        };
         /** EstimatedOddsRow */
         EstimatedOddsRow: {
             /**
@@ -168,10 +245,14 @@ export interface components {
         };
         /** HorsePrediction */
         HorsePrediction: {
+            /** Data Backing */
+            data_backing?: ("weak" | "medium" | "strong") | null;
             /** Horse Id */
             horse_id: string;
             /** Horse Number */
             horse_number?: number | null;
+            /** Market Win Prob */
+            market_win_prob?: number | null;
             /** Top2 */
             top2?: number | null;
             /** Top3 */
@@ -221,6 +302,8 @@ export interface components {
         };
         /** PredictionResponse */
         PredictionResponse: {
+            /** Canonical Consistent */
+            canonical_consistent?: boolean | null;
             /**
              * Horses
              * @default []
@@ -232,6 +315,12 @@ export interface components {
             joint_bet_type?: string | null;
             /** Joint Logic Version */
             joint_logic_version?: string | null;
+            /** Market Prob Source */
+            market_prob_source?: "win_odds_vote_share" | null;
+            /** Odds As Of */
+            odds_as_of?: string | null;
+            /** Odds Source */
+            odds_source?: ("final" | "prerace") | null;
             /** Race Id */
             race_id: string;
             run?: components["schemas"]["RunAudit"] | null;
@@ -410,6 +499,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    calibration_api_v1_models__model_version__calibration_get: {
+        parameters: {
+            query?: {
+                label?: string;
+            };
+            header?: never;
+            path: {
+                model_version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

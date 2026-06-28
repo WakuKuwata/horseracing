@@ -1,6 +1,139 @@
 {
   "components": {
     "schemas": {
+      "CalibrationBin": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "pred_hi": {
+            "title": "Pred Hi",
+            "type": "number"
+          },
+          "pred_lo": {
+            "title": "Pred Lo",
+            "type": "number"
+          },
+          "pred_mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pred Mean"
+          },
+          "realized_ci_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Ci High"
+          },
+          "realized_ci_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Ci Low"
+          },
+          "realized_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Rate"
+          },
+          "suppressed": {
+            "default": false,
+            "title": "Suppressed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pred_lo",
+          "pred_hi",
+          "count"
+        ],
+        "title": "CalibrationBin",
+        "type": "object"
+      },
+      "CalibrationResponse": {
+        "properties": {
+          "bins": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CalibrationBin"
+            },
+            "title": "Bins",
+            "type": "array"
+          },
+          "ece": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ece"
+          },
+          "label": {
+            "default": "win",
+            "title": "Label",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "n_total": {
+            "default": 0,
+            "title": "N Total",
+            "type": "integer"
+          },
+          "oos": {
+            "default": true,
+            "title": "Oos",
+            "type": "boolean"
+          },
+          "source": {
+            "const": "walk_forward_oos",
+            "default": "walk_forward_oos",
+            "title": "Source",
+            "type": "string"
+          },
+          "valid_years": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Valid Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model_version"
+        ],
+        "title": "CalibrationResponse",
+        "type": "object"
+      },
       "EstimatedOddsRow": {
         "properties": {
           "as_of": {
@@ -123,6 +256,22 @@
       },
       "HorsePrediction": {
         "properties": {
+          "data_backing": {
+            "anyOf": [
+              {
+                "enum": [
+                  "weak",
+                  "medium",
+                  "strong"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Backing"
+          },
           "horse_id": {
             "title": "Horse Id",
             "type": "string"
@@ -137,6 +286,17 @@
               }
             ],
             "title": "Horse Number"
+          },
+          "market_win_prob": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Win Prob"
           },
           "top2": {
             "anyOf": [
@@ -274,6 +434,17 @@
       },
       "PredictionResponse": {
         "properties": {
+          "canonical_consistent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Consistent"
+          },
           "horses": {
             "default": [],
             "items": {
@@ -317,6 +488,45 @@
               }
             ],
             "title": "Joint Logic Version"
+          },
+          "market_prob_source": {
+            "anyOf": [
+              {
+                "const": "win_odds_vote_share",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Prob Source"
+          },
+          "odds_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds As Of"
+          },
+          "odds_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "final",
+                  "prerace"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Source"
           },
           "race_id": {
             "title": "Race Id",
@@ -840,6 +1050,58 @@
         "summary": "Health",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/v1/models/{model_version}/calibration": {
+      "get": {
+        "operationId": "calibration_api_v1_models__model_version__calibration_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_version",
+            "required": true,
+            "schema": {
+              "title": "Model Version",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "label",
+            "required": false,
+            "schema": {
+              "default": "win",
+              "title": "Label",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Calibration",
+        "tags": [
+          "calibration"
         ]
       }
     },

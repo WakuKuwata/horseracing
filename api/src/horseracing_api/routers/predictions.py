@@ -17,9 +17,9 @@ from horseracing_probability.engine import joint_probabilities
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
-from ..queries import get_race, run_predictions
+from ..queries import get_race, race_has_results, run_predictions, win_odds_as_of
 from ..schemas import HorsePrediction, JointEntry, PredictionResponse, RunAudit
-from ..selection import canonical_win_probs, select_prediction_run
+from ..selection import canonical_win_probs, market_win_probs, select_prediction_run
 
 router = APIRouter()
 
@@ -62,12 +62,21 @@ def predictions(
     if run is None:
         return PredictionResponse(race_id=race_id, run=None, horses=[])  # typed-empty
 
+    # Feature 021 US1: market vote-share q on the SAME canonical field as model p (R1). p_numbers is
+    # the 009 canonical population; q is computed/renormalized on it. p≠q kept separate; q null when
+    # the horse has no valid win odds (never 0-filled).
+    pmap = canonical_win_probs(session, run_id=run.prediction_run_id, race_id=race_id)
+    qmap, canonical_consistent = market_win_probs(
+        session, race_id=race_id, p_numbers=set(pmap)
+    )
+
     horses = [
         HorsePrediction(
             horse_number=n, horse_id=hid,
             win=(float(w) if w is not None else None),
             top2=(float(t2) if t2 is not None else None),
             top3=(float(t3) if t3 is not None else None),
+            market_win_prob=(qmap.get(int(n)) if n is not None else None),
         )
         for (n, hid, _status, w, t2, t3) in run_predictions(
             session, run_id=run.prediction_run_id, race_id=race_id
@@ -77,12 +86,18 @@ def predictions(
         prediction_run_id=str(run.prediction_run_id), model_version=run.model_version,
         logic_version=run.logic_version, computed_at=run.computed_at,
     )
-    resp = PredictionResponse(race_id=race_id, run=audit, horses=horses)
+    resp = PredictionResponse(
+        race_id=race_id, run=audit, horses=horses,
+        market_prob_source="win_odds_vote_share",
+        canonical_consistent=canonical_consistent,
+        odds_as_of=win_odds_as_of(session, race_id),
+        odds_source=("final" if race_has_results(session, race_id) else "prerace"),
+    )
 
     if bet_type is None:
         return resp  # no joint without an explicit bet_type (grid protection)
 
-    canon = canonical_win_probs(session, run_id=run.prediction_run_id, race_id=race_id)
+    canon = pmap  # reuse the canonical p population computed above
     if len(canon) < 2:
         return _err(409, "no_usable_probabilities", "no usable win probabilities for joint")
     jp = joint_probabilities(canon, field_size=len(canon))  # may raise -> 409 via app handler

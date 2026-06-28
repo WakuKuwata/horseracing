@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from .consistency import DEFAULT_TOLERANCE, check_consistency
@@ -11,6 +12,51 @@ from .predictor import Predictor
 from .splits import FIRST_VALID_YEAR, expanding_folds
 
 _LABELS = ("win", "top2", "top3")
+
+#: Feature 021 US2: a reliability bin with fewer than this many samples is suppressed (not plotted)
+#: because its realized rate / CI is too unstable to display honestly (codex R5).
+RELIABILITY_MIN_COUNT = 30
+_WILSON_Z = 1.96  # 95% interval
+
+
+def _wilson(k: int, n: int) -> tuple[float, float] | tuple[None, None]:
+    """95% Wilson interval for a binomial proportion k/n (count-aware uncertainty, FR-006b)."""
+    if n <= 0:
+        return None, None
+    p = k / n
+    z2 = _WILSON_Z * _WILSON_Z
+    denom = 1.0 + z2 / n
+    center = (p + z2 / (2 * n)) / denom
+    half = (_WILSON_Z / denom) * math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))
+    return max(0.0, center - half), min(1.0, center + half)
+
+
+def reliability_bins(
+    probs: list[float], labels: list[int], *,
+    n_bins: int = 10, min_count: int = RELIABILITY_MIN_COUNT,
+) -> list[dict]:
+    """Equal-width reliability bins on [0,1]: pred_mean vs realized_rate + Wilson CI + count.
+
+    Bins with < ``min_count`` samples are marked ``suppressed`` (R5). Empty bins are skipped.
+    """
+    out: list[dict] = []
+    for b in range(n_bins):
+        lo, hi = b / n_bins, (b + 1) / n_bins
+        last = b == n_bins - 1
+        idx = [i for i in range(len(probs)) if (lo <= probs[i] < hi) or (last and probs[i] == 1.0)]
+        if not idx:
+            continue
+        count = len(idx)
+        wins = sum(labels[i] for i in idx)
+        ci_lo, ci_hi = _wilson(wins, count)
+        out.append({
+            "pred_lo": lo, "pred_hi": hi,
+            "pred_mean": sum(probs[i] for i in idx) / count,
+            "realized_rate": wins / count,
+            "realized_ci_low": ci_lo, "realized_ci_high": ci_hi,
+            "count": count, "suppressed": count < min_count,
+        })
+    return out
 
 
 @dataclass
@@ -30,6 +76,9 @@ class EvalResult:
     overall: dict[str, dict]
     by_fold: list[dict]
     by_field_size_ece: dict[str, dict[int, float]]
+    #: Feature 021 US2: walk-forward OOS reliability per label {label: {bins, n_total}} (read by the
+    #: API calibration endpoint via metrics_summary). OOS by construction (pooled valid folds).
+    reliability: dict[str, dict] = field(default_factory=dict)
 
     def to_summary(self) -> dict:
         """data-model.md metrics_summary jsonb 形。"""
@@ -42,6 +91,7 @@ class EvalResult:
                 "overall": self.overall,
                 "by_fold": self.by_fold,
                 "by_field_size_ece": self.by_field_size_ece,
+                "reliability": self.reliability,
             }
         }
 
@@ -107,6 +157,11 @@ def evaluate(
         for label, r in overall.items()
         if r.probs
     }
+    reliability = {
+        label: {"bins": reliability_bins(r.probs, r.labels), "n_total": len(r.probs)}
+        for label, r in overall.items()
+        if r.probs
+    }
     return EvalResult(
         scheme="expanding_yearly",
         valid_years=valid_years,
@@ -115,4 +170,5 @@ def evaluate(
         overall=_metrics_for(overall, ece_bins),
         by_fold=by_fold,
         by_field_size_ece=by_field,
+        reliability=reliability,
     )

@@ -62,9 +62,16 @@ class RunAudit(BaseModel):
 class HorsePrediction(BaseModel):
     horse_number: int | None = None
     horse_id: str
-    win: float | None = None
+    win: float | None = None        # model p (009 canonical field)
     top2: float | None = None
     top3: float | None = None
+    # Feature 021 US1: market-implied win prob q (vote-share), computed on the SAME canonical field
+    # as p. Pseudo (estimate, contains favorite-longshot bias, NOT a true prob, NOT model p). Null
+    # when the horse has no valid win odds (never 0-filled). Kept SEPARATE from win (p≠q).
+    market_win_prob: float | None = None
+    # Feature 021 US3 (adoption-gated): leak-safe data-backing / condition-coverage hint. Null when
+    # US3 is deferred or the horse lacks a category.
+    data_backing: Literal["weak", "medium", "strong"] | None = None
 
 
 class JointEntry(BaseModel):
@@ -79,6 +86,13 @@ class PredictionResponse(BaseModel):
     joint: list[JointEntry] | None = None
     joint_bet_type: str | None = None
     joint_logic_version: str | None = None
+    # Feature 021 US1: market-q provenance + canonical-field consistency + odds audit. q is pseudo
+    # (vote-share); canonical_consistent=False means p and q populations differ -> front must
+    # suppress the p−q divergence (R1). odds_source: final (race has results) vs prerace.
+    market_prob_source: Literal["win_odds_vote_share"] | None = None
+    canonical_consistent: bool | None = None
+    odds_as_of: datetime.datetime | None = None
+    odds_source: Literal["final", "prerace"] | None = None
 
 
 # --- odds (real vs estimated kept in SEPARATE fields) -----------------------
@@ -136,3 +150,26 @@ class RecommendationRow(BaseModel):
 class RecommendationResponse(BaseModel):
     race_id: str
     items: list[RecommendationRow] = []
+
+
+# --- calibration / reliability (Feature 021 US2, walk-forward OOS, read-only) ----------------
+class CalibrationBin(BaseModel):
+    pred_lo: float
+    pred_hi: float
+    pred_mean: float | None = None
+    realized_rate: float | None = None
+    realized_ci_low: float | None = None   # Wilson interval (count-aware, FR-006b)
+    realized_ci_high: float | None = None
+    count: int
+    suppressed: bool = False               # too few samples -> not plotted (R5)
+
+
+class CalibrationResponse(BaseModel):
+    model_version: str
+    oos: bool = True                       # walk-forward OOS only (never in-sample, R2)
+    source: Literal["walk_forward_oos"] = "walk_forward_oos"
+    label: str = "win"
+    valid_years: list[int] = []
+    n_total: int = 0
+    ece: float | None = None
+    bins: list[CalibrationBin] = []

@@ -11,8 +11,11 @@ from __future__ import annotations
 
 from horseracing_db.enums import AdoptionStatus, EntryStatus
 from horseracing_db.models import ModelVersion, PredictionRun, RaceHorse, RacePrediction
+from horseracing_probability.market_odds import market_implied_win_probs
 from sqlalchemy import case, select
 from sqlalchemy.orm import Session
+
+from .queries import canonical_win_odds
 
 
 def select_prediction_run(session: Session, race_id: str) -> PredictionRun | None:
@@ -48,3 +51,21 @@ def canonical_win_probs(session: Session, *, run_id, race_id: str) -> dict[int, 
             continue
         out[int(horse_number)] = float(win_prob)
     return out
+
+
+def market_win_probs(
+    session: Session, *, race_id: str, p_numbers: set[int]
+) -> tuple[dict[int, float], bool]:
+    """Feature 021 US1: market vote-share q on the SAME canonical field as model p.
+
+    Returns ({horse_number -> q}, canonical_consistent). q is `market_implied_win_probs` (010) over
+    started horses with valid win odds, renormalized on that population. ``canonical_consistent`` is
+    True only when the q population exactly matches the model-p population (``p_numbers``) — when it
+    differs, the per-horse p−q divergence is mathematically incomparable and the front must suppress
+    it (R1 / 憲法 IV). q is pseudo (NOT a true prob, NOT p) and never re-enters model features.
+    """
+    odds = canonical_win_odds(session, race_id)  # {horse_number -> win odds} (started, >0)
+    q = market_implied_win_probs(odds) if odds else {}
+    q = {int(k): float(v) for k, v in q.items()}
+    consistent = bool(p_numbers) and set(q.keys()) == p_numbers
+    return q, consistent
