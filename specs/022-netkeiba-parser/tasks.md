@@ -15,7 +15,7 @@ description: "Task list for 022 実 netkeiba パーサ"
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: 並行可能（別ファイル・依存なし）
-- **[Story]**: US1=出走表 / US2=結果 / US3=単勝オッズ
+- **[Story]**: US1=出走表 / US2=結果 / US3=単勝オッズ / US4=開催日一覧（追補）/ US5=馬プロフィール補完（追補）
 
 ## Path Conventions
 
@@ -119,6 +119,54 @@ description: "Task list for 022 実 netkeiba パーサ"
 
 ---
 
+## Phase 7: User Story 4 - 開催日レース一覧取得 (Priority: P4) 〔追補 2026-06-28〕
+
+**Goal**: 開催日 (YYYYMMDD) からその日の全 race_id を列挙し、各レースの取り込み URL を生成できる。
+
+**Independent Test**: 保存したレース一覧フラグメント HTML フィクスチャを解析し、race_id が重複なく出現順で列挙され、12桁として無効な ID が除外される（ネットワーク非依存）。
+
+### Tests for User Story 4 ⚠️
+
+- [x] T026 [P] [US4] `scrape/tests/unit/test_parse_race_list.py`：フラグメントから race_id 重複排除・出現順抽出、空ペイロード→`ParseError`、JRA 開催無し日→空リスト、`discover_races` が無効 ID を除外
+
+### Implementation for User Story 4
+
+- [x] T027 [US4] `scrape/src/horseracing_scrape/urls.py` に `race_list_url(date)`（`top/race_list_sub.html?kaisai_date=`、YYYYMMDD/`YYYY-MM-DD` 正規化）追加
+- [x] T028 [US4] `scrape/src/horseracing_scrape/parse/race_list.py` を新規作成（`race_id=` 正規抽出・重複排除・出現順、空ペイロード fail-close）→ `ScrapedRaceList`（`models.py` に追加）
+- [x] T029 [US4] `scrape/src/horseracing_scrape/pipeline.py` に `discover_races`（読み取り専用・12桁無効除外）追加、`cli.py` に `list-races --date [--urls]` 追加（依存: T027, T028）
+
+**Checkpoint**: 日付指定で race_id 一覧が取れ、US1–US3 へ URL を供給できる（手動 URL 入力不要）。
+
+---
+
+## Phase 8: User Story 5 - 馬プロフィール識別・血統補完 (Priority: P5) 〔追補 2026-06-28〕
+
+**Goal**: surrogate (`nk:`) 馬の識別・血統属性を db.netkeiba.com から補完する（opt-in、NULL 列のみ、成績は読まない）。
+
+**Independent Test**: surrogate 馬 1 頭を DB に置き、保存プロフィール HTML から 性別/生年/血統が NULL 列のみに補完され、既存非 NULL 値は保持され、解析結果型に成績フィールドが存在しないことを検証する。
+
+### Tests for User Story 5 ⚠️
+
+- [x] T030 [P] [US5] `scrape/tests/unit/test_parse_horse_profile.py`：識別・血統抽出、名前欠損→`ParseError`、母父欠損→None、**`ScrapedHorseProfile` が成績フィールドを持たない（leak-guard 構造検証）**
+- [x] T031 [P] [US5] `scrape/tests/integration/test_profiles.py`：NULL 列のみ補完、既存非 NULL 値保持、DB 未登録馬は skip、job_type='horse_profile' 監査
+
+### Implementation for User Story 5
+
+- [x] T032 [US5] `scrape/src/horseracing_scrape/urls.py` に `horse_profile_url(id)`、`models.py` に `ScrapedHorseProfile`（識別・血統のみ）追加
+- [x] T033 [US5] `scrape/src/horseracing_scrape/parse/_profile.py` に `parse_horse_profile`（性別/生年/父・母・母父、`db_prof_table`/`blood_table`、成績は読まない、`HORSE_PROFILE_PROFILE`）追加
+- [x] T034 [US5] `scrape/src/horseracing_scrape/upsert.py` に `complete_horse_profile`（fill-NULL-only、血統 id は `resolve_entity` 経由、JRA-VAN 不上書き）追加
+- [x] T035 [US5] `scrape/src/horseracing_scrape/pipeline.py` に `complete_profiles`（opt-in post-pass、surrogate 対象 or 明示 id、job 監査）追加、`cli.py` に `complete-profiles` ＋ `capture-fixture` の `race_list`/`horse_profile` kind 追加（依存: T032, T033, T034）
+
+### Selector 検証・実 markup 反映 (US4/US5, 2026-06-28)
+
+- [x] T036 実 netkeiba を polite fetcher で最小取得し US4/US5 パーサを実 markup 検証。フィクスチャ `fixtures/real/{race_list_20241228,horse_profile_2022103995,pedigree_2022103995}.html` 保存＋ネットワーク非依存テスト追加（`test_real_*`）
+- [x] T037 取得層エンコーディング修正（FR-017）：`fetch._resolve_text` で charset ヘッダ無し時に `<meta charset>` を見て EUC-JP デコード（db.netkeiba.com 文字化け解消、UTF-8 ページは無影響）。回帰テスト追加
+- [x] T038 血統取得を 2 ページ方式へ修正：本体ページ血統は JS 描画のため `urls.horse_pedigree_url`＋`parse._profile.parse_horse_pedigree`（`blood_table`、父系 `b_ml`/母系 `b_fml`、母父=母セル後の最初の `b_ml`）を追加、`complete_profiles` で識別＋血統をマージ、`capture-fixture` に `pedigree` kind 追加
+
+**Checkpoint**: surrogate 馬の血統/識別が leak-safe に補完され、036 系特徴の入力が揃う。実 markup で全パーサ検証済み（54 tests green）。
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -127,6 +175,7 @@ description: "Task list for 022 実 netkeiba パーサ"
 - **Foundational (P2)**: Setup 後。**全 US をブロック**（特に T005 `_common`、T004 `urls`、T007 実フィクスチャ）。
 - **US1/US2/US3 (P3–5)**: Foundational 後。相互独立（各 integration test は自前で前提レースを seed）→ 並行可。
 - **Polish (P6)**: 対象 US 完了後。
+- **US4/US5 (P7–8, 追補)**: 当初スコープ完了後の後追い。US4 は `urls`/`parse`/`pipeline`/`cli` の追加のみ（既存無改修）。US5 は US1（surrogate 馬の取り込み）後に意味を持つが、実装は独立（明示 id 指定でも動く）。両者とも実 markup は本番前に `capture-fixture --kind race_list/horse_profile` で検証要。
 
 ### Key task dependencies
 
@@ -179,3 +228,4 @@ Task: "T009 integration test entries ingest in scrape/tests/integration/test_ent
 - odds は **no-cache**（古い odds を書かない＝憲法 V）。necessary な必須フィールドは strict parse で fail-close。
 - スキーマ変更なし。exotic odds・RaceFront write は別 feature。
 - コミットは各タスク/論理単位で。各 Checkpoint でストーリー独立性を検証。
+- **追補 (T026–T035, US4/US5)**: 開催日一覧 (US4) と馬プロフィール識別・血統補完 (US5)。US5 はリーク境界が核心＝**競走成績を読まず識別・血統のみ**を NULL 列にのみ補完（`ScrapedHorseProfile` に成績フィールドを置かない構造担保＋leak-guard）。Obsidian doc の Playwright 記述は古く、本 feature の静的取得方針 (FR-013) と実装が正。実 markup は本番前に実ページ検証が必要。

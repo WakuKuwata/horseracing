@@ -92,3 +92,31 @@ class ScrapedExoticRow:
 class ScrapedExoticOdds:
     key: ScrapedRaceKey
     rows: tuple[ScrapedExoticRow, ...]
+
+
+@dataclass(frozen=True)
+class ScrapedRaceList:
+    """All race_ids found on a day's race-list fragment (deduped, in page order)."""
+
+    kaisai_date: str                     # YYYYMMDD as supplied to netkeiba
+    race_ids: tuple[str, ...]            # 12-digit netkeiba/JRA-VAN race_ids
+
+
+@dataclass(frozen=True)
+class ScrapedHorseProfile:
+    """Leak-safe identity/pedigree attributes from a db.netkeiba.com horse page.
+
+    Performance statistics (career starts/wins/earnings/recent finishes) are intentionally NOT
+    carried here — they must never reach model features (leak boundary, constitution II). Pedigree
+    ids are netkeiba ids (resolved to canonical/surrogate at upsert via id_mappings)."""
+
+    netkeiba_horse_id: str
+    horse_name: str | None
+    sex: str | None
+    birth_year: int | None
+    netkeiba_sire_id: str | None
+    sire_name: str | None
+    netkeiba_dam_id: str | None
+    dam_name: str | None
+    netkeiba_damsire_id: str | None
+    damsire_name: str | None

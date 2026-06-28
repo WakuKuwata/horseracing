@@ -72,6 +72,42 @@ def test_all_failures_raise():
         f.get("https://x.com/p")
 
 
+class _BytesResp:
+    """Mimics httpx.Response: exposes content + charset_encoding (from Content-Type header)."""
+    def __init__(self, status_code: int, content: bytes, charset_encoding: str | None):
+        self.status_code = status_code
+        self.content = content
+        self.charset_encoding = charset_encoding
+
+    @property
+    def text(self) -> str:  # httpx would (mis)guess when no header charset
+        return self.content.decode("utf-8", errors="replace")
+
+
+def test_eucjp_page_without_header_charset_decodes_from_meta():
+    # db.netkeiba.com: EUC-JP body, NO charset in Content-Type → must sniff <meta charset>
+    body = (
+        "<html><head><meta charset=euc-jp></head>"
+        "<body><h1>ジョバンニ</h1></body></html>"
+    ).encode("euc_jp")
+    client = _Client({
+        "https://db.x.com/robots.txt": _Resp(200, ""),
+        "https://db.x.com/h": _BytesResp(200, body, charset_encoding=None),
+    })
+    f = HttpFetcher(user_agent="UA", client=client, sleep=lambda s: None, clock=lambda: 100.0)
+    assert "ジョバンニ" in f.get("https://db.x.com/h")  # decoded, not mojibake
+
+
+def test_header_charset_trusts_httpx_text():
+    # when the header carries the charset, httpx already decoded — use .text as-is
+    client = _Client({
+        "https://x.com/robots.txt": _Resp(200, ""),
+        "https://x.com/u": _BytesResp(200, "café".encode(), charset_encoding="utf-8"),
+    })
+    f = HttpFetcher(user_agent="UA", client=client, sleep=lambda s: None, clock=lambda: 100.0)
+    assert f.get("https://x.com/u") == "café"
+
+
 def test_cache_avoids_second_fetch(tmp_path):
     client = _Client({
         "https://x.com/robots.txt": _Resp(200, ""), "https://x.com/p": _Resp(200, "PAGE"),

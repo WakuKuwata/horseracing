@@ -8,11 +8,37 @@ parser/pipeline tests.
 from __future__ import annotations
 
 import hashlib
+import re
 import time
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
+
+_META_CHARSET_RE = re.compile(rb"""charset=["']?\s*([\w-]+)""", re.IGNORECASE)
+
+
+def _resolve_text(resp) -> str:
+    """Decode a response honoring the page charset.
+
+    netkeiba is mixed-encoding: race.netkeiba.com is UTF-8, but db.netkeiba.com is **EUC-JP and
+    sends no charset in the Content-Type header** — only a `<meta charset>` in the body. httpx's
+    content-sniffing then mis-decodes it (mojibake). So: header charset wins (httpx already decoded
+    right); otherwise sniff the meta charset from the raw bytes and decode explicitly; otherwise
+    fall back to httpx's text. Test doubles without `.content` just use `.text`."""
+    content = getattr(resp, "content", None)
+    if content is None:  # test double / non-httpx client
+        return resp.text
+    if getattr(resp, "charset_encoding", None):  # charset in Content-Type header → trust httpx
+        return resp.text
+    m = _META_CHARSET_RE.search(content[:2048])
+    if m:
+        enc = m.group(1).decode("ascii", "ignore").strip().lower()
+        try:
+            return content.decode(enc, errors="replace")
+        except LookupError:
+            pass
+    return resp.text
 
 
 class FetchError(RuntimeError):
@@ -123,7 +149,7 @@ class HttpFetcher:
             try:
                 resp = self._client.get(url)
                 if resp.status_code == 200:
-                    return resp.text
+                    return _resolve_text(resp)
                 last_err = FetchError(f"HTTP {resp.status_code} for {url}")
             except Exception as exc:  # noqa: BLE001
                 last_err = exc

@@ -26,6 +26,33 @@
       "fetched_at": "2026-06-28",
       "sha256": "b490af1ed3eb48a0bc585d1c6b56bc5120c64089a58389e21a5eda3c4d3c0cea",
       "trim_note": "raw JSON response (type=1 win/place), no trim"
+    },
+    {
+      "page_kind": "race_list",
+      "file": "race_list_20241228.html",
+      "url": "https://race.netkeiba.com/top/race_list_sub.html?kaisai_date=20241228",
+      "date": "20241228",
+      "fetched_at": "2026-06-28",
+      "sha256": "ab44be556ddd198bd32161c98036e17ffe31bbbb1cb8f02a21eb98ed27616880",
+      "trim_note": "raw capture (untrimmed)"
+    },
+    {
+      "page_kind": "horse_profile",
+      "file": "horse_profile_2022103995.html",
+      "url": "https://db.netkeiba.com/horse/2022103995/",
+      "horse_id": "2022103995",
+      "fetched_at": "2026-06-28",
+      "sha256": "71582ae101154f04f58c22e278bccb0ac1c5709260a6f9708a09059aba9e6a41",
+      "trim_note": "raw capture (untrimmed)"
+    },
+    {
+      "page_kind": "pedigree",
+      "file": "pedigree_2022103995.html",
+      "url": "https://db.netkeiba.com/horse/ped/2022103995/",
+      "horse_id": "2022103995",
+      "fetched_at": "2026-06-28",
+      "sha256": "ce10b1399410f246f03945f9cdc5637bd6a37d0d971f6943f81f5fafe245ee5e",
+      "trim_note": "raw capture (untrimmed)"
     }
   ]
 }

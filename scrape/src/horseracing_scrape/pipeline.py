@@ -9,25 +9,32 @@ from __future__ import annotations
 import datetime
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from horseracing_db.enums import JobStatus, Source
-from horseracing_db.models import IngestionJob
+from horseracing_db.models import Horse, IngestionJob
+from horseracing_db.validation import is_valid_race_id
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from . import SCRAPE_PARSER_VERSION
+from . import SCRAPE_PARSER_VERSION, SURROGATE_PREFIX
 from .fetch import PoliteFetcher
+from .models import ScrapedRaceList
 from .odds_adapter import fetch_win_odds
+from .parse._profile import parse_horse_pedigree, parse_horse_profile
 from .parse.entries import parse_entries
 from .parse.exotic_odds import parse_exotic_odds
+from .parse.race_list import parse_race_list
 from .parse.results import parse_results
 from .upsert import (
     Counts,
     backfill_results,
+    complete_horse_profile,
     update_odds,
     upsert_entries,
     upsert_exotic_odds,
 )
+from .urls import horse_pedigree_url, horse_profile_url, race_list_url
 from .venues import build_race_id
 
 
@@ -143,6 +150,74 @@ def scrape_exotic_odds(
 
     return _run_job(session, job_type="exotic_odds", scope="urls", scope_value=scope_value,
                     work=work)
+
+
+def discover_races(fetcher: PoliteFetcher, date: str) -> ScrapedRaceList:
+    """List a day's race_ids from the server-rendered race-list fragment (③ day discovery).
+
+    Read-only (no DB write, no core-table mutation) — the operator feeds the returned race_ids to
+    ``scrape-entries``/``scrape-results`` etc. Only valid 12-digit race_ids are returned; non-JRA
+    venues are not filtered here (the entries upsert skips unknown venues, no fake IDs)."""
+    scraped = parse_race_list(fetcher.get(race_list_url(date), use_cache=False), date)
+    return ScrapedRaceList(
+        kaisai_date=scraped.kaisai_date,
+        race_ids=tuple(r for r in scraped.race_ids if is_valid_race_id(r)),
+    )
+
+
+def complete_profiles(
+    session: Session, *, fetcher: PoliteFetcher,
+    netkeiba_horse_ids: list[str] | None = None, limit: int | None = None,
+) -> JobSummary:
+    """Opt-in post-pass (④): fill leak-safe identity/pedigree for surrogate horses.
+
+    Targets ``nk:`` surrogate horses still missing identity/pedigree (sex/birth_year/sire) — or an
+    explicit netkeiba-id list — fetches each db.netkeiba.com profile, and fills NULL columns only
+    (never clobbers JRA-VAN, never reads career stats). Default-off: invoked only via the
+    ``complete-profiles`` CLI command, never as part of entry/odds/result ingestion."""
+    def work() -> Counts:
+        if netkeiba_horse_ids is not None:
+            targets = [(f"{SURROGATE_PREFIX}{nk}", nk) for nk in netkeiba_horse_ids]
+        else:
+            stmt = (
+                select(Horse.horse_id)
+                .where(Horse.horse_id.like(f"{SURROGATE_PREFIX}%"))
+                .where(or_(Horse.sex.is_(None), Horse.birth_year.is_(None),
+                           Horse.sire_id.is_(None)))
+                .order_by(Horse.horse_id)
+            )
+            if limit is not None:
+                stmt = stmt.limit(limit)
+            targets = [(hid, hid[len(SURROGATE_PREFIX):]) for hid in session.scalars(stmt)]
+
+        parts: list[Counts] = []
+        for horse_id, netkeiba_id in targets:
+            try:
+                profile = parse_horse_profile(
+                    fetcher.get(horse_profile_url(netkeiba_id)), netkeiba_id
+                )
+            except Exception as exc:  # noqa: BLE001 — one bad page must not abort the pass
+                parts.append(Counts(processed=1, errors=1, error_messages=[str(exc)]))
+                continue
+            # pedigree lives on a separate server-rendered page; its failure must not drop the
+            # identity we already have — merge what we can (Unknown pedigree stays None).
+            try:
+                sire, dam, damsire = parse_horse_pedigree(
+                    fetcher.get(horse_pedigree_url(netkeiba_id)), netkeiba_id
+                )
+                profile = replace(
+                    profile,
+                    netkeiba_sire_id=sire[0], sire_name=sire[1],
+                    netkeiba_dam_id=dam[0], dam_name=dam[1],
+                    netkeiba_damsire_id=damsire[0], damsire_name=damsire[1],
+                )
+            except Exception as exc:  # noqa: BLE001 — pedigree optional; keep identity
+                parts.append(Counts(error_messages=[f"pedigree skipped {netkeiba_id}: {exc}"]))
+            parts.append(complete_horse_profile(session, horse_id, profile))
+        return _aggregate(parts)
+
+    return _run_job(session, job_type="horse_profile", scope="surrogate_horses",
+                    scope_value=str(limit) if limit is not None else None, work=work)
 
 
 def scrape_results(

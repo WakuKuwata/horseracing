@@ -64,6 +64,37 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 
 ---
 
+### User Story 4 - 開催日からレース一覧を取得する (Priority: P4)
+
+オペレーターが開催日 (YYYYMMDD) を指定すると、その日の全 race_id が netkeiba のレース一覧から列挙され、各レースの出馬表/結果/オッズ URL を生成して後続の取り込み (US1–US3) に渡せる。これにより「1日分まとめて取り込む」運用が、URL の手入力なしに成立する。
+
+**Why this priority**: US1–US3 は個別 URL 指定前提で、日単位運用には race_id の事前列挙が要る (019 で「race_id→URL 自動逆引き」として deferred されていた)。予測・取り込みの母集団を作る前段だが、個別 URL 指定でも回るため P4。
+
+**Independent Test**: 保存した実 netkeiba レース一覧フラグメント HTML フィクスチャを `FixtureFetcher` 経由で解析し、その日の全 race_id が重複なく出現順に列挙され、12桁として無効な ID が除外されることを検証する (ネットワーク非依存)。
+
+**Acceptance Scenarios**:
+
+1. **Given** 開催日のレース一覧フラグメント HTML, **When** 列挙を実行, **Then** その日の全 race_id が重複排除・出現順で返り、各 race の出馬表/結果/オッズ URL を構築できる。
+2. **Given** JRA 開催の無い日付のフラグメント, **When** 列挙, **Then** 空のリストが返る (エラーにしない)。一方、ペイロード自体が空/取得失敗なら fail-close する。
+
+---
+
+### User Story 5 - 馬のプロフィール (識別・血統) を補完する (Priority: P5)
+
+オペレーターが明示的に補完を起動すると、surrogate (`nk:`) で取り込まれた馬の db.netkeiba.com プロフィールページが取得され、**識別・血統属性のみ** (性別 / 生年 / 父・母・母父の ID と名) が `horses` の **NULL 列だけ** に補完される (既存 JRA-VAN 値は上書きしない)。通算成績・賞金等の競走成績は **一切読み込まない** (リーク境界)。
+
+**Why this priority**: 血統/性別/生年は予測特徴量 (036 系) の入力になり得るが、出走表取り込み (US1) だけで予測は回る。補完は任意・後追いで足り、既定では起動しないため最も低い P5。
+
+**Independent Test**: surrogate 馬 1 頭を DB に置き、保存した実 horse プロフィール HTML フィクスチャから 性別/生年/血統が NULL 列に補完され、既存の非 NULL 値が保持され、競走成績フィールドが解析結果に存在しないことを検証する。
+
+**Acceptance Scenarios**:
+
+1. **Given** 識別・血統が NULL の surrogate 馬と保存プロフィール HTML, **When** 補完を起動, **Then** 性別/生年/父・母・母父が `horses` に書かれ、`ingestion_jobs` に job_type='horse_profile' で記録される。
+2. **Given** 性別等が既に入っている馬, **When** 補完, **Then** 既存値は上書きされず、NULL 列のみ埋まる。
+3. **Given** プロフィールページ, **When** 解析, **Then** 通算成績・賞金・近走着順は解析結果に含まれない (leak-guard)。
+
+---
+
 ### Edge Cases
 
 - netkeiba の HTML 構造が変化し必須要素が取得できない場合は **fail-close** (誤データを作らない) し、`ingestion_jobs` に errors を記録する。部分的に取得できた場合も、必須要素を欠く行は書かず errors に計上する。
@@ -71,6 +102,9 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 - 出走表ページにオッズ列が含まれていても、それを結果・特徴量として扱わない (リーク境界・責務分離)。
 - ページが想定と異なる種別 (例: 地方競馬・海外) で有効な JRA-VAN race_id を構築できない場合は skip。
 - 文字エンコーディング・全角/半角・タイム表記 (例: `1:34.5`) の正規化を行う。
+- レース一覧 (US4) は JS 描画の top ページではなく、同等のサーバ描画フラグメント (`top/race_list_sub.html?kaisai_date=`) を静的取得して race_id を抽出する (FR-013 のハイブリッド方針と整合)。過去日のフラグメントは `result.html`、未来日は `shutuba.html` へリンクするが、抽出は `race_id=` を対象とするためどちらでも成立する (実 markup で確認)。
+- プロフィール補完 (US5): 馬本体ページ (`/horse/{id}/`) は 馬名/性別/生年は静的取得できるが**血統ブロックは JS 描画 (空 `#horse_pedigree_box`)** のため、血統は専用のサーバ描画ページ `/horse/ped/{id}/` (`table.blood_table`, 父系=`td.b_ml`/母系=`td.b_fml`) から取得する (実 markup で確認、2 ページ取得)。母父が版面差で取れない場合は当該項目のみ None (Unknown) とし推測しない。
+- db.netkeiba.com は **EUC-JP かつ Content-Type に charset ヘッダ無し**のため、取得層は本文 `<meta charset>` を見て明示デコードする (UTF-8 の race.netkeiba.com は無影響)。これを怠ると文字化けする (実 markup で確認)。
 
 ## Requirements *(mandatory)*
 
@@ -89,6 +123,10 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 - **FR-011**: 取得は netkeiba の robots.txt とレート制限 (既存 1秒/ドメイン間隔) を遵守し、個人利用の範囲で礼儀正しく行わなければならない (MUST)。利用規約上スクレイプが許容されない場合は取得しない方針を明記する。
 - **FR-012**: 既存スタブパーサ (合成スキーマ前提) は実パーサへ**置換**し、合成フィクスチャに依存した既存テストは実フィクスチャベースへ更新しなければならない (MUST)。実パーサは単一経路とし、移行期間の並存は行わない (決定: 置換)。**対象は entries / results / 単勝 odds の 3 パーサに限る**。exotic odds パーサ (`parse/exotic_odds.py`) は本 feature 対象外で合成のまま残置する (次段)。
 - **FR-013**: システムは netkeiba の動的描画ページに対して必要なデータを確実に取得できなければならない (MUST)。取得方式は**ハイブリッド**とする (決定): 出走表 (entries) と結果 (results) は**サーバ描画 HTML を静的取得して解析**し、単勝オッズ (odds) は **netkeiba 内部の JSON データ (埋め込み JSON ないし JSON エンドポイント) を利用**する。headless ブラウザ (Playwright 等) は導入しない。実 netkeiba ページの構造を実サンプルで確認したうえで、この方式の妥当性を plan で検証する (構造が想定と異なる場合は plan 段で方式を見直す)。
+- **FR-014** (US4, 追補): システムは開催日 (YYYYMMDD) を指定して、その日の全 race_id を列挙できなければならない (MUST)。取得は JS 描画の top ページではなく**サーバ描画フラグメントを静的取得**して race_id を抽出する (FR-013 整合)。列挙は重複排除・出現順とし、12桁として無効な ID を除外する (MUST)。列挙自体は読み取り専用で、コア表を変更しない (MUST NOT)。JRA 開催の無い日は空リストを返し (エラーにしない)、ペイロードが空/取得失敗なら fail-close する (MUST)。
+- **FR-015** (US5, 追補): システムは馬の db.netkeiba.com から**識別・血統属性のみ** (性別 / 生年 / 父・母・母父の ID・名) を抽出し、`horses` の **NULL 列のみ**に補完できなければならない (MUST)。識別 (馬名/性別/生年) は本体ページ `/horse/{id}/` から、血統は専用ページ `/horse/ped/{id}/` (サーバ描画 `blood_table`) から取得する (本体ページの血統は JS 描画のため、FR-013 整合で 2 ページ静的取得)。既存値 (JRA-VAN 由来含む) を上書きしてはならない (MUST NOT)。血統馬 ID も `id_mappings` 経由で解決し推測結合しない (MUST NOT)。補完は既定で起動せず、オペレーターの明示起動でのみ実行する (opt-in, MUST)。`ingestion_jobs` に job_type='horse_profile' で記録する (MUST)。騎手・調教師は補完すべき列が無く対象外とする。
+- **FR-017** (US5, 追補): 取得層は対象ページの文字エンコーディングを正しく扱わなければならない (MUST)。Content-Type に charset が無い場合は本文の `<meta charset>` を見て明示デコードする (db.netkeiba.com は EUC-JP・charset ヘッダ無し)。これにより取り込み文字列の文字化けを防ぐ (MUST)。
+- **FR-016** (US5, 追補): プロフィール補完は**競走成績 (通算成績・勝率・賞金・近走着順等) を一切読み込んでも保存してもならない** (リーク境界、MUST NOT)。解析結果の型に成績フィールドが存在しないことで構造的に担保し、leak-guard テストで検証する (MUST)。
 
 ### Key Entities *(include if feature involves data)*
 
@@ -96,7 +134,9 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 - **結果 (results) の解析結果**: race_id と各馬 (netkeiba馬ID) の 着順・競走状態 (完走/中止/失格)・タイム。既存 `race_results` に対応。
 - **単勝オッズ (win odds) の解析結果**: race_id と各馬 (netkeiba馬ID) の 単勝オッズ・人気。既存 `race_horses.odds` に対応。
 - **実 HTML フィクスチャ**: 実 netkeiba の出走表/結果/オッズページを保存したテスト用 HTML。ネットワーク非依存テストの基盤。
-- **取り込みジョブ監査 (ingestion_jobs)**: 既存テーブル。job 種別・scope・件数・status・parser/logic バージョン・errors。
+- **レース一覧の解析結果 (US4)**: 開催日 (YYYYMMDD) と、その日の race_id 列 (重複排除・出現順)。新テーブルなし (読み取り専用の列挙)。
+- **馬プロフィールの解析結果 (US5)**: netkeiba 馬 ID・馬名・性別・生年・父/母/母父の (ID, 名)。既存 `horses` の識別・血統列に対応。**競走成績フィールドを持たない** (リーク境界)。
+- **取り込みジョブ監査 (ingestion_jobs)**: 既存テーブル。job 種別 (entries/results/odds/exotic_odds/horse_profile)・scope・件数・status・parser/logic バージョン・errors。
 
 ## Success Criteria *(mandatory)*
 
@@ -109,6 +149,8 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 - **SC-005**: netkeiba 由来の odds・結果がモデル特徴量に現れないことを leak-guard テストで確認できる。
 - **SC-006**: 全パーサテストがネットワーク非依存で完結する (テスト実行時に外部 HTTP を行わない)。
 - **SC-007**: 実 netkeiba から取得したデータで予測 serving (006/019) がエラーなく予測を生成できる (出走表→特徴量→予測のエンドツーエンドが実データで成立)。
+- **SC-008** (US4, 追補): 保存済みレース一覧フラグメントから、その日の全 race_id が重複なく出現順で列挙され、無効な ID が除外される。JRA 開催の無い日は空リスト、空ペイロードは fail-close する。
+- **SC-009** (US5, 追補): 保存済み horse プロフィールから、surrogate 馬の 性別/生年/血統が NULL 列のみに補完され、既存の非 NULL 値は保持される。解析結果に競走成績フィールドが存在しないことを leak-guard テストで確認できる。
 
 ## Assumptions
 
@@ -127,3 +169,12 @@ feature 008 (netkeiba-scraping) の取得層 (`scrape/fetch.py` の `HttpFetcher
 - 自動スケジューリング、定期再取得、複数データソース、odds スナップショット履歴。
 - ログイン/有料会員限定ページの取得。
 - 着差 (`race_results.finish_time_diff`) の取り込み（finish_time のみ対象。着差は対象外）。
+- 騎手・調教師のプロフィールページ補完 (補完すべき列が無いため対象外。US5 は馬の識別・血統のみ)。
+- レース一覧 (US4) の起点となる開催日カレンダー自体の自動探索・期間一括巡回 (オペレーターが日付を与える前提)。
+- プロフィール由来データを含む実ライブ取得の本番稼働 (US4/US5 の実 markup は本番前に `capture-fixture` で実ページ検証が必要)。
+
+## 追補メモ (2026-06-28)
+
+US4 (開催日レース一覧取得) と US5 (馬プロフィール識別・血統補完) は、本 feature の当初スコープ (entries/results/odds の実パーサ置換) の **後追い追補**として追加した。きっかけは外部設計ドキュメント (Obsidian `data-sources.md` / `scraping-netkeiba.md`) と実装の整合確認で、ドキュメントが挙げる「開催日一覧ページ」「未登録エンティティのプロフィール補完」が未実装と判明したため。Playwright / オッズ URL に関するドキュメント記述は本 spec の FR-013 (静的取得ハイブリッド、Playwright 不採用) と相違するが、これは**外部ドキュメント側が古い**ものであり、repo spec・実装の修正は不要 (外部ドキュメントは本リポジトリの管理対象外)。設計方針は codex の second opinion を取得済み (特に US5 のリーク境界 = 競走成績を読まない方針)。
+
+**実 netkeiba selector 検証 (2026-06-28 実施)**: polite fetcher で実ページを最小限取得し US4/US5 のパーサを実 markup で検証。結果フィクスチャを `scrape/tests/fixtures/real/` に保存 (race_list_20241228 / horse_profile_2022103995 / pedigree_2022103995) し、ネットワーク非依存テストに組み込んだ。検証で判明した実装修正 = (a) **db.netkeiba.com は EUC-JP・charset ヘッダ無し**で文字化け → 取得層に meta charset デコードを追加 (FR-017)、(b) 馬本体ページの**血統は JS 描画** (空 `#horse_pedigree_box`) → 血統は `/horse/ped/{id}/` のサーバ描画 `blood_table` から取得する 2 ページ方式へ、(c) 実 blood_table の class は `b_ml`(父系)/`b_fml`(母系) で母父は母セル後の最初の `b_ml` (当初の `b_fl` 仮定は誤り)。識別 (馬名/性別/生年) と一覧抽出は当初 selector のまま実 markup で成立。

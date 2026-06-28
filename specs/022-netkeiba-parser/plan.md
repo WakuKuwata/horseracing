@@ -26,7 +26,7 @@ scrape の唯一の実害スタブである parse 層（合成 HTML スキーマ
 
 **Constraints**: リーク境界（odds/結果は特徴量にしない）、odds 最新値上書き（スナップショット禁止）、race_id 12桁/2007+、netkeiba エンティティは id_mappings 経由のみ、fail-close。netkeiba ToS/robots 遵守、個人利用前提。
 
-**Scale/Scope**: P1 出走表 / P2 結果 / P3 単勝オッズ。exotic odds・RaceFront write・スキーマ変更は out of scope。
+**Scale/Scope**: P1 出走表 / P2 結果 / P3 単勝オッズ。**追補 (2026-06-28)**: P4 開催日レース一覧取得 / P5 馬プロフィール識別・血統補完。exotic odds・RaceFront write・スキーマ変更・騎手/調教師プロフィール補完は out of scope。
 
 ## Constitution Check
 
@@ -62,17 +62,19 @@ scrape/src/horseracing_scrape/
 ├── fetch.py             # [無改修] HttpFetcher（robots/rate-limit/cache）
 ├── idmap.py             # [無改修] netkeiba→JRA-VAN id_mappings 解決
 ├── venues.py            # [無改修] build_race_id 維持
-├── urls.py              # [新規] race_id→netkeiba URL 構築（entries/result HTML, odds JSON）
+├── urls.py              # [新規→追補] race_id→URL（entries/result HTML, odds JSON）＋ race_list_url（開催日フラグメント, US4）＋ horse_profile_url（US5）
 ├── odds_adapter.py      # [新規] odds JSON 取得（no-cache）+ schema 必須キー検査 + 欠損 fail-close
-├── models.py            # [無改修] parse↔upsert 境界 dataclass
-├── upsert.py            # [小改修] update_odds に popularity 追加 / backfill_results に finish_time(str→Interval) 追加（既存カラム、スキーマ変更なし）
-├── pipeline.py          # [小改修] odds 取得を odds_adapter 経由へ、capture-fixture 経路
-├── cli.py               # [小改修] capture-fixture サブコマンド（1回限り取得）
+├── models.py            # [追補] parse↔upsert 境界 dataclass に ScrapedRaceList（US4）/ ScrapedHorseProfile（US5, 成績フィールド無し）追加
+├── upsert.py            # [小改修→追補] update_odds に popularity / backfill_results に finish_time / complete_horse_profile（US5, NULL列のみ・血統 id 解決）追加
+├── pipeline.py          # [小改修→追補] odds を odds_adapter 経由へ、discover_races（US4, 読み取り専用）/ complete_profiles（US5, opt-in, job_type='horse_profile'）追加
+├── cli.py               # [小改修→追補] capture-fixture（race_list/horse_profile kind 追加）／ list-races（US4）／ complete-profiles（US5, opt-in）
 └── parse/
     ├── _common.py       # [改修] 実 markup ヘルパへ更新（合成 data-* 撤去）/ 必須フィールドは strict parse→ParseError
     ├── entries.py       # [置換] 実 netkeiba 出走表 HTML 解析（本文 race_id 照合含む）
     ├── results.py       # [置換] 実 netkeiba 結果 HTML 解析
     ├── odds.py          # [置換] 実 netkeiba 単勝 odds JSON 解析
+    ├── race_list.py     # [新規・追補] 開催日フラグメント→race_id 列挙（重複排除・出現順・無効除外・空ペイロード fail-close, US4）
+    ├── _profile.py      # [追補] ParserProfile に加え parse_horse_profile（識別・血統のみ、成績は読まない, US5）
     └── exotic_odds.py   # [据え置き] 本 feature 対象外（次段。合成のまま残置を plan で明示）
 
 scrape/tests/
@@ -105,6 +107,20 @@ scrape/tests/
 
 **不採用・保留**: なし（全件採用）。Codex 総評の「条件付き」条件はすべて上表で解消済み。
 
+## 追補 (2026-06-28): US4 開催日一覧 / US5 馬プロフィール補完
+
+当初スコープ (entries/results/odds の実パーサ置換) 完了後、外部設計ドキュメント (Obsidian `data-sources.md` / `scraping-netkeiba.md`) と実装の整合確認で 2 つの未実装機能が判明し、後追いで追加した。Obsidian doc の「Playwright を使う / オッズは `odds/index.html`」記述は本 plan の FR-013 (静的取得ハイブリッド・Playwright 不採用) と相違するが、**ドキュメント側が古い**ものであり repo spec/plan/実装は無修正 (外部 doc は管理対象外)。
+
+**US4 開催日レース一覧取得 (P4)**: JS 描画の `top/race_list.html` ではなく、同等のサーバ描画フラグメント `top/race_list_sub.html?kaisai_date=` を httpx で静的取得し、`race_id=` を正規抽出 (重複排除・出現順・12桁無効除外)。`discover_races` は読み取り専用 (コア表非変更)、CLI `list-races` で race_id と各種 URL を出力しオペレーターが US1–US3 に渡す。019 で deferred だった「race_id→URL 自動逆引き」を日付起点で解消。
+
+**US5 馬プロフィール識別・血統補完 (P5)**: db.netkeiba.com の classic HTML を静的取得し、**識別・血統のみ** (性別/生年/父・母・母父) を `horses` の NULL 列だけに補完 (既存 JRA-VAN 値は不変)。血統馬 ID も `id_mappings` 経由で解決。既定では起動せず CLI `complete-profiles` の明示起動のみ (opt-in)。job_type='horse_profile' で監査。**競走成績 (通算成績/勝率/賞金/近走) は一切読まない** — 解析結果型 `ScrapedHorseProfile` に成績フィールドを置かないことで構造的に担保し、leak-guard テストで検証 (憲法 II)。騎手/調教師は補完すべき列が無く対象外。**実 markup 検証の結果 (2026-06-28)**: 識別は `/horse/{id}/` (server-rendered) から、血統は `/horse/ped/{id}/` の `blood_table` (父系 `b_ml`/母系 `b_fml`、母父=母セル後の最初の `b_ml`) から取得する 2 ページ方式。本体ページの血統は JS 描画 (空 `#horse_pedigree_box`) で静的取得不可だったため分離。db.netkeiba.com は EUC-JP・charset ヘッダ無しのため取得層に meta charset デコードを追加 (FR-017)。
+
+**Selector 検証 (2026-06-28)**: polite fetcher で実ページを最小取得し、US4/US5 パーサを実 markup で検証して通過。フィクスチャ (`fixtures/real/race_list_20241228.html` / `horse_profile_2022103995.html` / `pedigree_2022103995.html`) を保存しネットワーク非依存テスト化。新規/改修ファイル = `urls.horse_pedigree_url`、`parse._profile.parse_horse_pedigree`、`fetch._resolve_text` (EUC-JP)、`cli` capture-fixture に `pedigree` kind。
+
+**Codex second opinion (追補分)**: `codex:codex-rescue` に US4/US5 の設計を諮問。主要採用点 = (a) race_list は `race_list_sub.html` フラグメント仮説で静的取得・fail-close・operator opt-in、(b) プロフィールは lazy 取得でなく独立 post-pass、(c) **プロフィールページの成績データは leak 面ゆえ identity/pedigree のみ保存** (本追補の核心)、(d) INSERT-or-leave 維持。実 markup (race_list_sub / blood_table) は本番前に `capture-fixture --kind race_list/horse_profile` で実ページ検証が必要 (セレクタは best-effort) と明記。
+
+**憲法 Check (追補分)**: I=race_id/血統 id とも検証・id_mappings 経由 (PASS) / II=成績を読まない構造担保＋leak-guard (PASS) / III=モデル/特徴量変更なし (N/A) / IV=確率ロジック変更なし (N/A) / V=補完は ingestion_jobs 監査・血統 id 解決は idempotent (PASS) / VI=新 UI/API/スキーマなし・既存 dataclass/テーブル再利用 (PASS)。
+
 ## Complexity Tracking
 
-憲法違反なし。Complexity 逸脱なし（新依存・新サービス・スキーマ変更なし、変更面を parse 層に限定）。
+憲法違反なし。Complexity 逸脱なし（新依存・新サービス・スキーマ変更なし、変更面を parse 層＋ pipeline/cli の追補に限定）。

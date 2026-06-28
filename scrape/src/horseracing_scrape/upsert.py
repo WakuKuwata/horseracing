@@ -25,7 +25,13 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from .idmap import resolve_entity
-from .models import ScrapedEntry, ScrapedExoticOdds, ScrapedOdds, ScrapedResult
+from .models import (
+    ScrapedEntry,
+    ScrapedExoticOdds,
+    ScrapedHorseProfile,
+    ScrapedOdds,
+    ScrapedResult,
+)
 from .venues import build_race_id
 
 _NETKEIBA_TIME_RE = re.compile(r"^(?:(\d+):)?(\d{1,2})\.(\d)$")  # "2:00.5" or "59.8"
@@ -169,6 +175,51 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
             ).on_conflict_do_nothing(index_elements=["race_id", "horse_id"])
         )
         c.written += 1
+    return c
+
+
+# --- horse profile completion (leak-safe, opt-in) ---------------------------
+def complete_horse_profile(
+    session: Session, horse_id: str, profile: ScrapedHorseProfile
+) -> Counts:
+    """Fill leak-safe identity/pedigree attributes on an EXISTING horse row.
+
+    fill-NULL-only: never clobber an attribute already set (protects JRA-VAN data, INV-N4). Only
+    identity/pedigree columns are written — career stats are never read or stored (leak boundary,
+    constitution II). Pedigree ids are resolved via id_mappings (canonical or ``nk:`` surrogate),
+    never guess-joined. A horse not yet in the DB is skipped (entries must be ingested first)."""
+    c = Counts()
+    c.processed += 1
+    horse = session.get(Horse, horse_id)
+    if horse is None:  # entries create the row first; nothing to complete otherwise
+        c.skipped += 1
+        c.error_messages.append(f"horse not in DB: {horse_id}")
+        return c
+
+    def _ped_id(netkeiba_id: str | None) -> str | None:
+        if not netkeiba_id:
+            return None
+        return resolve_entity(session, entity_type="horse", netkeiba_id=netkeiba_id)
+
+    candidates = {
+        "sex": profile.sex,
+        "birth_year": profile.birth_year,
+        "sire_id": _ped_id(profile.netkeiba_sire_id),
+        "sire_name": profile.sire_name,
+        "dam_id": _ped_id(profile.netkeiba_dam_id),
+        "dam_name": profile.dam_name,
+        "damsire_id": _ped_id(profile.netkeiba_damsire_id),
+        "damsire_name": profile.damsire_name,
+    }
+    changed = False
+    for col, value in candidates.items():
+        if value is not None and getattr(horse, col) is None:
+            setattr(horse, col, value)
+            changed = True
+    if changed:
+        c.written += 1
+    else:
+        c.skipped += 1  # nothing new to fill (already complete / page had nothing leak-safe)
     return c
 
 
