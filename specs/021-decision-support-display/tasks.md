@@ -94,7 +94,7 @@ description: "Task list — 意思決定支援の表示強化 (021)"
 - [X] T023 [P] front pseudo invariant test 拡張: q/q'/recomputed 校正含め「ラベルなし pseudo/推定値 0 件」を単一 PseudoBadge 経路で保証（SC-002, 憲法 V）
 - [X] T024 read-only invariant test: 新エンドポイント/フィールドが GET のみ・write 関数（`generate_*`）を呼ばない（014 規約）
 - [X] T025 lint/test ゲート: `uv run ruff check` + `uv run pytest`（api/eval/training）、`pnpm test` + 型 drift（front）緑
-- [ ] T026 実 DB スモーク（[quickstart.md](quickstart.md)）: US1（p/q 併記）・US2（calibration）・US3（採否）を実データで確認
+- [X] T026 実 DB スモーク（[quickstart.md](quickstart.md)）: 実 horseracing DB（2007–2024）で US1/US2/US3 確認。**スモークで ingest の馬番/枠番 列取り違えを発見→修正（別コミット c8cd98b）→再取り込み・再学習・再 serving**。最終: 馬番ユニーク・Σq=1.0・q/p/band 充填・canonical_consistent=true・calibration が OOS reliability(n=827,102, ECE 0.00833) を返却
 - [X] T027 [P] `CLAUDE.md` に 021 の 1 行サマリを追記（014–020 と同形式: p/q 同一 canonical field 併記・中立提示・OOS reliability を metrics_summary 経由 read・データ裏付けは検証先行で採否・read-only/スキーマ変更なし・市場優位の明示）
 
 ---
