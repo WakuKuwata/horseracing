@@ -18,14 +18,18 @@ function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T
   return result.data as T;
 }
 
-export function useRaces(params: {
-  page?: number;
-  page_size?: number;
-  date?: string;
-  venue?: string;
-}) {
+export function useRaces(
+  params: {
+    page?: number;
+    page_size?: number;
+    date?: string;
+    venue?: string;
+  },
+  options?: { enabled?: boolean },
+) {
   return useQuery<RacePage, ErrorInfo>({
     queryKey: ["races", params],
+    enabled: options?.enabled ?? true,
     queryFn: async () =>
       unwrap(
         await api.GET("/api/v1/races", {

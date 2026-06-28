@@ -9,11 +9,17 @@ import { RaceListPage } from "./RaceListPage";
 const BASE = "*/api/v1";
 
 describe("RaceListPage", () => {
-  it("renders the race table on success", async () => {
+  it("renders the day board (venue group + race card) on success", async () => {
     server.use(http.get(`${BASE}/races`, () => HttpResponse.json(racePage)));
     renderWithProviders(<RaceListPage />);
-    expect(await screen.findByText("200806010111")).toBeInTheDocument();
-    expect(screen.getByText(/1–1 \/ 1 件/)).toBeInTheDocument();
+    // venue 05 -> 東京, race_number 11 -> "11R"
+    expect(await screen.findByText("東京")).toBeInTheDocument();
+    expect(screen.getByText("11R")).toBeInTheDocument();
+    // card links to the race detail
+    expect(screen.getByRole("link", { name: /11R/ })).toHaveAttribute(
+      "href",
+      "/races/200806010111",
+    );
   });
 
   it("shows the empty state (distinct from error) on 200 with no rows", async () => {
@@ -23,7 +29,7 @@ describe("RaceListPage", () => {
       ),
     );
     renderWithProviders(<RaceListPage />);
-    expect(await screen.findByText("該当するレースがありません")).toBeInTheDocument();
+    expect(await screen.findByText("レースデータがありません")).toBeInTheDocument();
   });
 
   it("shows a typed error state on 500", async () => {

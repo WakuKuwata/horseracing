@@ -183,3 +183,96 @@ th.num {
 .audit code {
   color: var(--text);
 }
+
+/* --- day-centric race board (one day → venue groups → race cards) --- */
+.day-board {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.venue-group {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem 1rem;
+}
+.venue-group__title {
+  margin: 0 0 0.7rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.venue-group__count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.venue-group__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+.race-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+}
+.race-card:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+.race-card__no {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--accent);
+  min-width: 2.4rem;
+}
+.race-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.race-card__class {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.race-card__meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* --- day data-update (段B write) --- */
+.day-update {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.day-update button {
+  background: var(--accent);
+  color: #04101f;
+  border: none;
+  border-radius: 5px;
+  padding: 0.35rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.day-update button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.day-update__status {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
