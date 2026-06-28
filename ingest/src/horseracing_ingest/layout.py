@@ -26,8 +26,11 @@ WEATHER = 20  # col21
 
 # --- horse-level ---
 RACE_HORSE_ID_18 = 30  # col31, 18-digit id (cross-check only)
-FRAME = 31  # col32 枠番
-HORSE_NUMBER = 32  # col33 馬番
+# NOTE: actual JRA-VAN file order is 馬番 (index31, unique 1..N) then 枠番 (index32, 1-8 bracket) —
+# verified against raw rows. (Fixed: these two were previously swapped, so horse_number held the
+# 枠番 and collided for ~97% of races, breaking canonical field / joint / market-q.)
+HORSE_NUMBER = 31  # col32 馬番 (unique per race)
+FRAME = 32  # col33 枠番 (1-8 bracket)
 HORSE_NAME = 33  # col34
 SEX = 34  # col35 (牡/牝/セ)
 AGE = 35  # col36
