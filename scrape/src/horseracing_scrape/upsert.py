@@ -11,7 +11,9 @@
 
 from __future__ import annotations
 
+import datetime
 import math
+import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 
@@ -25,6 +27,21 @@ from sqlalchemy.orm import Session
 from .idmap import resolve_entity
 from .models import ScrapedEntry, ScrapedExoticOdds, ScrapedOdds, ScrapedResult
 from .venues import build_race_id
+
+_NETKEIBA_TIME_RE = re.compile(r"^(?:(\d+):)?(\d{1,2})\.(\d)$")  # "2:00.5" or "59.8"
+
+
+def parse_netkeiba_time(value: str | None) -> datetime.timedelta | None:
+    """netkeiba finish time 'M:SS.s' / 'SS.s' -> timedelta; None if empty/unparseable."""
+    if not value:
+        return None
+    m = _NETKEIBA_TIME_RE.match(value.strip())
+    if not m:
+        return None
+    minutes = int(m.group(1)) if m.group(1) else 0
+    return datetime.timedelta(
+        minutes=minutes, seconds=int(m.group(2)), milliseconds=int(m.group(3)) * 100
+    )
 
 
 @dataclass
@@ -112,11 +129,12 @@ def update_odds(session: Session, race_id: str, scraped: ScrapedOdds) -> Counts:
         c.processed += 1
         if row.odds is None or row.odds <= 0:
             continue
-        horse_id = resolve_entity(session, entity_type="horse", netkeiba_id=row.netkeiba_horse_id)
+        # netkeiba win-odds JSON is keyed by 馬番 → match the existing race_horses row by
+        # (race_id, horse_number); no id_mapping needed (Feature 022 I1). Also persist popularity.
         res = session.execute(
             update(RaceHorse)
-            .where(RaceHorse.race_id == race_id, RaceHorse.horse_id == horse_id)
-            .values(odds=Decimal(str(row.odds)))
+            .where(RaceHorse.race_id == race_id, RaceHorse.horse_number == row.horse_number)
+            .values(odds=Decimal(str(row.odds)), popularity=row.popularity)
         )
         c.written += res.rowcount or 0
     return c
@@ -147,6 +165,7 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
             insert(RaceResult).values(
                 race_id=race_id, horse_id=horse_id, finish_order=row.finish_order,
                 result_status=row.result_status,
+                finish_time=parse_netkeiba_time(row.finish_time),
             ).on_conflict_do_nothing(index_elements=["race_id", "horse_id"])
         )
         c.written += 1

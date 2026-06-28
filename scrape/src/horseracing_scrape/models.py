@@ -54,7 +54,9 @@ class ScrapedEntry:
 
 @dataclass(frozen=True)
 class ScrapedOddsRow:
-    netkeiba_horse_id: str
+    # netkeiba win-odds JSON is keyed by 馬番 (horse_number), not horse id (Feature 022 I1).
+    # update_odds matches race_horses by (race_id, horse_number) — no id_mapping needed.
+    horse_number: int
     odds: float | None
     popularity: int | None
 

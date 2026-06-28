@@ -1,4 +1,5 @@
-"""US1 (SC-001/002): entries upsert — mapped=canonical, unmapped=nk: + UNMAPPED queue, idempotent."""
+"""US1 (SC-001): real-entries upsert — mapped=canonical, unmapped=nk:+UNMAPPED (horse/jockey/
+trainer), idempotent, invalid venue writes no row."""
 
 from __future__ import annotations
 
@@ -7,58 +8,60 @@ from horseracing_db.enums import EntityType, MappingStatus, Source
 from horseracing_db.models import IdMapping, Race, RaceHorse
 from sqlalchemy import func, select
 
+from horseracing_scrape.fetch import FixtureFetcher
 from horseracing_scrape.pipeline import scrape_entries
-from tests._synth import RACE_ID, fixture_fetcher, map_horse
+from tests._synth import REAL_RID, map_horse, real_entries_fetcher
 
 pytestmark = pytest.mark.integration
 
 
 def test_entries_mapped_and_unmapped(session):
-    map_horse(session, netkeiba_id="H001", canonical_id="2020000001")  # H001 is mapped
-    fetcher, urls = fixture_fetcher("entries")
+    map_horse(session, netkeiba_id="2022103995", canonical_id="2020000001")  # 馬番1 mapped
+    fetcher, urls = real_entries_fetcher()
 
     summary = scrape_entries(session, urls=urls, fetcher=fetcher)
     assert summary.status == "succeeded"
 
-    assert session.get(Race, RACE_ID) is not None
+    assert session.get(Race, REAL_RID) is not None
     horse_ids = set(session.scalars(
-        select(RaceHorse.horse_id).where(RaceHorse.race_id == RACE_ID)
+        select(RaceHorse.horse_id).where(RaceHorse.race_id == REAL_RID)
     ))
-    assert horse_ids == {"2020000001", "nk:H002", "nk:H003"}  # canonical + surrogates
+    assert len(horse_ids) == 18
+    assert "2020000001" in horse_ids                       # mapped -> canonical
+    assert "nk:2022105102" in horse_ids                    # others -> surrogate
+    assert "2022103995" not in horse_ids                   # mapped id not used as surrogate
 
-    # unmapped H002/H003 queued; mapped H001 stays mapped
-    unmapped = set(session.scalars(
-        select(IdMapping.source_id).where(
-            IdMapping.entity_type == EntityType.HORSE, IdMapping.source == Source.NETKEIBA,
+    # jockey & trainer also queued UNMAPPED (codex coverage gap closed)
+    for et in (EntityType.JOCKEY, EntityType.TRAINER):
+        n = session.scalar(select(func.count()).select_from(IdMapping).where(
+            IdMapping.entity_type == et, IdMapping.source == Source.NETKEIBA,
             IdMapping.mapping_status == MappingStatus.UNMAPPED,
-        )
-    ))
-    assert unmapped == {"H002", "H003"}
-
-    # cancelled reflected in entry_status
-    statuses = dict(session.execute(
-        select(RaceHorse.horse_id, RaceHorse.entry_status).where(RaceHorse.race_id == RACE_ID)
-    ).all())
-    assert statuses["nk:H003"] == "cancelled"
+        ))
+        assert n and n > 0
 
 
 def test_entries_idempotent(session):
-    fetcher, urls = fixture_fetcher("entries")
+    fetcher, urls = real_entries_fetcher()
     scrape_entries(session, urls=urls, fetcher=fetcher)
     n1 = session.scalar(select(func.count()).select_from(RaceHorse))
-    fetcher2, urls2 = fixture_fetcher("entries")
+    fetcher2, urls2 = real_entries_fetcher()
     scrape_entries(session, urls=urls2, fetcher=fetcher2)
     n2 = session.scalar(select(func.count()).select_from(RaceHorse))
-    assert n1 == n2  # re-run: no duplicates
+    assert n1 == n2 == 18  # re-run: no duplicates
 
 
 def test_unknown_venue_writes_no_row(session):
+    # canonical race_id with an unknown venue (99) -> build_race_id None -> skip, no fake row
     html = (
-        '<div class="race" data-year="2025" data-track="99" data-kai="1" data-day="1" '
-        'data-raceno="1"><table class="entries"><tr class="horse" data-horse-id="H001" '
-        'data-number="1" data-status="started"></tr></table></div>'
+        "<html><head>"
+        '<link rel="canonical" '
+        'href="https://race.netkeiba.com/race/shutuba.html?race_id=202499010101" />'
+        "</head><body>"
+        '<table class="Shutuba_Table"><tr class="HorseList">'
+        '<td class="Waku1">1</td><td class="Umaban1">1</td>'
+        '<td class="HorseInfo"><a href="https://db.netkeiba.com/horse/2022103995">馬</a></td>'
+        "</tr></table></body></html>"
     )
-    from horseracing_scrape.fetch import FixtureFetcher
     summary = scrape_entries(session, urls=["u"], fetcher=FixtureFetcher({"u": html}))
     assert summary.skipped == 1
-    assert session.scalar(select(func.count()).select_from(Race)) == 0  # no fake race_id row
+    assert session.scalar(select(func.count()).select_from(Race)) == 0

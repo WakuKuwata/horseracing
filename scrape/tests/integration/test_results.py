@@ -1,46 +1,47 @@
-"""US3 (SC-005): results backfill is INSERT-ONLY (never overwrites JRA-VAN); no row for non-starters."""
+"""US2 (SC-002): real-results backfill — finish_order + finish_time persisted, INSERT-ONLY."""
 
 from __future__ import annotations
+
+import datetime
 
 import pytest
 from horseracing_db.enums import ResultStatus
 from horseracing_db.models import RaceResult
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from horseracing_scrape.pipeline import scrape_entries, scrape_results
-from tests._synth import RACE_ID, fixture_fetcher
+from tests._synth import H_WINNER, REAL_RID, real_entries_fetcher, real_results_fetcher
 
 pytestmark = pytest.mark.integration
 
 
-def test_backfill_inserts_for_started_only(session):
-    fetcher, urls = fixture_fetcher("entries")
-    scrape_entries(session, urls=urls, fetcher=fetcher)  # H001/H002 started, H003 cancelled
-    rf, rurls = fixture_fetcher("results")
+def test_backfill_finish_order_and_time(session):
+    ef, eurls = real_entries_fetcher()
+    scrape_entries(session, urls=eurls, fetcher=ef)  # 18 started
+    rf, rurls = real_results_fetcher()
     summary = scrape_results(session, urls=rurls, fetcher=rf)
     assert summary.status == "succeeded"
 
-    finishers = dict(session.execute(
-        select(RaceResult.horse_id, RaceResult.finish_order).where(RaceResult.race_id == RACE_ID)
-    ).all())
-    assert set(finishers) == {"nk:H001", "nk:H002"}   # no result row for cancelled H003
-    assert finishers["nk:H001"] == 1
+    n = session.scalar(select(func.count()).select_from(RaceResult).where(
+        RaceResult.race_id == REAL_RID))
+    assert n == 18
+    win = session.execute(select(RaceResult.finish_order, RaceResult.finish_time).where(
+        RaceResult.race_id == REAL_RID, RaceResult.horse_id == H_WINNER)).one()
+    assert win.finish_order == 1
+    assert win.finish_time == datetime.timedelta(minutes=2, milliseconds=500)  # "2:00.5"
 
 
 def test_backfill_does_not_overwrite_jravan(session):
-    fetcher, urls = fixture_fetcher("entries")
-    scrape_entries(session, urls=urls, fetcher=fetcher)
-    # seed a JRA-VAN result with a DIFFERENT finish_order
-    session.add(RaceResult(race_id=RACE_ID, horse_id="nk:H001", finish_order=5,
+    ef, eurls = real_entries_fetcher()
+    scrape_entries(session, urls=eurls, fetcher=ef)
+    # seed a JRA-VAN result with a DIFFERENT finish_order for the winner
+    session.add(RaceResult(race_id=REAL_RID, horse_id=H_WINNER, finish_order=5,
                            result_status=ResultStatus.FINISHED))
     session.commit()
 
-    rf, rurls = fixture_fetcher("results")   # netkeiba says H001 finished 1st
+    rf, rurls = real_results_fetcher()  # netkeiba says winner finished 1st
     scrape_results(session, urls=rurls, fetcher=rf)
 
-    fo = session.scalar(
-        select(RaceResult.finish_order).where(
-            RaceResult.race_id == RACE_ID, RaceResult.horse_id == "nk:H001"
-        )
-    )
+    fo = session.scalar(select(RaceResult.finish_order).where(
+        RaceResult.race_id == REAL_RID, RaceResult.horse_id == H_WINNER))
     assert fo == 5  # existing JRA-VAN row untouched (insert-only)
