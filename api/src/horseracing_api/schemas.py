@@ -38,6 +38,9 @@ class RaceSummary(BaseModel):
     race_class: str | None = None
     distance: int | None = None
     track_type: str | None = None
+    # 発走時刻 (post time, JST-aware). netkeiba-sourced; mostly null for JRA-VAN-only races
+    # (004 cutoff is date-level). Display-only — never a model feature (leak boundary, II).
+    post_time: datetime.datetime | None = None
     # Feature 014: results-confirmed flag — True once race_results rows exist (race run & official),
     # False while result-pending. Lets the list distinguish 確定後 vs 確定前 without a detail fetch.
     has_results: bool = False

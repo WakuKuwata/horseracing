@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 import type { RaceSummary } from "../api/types";
-import { PLACEHOLDER } from "../lib/format";
+import { formatPostTime, PLACEHOLDER } from "../lib/format";
 
 /** Race title: prefer the race name (e.g. ホープフルＳ); strip the JRA-VAN "*" suffix used for
  *  non-stakes rows (未勝利* → 未勝利). Fall back to race_class, then a placeholder. */
@@ -21,6 +21,9 @@ export function RaceCard({ race }: { race: RaceSummary }) {
     .join(" · ");
 
   const confirmed = race.has_results === true;
+  // 発走時刻 (netkeiba-sourced). JRA-VAN-only races have none → omit the chip rather than show a
+  // placeholder for every historical race.
+  const postTime = race.post_time ? formatPostTime(race.post_time) : null;
 
   return (
     <Link to={`/races/${race.race_id}`} className="race-card">
@@ -29,6 +32,11 @@ export function RaceCard({ race }: { race: RaceSummary }) {
         <span className="race-card__title">{raceTitle(race)}</span>
         <span className="race-card__meta">{meta || PLACEHOLDER}</span>
       </span>
+      {postTime && (
+        <span className="race-card__post" aria-label="発走時刻">
+          発走 {postTime}
+        </span>
+      )}
       <span
         className={`race-status race-status--${confirmed ? "confirmed" : "pending"}`}
       >

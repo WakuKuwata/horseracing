@@ -354,6 +354,8 @@ export interface components {
             has_results: boolean;
             /** Horses */
             horses: components["schemas"]["HorseEntry"][];
+            /** Post Time */
+            post_time?: string | null;
             /** Race Class */
             race_class?: string | null;
             /** Race Date */
@@ -378,6 +380,8 @@ export interface components {
              * @default false
              */
             has_results: boolean;
+            /** Post Time */
+            post_time?: string | null;
             /** Race Class */
             race_class?: string | null;
             /** Race Date */

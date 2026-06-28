@@ -33,6 +33,20 @@ export function formatDateTime(value: string | null | undefined): string {
   return value.replace("T", " ").replace(/\.\d+/, "").replace("Z", " UTC");
 }
 
+/** Post time (JST-aware ISO) → "12:55" in Asia/Tokyo; em-dash when absent. netkeiba-sourced, so
+ *  JRA-VAN-only races have none — callers may omit the chip rather than render the placeholder. */
+export function formatPostTime(value: string | null | undefined): string {
+  if (!value) return EM_DASH;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return EM_DASH;
+  return new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Tokyo",
+  }).format(d);
+}
+
 /** A bet-type/horse-number selection array → "1-2-3". */
 export function formatSelection(selection: number[] | null | undefined): string {
   if (!selection || selection.length === 0) return EM_DASH;

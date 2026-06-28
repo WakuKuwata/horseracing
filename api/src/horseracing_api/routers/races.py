@@ -39,7 +39,8 @@ def _summary(r, *, has_results: bool = False) -> RaceSummary:
     return RaceSummary(
         race_id=r.race_id, race_date=r.race_date, venue_code=r.venue_code,
         race_number=r.race_number, race_name=r.race_name, race_class=r.race_class,
-        distance=r.distance, track_type=r.track_type, has_results=has_results,
+        distance=r.distance, track_type=r.track_type, post_time=r.post_time,
+        has_results=has_results,
     )
 
 

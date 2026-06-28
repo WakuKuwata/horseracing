@@ -6,6 +6,7 @@ import {
   formatNum,
   formatOdds,
   formatPct,
+  formatPostTime,
   formatSelection,
 } from "./format";
 
@@ -58,5 +59,17 @@ describe("formatDateTime", () => {
   });
   it("placeholder for null", () => {
     expect(formatDateTime(null)).toBe(PLACEHOLDER);
+  });
+});
+
+describe("formatPostTime", () => {
+  it("renders the post time in JST regardless of the offset in the ISO string", () => {
+    // 10:05 JST expressed with the +09:00 offset, and the same instant as UTC — both -> 10:05
+    expect(formatPostTime("2025-10-11T10:05:00+09:00")).toBe("10:05");
+    expect(formatPostTime("2025-10-11T01:05:00Z")).toBe("10:05");
+  });
+  it("placeholder for null/invalid", () => {
+    expect(formatPostTime(null)).toBe(PLACEHOLDER);
+    expect(formatPostTime("not-a-date")).toBe(PLACEHOLDER);
   });
 });

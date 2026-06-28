@@ -255,6 +255,13 @@ th.num {
   font-size: 0.78rem;
   color: var(--muted);
 }
+.race-card__post {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
 
 /* --- data-refresh button (024) --- */
 .detail-topbar {
