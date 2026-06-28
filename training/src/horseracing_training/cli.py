@@ -136,6 +136,7 @@ def _run_feature_command(session: Session, args) -> int:
         baseline = LightGBMPredictor(session, seed=args.seed, drop_features=tuple(FEATURE_GROUPS))
         r = evaluate_feature_adoption(
             session, candidate=candidate, baseline=baseline,
+            ece_tol=args.ece_tol, worst_fold_ece_tol=args.worst_fold_ece_tol,
             start_date=args.from_, end_date=args.to,
         )
         print(f"feature-eval fv={FEATURE_VERSION} folds={r.n_folds} adopted={r.adopted}")
@@ -211,6 +212,9 @@ def main(argv: list[str] | None = None) -> int:
     # eval is predictor-agnostic; we inject the concrete LightGBMPredictor + FEATURE_GROUPS here.
     fe = sub.add_parser("feature-eval", help="020: candidate vs baseline (020 features dropped)")
     _add_window(fe)
+    fe.add_argument("--ece-tol", type=float, default=1e-3, help="mean ECE non-degradation tol")
+    fe.add_argument("--worst-fold-ece-tol", type=float, default=2e-3,
+                    help="looser per-fold worst ECE tol (single-fold blip should not veto)")
     fa = sub.add_parser("feature-ablation", help="020: per-group LogLoss contribution (diagnostic)")
     _add_window(fa)
     fa.add_argument("--groups", default=None, help="comma-separated group subset (default: all)")

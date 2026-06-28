@@ -49,6 +49,17 @@ def test_candidate_beats_baseline_is_adopted(session):
     assert report.adopted is True
 
 
+def test_worst_fold_ece_tol_is_wired(session):
+    """The per-fold worst-ECE guard is a real, separate knob: an impossibly tight tolerance blocks
+    adoption via the fold guard even when the PRIMARY (mean) gate still passes."""
+    _seed(session)
+    kwargs = dict(candidate=FakePredictor(skill=50.0), baseline=FakePredictor(skill=8.0))
+    assert evaluate_feature_adoption(session, **kwargs).adopted is True
+    strict = evaluate_feature_adoption(session, worst_fold_ece_tol=-1.0, **kwargs)
+    assert strict.primary_pass is True      # mean gate unaffected
+    assert strict.adopted is False          # fold guard vetoes
+
+
 def test_no_false_positive_when_candidate_not_better(session):
     """SC-010: a candidate that does NOT beat baseline must NOT be adopted."""
     _seed(session)
