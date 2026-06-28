@@ -20,10 +20,11 @@ describe("RaceDetailPage", () => {
   it("renders predictions and the prediction-run audit", async () => {
     server.use(...happyHandlers);
     renderDetail();
-    // win probability rendered as percentage
-    expect(await screen.findByText("32.0%")).toBeInTheDocument();
+    // win probability rendered as percentage (appears in both the prediction table and PQCompare)
+    expect((await screen.findAllByText("32.0%")).length).toBeGreaterThan(0);
     // run audit surfaces which prediction_run was selected (constitution V)
     expect(screen.getByText("run-abc")).toBeInTheDocument();
-    expect(screen.getByText("lgbm-006")).toBeInTheDocument();
+    // model_version appears in the run audit and the calibration panel
+    expect(screen.getAllByText("lgbm-006").length).toBeGreaterThan(0);
   });
 });

@@ -27,7 +27,7 @@ describe("openapi snapshot", () => {
     expect(raw).toBe(resorted);
   });
 
-  it("exposes exactly the 6 read-only endpoints the SPA consumes", () => {
+  it("exposes exactly the 7 read-only endpoints the SPA consumes", () => {
     const paths = Object.keys((spec.paths as Record<string, unknown>) ?? {}).sort();
     expect(paths).toEqual(
       [
@@ -37,6 +37,7 @@ describe("openapi snapshot", () => {
         "/api/v1/races/{race_id}/odds",
         "/api/v1/races/{race_id}/predictions",
         "/api/v1/races/{race_id}/recommendations",
+        "/api/v1/models/{model_version}/calibration",
       ].sort(),
     );
   });

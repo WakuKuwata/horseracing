@@ -10,18 +10,20 @@ import type { ReactNode } from "react";
  * ONLY component allowed to display such values. Do not format pseudo numbers inline elsewhere.
  */
 
-export type PseudoKind = "estimated" | "pseudo" | "double_pseudo";
+export type PseudoKind = "estimated" | "pseudo" | "double_pseudo" | "market_q";
 
 const LABELS: Record<PseudoKind, string> = {
   estimated: "推定",
   pseudo: "疑似",
   double_pseudo: "二重疑似",
+  market_q: "市場推定",
 };
 
 const TITLES: Record<PseudoKind, string> = {
   estimated: "推定市場オッズ(PL外挿・実オッズではない)",
   pseudo: "疑似値(モデル確率の逆数・実績ではない)",
   double_pseudo: "二重疑似(推定オッズ + PL外挿・実現ROIではない)",
+  market_q: "市場推定確率(オッズ由来 vote-share・FL bias 含む・真の確率でもモデル p でもない)",
 };
 
 export function PseudoBadge({ kind }: { kind: PseudoKind }) {

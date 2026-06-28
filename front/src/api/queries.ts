@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api, parseApiError, type ErrorInfo } from "./client";
 import type {
+  CalibrationResponse,
   OddsResponse,
   PredictionResponse,
   RaceDetail,
@@ -79,6 +80,21 @@ export function useOdds(raceId: string, betType?: string) {
             path: { race_id: raceId },
             query: betType ? { bet_type: betType } : {},
           },
+        }),
+      ),
+  });
+}
+
+export function useCalibration(modelVersion: string | undefined, label = "win") {
+  // Feature 021 US2: read-only walk-forward OOS reliability for a model_version. Disabled until the
+  // model_version is known (it comes from the predictions run audit).
+  return useQuery<CalibrationResponse, ErrorInfo>({
+    queryKey: ["calibration", modelVersion, label],
+    enabled: !!modelVersion,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/models/{model_version}/calibration", {
+          params: { path: { model_version: modelVersion as string }, query: { label } },
         }),
       ),
   });

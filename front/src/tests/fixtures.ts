@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw";
 
 import type {
+  CalibrationResponse,
   OddsResponse,
   PredictionResponse,
   RaceDetail,
@@ -45,12 +46,16 @@ export const raceDetail: RaceDetail = {
 export const predictionResponse: PredictionResponse = {
   race_id: "200806010111",
   horses: [
-    { horse_id: "h1", horse_number: 1, win: 0.32, top2: 0.55, top3: 0.7 },
-    { horse_id: "h2", horse_number: 2, win: 0.18, top2: 0.4, top3: 0.58 },
+    { horse_id: "h1", horse_number: 1, win: 0.32, top2: 0.55, top3: 0.7, market_win_prob: 0.3 },
+    { horse_id: "h2", horse_number: 2, win: 0.18, top2: 0.4, top3: 0.58, market_win_prob: 0.2 },
   ],
   joint: null,
   joint_bet_type: null,
   joint_logic_version: null,
+  market_prob_source: "win_odds_vote_share",
+  canonical_consistent: true,
+  odds_as_of: "2008-06-01T05:00:00Z",
+  odds_source: "final",
   run: {
     prediction_run_id: "run-abc",
     logic_version: "009.1",
@@ -103,6 +108,26 @@ export const recommendationResponse: RecommendationResponse = {
   ],
 };
 
+export const calibrationResponse: CalibrationResponse = {
+  model_version: "lgbm-006",
+  oos: true,
+  source: "walk_forward_oos",
+  label: "win",
+  valid_years: [2008, 2009],
+  n_total: 200,
+  ece: 0.012,
+  bins: [
+    {
+      pred_lo: 0.0, pred_hi: 0.1, pred_mean: 0.05, realized_rate: 0.06,
+      realized_ci_low: 0.03, realized_ci_high: 0.09, count: 150, suppressed: false,
+    },
+    {
+      pred_lo: 0.5, pred_hi: 0.6, pred_mean: 0.55, realized_rate: 0.5,
+      realized_ci_low: 0.2, realized_ci_high: 0.8, count: 4, suppressed: true,
+    },
+  ],
+};
+
 /** Default happy-path handlers; tests override individually with server.use(). */
 export const happyHandlers = [
   http.get(`${BASE}/races`, () => HttpResponse.json(racePage)),
@@ -113,6 +138,7 @@ export const happyHandlers = [
   }),
   http.get(`${BASE}/races/:id/odds`, () => HttpResponse.json(oddsResponse)),
   http.get(`${BASE}/races/:id/recommendations`, () => HttpResponse.json(recommendationResponse)),
+  http.get(`${BASE}/models/:mv/calibration`, () => HttpResponse.json(calibrationResponse)),
 ];
 
 export { http, HttpResponse };

@@ -1,8 +1,10 @@
 import { Link, useParams } from "react-router-dom";
 
 import { usePredictions, useRace } from "../api/queries";
+import { CalibrationChart } from "../components/CalibrationChart";
 import { JointPanel } from "../components/JointPanel";
 import { OddsPanel } from "../components/OddsPanel";
+import { PQCompare } from "../components/PQCompare";
 import { PredictionTable } from "../components/PredictionTable";
 import { RecommendationPanel } from "../components/RecommendationPanel";
 import { RunAuditView } from "../components/RunAudit";
@@ -63,6 +65,22 @@ export function RaceDetailPage() {
           )}
         </QueryStateView>
       </div>
+
+      <div className="panel">
+        <h2>モデル予測 p と市場推定 q の比較</h2>
+        <QueryStateView
+          isLoading={predQuery.isLoading}
+          error={predQuery.error ?? null}
+          data={predQuery.data}
+          isEmpty={(d) => d.horses.length === 0}
+          loadingLabel="予測を読み込み中…"
+          emptyMessage="この レースの予測はありません"
+        >
+          {(d) => <PQCompare data={d} />}
+        </QueryStateView>
+      </div>
+
+      <CalibrationChart modelVersion={predQuery.data?.run?.model_version} />
 
       <JointPanel raceId={raceId} />
       <OddsPanel raceId={raceId} />

@@ -16,3 +16,5 @@ export type RealExoticOddsRow = S["RealExoticOddsRow"];
 export type RecommendationResponse = S["RecommendationResponse"];
 export type RecommendationRow = S["RecommendationRow"];
 export type RacePage = S["Page_RaceSummary_"];
+export type CalibrationResponse = S["CalibrationResponse"];
+export type CalibrationBin = S["CalibrationBin"];

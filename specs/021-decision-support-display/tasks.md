@@ -36,12 +36,12 @@ description: "Task list — 意思決定支援の表示強化 (021)"
 
 ### 実装
 - [X] T005 [US1] `api/src/horseracing_api/routers/predictions.py`: T004 ヘルパで各 horse に `market_win_prob` を充填し、`market_prob_source="win_odds_vote_share"`/`canonical_consistent`/`odds_as_of`/`odds_source` を設定（write しない、既存 run 選択ロジック不変）
-- [ ] T006 [P] [US1] `front/src/components/PQCompare.tsx` を新規: p と q を併記し p−q を**中立提示**（緑赤・利益語・p−q ソート/ハイライト禁止, R3）、q に `<PseudoBadge>`（市場推定/FL bias 含む）、`odds_as_of`/`odds_source` 表示。`market_win_prob=null` は `formatNum`→未提供
-- [ ] T007 [P] [US1] `front/src/` レース詳細に PQCompare を組み込み、「市場 q の方が予測上手い(020)」注記を表示（FR-017）
+- [X] T006 [P] [US1] `front/src/components/PQCompare.tsx` を新規: p と q を併記し p−q を**中立提示**（緑赤・利益語・p−q ソート/ハイライト禁止, R3）、q に `<PseudoBadge>`（市場推定/FL bias 含む）、`odds_as_of`/`odds_source` 表示。`market_win_prob=null` は `formatNum`→未提供
+- [X] T007 [P] [US1] `front/src/` レース詳細に PQCompare を組み込み、「市場 q の方が予測上手い(020)」注記を表示（FR-017）
 
 ### US1 テスト
 - [X] T008 [P] [US1] `api/tests/integration/test_predictions_market_q.py`: p と q が同一 canonical field（Σq≈1、頭数一致）、有効オッズ無→`market_win_prob=null`（0 でない）、スクラッチ除外整合、`canonical_consistent` の真偽、エンドポイントが GET/read-only（write 関数未呼出）
-- [ ] T009 [P] [US1] `front/src/__tests__/pqcompare.test.tsx`: p/q 併記表示、q に pseudo ラベル必須、**中立提示（損益色/利益語/edge ソートが無い）**、null 安全（未提供）、`canonical_consistent=false` 時は乖離を出さない（SC-001/002/007/008）
+- [X] T009 [P] [US1] `front/src/__tests__/pqcompare.test.tsx`: p/q 併記表示、q に pseudo ラベル必須、**中立提示（損益色/利益語/edge ソートが無い）**、null 安全（未提供）、`canonical_consistent=false` 時は乖離を出さない（SC-001/002/007/008）
 
 **Checkpoint**: US1 単独で意思決定支援の中核（p/q 併記）が成立。
 
@@ -57,7 +57,7 @@ description: "Task list — 意思決定支援の表示強化 (021)"
 - [X] T010 [US2] `eval/src/horseracing_eval/harness.py`: walk-forward OOS の reliability bins（pred_lo/hi・pred_mean・realized_rate・**realized_ci_low/high＝Wilson 信頼区間**・count、等幅、少数 bin は `suppressed`）と全体 ECE/n_total/valid_years を `EvalResult` summary に出力（既存 ECE binning を拡張、独自指標を作らない, R5/FR-006b/analyze U1/憲法 III）
 - [X] T011 [US2] `training/src/horseracing_training/artifacts.py`（save_model_version 経路）: adoption 時に T010 の reliability を `model_versions.metrics_summary`(JSONB) へ追記（スキーマ変更なし、R2/R8）
 - [X] T012 [US2] `api/src/horseracing_api/routers/calibration.py` を新規 + `queries.py`: `GET /api/v1/models/{model_version}/calibration` が metrics_summary を read し `CalibrationResponse` を返す（再計算しない、未収録→404 typed `calibration_unavailable`）。`app.py` に router 登録
-- [ ] T013 [P] [US2] `front/src/components/CalibrationChart.tsx` を新規 + レース/モデル画面に組込: 予測 vs 実現の reliability 図を**件数 + 信頼区間（realized_ci_low/high）付き**で描画（FR-006b）、`source`/OOS/model_version/valid_years/n_total を監査表示、`suppressed` bin は明示
+- [X] T013 [P] [US2] `front/src/components/CalibrationChart.tsx` を新規 + レース/モデル画面に組込: 予測 vs 実現の reliability 図を**件数 + 信頼区間（realized_ci_low/high）付き**で描画（FR-006b）、`source`/OOS/model_version/valid_years/n_total を監査表示、`suppressed` bin は明示
 
 ### US2 テスト
 - [X] T014 [P] [US2] `eval/tests/integration/test_reliability_bins.py`: OOS reliability bins が算出され（件数・realized_rate・ece）、少数 bin が `suppressed`、in-sample でなく walk-forward 由来であること
@@ -91,9 +91,9 @@ description: "Task list — 意思決定支援の表示強化 (021)"
 
 - [X] T021 [P] 契約同期: `front/openapi.json` を live `/openapi.json` から再生成 + 生成型更新、drift-check test 緑（SC-005, 憲法 VI）
 - [X] T022 [P] leak-guard test（`api/tests/` or `features/tests/`）: `market_win_prob`/`data_backing`/reliability/EV 等の表示派生値・オッズ・結果が `model_input_features` に出現しないことを assert（SC-006, 憲法 II / R9）
-- [ ] T023 [P] front pseudo invariant test 拡張: q/q'/recomputed 校正含め「ラベルなし pseudo/推定値 0 件」を単一 PseudoBadge 経路で保証（SC-002, 憲法 V）
+- [X] T023 [P] front pseudo invariant test 拡張: q/q'/recomputed 校正含め「ラベルなし pseudo/推定値 0 件」を単一 PseudoBadge 経路で保証（SC-002, 憲法 V）
 - [X] T024 read-only invariant test: 新エンドポイント/フィールドが GET のみ・write 関数（`generate_*`）を呼ばない（014 規約）
-- [ ] T025 lint/test ゲート: `uv run ruff check` + `uv run pytest`（api/eval/training）、`pnpm test` + 型 drift（front）緑
+- [X] T025 lint/test ゲート: `uv run ruff check` + `uv run pytest`（api/eval/training）、`pnpm test` + 型 drift（front）緑
 - [ ] T026 実 DB スモーク（[quickstart.md](quickstart.md)）: US1（p/q 併記）・US2（calibration）・US3（採否）を実データで確認
 - [X] T027 [P] `CLAUDE.md` に 021 の 1 行サマリを追記（014–020 と同形式: p/q 同一 canonical field 併記・中立提示・OOS reliability を metrics_summary 経由 read・データ裏付けは検証先行で採否・read-only/スキーマ変更なし・市場優位の明示）
 
