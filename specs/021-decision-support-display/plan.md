@@ -46,7 +46,7 @@ Constitution v1.0.0 ゲート:
 
 1. **US1: p と q を predictions エンドポイントに co-locate**（odds でなく predictions に q を追加）。理由: p の canonical field（`canonical_win_probs`）はこのエンドポイントで確定するため、同じ population で q を算出すれば母集団不一致（codex R1, IV）を構造的に防げる。q は `market_implied_win_probs`（010）を canonical field の win オッズに適用し再正規化。生 q のみ（FL 補正 q'(013) の併記は deferred、足す場合は別フィールド+ラベル, R4）。p−q は front 側で 2 フィールドから算出し中立提示（profit 言語/色/ソート禁止, R3）。
 2. **US2: reliability は walk-forward OOS を `metrics_summary`(既存 JSONB) に事前永続化 → API は read のみ**。理由: 永続化済み serving 予測は過去レースに対し in-sample 楽観（codex R2）。eval harness が walk-forward OOS で算出する reliability bins（予測平均/実現勝率/件数, ECE）を adoption 時に `metrics_summary` へ追記し、API はそれを read（スキーマ変更なし、API は学習を走らせない、model_version スコープ R8）。少数 bin は件数表示＋抑制（R5）。
-3. **US3: 「データ裏付け（条件カバレッジ）」に限定**（汎用「信頼度」を不採用, codex R6/verdict）。指標案: 馬の過去出走数（Unknown=新馬→裏付け弱）+ field_size をベースにした粗いカテゴリ（弱/中/強）。リーク安全（事前情報のみ）。**採用条件**: 過去 OOS データで「裏付け弱い群は校正/誤差が悪い」と確認できること。確認できなければ US3 を defer（spec FR-012 で明記済）。
+3. **US3: 中立な出走歴インジケータに着地**（codex 確認反映）。T016 検証で weak−strong ECE +0.00211（閾値 +0.002 を +0.00011 のみ超過）と薄く、codex が「校正信頼度シグナルとしての採用は NG（bootstrap CI/fold 単調性 未検証、035/036 リスク）、ただし中立な事実なら可」と判定。→ `prior_starts_band`（few≤1/some2–5/many≥6）= **純粋な出走歴の事実**として実装（weak/strong 語・損益色・ソートなし、「予測精度の保証ではない」明示）。校正信頼度としての解釈は deferred。リーク安全（prior-start 数のみ）。
 
 ## Project Structure
 

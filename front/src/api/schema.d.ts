@@ -245,14 +245,14 @@ export interface components {
         };
         /** HorsePrediction */
         HorsePrediction: {
-            /** Data Backing */
-            data_backing?: ("weak" | "medium" | "strong") | null;
             /** Horse Id */
             horse_id: string;
             /** Horse Number */
             horse_number?: number | null;
             /** Market Win Prob */
             market_win_prob?: number | null;
+            /** Prior Starts Band */
+            prior_starts_band?: ("few" | "some" | "many") | null;
             /** Top2 */
             top2?: number | null;
             /** Top3 */

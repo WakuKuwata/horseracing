@@ -74,14 +74,14 @@ description: "Task list — 意思決定支援の表示強化 (021)"
 **Independent Test**: data_backing が weak/medium/strong で付与され、weak 群が校正/誤差で劣ることを検証済み、指標が結果/オッズ不使用（事前情報のみ）。
 
 ### 採用判定（実装前ゲート, 憲法 III）
-- [ ] T016 [US3] `eval/` にスクリプト/関数: 候補指標（馬の過去出走数 Unknown 有無 + field_size の粗いカテゴリ）で過去 OOS を層別し「weak 群の校正(ECE)/誤差が medium/strong より悪い」かを検証。**結果を plan/research に記録し採否を決定**（妥当でなければ T017–T020 を defer し US3 をスキップ, FR-012）
+- [X] T016 [US3] `eval/` にスクリプト/関数: 候補指標（馬の過去出走数 Unknown 有無 + field_size の粗いカテゴリ）で過去 OOS を層別し「weak 群の校正(ECE)/誤差が medium/strong より悪い」かを検証。**結果を plan/research に記録し採否を決定**（妥当でなければ T017–T020 を defer し US3 をスキップ, FR-012）
 ### 実装（T016 が採用の場合のみ）
-- [ ] T017 [US3] `api/src/horseracing_api/`（selection/predictions）: data_backing をリーク安全に算出（事前情報のみ、結果/オッズ/表示派生値 不使用）し `HorsePrediction.data_backing` に充填
-- [ ] T018 [P] [US3] `front/src/components/DataBackingBadge.tsx` + レース詳細組込: 裏付け弱を区別表示し「的中確信ではない」明示（粗い注意バッジ）
+- [X] T017 [US3] `api/src/horseracing_api/`（selection/predictions）: data_backing をリーク安全に算出（事前情報のみ、結果/オッズ/表示派生値 不使用）し `HorsePrediction.data_backing` に充填
+- [X] T018 [P] [US3] `front/src/components/DataBackingBadge.tsx` + レース詳細組込: 裏付け弱を区別表示し「的中確信ではない」明示（粗い注意バッジ）
 
 ### US3 テスト（採用時）
-- [ ] T019 [P] [US3] `api/tests/integration/test_data_backing.py`: data_backing が事前情報のみで算出（結果/オッズ非依存）、カテゴリ妥当、null 安全
-- [ ] T020 [P] [US3] `front/src/__tests__/databacking.test.tsx`: 裏付け弱の区別表示と「的中確信でない」注記
+- [X] T019 [P] [US3] `api/tests/integration/test_data_backing.py`: data_backing が事前情報のみで算出（結果/オッズ非依存）、カテゴリ妥当、null 安全
+- [X] T020 [P] [US3] `front/src/__tests__/databacking.test.tsx`: 裏付け弱の区別表示と「的中確信でない」注記
 
 **Checkpoint**: US3 は検証に通れば併記、通らなければ defer（正直）。
 

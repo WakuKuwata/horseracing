@@ -69,9 +69,11 @@ class HorsePrediction(BaseModel):
     # as p. Pseudo (estimate, contains favorite-longshot bias, NOT a true prob, NOT model p). Null
     # when the horse has no valid win odds (never 0-filled). Kept SEPARATE from win (p≠q).
     market_win_prob: float | None = None
-    # Feature 021 US3 (adoption-gated): leak-safe data-backing / condition-coverage hint. Null when
-    # US3 is deferred or the horse lacks a category.
-    data_backing: Literal["weak", "medium", "strong"] | None = None
+    # Feature 021 US3: NEUTRAL FACTUAL prior-start volume band (few <=1 / some 2-5 / many >=6).
+    # codex: the T016 calibration-trust margin was too thin (+0.00011 over gate) to claim "less
+    # reliable", so this ships ONLY as a factual history-volume hint (NOT a confidence/calibration
+    # signal): no weak/strong wording, no colour, no sorting. Null if absent.
+    prior_starts_band: Literal["few", "some", "many"] | None = None
 
 
 class JointEntry(BaseModel):

@@ -256,22 +256,6 @@
       },
       "HorsePrediction": {
         "properties": {
-          "data_backing": {
-            "anyOf": [
-              {
-                "enum": [
-                  "weak",
-                  "medium",
-                  "strong"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data Backing"
-          },
           "horse_id": {
             "title": "Horse Id",
             "type": "string"
@@ -297,6 +281,22 @@
               }
             ],
             "title": "Market Win Prob"
+          },
+          "prior_starts_band": {
+            "anyOf": [
+              {
+                "enum": [
+                  "few",
+                  "some",
+                  "many"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prior Starts Band"
           },
           "top2": {
             "anyOf": [

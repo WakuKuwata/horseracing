@@ -17,7 +17,13 @@ from horseracing_probability.engine import joint_probabilities
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
-from ..queries import get_race, race_has_results, run_predictions, win_odds_as_of
+from ..queries import (
+    get_race,
+    prior_start_counts,
+    race_has_results,
+    run_predictions,
+    win_odds_as_of,
+)
 from ..schemas import HorsePrediction, JointEntry, PredictionResponse, RunAudit
 from ..selection import canonical_win_probs, market_win_probs, select_prediction_run
 
@@ -25,6 +31,16 @@ router = APIRouter()
 
 _RACE_ID = re.compile(r"^[0-9]{12}$")
 _EXOTIC = set(BetType.EXOTIC)
+
+
+def _prior_starts_band(prior_starts: int) -> str:
+    """Feature 021 US3: NEUTRAL factual prior-start volume band (few/some/many). codex: not a
+    calibration/confidence claim — just how much race history backs this horse."""
+    if prior_starts <= 1:
+        return "few"
+    if prior_starts <= 5:
+        return "some"
+    return "many"
 
 
 def _err(status: int, code: str, detail: str) -> JSONResponse:
@@ -69,6 +85,8 @@ def predictions(
     qmap, canonical_consistent = market_win_probs(
         session, race_id=race_id, p_numbers=set(pmap)
     )
+    # US3: leak-safe prior-start count (strictly before this race); absent -> 0 = few.
+    backing = prior_start_counts(session, race_id)
 
     horses = [
         HorsePrediction(
@@ -77,6 +95,7 @@ def predictions(
             top2=(float(t2) if t2 is not None else None),
             top3=(float(t3) if t3 is not None else None),
             market_win_prob=(qmap.get(int(n)) if n is not None else None),
+            prior_starts_band=_prior_starts_band(backing.get(hid, 0)),
         )
         for (n, hid, _status, w, t2, t3) in run_predictions(
             session, run_id=run.prediction_run_id, race_id=race_id

@@ -100,6 +100,35 @@ def canonical_win_odds(session: Session, race_id: str) -> dict[int, float]:
     return out
 
 
+def prior_start_counts(session: Session, race_id: str) -> dict[str, int]:
+    """Feature 021 US3: {horse_id -> number of STARTED races strictly BEFORE this race's date}.
+
+    Leak-safe data-backing signal: uses entries (not results), date strictly before the target race.
+    Horses with no prior starts are absent (caller treats absent as 0 = weak backing).
+    """
+    target = session.get(Race, race_id)
+    if target is None or target.race_date is None:
+        return {}
+    horse_ids = list(
+        session.scalars(
+            select(RaceHorse.horse_id)
+            .where(RaceHorse.race_id == race_id)
+            .where(RaceHorse.entry_status == EntryStatus.STARTED)
+        )
+    )
+    if not horse_ids:
+        return {}
+    rows = session.execute(
+        select(RaceHorse.horse_id, func.count())
+        .join(Race, Race.race_id == RaceHorse.race_id)
+        .where(RaceHorse.horse_id.in_(horse_ids))
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+        .where(Race.race_date < target.race_date)
+        .group_by(RaceHorse.horse_id)
+    ).all()
+    return {hid: int(c) for hid, c in rows}
+
+
 def race_has_results(session: Session, race_id: str) -> bool:
     """True if any race_results exist (Feature 021: odds_source final vs prerace)."""
     return session.scalar(

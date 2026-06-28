@@ -1,5 +1,6 @@
 import type { PredictionResponse } from "../api/types";
 import { formatDateTime, formatPct, PLACEHOLDER } from "../lib/format";
+import { DataBackingBadge } from "./DataBackingBadge";
 import { PseudoValue } from "./PseudoValue";
 
 /**
@@ -47,6 +48,7 @@ export function PQCompare({ data }: { data: PredictionResponse }) {
             <th className="num">モデル勝率 p</th>
             <th className="num">市場推定 q</th>
             {comparable && <th className="num">差 (p−q)</th>}
+            <th>出走歴</th>
           </tr>
         </thead>
         <tbody>
@@ -74,6 +76,9 @@ export function PQCompare({ data }: { data: PredictionResponse }) {
                       : `${diff >= 0 ? "+" : ""}${(diff * 100).toFixed(1)}pt`}
                   </td>
                 )}
+                <td>
+                  <DataBackingBadge band={h.prior_starts_band} />
+                </td>
               </tr>
             );
           })}

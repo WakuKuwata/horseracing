@@ -46,8 +46,10 @@ export const raceDetail: RaceDetail = {
 export const predictionResponse: PredictionResponse = {
   race_id: "200806010111",
   horses: [
-    { horse_id: "h1", horse_number: 1, win: 0.32, top2: 0.55, top3: 0.7, market_win_prob: 0.3 },
-    { horse_id: "h2", horse_number: 2, win: 0.18, top2: 0.4, top3: 0.58, market_win_prob: 0.2 },
+    { horse_id: "h1", horse_number: 1, win: 0.32, top2: 0.55, top3: 0.7,
+      market_win_prob: 0.3, prior_starts_band: "many" },
+    { horse_id: "h2", horse_number: 2, win: 0.18, top2: 0.4, top3: 0.58,
+      market_win_prob: 0.2, prior_starts_band: "few" },
   ],
   joint: null,
   joint_bet_type: null,
