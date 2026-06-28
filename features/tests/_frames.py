@@ -28,12 +28,20 @@ def make_frames(specs: list[dict]) -> Frames:
     finish_order=1, last_3f=35.0, + optional race_horse attrs.
     """
     race_rows, rh_rows, rr_rows = [], [], []
+    pedigree: dict[str, dict] = {}  # Feature 026: horse_id -> pedigree (first spec wins, stable)
     for spec in specs:
         rid = spec["race_id"]
         rdate = datetime.date.fromisoformat(spec["race_date"])
         race_rows.append({"race_id": rid, "race_date": rdate,
                           **{k: spec.get(k, v) for k, v in _RACE_DEFAULTS.items()}})
         for h in spec["horses"]:
+            pedigree.setdefault(h["horse_id"], {
+                "horse_id": h["horse_id"],
+                "sire_name": h.get("sire_name"), "dam_name": h.get("dam_name"),
+                "damsire_name": h.get("damsire_name"),
+                "sire_id": h.get("sire_id"), "dam_id": h.get("dam_id"),
+                "damsire_id": h.get("damsire_id"),
+            })
             entry = h.get("entry_status", EntryStatus.STARTED)
             rh_rows.append({
                 "race_id": rid, "horse_id": h["horse_id"], "entry_status": entry,
@@ -57,4 +65,5 @@ def make_frames(specs: list[dict]) -> Frames:
         races=pd.DataFrame(race_rows),
         race_horses=pd.DataFrame(rh_rows),
         race_results=pd.DataFrame(rr_rows),
+        horses=pd.DataFrame(list(pedigree.values())),
     )

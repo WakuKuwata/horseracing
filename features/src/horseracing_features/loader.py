@@ -7,13 +7,20 @@ past-performance history is complete even for target races early in a window.
 from __future__ import annotations
 
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pandas as pd
-from horseracing_db.models import Race, RaceHorse, RaceResult
+from horseracing_db.models import Horse, Race, RaceHorse, RaceResult
 from horseracing_db.validation import INGEST_SCOPE_START
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+#: Feature 026: horses pedigree columns loaded for sire/damsire aptitude. Aggregation keys are the
+#: NAME columns (sire_name/damsire_name are ~100% populated; the *_id columns are ~0% in the real DB
+#: and kept only for the staleness fingerprint / future ID-based migration).
+_HORSE_COLUMNS = [
+    "horse_id", "sire_name", "dam_name", "damsire_name", "sire_id", "dam_id", "damsire_id",
+]
 
 
 @dataclass(frozen=True)
@@ -21,6 +28,11 @@ class Frames:
     races: pd.DataFrame
     race_horses: pd.DataFrame
     race_results: pd.DataFrame
+    #: Feature 026: per-horse pedigree (optional; default empty keeps existing Frames(...) callers
+    #: and make_frames working — pedigree features become all-NaN when absent).
+    horses: pd.DataFrame = field(
+        default_factory=lambda: pd.DataFrame(columns=_HORSE_COLUMNS)
+    )
 
 
 def load_frames(session: Session, end_date: datetime.date | None = None) -> Frames:
@@ -65,4 +77,14 @@ def load_frames(session: Session, end_date: datetime.date | None = None) -> Fram
 
     race_horses = pd.read_sql(rh_stmt, conn)
     race_results = pd.read_sql(rr_stmt, conn)
-    return Frames(races=races, race_horses=race_horses, race_results=race_results)
+
+    # Feature 026: per-horse pedigree (static attribute; no date filter — the as-of leak boundary
+    # is enforced by the aggregation over race_results, not by which horse rows are loaded).
+    horses_stmt = select(
+        Horse.horse_id, Horse.sire_name, Horse.dam_name, Horse.damsire_name,
+        Horse.sire_id, Horse.dam_id, Horse.damsire_id,
+    )
+    horses = pd.read_sql(horses_stmt, conn)
+    return Frames(
+        races=races, race_horses=race_horses, race_results=race_results, horses=horses
+    )

@@ -41,8 +41,9 @@ def test_generate_deterministic_with_manifest(tmp_path):
     m2 = write_materialized(tmp_path / "b.parquet", frames)
     assert m1.content_hash == m2.content_hash               # deterministic (SC-003)
     assert m1.source_fingerprint == m2.source_fingerprint
-    assert m1.feature_version == "features-006" and m1.n_rows > 0
+    assert m1.feature_version == "features-007" and m1.n_rows > 0
     assert "rel_last3f_avg" in m1.materialized_columns       # as-of col present
+    assert "sire_win_rate" in m1.materialized_columns        # Feature 026 pedigree col present
     assert "field_size" not in m1.materialized_columns       # static excluded
     assert (tmp_path / "a.manifest.json").exists()
 
@@ -105,3 +106,38 @@ def test_asof_leak_invariant_to_result_change(tmp_path):
     row1 = after[(after.race_id == "200803010101") & (after.horse_id == "H")].iloc[0]
     for c in base.columns:
         assert (pd.isna(row0[c]) and pd.isna(row1[c])) or row0[c] == row1[c], c
+
+
+def _ped_specs():
+    # two offspring of sire S so pedigree features are non-trivial (sire_name populated)
+    return [
+        {"race_id": "200801010101", "race_date": "2008-01-01", "horses": [
+            {"horse_id": "B", "horse_number": 1, "finish_order": 1, "sire_name": "S"},
+            {"horse_id": "X", "horse_number": 2, "finish_order": 2, "sire_name": "O"}]},
+        {"race_id": "200803010101", "race_date": "2008-03-01", "horses": [
+            {"horse_id": "H", "horse_number": 1, "finish_order": 1, "sire_name": "S"},
+            {"horse_id": "X", "horse_number": 2, "finish_order": 2, "sire_name": "O"}]},
+    ]
+
+
+def test_pedigree_backfill_fails_closed(tmp_path):
+    # Feature 026: races/race_horses/race_results UNCHANGED but sire_name backfilled -> the fingerprint
+    # (now covering horses pedigree cols) must trip fail-closed (no silently-stale pedigree features).
+    frames = make_frames(_ped_specs())
+    path = tmp_path / "features.parquet"
+    write_materialized(path, frames)
+    mutated = make_frames(_ped_specs())
+    mutated.horses.loc[mutated.horses["horse_id"] == "B", "sire_name"] = "S2"  # pedigree backfill
+    with pytest.raises(MaterializationError):
+        assemble_feature_matrix(mutated, use_materialized=True, materialized_path=path)
+
+
+def test_pedigree_columns_present_and_parity(tmp_path):
+    # pedigree columns are materialized AND the read path matches in-memory bit-for-bit (SC-003).
+    frames = make_frames(_ped_specs())
+    path = tmp_path / "features.parquet"
+    write_materialized(path, frames)
+    via = assemble_feature_matrix(frames, use_materialized=True, materialized_path=path)
+    mem = assemble_feature_matrix(frames, use_materialized=False)
+    assert "sire_win_rate" in via.columns and "damsire_win_rate" in via.columns
+    assert_frame_equal(via, mem, check_exact=True, check_dtype=True)

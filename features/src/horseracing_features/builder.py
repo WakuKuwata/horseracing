@@ -25,6 +25,7 @@ from .static_features import build_static_features
 def _asof_block(
     frames: Frames, *, low_history_max: int, start_date, end_date,
     materialized_path: Path | None, use_materialized: bool,
+    fingerprint_frames: Frames | None = None,
 ):
     """The as-of feature block: from materialized parquet (fast, opt-in) or computed in-memory.
 
@@ -36,7 +37,11 @@ def _asof_block(
     """
     if use_materialized and materialized_path is not None:
         df, manifest = read_materialized(materialized_path)   # raises if missing
-        assert_fresh(manifest, frames)                        # fail-closed on in-range change
+        # Staleness is verified over the FULL materialized range (fingerprint_frames), not the
+        # end_date-restricted `frames` — otherwise an end_date < data_through would mismatch the
+        # full-pool manifest. The rest (static/population/fallback) uses windowed `frames` so static
+        # dtypes don't depend on rows beyond end_date (parity).
+        assert_fresh(manifest, fingerprint_frames if fingerprint_frames is not None else frames)
         if has_future_rows(frames, manifest, start_date=start_date, end_date=end_date):
             return build_asof_features(frames, low_history_max=low_history_max)  # serving fallback
         return df                                             # parquet fast path
@@ -51,6 +56,7 @@ def assemble_feature_matrix(
     low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
     materialized_path: Path | None = None,
     use_materialized: bool = False,
+    fingerprint_frames: Frames | None = None,
 ) -> pd.DataFrame:
     """Build the fixed-schema FeatureMatrix from in-memory Frames (DB-independent).
 
@@ -60,11 +66,14 @@ def assemble_feature_matrix(
     Feature 025: ``use_materialized`` reads the as-of block from ``materialized_path`` (parquet)
     when fresh & covered; otherwise/by default it is computed in-memory. Output is identical
     either way (parity gate) — static/current-race features are always computed here.
+    ``fingerprint_frames`` (full materialized-range pool) is used ONLY for the staleness check when
+    ``use_materialized``; ``frames`` stays end_date-windowed so static dtypes are pool-independent.
     """
     static = build_static_features(frames)
     asof = _asof_block(
         frames, low_history_max=low_history_max, start_date=start_date, end_date=end_date,
         materialized_path=materialized_path, use_materialized=use_materialized,
+        fingerprint_frames=fingerprint_frames,
     )
     fm = static.merge(asof, on=["race_id", "horse_id"], how="left")
 
@@ -94,13 +103,18 @@ def build_feature_matrix(
     materialized_path: Path | None = None,
     use_materialized: bool = False,
 ) -> pd.DataFrame:
-    # With materialization, load the FULL source pool so the staleness fingerprint covers the whole
-    # materialized range (manifest was generated over the full pool); end_date is applied only as the
-    # final row filter. as-of values for races <= end_date are identical either way (they look
-    # strictly before each race), so parity holds. Without materialization, restrict by end_date.
-    load_end = None if use_materialized else end_date
-    frames = load_frames(session, end_date=load_end)
+    # Always load the end_date-windowed pool for static/population/as-of: as-of values for races
+    # <= end_date only look strictly before each race, and windowed loading keeps static dtypes
+    # independent of rows beyond end_date (parity). When using materialized parquet, also load the
+    # FULL pool ONLY to verify the staleness fingerprint over the whole materialized range (the
+    # manifest was generated over the full pool); this never feeds feature values.
+    frames = load_frames(session, end_date=end_date)
+    # full-pool frames for the staleness fingerprint only; reuse `frames` when already unrestricted.
+    fp_frames = None
+    if use_materialized:
+        fp_frames = frames if end_date is None else load_frames(session, end_date=None)
     return assemble_feature_matrix(
         frames, start_date=start_date, end_date=end_date, low_history_max=low_history_max,
         materialized_path=materialized_path, use_materialized=use_materialized,
+        fingerprint_frames=fp_frames,
     )

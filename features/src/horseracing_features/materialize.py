@@ -30,10 +30,15 @@ from .history import build_history_features
 from .human_form import build_human_form_features
 from .loader import Frames
 from .pace_features import build_pace_features
+from .pedigree_features import build_pedigree_features
 from .registry import FEATURE_VERSION, materialized_columns
 from .schema import DEFAULT_LOW_HISTORY_MAX
 
 _KEYS = ["race_id", "horse_id"]
+#: Feature 026: horses pedigree columns folded into the staleness fingerprint, so a pedigree
+#: backfill (sire_name filled/corrected while the race tables stay unchanged) trips fail-closed.
+_HORSE_FP_COLS = ["horse_id", "sire_name", "dam_name", "damsire_name",
+                  "sire_id", "dam_id", "damsire_id"]
 MANIFEST_VERSION = 1
 
 
@@ -79,10 +84,17 @@ def _restrict(frames: Frames, through: datetime.date | None) -> Frames:
     races = frames.races.copy()
     keep = races[pd.to_datetime(races["race_date"]) <= pd.Timestamp(through)]["race_id"]
     keep_set = set(keep)
+    rh = frames.race_horses[frames.race_horses["race_id"].isin(keep_set)]
+    # Feature 026: restrict horses to those running in the kept races, so a FUTURE horse (only in
+    # races beyond `through`) does not flip the fingerprint (consistent with the date restriction).
+    horses = frames.horses
+    if len(horses):
+        horses = horses[horses["horse_id"].isin(set(rh["horse_id"]))]
     return Frames(
         races=races[races["race_id"].isin(keep_set)],
-        race_horses=frames.race_horses[frames.race_horses["race_id"].isin(keep_set)],
+        race_horses=rh,
         race_results=frames.race_results[frames.race_results["race_id"].isin(keep_set)],
+        horses=horses,
     )
 
 
@@ -96,10 +108,13 @@ def source_fingerprint(frames: Frames, *, through: datetime.date | None = None) 
     the materialized range flips the fingerprint and forces fail-closed.
     """
     fr = _restrict(frames, through)
+    horse_fp_cols = [c for c in _HORSE_FP_COLS if c in fr.horses.columns]
     parts = [
         _hash_frame(fr.races, list(fr.races.columns)),
         _hash_frame(fr.race_horses, list(fr.race_horses.columns)),
         _hash_frame(fr.race_results, list(fr.race_results.columns)),
+        # Feature 026: pedigree backfill detection (the race tables may be unchanged).
+        _hash_frame(fr.horses, horse_fp_cols) if horse_fp_cols and len(fr.horses) else "",
     ]
     return hashlib.sha256("|".join(parts).encode()).hexdigest()
 
@@ -115,10 +130,12 @@ def build_asof_features(
     extra = build_extra_features(frames)
     human = build_human_form_features(frames)
     pace = build_pace_features(frames)
+    pedigree = build_pedigree_features(frames)  # Feature 026 (single as-of source)
     out = (
         history.merge(extra, on=_KEYS, how="left")
         .merge(human, on=_KEYS, how="left")
         .merge(pace, on=_KEYS, how="left")
+        .merge(pedigree, on=_KEYS, how="left")
     )
     cols = [*_KEYS, *materialized_columns()]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)

@@ -132,10 +132,10 @@ def _run_feature_command(session: Session, args) -> int:
     if args.command == "feature-eval":
         from horseracing_eval.feature_eval import evaluate_feature_adoption
 
-        # baseline = candidate MINUS the groups under test. Default = Feature 023 groups, so the
-        # baseline is features-005 (004+020) and feature-eval measures 023's marginal value.
+        # baseline = candidate MINUS the groups under test. Default = Feature 026 groups, so the
+        # baseline is features-006 and feature-eval measures 026's (pedigree) marginal value.
         gcols = _group_columns()
-        drop_groups = (args.drop_groups or "pace_time,position_style").split(",")
+        drop_groups = (args.drop_groups or "sire_aptitude,damsire_aptitude").split(",")
         drop = tuple(c for g in drop_groups for c in gcols.get(g, []))
         candidate = LightGBMPredictor(session, seed=args.seed)
         baseline = LightGBMPredictor(session, seed=args.seed, drop_features=drop)
@@ -222,8 +222,8 @@ def main(argv: list[str] | None = None) -> int:
     fe.add_argument("--worst-fold-ece-tol", type=float, default=2e-3,
                     help="looser per-fold worst ECE tol (single-fold blip should not veto)")
     fe.add_argument("--drop-groups", default=None,
-                    help="comma-separated groups the baseline drops (default: 023 pace_time,"
-                         "position_style → baseline=features-005)")
+                    help="comma-separated groups the baseline drops (default: 026 sire_aptitude,"
+                         "damsire_aptitude → baseline=features-006)")
     fa = sub.add_parser("feature-ablation", help="020: per-group LogLoss contribution (diagnostic)")
     _add_window(fa)
     fa.add_argument("--groups", default=None, help="comma-separated group subset (default: all)")

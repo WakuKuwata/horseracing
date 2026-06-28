@@ -99,6 +99,15 @@ REGISTRY: dict[str, FeatureMeta] = {
     "rel_corner_pos_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
     "front_runner_rate": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
     "closer_rate": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 026: sire aptitude (as-of, OTHER offspring only = sire cumsum − self cumsum) ---
+    "sire_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "sire_avg_finish": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "sire_starts": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.ZERO_OK),
+    "sire_dist_band_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "sire_surface_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 026: damsire (BMS) aptitude (optional, ablation-gated; overall only) ---
+    "damsire_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "damsire_avg_finish": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -123,10 +132,19 @@ FEATURE_GROUPS: dict[str, str] = {
     "rel_corner_pos_avg": "position_style",
     "front_runner_rate": "position_style",
     "closer_rate": "position_style",
+    # Feature 026: sire aptitude (MVP main group)
+    "sire_win_rate": "sire_aptitude",
+    "sire_avg_finish": "sire_aptitude",
+    "sire_starts": "sire_aptitude",
+    "sire_dist_band_win_rate": "sire_aptitude",
+    "sire_surface_win_rate": "sire_aptitude",
+    # Feature 026: damsire/BMS aptitude (optional, ablation-gated)
+    "damsire_win_rate": "damsire_aptitude",
+    "damsire_avg_finish": "damsire_aptitude",
 }
 
-#: feature schema version. 020→021 unchanged; bumped by Feature 023 (pace/time features).
-FEATURE_VERSION = "features-006"
+#: feature schema version. 020→021 unchanged; bumped by 023 (pace/time); bumped by 026 (pedigree).
+FEATURE_VERSION = "features-007"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
