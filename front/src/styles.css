@@ -255,6 +255,45 @@ th.num {
   font-size: 0.78rem;
   color: var(--muted);
 }
+
+/* --- data-refresh button (024) --- */
+.detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.5rem;
+}
+.refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.refresh__btn {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.refresh__btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.refresh__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.refresh__status {
+  font-size: 0.78rem;
+}
+.refresh__status--pending { color: var(--muted); }
+.refresh__status--ok { color: var(--accent); }
+.refresh__status--warn { color: #c98a00; }
+.refresh__status--error { color: #c0392b; }
+.refresh__status--muted { color: var(--muted); }
+
 .race-status {
   margin-left: auto;
   flex-shrink: 0;

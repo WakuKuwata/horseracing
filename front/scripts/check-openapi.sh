@@ -4,12 +4,21 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-tmp="$(mktemp)"
-pnpm exec openapi-typescript openapi.json -o "$tmp"
-if ! diff -u src/api/schema.d.ts "$tmp"; then
-  echo "openapi drift: src/api/schema.d.ts is out of date — run pnpm gen:types and commit." >&2
+check() {
+  local snapshot="$1" generated="$2" name="$3"
+  local tmp
+  tmp="$(mktemp)"
+  pnpm exec openapi-typescript "$snapshot" -o "$tmp"
+  if ! diff -u "$generated" "$tmp"; then
+    echo "openapi drift: $generated is out of date — regenerate from $snapshot and commit." >&2
+    rm -f "$tmp"
+    exit 1
+  fi
   rm -f "$tmp"
-  exit 1
-fi
-rm -f "$tmp"
-echo "openapi types in sync with committed openapi.json"
+  echo "$name types in sync with committed $snapshot"
+}
+
+# 014 read-only API
+check openapi.json src/api/schema.d.ts "014 api"
+# 024 ops write API
+check ops-openapi.json src/api/ops-schema.d.ts "024 ops"

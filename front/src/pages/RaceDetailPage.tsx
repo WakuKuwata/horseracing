@@ -7,6 +7,7 @@ import { OddsPanel } from "../components/OddsPanel";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
 import { PQCompare } from "../components/PQCompare";
 import { RecommendationPanel } from "../components/RecommendationPanel";
+import { RefreshButton } from "../components/RefreshButton";
 import { RunAuditView } from "../components/RunAudit";
 import { QueryStateView } from "../components/StateView";
 import { PLACEHOLDER } from "../lib/format";
@@ -20,9 +21,11 @@ export function RaceDetailPage() {
 
   return (
     <section>
-      <p>
+      <div className="detail-topbar">
         <Link to="/">← レース一覧</Link>
-      </p>
+        {/* US1: refresh THIS race from netkeiba (ops write service); display stays on 014. */}
+        <RefreshButton raceId={raceId} />
+      </div>
 
       <div className="panel">
         <QueryStateView

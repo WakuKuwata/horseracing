@@ -1,0 +1,188 @@
+openapi: 3.1.0
+info:
+  title: horseracing ops (data-refresh) API
+  version: v1
+  description: >-
+    Write/ingestion サービス（Feature 024）。netkeiba からのオンデマンド更新を受け付ける。
+    014 read-only API とは別アプリ・別ポート・別 DB ロール(owner)。本 API は更新を「受付」
+    するのみで取得処理は非同期 worker が行う。表示データの取得は 014 (/api/v1) を使うこと。
+servers:
+  - url: /ops/v1
+tags:
+  - name: refresh
+  - name: jobs
+
+paths:
+  /races/{race_id}/refresh:
+    post:
+      tags: [refresh]
+      summary: 1 レースの更新を受け付ける（US1）
+      parameters:
+        - name: race_id
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[0-9]{12}$' }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '202':
+          description: 受付済み（取得はバックグラウンド）。dedup により既存ジョブを再利用する場合あり。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobAccepted' }
+        '404':
+          description: レースが存在しない（取得は起動しない）
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '422':
+          description: race_id が 12 桁でない
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  /days/{date}/refresh:
+    post:
+      tags: [refresh]
+      summary: その日の全レースの一括更新を受け付ける（US2）
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema: { type: string, format: date }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '202':
+          description: バッチ受付済み（親ジョブ＋レース単位の子ジョブ）。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchAccepted' }
+        '404':
+          description: その日にレースが無い
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '422':
+          description: 日付の形式不正
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  /jobs/{job_id}:
+    get:
+      tags: [jobs]
+      summary: 更新ジョブの状態を取得（front の polling 用）
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: ジョブ状態
+          content: { application/json: { schema: { $ref: '#/components/schemas/Job' } } }
+        '404':
+          description: ジョブが存在しない
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  /batches/{trace_id}:
+    get:
+      tags: [jobs]
+      summary: 一括更新バッチの集約状態＋子ジョブ一覧（US2 の polling 用）
+      parameters:
+        - name: trace_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: バッチ集約状態
+          content: { application/json: { schema: { $ref: '#/components/schemas/Batch' } } }
+        '404':
+          description: バッチが存在しない
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+components:
+  schemas:
+    RefreshRequest:
+      type: object
+      properties:
+        force:
+          type: boolean
+          default: false
+          description: 鮮度判定(直近 succeeded)を無視して再取得。進行中ジョブは常に再利用される。
+
+    JobStatus:
+      type: string
+      enum: [queued, running, succeeded, partial, failed, skipped]
+
+    JobAccepted:
+      type: object
+      required: [job_id, status, reused, scope, scope_value, poll_url]
+      properties:
+        job_id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/JobStatus' }
+        reused: { type: boolean, description: dedup で既存ジョブを再利用した場合 true }
+        scope: { type: string, enum: [race] }
+        scope_value: { type: string, description: 12桁 race_id }
+        poll_url: { type: string, description: GET /ops/v1/jobs/{job_id} }
+
+    BatchAccepted:
+      type: object
+      required: [trace_id, status, scope, scope_value, poll_url, children]
+      properties:
+        trace_id: { type: string }
+        status: { $ref: '#/components/schemas/JobStatus' }
+        scope: { type: string, enum: [day] }
+        scope_value: { type: string, format: date }
+        poll_url: { type: string, description: GET /ops/v1/batches/{trace_id} }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/JobAccepted' }
+
+    Job:
+      type: object
+      required: [job_id, job_type, status, scope, scope_value]
+      properties:
+        job_id: { type: string, format: uuid }
+        job_type: { type: string, enum: [refresh_race, refresh_day] }
+        status: { $ref: '#/components/schemas/JobStatus' }
+        scope: { type: string, enum: [race, day] }
+        scope_value: { type: string }
+        trace_id: { type: string, nullable: true }
+        kind:
+          type: string
+          nullable: true
+          enum: [entries+odds, results]
+          description: worker が実行時に確定した取得種別（実行前は null）
+        processed_rows: { type: integer, nullable: true }
+        skipped_rows: { type: integer, nullable: true }
+        error_count: { type: integer, nullable: true }
+        retry_count: { type: integer }
+        started_at: { type: string, format: date-time, nullable: true }
+        completed_at: { type: string, format: date-time, nullable: true }
+        error_message: { type: string, nullable: true }
+
+    Batch:
+      type: object
+      required: [trace_id, status, scope_value, children]
+      properties:
+        trace_id: { type: string }
+        status:
+          $ref: '#/components/schemas/JobStatus'
+          description: 子ジョブ status の集約（running/partial/succeeded 等）
+        scope_value: { type: string, format: date }
+        total: { type: integer }
+        succeeded: { type: integer }
+        failed: { type: integer }
+        running: { type: integer }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/Job' }
+
+    Error:
+      type: object
+      required: [status, code, detail]
+      properties:
+        status: { type: integer }
+        code: { type: string }
+        detail: { type: string }

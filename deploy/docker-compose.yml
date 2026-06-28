@@ -52,6 +52,38 @@ services:
       migrate:
         condition: service_completed_successfully   # fail-closed: no migrate success → no api
 
+  # Feature 024: ops WRITE service (owner role) — on-demand netkeiba refresh. Separate image/port
+  # from the read-only api. Fail-closed behind a successful migrate, same as api.
+  ops:
+    build:
+      context: ..
+      dockerfile: deploy/ops.Dockerfile
+    image: horseracing-ops:local
+    environment:
+      DATABASE_URL_OWNER: ${DATABASE_URL_OWNER}   # read+write owner role (NOT app_ro)
+    healthcheck:
+      test: ["CMD-SHELL",
+             "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/openapi.json').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Feature 024: resident worker that drains queued refresh jobs (reuses the ops image).
+  worker:
+    image: horseracing-ops:local   # built by the `ops` service
+    command: ["python", "-m", "horseracing_ops.worker"]
+    environment:
+      DATABASE_URL_OWNER: ${DATABASE_URL_OWNER}
+    restart: unless-stopped
+    depends_on:
+      ops:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+
   nginx:
     build:
       context: ..
@@ -66,6 +98,8 @@ services:
       retries: 12
     depends_on:
       api:
+        condition: service_healthy
+      ops:
         condition: service_healthy
 
 volumes:

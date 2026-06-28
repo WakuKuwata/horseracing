@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 
 import { useRaces } from "../api/queries";
+import { DayRefreshButton } from "../components/DayRefreshButton";
 import { RaceDayBoard } from "../components/RaceDayBoard";
 import { EmptyView, QueryStateView } from "../components/StateView";
 
@@ -50,6 +51,8 @@ export function RaceListPage() {
           value={effectiveDate}
           onChange={(e) => selectDate(e.target.value)}
         />
+        {/* US2: refresh ALL races on the selected day from netkeiba (ops write service). */}
+        {effectiveDate && <DayRefreshButton date={effectiveDate} />}
       </div>
 
       {noData ? (

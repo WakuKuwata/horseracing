@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/023-pace-time-features/plan.md` (active feature: ペース/時計シグナルの特徴量化 — 上がり3F/走破時計/着差/通過順位/脚質の as-of 特徴・レース内相対正規化・020 採用ゲート再利用).
+`specs/024-data-refresh-button/plan.md` (active feature: netkeiba データ更新ボタン — 一覧/詳細に「更新」ボタン、別 ops write サービス(owner ロール)が ingestion_jobs に enqueue→常駐 worker が scrape 取得、014 read-only は不変・スキーマ変更なし、非同期+進捗ポーリング).
 Stack: Python 3.12, PostgreSQL 16, SQLAlchemy 2.0, Alembic, psycopg3, pytest + testcontainers; numpy/scikit-learn/pandas/lightgbm for ML; httpx + selectolax/bs4 for scraping.
 Packages: `db/`, `ingest/`, `eval/`, `features/`, `training/`, `serving/`, `betting/`, `scrape/`, `probability/` (`horseracing-probability`).
 Probability: from per-race win probs derive all 7 JRA bet-type probabilities via Plackett-Luce/Harville — exacta P(i→j)=p_i·p_j/(1−p_i), trifecta sequential; quinella/trio = sum of orderings; wide{i,j}=Σ_k trio{i,j,k} (NOT independent product); place=harville top-N (field-size: 5–7=top2, 8+=top3, ≤4=none). Order FIXED: exclude scratched → renormalize Σ=1 → clip[eps,1−eps] → derive (renormalize BEFORE PL denominators); do NOT inherit harville's denom-skip. Invariants: Σexacta=1, Σtrifecta=1, unordered=sum-of-orderings, joint marginals == harville_topk, includes∈[0,1], monotone, deterministic. Derivation never reads results/odds (leak boundary); calibration eval vs independent-product baseline (NLL/Brier). No schema change. Exotic odds/EV/estimated-odds deferred (P0).
