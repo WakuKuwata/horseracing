@@ -5,10 +5,11 @@ import { Link } from "react-router-dom";
 import type { HorseEntry, HorsePrediction } from "../api/types";
 import { formatNum, formatPct, PLACEHOLDER } from "../lib/format";
 
-// Feature 029: link a name to its profile only when the id is a resolved canonical id. Surrogate
-// (`nk:`) and null ids have no profile target → render plain text (no broken link).
+// Feature 029: link a name to its profile when an id is present. `nk:` surrogates DO resolve to a
+// profile (the surrogate horse/jockey exists in the DB with its scraped identity + accumulated
+// results), so they are linkable too; only a null/empty id has no target → render plain text.
 function isLinkable(id: string | null | undefined): id is string {
-  return !!id && !id.startsWith("nk:");
+  return !!id;
 }
 
 type Pred = Pick<HorsePrediction, "win" | "top2" | "top3" | "market_win_prob">;

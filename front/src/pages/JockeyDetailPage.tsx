@@ -67,7 +67,7 @@ export function JockeyDetailPage() {
                       </Link>
                     </td>
                     <td>
-                      {row.horse_id && !row.horse_id.startsWith("nk:") ? (
+                      {row.horse_id ? (
                         <Link to={`/horses/${row.horse_id}`}>{row.horse_name ?? row.horse_id}</Link>
                       ) : (
                         (row.horse_name ?? PLACEHOLDER)
