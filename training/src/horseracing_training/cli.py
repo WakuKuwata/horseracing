@@ -132,12 +132,18 @@ def _run_feature_command(session: Session, args) -> int:
     if args.command == "feature-eval":
         from horseracing_eval.feature_eval import evaluate_feature_adoption
 
-        # baseline = candidate MINUS the groups under test. Default = Feature 026 groups, so the
-        # baseline is features-006 and feature-eval measures 026's (pedigree) marginal value.
+        # baseline = candidate MINUS --drop-groups. Default = Feature 030 groups, so baseline is
+        # features-007 and feature-eval measures 030's marginal value. --candidate-drop-groups also
+        # drops from the CANDIDATE (Feature 030 per-group protocol: candidate=features-007+g via
+        # candidate-drop = all-030-except-g, baseline-drop = all-030).
         gcols = _group_columns()
-        drop_groups = (args.drop_groups or "sire_aptitude,damsire_aptitude").split(",")
+        _DEF_030 = "handicap,season,place_rate,human_form_plus,course_aptitude"
+        drop_groups = (args.drop_groups or _DEF_030).split(",")
+        cand_drop_groups = (args.candidate_drop_groups.split(",")
+                            if args.candidate_drop_groups else [])
         drop = tuple(c for g in drop_groups for c in gcols.get(g, []))
-        candidate = LightGBMPredictor(session, seed=args.seed)
+        cand_drop = tuple(c for g in cand_drop_groups for c in gcols.get(g, []))
+        candidate = LightGBMPredictor(session, seed=args.seed, drop_features=cand_drop)
         baseline = LightGBMPredictor(session, seed=args.seed, drop_features=drop)
         r = evaluate_feature_adoption(
             session, candidate=candidate, baseline=baseline,
@@ -145,7 +151,7 @@ def _run_feature_command(session: Session, args) -> int:
             start_date=args.from_, end_date=args.to,
         )
         print(f"feature-eval fv={FEATURE_VERSION} drop_groups={drop_groups} "
-              f"folds={r.n_folds} adopted={r.adopted}")
+              f"cand_drop={cand_drop_groups or '-'} folds={r.n_folds} adopted={r.adopted}")
         print(f"  LogLoss base={r.mean_logloss_base:.5f} cand={r.mean_logloss_cand:.5f}")
         print(f"  Brier   base={r.mean_brier_base:.5f} cand={r.mean_brier_cand:.5f}")
         print(f"  AUC     base={r.mean_auc_base:.5f} cand={r.mean_auc_cand:.5f}")
@@ -222,8 +228,11 @@ def main(argv: list[str] | None = None) -> int:
     fe.add_argument("--worst-fold-ece-tol", type=float, default=2e-3,
                     help="looser per-fold worst ECE tol (single-fold blip should not veto)")
     fe.add_argument("--drop-groups", default=None,
-                    help="comma-separated groups the baseline drops (default: 026 sire_aptitude,"
-                         "damsire_aptitude → baseline=features-006)")
+                    help="comma-separated groups the BASELINE drops (default: 030 groups → "
+                         "baseline=features-007)")
+    fe.add_argument("--candidate-drop-groups", dest="candidate_drop_groups", default=None,
+                    help="comma-separated groups the CANDIDATE drops too (030 per-group: set to "
+                         "all-030-except-g so candidate=features-007+g)")
     fa = sub.add_parser("feature-ablation", help="020: per-group LogLoss contribution (diagnostic)")
     _add_window(fa)
     fa.add_argument("--groups", default=None, help="comma-separated group subset (default: all)")

@@ -55,6 +55,7 @@ def load_frames(session: Session, end_date: datetime.date | None = None) -> Fram
             RaceHorse.race_id, RaceHorse.horse_id, RaceHorse.age, RaceHorse.sex,
             RaceHorse.frame, RaceHorse.horse_number, RaceHorse.jockey_id,
             RaceHorse.trainer_id, RaceHorse.weight, RaceHorse.weight_diff,
+            RaceHorse.jockey_weight,  # Feature 030: 斤量 (carried weight, pre-race)
             RaceHorse.entry_status,
             RaceHorse.running_style,  # Feature 023: past 脚質 (as-of only, never the target race)
         )

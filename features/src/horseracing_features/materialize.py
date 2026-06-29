@@ -29,6 +29,7 @@ from .extra_features import build_extra_features
 from .history import build_history_features
 from .human_form import build_human_form_features
 from .loader import Frames
+from .lowcost_features import build_lowcost_features
 from .pace_features import build_pace_features
 from .pedigree_features import build_pedigree_features
 from .registry import FEATURE_VERSION, materialized_columns
@@ -131,11 +132,13 @@ def build_asof_features(
     human = build_human_form_features(frames)
     pace = build_pace_features(frames)
     pedigree = build_pedigree_features(frames)  # Feature 026 (single as-of source)
+    lowcost = build_lowcost_features(frames)    # Feature 030 (single as-of source)
     out = (
         history.merge(extra, on=_KEYS, how="left")
         .merge(human, on=_KEYS, how="left")
         .merge(pace, on=_KEYS, how="left")
         .merge(pedigree, on=_KEYS, how="left")
+        .merge(lowcost, on=_KEYS, how="left")
     )
     cols = [*_KEYS, *materialized_columns()]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)

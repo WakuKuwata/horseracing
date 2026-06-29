@@ -17,7 +17,7 @@ _RACE_DEFAULTS = dict(
 # horse-level (race_horses) defaults
 _HORSE_DEFAULTS = dict(
     age=3, sex="牡", frame=1, horse_number=1, jockey_id="J1", trainer_id="T1",
-    weight=460, weight_diff=0, running_style=None,
+    weight=460, weight_diff=0, jockey_weight=56.0, running_style=None,  # 030: 斤量
 )
 
 

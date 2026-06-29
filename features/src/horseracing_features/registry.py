@@ -108,6 +108,28 @@ REGISTRY: dict[str, FeatureMeta] = {
     # --- Feature 026: damsire (BMS) aptitude (optional, ablation-gated; overall only) ---
     "damsire_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
     "damsire_avg_finish": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 030: handicap (斤量, static + 1 as-of change) ---
+    "carried_weight": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.NULL),
+    "carried_weight_ratio": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.NULL),
+    "carried_weight_rel": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.NULL),
+    "carried_weight_change": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 030: season (static, from race_date) ---
+    "race_month": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "race_season": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 030: place_rate (as-of self, strictly-before) ---
+    "place_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "show_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "dist_band_place_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 030: human_form_plus (as-of cross, target-row + same-day excluded) ---
+    "jockey_place_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "trainer_place_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "jockey_recent_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "jockey_surface_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "jt_combo_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "jockey_change": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 030: course_aptitude (as-of self venue) ---
+    "venue_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    "venue_place_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -141,10 +163,32 @@ FEATURE_GROUPS: dict[str, str] = {
     # Feature 026: damsire/BMS aptitude (optional, ablation-gated)
     "damsire_win_rate": "damsire_aptitude",
     "damsire_avg_finish": "damsire_aptitude",
+    # Feature 030: handicap (斤量)
+    "carried_weight": "handicap",
+    "carried_weight_ratio": "handicap",
+    "carried_weight_rel": "handicap",
+    "carried_weight_change": "handicap",
+    # Feature 030: season
+    "race_month": "season",
+    "race_season": "season",
+    # Feature 030: place_rate (複勝率)
+    "place_rate": "place_rate",
+    "show_rate": "place_rate",
+    "dist_band_place_rate": "place_rate",
+    # Feature 030: human_form_plus
+    "jockey_place_rate": "human_form_plus",
+    "trainer_place_rate": "human_form_plus",
+    "jockey_recent_win_rate": "human_form_plus",
+    "jockey_surface_win_rate": "human_form_plus",
+    "jt_combo_win_rate": "human_form_plus",
+    "jockey_change": "human_form_plus",
+    # Feature 030: course_aptitude
+    "venue_win_rate": "course_aptitude",
+    "venue_place_rate": "course_aptitude",
 }
 
-#: feature schema version. 020→021 unchanged; bumped by 023 (pace/time); bumped by 026 (pedigree).
-FEATURE_VERSION = "features-007"
+#: feature schema version. 023 (pace); 026 (pedigree); bumped by 030 (low-cost feature expansion).
+FEATURE_VERSION = "features-008"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
@@ -157,6 +201,8 @@ STATIC_COLUMNS: tuple[str, ...] = (
     "venue_code", "distance", "track_type", "going", "weather", "race_class", "race_number",
     "age", "sex", "frame", "horse_number", "jockey_id", "trainer_id", "weight", "weight_diff",
     "field_size",
+    # Feature 030: current-race static (斤量・季節) — build_static_features, not materialized.
+    "carried_weight", "carried_weight_ratio", "carried_weight_rel", "race_month", "race_season",
 )
 
 
