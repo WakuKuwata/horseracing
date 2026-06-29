@@ -130,6 +130,14 @@ REGISTRY: dict[str, FeatureMeta] = {
     # --- Feature 030: course_aptitude (as-of self venue) ---
     "venue_win_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
     "venue_place_rate": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 031: pace_scenario (field-composition, leave-one-out over started field) ---
+    "field_front_rate_ex_self": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "field_closer_rate_ex_self": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "pace_imbalance_ex_self": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "front_pressure": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "closer_setup": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "style_mismatch": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "field_style_coverage": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -185,10 +193,18 @@ FEATURE_GROUPS: dict[str, str] = {
     # Feature 030: course_aptitude
     "venue_win_rate": "course_aptitude",
     "venue_place_rate": "course_aptitude",
+    # Feature 031: pace_scenario (field-composition + own-style interaction)
+    "field_front_rate_ex_self": "pace_scenario",
+    "field_closer_rate_ex_self": "pace_scenario",
+    "pace_imbalance_ex_self": "pace_scenario",
+    "front_pressure": "pace_scenario",
+    "closer_setup": "pace_scenario",
+    "style_mismatch": "pace_scenario",
+    "field_style_coverage": "pace_scenario",
 }
 
-#: feature schema version. 023 (pace); 026 (pedigree); bumped by 030 (low-cost feature expansion).
-FEATURE_VERSION = "features-008"
+#: feature schema version. 023/026/030; bumped by 031 (pace scenario / field-composition).
+FEATURE_VERSION = "features-009"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
