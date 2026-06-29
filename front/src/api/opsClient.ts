@@ -53,6 +53,15 @@ export async function refreshRace(raceId: string, force = false): Promise<JobAcc
   );
 }
 
+/** Feature 028: enqueue a 1-race prediction job; returns the accepted job (202). */
+export async function predictRace(raceId: string): Promise<JobAccepted> {
+  return unwrap(
+    await opsApi.POST("/ops/v1/races/{race_id}/predict", {
+      params: { path: { race_id: raceId } },
+    }),
+  );
+}
+
 /** Poll a refresh job's status. */
 export async function getJob(jobId: string): Promise<Job> {
   return unwrap(

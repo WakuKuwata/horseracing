@@ -202,7 +202,8 @@
               {
                 "enum": [
                   "entries+odds",
-                  "results"
+                  "results",
+                  "predict"
                 ],
                 "type": "string"
               },
@@ -407,7 +408,7 @@
     }
   },
   "info": {
-    "description": "On-demand netkeiba refresh \u2014 enqueue + job status (Feature 024). Write path, separate from the read-only 014 API.",
+    "description": "On-demand netkeiba refresh — enqueue + job status (Feature 024). Write path, separate from the read-only 014 API.",
     "title": "horseracing ops (data-refresh) API",
     "version": "v1"
   },
@@ -467,6 +468,7 @@
     },
     "/ops/v1/days/{date}/refresh": {
       "post": {
+        "description": "Accept a day refresh and return 202 immediately. The worker discovers the day's races from\nnetkeiba and fans out refresh_race children; poll the batch for progress. No netkeiba round-trip\nhere (never block), and any date is accepted — discovery (not the DB) decides the race set.",
         "operationId": "refresh_day_ops_v1_days__date__refresh_post",
         "parameters": [
           {
@@ -585,6 +587,58 @@
         "summary": "Get Job",
         "tags": [
           "jobs"
+        ]
+      }
+    },
+    "/ops/v1/races/{race_id}/predict": {
+      "post": {
+        "operationId": "predict_race_ops_v1_races__race_id__predict_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Predict Race",
+        "tags": [
+          "predict"
         ]
       }
     },

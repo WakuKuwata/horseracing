@@ -13,7 +13,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 JobStatusT = Literal["queued", "running", "succeeded", "partial", "failed", "skipped"]
-KindT = Literal["entries+odds", "results"]
+KindT = Literal["entries+odds", "results", "predict"]  # Feature 028: predict job summary.kind
 
 
 class ErrorBody(BaseModel):

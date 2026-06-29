@@ -11,7 +11,7 @@ export function renderWithProviders(
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
-  return render(
+  const result = render(
     <QueryClientProvider client={client}>
       <MemoryRouter
         initialEntries={[route]}
@@ -21,4 +21,5 @@ export function renderWithProviders(
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return { ...result, queryClient: client };
 }

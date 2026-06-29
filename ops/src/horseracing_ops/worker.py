@@ -18,13 +18,14 @@ from horseracing_db.models import IngestionJob
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from . import JOB_TYPE_DAY, JOB_TYPE_RACE
+from . import JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RACE
 from .config import CONFIG
 from .deps import create_ops_engine
-from .runner import make_fetcher, run_day, run_one
+from .runner import make_fetcher, run_day, run_one, run_predict
 
-#: job types the worker drains (refresh_day discovers + fans out; refresh_race does the scrape).
-_CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY)
+#: job types the worker drains (refresh_day discovers + fans out; refresh_race scrapes; predict runs
+#: the serving model for one race — Feature 028).
+_CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY, JOB_TYPE_PREDICT)
 
 #: a RUNNING job older than this (no progress) is presumed orphaned by a crashed worker.
 STALE_RUNNING_SECONDS = CONFIG.stale_running_seconds
@@ -81,7 +82,12 @@ def claim_one(session: Session) -> IngestionJob | None:
 
 
 def _run_claimed(session: Session, job: IngestionJob, *, fetcher=None) -> None:
-    runner = run_day if job.job_type == JOB_TYPE_DAY else run_one
+    if job.job_type == JOB_TYPE_DAY:
+        runner = run_day
+    elif job.job_type == JOB_TYPE_PREDICT:
+        runner = run_predict
+    else:
+        runner = run_one
     try:
         runner(session, job, fetcher=fetcher)
     except Exception as exc:  # noqa: BLE001 — one bad job must not kill the worker

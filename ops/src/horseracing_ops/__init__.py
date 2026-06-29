@@ -13,3 +13,4 @@ API_PREFIX = "/ops/v1"
 #: how the ops/worker job rows are tagged in ingestion_jobs.job_type
 JOB_TYPE_RACE = "refresh_race"
 JOB_TYPE_DAY = "refresh_day"
+JOB_TYPE_PREDICT = "predict"  # Feature 028: generate model predictions for a race (via serving)

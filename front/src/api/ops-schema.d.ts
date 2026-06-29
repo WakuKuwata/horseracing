@@ -30,7 +30,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Refresh Day */
+        /**
+         * Refresh Day
+         * @description Accept a day refresh and return 202 immediately. The worker discovers the day's races from
+         *     netkeiba and fans out refresh_race children; poll the batch for progress. No netkeiba round-trip
+         *     here (never block), and any date is accepted — discovery (not the DB) decides the race set.
+         */
         post: operations["refresh_day_ops_v1_days__date__refresh_post"];
         delete?: never;
         options?: never;
@@ -49,6 +54,23 @@ export interface paths {
         get: operations["get_job_ops_v1_jobs__job_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ops/v1/races/{race_id}/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Predict Race */
+        post: operations["predict_race_ops_v1_races__race_id__predict_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -168,7 +190,7 @@ export interface components {
             /** Job Type */
             job_type: string;
             /** Kind */
-            kind?: ("entries+odds" | "results") | null;
+            kind?: ("entries+odds" | "results" | "predict") | null;
             /** Processed Rows */
             processed_rows?: number | null;
             /**
@@ -367,6 +389,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predict_race_ops_v1_races__race_id__predict_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                race_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };

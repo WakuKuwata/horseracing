@@ -16,7 +16,7 @@ from horseracing_db.validation import is_valid_race_id
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from . import JOB_TYPE_DAY, JOB_TYPE_RACE
+from . import JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RACE
 from .config import CONFIG
 
 #: default freshness window — a same-race success within this many seconds is reused (US3/FR-015).
@@ -77,6 +77,37 @@ def enqueue_race(
     job = IngestionJob(
         source=Source.NETKEIBA, job_type=JOB_TYPE_RACE, scope="race", scope_value=race_id,
         status=JobStatus.QUEUED, trace_id=trace_id,
+    )
+    session.add(job)
+    session.flush()
+    return job, False
+
+
+def enqueue_predict(session: Session, race_id: str) -> tuple[IngestionJob, bool]:
+    """Feature 028: enqueue a predict job (in-flight-only dedup). (job, reused); caller commits.
+
+    Reuse only an ACTIVE (queued/running) predict job for the same race — so a double-click can't
+    create two. A completed job is NOT reused (an explicit click means "(re)generate now", e.g.
+    after the model or entries changed). The advisory lock key is `predict:{race_id}` (distinct from
+    refresh's `refresh:race:{race_id}`), so predict and refresh never block each other.
+    model_version is not in the dedup key (ingestion_jobs has no payload column) — it is recorded in
+    prediction_runs for audit instead.
+    """
+    session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
+                    {"k": f"predict:{race_id}"})
+    active = session.scalars(
+        select(IngestionJob)
+        .where(IngestionJob.job_type == JOB_TYPE_PREDICT)
+        .where(IngestionJob.scope_value == race_id)
+        .where(IngestionJob.status.in_(_ACTIVE))
+        .order_by(IngestionJob.created_at.desc())
+    ).first()
+    if active is not None:
+        return active, True
+
+    job = IngestionJob(
+        source=Source.NETKEIBA, job_type=JOB_TYPE_PREDICT, scope="race", scope_value=race_id,
+        status=JobStatus.QUEUED, summary={"kind": "predict", "source": "manual"},
     )
     session.add(job)
     session.flush()

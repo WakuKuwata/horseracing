@@ -40,6 +40,29 @@ paths:
           description: race_id が 12 桁でない
           content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
 
+  # Feature 028: generate model predictions for one race (ops write path; serving via subprocess).
+  /races/{race_id}/predict:
+    post:
+      tags: [predict]
+      summary: 1 レースの予測生成を受け付ける（028, US1）
+      parameters:
+        - name: race_id
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[0-9]{12}$' }
+      responses:
+        '202':
+          description: 受付済み（生成はバックグラウンド）。進行中の同一レース predict は再利用（in-flight dedup）。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobAccepted' }
+        '404':
+          description: レースが存在しない
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '422':
+          description: race_id が 12 桁でない
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
   /days/{date}/refresh:
     post:
       tags: [refresh]

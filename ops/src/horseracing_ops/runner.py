@@ -17,6 +17,9 @@ counts onto the orchestration row. Ingested odds/results never become model feat
 from __future__ import annotations
 
 import datetime
+import os
+import subprocess
+from pathlib import Path
 
 import httpx
 from horseracing_db.enums import JobStatus
@@ -32,9 +35,16 @@ from horseracing_scrape.urls import entries_url, result_url, win_odds_url
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .deps import owner_database_url
 from .enqueue import enqueue_race
 
 _USER_AGENT = "horseracing-ops/0.1 (personal use; contact via repo)"
+
+#: Feature 028: the ops (write/ingest) path must NOT import the model/feature stack (boundary II/VI,
+#: tests/integration/test_boundary.py). So predict shells out to the serving CLI in its OWN env via
+#: uv, keeping ops's import graph clean. The subprocess persists prediction_runs itself.
+_SERVING_DIR = Path(__file__).resolve().parents[3] / "serving"
+_SERVING_TIMEOUT_S = 300
 
 
 def make_fetcher(min_interval: float = 1.0, cache_dir: str | None = None) -> HttpFetcher:
@@ -103,6 +113,53 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
         "calls": [{"job_type": s.job_type, "status": s.status, "written": s.written,
                    "skipped": s.skipped, "errors": s.errors} for s in summaries],
     }
+    session.add(job)
+    session.commit()
+    return job
+
+
+def _serving_predict(race_id: str) -> subprocess.CompletedProcess:
+    """Invoke the serving CLI in its OWN env (`uv run --project serving`) — ops must not import the
+    model stack (boundary II/VI). The CLI builds as-of (leak-safe) features, runs the single active
+    model, and persists the prediction_run; it prints a summary and exits 0 (incl. the empty
+    "no races inferred" case) or non-zero on ServingError / failure. Monkeypatched in tests."""
+    cmd = [
+        "uv", "run", "--project", str(_SERVING_DIR), "python", "-m", "horseracing_serving",
+        "predict", "--race-id", race_id, "--database-url", owner_database_url(),
+    ]
+    # cwd = serving/ so the model_versions.weights_uri (stored relative, e.g. ../artifacts/...)
+    # resolves to <repo>/artifacts exactly as a normal serving run does. Drop VIRTUAL_ENV so uv
+    # targets serving's env without a noisy mismatch warning (ops runs under its own venv).
+    env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
+    return subprocess.run(  # noqa: S603 — fixed argv, race_id is endpoint-validated 12 digits
+        cmd, capture_output=True, text=True, timeout=_SERVING_TIMEOUT_S,
+        cwd=str(_SERVING_DIR), env=env,
+    )
+
+
+def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:
+    """Feature 028: generate predictions for one race by shelling out to the serving CLI (no scrape,
+    so ``fetcher`` is unused — kept for the worker's uniform runner(session, job, fetcher=) call).
+
+    Maps the CLI outcome to a terminal job status: non-zero exit (ServingError / failure) → FAILED
+    (deterministic — not worker-retried); rc 0 + "no races inferred" → SKIPPED (no started horses,
+    no half-baked run); otherwise → SUCCEEDED. The CLI persists prediction_runs itself; the audit
+    (model_version/computed_at) lives there, so the job summary keeps just a short output tail."""
+    race_id = job.scope_value or ""
+    proc = _serving_predict(race_id)
+    stdout = proc.stdout or ""
+    tail = ((proc.stderr or "") + stdout).strip()[-500:]
+    job.completed_at = _now()
+    if proc.returncode != 0:
+        job.status = JobStatus.FAILED
+        job.error_message = tail
+        job.summary = {"kind": "predict", "source": "manual", "error": tail}
+    elif "no races inferred" in stdout:
+        job.status = JobStatus.SKIPPED
+        job.summary = {"kind": "predict", "source": "manual", "reason": "no started horses"}
+    else:
+        job.status = JobStatus.SUCCEEDED
+        job.summary = {"kind": "predict", "source": "manual", "output": tail}
     session.add(job)
     session.commit()
     return job

@@ -17,7 +17,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import API_PREFIX, API_VERSION
 from .deps import create_ops_engine
-from .routers import jobs, refresh
+from .routers import jobs, predict, refresh
 
 
 @asynccontextmanager
@@ -56,4 +56,5 @@ async def _http_error(request: Request, exc: StarletteHTTPException) -> JSONResp
 
 
 app.include_router(refresh.router, prefix=API_PREFIX)
+app.include_router(predict.router, prefix=API_PREFIX)
 app.include_router(jobs.router, prefix=API_PREFIX)
