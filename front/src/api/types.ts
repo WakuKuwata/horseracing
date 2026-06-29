@@ -18,3 +18,10 @@ export type RecommendationRow = S["RecommendationRow"];
 export type RacePage = S["Page_RaceSummary_"];
 export type CalibrationResponse = S["CalibrationResponse"];
 export type CalibrationBin = S["CalibrationBin"];
+// Feature 029: horse/jockey profiles
+export type HorseProfile = S["HorseProfile"];
+export type HorseHistoryRow = S["HorseHistoryRow"];
+export type HorseHistoryPage = S["Page_HorseHistoryRow_"];
+export type JockeyProfile = S["JockeyProfile"];
+export type JockeyHistoryRow = S["JockeyHistoryRow"];
+export type JockeyHistoryPage = S["Page_JockeyHistoryRow_"];

@@ -8,9 +8,10 @@ endpoint's list[int] contract).
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
 
-from horseracing_db.enums import BetType, EntryStatus
+from horseracing_db.enums import BetType, EntryStatus, ResultStatus
 from horseracing_db.models import (
     ExoticOdds,
     Horse,
@@ -70,6 +71,7 @@ def race_horses(session: Session, race_id: str):
             RaceHorse.entry_status, RaceHorse.age, RaceHorse.sex,
             RaceHorse.weight, RaceHorse.weight_diff, RaceHorse.jockey_weight,
             RaceHorse.odds, RaceHorse.popularity,
+            RaceHorse.jockey_id, RaceHorse.trainer_id,
             Horse.horse_name,
             Jockey.jockey_name,
             Trainer.trainer_name,
@@ -199,3 +201,147 @@ def exotic_recommendations(session: Session, race_id: str) -> list[Recommendatio
             .order_by(Recommendation.bet_type, Recommendation.computed_at.desc())
         )
     )
+
+
+# --- horse / jockey profiles (Feature 029) — factual career aggregates, read-only ---------------
+# 母数規則 (research D2): 出走数=entry_status='started'; 着順率の分子=finished & finish_order;
+# 平均着順=完走のみ。取消/除外は出走数に含めない; 中止/失格は出走数に含むが率/平均から除外。
+
+
+@dataclasses.dataclass
+class HorseProfileData:
+    horse: Horse
+    starts: int
+    wins: int
+    seconds_in: int
+    shows_in: int
+    avg_finish: float | None
+
+
+def horse_profile(session: Session, horse_id: str) -> HorseProfileData | None:
+    """Identity + pedigree (names) + career aggregates. None when the horse does not exist."""
+    horse = session.get(Horse, horse_id)
+    if horse is None:
+        return None
+    starts = session.scalar(
+        select(func.count())
+        .select_from(RaceHorse)
+        .where(RaceHorse.horse_id == horse_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    ) or 0
+    wins, seconds_in, shows_in, avg_finish = session.execute(
+        select(
+            func.count().filter(RaceResult.finish_order == 1),
+            func.count().filter(RaceResult.finish_order <= 2),
+            func.count().filter(RaceResult.finish_order <= 3),
+            func.avg(RaceResult.finish_order),
+        )
+        .where(RaceResult.horse_id == horse_id)
+        .where(RaceResult.result_status == ResultStatus.FINISHED)
+        .where(RaceResult.finish_order.is_not(None))
+    ).one()
+    return HorseProfileData(
+        horse=horse, starts=int(starts), wins=int(wins), seconds_in=int(seconds_in),
+        shows_in=int(shows_in), avg_finish=(float(avg_finish) if avg_finish is not None else None),
+    )
+
+
+def horse_history(session: Session, horse_id: str, *, page: int, page_size: int):
+    """(rows, total) of the horse's entries (newest first); None when the horse does not exist."""
+    if session.get(Horse, horse_id) is None:
+        return None
+    base = (
+        select(RaceHorse.race_id)
+        .where(RaceHorse.horse_id == horse_id)
+    )
+    total = session.scalar(select(func.count()).select_from(base.subquery())) or 0
+    rows = session.execute(
+        select(
+            Race.race_id, Race.race_date, Race.venue_code, Race.race_number, Race.race_name,
+            Race.race_class, Race.distance, Race.track_type,
+            RaceHorse.horse_number, RaceHorse.popularity, RaceHorse.odds, RaceHorse.entry_status,
+            RaceResult.finish_order, RaceResult.finish_time, RaceResult.last_3f,
+            RaceResult.result_status,
+        )
+        .select_from(RaceHorse)
+        .join(Race, Race.race_id == RaceHorse.race_id)
+        .outerjoin(
+            RaceResult,
+            (RaceResult.race_id == RaceHorse.race_id) & (RaceResult.horse_id == RaceHorse.horse_id),
+        )
+        .where(RaceHorse.horse_id == horse_id)
+        .order_by(Race.race_date.desc().nulls_last(), Race.race_id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).all()
+    return list(rows), int(total)
+
+
+@dataclasses.dataclass
+class JockeyProfileData:
+    jockey: Jockey
+    mounts: int
+    wins: int
+    seconds_in: int
+    shows_in: int
+    avg_finish: float | None
+
+
+def jockey_profile(session: Session, jockey_id: str) -> JockeyProfileData | None:
+    """Identity + riding aggregates (mounts/wins/placings/avg). None when the jockey is unknown."""
+    jockey = session.get(Jockey, jockey_id)
+    if jockey is None:
+        return None
+    mounts = session.scalar(
+        select(func.count())
+        .select_from(RaceHorse)
+        .where(RaceHorse.jockey_id == jockey_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    ) or 0
+    wins, seconds_in, shows_in, avg_finish = session.execute(
+        select(
+            func.count().filter(RaceResult.finish_order == 1),
+            func.count().filter(RaceResult.finish_order <= 2),
+            func.count().filter(RaceResult.finish_order <= 3),
+            func.avg(RaceResult.finish_order),
+        )
+        .select_from(RaceHorse)
+        .join(
+            RaceResult,
+            (RaceResult.race_id == RaceHorse.race_id) & (RaceResult.horse_id == RaceHorse.horse_id),
+        )
+        .where(RaceHorse.jockey_id == jockey_id)
+        .where(RaceResult.result_status == ResultStatus.FINISHED)
+        .where(RaceResult.finish_order.is_not(None))
+    ).one()
+    return JockeyProfileData(
+        jockey=jockey, mounts=int(mounts), wins=int(wins), seconds_in=int(seconds_in),
+        shows_in=int(shows_in), avg_finish=(float(avg_finish) if avg_finish is not None else None),
+    )
+
+
+def jockey_history(session: Session, jockey_id: str, *, page: int, page_size: int):
+    """(rows, total) of the jockey's mounts (newest first); None when the jockey does not exist."""
+    if session.get(Jockey, jockey_id) is None:
+        return None
+    base = select(RaceHorse.race_id).where(RaceHorse.jockey_id == jockey_id)
+    total = session.scalar(select(func.count()).select_from(base.subquery())) or 0
+    rows = session.execute(
+        select(
+            Race.race_id, Race.race_date, Race.venue_code, Race.race_number, Race.race_name,
+            RaceHorse.horse_id, Horse.horse_name,
+            RaceResult.finish_order, RaceResult.result_status,
+        )
+        .select_from(RaceHorse)
+        .join(Race, Race.race_id == RaceHorse.race_id)
+        .outerjoin(Horse, Horse.horse_id == RaceHorse.horse_id)
+        .outerjoin(
+            RaceResult,
+            (RaceResult.race_id == RaceHorse.race_id) & (RaceResult.horse_id == RaceHorse.horse_id),
+        )
+        .where(RaceHorse.jockey_id == jockey_id)
+        .order_by(Race.race_date.desc().nulls_last(), Race.race_id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).all()
+    return list(rows), int(total)

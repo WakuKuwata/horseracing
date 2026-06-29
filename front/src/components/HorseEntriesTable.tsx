@@ -1,7 +1,15 @@
 import { useMemo, useState } from "react";
 
+import { Link } from "react-router-dom";
+
 import type { HorseEntry, HorsePrediction } from "../api/types";
 import { formatNum, formatPct, PLACEHOLDER } from "../lib/format";
+
+// Feature 029: link a name to its profile only when the id is a resolved canonical id. Surrogate
+// (`nk:`) and null ids have no profile target → render plain text (no broken link).
+function isLinkable(id: string | null | undefined): id is string {
+  return !!id && !id.startsWith("nk:");
+}
 
 type Pred = Pick<HorsePrediction, "win" | "top2" | "top3" | "market_win_prob">;
 
@@ -102,11 +110,23 @@ export function HorseEntriesTable({
                 </span>
               </td>
               <td>
-                <span className="cell-main">{r.horse_name ?? PLACEHOLDER}</span>
+                <span className="cell-main">
+                  {isLinkable(r.horse_id) ? (
+                    <Link to={`/horses/${r.horse_id}`}>{r.horse_name ?? r.horse_id}</Link>
+                  ) : (
+                    (r.horse_name ?? PLACEHOLDER)
+                  )}
+                </span>
                 <span className="cell-sub">{(r.sex ?? "") + (r.age != null ? r.age : "")}</span>
               </td>
               <td>
-                <span className="cell-main">{r.jockey_name ?? PLACEHOLDER}</span>
+                <span className="cell-main">
+                  {isLinkable(r.jockey_id) ? (
+                    <Link to={`/jockeys/${r.jockey_id}`}>{r.jockey_name ?? r.jockey_id}</Link>
+                  ) : (
+                    (r.jockey_name ?? PLACEHOLDER)
+                  )}
+                </span>
                 <span className="cell-sub">
                   {r.jockey_weight != null ? `${formatNum(r.jockey_weight, 1)}kg` : ""}
                 </span>

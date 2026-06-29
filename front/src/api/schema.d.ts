@@ -27,6 +27,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/horses/{horse_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Horse */
+        get: operations["get_horse_api_v1_horses__horse_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/horses/{horse_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Horse History */
+        get: operations["get_horse_history_api_v1_horses__horse_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jockeys/{jockey_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Jockey */
+        get: operations["get_jockey_api_v1_jockeys__jockey_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jockeys/{jockey_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Jockey History */
+        get: operations["get_jockey_history_api_v1_jockeys__jockey_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/models/{model_version}/calibration": {
         parameters: {
             query?: never;
@@ -244,6 +312,8 @@ export interface components {
             horse_name?: string | null;
             /** Horse Number */
             horse_number?: number | null;
+            /** Jockey Id */
+            jockey_id?: string | null;
             /** Jockey Name */
             jockey_name?: string | null;
             /** Jockey Weight */
@@ -254,12 +324,49 @@ export interface components {
             popularity?: number | null;
             /** Sex */
             sex?: string | null;
+            /** Trainer Id */
+            trainer_id?: string | null;
             /** Trainer Name */
             trainer_name?: string | null;
             /** Weight */
             weight?: number | null;
             /** Weight Diff */
             weight_diff?: number | null;
+        };
+        /** HorseHistoryRow */
+        HorseHistoryRow: {
+            /** Distance */
+            distance?: number | null;
+            /** Entry Status */
+            entry_status?: string | null;
+            /** Finish Order */
+            finish_order?: number | null;
+            /** Finish Time Sec */
+            finish_time_sec?: number | null;
+            /** Horse Number */
+            horse_number?: number | null;
+            /** Last 3F */
+            last_3f?: number | null;
+            /** Odds */
+            odds?: number | null;
+            /** Popularity */
+            popularity?: number | null;
+            /** Race Class */
+            race_class?: string | null;
+            /** Race Date */
+            race_date?: string | null;
+            /** Race Id */
+            race_id: string;
+            /** Race Name */
+            race_name?: string | null;
+            /** Race Number */
+            race_number?: number | null;
+            /** Result Status */
+            result_status?: string | null;
+            /** Track Type */
+            track_type?: string | null;
+            /** Venue Code */
+            venue_code?: string | null;
         };
         /** HorsePrediction */
         HorsePrediction: {
@@ -277,6 +384,109 @@ export interface components {
             top3?: number | null;
             /** Win */
             win?: number | null;
+        };
+        /** HorseProfile */
+        HorseProfile: {
+            /** Avg Finish */
+            avg_finish?: number | null;
+            /** Birth Year */
+            birth_year?: number | null;
+            /** Dam Name */
+            dam_name?: string | null;
+            /** Damsire Name */
+            damsire_name?: string | null;
+            /** Data Source */
+            data_source?: string | null;
+            /** Horse Id */
+            horse_id: string;
+            /** Horse Name */
+            horse_name?: string | null;
+            /** Quinella Rate */
+            quinella_rate?: number | null;
+            /**
+             * Seconds In
+             * @default 0
+             */
+            seconds_in: number;
+            /** Sex */
+            sex?: string | null;
+            /** Show Rate */
+            show_rate?: number | null;
+            /**
+             * Shows In
+             * @default 0
+             */
+            shows_in: number;
+            /** Sire Name */
+            sire_name?: string | null;
+            /**
+             * Starts
+             * @default 0
+             */
+            starts: number;
+            /** Win Rate */
+            win_rate?: number | null;
+            /**
+             * Wins
+             * @default 0
+             */
+            wins: number;
+        };
+        /** JockeyHistoryRow */
+        JockeyHistoryRow: {
+            /** Finish Order */
+            finish_order?: number | null;
+            /** Horse Id */
+            horse_id?: string | null;
+            /** Horse Name */
+            horse_name?: string | null;
+            /** Race Date */
+            race_date?: string | null;
+            /** Race Id */
+            race_id: string;
+            /** Race Name */
+            race_name?: string | null;
+            /** Race Number */
+            race_number?: number | null;
+            /** Result Status */
+            result_status?: string | null;
+            /** Venue Code */
+            venue_code?: string | null;
+        };
+        /** JockeyProfile */
+        JockeyProfile: {
+            /** Avg Finish */
+            avg_finish?: number | null;
+            /** Jockey Id */
+            jockey_id: string;
+            /** Jockey Name */
+            jockey_name?: string | null;
+            /**
+             * Mounts
+             * @default 0
+             */
+            mounts: number;
+            /** Quinella Rate */
+            quinella_rate?: number | null;
+            /**
+             * Seconds In
+             * @default 0
+             */
+            seconds_in: number;
+            /** Show Rate */
+            show_rate?: number | null;
+            /**
+             * Shows In
+             * @default 0
+             */
+            shows_in: number;
+            /** Win Rate */
+            win_rate?: number | null;
+            /**
+             * Wins
+             * @default 0
+             */
+            wins: number;
         };
         /** JointEntry */
         JointEntry: {
@@ -304,6 +514,32 @@ export interface components {
              * @default []
              */
             win: components["schemas"]["WinOddsRow"][];
+        };
+        /** Page[HorseHistoryRow] */
+        Page_HorseHistoryRow_: {
+            /** Has Next */
+            has_next: boolean;
+            /** Items */
+            items: components["schemas"]["HorseHistoryRow"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
+        /** Page[JockeyHistoryRow] */
+        Page_JockeyHistoryRow_: {
+            /** Has Next */
+            has_next: boolean;
+            /** Items */
+            items: components["schemas"]["JockeyHistoryRow"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
         };
         /** Page[RaceSummary] */
         Page_RaceSummary_: {
@@ -535,6 +771,164 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_horse_api_v1_horses__horse_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                horse_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HorseProfile"];
+                };
+            };
+            /** @description horse not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_horse_history_api_v1_horses__horse_id__history_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                horse_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_HorseHistoryRow_"];
+                };
+            };
+            /** @description horse not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_jockey_api_v1_jockeys__jockey_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jockey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JockeyProfile"];
+                };
+            };
+            /** @description jockey not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_jockey_history_api_v1_jockeys__jockey_id__history_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                jockey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_JockeyHistoryRow_"];
+                };
+            };
+            /** @description jockey not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
