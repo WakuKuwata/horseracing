@@ -125,7 +125,8 @@ def race_detail(race_id: str, session: Session = Depends(get_session)):
         HorseEntry(
             horse_number=h.horse_number, frame=h.frame, horse_id=h.horse_id,
             horse_name=h.horse_name, entry_status=h.entry_status, age=h.age, sex=h.sex,
-            jockey_name=h.jockey_name, trainer_name=h.trainer_name,
+            jockey_id=h.jockey_id, jockey_name=h.jockey_name,
+            trainer_id=h.trainer_id, trainer_name=h.trainer_name,
             jockey_weight=float(h.jockey_weight) if h.jockey_weight is not None else None,
             weight=h.weight, weight_diff=h.weight_diff,
             odds=float(h.odds) if h.odds is not None else None, popularity=h.popularity,

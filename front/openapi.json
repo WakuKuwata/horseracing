@@ -257,6 +257,17 @@
             ],
             "title": "Horse Number"
           },
+          "jockey_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jockey Id"
+          },
           "jockey_name": {
             "anyOf": [
               {
@@ -312,6 +323,17 @@
             ],
             "title": "Sex"
           },
+          "trainer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainer Id"
+          },
           "trainer_name": {
             "anyOf": [
               {
@@ -351,6 +373,185 @@
           "entry_status"
         ],
         "title": "HorseEntry",
+        "type": "object"
+      },
+      "HorseHistoryRow": {
+        "properties": {
+          "distance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance"
+          },
+          "entry_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Status"
+          },
+          "finish_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Order"
+          },
+          "finish_time_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Time Sec"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "last_3f": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last 3F"
+          },
+          "odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds"
+          },
+          "popularity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Popularity"
+          },
+          "race_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Class"
+          },
+          "race_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Date"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "race_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Name"
+          },
+          "race_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Number"
+          },
+          "result_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Status"
+          },
+          "track_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Type"
+          },
+          "venue_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Code"
+          }
+        },
+        "required": [
+          "race_id"
+        ],
+        "title": "HorseHistoryRow",
         "type": "object"
       },
       "HorsePrediction": {
@@ -437,6 +638,350 @@
         "title": "HorsePrediction",
         "type": "object"
       },
+      "HorseProfile": {
+        "properties": {
+          "avg_finish": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Finish"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Year"
+          },
+          "dam_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dam Name"
+          },
+          "damsire_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damsire Name"
+          },
+          "data_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source"
+          },
+          "horse_id": {
+            "title": "Horse Id",
+            "type": "string"
+          },
+          "horse_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Name"
+          },
+          "quinella_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quinella Rate"
+          },
+          "seconds_in": {
+            "default": 0,
+            "title": "Seconds In",
+            "type": "integer"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
+          },
+          "show_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Rate"
+          },
+          "shows_in": {
+            "default": 0,
+            "title": "Shows In",
+            "type": "integer"
+          },
+          "sire_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sire Name"
+          },
+          "starts": {
+            "default": 0,
+            "title": "Starts",
+            "type": "integer"
+          },
+          "win_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win Rate"
+          },
+          "wins": {
+            "default": 0,
+            "title": "Wins",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "horse_id"
+        ],
+        "title": "HorseProfile",
+        "type": "object"
+      },
+      "JockeyHistoryRow": {
+        "properties": {
+          "finish_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Order"
+          },
+          "horse_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Id"
+          },
+          "horse_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Name"
+          },
+          "race_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Date"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "race_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Name"
+          },
+          "race_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Number"
+          },
+          "result_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Status"
+          },
+          "venue_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Code"
+          }
+        },
+        "required": [
+          "race_id"
+        ],
+        "title": "JockeyHistoryRow",
+        "type": "object"
+      },
+      "JockeyProfile": {
+        "properties": {
+          "avg_finish": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Finish"
+          },
+          "jockey_id": {
+            "title": "Jockey Id",
+            "type": "string"
+          },
+          "jockey_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jockey Name"
+          },
+          "mounts": {
+            "default": 0,
+            "title": "Mounts",
+            "type": "integer"
+          },
+          "quinella_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quinella Rate"
+          },
+          "seconds_in": {
+            "default": 0,
+            "title": "Seconds In",
+            "type": "integer"
+          },
+          "show_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Rate"
+          },
+          "shows_in": {
+            "default": 0,
+            "title": "Shows In",
+            "type": "integer"
+          },
+          "win_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win Rate"
+          },
+          "wins": {
+            "default": 0,
+            "title": "Wins",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jockey_id"
+        ],
+        "title": "JockeyProfile",
+        "type": "object"
+      },
       "JointEntry": {
         "properties": {
           "prob": {
@@ -493,6 +1038,78 @@
           "race_id"
         ],
         "title": "OddsResponse",
+        "type": "object"
+      },
+      "Page_HorseHistoryRow_": {
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HorseHistoryRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "has_next"
+        ],
+        "title": "Page[HorseHistoryRow]",
+        "type": "object"
+      },
+      "Page_JockeyHistoryRow_": {
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/JockeyHistoryRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "has_next"
+        ],
+        "title": "Page[JockeyHistoryRow]",
         "type": "object"
       },
       "Page_RaceSummary_": {
@@ -1205,6 +1822,232 @@
         "summary": "Health",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/v1/horses/{horse_id}": {
+      "get": {
+        "operationId": "get_horse_api_v1_horses__horse_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "horse_id",
+            "required": true,
+            "schema": {
+              "title": "Horse Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HorseProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "horse not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Horse",
+        "tags": [
+          "horses"
+        ]
+      }
+    },
+    "/api/v1/horses/{horse_id}/history": {
+      "get": {
+        "operationId": "get_horse_history_api_v1_horses__horse_id__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "horse_id",
+            "required": true,
+            "schema": {
+              "title": "Horse Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_HorseHistoryRow_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "horse not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Horse History",
+        "tags": [
+          "horses"
+        ]
+      }
+    },
+    "/api/v1/jockeys/{jockey_id}": {
+      "get": {
+        "operationId": "get_jockey_api_v1_jockeys__jockey_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jockey_id",
+            "required": true,
+            "schema": {
+              "title": "Jockey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JockeyProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "jockey not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Jockey",
+        "tags": [
+          "jockeys"
+        ]
+      }
+    },
+    "/api/v1/jockeys/{jockey_id}/history": {
+      "get": {
+        "operationId": "get_jockey_history_api_v1_jockeys__jockey_id__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jockey_id",
+            "required": true,
+            "schema": {
+              "title": "Jockey Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_JockeyHistoryRow_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "jockey not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Jockey History",
+        "tags": [
+          "jockeys"
         ]
       }
     },

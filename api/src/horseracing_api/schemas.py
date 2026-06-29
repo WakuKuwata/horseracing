@@ -54,7 +54,9 @@ class HorseEntry(BaseModel):
     entry_status: str
     age: int | None = None
     sex: str | None = None
+    jockey_id: str | None = None      # Feature 029: jockey-profile link (None / nk: = no link)
     jockey_name: str | None = None
+    trainer_id: str | None = None     # Feature 029
     trainer_name: str | None = None
     jockey_weight: float | None = None   # 斤量 (carried weight)
     weight: int | None = None            # 馬体重 (body weight)
@@ -65,6 +67,73 @@ class HorseEntry(BaseModel):
 
 class RaceDetail(RaceSummary):
     horses: list[HorseEntry]
+
+
+# --- horse / jockey profiles (Feature 029) ----------------------------------
+# Factual career aggregates from race_horses + race_results (NOT model features). Rates use 出走数
+# (started) as denominator; finished-only for placings/avg_finish. starts=0 -> rates null (Unknown
+# != 0). Pedigree shown by NAME (ids ~0% populated). Read-only; never re-enter model features (II).
+class HorseProfile(BaseModel):
+    horse_id: str
+    horse_name: str | None = None
+    sex: str | None = None
+    birth_year: int | None = None
+    data_source: str | None = None
+    sire_name: str | None = None
+    dam_name: str | None = None
+    damsire_name: str | None = None
+    starts: int = 0                      # 出走数 (entry_status='started')
+    wins: int = 0                        # 1着
+    seconds_in: int = 0                  # 2着以内 (連対)
+    shows_in: int = 0                    # 3着以内 (複勝)
+    win_rate: float | None = None        # wins / starts (starts=0 -> null)
+    quinella_rate: float | None = None   # seconds_in / starts
+    show_rate: float | None = None       # shows_in / starts
+    avg_finish: float | None = None      # 完走のみの平均着順
+
+
+class HorseHistoryRow(BaseModel):
+    race_id: str
+    race_date: datetime.date | None = None
+    venue_code: str | None = None
+    race_number: int | None = None
+    race_name: str | None = None
+    race_class: str | None = None
+    distance: int | None = None
+    track_type: str | None = None
+    horse_number: int | None = None
+    popularity: int | None = None
+    odds: float | None = None
+    entry_status: str | None = None
+    finish_order: int | None = None
+    finish_time_sec: float | None = None   # finish_time (Interval) -> 秒
+    last_3f: float | None = None
+    result_status: str | None = None
+
+
+class JockeyProfile(BaseModel):
+    jockey_id: str
+    jockey_name: str | None = None
+    mounts: int = 0                      # 騎乗数 (started)
+    wins: int = 0
+    seconds_in: int = 0
+    shows_in: int = 0
+    win_rate: float | None = None
+    quinella_rate: float | None = None
+    show_rate: float | None = None
+    avg_finish: float | None = None
+
+
+class JockeyHistoryRow(BaseModel):
+    race_id: str
+    race_date: datetime.date | None = None
+    venue_code: str | None = None
+    race_number: int | None = None
+    race_name: str | None = None
+    horse_id: str | None = None
+    horse_name: str | None = None
+    finish_order: int | None = None
+    result_status: str | None = None
 
 
 # --- predictions ------------------------------------------------------------

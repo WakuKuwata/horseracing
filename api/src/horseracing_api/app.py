@@ -19,7 +19,15 @@ from horseracing_probability.market_odds import MarketOddsError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import API_PREFIX, API_VERSION
-from .routers import calibration, odds, predictions, races, recommendations
+from .routers import (
+    calibration,
+    horses,
+    jockeys,
+    odds,
+    predictions,
+    races,
+    recommendations,
+)
 
 
 @asynccontextmanager
@@ -75,3 +83,5 @@ app.include_router(predictions.router, prefix=API_PREFIX)
 app.include_router(odds.router, prefix=API_PREFIX)
 app.include_router(recommendations.router, prefix=API_PREFIX)
 app.include_router(calibration.router, prefix=API_PREFIX)
+app.include_router(horses.router, prefix=API_PREFIX)
+app.include_router(jockeys.router, prefix=API_PREFIX)

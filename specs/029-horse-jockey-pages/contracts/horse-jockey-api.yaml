@@ -1,0 +1,170 @@
+openapi: 3.1.0
+info:
+  title: horseracing read-only API — horse/jockey profiles (Feature 029)
+  version: v1
+  description: >-
+    014 read-only API への additive な read 拡張。馬・騎手のプロフィール(事実集計)と
+    レース別履歴(ページング)を返す。書き込みなし・全 GET。表示する成績は確定実績の集計で
+    あり、モデル予測特徴量とは別物(混同させない)。
+servers:
+  - url: /api/v1
+tags:
+  - name: horses
+  - name: jockeys
+
+paths:
+  /horses/{horse_id}:
+    get:
+      tags: [horses]
+      summary: 馬プロフィール(識別+血統+通算成績)
+      parameters:
+        - { name: horse_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: 馬プロフィール
+          content: { application/json: { schema: { $ref: '#/components/schemas/HorseProfile' } } }
+        '404': { description: 馬が存在しない, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /horses/{horse_id}/history:
+    get:
+      tags: [horses]
+      summary: 馬のレース別出走履歴(新しい順・ページング)
+      parameters:
+        - { name: horse_id, in: path, required: true, schema: { type: string } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: page_size, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: 履歴(ページング)
+          content: { application/json: { schema: { $ref: '#/components/schemas/Page_HorseHistoryRow_' } } }
+        '404': { description: 馬が存在しない, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /jockeys/{jockey_id}:
+    get:
+      tags: [jockeys]
+      summary: 騎手プロフィール(識別+騎乗成績)
+      parameters:
+        - { name: jockey_id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: 騎手プロフィール
+          content: { application/json: { schema: { $ref: '#/components/schemas/JockeyProfile' } } }
+        '404': { description: 騎手が存在しない, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /jockeys/{jockey_id}/history:
+    get:
+      tags: [jockeys]
+      summary: 騎手の騎乗履歴(新しい順・ページング)
+      parameters:
+        - { name: jockey_id, in: path, required: true, schema: { type: string } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: page_size, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: 騎乗履歴(ページング)
+          content: { application/json: { schema: { $ref: '#/components/schemas/Page_JockeyHistoryRow_' } } }
+        '404': { description: 騎手が存在しない, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+components:
+  schemas:
+    HorseProfile:
+      type: object
+      required: [horse_id]
+      properties:
+        horse_id: { type: string }
+        horse_name: { type: string, nullable: true }
+        sex: { type: string, nullable: true }
+        birth_year: { type: integer, nullable: true }
+        data_source: { type: string, nullable: true }
+        sire_name: { type: string, nullable: true }
+        dam_name: { type: string, nullable: true }
+        damsire_name: { type: string, nullable: true }
+        starts: { type: integer }
+        wins: { type: integer }
+        seconds_in: { type: integer, description: 2着以内(連対)回数 }
+        shows_in: { type: integer, description: 3着以内(複勝)回数 }
+        win_rate: { type: number, nullable: true, description: starts=0 のとき null(Unknown) }
+        quinella_rate: { type: number, nullable: true }
+        show_rate: { type: number, nullable: true }
+        avg_finish: { type: number, nullable: true, description: 完走のみの平均着順 }
+
+    HorseHistoryRow:
+      type: object
+      required: [race_id]
+      properties:
+        race_id: { type: string }
+        race_date: { type: string, format: date, nullable: true }
+        venue_code: { type: string, nullable: true }
+        race_number: { type: integer, nullable: true }
+        race_name: { type: string, nullable: true }
+        race_class: { type: string, nullable: true }
+        distance: { type: integer, nullable: true }
+        track_type: { type: string, nullable: true }
+        horse_number: { type: integer, nullable: true }
+        popularity: { type: integer, nullable: true }
+        odds: { type: number, nullable: true }
+        entry_status: { type: string, nullable: true }
+        finish_order: { type: integer, nullable: true }
+        finish_time_sec: { type: number, nullable: true, description: 走破タイム(秒) }
+        last_3f: { type: number, nullable: true, description: 上がり3F }
+        result_status: { type: string, nullable: true }
+
+    JockeyProfile:
+      type: object
+      required: [jockey_id]
+      properties:
+        jockey_id: { type: string }
+        jockey_name: { type: string, nullable: true }
+        mounts: { type: integer, description: 騎乗数 }
+        wins: { type: integer }
+        seconds_in: { type: integer }
+        shows_in: { type: integer }
+        win_rate: { type: number, nullable: true }
+        quinella_rate: { type: number, nullable: true }
+        show_rate: { type: number, nullable: true }
+        avg_finish: { type: number, nullable: true }
+
+    JockeyHistoryRow:
+      type: object
+      required: [race_id]
+      properties:
+        race_id: { type: string }
+        race_date: { type: string, format: date, nullable: true }
+        venue_code: { type: string, nullable: true }
+        race_number: { type: integer, nullable: true }
+        race_name: { type: string, nullable: true }
+        horse_id: { type: string, nullable: true }
+        horse_name: { type: string, nullable: true }
+        finish_order: { type: integer, nullable: true }
+        result_status: { type: string, nullable: true }
+
+    Page_HorseHistoryRow_:
+      type: object
+      required: [items, page, page_size, total, has_next]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/HorseHistoryRow' } }
+        page: { type: integer }
+        page_size: { type: integer }
+        total: { type: integer }
+        has_next: { type: boolean }
+
+    Page_JockeyHistoryRow_:
+      type: object
+      required: [items, page, page_size, total, has_next]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/JockeyHistoryRow' } }
+        page: { type: integer }
+        page_size: { type: integer }
+        total: { type: integer }
+        has_next: { type: boolean }
+
+    Error:
+      type: object
+      required: [status, code, detail]
+      properties:
+        status: { type: integer }
+        code: { type: string }
+        detail: { type: string }
+
+  # additive change to the existing 014 contract (documented here; lands in api/schemas.py):
+  #   HorseEntry += jockey_id: string|null, trainer_id: string|null  (FR-010, for profile links)

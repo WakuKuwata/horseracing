@@ -3,6 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { api, parseApiError, type ErrorInfo } from "./client";
 import type {
   CalibrationResponse,
+  HorseHistoryPage,
+  HorseProfile,
+  JockeyHistoryPage,
+  JockeyProfile,
   OddsResponse,
   PredictionResponse,
   RaceDetail,
@@ -109,6 +113,61 @@ export function useRecommendations(raceId: string) {
       unwrap(
         await api.GET("/api/v1/races/{race_id}/recommendations", {
           params: { path: { race_id: raceId } },
+        }),
+      ),
+  });
+}
+
+// --- Feature 029: horse profile (facts, not model features) -----------------
+export function useHorseProfile(horseId: string) {
+  return useQuery<HorseProfile, ErrorInfo>({
+    queryKey: ["horse", horseId],
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/horses/{horse_id}", {
+          params: { path: { horse_id: horseId } },
+        }),
+      ),
+  });
+}
+
+export function useHorseHistory(
+  horseId: string,
+  params: { page?: number; page_size?: number } = {},
+) {
+  return useQuery<HorseHistoryPage, ErrorInfo>({
+    queryKey: ["horse-history", horseId, params],
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/horses/{horse_id}/history", {
+          params: { path: { horse_id: horseId }, query: params },
+        }),
+      ),
+  });
+}
+
+export function useJockeyProfile(jockeyId: string) {
+  return useQuery<JockeyProfile, ErrorInfo>({
+    queryKey: ["jockey", jockeyId],
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/jockeys/{jockey_id}", {
+          params: { path: { jockey_id: jockeyId } },
+        }),
+      ),
+  });
+}
+
+export function useJockeyHistory(
+  jockeyId: string,
+  params: { page?: number; page_size?: number } = {},
+) {
+  return useQuery<JockeyHistoryPage, ErrorInfo>({
+    queryKey: ["jockey-history", jockeyId, params],
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/jockeys/{jockey_id}/history", {
+          params: { path: { jockey_id: jockeyId }, query: params },
         }),
       ),
   });

@@ -27,7 +27,7 @@ describe("openapi snapshot", () => {
     expect(raw).toBe(resorted);
   });
 
-  it("exposes exactly the 7 read-only endpoints the SPA consumes", () => {
+  it("exposes exactly the read-only endpoints the SPA consumes", () => {
     const paths = Object.keys((spec.paths as Record<string, unknown>) ?? {}).sort();
     expect(paths).toEqual(
       [
@@ -38,6 +38,11 @@ describe("openapi snapshot", () => {
         "/api/v1/races/{race_id}/predictions",
         "/api/v1/races/{race_id}/recommendations",
         "/api/v1/models/{model_version}/calibration",
+        // Feature 029: horse + jockey profile + paged history (read-only)
+        "/api/v1/horses/{horse_id}",
+        "/api/v1/horses/{horse_id}/history",
+        "/api/v1/jockeys/{jockey_id}",
+        "/api/v1/jockeys/{jockey_id}/history",
       ].sort(),
     );
   });
