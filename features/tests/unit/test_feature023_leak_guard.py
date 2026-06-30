@@ -27,7 +27,7 @@ def test_pace_features_registered_and_model_inputs():
     inputs = set(model_input_features())
     for c in _PACE_COLS:
         assert c in REGISTRY and c in inputs, c
-    assert FEATURE_VERSION == "features-010"  # 026/030/031; 032 (debut × pedigree)
+    assert FEATURE_VERSION == "features-011"  # 026/030/031/032; 033 (condition × ability)
 
 
 def test_no_schema_change_or_orm_table():

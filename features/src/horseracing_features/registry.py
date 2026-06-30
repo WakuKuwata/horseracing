@@ -144,6 +144,14 @@ REGISTRY: dict[str, FeatureMeta] = {
     "debut_x_sire_dist_band_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
     "lowhist_x_sire_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
     "lowhist_x_sire_dist_band_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 033: condition-change × ability/time ---
+    "dist_change": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "surface_switch": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "going_change": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "dist_extension": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "dist_shortening": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "dist_ext_x_closing": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "dist_short_x_speed": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -213,10 +221,18 @@ FEATURE_GROUPS: dict[str, str] = {
     "debut_x_sire_dist_band_win_rate": "debut_pedigree",
     "lowhist_x_sire_win_rate": "debut_pedigree",
     "lowhist_x_sire_dist_band_win_rate": "debut_pedigree",
+    # Feature 033: condition-change × ability/time
+    "dist_change": "condition_change",
+    "surface_switch": "condition_change",
+    "going_change": "condition_change",
+    "dist_extension": "condition_change",
+    "dist_shortening": "condition_change",
+    "dist_ext_x_closing": "condition_change",
+    "dist_short_x_speed": "condition_change",
 }
 
-#: feature schema version. 023/026/030/031; bumped by 032 (debut/low-history × pedigree).
-FEATURE_VERSION = "features-010"
+#: feature schema version. 023/026/030/031/032; bumped by 033 (condition-change × ability).
+FEATURE_VERSION = "features-011"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
