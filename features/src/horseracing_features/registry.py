@@ -138,6 +138,12 @@ REGISTRY: dict[str, FeatureMeta] = {
     "closer_setup": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
     "style_mismatch": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
     "field_style_coverage": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 032: debut/low-history × pedigree ---
+    "sire_debut_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "debut_x_sire_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "debut_x_sire_dist_band_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "lowhist_x_sire_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "lowhist_x_sire_dist_band_win_rate": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -201,10 +207,16 @@ FEATURE_GROUPS: dict[str, str] = {
     "closer_setup": "pace_scenario",
     "style_mismatch": "pace_scenario",
     "field_style_coverage": "pace_scenario",
+    # Feature 032: debut/low-history × pedigree
+    "sire_debut_win_rate": "debut_pedigree",
+    "debut_x_sire_win_rate": "debut_pedigree",
+    "debut_x_sire_dist_band_win_rate": "debut_pedigree",
+    "lowhist_x_sire_win_rate": "debut_pedigree",
+    "lowhist_x_sire_dist_band_win_rate": "debut_pedigree",
 }
 
-#: feature schema version. 023/026/030; bumped by 031 (pace scenario / field-composition).
-FEATURE_VERSION = "features-009"
+#: feature schema version. 023/026/030/031; bumped by 032 (debut/low-history × pedigree).
+FEATURE_VERSION = "features-010"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")

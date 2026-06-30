@@ -25,6 +25,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from .debut_pedigree_features import build_debut_pedigree_features
 from .extra_features import build_extra_features
 from .history import build_history_features
 from .human_form import build_human_form_features
@@ -135,6 +136,9 @@ def build_asof_features(
     pedigree = build_pedigree_features(frames)  # Feature 026 (single as-of source)
     lowcost = build_lowcost_features(frames)    # Feature 030 (single as-of source)
     scenario = build_pace_scenario_features(frames, pace=pace)  # Feature 031 (field-composition)
+    debutped = build_debut_pedigree_features(  # Feature 032 (debut/low-history × pedigree)
+        frames, history=history, pedigree=pedigree
+    )
     out = (
         history.merge(extra, on=_KEYS, how="left")
         .merge(human, on=_KEYS, how="left")
@@ -142,6 +146,7 @@ def build_asof_features(
         .merge(pedigree, on=_KEYS, how="left")
         .merge(lowcost, on=_KEYS, how="left")
         .merge(scenario, on=_KEYS, how="left")
+        .merge(debutped, on=_KEYS, how="left")
     )
     cols = [*_KEYS, *materialized_columns()]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)
