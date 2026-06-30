@@ -63,6 +63,11 @@ def race_list_url(date: str | datetime.date) -> str:
     return f"{_BASE}/top/race_list_sub.html?kaisai_date={_kaisai_date(date)}"
 
 
+def race_db_url(race_id: str) -> str:
+    """db.netkeiba.com race DB page (carries the ラップタイム sectional profile, Feature 034)."""
+    return f"{_DB_BASE}/race/{_check(race_id)}/"
+
+
 def _horse_id(netkeiba_horse_id: str) -> str:
     if not netkeiba_horse_id or not str(netkeiba_horse_id).strip():
         raise ValueError("empty netkeiba_horse_id")

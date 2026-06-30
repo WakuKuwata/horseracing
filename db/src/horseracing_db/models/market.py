@@ -51,3 +51,24 @@ class ExoticOdds(TimestampMixin, Base):
     source: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text(f"'{Source.NETKEIBA}'")
     )
+
+
+class RaceLaps(TimestampMixin, Base):
+    """Feature 034: race-level sectional lap profile (maps onto migration 0007). One row per race,
+    SINGLE latest value + updated_at — NO snapshot history (constitution V). lap_times is a JSONB
+    array of per-200m seconds; pace_first_3f/pace_last_3f are the race テン3F/上がり3F split.
+    RESULT-derived — never a current-race model feature, only past races read as-of (II)."""
+
+    __tablename__ = "race_laps"
+    __table_args__ = (
+        CheckConstraint(JOB_SOURCE, name="ck_race_laps_source"),
+    )
+
+    race_id: Mapped[str] = mapped_column(ForeignKey("races.race_id"), primary_key=True)
+    #: per-200m segment times of the race (leader-based pace profile).
+    lap_times: Mapped[list] = mapped_column(JSONB, nullable=False)
+    pace_first_3f: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
+    pace_last_3f: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
+    source: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text(f"'{Source.NETKEIBA}'")
+    )

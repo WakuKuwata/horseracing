@@ -24,6 +24,7 @@ from .odds_adapter import fetch_win_odds
 from .parse._profile import parse_horse_pedigree, parse_horse_profile
 from .parse.entries import parse_entries
 from .parse.exotic_odds import parse_exotic_odds
+from .parse.laps import parse_laps
 from .parse.race_list import parse_race_list
 from .parse.results import parse_results
 from .upsert import (
@@ -33,8 +34,9 @@ from .upsert import (
     update_odds,
     upsert_entries,
     upsert_exotic_odds,
+    upsert_laps,
 )
-from .urls import horse_pedigree_url, horse_profile_url, race_list_url
+from .urls import horse_pedigree_url, horse_profile_url, race_db_url, race_list_url
 from .venues import build_race_id
 
 
@@ -171,6 +173,27 @@ def scrape_exotic_odds(
         return _aggregate(parts)
 
     return _run_job(session, job_type="exotic_odds", scope="urls", scope_value=scope_value,
+                    work=work)
+
+
+def scrape_laps(
+    session: Session, *, race_ids: list[str], fetcher: PoliteFetcher,
+    scope_value: str | None = None,
+) -> JobSummary:
+    """Ingest race-level sectional lap profiles (034) from db.netkeiba race pages. RESULT-derived,
+    single-latest overwrite, audited as job_type='race_laps'. Races with no ラップタイム table or no
+    existing race row are skipped (no fake rows)."""
+    def work() -> Counts:
+        parts: list[Counts] = []
+        for rid in race_ids:
+            scraped = parse_laps(fetcher.get(race_db_url(rid)), race_id=rid)
+            if scraped is None:  # page has no lap section
+                parts.append(Counts(processed=1, skipped=1))
+                continue
+            parts.append(upsert_laps(session, rid, scraped))
+        return _aggregate(parts)
+
+    return _run_job(session, job_type="race_laps", scope="race_ids", scope_value=scope_value,
                     work=work)
 
 

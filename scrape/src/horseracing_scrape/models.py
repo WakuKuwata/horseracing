@@ -89,6 +89,20 @@ class ScrapedResult:
 
 
 @dataclass(frozen=True)
+class ScrapedLaps:
+    """Feature 034: race-level sectional lap profile (db.netkeiba ラップタイム). RESULT-derived
+    (known only after the race) — never a current-race feature, only past races' as-of (leak II).
+
+    lap_times = per-200m segment times (leader-based pace profile). pace_first_3f / pace_last_3f =
+    the race's テン3F / 上がり3F split (netkeiba's "(36.0-35.5)")."""
+
+    key: ScrapedRaceKey
+    lap_times: tuple[float, ...]
+    pace_first_3f: float | None = None
+    pace_last_3f: float | None = None
+
+
+@dataclass(frozen=True)
 class ScrapedExoticRow:
     bet_type: str               # place/quinella/exacta/wide/trio/trifecta
     numbers: tuple[int, ...]    # horse_number combination (race-local 馬番, no id-mapping needed)

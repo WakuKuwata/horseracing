@@ -26,6 +26,7 @@ from .pipeline import (
     discover_races,
     scrape_entries,
     scrape_exotic_odds,
+    scrape_laps,
     scrape_odds,
     scrape_results,
 )
@@ -118,6 +119,18 @@ def main(argv: list[str] | None = None) -> int:
     cp.add_argument("--min-interval", type=float, default=1.0)
     cp.add_argument("--database-url", default=None)
 
+    # ⑤ sectional lap backfill (034): by explicit race_id(s) or a date range of races missing laps
+    sl = sub.add_parser("scrape-laps",
+                        help="ingest race-level sectional laps (034) from db.netkeiba race pages")
+    sl.add_argument("--race-id", action="append", default=None,
+                    help="JRA-VAN 12-digit race_id (repeat); omit to use --from/--to")
+    sl.add_argument("--from", dest="from_", default=None, help="race_date >= (YYYY-MM-DD)")
+    sl.add_argument("--to", dest="to", default=None, help="race_date <= (YYYY-MM-DD)")
+    sl.add_argument("--limit", type=int, default=None, help="max races this run")
+    sl.add_argument("--cache-dir", default=".scrape_cache")
+    sl.add_argument("--min-interval", type=float, default=1.0)
+    sl.add_argument("--database-url", default=None)
+
     cap = sub.add_parser("capture-fixture", help="one-off: save a real netkeiba page as a fixture")
     cap.add_argument("--kind", required=True, choices=list(_CAPTURE))
     cap.add_argument("--race-id", help="JRA-VAN 12-digit race_id (entries/results/odds)")
@@ -141,6 +154,35 @@ def main(argv: list[str] | None = None) -> int:
                 print(rid)
         print(f"# {len(listing.race_ids)} races for {listing.kaisai_date}")
         return 0
+
+    if args.command == "scrape-laps":
+        fetcher = _make_fetcher(args.min_interval, args.cache_dir)
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            race_ids = args.race_id
+            if not race_ids:  # date-range backfill: races missing a race_laps row
+                from sqlalchemy import text as _text
+                q = ("select r.race_id from races r left join race_laps l on l.race_id=r.race_id "
+                     "where l.race_id is null")
+                params = {}
+                if args.from_:
+                    q += " and r.race_date >= :f"
+                    params["f"] = args.from_
+                if args.to:
+                    q += " and r.race_date <= :t"
+                    params["t"] = args.to
+                q += " order by r.race_id"
+                if args.limit:
+                    q += f" limit {int(args.limit)}"
+                race_ids = [row[0] for row in session.execute(_text(q), params).fetchall()]
+            scope = (args.race_id[0] if args.race_id
+                     else f"{args.from_ or '..'}..{args.to or '..'}")
+            summary = scrape_laps(session, race_ids=race_ids, fetcher=fetcher, scope_value=scope)
+        print(
+            f"{summary.job_type}: status={summary.status} processed={summary.processed} "
+            f"written={summary.written} skipped={summary.skipped} errors={summary.errors}"
+        )
+        return 0 if summary.status != "failed" else 1
 
     if args.command == "complete-profiles":
         fetcher = _make_fetcher(args.min_interval, args.cache_dir)

@@ -18,7 +18,16 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from horseracing_db.enums import BetType, CoverageScope, EntryStatus, ResultStatus
-from horseracing_db.models import ExoticOdds, Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
+from horseracing_db.models import (
+    ExoticOdds,
+    Horse,
+    Jockey,
+    Race,
+    RaceHorse,
+    RaceLaps,
+    RaceResult,
+    Trainer,
+)
 from horseracing_db.selection import canonical_selection
 from sqlalchemy import exists, func, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -29,6 +38,7 @@ from .models import (
     ScrapedEntry,
     ScrapedExoticOdds,
     ScrapedHorseProfile,
+    ScrapedLaps,
     ScrapedOdds,
     ScrapedResult,
 )
@@ -342,4 +352,32 @@ def upsert_exotic_odds(session: Session, race_id: str, scraped: ScrapedExoticOdd
             )
             session.execute(stmt)
             c.written += 1
+    return c
+
+
+# --- race laps (034) --------------------------------------------------------
+
+
+def upsert_laps(session: Session, race_id: str, scraped: ScrapedLaps) -> Counts:
+    """Store the race-level sectional lap profile with single-latest-value overwrite (constitution
+    V). RESULT-derived; written only when the race row exists (FK). Skips empty lap arrays."""
+    c = Counts()
+    c.processed += 1
+    if not scraped.lap_times:
+        c.skipped += 1
+        return c
+    if not session.scalar(select(exists().where(Race.race_id == race_id))):
+        c.skipped += 1   # no race row yet → nothing to attach laps to
+        return c
+    first = None if scraped.pace_first_3f is None else Decimal(str(scraped.pace_first_3f))
+    last = None if scraped.pace_last_3f is None else Decimal(str(scraped.pace_last_3f))
+    laps = [float(x) for x in scraped.lap_times]
+    stmt = insert(RaceLaps).values(
+        race_id=race_id, lap_times=laps, pace_first_3f=first, pace_last_3f=last, source="netkeiba",
+    ).on_conflict_do_update(
+        index_elements=["race_id"],
+        set_={"lap_times": laps, "pace_first_3f": first, "pace_last_3f": last},
+    )
+    session.execute(stmt)
+    c.written += 1
     return c
