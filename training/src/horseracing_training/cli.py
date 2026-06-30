@@ -50,13 +50,14 @@ def train_evaluate(
     seed: int = 42,
     hpo: bool = False,
     target_encode_cols: tuple[str, ...] = (),
+    te_smoothing: float = 10.0,
 ) -> dict:
     eval_races = _load_eval_races(session)
 
     def _make() -> LightGBMPredictor:
         return LightGBMPredictor(
             session, seed=seed, calibration=calibration,
-            hpo=hpo, target_encode_cols=target_encode_cols,
+            hpo=hpo, target_encode_cols=target_encode_cols, te_smoothing=te_smoothing,
         )
 
     predictor = _make()
@@ -195,6 +196,33 @@ def _run_feature_command(session: Session, args) -> int:
             print(f"  edge[{b['edge_lo']:+.2f},{b['edge_hi']:+.2f}) n={b['n']} "
                   f"win_rate={b['win_rate']:.4f} mean_edge={b['mean_edge']:+.4f}")
         return 0
+    if args.command == "model-eval":
+        # Feature 036: modeling change (OOF target encoding) — NOT a feature-group change, so the
+        # candidate has the SAME feature columns as the baseline (FEATURE_VERSION unchanged); it
+        # differs only by an internal OOF-TE transform of high-cardinality categoricals.
+        from horseracing_eval.feature_eval import evaluate_feature_adoption
+
+        te_cols = tuple(c for c in (args.target_encode or "").split(",") if c)
+        candidate = LightGBMPredictor(
+            session, seed=args.seed, target_encode_cols=te_cols,
+            te_smoothing=args.te_smoothing, calibration=args.calibration,
+        )
+        baseline = LightGBMPredictor(session, seed=args.seed, calibration=args.calibration)
+        r = evaluate_feature_adoption(
+            session, candidate=candidate, baseline=baseline,
+            ece_tol=args.ece_tol, worst_fold_ece_tol=args.worst_fold_ece_tol,
+            start_date=args.from_, end_date=args.to,
+        )
+        print(f"model-eval fv={FEATURE_VERSION} target_encode={list(te_cols)} "
+              f"folds={r.n_folds} adopted={r.adopted}")
+        print(f"  LogLoss base={r.mean_logloss_base:.5f} cand={r.mean_logloss_cand:.5f}")
+        print(f"  Brier   base={r.mean_brier_base:.5f} cand={r.mean_brier_cand:.5f}")
+        print(f"  AUC     base={r.mean_auc_base:.5f} cand={r.mean_auc_cand:.5f}")
+        print(f"  ECE     base={r.mean_ece_base:.5f} cand={r.mean_ece_cand:.5f}")
+        print(f"  winning_folds={r.n_winning_folds}/{r.n_folds} "
+              f"worst_dLogLoss={r.worst_fold_dlogloss:+.5f} worst_dECE={r.worst_fold_dece:+.5f}")
+        print(f"  primary_pass(LogLoss改善 かつ ECE非悪化)={r.primary_pass}  ADOPTED={r.adopted}")
+        return 0
     return 1
 
 
@@ -220,6 +248,8 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="US4: OOF target-encode these columns (comma-separated; bare flag uses defaults)",
     )
+    te.add_argument("--te-smoothing", type=float, default=10.0,
+                    help="Feature 036: OOF TE smoothing (shrinkage toward prior)")
     te.add_argument("--database-url", default=None)
 
     # Feature 020 — walk-forward adoption gate / ablation / market diagnostic.
@@ -241,8 +271,19 @@ def main(argv: list[str] | None = None) -> int:
     fd = sub.add_parser("feature-diagnostic", help="020: market p−q edge diagnostic (SECONDARY)")
     _add_window(fd)
 
+    # Feature 036: OOF target encoding (modeling change; same feature columns as baseline).
+    me = sub.add_parser("model-eval", help="036: OOF target-encode candidate vs no-TE baseline")
+    _add_window(me)
+    me.add_argument("--ece-tol", type=float, default=1e-3)
+    me.add_argument("--worst-fold-ece-tol", type=float, default=2e-3)
+    me.add_argument("--target-encode", default="jockey_id,trainer_id",
+                    help="comma-separated high-cardinality columns to OOF target-encode")
+    me.add_argument("--te-smoothing", type=float, default=10.0,
+                    help="TE smoothing (higher = more shrinkage toward prior = less overconfident)")
+    me.add_argument("--calibration", choices=["platt", "isotonic"], default="platt")
+
     args = parser.parse_args(argv)
-    if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic"):
+    if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic", "model-eval"):
         engine = create_db_engine(getattr(args, "database_url", None))
         with Session(engine) as session:
             return _run_feature_command(session, args)
@@ -261,6 +302,7 @@ def main(argv: list[str] | None = None) -> int:
                 seed=args.seed,
                 hpo=args.hpo,
                 target_encode_cols=te_cols,
+                te_smoothing=args.te_smoothing,
             )
         _print_summary(summary)
         return 0
