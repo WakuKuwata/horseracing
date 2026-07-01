@@ -178,19 +178,30 @@ def scrape_exotic_odds(
 
 def scrape_laps(
     session: Session, *, race_ids: list[str], fetcher: PoliteFetcher,
-    scope_value: str | None = None,
+    scope_value: str | None = None, commit_every: int = 200,
 ) -> JobSummary:
     """Ingest race-level sectional lap profiles (034) from db.netkeiba race pages. RESULT-derived,
     single-latest overwrite, audited as job_type='race_laps'. Races with no ラップタイム table or no
-    existing race row are skipped (no fake rows)."""
+    existing race row are skipped (no fake rows).
+
+    Feature 038: resilient full-backfill — a per-page fetch/parse error is recorded and SKIPPED (one
+    bad page never aborts a ~62k-race job), and progress is committed every ``commit_every`` races
+    so a mid-run kill keeps what was already ingested (the CLI re-queries only race_laps-missing
+    races, so a re-run resumes)."""
     def work() -> Counts:
         parts: list[Counts] = []
-        for rid in race_ids:
-            scraped = parse_laps(fetcher.get(race_db_url(rid)), race_id=rid)
-            if scraped is None:  # page has no lap section
-                parts.append(Counts(processed=1, skipped=1))
-                continue
-            parts.append(upsert_laps(session, rid, scraped))
+        for i, rid in enumerate(race_ids, start=1):
+            try:
+                scraped = parse_laps(fetcher.get(race_db_url(rid)), race_id=rid)
+                if scraped is None:  # page has no lap section
+                    parts.append(Counts(processed=1, skipped=1))
+                else:
+                    parts.append(upsert_laps(session, rid, scraped))
+            except Exception as exc:  # noqa: BLE001 — per-page resilience: skip, never abort the job
+                parts.append(Counts(processed=1, errors=1,
+                                    error_messages=[f"{rid}: {type(exc).__name__}"]))
+            if commit_every and i % commit_every == 0:
+                session.commit()  # persist progress so a kill loses at most the last partial batch
         return _aggregate(parts)
 
     return _run_job(session, job_type="race_laps", scope="race_ids", scope_value=scope_value,

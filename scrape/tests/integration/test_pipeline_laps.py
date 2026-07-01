@@ -47,3 +47,22 @@ def test_scrape_laps_idempotent_overwrite(session: Session):
     scrape_laps(session, race_ids=[_RID], fetcher=fetcher, scope_value="t")
     scrape_laps(session, race_ids=[_RID], fetcher=fetcher, scope_value="t")
     assert session.query(RaceLaps).count() == 1   # single-latest, no duplicate
+
+
+def test_scrape_laps_resilient_to_page_error(session: Session):
+    # Feature 038: one page that raises on fetch must NOT abort the whole backfill — it is recorded
+    # as an error/skip while the good race still gets ingested (single failure ≠ job failure).
+    _seed_race(session, "202406050911")
+    _seed_race(session, "202406050912")
+
+    class _FlakyFetcher:
+        def get(self, url: str, *, use_cache: bool = True) -> str:
+            if "202406050912" in url:
+                raise RuntimeError("simulated fetch failure")
+            return real_fixture(_FIX)
+
+    summ = scrape_laps(session, race_ids=["202406050912", "202406050911"],
+                       fetcher=_FlakyFetcher(), scope_value="t")
+    assert str(summ.status) == "partial"  # not FAILED
+    assert summ.written == 1 and summ.errors == 1
+    assert session.get(RaceLaps, "202406050911") is not None  # the good race still ingested
