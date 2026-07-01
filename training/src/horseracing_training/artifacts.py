@@ -38,7 +38,9 @@ def feature_hash(feature_cols: list[str]) -> str:
 def _write_model(predictor: LightGBMPredictor, path: Path) -> None:
     wm = predictor.win_model_
     if wm is not None and wm.booster_ is not None:
-        wm.booster_.booster_.save_model(str(path))
+        # binary -> LGBMClassifier (.booster_); cond_logit -> raw lgb.Booster (Feature 039)
+        booster = getattr(wm.booster_, "booster_", wm.booster_)
+        booster.save_model(str(path))
     else:  # degenerate constant model — no LightGBM booster to serialize
         const = 0.0 if (wm is None or wm._constant is None) else wm._constant
         path.write_text(json.dumps({"degenerate_constant_win": const}))
@@ -60,6 +62,10 @@ def build_preprocessor(predictor: LightGBMPredictor, feature_version: str) -> di
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
         "model_degenerate": bool(info.get("model_degenerate")),
+        # Feature 039: serving must apply the matching postprocess (binary sigmoid vs
+        # cond_logit race-softmax). Default "binary" keeps pre-039 artifacts backward-compatible.
+        "objective": info.get("objective", "binary"),
+        "postprocess": info.get("postprocess", "sigmoid"),
     }
 
 
@@ -97,6 +103,8 @@ def save_model_version(
     metadata = {
         "model_version": model_version,
         "model_family": MODEL_FAMILY,
+        "objective": info.get("objective", "binary"),  # Feature 039
+        "postprocess": info.get("postprocess", "sigmoid"),
         "seed": info.get("seed"),
         "params": info.get("params"),
         "calibration": info.get("calibration"),
@@ -120,6 +128,7 @@ def save_model_version(
     summary = eval_result.to_summary()
     summary["training"] = {
         "model_family": MODEL_FAMILY,
+        "objective": info.get("objective", "binary"),  # Feature 039
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
         "seed": info.get("seed"),

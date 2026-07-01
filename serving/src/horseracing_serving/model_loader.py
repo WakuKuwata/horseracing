@@ -43,13 +43,23 @@ class ServingModel:
     encoders: dict = field(default_factory=dict)  # col -> TargetEncoder
     feature_version: str = ""
     feature_hash: str = ""
+    objective: str = "binary"  # Feature 039: "binary" | "cond_logit"
     metadata: dict = field(default_factory=dict)
 
     def raw_predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Raw P(win) per row. Matches training's predict_proba[:,1] for binary objective."""
+        """Per-horse win score. binary: booster P(win). cond_logit: race-softmax.
+
+        Feature 039: predict_race passes ONE race's started horses, so a cond_logit
+        booster's raw margins are softmaxed over the whole batch (= that race).
+        """
         if self.booster is None:
             return np.full(len(X), self.degenerate_constant, dtype=float)
-        return np.asarray(self.booster.predict(X[self.feature_cols]), dtype=float)
+        raw = np.asarray(self.booster.predict(X[self.feature_cols]), dtype=float)
+        if self.objective == "cond_logit":
+            from horseracing_training.cond_logit import race_softmax
+
+            return race_softmax(raw, [len(raw)]) if len(raw) else raw
+        return raw
 
 
 def resolve_model_version(session: Session, explicit: str | None = None) -> str:
@@ -139,5 +149,7 @@ def load_serving_model(
         encoders=dict(prep.get("encoders", {})),
         feature_version=metadata.get("feature_version", ""),
         feature_hash=current_hash,
+        # Feature 039: prefer preprocessor, fall back to metadata, default binary (pre-039)
+        objective=prep.get("objective", metadata.get("objective", "binary")),
         metadata=metadata,
     )

@@ -96,6 +96,9 @@ def fit_calibrator(
     """Fit a calibrator on (raw score, win label). Degenerate slice -> identity-with-clip."""
     raw = np.asarray(raw, dtype=float)
     y = np.asarray(y)
+    # Feature 039: explicit no-calibration path (cond_logit softmax-only A/B).
+    if method in ("none", "identity"):
+        return Calibrator(method="identity", clip=clip, identity=True)
     if len(y) < _MIN_CALIB_ROWS or len(np.unique(y)) < 2:
         return Calibrator(method="identity", clip=clip, identity=True)
 

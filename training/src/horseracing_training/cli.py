@@ -51,6 +51,7 @@ def train_evaluate(
     hpo: bool = False,
     target_encode_cols: tuple[str, ...] = (),
     te_smoothing: float = 10.0,
+    objective: str = "binary",
 ) -> dict:
     eval_races = _load_eval_races(session)
 
@@ -58,6 +59,7 @@ def train_evaluate(
         return LightGBMPredictor(
             session, seed=seed, calibration=calibration,
             hpo=hpo, target_encode_cols=target_encode_cols, te_smoothing=te_smoothing,
+            objective=objective,
         )
 
     predictor = _make()
@@ -203,17 +205,21 @@ def _run_feature_command(session: Session, args) -> int:
         from horseracing_eval.feature_eval import evaluate_feature_adoption
 
         te_cols = tuple(c for c in (args.target_encode or "").split(",") if c)
+        objective = getattr(args, "objective", "binary")
         candidate = LightGBMPredictor(
             session, seed=args.seed, target_encode_cols=te_cols,
             te_smoothing=args.te_smoothing, calibration=args.calibration,
+            objective=objective,
         )
+        # baseline = current production shape (binary). Feature 039 candidate = cond_logit.
         baseline = LightGBMPredictor(session, seed=args.seed, calibration=args.calibration)
         r = evaluate_feature_adoption(
             session, candidate=candidate, baseline=baseline,
             ece_tol=args.ece_tol, worst_fold_ece_tol=args.worst_fold_ece_tol,
             start_date=args.from_, end_date=args.to,
         )
-        print(f"model-eval fv={FEATURE_VERSION} target_encode={list(te_cols)} "
+        print(f"model-eval fv={FEATURE_VERSION} objective={objective} "
+              f"target_encode={list(te_cols)} calib={args.calibration} "
               f"folds={r.n_folds} adopted={r.adopted}")
         print(f"  LogLoss base={r.mean_logloss_base:.5f} cand={r.mean_logloss_cand:.5f}")
         print(f"  Brier   base={r.mean_brier_base:.5f} cand={r.mean_brier_cand:.5f}")
@@ -232,7 +238,9 @@ def main(argv: list[str] | None = None) -> int:
 
     te = sub.add_parser("train-evaluate", help="walk-forward train + calibrate + adopt + save")
     te.add_argument("--first-valid-year", type=int, default=2008)
-    te.add_argument("--calibration", choices=["platt", "isotonic"], default="platt")
+    te.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="platt")
+    te.add_argument("--objective", choices=["binary", "cond_logit"], default="binary",
+                    help="Feature 039: win objective (binary=current, cond_logit=race-softmax)")
     te.add_argument("--ece-threshold", type=float, default=0.05)
     te.add_argument("--baseline", default="uniform")
     te.add_argument("--model-version", default="lightgbm-win-v1")
@@ -280,7 +288,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="comma-separated high-cardinality columns to OOF target-encode")
     me.add_argument("--te-smoothing", type=float, default=10.0,
                     help="TE smoothing (higher = more shrinkage toward prior = less overconfident)")
-    me.add_argument("--calibration", choices=["platt", "isotonic"], default="platt")
+    me.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="platt")
+    me.add_argument("--objective", choices=["binary", "cond_logit"], default="binary",
+                    help="Feature 039: candidate win objective (baseline stays binary)")
 
     args = parser.parse_args(argv)
     if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic", "model-eval"):
@@ -303,6 +313,7 @@ def main(argv: list[str] | None = None) -> int:
                 hpo=args.hpo,
                 target_encode_cols=te_cols,
                 te_smoothing=args.te_smoothing,
+                objective=args.objective,
             )
         _print_summary(summary)
         return 0

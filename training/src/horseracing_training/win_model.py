@@ -13,6 +13,8 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from .cond_logit import cond_logit_objective, group_sizes_from_race_ids, race_softmax
+
 #: fixed, deterministic defaults. ``num_threads=1`` + ``deterministic=True`` make
 #: training bit-reproducible for a given seed (SC-006).
 DEFAULT_PARAMS: dict = {
@@ -31,12 +33,19 @@ DEFAULT_PARAMS: dict = {
 class WinModel:
     seed: int = 42
     params: dict = field(default_factory=lambda: dict(DEFAULT_PARAMS))
-    booster_: lgb.LGBMClassifier | None = None
+    #: "binary" (per-horse P(win), current) or "cond_logit" (race-softmax, Feature 039).
+    objective: str = "binary"
+    booster_: lgb.LGBMClassifier | lgb.Booster | None = None
     feature_cols_: list[str] | None = None
     _constant: float | None = None
 
     def fit(
-        self, X: pd.DataFrame, y, *, categorical_cols: list[str] | None = None
+        self,
+        X: pd.DataFrame,
+        y,
+        *,
+        categorical_cols: list[str] | None = None,
+        group_ids=None,
     ) -> WinModel:
         self.feature_cols_ = list(X.columns)
         y = np.asarray(y)
@@ -49,23 +58,67 @@ class WinModel:
             return self
 
         self._constant = None
-        clf = lgb.LGBMClassifier(
-            random_state=self.seed,
+        cat = [c for c in (categorical_cols or []) if c in X.columns]
+        if self.objective == "cond_logit":
+            self._fit_cond_logit(X, y, cat, group_ids)
+        else:
+            clf = lgb.LGBMClassifier(
+                random_state=self.seed,
+                deterministic=True,
+                num_threads=1,
+                force_col_wise=True,
+                verbose=-1,
+                **self.params,
+            )
+            clf.fit(X, y, categorical_feature=cat or "auto")
+            self.booster_ = clf
+        return self
+
+    def _fit_cond_logit(self, X, y, cat, group_ids) -> None:
+        if group_ids is None:
+            raise ValueError("cond_logit objective requires group_ids (race ids)")
+        # rows must be contiguous by race for the group softmax -> stable sort
+        order = np.argsort(np.asarray(group_ids), kind="stable")
+        Xs = X.iloc[order].reset_index(drop=True)
+        ys = np.asarray(y, dtype=float)[order]
+        gsizes = group_sizes_from_race_ids(np.asarray(group_ids)[order])
+
+        params = {k: v for k, v in self.params.items() if k != "objective"}
+        num_round = int(params.pop("n_estimators", 300))
+        params.update(
+            objective=cond_logit_objective(gsizes),
+            seed=self.seed,
             deterministic=True,
             num_threads=1,
             force_col_wise=True,
             verbose=-1,
-            **self.params,
         )
-        cat = [c for c in (categorical_cols or []) if c in X.columns]
-        clf.fit(X, y, categorical_feature=cat or "auto")
-        self.booster_ = clf
-        return self
+        dtrain = lgb.Dataset(
+            Xs, label=ys, categorical_feature=cat or "auto", free_raw_data=False
+        )
+        self.booster_ = lgb.train(params, dtrain, num_boost_round=num_round)
 
-    def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Raw P(win) per row in [0, 1]."""
+    def predict(self, X: pd.DataFrame, *, group_ids=None) -> np.ndarray:
+        """Per-horse win prob. binary -> P(win); cond_logit -> per-race softmax.
+
+        cond_logit REQUIRES group_ids (race ids aligned to X rows) so the softmax
+        normalizes within each race; None raises (group is mandatory at every entry).
+        """
         if self.booster_ is None:
             const = 0.0 if self._constant is None else self._constant
             return np.full(len(X), const, dtype=float)
+        if self.objective == "cond_logit":
+            if group_ids is None:
+                raise ValueError("cond_logit predict requires group_ids (race ids)")
+            gids = np.asarray(group_ids)
+            order = np.argsort(gids, kind="stable")
+            raw = self.booster_.predict(
+                X[self.feature_cols_].iloc[order], raw_score=True
+            )
+            gsizes = group_sizes_from_race_ids(gids[order])
+            p_sorted = race_softmax(raw, gsizes)
+            out = np.empty(len(X), dtype=float)
+            out[order] = p_sorted
+            return out
         proba = self.booster_.predict_proba(X[self.feature_cols_])
         return np.asarray(proba[:, 1], dtype=float)

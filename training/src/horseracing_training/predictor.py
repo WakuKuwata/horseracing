@@ -60,9 +60,12 @@ class LightGBMPredictor:
         target_encode_cols: tuple[str, ...] = (),
         te_smoothing: float = DEFAULT_SMOOTHING,
         drop_features: tuple[str, ...] = (),
+        objective: str = "binary",
     ) -> None:
         self.session = session
         self.seed = seed
+        # Feature 039: "binary" (per-horse P(win), current) or "cond_logit" (race-softmax).
+        self.objective = objective
         self.calibration = calibration
         self.ece_clip = ece_clip
         self.params = params
@@ -149,12 +152,21 @@ class LightGBMPredictor:
         # --- hyperparameter selection (opt-in): train-internal CV, valid never seen ------
         params = self._select_params(model_df, data, cat_for_model)
 
-        self.win_model_ = WinModel(seed=self.seed, params=params).fit(
-            model_X, y_model, categorical_cols=cat_for_model
+        # Feature 039: cond_logit needs race groups at fit AND predict (softmax unit). The
+        # model-fit rows' race_ids are the training groups; the held-out calib rows' race_ids
+        # group the calibration predictions (never softmax across races).
+        model_groups = model_df["race_id"].to_numpy() if self.objective == "cond_logit" else None
+        calib_groups = (
+            calib_df["race_id"].to_numpy()
+            if (self.objective == "cond_logit" and not calib_df.empty)
+            else None
         )
+        self.win_model_ = WinModel(
+            seed=self.seed, params=params, objective=self.objective
+        ).fit(model_X, y_model, categorical_cols=cat_for_model, group_ids=model_groups)
 
         if calib_mask.any():
-            raw_c = self.win_model_.predict(calib_X)
+            raw_c = self.win_model_.predict(calib_X, group_ids=calib_groups)
             self.calibrator_ = fit_calibrator(
                 raw_c, calib_df[WIN_LABEL].to_numpy(), method=self.calibration, clip=self.ece_clip
             )
@@ -163,6 +175,8 @@ class LightGBMPredictor:
 
         self.fit_info_ = {
             "seed": self.seed,
+            "objective": self.objective,
+            "postprocess": "group_softmax" if self.objective == "cond_logit" else "sigmoid",
             "params": self.win_model_.params,
             "calibration": self.calibrator_.method,
             "calib_frac": self.calib_frac,
@@ -182,6 +196,8 @@ class LightGBMPredictor:
     def _select_params(self, model_df, data: TrainingMatrix, cat_for_model: list[str]) -> dict:
         if not self.hpo:
             return self._resolved_params()
+        if self.objective == "cond_logit":  # Feature 039: HPO×cond_logit deferred
+            raise NotImplementedError("HPO is not supported with objective=cond_logit")
         grid = self.param_grid
         if grid is None:
             from .hpo import DEFAULT_GRID
@@ -218,7 +234,9 @@ class LightGBMPredictor:
             encoded = {col: enc.transform(rows[col]) for col, enc in self.encoders_.items()}
             X = apply_encoded_columns(X, encoded, data.feature_cols)
 
-        raw = self.win_model_.predict(X)
+        # cond_logit: all started horses of ONE race form a single softmax group.
+        group_ids = [race.race_id] * len(started_ids) if self.objective == "cond_logit" else None
+        raw = self.win_model_.predict(X, group_ids=group_ids)
         cal = self.calibrator_.transform(raw)
         return assemble_predictions(started_ids, cal, eps=self.ece_clip)
 
