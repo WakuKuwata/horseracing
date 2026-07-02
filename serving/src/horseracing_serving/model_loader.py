@@ -43,7 +43,7 @@ class ServingModel:
     encoders: dict = field(default_factory=dict)  # col -> TargetEncoder
     feature_version: str = ""
     feature_hash: str = ""
-    objective: str = "binary"  # Feature 039: "binary" | "cond_logit"
+    objective: str = "binary"  # 039/042: "binary" | "cond_logit" | "pl_topk"
     metadata: dict = field(default_factory=dict)
 
     def raw_predict(self, X: pd.DataFrame) -> np.ndarray:
@@ -55,7 +55,7 @@ class ServingModel:
         if self.booster is None:
             return np.full(len(X), self.degenerate_constant, dtype=float)
         raw = np.asarray(self.booster.predict(X[self.feature_cols]), dtype=float)
-        if self.objective == "cond_logit":
+        if self.objective in ("cond_logit", "pl_topk"):  # same race-softmax postprocess
             from horseracing_training.cond_logit import race_softmax
 
             return race_softmax(raw, [len(raw)]) if len(raw) else raw

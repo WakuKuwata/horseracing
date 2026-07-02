@@ -47,6 +47,15 @@ def test_cond_logit_raw_predict_is_race_softmax():
     assert p[0] > p[1] > p[2] > p[3]           # higher margin -> higher prob
 
 
+def test_pl_topk_raw_predict_is_race_softmax():
+    # Feature 042: pl_topk shares the cond_logit race-softmax postprocess
+    raw = [1.0, 0.0, -1.0]
+    m = _model(raw, "pl_topk")
+    p = m.raw_predict(_rows(3))
+    assert abs(p.sum() - 1.0) < 1e-9
+    assert p[0] > p[1] > p[2]
+
+
 def test_binary_raw_predict_unchanged():
     raw = [0.4, 0.3, 0.1]
     m = _model(raw, "binary")

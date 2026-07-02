@@ -29,7 +29,7 @@ from .calibration import (
     fit_calibrator,
     split_train_by_time,
 )
-from .dataset import RACE_DATE, WIN_LABEL, TrainingMatrix, build_training_matrix
+from .dataset import RACE_DATE, RANK_LABEL, WIN_LABEL, TrainingMatrix, build_training_matrix
 from .hpo import select_params_cv
 from .target_encoding import (
     DEFAULT_SMOOTHING,
@@ -64,7 +64,7 @@ class LightGBMPredictor:
     ) -> None:
         self.session = session
         self.seed = seed
-        # Feature 039: "binary" (per-horse P(win), current) or "cond_logit" (race-softmax).
+        # Feature 039/042: "binary" | "cond_logit" (race-softmax) | "pl_topk" (PL top-3).
         self.objective = objective
         self.calibration = calibration
         self.ece_clip = ece_clip
@@ -152,18 +152,24 @@ class LightGBMPredictor:
         # --- hyperparameter selection (opt-in): train-internal CV, valid never seen ------
         params = self._select_params(model_df, data, cat_for_model)
 
-        # Feature 039: cond_logit needs race groups at fit AND predict (softmax unit). The
-        # model-fit rows' race_ids are the training groups; the held-out calib rows' race_ids
-        # group the calibration predictions (never softmax across races).
-        model_groups = model_df["race_id"].to_numpy() if self.objective == "cond_logit" else None
+        # Feature 039/042: softmax objectives need race groups at fit AND predict (softmax
+        # unit). The model-fit rows' race_ids are the training groups; the held-out calib
+        # rows' race_ids group the calibration predictions (never softmax across races).
+        is_softmax = self.objective in WinModel.SOFTMAX_OBJECTIVES
+        model_groups = model_df["race_id"].to_numpy() if is_softmax else None
         calib_groups = (
-            calib_df["race_id"].to_numpy()
-            if (self.objective == "cond_logit" and not calib_df.empty)
-            else None
+            calib_df["race_id"].to_numpy() if (is_softmax and not calib_df.empty) else None
+        )
+        # Feature 042: pl_topk consumes the finishing-rank LABEL (1..3/0, never a feature)
+        model_ranks = (
+            model_df[RANK_LABEL].to_numpy() if self.objective == "pl_topk" else None
         )
         self.win_model_ = WinModel(
             seed=self.seed, params=params, objective=self.objective
-        ).fit(model_X, y_model, categorical_cols=cat_for_model, group_ids=model_groups)
+        ).fit(
+            model_X, y_model, categorical_cols=cat_for_model,
+            group_ids=model_groups, ranks=model_ranks,
+        )
 
         if calib_mask.any():
             raw_c = self.win_model_.predict(calib_X, group_ids=calib_groups)
@@ -176,7 +182,10 @@ class LightGBMPredictor:
         self.fit_info_ = {
             "seed": self.seed,
             "objective": self.objective,
-            "postprocess": "group_softmax" if self.objective == "cond_logit" else "sigmoid",
+            "postprocess": (
+                "group_softmax"
+                if self.objective in WinModel.SOFTMAX_OBJECTIVES else "sigmoid"
+            ),
             "params": self.win_model_.params,
             "calibration": self.calibrator_.method,
             "calib_frac": self.calib_frac,
@@ -196,8 +205,8 @@ class LightGBMPredictor:
     def _select_params(self, model_df, data: TrainingMatrix, cat_for_model: list[str]) -> dict:
         if not self.hpo:
             return self._resolved_params()
-        if self.objective == "cond_logit":  # Feature 039: HPO×cond_logit deferred
-            raise NotImplementedError("HPO is not supported with objective=cond_logit")
+        if self.objective in WinModel.SOFTMAX_OBJECTIVES:  # 039/042: HPO deferred
+            raise NotImplementedError(f"HPO is not supported with objective={self.objective}")
         grid = self.param_grid
         if grid is None:
             from .hpo import DEFAULT_GRID
@@ -234,8 +243,11 @@ class LightGBMPredictor:
             encoded = {col: enc.transform(rows[col]) for col, enc in self.encoders_.items()}
             X = apply_encoded_columns(X, encoded, data.feature_cols)
 
-        # cond_logit: all started horses of ONE race form a single softmax group.
-        group_ids = [race.race_id] * len(started_ids) if self.objective == "cond_logit" else None
+        # softmax objectives: all started horses of ONE race form a single softmax group.
+        group_ids = (
+            [race.race_id] * len(started_ids)
+            if self.objective in WinModel.SOFTMAX_OBJECTIVES else None
+        )
         raw = self.win_model_.predict(X, group_ids=group_ids)
         cal = self.calibrator_.transform(raw)
         return assemble_predictions(started_ids, cal, eps=self.ece_clip)

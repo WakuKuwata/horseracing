@@ -41,6 +41,9 @@ CATEGORICAL_FEATURES: tuple[str, ...] = (
 )
 
 WIN_LABEL = "win"
+#: Feature 042: finishing-rank LABEL (1..3 for finished top-3, else 0) for the PL top-k
+#: objective. Label-side only (same leak boundary as ``win``) — never a model feature.
+RANK_LABEL = "finish_rank"
 RACE_DATE = "race_date"
 
 
@@ -67,6 +70,16 @@ def _win_pairs(session: Session) -> set[tuple[str, str]]:
     return {(r.race_id, r.horse_id) for r in rows}
 
 
+def _rank_map(session: Session) -> dict[tuple[str, str], int]:
+    """Feature 042: (race_id, horse_id) -> finishing rank (1..3) of finished top-3 horses."""
+    rows = session.execute(
+        select(RaceResult.race_id, RaceResult.horse_id, RaceResult.finish_order)
+        .where(RaceResult.result_status == ResultStatus.FINISHED)
+        .where(RaceResult.finish_order <= 3)
+    ).all()
+    return {(r.race_id, r.horse_id): int(r.finish_order) for r in rows}
+
+
 def _race_dates(session: Session) -> dict[str, datetime.date]:
     rows = session.execute(select(Race.race_id, Race.race_date)).all()
     return {r.race_id: r.race_date for r in rows}
@@ -83,11 +96,17 @@ def build_training_matrix(
 
     race_dates = _race_dates(session)
     winners = _win_pairs(session)
+    ranks = _rank_map(session)
 
     df = matrix.copy()
     df[RACE_DATE] = df["race_id"].map(race_dates)
     df[WIN_LABEL] = [
         1 if (rid, hid) in winners else 0
+        for rid, hid in zip(df["race_id"], df["horse_id"], strict=True)
+    ]
+    # Feature 042: finishing-rank label for pl_topk (label-side only, not a feature)
+    df[RANK_LABEL] = [
+        ranks.get((rid, hid), 0)
         for rid, hid in zip(df["race_id"], df["horse_id"], strict=True)
     ]
 

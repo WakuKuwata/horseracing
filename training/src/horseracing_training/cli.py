@@ -239,8 +239,9 @@ def main(argv: list[str] | None = None) -> int:
     te = sub.add_parser("train-evaluate", help="walk-forward train + calibrate + adopt + save")
     te.add_argument("--first-valid-year", type=int, default=2008)
     te.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="platt")
-    te.add_argument("--objective", choices=["binary", "cond_logit"], default="binary",
-                    help="Feature 039: win objective (binary=current, cond_logit=race-softmax)")
+    te.add_argument("--objective", choices=["binary", "cond_logit", "pl_topk"],
+                    default="binary",
+                    help="039/042: win objective (binary | cond_logit | pl_topk=PL top-3)")
     te.add_argument("--ece-threshold", type=float, default=0.05)
     te.add_argument("--baseline", default="uniform")
     te.add_argument("--model-version", default="lightgbm-win-v1")
@@ -289,8 +290,9 @@ def main(argv: list[str] | None = None) -> int:
     me.add_argument("--te-smoothing", type=float, default=10.0,
                     help="TE smoothing (higher = more shrinkage toward prior = less overconfident)")
     me.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="platt")
-    me.add_argument("--objective", choices=["binary", "cond_logit"], default="binary",
-                    help="Feature 039: candidate win objective (baseline stays binary)")
+    me.add_argument("--objective", choices=["binary", "cond_logit", "pl_topk"],
+                    default="binary",
+                    help="039/042: candidate win objective (baseline stays binary)")
 
     args = parser.parse_args(argv)
     if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic", "model-eval"):

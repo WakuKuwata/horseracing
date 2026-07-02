@@ -88,6 +88,63 @@ def cond_logit_objective(group_sizes: list[int]):
     return fobj
 
 
+#: Feature 042: stage decay for PL top-k (pre-registered from the spike; NOT tuned on OOS).
+#: Later finishing positions are noisier (eased-up finishes), so stages decay.
+STAGE_WEIGHTS: tuple[float, ...] = (1.0, 0.5, 0.25)
+
+
+def pl_topk_objective(group_sizes: list[int], ranks):
+    """Feature 042: Plackett-Luce top-k (k=len(STAGE_WEIGHTS)) sequential objective.
+
+    ``ranks``: per-row finishing rank (1..k) or 0 (others/DNF), aligned to the sorted rows.
+    Stage j softmaxes over the not-yet-placed horses and targets the j-th finisher:
+    grad += w_j(p − y_j), hess += w_j·p(1−p) on the remaining set. Stage 1 without a
+    unique winner neutralizes the whole group (as cond_logit); a later stage without a
+    unique target (dead-heat / missing) or with <2 remaining horses breaks — earlier
+    stages' gradients are kept. Sample weight is applied explicitly (LightGBM does not
+    auto-apply it to custom objectives); no weight -> unchanged.
+    """
+    ranks = np.asarray(ranks)
+
+    def fobj(preds, dataset):
+        preds = np.asarray(preds, dtype=float)
+        grad = np.zeros_like(preds)
+        hess = np.zeros_like(preds)
+        start = 0
+        for g in group_sizes:
+            sl = slice(start, start + g)
+            start += g
+            rk = ranks[sl]
+            if (rk == 1).sum() != 1:  # no unique winner -> neutralize group (039 rule)
+                continue
+            v = preds[sl]
+            remaining = np.ones(g, dtype=bool)
+            for j, w in enumerate(STAGE_WEIGHTS, start=1):
+                target = rk == j
+                if target.sum() != 1 or remaining.sum() < 2:
+                    break  # keep earlier stages' gradients
+                vr = v[remaining] - v[remaining].max()
+                e = np.exp(vr)
+                p = e / e.sum()
+                yj = target[remaining].astype(float)
+                gsub = grad[sl]
+                hsub = hess[sl]
+                gsub[remaining] += w * (p - yj)
+                hsub[remaining] += w * np.maximum(p * (1.0 - p), _HESS_FLOOR)
+                grad[sl] = gsub
+                hess[sl] = hsub
+                remaining = remaining & ~target
+        hess = np.maximum(hess, _HESS_FLOOR)
+        w_arr = dataset.get_weight()
+        if w_arr is not None:
+            w_arr = np.asarray(w_arr, dtype=float)
+            grad *= w_arr
+            hess *= w_arr
+        return grad, hess
+
+    return fobj
+
+
 def winner_nll(probs, y, race_ids) -> tuple[float, int]:
     """Mean race-level −log p_winner over races with exactly one winner. Returns (nll, n).
 
