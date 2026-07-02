@@ -198,6 +198,21 @@ def _run_feature_command(session: Session, args) -> int:
             print(f"  edge[{b['edge_lo']:+.2f},{b['edge_hi']:+.2f}) n={b['n']} "
                   f"win_rate={b['win_rate']:.4f} mean_edge={b['mean_edge']:+.4f}")
         return 0
+    if args.command == "segment-diagnostic":
+        from horseracing_eval.segment_edge import evaluate_segment_edge
+
+        r = evaluate_segment_edge(
+            session, predictor=LightGBMPredictor(session, seed=args.seed),
+            start_date=args.from_, end_date=args.to,
+        )
+        print(f"segment-diagnostic n={r.n_horses}  {r.note}")
+        print(f"  {'axis':<12} {'segment':<16} {'n':>8} {'win%':>7} "
+              f"{'LL(p)':>8} {'LL(q)':>8} {'gap':>8} {'mean_p':>7} {'mean_q':>7}")
+        for row in r.rows:
+            print(f"  {row.axis:<12} {row.segment:<16} {row.n:>8} {row.win_rate:>7.4f} "
+                  f"{row.logloss_p:>8.5f} {row.logloss_q:>8.5f} {row.gap:>+8.5f} "
+                  f"{row.mean_p:>7.4f} {row.mean_q:>7.4f}")
+        return 0
     if args.command == "model-eval":
         # Feature 036: modeling change (OOF target encoding) — NOT a feature-group change, so the
         # candidate has the SAME feature columns as the baseline (FEATURE_VERSION unchanged); it
@@ -279,6 +294,9 @@ def main(argv: list[str] | None = None) -> int:
     fa.add_argument("--groups", default=None, help="comma-separated group subset (default: all)")
     fd = sub.add_parser("feature-diagnostic", help="020: market p−q edge diagnostic (SECONDARY)")
     _add_window(fd)
+    sd = sub.add_parser("segment-diagnostic",
+                        help="047: segment-wise p vs q diagnostic (SECONDARY, pre-registered)")
+    _add_window(sd)
 
     # Feature 036: OOF target encoding (modeling change; same feature columns as baseline).
     me = sub.add_parser("model-eval", help="036: OOF target-encode candidate vs no-TE baseline")
@@ -295,7 +313,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="039/042: candidate win objective (baseline stays binary)")
 
     args = parser.parse_args(argv)
-    if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic", "model-eval"):
+    if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic",
+                        "segment-diagnostic", "model-eval"):
         engine = create_db_engine(getattr(args, "database_url", None))
         with Session(engine) as session:
             return _run_feature_command(session, args)
