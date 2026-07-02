@@ -15,6 +15,7 @@ import itertools
 from dataclasses import dataclass
 
 from horseracing_eval.baselines import harville_topk
+from horseracing_eval.stage_discount import StageDiscount
 
 DEFAULT_EPS = 1e-9
 
@@ -45,30 +46,58 @@ def _normalize_clip(win_probs: dict[str, float], eps: float) -> tuple[list[str],
     return ids, p
 
 
-def _place(ids: list[str], p: list[float], field_size: int) -> dict[str, float] | None:
+def _place(
+    ids: list[str], p: list[float], field_size: int, sd: StageDiscount | None
+) -> dict[str, float] | None:
     if field_size <= 4:  # JRA: no place bet for <=4 runners
         return None
-    top2, top3 = harville_topk(p)
+    if sd is None or sd.is_identity:
+        top2, top3 = harville_topk(p)
+    else:
+        top2, top3 = harville_topk(p, lambda2=sd.lambda2, lambda3=sd.lambda3)
     incl = top2 if field_size <= 7 else top3        # 5-7 -> top2, 8+ -> top3
     return {ids[i]: incl[i] for i in range(len(ids))}
 
 
 def joint_probabilities(
-    win_probs: dict[str, float], *, field_size: int | None = None, eps: float = DEFAULT_EPS
+    win_probs: dict[str, float],
+    *,
+    field_size: int | None = None,
+    eps: float = DEFAULT_EPS,
+    stage_discount: StageDiscount | None = None,
 ) -> JointProbabilities:
+    """Feature 049: ``stage_discount`` applies Benter-style weights p^λ_j to the stage-2/3
+    sequential denominators (contracts/stage-discount.md). None/identity keeps the
+    ORIGINAL arithmetic below byte-identical (INV-S9): the legacy path writes the
+    denominators as ``1.0 - p[i]`` (valid because Σp==1 post-normalize), which is not
+    bit-equal to ``S2 - w2[i]``, so the two paths are branched explicitly."""
     ids, p = _normalize_clip(win_probs, eps)
     n = len(ids)
     rng = range(n)
     win = {ids[i]: p[i] for i in rng}
 
+    discounted = stage_discount is not None and not stage_discount.is_identity
+    if discounted:
+        w2 = [x ** stage_discount.lambda2 for x in p]
+        w3 = [x ** stage_discount.lambda3 for x in p]
+        s2 = sum(w2)
+        s3 = sum(w3)
+
     # exacta (ordered pairs) + quinella (unordered = both orderings)
     exacta: dict[tuple[str, str], float] = {}
     for i in rng:
-        di = 1.0 - p[i]
-        for j in rng:
-            if j == i:
-                continue
-            exacta[(ids[i], ids[j])] = p[i] * p[j] / di
+        if discounted:
+            di = s2 - w2[i]
+            for j in rng:
+                if j == i:
+                    continue
+                exacta[(ids[i], ids[j])] = p[i] * w2[j] / di
+        else:
+            di = 1.0 - p[i]
+            for j in rng:
+                if j == i:
+                    continue
+                exacta[(ids[i], ids[j])] = p[i] * p[j] / di
     quinella: dict[frozenset[str], float] = {}
     for i in rng:
         for j in range(i + 1, n):
@@ -80,7 +109,21 @@ def joint_probabilities(
     trifecta: dict[tuple[str, str, str], float] = {}
     trio: dict[frozenset[str], float] = {}
     wide: dict[frozenset[str], float] | None = None
-    if n >= 3:
+    if n >= 3 and discounted:
+        for i in rng:
+            for j in rng:
+                if j == i:
+                    continue
+                # stage-2 conditional given i first: w2[j]/(S2 - w2[i])
+                pj_given_i = w2[j] / (s2 - w2[i])
+                dij = s3 - w3[i] - w3[j]
+                if dij < eps:  # floor (defensive, same discipline as legacy path)
+                    dij = eps
+                for k in rng:
+                    if k == i or k == j:
+                        continue
+                    trifecta[(ids[i], ids[j], ids[k])] = p[i] * pj_given_i * (w3[k] / dij)
+    elif n >= 3:
         for i in rng:
             di = 1.0 - p[i]
             for j in rng:
@@ -93,6 +136,8 @@ def joint_probabilities(
                     if k == i or k == j:
                         continue
                     trifecta[(ids[i], ids[j], ids[k])] = p[i] * (p[j] / di) * (p[k] / dij)
+    if n >= 3:
+        # trio/wide derive PURELY from trifecta (sum of orderings) — shared by both paths
         for a, b, c in itertools.combinations(rng, 3):
             s = 0.0
             for perm in itertools.permutations((a, b, c)):
@@ -109,7 +154,7 @@ def joint_probabilities(
                     w += trio[frozenset((ids[i], ids[j], ids[k]))]
                 wide[frozenset((ids[i], ids[j]))] = w
 
-    place = _place(ids, p, field_size if field_size is not None else n)
+    place = _place(ids, p, field_size if field_size is not None else n, stage_discount)
     return JointProbabilities(
         win=win, place=place, exacta=exacta, quinella=quinella, wide=wide,
         trifecta=trifecta, trio=trio,

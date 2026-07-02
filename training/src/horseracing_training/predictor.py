@@ -254,13 +254,17 @@ class LightGBMPredictor:
 
 
 def assemble_predictions(
-    started_ids: list[str], calibrated, *, eps: float = DEFAULT_CLIP
+    started_ids: list[str], calibrated, *, eps: float = DEFAULT_CLIP, stage_discount=None
 ) -> dict[str, Prediction]:
     """clip -> race-normalize(Σwin=1) -> Harville top2/top3 (INV-T1 tail).
 
     Pure and DB-free: given calibrated raw win scores aligned to ``started_ids``, produce a
     consistency-satisfying Prediction per horse (0<=win<=top2<=top3<=1, Σ within tolerance).
     Endpoints are clipped so no win reaches 0/1 (keeps Harville top3 well-defined, R5).
+
+    Feature 049: ``stage_discount`` (a StageDiscount, or None) applies the Benter-style
+    top2/top3 correction. ``win`` is untouched (INV-S2); None/identity keeps the legacy
+    byte-identical path.
     """
     cal = np.clip(np.asarray(calibrated, dtype=float), eps, 1.0 - eps)
     total = float(cal.sum())
@@ -268,7 +272,12 @@ def assemble_predictions(
         win = np.full(len(started_ids), 1.0 / len(started_ids))
     else:
         win = cal / total
-    top2, top3 = harville_topk(win.tolist())
+    if stage_discount is not None and not stage_discount.is_identity:
+        top2, top3 = harville_topk(
+            win.tolist(), lambda2=stage_discount.lambda2, lambda3=stage_discount.lambda3
+        )
+    else:
+        top2, top3 = harville_topk(win.tolist())
     return {
         hid: Prediction(win=float(win[i]), top2=float(top2[i]), top3=float(top3[i]))
         for i, hid in enumerate(started_ids)

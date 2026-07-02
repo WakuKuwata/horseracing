@@ -12,13 +12,24 @@ from .predictor import Prediction, RaceContext
 _EPS = 1e-12
 
 
-def harville_topk(win: list[float]) -> tuple[list[float], list[float]]:
+def harville_topk(
+    win: list[float], *, lambda2: float = 1.0, lambda3: float = 1.0
+) -> tuple[list[float], list[float]]:
     """Derive P(top2)/P(top3) from win probs (Plackett-Luce / Harville).
 
     Public so feature-based predictors (Feature 005) derive top2/top3 identically
     to the market baseline (research R8). The race-normalized win vector must sum
     to ~1 for the result to satisfy probability consistency.
+
+    Feature 049: ``lambda2``/``lambda3`` apply a Benter-style stage discount (weights
+    p^λ_j in the stage-2/3 conditionals). The default 1.0/1.0 takes the ORIGINAL loop
+    below — an explicit branch, not pow(x, 1.0), so the legacy path stays
+    byte-identical (INV-S1) regardless of libm behaviour.
     """
+    if not (lambda2 == 1.0 and lambda3 == 1.0):
+        from .stage_discount import StageDiscount, discounted_topk
+
+        return discounted_topk(win, StageDiscount(lambda2=lambda2, lambda3=lambda3))
     n = len(win)
     top2 = [0.0] * n
     top3 = [0.0] * n

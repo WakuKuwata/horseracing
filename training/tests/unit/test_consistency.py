@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from horseracing_eval.consistency import check_consistency
+from horseracing_eval.stage_discount import StageDiscount
 
 from horseracing_training.predictor import assemble_predictions
 
@@ -39,3 +40,28 @@ def test_small_field_below_k():
 def test_uniform_field_various_sizes(n):
     preds = assemble_predictions(_ids(n), np.full(n, 1.0 / n))
     check_consistency(preds)
+
+
+# ---- Feature 049: stage_discount pass-through (INV-S2/S9) --------------------
+
+
+def test_stage_discount_none_byte_identical():
+    cal = np.array([0.4, 0.2, 0.15, 0.15, 0.1])
+    base = assemble_predictions(_ids(5), cal)
+    ident = assemble_predictions(_ids(5), cal, stage_discount=StageDiscount())
+    for h in base:
+        assert base[h].win == ident[h].win
+        assert base[h].top2 == ident[h].top2   # identity == legacy, exact
+        assert base[h].top3 == ident[h].top3
+
+
+def test_stage_discount_leaves_win_unchanged_changes_tail():
+    cal = np.array([0.45, 0.25, 0.15, 0.08, 0.04, 0.03])
+    base = assemble_predictions(_ids(6), cal)
+    disc = assemble_predictions(_ids(6), cal, stage_discount=StageDiscount(lambda2=0.5, lambda3=0.5))
+    check_consistency(disc)
+    for h in base:
+        assert disc[h].win == base[h].win           # INV-S2: win untouched
+    # favourite's tail is compressed by the discount
+    assert disc["H0"].top2 < base["H0"].top2
+    assert disc["H0"].top3 < base["H0"].top3

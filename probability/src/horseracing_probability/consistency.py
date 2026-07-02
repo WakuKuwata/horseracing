@@ -7,6 +7,7 @@ agree with the independently-implemented harville_topk (the strongest correctnes
 from __future__ import annotations
 
 from horseracing_eval.baselines import harville_topk
+from horseracing_eval.stage_discount import StageDiscount
 
 from .engine import JointProbabilities
 
@@ -22,12 +23,22 @@ def _close(a: float, b: float, tol: float) -> bool:
 
 
 def check_joint_consistency(
-    jp: JointProbabilities, tol: dict[str, float] | None = None
+    jp: JointProbabilities,
+    tol: dict[str, float] | None = None,
+    *,
+    stage_discount: StageDiscount | None = None,
 ) -> None:
+    """Feature 049: when ``stage_discount`` is passed, the marginal-equality checks
+    (INV-S5) compare against harville_topk derived with the SAME λ — a discounted
+    joint must still agree with its own discounted marginals."""
     t = {**DEFAULT_TOL, **(tol or {})}
     ids = sorted(jp.win)
     p = [jp.win[h] for h in ids]
     n = len(ids)
+    if stage_discount is not None and not stage_discount.is_identity:
+        _l2, _l3 = stage_discount.lambda2, stage_discount.lambda3
+    else:
+        _l2 = _l3 = 1.0
 
     # Σexacta = 1
     s_ex = sum(jp.exacta.values())
@@ -42,8 +53,8 @@ def check_joint_consistency(
         if jp.wide is not None and jp.wide[key] < q - t["range"]:
             raise JointConsistencyError(f"wide < quinella for {key}")
 
-    # exacta marginal == harville top2
-    top2, top3 = harville_topk(p)
+    # exacta marginal == harville top2 (same λ as the joint)
+    top2, top3 = harville_topk(p, lambda2=_l2, lambda3=_l3)
     for idx, h in enumerate(ids):
         marg2 = sum(jp.exacta[(h, o)] + jp.exacta[(o, h)] for o in ids if o != h)
         if not _close(marg2, top2[idx], t["marginal"]):
