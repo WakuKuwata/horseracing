@@ -13,7 +13,7 @@ from horseracing_db.models import (
     Recommendation,
 )
 from horseracing_db.session import create_db_engine
-from sqlalchemy import case, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from .backtest import run_backtest
@@ -96,12 +96,42 @@ def _has_group(session: Session, run_id, bet_types) -> bool:
     ).first() is not None
 
 
-def _generate_product_set(session: Session, run_id) -> tuple[int, int, list[str]]:
+def _fit_product_p_calibrator(session: Session, *, before_date, target_race_id: str):
+    """Feature 046: walk-forward model-p calibrator for the product path (017 machinery).
+
+    Fits γ (winner-NLL MLE) on persisted predictions × winners STRICTLY before the target race
+    (race_before date+id tie-break). Insufficient data (min_races/min_wins, 017 defaults) →
+    identity fallback — the calibrated path then equals the raw path. The sample scan is bounded
+    to the era that actually has prediction_runs (cheap; avoids a 2007+ full-table walk).
+    """
+    from horseracing_db.models import PredictionRun, Race
+    from horseracing_probability.model_calibration import (
+        fit_p_calibrator,
+        load_p_samples,
+        split_before,
+    )
+
+    first = session.scalar(
+        select(func.min(Race.race_date))
+        .select_from(PredictionRun)
+        .join(Race, Race.race_id == PredictionRun.race_id)
+    )
+    if first is None:  # no persisted predictions at all -> identity
+        return fit_p_calibrator([], base_model_version=None)
+    samples = load_p_samples(session, date_from=first, date_to=before_date)
+    train = split_before(samples, before_date, target_race_id)
+    return fit_p_calibrator([(p, w) for (_rid, _d, p, w, _dh) in train])
+
+
+def _generate_product_set(
+    session: Session, run_id, *, p_calibrator=None
+) -> tuple[int, int, list[str]]:
     """Generate the missing bet_type groups for one run (group-wise idempotent, Feature 045).
 
     win = 007 EV on real win odds + 016 Kelly sizing; exotic = 016 Kelly set (043). A group that
     already exists is skipped (no append-only duplication; existing 043 runs get win topped up).
-    Returns (n_win, n_exotic, skipped_group_names).
+    Feature 046: the walk-forward p calibrator is applied to BOTH groups (identity when
+    insufficient) and recorded in logic_version. Returns (n_win, n_exotic, skipped_group_names).
     """
     cfg = KellyConfig()
     n_win = n_exotic = 0
@@ -109,11 +139,13 @@ def _generate_product_set(session: Session, run_id) -> tuple[int, int, list[str]
     if _has_group(session, run_id, (BetType.WIN,)):
         skipped.append("win")
     else:
-        n_win = len(generate_recommendations(session, prediction_run_id=run_id, cfg=cfg))
+        n_win = len(generate_recommendations(
+            session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator))
     if _has_group(session, run_id, BetType.EXOTIC):
         skipped.append("exotic")
     else:
-        n_exotic = len(generate_kelly_recommendations(session, prediction_run_id=run_id, cfg=cfg))
+        n_exotic = len(generate_kelly_recommendations(
+            session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator))
     return n_win, n_exotic, skipped
 
 
@@ -136,9 +168,16 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     if not _race_has_win_odds(session, race_id):
         print(f"SKIPPED: no win odds for race {race_id} (recommendations need odds)")
         return 0
-    n_win, n_exotic, skipped = _generate_product_set(session, run_id)
+    # Feature 046: walk-forward p calibrator (strictly before this race; identity when thin)
+    from horseracing_db.models import Race
+    race = session.get(Race, race_id)
+    pcal = _fit_product_p_calibrator(
+        session, before_date=race.race_date, target_race_id=race_id,
+    ) if race is not None and race.race_date is not None else None
+    n_win, n_exotic, skipped = _generate_product_set(session, run_id, p_calibrator=pcal)
     note = f" (skipped groups: {','.join(skipped)})" if skipped else ""
-    print(f"OK: run={run_id} win={n_win} exotic={n_exotic}{note}")
+    pnote = f" pcal={pcal.logic_version}" if pcal is not None else ""
+    print(f"OK: run={run_id} win={n_win} exotic={n_exotic}{note}{pnote}")
     return 0
 
 
@@ -262,15 +301,19 @@ def _cmd_recommend_backfill(session: Session, args) -> int:
     prints generated / skipped-by-reason counts.
     """
     from horseracing_db.models import Race
-    race_ids = session.scalars(
-        select(Race.race_id)
+    rows = session.execute(
+        select(Race.race_id, Race.race_date)
         .where(Race.race_date >= args.from_)
         .where(Race.race_date <= args.to)
-        .order_by(Race.race_id)
+        .order_by(Race.race_date, Race.race_id)
     ).all()
     counts = {"generated": 0, "topped_up": 0, "skip_no_run": 0, "skip_no_odds": 0,
               "skip_exists": 0, "error": 0}
-    for rid in race_ids:
+    # Feature 046: fit the p calibrator ONCE per day (samples strictly before that day — the
+    # date-level cutoff excludes same-day races, matching the 004 date-level convention).
+    pcal_day = None
+    pcal = None
+    for rid, rdate in rows:
         try:
             run_id = _resolve_active_run(session, rid)
             if run_id is None:
@@ -284,14 +327,18 @@ def _cmd_recommend_backfill(session: Session, args) -> int:
             if not _race_has_win_odds(session, rid):
                 counts["skip_no_odds"] += 1
                 continue
-            _generate_product_set(session, run_id)
+            if rdate != pcal_day:
+                # cutoff = the day itself with a smaller-than-any race_id → strictly before the day
+                pcal = _fit_product_p_calibrator(session, before_date=rdate, target_race_id="")
+                pcal_day = rdate
+            _generate_product_set(session, run_id, p_calibrator=pcal)
             # a partial run (043-era exotic-only) counts as a top-up, a bare run as generated
             counts["topped_up" if (has_win or has_exotic) else "generated"] += 1
         except Exception as exc:  # noqa: BLE001 — one race must not abort the whole backfill
             session.rollback()
             counts["error"] += 1
             print(f"  error {rid}: {type(exc).__name__}: {exc}")
-    total = len(race_ids)
+    total = len(rows)
     print(f"recommend-backfill {args.from_}..{args.to}  races={total}")
     print(f"  generated={counts['generated']} topped_up={counts['topped_up']} "
           f"skip_exists={counts['skip_exists']} skip_no_run={counts['skip_no_run']} "

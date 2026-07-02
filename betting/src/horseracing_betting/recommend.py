@@ -84,6 +84,27 @@ def _win_stake_fractions(bets, cfg: KellyConfig) -> list[float | None]:
     return fractions
 
 
+def _apply_p_calibration(horses: list[dict], p_calibrator) -> list[dict]:
+    """Feature 046: calibrate the RACE-NORMALIZED win-prob vector (017 canonical) in place.
+
+    Mirrors kelly_recommend: normalize over started -> p'∝p^γ -> renormalize (apply_p_calibrator
+    does the power+renorm). Calibrated probs are written back so select_ev_bets' own renorm is a
+    no-op. Horses outside the normalized population keep their original value (they get no bet).
+    """
+    from horseracing_probability.model_calibration import apply_p_calibrator
+
+    from .ev import renormalized_started_probs
+
+    p_norm = renormalized_started_probs(horses)
+    if not p_norm:
+        return horses
+    calibrated = apply_p_calibrator(p_norm, p_calibrator)
+    for h in horses:
+        if h["horse_id"] in calibrated:
+            h["win_prob"] = calibrated[h["horse_id"]]
+    return horses
+
+
 def generate_recommendations(
     session: Session,
     *,
@@ -92,13 +113,18 @@ def generate_recommendations(
     stake: float = DEFAULT_STAKE,
     logic_version: str | None = None,
     cfg: KellyConfig | None = None,
+    p_calibrator=None,
 ) -> list[uuid.UUID]:
     run = session.get(PredictionRun, prediction_run_id)
     if run is None:
         raise ValueError(f"prediction_run {prediction_run_id} not found")
     lv = logic_version or default_logic_version(threshold, stake, cfg=cfg)
+    if p_calibrator is not None:  # Feature 046: record the model-p calibrator (same as 017/kelly)
+        lv = f"{lv};{p_calibrator.logic_version}"
 
     horses = _load_horses(session, prediction_run_id, run.race_id)
+    if p_calibrator is not None:  # calibrate model p only; odds untouched (p≠q)
+        horses = _apply_p_calibration(horses, p_calibrator)
     bets = select_ev_bets(horses, threshold=threshold, stake=stake)
     # Feature 045: opt-in Kelly sizing (cfg=None keeps the original flat behaviour, NULL stake).
     fractions = _win_stake_fractions(bets, cfg) if cfg is not None else [None] * len(bets)
