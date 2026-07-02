@@ -569,6 +569,15 @@ def main(argv: list[str] | None = None) -> int:
     xd.add_argument("--model-version", default=None)
     xd.add_argument("--database-url", default=None)
 
+    # Feature 049: exotic pseudo-ROI non-degradation gate (λ=1 vs walk-forward λ̂).
+    sc = sub.add_parser("stage-discount-backtest-compare",
+                        help="049: place/wide/trio pseudo-ROI, λ=1 vs walk-forward λ̂ (MUST gate)")
+    sc.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    sc.add_argument("--to", type=_parse_date, required=True)
+    sc.add_argument("--min-races", type=int, default=300)
+    sc.add_argument("--model-version", default=None)
+    sc.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
@@ -598,7 +607,20 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_exotic_backtest(session, args)
         if args.command == "exotic-divergence":
             return _cmd_exotic_divergence(session, args)
+        if args.command == "stage-discount-backtest-compare":
+            return _cmd_stage_discount_compare(session, args)
     return 1
+
+
+def _cmd_stage_discount_compare(session, args) -> int:
+    from .stage_discount_compare import compare_stage_discount_roi
+
+    r = compare_stage_discount_roi(
+        session, date_from=args.from_, date_to=args.to,
+        min_races=args.min_races, model_version=args.model_version,
+    )
+    print(r.summary())
+    return 0 if r.must_pass else 2
 
 
 if __name__ == "__main__":

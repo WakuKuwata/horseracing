@@ -213,6 +213,34 @@ def _run_feature_command(session: Session, args) -> int:
                   f"{row.logloss_p:>8.5f} {row.logloss_q:>8.5f} {row.gap:>+8.5f} "
                   f"{row.mean_p:>7.4f} {row.mean_q:>7.4f}")
         return 0
+    if args.command == "stage-discount-eval":
+        # Feature 049: derivation-layer A/B. Uses the PRODUCTION predictor config (pl_topk +
+        # OOF-TE + isotonic) so top2/top3 reflect the real lgbm-042 serving derivation; win is
+        # identical across baseline/candidate by construction (only the tail is discounted).
+        from horseracing_eval.dataset import load_eval_races
+        from horseracing_eval.stage_discount_eval import evaluate_stage_discount
+
+        te_cols = tuple(c for c in (args.target_encode or "").split(",") if c)
+        predictor = LightGBMPredictor(
+            session, seed=args.seed, target_encode_cols=te_cols,
+            te_smoothing=args.te_smoothing, calibration=args.calibration,
+            objective=args.objective,
+        )
+        eval_races = load_eval_races(session, start_date=args.from_, end_date=args.to)
+        r = evaluate_stage_discount(
+            predictor, eval_races, first_valid_year=args.first_valid_year,
+            min_races=args.min_races,
+        )
+        print(f"stage-discount-eval objective={args.objective} calib={args.calibration} "
+              f"target_encode={list(te_cols)}")
+        print(r.summary())
+        print("  fold λ̂ (from prior OOS):")
+        for fl in r.fold_lambdas:
+            print(f"    {fl['valid_year']}: l2={fl['lambda2']:.4f} l3={fl['lambda3']:.4f} "
+                  f"n_fit={fl['n_fit']} fallback={fl['fallback']}")
+        print(f"  ADOPTED={r.adopted} (primary={r.primary_pass} guard={r.guard_pass} "
+              f"win_identical={r.win_identical})")
+        return 0
     if args.command == "model-eval":
         # Feature 036: modeling change (OOF target encoding) — NOT a feature-group change, so the
         # candidate has the SAME feature columns as the baseline (FEATURE_VERSION unchanged); it
@@ -312,9 +340,23 @@ def main(argv: list[str] | None = None) -> int:
                     default="binary",
                     help="039/042: candidate win objective (baseline stays binary)")
 
+    # Feature 049: stage-discount A/B (derivation layer). Production predictor config defaults.
+    sde = sub.add_parser("stage-discount-eval",
+                         help="049: top2/top3 stage-discount A/B (λ=1 vs walk-forward λ̂)")
+    _add_window(sde)
+    sde.add_argument("--first-valid-year", type=int, default=2008)
+    sde.add_argument("--min-races", type=int, default=300,
+                     help="min prior-OOS races to fit a non-identity λ (else identity fallback)")
+    sde.add_argument("--objective", choices=["binary", "cond_logit", "pl_topk"],
+                     default="pl_topk", help="production win objective (default pl_topk=lgbm-042)")
+    sde.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="isotonic")
+    sde.add_argument("--target-encode", default="jockey_id,trainer_id",
+                     help="OOF target-encode columns (production default)")
+    sde.add_argument("--te-smoothing", type=float, default=10.0)
+
     args = parser.parse_args(argv)
     if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic",
-                        "segment-diagnostic", "model-eval"):
+                        "segment-diagnostic", "model-eval", "stage-discount-eval"):
         engine = create_db_engine(getattr(args, "database_url", None))
         with Session(engine) as session:
             return _run_feature_command(session, args)

@@ -83,17 +83,21 @@ def candidate_bets(
     payout_rates: dict[str, float] | None = None,
     odds_cap: float = 10000.0,
     calibrator=None,
+    stage_discount=None,
 ) -> dict[str, list[ExoticBet]]:
     """All scoreable candidates per bet type (no threshold/top-K) on the SHARED canonical field.
 
     P_model from 009(p), O_est from 010(q), keyed identically (same int horse_numbers). Used by both
     the EV strategy and the ROI baselines so they compare on one population/selection/odds path.
     ``calibrator`` (Feature 013, opt-in) FL-bias-corrects the market q before O_est; None = raw q.
+    ``stage_discount`` (Feature 049, opt-in) applies the top2/top3 Benter discount to P_model.
     """
     if not field.p_norm:
         return {}
 
-    joint = joint_probabilities(field.p_norm, field_size=field.field_size)
+    joint = joint_probabilities(
+        field.p_norm, field_size=field.field_size, stage_discount=stage_discount,
+    )
     est = estimate_market_odds(
         field.odds_norm, field_size=field.field_size, payout_rates=payout_rates,
         odds_cap=odds_cap, calibrator=calibrator,
@@ -136,11 +140,12 @@ def exotic_ev_bets(
     payout_rates: dict[str, float] | None = None,
     odds_cap: float = 10000.0,
     calibrator=None,
+    stage_discount=None,
 ) -> list[ExoticBet]:
     """EV = P_model(009 on p) × O_est(010 on q) on the canonical field; EV≥threshold, top-K."""
     cands = candidate_bets(
         field, bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap,
-        calibrator=calibrator,
+        calibrator=calibrator, stage_discount=stage_discount,
     )
     out: list[ExoticBet] = []
     for bt, bets in cands.items():

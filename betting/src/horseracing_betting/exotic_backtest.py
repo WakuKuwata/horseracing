@@ -71,10 +71,11 @@ def _field_and_outcome(session: Session, model, race_id: str, feature_rows):
 
 
 def _bets_for(strategy: str, field: CanonicalField, *, threshold, top_k, bet_types, seed,
-              payout_rates, odds_cap):
+              payout_rates, odds_cap, stage_discount=None):
     if strategy == "ev":
         return exotic_ev_bets(field, threshold=threshold, top_k=top_k, bet_types=bet_types,
-                              payout_rates=payout_rates, odds_cap=odds_cap)
+                              payout_rates=payout_rates, odds_cap=odds_cap,
+                              stage_discount=stage_discount)
     if strategy == "lowest_oest":
         return lowest_oest_baseline(field, top_k=top_k, bet_types=bet_types,
                                     payout_rates=payout_rates, odds_cap=odds_cap)
@@ -98,8 +99,12 @@ def run_exotic_backtest(
     seed: int = DEFAULT_SEED,
     model_version: str | None = None,
     strategies: tuple[str, ...] = ("ev", "lowest_oest", "uniform"),
+    stage_discount=None,
 ) -> dict[str, dict[str, ExoticRoiReport]]:
-    """Returns {strategy: {bet_type|__total__: ExoticRoiReport}} — all DOUBLE-pseudo."""
+    """Returns {strategy: {bet_type|__total__: ExoticRoiReport}} — all DOUBLE-pseudo.
+
+    Feature 049: ``stage_discount`` (opt-in) applies the top2/top3 Benter discount to the EV
+    strategy's P_model (baselines are odds-based and unaffected)."""
     model = load_serving_model(session, model_version)
     feature_rows = build_feature_matrix(session, end_date=date_to)
     present = set(feature_rows["race_id"].unique())
@@ -127,7 +132,8 @@ def run_exotic_backtest(
                                odds_cap=odds_cap)  # bet types with >=1 candidate (opportunity)
         for s in strategies:
             bets = _bets_for(s, field, threshold=threshold, top_k=top_k, bet_types=bet_types,
-                             seed=seed, payout_rates=payout_rates, odds_cap=odds_cap)
+                             seed=seed, payout_rates=payout_rates, odds_cap=odds_cap,
+                             stage_discount=stage_discount)
             placed_types = {b.bet_type for b in bets}
             for bt in avail:
                 opp[s][bt] = opp[s].get(bt, 0) + 1

@@ -13,9 +13,12 @@ _FORBIDDEN = ("odds", "result", "payout", "finish_order", "dividend")
 def test_no_odds_or_result_in_model_features():
     # model features must not include market odds / direct result fields (II); finish-derived
     # aggregates are as-of (avg_finish etc.) — guard only raw odds/result/payout tokens.
+    # Feature 049: calibration/derivation outputs (sdisc λ, pcal γ) live only in logic_version
+    # and must never re-enter features (INV-S8) — guard the token here too.
     for name in model_input_features():
         low = name.lower()
-        assert "odds" not in low and "payout" not in low and "dividend" not in low, name
+        for tok in ("odds", "payout", "dividend", "sdisc", "pcal"):
+            assert tok not in low, name
 
 
 def test_feature020_groups_registered():

@@ -155,6 +155,14 @@ def test_empty_samples_identity():
     assert sd.is_identity and sd.fallback
 
 
+def test_cutoff_leaves_no_samples_yields_identity():
+    # INV-S8 leak boundary: if the walk-forward cutoff excludes every prior race (e.g. the
+    # target is the first race), the fitter sees an empty sample set -> identity (never peeks
+    # at same/after-cutoff results).
+    sd = fit_stage_discount([], min_races=1)
+    assert sd.is_identity and sd.fallback
+
+
 # ---- logic_version fragment (data-model) ------------------------------------
 
 

@@ -288,6 +288,91 @@ def split_before(samples, target_date, target_id):
     return [s for s in samples if race_before(s[1], s[0], target_date, target_id)]
 
 
+# --- Feature 049: top2/top3 fitting sample loader ---------------------------
+def _placed_finishers(session: Session, race_id: str) -> tuple[str | None, str | None, str | None]:
+    """(1st, 2nd, 3rd) horse_ids; a position is None when missing or a dead heat (non-unique).
+
+    Results are used ONLY as fit labels here (never selection/features, 憲法 II).
+    """
+    rows = list(
+        session.execute(
+            select(RaceResult.horse_id, RaceResult.finish_order)
+            .where(RaceResult.race_id == race_id)
+            .where(RaceResult.result_status == ResultStatus.FINISHED)
+            .where(RaceResult.finish_order.in_((1, 2, 3)))
+        ).all()
+    )
+    by_pos: dict[int, list[str]] = {1: [], 2: [], 3: []}
+    for hid, order in rows:
+        by_pos[order].append(hid)
+    return tuple(  # type: ignore[return-value]
+        (by_pos[pos][0] if len(by_pos[pos]) == 1 else None) for pos in (1, 2, 3)
+    )
+
+
+def load_topk_samples(session: Session, *, date_from, date_to):
+    """[(race_id, race_date, p_dict, (id1|None, id2|None, id3|None))] ordered by (race_date, race_id).
+
+    Mirrors load_p_samples' run selection (latest run per race) for audit consistency
+    (analyze U2). The p_dict is the persisted win_prob over started horses; callers
+    normalize it through the engine before fitting. Non-unique finishers (dead heats)
+    yield None for that position so a race contributes only to the stages it can label.
+    """
+    rows = session.execute(
+        select(Race.race_id, Race.race_date)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .order_by(Race.race_date, Race.race_id)
+    ).all()
+    out = []
+    for race_id, race_date in rows:
+        p = _latest_run_predictions(session, race_id)
+        placed = _placed_finishers(session, race_id)
+        out.append((race_id, race_date, p, placed))
+    return out
+
+
+def fit_product_stage_discount(session, *, before_date, min_races=300, calibrator=None):
+    """Walk-forward product fit: λ_2/λ_3 from persisted predictions STRICTLY before ``before_date``
+    (research D3/D4). ``calibrator`` (e.g. two_gamma) is applied to fit-sample win vectors so fit
+    and apply share one distribution. Returns an eval StageDiscount (identity if under-sampled)."""
+    import datetime as _dt
+
+    from horseracing_eval.stage_discount import fit_stage_discount
+
+    end = before_date - _dt.timedelta(days=1)  # strictly before (date-level; race_id tie-break n/a)
+    raw = load_topk_samples(session, date_from=_dt.date(2007, 1, 1), date_to=end)
+    samples = to_topk_samples(raw, calibrator=calibrator)
+    return fit_stage_discount(samples, min_races=min_races)
+
+
+def to_topk_samples(raw, *, calibrator=None):
+    """Convert load_topk_samples rows -> eval TopkSample list (engine-normalized win vector +
+    finisher indices). ``calibrator`` (a p-calibrator, e.g. two_gamma) is applied to the win
+    vector BEFORE normalization so fit and apply share one p distribution (research D4).
+    Rows with no unique winner or a winner absent from p are skipped (can't index stage 1)."""
+    from horseracing_eval.stage_discount import TopkSample
+
+    samples = []
+    for _rid, _rdate, p, placed in raw:
+        i1_id, i2_id, i3_id = placed
+        if i1_id is None or not p or i1_id not in p:
+            continue
+        pd = calibrator(p) if calibrator is not None else p  # calibrator maps dict->dict
+        pd = _engine_normalize(pd)
+        ids = sorted(pd)
+        pos = {h: k for k, h in enumerate(ids)}
+        samples.append(
+            TopkSample(
+                win=tuple(pd[h] for h in ids),
+                i1=pos.get(i1_id),
+                i2=pos.get(i2_id) if i2_id in pos else None,
+                i3=pos.get(i3_id) if i3_id in pos else None,
+            )
+        )
+    return samples
+
+
 # --- p vs p' calibration evaluation (US1 adoption gate) ---------------------
 @dataclass(frozen=True)
 class PCalibrationReport:
