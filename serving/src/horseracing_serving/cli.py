@@ -9,7 +9,7 @@ from horseracing_db.session import create_db_engine
 from sqlalchemy.orm import Session
 
 from .model_loader import ServingError
-from .pipeline import run_serving
+from .pipeline import run_serving, run_serving_backfill
 
 
 def _parse_date(s: str) -> datetime.date:
@@ -26,7 +26,31 @@ def main(argv: list[str] | None = None) -> int:
     pr.add_argument("--model-version", default=None, help="explicit model (else single active)")
     pr.add_argument("--database-url", default=None)
 
+    # Feature 044: date-range predict backfill (idempotent per model; fills the product with data).
+    pb = sub.add_parser("predict-backfill", help="infer + persist over a date range (044)")
+    pb.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    pb.add_argument("--to", type=_parse_date, required=True)
+    pb.add_argument("--model-version", default=None, help="explicit model (else single active)")
+    pb.add_argument("--force", action="store_true",
+                    help="regenerate even if the model already has a run for the race")
+    pb.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
+    if args.command == "predict-backfill":
+        engine = create_db_engine(args.database_url)
+        try:
+            with Session(engine) as session:
+                counts = run_serving_backfill(
+                    session, date_from=args.from_, date_to=args.to,
+                    model_version=args.model_version, force=args.force,
+                )
+        except ServingError as e:
+            parser.error(str(e))
+        c = counts.as_dict()
+        print(f"predict-backfill {args.from_}..{args.to}")
+        print(f"  generated={c['generated']} skip_exists={c['skip_exists']} "
+              f"skip_no_started={c['skip_no_started']} error_days={c['error_days']}")
+        return 0
     if args.command == "predict":
         if (args.race_id is None) == (args.date is None):
             parser.error("exactly one of --race-id or --date is required")
