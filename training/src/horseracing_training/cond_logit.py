@@ -76,6 +76,13 @@ def cond_logit_objective(group_sizes: list[int]):
             p = e / e.sum()
             grad[sl] = p - yg
             hess[sl] = np.maximum(p * (1.0 - p), _HESS_FLOOR)
+        # LightGBM does NOT auto-apply sample weight to custom objectives — do it here.
+        # No weight set (e.g. lgbm-039) -> get_weight() is None -> grad/hess unchanged.
+        w = dataset.get_weight()
+        if w is not None:
+            w = np.asarray(w, dtype=float)
+            grad *= w
+            hess *= w
         return grad, hess
 
     return fobj

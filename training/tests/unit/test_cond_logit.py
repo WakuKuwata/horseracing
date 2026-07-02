@@ -38,6 +38,9 @@ def test_objective_grad_hess_one_winner():
         def get_label(self):
             return y
 
+        def get_weight(self):  # cond_logit applies sample weight; unweighted -> None
+            return None
+
     grad, hess = cond_logit_objective([3])(preds, _DS())
     p = np.full(3, 1.0 / 3)
     assert np.allclose(grad, p - y)
@@ -52,6 +55,9 @@ def test_objective_neutralizes_malformed_groups():
     class _DS:
         def get_label(self):
             return y
+
+        def get_weight(self):  # cond_logit applies sample weight; unweighted -> None
+            return None
 
     grad, hess = cond_logit_objective([4])(preds, _DS())
     assert np.allclose(grad, 0.0)
