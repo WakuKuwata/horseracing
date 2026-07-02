@@ -152,6 +152,11 @@ REGISTRY: dict[str, FeatureMeta] = {
     "dist_shortening": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
     "dist_ext_x_closing": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
     "dist_short_x_speed": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 041: corner trajectory (past-race position deltas, as-of) ---
+    "asof_late_gain_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "asof_late_gain_best": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "asof_early_pos_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "asof_mid_move_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -229,10 +234,15 @@ FEATURE_GROUPS: dict[str, str] = {
     "dist_shortening": "condition_change",
     "dist_ext_x_closing": "condition_change",
     "dist_short_x_speed": "condition_change",
+    # Feature 041: corner trajectory (position deltas)
+    "asof_late_gain_avg": "corner_trajectory",
+    "asof_late_gain_best": "corner_trajectory",
+    "asof_early_pos_avg": "corner_trajectory",
+    "asof_mid_move_avg": "corner_trajectory",
 }
 
-#: feature schema version. 023/026/030/031/032; bumped by 033 (condition-change × ability).
-FEATURE_VERSION = "features-011"
+#: feature schema version. 026/030-033; bumped by 041 (corner trajectory).
+FEATURE_VERSION = "features-012"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")

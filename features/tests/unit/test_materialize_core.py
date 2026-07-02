@@ -41,7 +41,7 @@ def test_generate_deterministic_with_manifest(tmp_path):
     m2 = write_materialized(tmp_path / "b.parquet", frames)
     assert m1.content_hash == m2.content_hash               # deterministic (SC-003)
     assert m1.source_fingerprint == m2.source_fingerprint
-    assert m1.feature_version == "features-011" and m1.n_rows > 0
+    assert m1.feature_version == "features-012" and m1.n_rows > 0
     assert "rel_last3f_avg" in m1.materialized_columns       # as-of col present
     assert "sire_win_rate" in m1.materialized_columns        # Feature 026 pedigree col present
     assert "place_rate" in m1.materialized_columns           # Feature 030 as-of col present

@@ -10,10 +10,12 @@ from horseracing_features.registry import model_input_features
 
 _ROOT = Path(__file__).resolve().parents[3]
 
-# tokens that would signal a display-derived value leaking back into model inputs
+# tokens that would signal a display-derived value leaking back into model inputs.
+# "split_gain" (not bare "gain"): 041 の asof_late_gain_* は過去走の位置ゲイン=ドメイン用語で
+# 040 の表示由来値ではない。importance/contribution 等で 040 リーク面は引き続き担保。
 _FORBIDDEN = (
     "explanation", "contribution", "base_value", "divergence",
-    "importance", "gain", "pred_contrib",
+    "importance", "split_gain", "pred_contrib",
 )
 
 
