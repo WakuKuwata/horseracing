@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import datetime
 
-from horseracing_db.enums import AdoptionStatus, EntryStatus
+from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus
 from horseracing_db.models import (
     ModelVersion,
     PredictionRun,
@@ -87,30 +87,58 @@ def _race_has_win_odds(session: Session, race_id: str) -> bool:
     return row is not None
 
 
+def _has_group(session: Session, run_id, bet_types) -> bool:
+    """Feature 045: does the run already have a recommendation in this bet_type group?"""
+    return session.scalars(
+        select(Recommendation.recommendation_id)
+        .where(Recommendation.prediction_run_id == run_id)
+        .where(Recommendation.bet_type.in_(bet_types))
+    ).first() is not None
+
+
+def _generate_product_set(session: Session, run_id) -> tuple[int, int, list[str]]:
+    """Generate the missing bet_type groups for one run (group-wise idempotent, Feature 045).
+
+    win = 007 EV on real win odds + 016 Kelly sizing; exotic = 016 Kelly set (043). A group that
+    already exists is skipped (no append-only duplication; existing 043 runs get win topped up).
+    Returns (n_win, n_exotic, skipped_group_names).
+    """
+    cfg = KellyConfig()
+    n_win = n_exotic = 0
+    skipped: list[str] = []
+    if _has_group(session, run_id, (BetType.WIN,)):
+        skipped.append("win")
+    else:
+        n_win = len(generate_recommendations(session, prediction_run_id=run_id, cfg=cfg))
+    if _has_group(session, run_id, BetType.EXOTIC):
+        skipped.append("exotic")
+    else:
+        n_exotic = len(generate_kelly_recommendations(session, prediction_run_id=run_id, cfg=cfg))
+    return n_win, n_exotic, skipped
+
+
 def _cmd_recommend_serve(session: Session, args) -> int:
-    """Feature 043: product-flow generation for ONE race. Single coherent set (Kelly EV+stake),
-    active-model run, idempotent. Prints a machine-parseable SKIPPED/OK line the ops runner maps
-    to skipped/succeeded (028-style). Exit non-zero only on genuine failure.
+    """Feature 043/045: product-flow generation for ONE race — win (007+Kelly) + exotic (016),
+    active-model run, group-wise idempotent. Prints a machine-parseable SKIPPED/OK line the ops
+    runner maps to skipped/succeeded (028-style). Exit non-zero only on genuine failure.
     """
     race_id = args.race_id
     run_id = _resolve_active_run(session, race_id)
     if run_id is None:
         print(f"SKIPPED: no prediction_run for race {race_id} (predict first)")
         return 0
-    existing = session.scalars(
-        select(Recommendation.recommendation_id)
-        .where(Recommendation.prediction_run_id == run_id)
-    ).first()
-    if existing is not None:  # idempotent: one set per run, no append-only duplication
-        print(f"SKIPPED: recommendations already exist for run {run_id}")
-        return 0
+    if _has_group(session, run_id, BetType.ALL):
+        # some group exists — top up only the missing groups (045); all present → full skip
+        if (_has_group(session, run_id, (BetType.WIN,))
+                and _has_group(session, run_id, BetType.EXOTIC)):
+            print(f"SKIPPED: recommendations already exist for run {run_id}")
+            return 0
     if not _race_has_win_odds(session, race_id):
         print(f"SKIPPED: no win odds for race {race_id} (recommendations need odds)")
         return 0
-    ids = generate_kelly_recommendations(
-        session, prediction_run_id=run_id, cfg=KellyConfig(),
-    )
-    print(f"OK: run={run_id} recommendations={len(ids)}")
+    n_win, n_exotic, skipped = _generate_product_set(session, run_id)
+    note = f" (skipped groups: {','.join(skipped)})" if skipped else ""
+    print(f"OK: run={run_id} win={n_win} exotic={n_exotic}{note}")
     return 0
 
 
@@ -240,34 +268,34 @@ def _cmd_recommend_backfill(session: Session, args) -> int:
         .where(Race.race_date <= args.to)
         .order_by(Race.race_id)
     ).all()
-    counts = {"generated": 0, "skip_no_run": 0, "skip_no_odds": 0, "skip_exists": 0, "error": 0}
+    counts = {"generated": 0, "topped_up": 0, "skip_no_run": 0, "skip_no_odds": 0,
+              "skip_exists": 0, "error": 0}
     for rid in race_ids:
         try:
             run_id = _resolve_active_run(session, rid)
             if run_id is None:
                 counts["skip_no_run"] += 1
                 continue
-            exists = session.scalars(
-                select(Recommendation.recommendation_id)
-                .where(Recommendation.prediction_run_id == run_id)
-            ).first()
-            if exists is not None:
+            has_win = _has_group(session, run_id, (BetType.WIN,))
+            has_exotic = _has_group(session, run_id, BetType.EXOTIC)
+            if has_win and has_exotic:  # group-wise idempotent (045)
                 counts["skip_exists"] += 1
                 continue
             if not _race_has_win_odds(session, rid):
                 counts["skip_no_odds"] += 1
                 continue
-            generate_kelly_recommendations(session, prediction_run_id=run_id, cfg=KellyConfig())
-            counts["generated"] += 1
+            _generate_product_set(session, run_id)
+            # a partial run (043-era exotic-only) counts as a top-up, a bare run as generated
+            counts["topped_up" if (has_win or has_exotic) else "generated"] += 1
         except Exception as exc:  # noqa: BLE001 — one race must not abort the whole backfill
             session.rollback()
             counts["error"] += 1
             print(f"  error {rid}: {type(exc).__name__}: {exc}")
     total = len(race_ids)
     print(f"recommend-backfill {args.from_}..{args.to}  races={total}")
-    print(f"  generated={counts['generated']} skip_exists={counts['skip_exists']} "
-          f"skip_no_run={counts['skip_no_run']} skip_no_odds={counts['skip_no_odds']} "
-          f"error={counts['error']}")
+    print(f"  generated={counts['generated']} topped_up={counts['topped_up']} "
+          f"skip_exists={counts['skip_exists']} skip_no_run={counts['skip_no_run']} "
+          f"skip_no_odds={counts['skip_no_odds']} error={counts['error']}")
     assert sum(counts.values()) == total, "count reconciliation failed"
     return 0
 

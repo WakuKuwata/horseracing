@@ -35,16 +35,17 @@ def test_recommendations_double_pseudo_and_read_only(client, session):
     assert after == before  # GET performed NO write (read-only)
 
 
-def test_win_recommendations_excluded(client, session):
+def test_win_recommendations_included_normalised(client, session):
+    # Feature 045: win rows are INCLUDED (real win odds), dict selection → [horse_number].
     seed_model(session)
     run = seed_race(session, race_id=_RACE, horses=_HORSES)
-    # a win recommendation has a dict selection — must be excluded from this endpoint
     session.add(Recommendation(prediction_run_id=run, race_id=_RACE, bet_type=BetType.WIN,
                                selection={"horse_id": "H1", "horse_number": 1},
                                is_estimated_odds=False, logic_version="win-lv"))
     session.commit()
-    body = client.get(f"/api/v1/races/{_RACE}/recommendations").json()
-    assert body["items"] == []  # win excluded (exotic-only)
+    items = client.get(f"/api/v1/races/{_RACE}/recommendations").json()["items"]
+    assert len(items) == 1
+    assert items[0]["bet_type"] == "win" and items[0]["selection"] == [1]
 
 
 def test_no_recommendations_typed_empty(client, session):

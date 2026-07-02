@@ -28,6 +28,19 @@ def _f(x):
     return float(x) if x is not None else None
 
 
+def _selection_numbers(selection) -> list[int] | None:
+    """Normalise a persisted selection to [horse_number, ...] (Feature 045).
+
+    Exotic rows store a list[int] already. Win rows (007) store a dict
+    {"horse_id", "horse_number"} → [horse_number]; a win row without a horse_number
+    cannot be displayed → None (caller drops it).
+    """
+    if isinstance(selection, dict):
+        n = selection.get("horse_number")
+        return [int(n)] if n is not None else None
+    return [int(i) for i in selection]
+
+
 @router.get("/races/{race_id}/recommendations", response_model=RecommendationResponse,
             tags=["recommendations"])
 def recommendations(race_id: str, session: Session = Depends(get_session)):
@@ -41,10 +54,14 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
     # re-generations and older runs never appear as duplicates. No run → typed-empty.
     run = select_prediction_run(session, race_id)
     run_id = run.prediction_run_id if run is not None else None
-    items = [
-        RecommendationRow(
+    items = []
+    for r in exotic_recommendations(session, race_id, prediction_run_id=run_id):
+        sel = _selection_numbers(r.selection)
+        if sel is None:  # win row without a horse_number — not displayable
+            continue
+        items.append(RecommendationRow(
             recommendation_id=str(r.recommendation_id),
-            bet_type=r.bet_type, selection=[int(i) for i in r.selection],
+            bet_type=r.bet_type, selection=sel,
             stake_fraction=_f(r.stake_fraction),
             market_odds_used=_f(r.market_odds_used),
             estimated_market_odds_used=_f(r.estimated_market_odds_used),
@@ -52,7 +69,5 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
             pseudo_roi=_f(r.pseudo_roi), double_pseudo=bool(r.is_estimated_odds),
             logic_version=r.logic_version, computed_at=r.computed_at,
             prediction_run_id=str(r.prediction_run_id),
-        )
-        for r in exotic_recommendations(session, race_id, prediction_run_id=run_id)
-    ]
+        ))
     return RecommendationResponse(race_id=race_id, items=items)

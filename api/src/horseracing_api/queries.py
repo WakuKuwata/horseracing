@@ -195,10 +195,12 @@ def real_exotic_odds(session: Session, race_id: str) -> list[ExoticOdds]:
 def exotic_recommendations(
     session: Session, race_id: str, *, prediction_run_id=None
 ) -> list[Recommendation]:
-    """Persisted exotic recommendations (win recs have a dict selection — excluded).
+    """Persisted recommendations for the run — ALL bet types incl. win (Feature 045).
 
     Feature 043: scoped to a single prediction_run so append-only re-generations / older runs
     are NOT mixed into the display. ``prediction_run_id=None`` (no run for the race) → empty.
+    Feature 045: win rows (real win odds; dict selection in the DB) are now included — the
+    router normalises their selection to [horse_number] so one list[int] contract serves all.
     """
     if prediction_run_id is None:
         return []
@@ -207,7 +209,7 @@ def exotic_recommendations(
             select(Recommendation)
             .where(Recommendation.race_id == race_id)
             .where(Recommendation.prediction_run_id == prediction_run_id)
-            .where(Recommendation.bet_type.in_(BetType.EXOTIC))
+            .where(Recommendation.bet_type.in_(BetType.ALL))
             .order_by(Recommendation.bet_type, Recommendation.computed_at.desc())
         )
     )
