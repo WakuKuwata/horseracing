@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw";
 
 import type {
   CalibrationResponse,
+  ImportanceResponse,
   OddsResponse,
   PredictionResponse,
   RaceDetail,
@@ -49,9 +50,19 @@ export const predictionResponse: PredictionResponse = {
   race_id: "200806010111",
   horses: [
     { horse_id: "h1", horse_number: 1, win: 0.32, top2: 0.55, top3: 0.7,
-      market_win_prob: 0.3, prior_starts_band: "many" },
+      market_win_prob: 0.3, prior_starts_band: "many",
+      divergence: "model_higher",
+      explanation: {
+        method: "lgbm_pred_contrib", method_version: 1, k: 2,
+        base_value: -3.0, score: -2.4, other_contribution: 0.1,
+        items: [
+          { feature: "te_jockey_id", value: 0.08, contribution: 0.5 },
+          { feature: "rel_time_avg", value: -0.3, contribution: -0.2 },
+        ],
+      } },
     { horse_id: "h2", horse_number: 2, win: 0.18, top2: 0.4, top3: 0.58,
-      market_win_prob: 0.2, prior_starts_band: "few" },
+      market_win_prob: 0.2, prior_starts_band: "few",
+      divergence: null, explanation: null },
   ],
   joint: null,
   joint_bet_type: null,
@@ -132,6 +143,16 @@ export const calibrationResponse: CalibrationResponse = {
   ],
 };
 
+export const importanceResponse: ImportanceResponse = {
+  model_version: "lgbm-006",
+  type: "gain",
+  values: [
+    { feature: "rel_time_avg", gain: 250.0 },
+    { feature: "te_jockey_id", gain: 120.0 },
+    { feature: "venue_code", gain: 40.0 },
+  ],
+};
+
 /** Default happy-path handlers; tests override individually with server.use(). */
 export const happyHandlers = [
   http.get(`${BASE}/races`, () => HttpResponse.json(racePage)),
@@ -143,6 +164,7 @@ export const happyHandlers = [
   http.get(`${BASE}/races/:id/odds`, () => HttpResponse.json(oddsResponse)),
   http.get(`${BASE}/races/:id/recommendations`, () => HttpResponse.json(recommendationResponse)),
   http.get(`${BASE}/models/:mv/calibration`, () => HttpResponse.json(calibrationResponse)),
+  http.get(`${BASE}/models/:mv/importance`, () => HttpResponse.json(importanceResponse)),
 ];
 
 export { http, HttpResponse };

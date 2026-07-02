@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { usePredictions, useRace } from "../api/queries";
 import { CalibrationChart } from "../components/CalibrationChart";
+import { ImportanceChart } from "../components/ImportanceChart";
 import { JointPanel } from "../components/JointPanel";
 import { OddsPanel } from "../components/OddsPanel";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
@@ -67,9 +68,14 @@ export function RaceDetailPage() {
           {(r) => (
             <>
               {predQuery.data?.run && <RunAuditView run={predQuery.data.run} />}
-              <HorseEntriesTable entries={r.horses} predictions={predQuery.data?.horses ?? []} />
+              <HorseEntriesTable
+                entries={r.horses}
+                predictions={predQuery.data?.horses ?? []}
+                oddsAsOf={predQuery.data?.odds_as_of}
+              />
               <p className="table-hint">
-                列見出しをクリックで並び替え（勝率p＝モデル予測 / 市場q＝オッズ由来・疑似）
+                列見出しをクリックで並び替え（勝率p＝モデル予測 / 市場q＝オッズ由来・疑似）。
+                「スコア寄与」でモデルの判断要因を表示。
               </p>
             </>
           )}
@@ -91,6 +97,7 @@ export function RaceDetailPage() {
       </div>
 
       <CalibrationChart modelVersion={predQuery.data?.run?.model_version} />
+      <ImportanceChart modelVersion={predQuery.data?.run?.model_version} />
 
       <JointPanel raceId={raceId} />
       <OddsPanel raceId={raceId} />

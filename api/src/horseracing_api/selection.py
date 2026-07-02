@@ -69,3 +69,25 @@ def market_win_probs(
     q = {int(k): float(v) for k, v in q.items()}
     consistent = bool(p_numbers) and set(q.keys()) == p_numbers
     return q, consistent
+
+
+# Feature 040 US3: pre-registered divergence bands (FR-011). p, q are same-canonical-field win
+# probs. RELATIVE floor max(0.03, 0.5*q) avoids badge spam where q is tiny. Boundaries (equality)
+# fall into "similar". NEUTRAL FACTUAL only — no buy/sell/危険/妙味 semantics, no sorting.
+DIVERGENCE_ABS_FLOOR = 0.03
+DIVERGENCE_REL_FRAC = 0.5
+
+
+def divergence_band(p: float | None, q: float | None) -> str | None:
+    """Neutral model-vs-market band, or None (suppressed) when p or q is missing.
+
+    Callers additionally suppress (pass q=None) when canonical_consistent is false.
+    """
+    if p is None or q is None:
+        return None
+    margin = max(DIVERGENCE_ABS_FLOOR, DIVERGENCE_REL_FRAC * q)
+    if p < q - margin:
+        return "market_higher"  # 市場評価がモデルより高い
+    if p > q + margin:
+        return "model_higher"   # モデル評価が市場より高い
+    return "similar"

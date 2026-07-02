@@ -60,7 +60,7 @@ def summarize_divergence(
 
 
 def _race_field(session: Session, model, race_id: str, feature_rows):
-    preds, _ = predict_race(model, race_id, feature_rows)
+    preds, _, _ = predict_race(model, race_id, feature_rows)
     if not preds:
         return None
     predictions: dict[int, float | None] = {}

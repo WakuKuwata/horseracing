@@ -34,7 +34,7 @@ from .exotic_types import (
 
 
 def _field_and_outcome(session: Session, model, race_id: str, feature_rows):
-    preds, _ = predict_race(model, race_id, feature_rows)
+    preds, _, _ = predict_race(model, race_id, feature_rows)
     if not preds:
         return None, None
     predictions: dict[int, float | None] = {}

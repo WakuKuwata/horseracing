@@ -5,6 +5,7 @@ import type {
   CalibrationResponse,
   HorseHistoryPage,
   HorseProfile,
+  ImportanceResponse,
   JockeyHistoryPage,
   JockeyProfile,
   OddsResponse,
@@ -99,6 +100,24 @@ export function useCalibration(modelVersion: string | undefined, label = "win") 
       unwrap(
         await api.GET("/api/v1/models/{model_version}/calibration", {
           params: { path: { model_version: modelVersion as string }, query: { label } },
+        }),
+      ),
+  });
+}
+
+export function useImportance(modelVersion: string | undefined) {
+  // Feature 040 US2: read-only split-gain (gain) importance for a model_version. Disabled until
+  // the model_version is known (it comes from the predictions run audit).
+  return useQuery<ImportanceResponse, ErrorInfo>({
+    queryKey: ["importance", modelVersion],
+    enabled: !!modelVersion,
+    // A typed 404 (importance_unavailable) is deterministic — retrying won't make it appear, and
+    // retry backoff would leave the panel stuck on "loading". Settle immediately to the state.
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/models/{model_version}/importance", {
+          params: { path: { model_version: modelVersion as string } },
         }),
       ),
   });

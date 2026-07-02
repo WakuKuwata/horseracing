@@ -25,3 +25,8 @@ export type HorseHistoryPage = S["Page_HorseHistoryRow_"];
 export type JockeyProfile = S["JockeyProfile"];
 export type JockeyHistoryRow = S["JockeyHistoryRow"];
 export type JockeyHistoryPage = S["Page_JockeyHistoryRow_"];
+// Feature 040: prediction explanation, importance, divergence
+export type Explanation = S["Explanation"];
+export type ExplanationItem = S["ExplanationItem"];
+export type ImportanceResponse = S["ImportanceResponse"];
+export type ImportanceValue = S["ImportanceValue"];

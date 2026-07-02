@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 import { Link } from "react-router-dom";
 
 import type { HorseEntry, HorsePrediction } from "../api/types";
 import { formatNum, formatPct, PLACEHOLDER } from "../lib/format";
+import { DivergenceBadge } from "./DivergenceBadge";
+import { ExplanationPanel } from "./ExplanationPanel";
 
 // Feature 029: link a name to its profile when an id is present. `nk:` surrogates DO resolve to a
 // profile (the surrogate horse/jockey exists in the DB with its scraped identity + accumulated
@@ -12,7 +14,10 @@ function isLinkable(id: string | null | undefined): id is string {
   return !!id;
 }
 
-type Pred = Pick<HorsePrediction, "win" | "top2" | "top3" | "market_win_prob">;
+type Pred = Pick<
+  HorsePrediction,
+  "win" | "top2" | "top3" | "market_win_prob" | "explanation" | "divergence"
+>;
 
 type ColKey =
   | "frame"
@@ -48,12 +53,24 @@ function value(row: Row, key: ColKey): number | string | null | undefined {
 export function HorseEntriesTable({
   entries,
   predictions,
+  oddsAsOf,
 }: {
   entries: HorseEntry[];
   predictions: HorsePrediction[];
+  oddsAsOf?: string | null;
 }) {
   const [sortKey, setSortKey] = useState<ColKey>("horse_number");
   const [asc, setAsc] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const rows: Row[] = useMemo(() => {
     const byId = new Map(predictions.map((p) => [p.horse_id, p]));
@@ -96,14 +113,18 @@ export function HorseEntriesTable({
               {sortKey === c.key ? (asc ? " ▲" : " ▼") : ""}
             </th>
           ))}
+          <th>市場との差</th>
           <th>状態</th>
+          <th>スコア寄与</th>
         </tr>
       </thead>
       <tbody>
         {sorted.map((r) => {
           const cancelled = r.entry_status !== "started";
+          const isOpen = expanded.has(r.horse_id);
           return (
-            <tr key={r.horse_id} className={cancelled ? "entry--cancelled" : ""}>
+            <Fragment key={r.horse_id}>
+            <tr className={cancelled ? "entry--cancelled" : ""}>
               <td>
                 <span className="umaban-cell">
                   <span className={`waku waku-${r.frame ?? 0}`}>{r.frame ?? PLACEHOLDER}</span>
@@ -152,8 +173,29 @@ export function HorseEntriesTable({
               </td>
               <td className="num">{formatPct(r.pred?.win)}</td>
               <td className="num">{formatPct(r.pred?.market_win_prob)}</td>
+              <td>
+                <DivergenceBadge divergence={r.pred?.divergence} oddsAsOf={oddsAsOf} />
+              </td>
               <td>{cancelled ? r.entry_status : ""}</td>
+              <td>
+                <button
+                  type="button"
+                  className="link-button"
+                  aria-expanded={isOpen}
+                  onClick={() => toggleExpand(r.horse_id)}
+                >
+                  {isOpen ? "閉じる" : "スコア寄与"}
+                </button>
+              </td>
             </tr>
+            {isOpen && (
+              <tr className="explanation-row">
+                <td colSpan={COLUMNS.length + 3}>
+                  <ExplanationPanel explanation={r.pred?.explanation} />
+                </td>
+              </tr>
+            )}
+            </Fragment>
           );
         })}
       </tbody>

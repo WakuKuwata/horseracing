@@ -190,6 +190,85 @@
         "title": "EstimatedOddsRow",
         "type": "object"
       },
+      "Explanation": {
+        "description": "Feature 040: display-only score-contribution explanation (persisted, read as-is).\n\nContributions decompose the RAW booster margin (before race-softmax / isotonic / 009), NOT the\nfinal probability. The front frames this as \"score contribution\" with limitation notes.",
+        "properties": {
+          "base_value": {
+            "title": "Base Value",
+            "type": "number"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExplanationItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "k": {
+            "title": "K",
+            "type": "integer"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "method_version": {
+            "title": "Method Version",
+            "type": "integer"
+          },
+          "other_contribution": {
+            "title": "Other Contribution",
+            "type": "number"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "method",
+          "method_version",
+          "k",
+          "base_value",
+          "score",
+          "other_contribution",
+          "items"
+        ],
+        "title": "Explanation",
+        "type": "object"
+      },
+      "ExplanationItem": {
+        "properties": {
+          "contribution": {
+            "title": "Contribution",
+            "type": "number"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "feature",
+          "contribution"
+        ],
+        "title": "ExplanationItem",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -556,6 +635,32 @@
       },
       "HorsePrediction": {
         "properties": {
+          "divergence": {
+            "anyOf": [
+              {
+                "enum": [
+                  "market_higher",
+                  "model_higher",
+                  "similar"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Divergence"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Explanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "horse_id": {
             "title": "Horse Id",
             "type": "string"
@@ -790,6 +895,51 @@
           "horse_id"
         ],
         "title": "HorseProfile",
+        "type": "object"
+      },
+      "ImportanceResponse": {
+        "description": "Feature 040 US2: split-gain feature importance (display-only, read from metrics_summary).\n\n``type`` is \"gain\" — split-gain importance, biased toward high-gain-split features. The front\nlabels it narrowly (\"分割利得(gain)重要度\"), not general feature importance.",
+        "properties": {
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "type": {
+            "default": "gain",
+            "title": "Type",
+            "type": "string"
+          },
+          "values": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportanceValue"
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model_version"
+        ],
+        "title": "ImportanceResponse",
+        "type": "object"
+      },
+      "ImportanceValue": {
+        "properties": {
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "gain": {
+            "title": "Gain",
+            "type": "number"
+          }
+        },
+        "required": [
+          "feature",
+          "gain"
+        ],
+        "title": "ImportanceValue",
         "type": "object"
       },
       "JockeyHistoryRow": {
@@ -2100,6 +2250,48 @@
         "summary": "Calibration",
         "tags": [
           "calibration"
+        ]
+      }
+    },
+    "/api/v1/models/{model_version}/importance": {
+      "get": {
+        "operationId": "importance_api_v1_models__model_version__importance_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_version",
+            "required": true,
+            "schema": {
+              "title": "Model Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Importance",
+        "tags": [
+          "importance"
         ]
       }
     },

@@ -122,3 +122,15 @@ class WinModel:
             return out
         proba = self.booster_.predict_proba(X[self.feature_cols_])
         return np.asarray(proba[:, 1], dtype=float)
+
+    def gain_importance(self) -> dict[str, float] | None:
+        """Feature 040: {feature -> gain} split-gain importance, or None if degenerate.
+
+        Handles both booster types: LGBMClassifier (binary, via .booster_) and the raw
+        lgb.Booster (cond_logit). Keyed by feature_cols_ (includes TE columns).
+        """
+        if self.booster_ is None or self.feature_cols_ is None:
+            return None
+        raw = getattr(self.booster_, "booster_", self.booster_)  # unwrap sklearn wrapper
+        gains = raw.feature_importance(importance_type="gain")
+        return {f: float(g) for f, g in zip(self.feature_cols_, gains, strict=True)}

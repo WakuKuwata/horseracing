@@ -144,6 +144,28 @@ class RunAudit(BaseModel):
     computed_at: datetime.datetime
 
 
+class ExplanationItem(BaseModel):
+    feature: str
+    value: float | str | None = None
+    contribution: float
+
+
+class Explanation(BaseModel):
+    """Feature 040: display-only score-contribution explanation (persisted, read as-is).
+
+    Contributions decompose the RAW booster margin (before race-softmax / isotonic / 009), NOT the
+    final probability. The front frames this as "score contribution" with limitation notes.
+    """
+
+    method: str
+    method_version: int
+    k: int
+    base_value: float
+    score: float
+    other_contribution: float
+    items: list[ExplanationItem]
+
+
 class HorsePrediction(BaseModel):
     horse_number: int | None = None
     horse_id: str
@@ -159,6 +181,11 @@ class HorsePrediction(BaseModel):
     # reliable", so this ships ONLY as a factual history-volume hint (NOT a confidence/calibration
     # signal): no weak/strong wording, no colour, no sorting. Null if absent.
     prior_starts_band: Literal["few", "some", "many"] | None = None
+    # Feature 040 US1: persisted score-contribution explanation (read as-is). Null = 未提供.
+    explanation: Explanation | None = None
+    # Feature 040 US3: neutral factual model-vs-market divergence band. Null = suppressed
+    # (q missing or canonical_consistent=false). NO buy/sell/危険/妙味 semantics.
+    divergence: Literal["market_higher", "model_higher", "similar"] | None = None
 
 
 class JointEntry(BaseModel):
@@ -260,3 +287,20 @@ class CalibrationResponse(BaseModel):
     n_total: int = 0
     ece: float | None = None
     bins: list[CalibrationBin] = []
+
+
+class ImportanceValue(BaseModel):
+    feature: str
+    gain: float
+
+
+class ImportanceResponse(BaseModel):
+    """Feature 040 US2: split-gain feature importance (display-only, read from metrics_summary).
+
+    ``type`` is "gain" — split-gain importance, biased toward high-gain-split features. The front
+    labels it narrowly ("分割利得(gain)重要度"), not general feature importance.
+    """
+
+    model_version: str
+    type: str = "gain"
+    values: list[ImportanceValue] = []

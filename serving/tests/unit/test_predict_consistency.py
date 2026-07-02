@@ -36,12 +36,12 @@ def _rows(n: int, *, with_nan: bool = False) -> pd.DataFrame:
 
 @pytest.mark.parametrize("n", [2, 3, 5, 8, 16])
 def test_consistency_various_field_sizes(n):
-    preds, _ = predict_race(_model(), _RACE, _rows(n))
+    preds, _, _ = predict_race(_model(), _RACE, _rows(n))
     check_consistency(preds)  # 0<=win<=top2<=top3<=1, Σ within tolerance (target min(k,N))
     assert set(preds) == {f"H{i}" for i in range(n)}  # every started horse predicted
 
 
 def test_nan_feature_snapshot_is_none_not_zero():
-    _, snaps = predict_race(_model(), _RACE, _rows(5, with_nan=True))
+    _, snaps, _ = predict_race(_model(), _RACE, _rows(5, with_nan=True))
     assert snaps["H0"]["age"] is None  # debut/missing stays Unknown, not 0
     assert "_raw_win" in snaps["H0"] and "_calibrated_win" in snaps["H0"]

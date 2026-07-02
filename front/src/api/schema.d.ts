@@ -112,6 +112,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models/{model_version}/importance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Importance */
+        get: operations["importance_api_v1_models__model_version__importance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/races": {
         parameters: {
             query?: never;
@@ -293,6 +310,38 @@ export interface components {
             /** Selection */
             selection: number[];
         };
+        /**
+         * Explanation
+         * @description Feature 040: display-only score-contribution explanation (persisted, read as-is).
+         *
+         *     Contributions decompose the RAW booster margin (before race-softmax / isotonic / 009), NOT the
+         *     final probability. The front frames this as "score contribution" with limitation notes.
+         */
+        Explanation: {
+            /** Base Value */
+            base_value: number;
+            /** Items */
+            items: components["schemas"]["ExplanationItem"][];
+            /** K */
+            k: number;
+            /** Method */
+            method: string;
+            /** Method Version */
+            method_version: number;
+            /** Other Contribution */
+            other_contribution: number;
+            /** Score */
+            score: number;
+        };
+        /** ExplanationItem */
+        ExplanationItem: {
+            /** Contribution */
+            contribution: number;
+            /** Feature */
+            feature: string;
+            /** Value */
+            value?: number | string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -370,6 +419,9 @@ export interface components {
         };
         /** HorsePrediction */
         HorsePrediction: {
+            /** Divergence */
+            divergence?: ("market_higher" | "model_higher" | "similar") | null;
+            explanation?: components["schemas"]["Explanation"] | null;
             /** Horse Id */
             horse_id: string;
             /** Horse Number */
@@ -431,6 +483,34 @@ export interface components {
              * @default 0
              */
             wins: number;
+        };
+        /**
+         * ImportanceResponse
+         * @description Feature 040 US2: split-gain feature importance (display-only, read from metrics_summary).
+         *
+         *     ``type`` is "gain" — split-gain importance, biased toward high-gain-split features. The front
+         *     labels it narrowly ("分割利得(gain)重要度"), not general feature importance.
+         */
+        ImportanceResponse: {
+            /** Model Version */
+            model_version: string;
+            /**
+             * Type
+             * @default gain
+             */
+            type: string;
+            /**
+             * Values
+             * @default []
+             */
+            values: components["schemas"]["ImportanceValue"][];
+        };
+        /** ImportanceValue */
+        ImportanceValue: {
+            /** Feature */
+            feature: string;
+            /** Gain */
+            gain: number;
         };
         /** JockeyHistoryRow */
         JockeyHistoryRow: {
@@ -953,6 +1033,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CalibrationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    importance_api_v1_models__model_version__importance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportanceResponse"];
                 };
             };
             /** @description Validation Error */

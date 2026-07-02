@@ -36,6 +36,7 @@ def persist_run(
     feature_version: str,
     predictions: dict[str, Prediction],
     snapshots: dict[str, dict],
+    explanations: dict[str, dict | None] | None = None,
 ) -> uuid.UUID:
     run = PredictionRun(
         race_id=race_id, model_version=model_version, logic_version=logic_version
@@ -44,12 +45,14 @@ def persist_run(
     session.flush()  # populate prediction_run_id (server_default gen_random_uuid) before children
     run_id = run.prediction_run_id
 
+    exps = explanations or {}
     for horse_id, pred in predictions.items():
         win, top2, top3 = _monotone(pred)
         session.add(
             RacePrediction(
                 prediction_run_id=run_id, horse_id=horse_id,
                 win_prob=_dec(win), top2_prob=_dec(top2), top3_prob=_dec(top3),
+                explanation=exps.get(horse_id),  # Feature 040; None -> NULL (未提供)
             )
         )
         session.add(

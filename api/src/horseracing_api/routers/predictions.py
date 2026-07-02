@@ -24,8 +24,13 @@ from ..queries import (
     run_predictions,
     win_odds_as_of,
 )
-from ..schemas import HorsePrediction, JointEntry, PredictionResponse, RunAudit
-from ..selection import canonical_win_probs, market_win_probs, select_prediction_run
+from ..schemas import Explanation, HorsePrediction, JointEntry, PredictionResponse, RunAudit
+from ..selection import (
+    canonical_win_probs,
+    divergence_band,
+    market_win_probs,
+    select_prediction_run,
+)
 
 router = APIRouter()
 
@@ -88,19 +93,27 @@ def predictions(
     # US3: leak-safe prior-start count (strictly before this race); absent -> 0 = few.
     backing = prior_start_counts(session, race_id)
 
-    horses = [
-        HorsePrediction(
-            horse_number=n, horse_id=hid,
-            win=(float(w) if w is not None else None),
-            top2=(float(t2) if t2 is not None else None),
-            top3=(float(t3) if t3 is not None else None),
-            market_win_prob=(qmap.get(int(n)) if n is not None else None),
-            prior_starts_band=_prior_starts_band(backing.get(hid, 0)),
+    horses = []
+    for (n, hid, _status, w, t2, t3, exp) in run_predictions(
+        session, run_id=run.prediction_run_id, race_id=race_id
+    ):
+        p_val = float(w) if w is not None else None
+        q_val = qmap.get(int(n)) if n is not None else None
+        # Feature 040 US3: divergence suppressed unless p and q share the canonical field.
+        div = divergence_band(p_val, q_val if canonical_consistent else None)
+        horses.append(
+            HorsePrediction(
+                horse_number=n, horse_id=hid,
+                win=p_val,
+                top2=(float(t2) if t2 is not None else None),
+                top3=(float(t3) if t3 is not None else None),
+                market_win_prob=q_val,
+                prior_starts_band=_prior_starts_band(backing.get(hid, 0)),
+                # Feature 040 US1: persisted explanation read as-is (JSONB dict → typed model).
+                explanation=(Explanation.model_validate(exp) if exp else None),
+                divergence=div,
+            )
         )
-        for (n, hid, _status, w, t2, t3) in run_predictions(
-            session, run_id=run.prediction_run_id, race_id=race_id
-        )
-    ]
     audit = RunAudit(
         prediction_run_id=str(run.prediction_run_id), model_version=run.model_version,
         logic_version=run.logic_version, computed_at=run.computed_at,

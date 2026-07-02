@@ -66,7 +66,7 @@ def run_serving(
     for rid in race_ids:
         if rid not in present:  # no started horses / out of feature scope
             continue
-        predictions, snapshots = predict_race(model, rid, feature_rows)
+        predictions, snapshots, explanations = predict_race(model, rid, feature_rows)
         check_consistency(predictions)  # fail-fast (INV-S2); nothing persisted on violation
         run_id = persist_run(
             session,
@@ -76,6 +76,7 @@ def run_serving(
             feature_version=model.feature_version,
             predictions=predictions,
             snapshots=snapshots,
+            explanations=explanations,  # Feature 040
         )
         results.append(
             ServingResult(

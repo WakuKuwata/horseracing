@@ -58,7 +58,7 @@ def _race_outcomes(session: Session, model, start_date, end_date) -> list[RaceOu
     for (race_id,) in races:
         if race_id not in present:
             continue
-        preds, _ = predict_race(model, race_id, feature_rows)
+        preds, _, _ = predict_race(model, race_id, feature_rows)
         if not preds:
             continue
         rhs = session.scalars(select(RaceHorse).where(RaceHorse.race_id == race_id)).all()

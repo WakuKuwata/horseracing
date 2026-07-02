@@ -77,7 +77,7 @@ class _PlacedBet:
 
 
 def _field_and_outcome(session, model, race_id, feature_rows):
-    preds, _ = predict_race(model, race_id, feature_rows)
+    preds, _, _ = predict_race(model, race_id, feature_rows)
     if not preds:
         return None, None
     predictions: dict[int, float | None] = {}

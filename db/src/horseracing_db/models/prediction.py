@@ -81,6 +81,9 @@ class RacePrediction(TimestampMixin, Base):
     win_prob: Mapped[Decimal | None] = mapped_column(Numeric)
     top2_prob: Mapped[Decimal | None] = mapped_column(Numeric)
     top3_prob: Mapped[Decimal | None] = mapped_column(Numeric)
+    # Feature 040: display-only score-contribution explanation (TreeSHAP top-K + audit).
+    # NULL = 未提供 (old runs / degenerate model). NEVER a model feature (leak boundary II).
+    explanation: Mapped[dict | None] = mapped_column(JSONB)
 
 
 class FeatureSnapshot(TimestampMixin, Base):

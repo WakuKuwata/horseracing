@@ -56,6 +56,6 @@ def test_binary_raw_predict_unchanged():
 
 def test_cond_logit_predict_race_consistent():
     m = _model([1.5, 0.5, -0.5, 0.0, 0.2], "cond_logit")
-    preds, _ = predict_race(m, _RACE, _rows(5))
+    preds, _, _ = predict_race(m, _RACE, _rows(5))
     check_consistency(preds)
     assert abs(sum(p.win for p in preds.values()) - 1.0) < 1e-9

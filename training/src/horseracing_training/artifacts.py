@@ -126,6 +126,12 @@ def save_model_version(
 
     # 2. metrics_summary (eval shape + training meta) -> DB
     summary = eval_result.to_summary()
+    # Feature 040 US2: split-gain feature importance for display (/models/{mv}/importance).
+    # Absent (key omitted) for degenerate models -> API returns typed 404 importance_unavailable.
+    if predictor.win_model_ is not None:
+        gain = predictor.win_model_.gain_importance()
+        if gain is not None:
+            summary["importance"] = {"type": "gain", "values": gain}
     summary["training"] = {
         "model_family": MODEL_FAMILY,
         "objective": info.get("objective", "binary"),  # Feature 039

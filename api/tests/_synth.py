@@ -57,6 +57,7 @@ def seed_race(
                 prediction_run_id=run.prediction_run_id, horse_id=f"H{n}",
                 win_prob=Decimal(str(h["win"])), top2_prob=Decimal(str(h.get("top2", h["win"]))),
                 top3_prob=Decimal(str(h.get("top3", h["win"]))),
+                explanation=h.get("explanation"),  # Feature 040: JSONB or None
             ))
         if h.get("finish") is not None and status == EntryStatus.STARTED:
             session.merge(RaceResult(race_id=race_id, horse_id=f"H{n}", finish_order=h["finish"],

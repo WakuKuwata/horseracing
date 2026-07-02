@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from horseracing_eval.predictor import Prediction
 from horseracing_training.calibration import DEFAULT_CLIP
+from horseracing_training.explanation import compute_explanations
 from horseracing_training.predictor import assemble_predictions
 from horseracing_training.target_encoding import apply_encoded_columns
 
@@ -40,7 +41,7 @@ def _jsonable(v):
 
 def predict_race(
     model: ServingModel, race_id: str, feature_rows: pd.DataFrame
-) -> tuple[dict[str, Prediction], dict[str, dict]]:
+) -> tuple[dict[str, Prediction], dict[str, dict], dict[str, dict | None]]:
     rows = feature_rows[feature_rows["race_id"] == race_id].copy()
     if rows.empty:
         raise ValueError(f"no started horses for race {race_id}")
@@ -71,10 +72,19 @@ def predict_race(
     calibrated = np.asarray(model.calibrator.transform(raw), dtype=float)
     predictions = assemble_predictions(started_ids, calibrated, eps=DEFAULT_CLIP)
 
+    # Feature 040: per-horse score-contribution explanation (display-only; NEVER a model feature).
+    # Decomposes the RAW booster margin (before race-softmax/isotonic/009) — additive, top-K.
+    # Degenerate model (no booster) -> all None. Does not touch predictions/snapshots (INV-E2).
+    if model.booster is not None:
+        exp_list = compute_explanations(model.booster, X, model.feature_cols)
+        explanations: dict[str, dict | None] = dict(zip(started_ids, exp_list, strict=True))
+    else:
+        explanations = {hid: None for hid in started_ids}
+
     snapshots: dict[str, dict] = {}
     for i, hid in enumerate(started_ids):
         feat = {c: _jsonable(X.iloc[i][c]) for c in model.feature_cols}
         feat["_raw_win"] = float(raw[i])
         feat["_calibrated_win"] = float(calibrated[i])
         snapshots[hid] = feat
-    return predictions, snapshots
+    return predictions, snapshots, explanations

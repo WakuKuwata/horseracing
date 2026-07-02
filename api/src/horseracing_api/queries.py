@@ -86,11 +86,12 @@ def race_horses(session: Session, race_id: str):
 
 
 def run_predictions(session: Session, *, run_id, race_id: str):
-    """(horse_number, horse_id, entry_status, win, top2, top3) for the run's started horses."""
+    """(horse_number, horse_id, entry_status, win, top2, top3, explanation) — started horses."""
     return session.execute(
         select(
             RaceHorse.horse_number, RaceHorse.horse_id, RaceHorse.entry_status,
             RacePrediction.win_prob, RacePrediction.top2_prob, RacePrediction.top3_prob,
+            RacePrediction.explanation,  # Feature 040 (JSONB or None)
         )
         .join(RacePrediction, RacePrediction.horse_id == RaceHorse.horse_id)
         .where(RaceHorse.race_id == race_id)
