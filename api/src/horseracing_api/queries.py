@@ -192,12 +192,21 @@ def real_exotic_odds(session: Session, race_id: str) -> list[ExoticOdds]:
     )
 
 
-def exotic_recommendations(session: Session, race_id: str) -> list[Recommendation]:
-    """Persisted exotic recommendations only (win recs have a dict selection — excluded)."""
+def exotic_recommendations(
+    session: Session, race_id: str, *, prediction_run_id=None
+) -> list[Recommendation]:
+    """Persisted exotic recommendations (win recs have a dict selection — excluded).
+
+    Feature 043: scoped to a single prediction_run so append-only re-generations / older runs
+    are NOT mixed into the display. ``prediction_run_id=None`` (no run for the race) → empty.
+    """
+    if prediction_run_id is None:
+        return []
     return list(
         session.scalars(
             select(Recommendation)
             .where(Recommendation.race_id == race_id)
+            .where(Recommendation.prediction_run_id == prediction_run_id)
             .where(Recommendation.bet_type.in_(BetType.EXOTIC))
             .order_by(Recommendation.bet_type, Recommendation.computed_at.desc())
         )

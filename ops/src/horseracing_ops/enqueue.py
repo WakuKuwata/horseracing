@@ -16,7 +16,7 @@ from horseracing_db.validation import is_valid_race_id
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from . import JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RACE
+from . import JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RACE, JOB_TYPE_RECOMMEND
 from .config import CONFIG
 
 #: default freshness window — a same-race success within this many seconds is reused (US3/FR-015).
@@ -108,6 +108,36 @@ def enqueue_predict(session: Session, race_id: str) -> tuple[IngestionJob, bool]
     job = IngestionJob(
         source=Source.NETKEIBA, job_type=JOB_TYPE_PREDICT, scope="race", scope_value=race_id,
         status=JobStatus.QUEUED, summary={"kind": "predict", "source": "manual"},
+    )
+    session.add(job)
+    session.flush()
+    return job, False
+
+
+def enqueue_recommend(session: Session, race_id: str) -> tuple[IngestionJob, bool]:
+    """Feature 043: enqueue a recommend job (in-flight-only dedup). (job, reused); caller commits.
+
+    Same shape as enqueue_predict (028): reuse only an ACTIVE (queued/running) recommend job for the
+    race so a double-click can't create two; a completed job is NOT reused. The advisory lock key is
+    `recommend:{race_id}` (distinct from predict/refresh), so the three never block each other. The
+    generation itself is idempotent per prediction_run (betting recommend-serve skips if a set
+    already exists), so re-clicking after completion is safe.
+    """
+    session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
+                    {"k": f"recommend:{race_id}"})
+    active = session.scalars(
+        select(IngestionJob)
+        .where(IngestionJob.job_type == JOB_TYPE_RECOMMEND)
+        .where(IngestionJob.scope_value == race_id)
+        .where(IngestionJob.status.in_(_ACTIVE))
+        .order_by(IngestionJob.created_at.desc())
+    ).first()
+    if active is not None:
+        return active, True
+
+    job = IngestionJob(
+        source=Source.NETKEIBA, job_type=JOB_TYPE_RECOMMEND, scope="race", scope_value=race_id,
+        status=JobStatus.QUEUED, summary={"kind": "recommend", "source": "manual"},
     )
     session.add(job)
     session.flush()

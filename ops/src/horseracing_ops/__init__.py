@@ -14,3 +14,4 @@ API_PREFIX = "/ops/v1"
 JOB_TYPE_RACE = "refresh_race"
 JOB_TYPE_DAY = "refresh_day"
 JOB_TYPE_PREDICT = "predict"  # Feature 028: generate model predictions for a race (via serving)
+JOB_TYPE_RECOMMEND = "recommend"  # Feature 043: generate buy recommendations (via betting CLI)

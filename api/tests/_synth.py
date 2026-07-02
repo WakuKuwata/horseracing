@@ -73,12 +73,13 @@ def add_exotic_odds(session, *, race_id, bet_type, selection, odds, coverage="pa
 
 
 def add_recommendation(session, *, race_id, run_id, bet_type=BetType.EXACTA, selection=(1, 2),
-                       is_estimated=True):
+                       is_estimated=True, stake_fraction=None):
     session.add(Recommendation(
         prediction_run_id=run_id, race_id=race_id, bet_type=bet_type, selection=list(selection),
         market_odds_used=(None if is_estimated else Decimal("12.0")),
         estimated_market_odds_used=(Decimal("9.0") if is_estimated else None),
         is_estimated_odds=is_estimated, pseudo_odds=Decimal("5.0"), pseudo_roi=Decimal("0.5"),
+        stake_fraction=(Decimal(str(stake_fraction)) if stake_fraction is not None else None),
         logic_version="rec-lv",
     ))
     session.commit()

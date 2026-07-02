@@ -203,7 +203,8 @@
                 "enum": [
                   "entries+odds",
                   "results",
-                  "predict"
+                  "predict",
+                  "recommend"
                 ],
                 "type": "string"
               },
@@ -639,6 +640,58 @@
         "summary": "Predict Race",
         "tags": [
           "predict"
+        ]
+      }
+    },
+    "/ops/v1/races/{race_id}/recommend": {
+      "post": {
+        "operationId": "recommend_race_ops_v1_races__race_id__recommend_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Recommend Race",
+        "tags": [
+          "recommend"
         ]
       }
     },

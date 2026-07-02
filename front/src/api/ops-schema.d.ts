@@ -77,6 +77,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ops/v1/races/{race_id}/recommend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recommend Race */
+        post: operations["recommend_race_ops_v1_races__race_id__recommend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ops/v1/races/{race_id}/refresh": {
         parameters: {
             query?: never;
@@ -190,7 +207,7 @@ export interface components {
             /** Job Type */
             job_type: string;
             /** Kind */
-            kind?: ("entries+odds" | "results" | "predict") | null;
+            kind?: ("entries+odds" | "results" | "predict" | "recommend") | null;
             /** Processed Rows */
             processed_rows?: number | null;
             /**
@@ -394,6 +411,46 @@ export interface operations {
         };
     };
     predict_race_ops_v1_races__race_id__predict_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                race_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    recommend_race_ops_v1_races__race_id__recommend_post: {
         parameters: {
             query?: never;
             header?: never;

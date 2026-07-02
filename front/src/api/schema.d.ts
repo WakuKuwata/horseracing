@@ -773,8 +773,12 @@ export interface components {
             pseudo_odds?: number | null;
             /** Pseudo Roi */
             pseudo_roi?: number | null;
+            /** Recommendation Id */
+            recommendation_id: string;
             /** Selection */
             selection: number[];
+            /** Stake Fraction */
+            stake_fraction?: number | null;
         };
         /** RunAudit */
         RunAudit: {

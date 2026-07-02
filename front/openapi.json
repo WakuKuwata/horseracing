@@ -1798,15 +1798,31 @@
             ],
             "title": "Pseudo Roi"
           },
+          "recommendation_id": {
+            "title": "Recommendation Id",
+            "type": "string"
+          },
           "selection": {
             "items": {
               "type": "integer"
             },
             "title": "Selection",
             "type": "array"
+          },
+          "stake_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stake Fraction"
           }
         },
         "required": [
+          "recommendation_id",
           "bet_type",
           "selection",
           "is_estimated_odds",

@@ -21,6 +21,16 @@ describe("RecommendationPanel", () => {
     assertPseudoLabelCoverage(container, ["18.0%", "×4.5", "×12.3"]);
   });
 
+  it("shows Kelly stake_fraction as a labelled (double-pseudo) figure (043)", async () => {
+    server.use(...happyHandlers);
+    const { container } = renderWithProviders(
+      <RecommendationPanel raceId="200806010111" />,
+    );
+    // stake_fraction 0.0123 → 1.23%; estimated row → double-pseudo, must be labelled (never bare)
+    await screen.findByText("1.23%");
+    assertPseudoLabelCoverage(container, ["1.23%"]);
+  });
+
   it("shows the empty state when there are no recommendations", async () => {
     server.use(
       http.get(`${BASE}/races/:id/recommendations`, () =>

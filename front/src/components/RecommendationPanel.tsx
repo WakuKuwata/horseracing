@@ -66,11 +66,12 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
                 <th className="num">使用オッズ</th>
                 <th className="num">疑似オッズ</th>
                 <th className="num">疑似ROI</th>
+                <th className="num">Kelly比率</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={`${r.bet_type}-${formatSelection(r.selection)}-${r.prediction_run_id}`}>
+                <tr key={r.recommendation_id}>
                   <td>{betTypeLabel(r.bet_type)}</td>
                   <td>{formatSelection(r.selection)}</td>
                   <td className="num">
@@ -94,6 +95,17 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
                         ? "—"
                         : `${(r.pseudo_roi * 100).toFixed(1)}%`}
                     </PseudoValue>
+                  </td>
+                  <td className="num">
+                    {/* Feature 043: Kelly effective fraction (016). NULL=flat (no Kelly). Estimated
+                        odds → double-pseudo (same kind as pseudo-ROI) so it's never read as real. */}
+                    {r.stake_fraction === null || r.stake_fraction === undefined ? (
+                      "—"
+                    ) : (
+                      <PseudoValue kind={pseudoRoiKind(r)}>
+                        {`${(r.stake_fraction * 100).toFixed(2)}%`}
+                      </PseudoValue>
+                    )}
                   </td>
                 </tr>
               ))}

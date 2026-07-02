@@ -62,6 +62,15 @@ export async function predictRace(raceId: string): Promise<JobAccepted> {
   );
 }
 
+/** Feature 043: generate buy recommendations for one race (ops write path). */
+export async function recommendRace(raceId: string): Promise<JobAccepted> {
+  return unwrap(
+    await opsApi.POST("/ops/v1/races/{race_id}/recommend", {
+      params: { path: { race_id: raceId } },
+    }),
+  );
+}
+
 /** Poll a refresh job's status. */
 export async function getJob(jobId: string): Promise<Job> {
   return unwrap(

@@ -18,14 +18,14 @@ from horseracing_db.models import IngestionJob
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from . import JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RACE
+from . import JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RACE, JOB_TYPE_RECOMMEND
 from .config import CONFIG
 from .deps import create_ops_engine
-from .runner import make_fetcher, run_day, run_one, run_predict
+from .runner import make_fetcher, run_day, run_one, run_predict, run_recommend
 
 #: job types the worker drains (refresh_day discovers + fans out; refresh_race scrapes; predict runs
-#: the serving model for one race — Feature 028).
-_CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY, JOB_TYPE_PREDICT)
+#: the serving model for one race — Feature 028; recommend generates buy-ups — Feature 043).
+_CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND)
 
 #: a RUNNING job older than this (no progress) is presumed orphaned by a crashed worker.
 STALE_RUNNING_SECONDS = CONFIG.stale_running_seconds
@@ -86,6 +86,8 @@ def _run_claimed(session: Session, job: IngestionJob, *, fetcher=None) -> None:
         runner = run_day
     elif job.job_type == JOB_TYPE_PREDICT:
         runner = run_predict
+    elif job.job_type == JOB_TYPE_RECOMMEND:
+        runner = run_recommend
     else:
         runner = run_one
     try:

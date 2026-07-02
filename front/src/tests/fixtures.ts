@@ -108,8 +108,10 @@ export const recommendationResponse: RecommendationResponse = {
   race_id: "200806010111",
   items: [
     {
+      recommendation_id: "rec-1",
       bet_type: "quinella",
       selection: [1, 2],
+      stake_fraction: 0.0123,
       market_odds_used: null,
       estimated_market_odds_used: 12.3,
       is_estimated_odds: true,

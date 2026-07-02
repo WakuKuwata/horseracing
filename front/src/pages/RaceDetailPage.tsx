@@ -8,6 +8,7 @@ import { OddsPanel } from "../components/OddsPanel";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
 import { PQCompare } from "../components/PQCompare";
 import { PredictButton } from "../components/PredictButton";
+import { RecommendButton } from "../components/RecommendButton";
 import { RecommendationPanel } from "../components/RecommendationPanel";
 import { RefreshButton } from "../components/RefreshButton";
 import { RunAuditView } from "../components/RunAudit";
@@ -29,6 +30,8 @@ export function RaceDetailPage() {
         <RefreshButton raceId={raceId} />
         {/* 028: generate THIS race's model predictions on demand (ops write → 014 refetch). */}
         <PredictButton raceId={raceId} />
+        {/* 043: generate THIS race's buy recommendations on demand (ops write → 014 refetch). */}
+        <RecommendButton raceId={raceId} />
       </div>
 
       <div className="panel">

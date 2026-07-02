@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from ..deps import get_session
 from ..queries import exotic_recommendations, get_race
 from ..schemas import RecommendationResponse, RecommendationRow
+from ..selection import select_prediction_run
 
 router = APIRouter()
 
@@ -36,9 +37,15 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
     if get_race(session, race_id) is None:
         return JSONResponse(status_code=404, content={
             "status": 404, "code": "race_not_found", "detail": f"race {race_id} not found"})
+    # Feature 043: scope to the SAME run the predictions view shows (active→latest), so append-only
+    # re-generations and older runs never appear as duplicates. No run → typed-empty.
+    run = select_prediction_run(session, race_id)
+    run_id = run.prediction_run_id if run is not None else None
     items = [
         RecommendationRow(
+            recommendation_id=str(r.recommendation_id),
             bet_type=r.bet_type, selection=[int(i) for i in r.selection],
+            stake_fraction=_f(r.stake_fraction),
             market_odds_used=_f(r.market_odds_used),
             estimated_market_odds_used=_f(r.estimated_market_odds_used),
             is_estimated_odds=r.is_estimated_odds, pseudo_odds=_f(r.pseudo_odds),
@@ -46,6 +53,6 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
             logic_version=r.logic_version, computed_at=r.computed_at,
             prediction_run_id=str(r.prediction_run_id),
         )
-        for r in exotic_recommendations(session, race_id)
+        for r in exotic_recommendations(session, race_id, prediction_run_id=run_id)
     ]
     return RecommendationResponse(race_id=race_id, items=items)

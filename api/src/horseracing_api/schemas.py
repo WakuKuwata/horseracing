@@ -248,8 +248,10 @@ class OddsResponse(BaseModel):
 
 # --- recommendations (persisted SELECT only, exotic bet types only) ---------
 class RecommendationRow(BaseModel):
+    recommendation_id: str          # Feature 043: stable row id (front list key; dedup-safe)
     bet_type: str
     selection: list[int]
+    stake_fraction: float | None = None   # Feature 043: Kelly effective fraction (016); NULL=flat
     market_odds_used: float | None = None
     estimated_market_odds_used: float | None = None
     is_estimated_odds: bool
