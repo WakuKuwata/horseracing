@@ -71,12 +71,42 @@ def _apply_gamma(p: dict[str, float], gamma: float) -> dict[str, float]:
     return _norm({h: gv / s for h, gv in g.items()})
 
 
+#: Feature 048: pre-registered pivot for the asymmetric two-piece power (specs/048 — FIXED,
+#: never fitted, never tuned after seeing results). Matches the 047 q_band boundary.
+TWO_GAMMA_PIVOT = 0.15
+
+
+def _two_gamma_weight(ph: float, gamma_lo: float, gamma_hi: float, pivot: float) -> float:
+    """Continuous, monotone two-piece power: p^γlo below the pivot, matched at the pivot above."""
+    ph = max(ph, _EPS)
+    if ph <= pivot:
+        return ph ** gamma_lo
+    return (pivot ** (gamma_lo - gamma_hi)) * (ph ** gamma_hi)
+
+
+def _apply_two_gamma(
+    p: dict[str, float], gamma_lo: float, gamma_hi: float, pivot: float = TWO_GAMMA_PIVOT
+) -> dict[str, float]:
+    """Feature 048: asymmetric calibration on the race-normalized vector (017 canonical)."""
+    pn = _norm(p)
+    g = {h: _two_gamma_weight(ph, gamma_lo, gamma_hi, pivot) for h, ph in pn.items()}
+    s = sum(g.values())
+    if s <= 0.0:
+        raise ValueError("Σ two_gamma weight <= 0")
+    return _norm({h: gv / s for h, gv in g.items()})
+
+
 def apply_p_calibrator(p: dict[str, float], calibrator: PCalibrator) -> dict[str, float]:
     """p → p' (race-normalized, engine-consistent). <2 horses returns engine-normalized p."""
     if len(p) < 2:
         return _norm(p) if p else {}
     if calibrator.method == "identity":
         return _norm(p)
+    if calibrator.method == "two_gamma":
+        return _apply_two_gamma(
+            p, float(calibrator.params["gamma_lo"]), float(calibrator.params["gamma_hi"]),
+            float(calibrator.params.get("pivot", TWO_GAMMA_PIVOT)),
+        )
     if calibrator.method != "power":
         raise NotImplementedError(f"method '{calibrator.method}' not implemented (power/identity)")
     return _apply_gamma(p, float(calibrator.params["gamma"]))
@@ -111,6 +141,41 @@ def fit_power_gamma(samples) -> tuple[float, int]:
     return gamma, len(races)
 
 
+def _nll_two_gamma(gamma_lo: float, gamma_hi: float, races, pivot: float) -> float:
+    total = 0.0
+    for p, winner in races:
+        w = {h: _two_gamma_weight(ph, gamma_lo, gamma_hi, pivot) for h, ph in p.items()}
+        denom = sum(w.values())
+        total += -math.log(max(w[winner] / denom, _EPS))
+    return total
+
+
+def fit_two_gamma(samples, *, pivot: float = TWO_GAMMA_PIVOT) -> tuple[float, float, int]:
+    """Feature 048: fit (γlo, γhi) by winner-NLL on the normalized vector (train window only).
+
+    Deterministic: coarse grid over [GAMMA_MIN, GAMMA_MAX]² then two rounds of coordinate-wise
+    golden refinement. The pivot is PRE-REGISTERED (specs/048), never fitted.
+    """
+    races = _informative(samples)
+    if not races:
+        return 1.0, 1.0, 0
+    grid = [GAMMA_MIN + i * (GAMMA_MAX - GAMMA_MIN) / 8 for i in range(9)]
+    best = (1.0, 1.0)
+    best_nll = _nll_two_gamma(1.0, 1.0, races, pivot)
+    for glo in grid:
+        for ghi in grid:
+            nll = _nll_two_gamma(glo, ghi, races, pivot)
+            if nll < best_nll - 1e-12:
+                best, best_nll = (glo, ghi), nll
+    glo, ghi = best
+    for _ in range(2):  # coordinate-wise golden refinement (deterministic)
+        glo = _golden_min(
+            lambda g, _hi=ghi: _nll_two_gamma(g, _hi, races, pivot), GAMMA_MIN, GAMMA_MAX)
+        ghi = _golden_min(
+            lambda g, _lo=glo: _nll_two_gamma(_lo, g, races, pivot), GAMMA_MIN, GAMMA_MAX)
+    return glo, ghi, len(races)
+
+
 def fit_p_calibrator(
     samples: list[tuple[dict[str, float], str | None]],
     *,
@@ -127,24 +192,37 @@ def fit_p_calibrator(
     Method/hyperparameter selection happens INSIDE the training window only (no selection leak).
     Insufficient data (min_races / min_wins / no informative races) → identity (γ=1) fallback.
     """
-    if method not in ("power", "identity"):
-        raise NotImplementedError(f"method '{method}' not implemented (power/identity in MVP)")
-    gamma, n_info = fit_power_gamma(samples) if method == "power" else (1.0, 0)
+    if method not in ("power", "identity", "two_gamma"):
+        raise NotImplementedError(
+            f"method '{method}' not implemented (power/identity/two_gamma)")
+    if method == "two_gamma":
+        glo, ghi, n_info = fit_two_gamma(samples)
+        params = {"gamma_lo": glo, "gamma_hi": ghi, "pivot": TWO_GAMMA_PIVOT}
+    else:
+        gamma, n_info = fit_power_gamma(samples) if method == "power" else (1.0, 0)
+        params = {"gamma": gamma}
     # prob_range over non-empty races only (races without predictions contribute nothing).
     ps = [ph for p, _ in samples if len(p) >= 2 for ph in _norm(p).values()]
     prob_range = (min(ps), max(ps)) if ps else (0.0, 1.0)
     sufficient = (
-        method == "power" and len(samples) >= min_races and n_info >= min_wins and n_info >= 1
+        method != "identity" and len(samples) >= min_races and n_info >= min_wins and n_info >= 1
     )
-    eff_method = "power" if sufficient else "identity"
-    eff_gamma = gamma if sufficient else 1.0
+    eff_method = method if sufficient else "identity"
+    if not sufficient:
+        params = {"gamma": 1.0}
+    # lv: power/identity keep the pre-048 byte format; two_gamma gets its own descriptor.
+    if eff_method == "two_gamma":
+        desc = (f"pcal=two_gamma;gamma_lo={params['gamma_lo']:.5f};"
+                f"gamma_hi={params['gamma_hi']:.5f};pivot={TWO_GAMMA_PIVOT}")
+    else:
+        desc = f"pcal={eff_method}(p^gamma);gamma={params['gamma']:.5f}"
     logic_version = (
-        f"pcal={eff_method}(p^gamma);gamma={eff_gamma:.5f};select={select};"
+        f"{desc};select={select};"
         f"window={train_window};n_races={len(samples)};n_info={n_info};"
         f"base_mv={base_model_version};v={version}"
     )
     return PCalibrator(
-        method=eff_method, params={"gamma": eff_gamma}, train_window=train_window,
+        method=eff_method, params=params, train_window=train_window,
         n_races=len(samples), n_samples=n_info, prob_range=prob_range, select=select,
         base_model_version=base_model_version, logic_version=logic_version, sufficient=sufficient,
     )

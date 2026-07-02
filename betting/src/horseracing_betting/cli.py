@@ -97,12 +97,15 @@ def _has_group(session: Session, run_id, bet_types) -> bool:
 
 
 def _fit_product_p_calibrator(session: Session, *, before_date, target_race_id: str):
-    """Feature 046: walk-forward model-p calibrator for the product path (017 machinery).
+    """Feature 046/048: walk-forward model-p calibrator for the product path (017 machinery).
 
-    Fits γ (winner-NLL MLE) on persisted predictions × winners STRICTLY before the target race
-    (race_before date+id tie-break). Insufficient data (min_races/min_wins, 017 defaults) →
-    identity fallback — the calibrated path then equals the raw path. The sample scan is bounded
-    to the era that actually has prediction_runs (cheap; avoids a 2007+ full-table walk).
+    Fits the calibrator on persisted predictions × winners STRICTLY before the target race
+    (race_before date+id tie-break). Feature 048: method=two_gamma (asymmetric two-piece power,
+    pivot=0.15 pre-registered) — adopted over uniform power on the pre-registered A/B
+    (eval NLL 2.2194→2.1954, joint exacta+trifecta not_degraded=True). Insufficient data
+    (min_races/min_wins, 017 defaults) → identity fallback — the calibrated path then equals
+    the raw path. The sample scan is bounded to the era that actually has prediction_runs
+    (cheap; avoids a 2007+ full-table walk).
     """
     from horseracing_db.models import PredictionRun, Race
     from horseracing_probability.model_calibration import (
@@ -120,7 +123,9 @@ def _fit_product_p_calibrator(session: Session, *, before_date, target_race_id: 
         return fit_p_calibrator([], base_model_version=None)
     samples = load_p_samples(session, date_from=first, date_to=before_date)
     train = split_before(samples, before_date, target_race_id)
-    return fit_p_calibrator([(p, w) for (_rid, _d, p, w, _dh) in train])
+    return fit_p_calibrator(
+        [(p, w) for (_rid, _d, p, w, _dh) in train], method="two_gamma"
+    )
 
 
 def _generate_product_set(

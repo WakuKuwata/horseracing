@@ -150,8 +150,10 @@ def _cmd_calibrate_eval(session: Session, args) -> int:
         min_races=args.min_races, min_wins=args.min_wins, train_frac=args.train_frac,
         base_model_version=args.model_version,
     )
-    print(f"calibrate-eval method={cal.method}  [model p→p'; compare=power vs identity]")
-    print(f"  gamma={cal.params.get('gamma'):.5f}  sufficient={cal.sufficient}  "
+    print(f"calibrate-eval method={cal.method}  [model p→p'; compare vs raw p]")
+    params = ";".join(f"{k}={v:.5f}" if isinstance(v, float) else f"{k}={v}"
+                      for k, v in sorted(cal.params.items()))
+    print(f"  params[{params}]  sufficient={cal.sufficient}  "
           f"n_train={cal.n_races} n_info={cal.n_samples}")
     print(f"  eval n_races={rep.n_races} dead_heat_excluded={rep.n_dead_heat_excluded}")
     print(f"  {'metric':<14}{'raw p':>12}{'cal p_prime':>14}")
