@@ -19,7 +19,7 @@ head 0006）。確認済み: `registry.FeatureMeta`=feature spec table、`histor
 ## Phase 1: Setup（registry group・版・テスト補助）
 
 - [X] T001 `features/src/horseracing_features/registry.py` に `FEATURE_GROUPS: dict[str, str]`（特徴名→group: recent_form/aptitude/race_condition/human_form）と group 取得ヘルパを追加。feature_version 定数を features-005 に bump（R1）
-- [ ] T002 [P] `features/tests/_leakcheck.py` を作成: cutoff 検証ヘルパ（対象レース当日以降のデータを変更しても特徴量が不変）と target-row 除外ヘルパ（対象行/同日結果を変更しても跨馬統計が不変）の共通アサーション（R2, FR-003）
+- [X] T002 [P] `features/tests/_leakcheck.py` を作成: cutoff 検証ヘルパ（対象レース当日以降のデータを変更しても特徴量が不変）と target-row 除外ヘルパ（対象行/同日結果を変更しても跨馬統計が不変）の共通アサーション（R2, FR-003）。自己テスト `test_leakcheck_helpers.py`（leak-safe で pass・意図的 leak で fail を実証）
 
 **Checkpoint**: group/版/リーク検証補助が揃う。
 
