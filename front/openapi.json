@@ -1738,6 +1738,11 @@
             "title": "Computed At",
             "type": "string"
           },
+          "dead_heat": {
+            "default": false,
+            "title": "Dead Heat",
+            "type": "boolean"
+          },
           "double_pseudo": {
             "title": "Double Pseudo",
             "type": "boolean"
@@ -1752,6 +1757,17 @@
               }
             ],
             "title": "Estimated Market Odds Used"
+          },
+          "hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit"
           },
           "is_estimated_odds": {
             "title": "Is Estimated Odds",
@@ -1798,6 +1814,28 @@
             ],
             "title": "Pseudo Roi"
           },
+          "realized_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Return"
+          },
+          "realized_roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Roi"
+          },
           "recommendation_id": {
             "title": "Recommendation Id",
             "type": "string"
@@ -1808,6 +1846,11 @@
             },
             "title": "Selection",
             "type": "array"
+          },
+          "settled": {
+            "default": false,
+            "title": "Settled",
+            "type": "boolean"
           },
           "stake_fraction": {
             "anyOf": [

@@ -261,6 +261,12 @@ class RecommendationRow(BaseModel):
     logic_version: str
     computed_at: datetime.datetime
     prediction_run_id: str
+    # Feature 049: retrospective WIN backtest (real odds, NOT pseudo). win-only; null otherwise.
+    settled: bool = False              # race has an official result
+    hit: bool | None = None            # recommended horse finished 1st (null = void / unsettled)
+    dead_heat: bool = False            # 1st was a dead heat (real dividend is split)
+    realized_return: float | None = None  # per-unit payout multiple: real odds if hit else 0.0
+    realized_roi: float | None = None      # realized_return - 1
 
 
 class RecommendationResponse(BaseModel):

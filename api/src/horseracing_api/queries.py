@@ -215,6 +215,26 @@ def exotic_recommendations(
     )
 
 
+def race_finish_map(
+    session: Session, race_id: str
+) -> tuple[dict[str, tuple[int | None, str]], int]:
+    """Feature 049: official finishing map for a race (read-only, for the WIN backtest display).
+
+    Returns (finish_map, n_winners): finish_map maps horse_id → (finish_order, result_status) for
+    every result row; empty ⇒ the race has no official result yet (unsettled). n_winners = count of
+    FINISHED horses at finish_order==1 (>1 ⇒ dead heat). Display-only — never a model feature (II).
+    """
+    rows = session.execute(
+        select(RaceResult.horse_id, RaceResult.finish_order, RaceResult.result_status)
+        .where(RaceResult.race_id == race_id)
+    ).all()
+    finish_map = {hid: (fo, st) for hid, fo, st in rows}
+    n_winners = sum(
+        1 for fo, st in finish_map.values() if fo == 1 and st == ResultStatus.FINISHED
+    )
+    return finish_map, n_winners
+
+
 # --- horse / jockey profiles (Feature 029) — factual career aggregates, read-only ---------------
 # 母数規則 (research D2): 出走数=entry_status='started'; 着順率の分子=finished & finish_order;
 # 平均着順=完走のみ。取消/除外は出走数に含めない; 中止/失格は出走数に含むが率/平均から除外。

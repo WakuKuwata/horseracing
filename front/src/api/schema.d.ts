@@ -757,10 +757,17 @@ export interface components {
              * Format: date-time
              */
             computed_at: string;
+            /**
+             * Dead Heat
+             * @default false
+             */
+            dead_heat: boolean;
             /** Double Pseudo */
             double_pseudo: boolean;
             /** Estimated Market Odds Used */
             estimated_market_odds_used?: number | null;
+            /** Hit */
+            hit?: boolean | null;
             /** Is Estimated Odds */
             is_estimated_odds: boolean;
             /** Logic Version */
@@ -773,10 +780,19 @@ export interface components {
             pseudo_odds?: number | null;
             /** Pseudo Roi */
             pseudo_roi?: number | null;
+            /** Realized Return */
+            realized_return?: number | null;
+            /** Realized Roi */
+            realized_roi?: number | null;
             /** Recommendation Id */
             recommendation_id: string;
             /** Selection */
             selection: number[];
+            /**
+             * Settled
+             * @default false
+             */
+            settled: boolean;
             /** Stake Fraction */
             stake_fraction?: number | null;
         };

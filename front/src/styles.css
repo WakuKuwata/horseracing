@@ -106,8 +106,54 @@ th.num {
   background: var(--real-bg);
   color: var(--real-fg);
 }
+/* Feature 049: realised backtest fact (real result × real odds) — neutral, distinct from pseudo. */
+.badge--result {
+  background: var(--real-bg);
+  color: var(--real-fg);
+}
 .pseudo-value {
   white-space: nowrap;
+}
+
+/* Feature 049: column-group header separating 予測時(疑似) from 結果(実績). Neutral, no P/L color. */
+th.colgroup {
+  font-size: 0.72rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border, #ddd);
+  text-align: center;
+}
+/* Feature 049: retrospective win summary — factual, no profit coloring (021 discipline). */
+.backtest-summary {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.backtest-summary h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+}
+.backtest-summary .note {
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+.backtest-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  margin: 0;
+}
+.backtest-stats > div {
+  display: flex;
+  gap: 0.35rem;
+}
+.backtest-stats dt {
+  color: var(--muted);
+}
+.backtest-stats dd {
+  margin: 0;
+  font-weight: 700;
 }
 
 .state {
