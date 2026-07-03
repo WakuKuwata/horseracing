@@ -1,6 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import { App } from "./App";
+import { CoveragePage } from "./pages/CoveragePage";
+import { JobsPage } from "./pages/JobsPage";
 import { ModelDetailPage } from "./pages/ModelDetailPage";
 import { ModelRegistryPage } from "./pages/ModelRegistryPage";
 
@@ -11,6 +13,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <ModelRegistryPage /> },
       { path: "models/:modelVersion", element: <ModelDetailPage /> },
+      { path: "coverage", element: <CoveragePage /> },
+      { path: "jobs", element: <JobsPage /> },
     ],
   },
 ]);

@@ -15,8 +15,10 @@ from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus, ResultSta
 from horseracing_db.models import (
     ExoticOdds,
     Horse,
+    IngestionJob,
     Jockey,
     ModelVersion,
+    PredictionRun,
     Race,
     RaceHorse,
     RacePrediction,
@@ -391,3 +393,95 @@ def list_model_versions(session: Session) -> list[ModelVersion]:
             )
         )
     )
+
+
+def active_model_version(session: Session) -> str | None:
+    """Feature 052: the single ACTIVE model_version (None when no model is active)."""
+    return session.scalar(
+        select(ModelVersion.model_version)
+        .where(ModelVersion.adoption_status == AdoptionStatus.ACTIVE)
+        .order_by(ModelVersion.model_version.desc())
+        .limit(1)
+    )
+
+
+def coverage_by_date(session: Session, date_from, date_to) -> list[dict]:
+    """Feature 052: per-day product coverage (admin console) — grouped SQL, constant query count.
+
+    For each race day in [date_from, date_to]: total races, races with any win odds, races with
+    official results, races PREDICTED BY THE ACTIVE MODEL (same semantics as the 044 backfill
+    idempotency — the coverage that matters operationally; 0 everywhere when no model is active),
+    and races with recommendations. Read-only aggregation; days come from ``races`` only.
+    """
+    def _per_day(stmt) -> dict:
+        return {d: int(n) for d, n in session.execute(stmt).all()}
+
+    base = (
+        select(Race.race_date, func.count(Race.race_id))
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .group_by(Race.race_date)
+    )
+    races = _per_day(base)
+
+    odds = _per_day(
+        select(Race.race_date, func.count(func.distinct(RaceHorse.race_id)))
+        .join(RaceHorse, RaceHorse.race_id == Race.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .where(RaceHorse.odds.is_not(None))
+        .group_by(Race.race_date)
+    )
+    results = _per_day(
+        select(Race.race_date, func.count(func.distinct(RaceResult.race_id)))
+        .join(RaceResult, RaceResult.race_id == Race.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .group_by(Race.race_date)
+    )
+    recs = _per_day(
+        select(Race.race_date, func.count(func.distinct(Recommendation.race_id)))
+        .join(Recommendation, Recommendation.race_id == Race.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .group_by(Race.race_date)
+    )
+    active = active_model_version(session)
+    predicted: dict = {}
+    if active is not None:
+        predicted = _per_day(
+            select(Race.race_date, func.count(func.distinct(PredictionRun.race_id)))
+            .join(PredictionRun, PredictionRun.race_id == Race.race_id)
+            .where(Race.race_date >= date_from)
+            .where(Race.race_date <= date_to)
+            .where(PredictionRun.model_version == active)
+            .group_by(Race.race_date)
+        )
+
+    return [
+        {
+            "date": d,
+            "n_races": races[d],
+            "n_with_odds": odds.get(d, 0),
+            "n_with_results": results.get(d, 0),
+            "n_predicted_active": predicted.get(d, 0),
+            "n_with_recommendations": recs.get(d, 0),
+        }
+        for d in sorted(races)
+    ]
+
+
+def list_jobs(
+    session: Session, *, status: str | None, job_type: str | None, limit: int
+) -> list[IngestionJob]:
+    """Feature 052: ingestion_jobs history for the admin console — newest first, exact-match
+    filters (unknown values simply return empty, never an error)."""
+    stmt = select(IngestionJob)
+    if status is not None:
+        stmt = stmt.where(IngestionJob.status == status)
+    if job_type is not None:
+        stmt = stmt.where(IngestionJob.job_type == job_type)
+    stmt = stmt.order_by(
+        IngestionJob.created_at.desc(), IngestionJob.ingestion_job_id
+    ).limit(limit)
+    return list(session.scalars(stmt))

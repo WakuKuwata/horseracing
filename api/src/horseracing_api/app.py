@@ -21,8 +21,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from . import API_PREFIX, API_VERSION
 from .routers import (
     calibration,
+    coverage,
     horses,
     importance,
+    jobs,
     jockeys,
     models,
     odds,
@@ -87,5 +89,7 @@ app.include_router(recommendations.router, prefix=API_PREFIX)
 app.include_router(calibration.router, prefix=API_PREFIX)
 app.include_router(importance.router, prefix=API_PREFIX)
 app.include_router(models.router, prefix=API_PREFIX)
+app.include_router(coverage.router, prefix=API_PREFIX)
+app.include_router(jobs.router, prefix=API_PREFIX)
 app.include_router(horses.router, prefix=API_PREFIX)
 app.include_router(jockeys.router, prefix=API_PREFIX)

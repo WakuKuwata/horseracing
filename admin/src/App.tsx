@@ -9,6 +9,11 @@ export function App() {
     <div className="app">
       <header className="app__header">
         <Link to="/" className="app__brand">運用コンソール</Link>
+        <nav className="app__nav">
+          <Link to="/">モデル</Link>
+          <Link to="/coverage">被覆率</Link>
+          <Link to="/jobs">ジョブ</Link>
+        </nav>
         <span className="app__banner">localhost 専用・認証なし(公開禁止)</span>
       </header>
       <main className="app__main">

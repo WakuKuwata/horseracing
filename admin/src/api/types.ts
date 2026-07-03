@@ -9,3 +9,8 @@ export type ModelListResponse = S["ModelListResponse"];
 export type CalibrationResponse = S["CalibrationResponse"];
 export type CalibrationBin = S["CalibrationBin"];
 export type ImportanceResponse = S["ImportanceResponse"];
+
+export type CoverageResponse = S["CoverageResponse"];
+export type CoverageDay = S["CoverageDay"];
+export type JobListResponse = S["JobListResponse"];
+export type JobRow = S["JobRow"];

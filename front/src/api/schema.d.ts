@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Coverage */
+        get: operations["coverage_api_v1_coverage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -53,6 +70,23 @@ export interface paths {
         };
         /** Get Horse History */
         get: operations["get_horse_history_api_v1_horses__horse_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jobs */
+        get: operations["jobs_api_v1_jobs_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -295,6 +329,48 @@ export interface components {
              */
             valid_years: number[];
         };
+        /**
+         * CoverageDay
+         * @description One race day's product coverage. n_predicted_active uses the ACTIVE model only (044
+         *     idempotency semantics); 0 when no model is active.
+         */
+        CoverageDay: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** N Predicted Active */
+            n_predicted_active: number;
+            /** N Races */
+            n_races: number;
+            /** N With Odds */
+            n_with_odds: number;
+            /** N With Recommendations */
+            n_with_recommendations: number;
+            /** N With Results */
+            n_with_results: number;
+        };
+        /** CoverageResponse */
+        CoverageResponse: {
+            /** Active Model Version */
+            active_model_version?: string | null;
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /**
+             * Days
+             * @default []
+             */
+            days: components["schemas"]["CoverageDay"][];
+        };
         /** EstimatedOddsRow */
         EstimatedOddsRow: {
             /**
@@ -528,6 +604,53 @@ export interface components {
             feature: string;
             /** Gain */
             gain: number;
+        };
+        /** JobListResponse */
+        JobListResponse: {
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["JobRow"][];
+        };
+        /**
+         * JobRow
+         * @description One ingestion_jobs row (audit trail; read-only transcription).
+         */
+        JobRow: {
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Count */
+            error_count?: number | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Ingestion Job Id */
+            ingestion_job_id: string;
+            /** Job Type */
+            job_type?: string | null;
+            /** Processed Rows */
+            processed_rows?: number | null;
+            /** Retry Count */
+            retry_count: number;
+            /** Scope */
+            scope?: string | null;
+            /** Scope Value */
+            scope_value?: string | null;
+            /** Skipped Rows */
+            skipped_rows?: number | null;
+            /** Source */
+            source?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Status */
+            status: string;
+            /** Trace Id */
+            trace_id?: string | null;
         };
         /** JockeyHistoryRow */
         JockeyHistoryRow: {
@@ -933,6 +1056,38 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    coverage_api_v1_coverage_get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_v1_health_get: {
         parameters: {
             query?: never;
@@ -1020,6 +1175,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jobs_api_v1_jobs_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                job_type?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobListResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

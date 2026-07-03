@@ -49,3 +49,16 @@ tr[data-active="true"] { background: var(--active-bg); }
 .state--loading { color: var(--muted); }
 .state--empty { color: var(--muted); background: #fafafa; }
 .state--error { background: #fdecea; color: #b3261e; }
+
+/* Feature 052 */
+.app__nav { display: flex; gap: 0.8rem; font-size: 0.9rem; }
+.app__nav a { color: var(--fg); text-decoration: none; }
+.app__nav a:hover { text-decoration: underline; }
+.toolbar { display: flex; gap: 1rem; margin: 0.4rem 0 0.8rem; font-size: 0.85rem; align-items: center; }
+.toolbar label { display: flex; gap: 0.4rem; align-items: center; }
+tr[data-hole="true"] { background: #fff4e5; }  /* coverage hole — needs backfill */
+.badge--job-succeeded { background: var(--active-bg); color: var(--active-fg); }
+.badge--job-failed { background: #fdecea; color: #b3261e; }
+.badge--job-running, .badge--job-queued { background: #e8f0fe; color: #1a56db; }
+.badge--job-partial, .badge--job-skipped { background: #eee; color: var(--muted); }
+.job-error { font-size: 0.75rem; color: #b3261e; max-width: 28rem; overflow-wrap: anywhere; }

@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { api, parseApiError, type ErrorInfo } from "./client";
-import type { CalibrationResponse, ImportanceResponse, ModelListResponse } from "./types";
+import type {
+  CalibrationResponse,
+  CoverageResponse,
+  ImportanceResponse,
+  JobListResponse,
+  ModelListResponse,
+} from "./types";
 
 // openapi-fetch returns { data, error, response }. Normalize the error branch into ErrorInfo and
 // throw so react-query's `error` is always typed (same unwrap pattern as front).
@@ -40,5 +46,25 @@ export function useImportance(modelVersion: string) {
           params: { path: { model_version: modelVersion } },
         }),
       ),
+  });
+}
+
+export function useCoverage(dateFrom: string, dateTo: string) {
+  return useQuery<CoverageResponse, ErrorInfo>({
+    queryKey: ["coverage", dateFrom, dateTo],
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/coverage", {
+          params: { query: { date_from: dateFrom, date_to: dateTo } },
+        }),
+      ),
+  });
+}
+
+export function useJobs(filters: { status?: string; job_type?: string; limit?: number }) {
+  return useQuery<JobListResponse, ErrorInfo>({
+    queryKey: ["jobs", filters],
+    queryFn: async () =>
+      unwrap(await api.GET("/api/v1/jobs", { params: { query: filters } })),
   });
 }

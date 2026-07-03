@@ -345,3 +345,47 @@ class ModelVersionRow(BaseModel):
 
 class ModelListResponse(BaseModel):
     items: list[ModelVersionRow] = []
+
+
+# --- coverage / jobs (Feature 052 admin console, read-only) --------------------------------------
+class CoverageDay(BaseModel):
+    """One race day's product coverage. n_predicted_active uses the ACTIVE model only (044
+    idempotency semantics); 0 when no model is active."""
+
+    date: datetime.date
+    n_races: int
+    n_with_odds: int
+    n_with_results: int
+    n_predicted_active: int
+    n_with_recommendations: int
+
+
+class CoverageResponse(BaseModel):
+    date_from: datetime.date
+    date_to: datetime.date
+    active_model_version: str | None = None  # null = no active model (predicted counts are 0)
+    days: list[CoverageDay] = []
+
+
+class JobRow(BaseModel):
+    """One ingestion_jobs row (audit trail; read-only transcription)."""
+
+    ingestion_job_id: str
+    source: str | None = None
+    job_type: str | None = None
+    scope: str | None = None
+    scope_value: str | None = None
+    status: str
+    trace_id: str | None = None
+    retry_count: int
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+    error_message: str | None = None
+    processed_rows: int | None = None
+    skipped_rows: int | None = None
+    error_count: int | None = None
+    created_at: datetime.datetime
+
+
+class JobListResponse(BaseModel):
+    items: list[JobRow] = []

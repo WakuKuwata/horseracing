@@ -134,6 +134,85 @@
         "title": "CalibrationResponse",
         "type": "object"
       },
+      "CoverageDay": {
+        "description": "One race day's product coverage. n_predicted_active uses the ACTIVE model only (044\nidempotency semantics); 0 when no model is active.",
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "n_predicted_active": {
+            "title": "N Predicted Active",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          },
+          "n_with_odds": {
+            "title": "N With Odds",
+            "type": "integer"
+          },
+          "n_with_recommendations": {
+            "title": "N With Recommendations",
+            "type": "integer"
+          },
+          "n_with_results": {
+            "title": "N With Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "n_races",
+          "n_with_odds",
+          "n_with_results",
+          "n_predicted_active",
+          "n_with_recommendations"
+        ],
+        "title": "CoverageDay",
+        "type": "object"
+      },
+      "CoverageResponse": {
+        "properties": {
+          "active_model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Model Version"
+          },
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "days": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CoverageDay"
+            },
+            "title": "Days",
+            "type": "array"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to"
+        ],
+        "title": "CoverageResponse",
+        "type": "object"
+      },
       "EstimatedOddsRow": {
         "properties": {
           "as_of": {
@@ -940,6 +1019,173 @@
           "gain"
         ],
         "title": "ImportanceValue",
+        "type": "object"
+      },
+      "JobListResponse": {
+        "properties": {
+          "items": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/JobRow"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "JobListResponse",
+        "type": "object"
+      },
+      "JobRow": {
+        "description": "One ingestion_jobs row (audit trail; read-only transcription).",
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Count"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "ingestion_job_id": {
+            "title": "Ingestion Job Id",
+            "type": "string"
+          },
+          "job_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Type"
+          },
+          "processed_rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed Rows"
+          },
+          "retry_count": {
+            "title": "Retry Count",
+            "type": "integer"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          },
+          "scope_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Value"
+          },
+          "skipped_rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipped Rows"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "ingestion_job_id",
+          "status",
+          "retry_count",
+          "created_at"
+        ],
+        "title": "JobRow",
         "type": "object"
       },
       "JockeyHistoryRow": {
@@ -2200,6 +2446,59 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/coverage": {
+      "get": {
+        "operationId": "coverage_api_v1_coverage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coverage",
+        "tags": [
+          "coverage"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Read-only readiness: DB connectivity + alembic schema-at-head (Feature 018, fail-closed).\n\n503 when the DB is unreachable OR applied migration != bundled head, so the deploy healthcheck\nblocks serving on an un-migrated DB. SELECT-only — no write path added (014 stays read-only).",
@@ -2330,6 +2629,83 @@
         "summary": "Get Horse History",
         "tags": [
           "horses"
+        ]
+      }
+    },
+    "/api/v1/jobs": {
+      "get": {
+        "operationId": "jobs_api_v1_jobs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Jobs",
+        "tags": [
+          "jobs"
         ]
       }
     },
