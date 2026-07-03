@@ -85,7 +85,7 @@
 - [x] T020 [US3] `serving/pyproject.toml` に `horseracing-probability` 依存を追加(analyze U1、非循環)した上で、`serving/src/horseracing_serving/pipeline.py`: `_predict_persist` 前に product λ フィット(**素の永続化 p でフィット=素の p に適用、分布一致 D4**。serve=レース前、backfill=日単位 1 回 — 046 `_fit_product_p_calibrator` と同型の境界・走査 bound)を追加し `assemble_predictions(stage_discount=sd)` へ結線。logic_version に `sdisc=harville;l2=...;l3=...;n2=...;n3=...`(identity 時 `sdisc=identity`)を追記(data-model.md 形式)
 - [x] T021 [US3] `betting/src/horseracing_betting/` 推奨経路(`_generate_product_set` 系)で `joint_probabilities(stage_discount=sd)` を opt-in 結線(046 の pcal 結線と同型・win 側 Kelly は影響なしを確認)。**λ̂ は T015 と同じく two_gamma 適用後の p' でフィットしたもの**(分布一致 D4 — serving の λ̂ と別フィット)。lv 追記は同一形式
 - [x] T022 [P] [US3] テスト: `serving/tests` に win_prob バイト不変+top2/top3 変化+lv 記録+identity fallback、`betting/tests` に sd=None 経路の lv バイト不変(後方互換)+sd 指定時の複勝系 P_model 変化
-- [ ] T023 [US3] 実 DB E2E(quickstart §4): serve 実行 → race_predictions/recommendations/lv 確認 → API 透過(openapi drift-check 一致)を検証し結果を spec に記録
+- [x] T023 [US3] 実 DB E2E(quickstart §4): serve 実行 → race_predictions/recommendations/lv 確認 → API 透過(openapi drift-check 一致)を検証し結果を spec に記録
 
 **Checkpoint**: 製品で校正済み連対率・複勝率が提供される
 
