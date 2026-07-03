@@ -27,11 +27,11 @@ def test_pace_features_registered_and_model_inputs():
     inputs = set(model_input_features())
     for c in _PACE_COLS:
         assert c in REGISTRY and c in inputs, c
-    assert FEATURE_VERSION == "features-012"  # 026/030-033; 041 (corner trajectory)
+    assert FEATURE_VERSION == "features-013"  # 026/030-033; 041 (corner trajectory)
 
 
 def test_no_schema_change_or_orm_table():
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0009_"), versions[-1]  # head unchanged
+    assert versions[-1].startswith("0010_"), versions[-1]  # head unchanged
     for f in (_ROOT / "features" / "src" / "horseracing_features").rglob("*.py"):
         assert "__tablename__" not in f.read_text(encoding="utf-8"), f

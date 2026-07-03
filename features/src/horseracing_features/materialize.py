@@ -33,7 +33,9 @@ from .history import build_history_features
 from .human_form import build_human_form_features
 from .loader import Frames
 from .lowcost_features import build_lowcost_features
+from .owner_breeder_features import build_owner_breeder_features
 from .pace_features import build_pace_features
+from .race_level_features import build_race_level_features
 from .pace_scenario_features import build_pace_scenario_features
 from .pedigree_features import build_pedigree_features
 from .registry import FEATURE_VERSION, materialized_columns
@@ -43,7 +45,9 @@ _KEYS = ["race_id", "horse_id"]
 #: Feature 026: horses pedigree columns folded into the staleness fingerprint, so a pedigree
 #: backfill (sire_name filled/corrected while the race tables stay unchanged) trips fail-closed.
 _HORSE_FP_COLS = ["horse_id", "sire_name", "dam_name", "damsire_name",
-                  "sire_id", "dam_id", "damsire_id"]
+                  "sire_id", "dam_id", "damsire_id",
+                  # Feature 055: owner/breeder/lines backfill detection (fail-closed)
+                  "owner_name", "breeder_name", "sire_line", "damsire_line"]
 MANIFEST_VERSION = 1
 
 
@@ -143,6 +147,8 @@ def build_asof_features(
     )
     condchg = build_condition_change_features(frames, pace=pace)  # Feature 033 (condition×ability)
     cornertraj = build_corner_trajectory_features(frames)  # Feature 041 (corner trajectory)
+    ownerbrd = build_owner_breeder_features(frames)  # Feature 055 (owner/breeder as-of rates)
+    racelevel = build_race_level_features(frames)    # Feature 055 (prize class, as-of half)
     out = (
         history.merge(extra, on=_KEYS, how="left")
         .merge(human, on=_KEYS, how="left")
@@ -153,6 +159,8 @@ def build_asof_features(
         .merge(debutped, on=_KEYS, how="left")
         .merge(condchg, on=_KEYS, how="left")
         .merge(cornertraj, on=_KEYS, how="left")
+        .merge(ownerbrd, on=_KEYS, how="left")
+        .merge(racelevel, on=_KEYS, how="left")
     )
     cols = [*_KEYS, *materialized_columns()]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)

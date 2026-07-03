@@ -17,7 +17,12 @@ _HORSE_COLS = [
 
 
 def build_static_features(frames: Frames) -> pd.DataFrame:
-    races = frames.races[["race_id", "race_date", *_RACE_COLS]]
+    race_cols = list(_RACE_COLS)
+    # Feature 055: prize_money (pre-published race condition) — optional so pre-055 fixtures work
+    has_prize = "prize_money" in frames.races.columns
+    if has_prize:
+        race_cols.append("prize_money")
+    races = frames.races[["race_id", "race_date", *race_cols]]
     rh = frames.race_horses[
         ["race_id", "horse_id", "jockey_weight", "entry_status", *_HORSE_COLS]
     ]
@@ -46,6 +51,24 @@ def build_static_features(frames: Frames) -> pd.DataFrame:
     month = pd.to_datetime(out["race_date"]).dt.month
     out["race_month"] = month.astype("float64")
     out["race_season"] = ((month % 12) // 3).astype("float64")
+
+    # Feature 055: prize level (log scale; NaN-propagating) + bloodline lines (static categoricals)
+    if has_prize:
+        out["prize_money_log"] = np.log1p(
+            pd.to_numeric(out["prize_money"], errors="coerce")
+        ).astype("float64")
+        out = out.drop(columns=["prize_money"])
+    else:
+        out["prize_money_log"] = np.nan
+    line_cols = ["horse_id"]
+    for c in ("sire_line", "damsire_line"):
+        if c in frames.horses.columns:
+            line_cols.append(c)
+    lines = frames.horses[line_cols].copy()
+    for c in ("sire_line", "damsire_line"):
+        if c not in lines.columns:
+            lines[c] = np.nan
+    out = out.merge(lines, on="horse_id", how="left")
 
     # drop helpers not in the registry — esp. race_date/entry_status which assemble re-merges later
     # (leaving them here would create _x/_y suffix collisions).

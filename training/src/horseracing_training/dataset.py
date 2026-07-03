@@ -38,6 +38,9 @@ CATEGORICAL_FEATURES: tuple[str, ...] = (
     "sex",
     "jockey_id",
     "trainer_id",
+    # Feature 055: bloodline lines (low-cardinality ~20 values)
+    "sire_line",
+    "damsire_line",
 )
 
 WIN_LABEL = "win"

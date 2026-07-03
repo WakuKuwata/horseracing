@@ -26,4 +26,4 @@ def test_display_derived_values_not_in_model_features():
 
 def test_021_adds_no_schema_change():
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0009_"), versions[-1]
+    assert versions[-1].startswith("0010_"), versions[-1]

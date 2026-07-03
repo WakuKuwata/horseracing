@@ -157,6 +157,18 @@ REGISTRY: dict[str, FeatureMeta] = {
     "asof_late_gain_best": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
     "asof_early_pos_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
     "asof_mid_move_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 055: raw-column features (テン3F/馬主/生産者/賞金/系統) ---
+    "asof_rel_first3f_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "asof_rel_first3f_best": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "asof_pace_balance_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "asof_owner_win_rate": FeatureMeta("owner", _T.PRE_ENTRY, _M.NULL),
+    "asof_owner_place_rate": FeatureMeta("owner", _T.PRE_ENTRY, _M.NULL),
+    "asof_breeder_win_rate": FeatureMeta("owner", _T.PRE_ENTRY, _M.NULL),
+    "prize_money_log": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "asof_prize_avg": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "prize_rel": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
+    "sire_line": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    "damsire_line": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -239,10 +251,22 @@ FEATURE_GROUPS: dict[str, str] = {
     "asof_late_gain_best": "corner_trajectory",
     "asof_early_pos_avg": "corner_trajectory",
     "asof_mid_move_avg": "corner_trajectory",
+    # Feature 055: raw-column bundle (4 groups)
+    "asof_rel_first3f_avg": "pace_first3f",
+    "asof_rel_first3f_best": "pace_first3f",
+    "asof_pace_balance_avg": "pace_first3f",
+    "asof_owner_win_rate": "owner_breeder",
+    "asof_owner_place_rate": "owner_breeder",
+    "asof_breeder_win_rate": "owner_breeder",
+    "prize_money_log": "race_level",
+    "asof_prize_avg": "race_level",
+    "prize_rel": "race_level",
+    "sire_line": "sire_line",
+    "damsire_line": "sire_line",
 }
 
-#: feature schema version. 026/030-033; bumped by 041 (corner trajectory).
-FEATURE_VERSION = "features-012"
+#: feature schema version. 026/030-033; 041 (corner trajectory); bumped by 055 (raw columns).
+FEATURE_VERSION = "features-013"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
@@ -257,6 +281,10 @@ STATIC_COLUMNS: tuple[str, ...] = (
     "field_size",
     # Feature 030: current-race static (斤量・季節) — build_static_features, not materialized.
     "carried_weight", "carried_weight_ratio", "carried_weight_rel", "race_month", "race_season",
+    # Feature 055: prize level + bloodline lines (current race / horse attrs, not materialized).
+    # prize_rel mixes static × as-of and is composed in the BUILDER (its as-of half asof_prize_avg
+    # IS materialized) — listing it here keeps it out of materialized_columns().
+    "prize_money_log", "prize_rel", "sire_line", "damsire_line",
 )
 
 

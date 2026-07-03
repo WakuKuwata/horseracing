@@ -57,6 +57,13 @@ _DEFAULTS = {
     layout.DAM_NAME: "母馬",
     layout.DAMSIRE_NAME: "母父馬",
     layout.BIRTH_DATE: "20050419",
+    # Feature 055 raw columns (finisher defaults)
+    layout.PRIZE_MONEY: "550",
+    layout.FIRST_3F: "35.6",
+    layout.OWNER_NAME: "馬主一郎",
+    layout.BREEDER_NAME: "生産牧場",
+    layout.SIRE_LINE: "サンデーサイレンス系",
+    layout.DAMSIRE_LINE: "ノーザンダンサー系",
 }
 
 # Friendly kwarg name -> column index.
@@ -103,6 +110,13 @@ _KW = {
     "dam_name": layout.DAM_NAME,
     "damsire_name": layout.DAMSIRE_NAME,
     "birth_date": layout.BIRTH_DATE,
+    # Feature 055
+    "prize_money": layout.PRIZE_MONEY,
+    "first_3f": layout.FIRST_3F,
+    "owner_name": layout.OWNER_NAME,
+    "breeder_name": layout.BREEDER_NAME,
+    "sire_line": layout.SIRE_LINE,
+    "damsire_line": layout.DAMSIRE_LINE,
 }
 
 

@@ -28,7 +28,13 @@ PACE_TIME_COLUMNS = [
     "finish_diff_avg", "finish_diff_best",
 ]
 POSITION_STYLE_COLUMNS = ["rel_corner_pos_avg", "front_runner_rate", "closer_rate"]
-PACE_COLUMNS = [*PACE_TIME_COLUMNS, *POSITION_STYLE_COLUMNS]
+#: Feature 055: テン3F (first 3F) — the front-half pace axis 023 lacked. Same in-race-relative +
+#: recent-N + strictly-before machinery; "best" = min = fastest early pace. pace_balance per past
+#: run = rel_last3f − rel_first3f (positive = front-loaded 前傾, negative = closer-shaped 後傾).
+PACE_FIRST3F_COLUMNS = [
+    "asof_rel_first3f_avg", "asof_rel_first3f_best", "asof_pace_balance_avg",
+]
+PACE_COLUMNS = [*PACE_TIME_COLUMNS, *POSITION_STYLE_COLUMNS, *PACE_FIRST3F_COLUMNS]
 
 _RECENT_N = 5
 _FRONT_STYLES = {"逃げ", "先行"}
@@ -52,16 +58,23 @@ def _pace_runs(frames: Frames) -> pd.DataFrame:
     races = frames.races[["race_id", "race_date"]].copy()
     races["race_date"] = pd.to_datetime(races["race_date"])
     rh = frames.race_horses[["race_id", "horse_id", "entry_status", "running_style"]].copy()
-    rr = frames.race_results[
-        ["race_id", "horse_id", "finish_order", "result_status",
-         "last_3f", "finish_time", "finish_time_diff", "corner_orders"]
-    ].copy()
+    rr_cols = ["race_id", "horse_id", "finish_order", "result_status",
+               "last_3f", "finish_time", "finish_time_diff", "corner_orders"]
+    # Feature 055: first_3f is optional so pre-055 Frames fixtures keep working (all-NaN then)
+    has_first3f = "first_3f" in frames.race_results.columns
+    if has_first3f:
+        rr_cols.append("first_3f")
+    rr = frames.race_results[rr_cols].copy()
     runs = rh.merge(races, on="race_id", how="left").merge(
         rr, on=["race_id", "horse_id"], how="left"
     )
     runs["is_started"] = (runs["entry_status"] == EntryStatus.STARTED).astype(int)
     runs["is_finished"] = (runs["result_status"] == ResultStatus.FINISHED).astype(int)
     runs["last3f_s"] = pd.to_numeric(runs["last_3f"], errors="coerce")
+    runs["first3f_s"] = (
+        pd.to_numeric(runs["first_3f"], errors="coerce") if has_first3f
+        else pd.Series(np.nan, index=runs.index)
+    )
     runs["time_s"] = _to_seconds(runs["finish_time"])
     runs["diff_s"] = _to_seconds(runs["finish_time_diff"])
     runs["corner_last"] = runs["corner_orders"].map(_final_corner)
@@ -76,10 +89,14 @@ def _pace_runs(frames: Frames) -> pd.DataFrame:
     means = fin.groupby("race_id", as_index=False).agg(
         race_mean_last3f=("last3f_s", "mean"),
         race_mean_time=("time_s", "mean"),
+        race_mean_first3f=("first3f_s", "mean"),  # Feature 055 (NaN race-wide pre-backfill)
     )
     runs = runs.merge(means, on="race_id", how="left")
     runs["rel_last3f"] = runs["last3f_s"] - runs["race_mean_last3f"]
     runs["rel_time"] = runs["time_s"] - runs["race_mean_time"]
+    runs["rel_first3f"] = runs["first3f_s"] - runs["race_mean_first3f"]
+    # 055: per-run pace balance — positive = front-loaded (前傾), NaN if either 3F missing
+    runs["pace_balance"] = runs["rel_last3f"] - runs["rel_first3f"]
     runs["rel_corner"] = np.where(
         runs["field_size"] > 0, runs["corner_last"] / runs["field_size"], np.nan
     )
@@ -127,6 +144,10 @@ def build_pace_features(frames: Frames) -> pd.DataFrame:
             "finish_diff_avg": ("diff_s", "mean"),
             "finish_diff_best": ("diff_s", "min"),
             "rel_corner_pos_avg": ("rel_corner", "mean"),
+            # Feature 055: テン3F — min = fastest relative early pace
+            "asof_rel_first3f_avg": ("rel_first3f", "mean"),
+            "asof_rel_first3f_best": ("rel_first3f", "min"),
+            "asof_pace_balance_avg": ("pace_balance", "mean"),
         },
     )
     # style: aggregate over STARTED past races (running_style is an entry attribute).
@@ -138,7 +159,8 @@ def build_pace_features(frames: Frames) -> pd.DataFrame:
 
     out = (
         targets[["race_id", "horse_id"]]
-        .merge(fin_feat[["race_id", "horse_id", *PACE_TIME_COLUMNS, "rel_corner_pos_avg"]],
+        .merge(fin_feat[["race_id", "horse_id", *PACE_TIME_COLUMNS, "rel_corner_pos_avg",
+                         *PACE_FIRST3F_COLUMNS]],
                on=["race_id", "horse_id"], how="left")
         .merge(sty_feat[["race_id", "horse_id", "front_runner_rate", "closer_rate"]],
                on=["race_id", "horse_id"], how="left")

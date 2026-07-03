@@ -58,6 +58,17 @@ DAM_NAME = 67  # col68 母名
 DAMSIRE_NAME = 68  # col69 母父名
 BIRTH_DATE = 72  # col73 "YYYYMMDD"
 
+# --- Feature 055: previously-unread columns (specs/055-raw-column-features) ---
+# Semantics verified against the raw files (research.md): for 1200m (=6F) races
+# finish_time == FIRST_3F + LAST_3F held for 100.000% of ~30k rows (2010/2018/2024);
+# PRIZE_MONEY is race-constant (1着賞金 万円 — a pre-published race condition, not a result).
+PRIZE_MONEY = 23  # col24 1着賞金(万円)
+FIRST_3F = 54  # col55 テン3F(前半3ハロン秒)
+OWNER_NAME = 64  # col65 馬主名
+BREEDER_NAME = 65  # col66 生産者名
+SIRE_LINE = 69  # col70 父系統
+DAMSIRE_LINE = 70  # col71 母父系統
+
 CORNER_COLUMNS = (CORNER_1, CORNER_2, CORNER_3, CORNER_4)
 
 # --- venue name -> 2-char JRA course code (R3) ---
