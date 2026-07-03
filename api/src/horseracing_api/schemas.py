@@ -312,3 +312,36 @@ class ImportanceResponse(BaseModel):
     model_version: str
     type: str = "gain"
     values: list[ImportanceValue] = []
+
+
+# --- model registry (Feature 051 admin console, read-only) --------------------------------------
+class ModelVersionRow(BaseModel):
+    """Feature 051: one model_versions row for the admin registry — persisted values ONLY
+    (metrics_summary transcription, no recomputation = 021 discipline). Missing keys → null
+    (old models lack train_through — recorded since 050 — and pre-040 runs lack importance)."""
+
+    model_version: str
+    model_family: str | None = None
+    feature_version: str | None = None
+    label_schema: str
+    adoption_status: str
+    created_at: datetime.datetime
+    # eval overall (win) — OOS walk-forward persisted by the training harness
+    win_log_loss: float | None = None
+    win_auc: float | None = None
+    win_ece: float | None = None
+    win_brier: float | None = None
+    # training metadata (050: train_through/n_model_rows recorded at train time)
+    objective: str | None = None
+    calibration: str | None = None
+    train_through: str | None = None
+    n_model_rows: int | None = None
+    git_sha: str | None = None
+    adopted: bool | None = None          # adoption-gate verdict at save time
+    # whether the per-model detail endpoints have content (021 calibration / 040 importance)
+    has_calibration: bool = False
+    has_importance: bool = False
+
+
+class ModelListResponse(BaseModel):
+    items: list[ModelVersionRow] = []

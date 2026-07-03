@@ -24,6 +24,7 @@ from .routers import (
     horses,
     importance,
     jockeys,
+    models,
     odds,
     predictions,
     races,
@@ -85,5 +86,6 @@ app.include_router(odds.router, prefix=API_PREFIX)
 app.include_router(recommendations.router, prefix=API_PREFIX)
 app.include_router(calibration.router, prefix=API_PREFIX)
 app.include_router(importance.router, prefix=API_PREFIX)
+app.include_router(models.router, prefix=API_PREFIX)
 app.include_router(horses.router, prefix=API_PREFIX)
 app.include_router(jockeys.router, prefix=API_PREFIX)

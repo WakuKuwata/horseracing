@@ -11,7 +11,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 
-from horseracing_db.enums import BetType, EntryStatus, ResultStatus
+from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus, ResultStatus
 from horseracing_db.models import (
     ExoticOdds,
     Horse,
@@ -377,3 +377,17 @@ def jockey_history(session: Session, jockey_id: str, *, page: int, page_size: in
         .limit(page_size)
     ).all()
     return list(rows), int(total)
+
+
+def list_model_versions(session: Session) -> list[ModelVersion]:
+    """Feature 051: all model_versions for the admin registry — deterministic order
+    (active first → created_at DESC → model_version), same spirit as select_prediction_run."""
+    from sqlalchemy import case
+    active_first = case((ModelVersion.adoption_status == AdoptionStatus.ACTIVE, 0), else_=1)
+    return list(
+        session.scalars(
+            select(ModelVersion).order_by(
+                active_first, ModelVersion.created_at.desc(), ModelVersion.model_version
+            )
+        )
+    )
