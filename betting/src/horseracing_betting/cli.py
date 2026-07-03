@@ -128,15 +128,33 @@ def _fit_product_p_calibrator(session: Session, *, before_date, target_race_id: 
     )
 
 
+def _fit_product_stage_discount(session: Session, *, before_date, p_calibrator=None):
+    """Feature 049: walk-forward top2/top3 discount for the EXOTIC product path. Per research D4
+    (distribution match) the fit sample p is passed through the SAME two_gamma p_calibrator that
+    the engine input uses, so λ is fit on the distribution it will be applied to. Under-sampled →
+    identity (no-op)."""
+    from horseracing_probability.model_calibration import (
+        apply_p_calibrator,
+        fit_product_stage_discount,
+    )
+
+    cal = None
+    if p_calibrator is not None:
+        cal = lambda pd: apply_p_calibrator(pd, p_calibrator)  # noqa: E731
+    return fit_product_stage_discount(session, before_date=before_date, calibrator=cal)
+
+
 def _generate_product_set(
-    session: Session, run_id, *, p_calibrator=None
+    session: Session, run_id, *, p_calibrator=None, stage_discount=None
 ) -> tuple[int, int, list[str]]:
     """Generate the missing bet_type groups for one run (group-wise idempotent, Feature 045).
 
     win = 007 EV on real win odds + 016 Kelly sizing; exotic = 016 Kelly set (043). A group that
     already exists is skipped (no append-only duplication; existing 043 runs get win topped up).
     Feature 046: the walk-forward p calibrator is applied to BOTH groups (identity when
-    insufficient) and recorded in logic_version. Returns (n_win, n_exotic, skipped_group_names).
+    insufficient) and recorded in logic_version. Feature 049: the top2/top3 stage discount is
+    applied to the EXOTIC group only (win Kelly is unaffected — win prob is untouched).
+    Returns (n_win, n_exotic, skipped_group_names).
     """
     cfg = KellyConfig()
     n_win = n_exotic = 0
@@ -150,7 +168,8 @@ def _generate_product_set(
         skipped.append("exotic")
     else:
         n_exotic = len(generate_kelly_recommendations(
-            session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator))
+            session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator,
+            stage_discount=stage_discount))
     return n_win, n_exotic, skipped
 
 
@@ -176,13 +195,25 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     # Feature 046: walk-forward p calibrator (strictly before this race; identity when thin)
     from horseracing_db.models import Race
     race = session.get(Race, race_id)
+    has_date = race is not None and race.race_date is not None
     pcal = _fit_product_p_calibrator(
         session, before_date=race.race_date, target_race_id=race_id,
-    ) if race is not None and race.race_date is not None else None
-    n_win, n_exotic, skipped = _generate_product_set(session, run_id, p_calibrator=pcal)
+    ) if has_date else None
+    # Feature 049: top2/top3 discount for exotic P_model — OPT-IN (default OFF). The pre-registered
+    # exotic pseudo-ROI MUST gate failed on trio, so the product default stays λ=1.
+    sdisc = _fit_product_stage_discount(
+        session, before_date=race.race_date, p_calibrator=pcal,
+    ) if (has_date and getattr(args, "stage_discount", False)) else None
+    n_win, n_exotic, skipped = _generate_product_set(
+        session, run_id, p_calibrator=pcal, stage_discount=sdisc,
+    )
     note = f" (skipped groups: {','.join(skipped)})" if skipped else ""
     pnote = f" pcal={pcal.logic_version}" if pcal is not None else ""
-    print(f"OK: run={run_id} win={n_win} exotic={n_exotic}{note}{pnote}")
+    snote = ""
+    if sdisc is not None:
+        from horseracing_eval.stage_discount import logic_version_fragment
+        snote = f" {logic_version_fragment(sdisc)}"
+    print(f"OK: run={run_id} win={n_win} exotic={n_exotic}{note}{pnote}{snote}")
     return 0
 
 
@@ -318,6 +349,7 @@ def _cmd_recommend_backfill(session: Session, args) -> int:
     # date-level cutoff excludes same-day races, matching the 004 date-level convention).
     pcal_day = None
     pcal = None
+    sdisc = None
     for rid, rdate in rows:
         try:
             run_id = _resolve_active_run(session, rid)
@@ -335,8 +367,11 @@ def _cmd_recommend_backfill(session: Session, args) -> int:
             if rdate != pcal_day:
                 # cutoff = the day itself with a smaller-than-any race_id → strictly before the day
                 pcal = _fit_product_p_calibrator(session, before_date=rdate, target_race_id="")
+                # Feature 049 discount OPT-IN (default OFF — exotic trio MUST gate failed)
+                sdisc = (_fit_product_stage_discount(session, before_date=rdate, p_calibrator=pcal)
+                         if getattr(args, "stage_discount", False) else None)
                 pcal_day = rdate
-            _generate_product_set(session, run_id, p_calibrator=pcal)
+            _generate_product_set(session, run_id, p_calibrator=pcal, stage_discount=sdisc)
             # a partial run (043-era exotic-only) counts as a top-up, a bare run as generated
             counts["topped_up" if (has_win or has_exotic) else "generated"] += 1
         except Exception as exc:  # noqa: BLE001 — one race must not abort the whole backfill
@@ -530,12 +565,17 @@ def main(argv: list[str] | None = None) -> int:
     rs = sub.add_parser("recommend-serve",
                         help="generate the product recommendation set for ONE race (043)")
     rs.add_argument("--race-id", required=True)
+    rs.add_argument("--stage-discount", dest="stage_discount", action="store_true",
+                    help="049: apply top2/top3 Benter discount to exotic P_model (OPT-IN; default "
+                         "OFF — exotic trio pseudo-ROI MUST gate failed)")
     rs.add_argument("--database-url", default=None)
 
     rb = sub.add_parser("recommend-backfill",
                         help="idempotently generate recommendation sets over a date range (043)")
     rb.add_argument("--from", dest="from_", type=_parse_date, required=True)
     rb.add_argument("--to", type=_parse_date, required=True)
+    rb.add_argument("--stage-discount", dest="stage_discount", action="store_true",
+                    help="049: apply top2/top3 discount to exotic P_model (OPT-IN; default OFF)")
     rb.add_argument("--database-url", default=None)
 
     kc = sub.add_parser("kelly-calibration-compare",

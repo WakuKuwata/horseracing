@@ -30,15 +30,16 @@ DEFAULT_ODDS_CAP = 10000.0
 
 
 def _blended_bets(field, real_odds, *, threshold, top_k, bet_types, payout_rates, odds_cap,
-                  calibrator=None):
+                  calibrator=None, stage_discount=None):
     """EV candidates with real odds preferred per selection, else estimated O_est (011).
 
     Returns (bet, odds_used, is_estimated, ev) tuples, EV≥threshold, top-K by (−EV, selection_key).
     EV uses the chosen odds so real-priced bets are ranked on their real EV (row-level distinction).
     ``calibrator`` (013, opt-in) FL-corrects the estimated O_est used for the fallback.
+    ``stage_discount`` (049, opt-in) applies the top2/top3 Benter discount to P_model.
     """
     cands = candidate_bets(field, bet_types=bet_types, payout_rates=payout_rates, odds_cap=odds_cap,
-                           calibrator=calibrator)
+                           calibrator=calibrator, stage_discount=stage_discount)
     out: list[tuple[ExoticBet, float, bool, float]] = []
     for bt, bets in cands.items():
         k = _k_for(top_k, bt)

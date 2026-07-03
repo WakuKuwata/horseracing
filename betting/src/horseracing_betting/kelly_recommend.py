@@ -44,6 +44,7 @@ def generate_kelly_recommendations(
     use_real_odds: bool = True,
     calibrator=None,
     p_calibrator=None,
+    stage_discount=None,
     logic_version: str | None = None,
 ) -> list[uuid.UUID]:
     cfg = cfg or KellyConfig()
@@ -55,6 +56,12 @@ def generate_kelly_recommendations(
     lv = logic_version or kelly_logic_version(cfg, odds_cap=odds_cap, threshold=threshold)
     if p_calibrator is not None:  # Feature 017: record the model-p calibrator in logic_version
         lv = f"{lv};{p_calibrator.logic_version}"
+    if stage_discount is not None:  # Feature 049: record the top2/top3 discount λ
+        from horseracing_eval.stage_discount import logic_version_fragment
+
+        frag = logic_version_fragment(stage_discount)
+        if frag:
+            lv = f"{lv};{frag}"
 
     predictions, odds, scratched, number_to_id = _load_field_inputs(
         session, prediction_run_id, race_id
@@ -71,6 +78,7 @@ def generate_kelly_recommendations(
     blended = _blended_bets(
         field, real_odds, threshold=threshold, top_k=top_k, bet_types=bet_types,
         payout_rates=rates, odds_cap=odds_cap, calibrator=calibrator,
+        stage_discount=stage_discount,
     )
 
     # Kelly-filter each candidate, then group by bet_type for joint allocation.

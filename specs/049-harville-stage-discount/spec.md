@@ -4,7 +4,28 @@
 
 **Created**: 2026-07-02
 
-**Status**: Draft
+**Status**: **PARTIAL — PRIMARY 合格 / MUST 不合格(製品デフォルト非採用、opt-in で保全)**
+
+## 実 DB 結果(2026-07-03、事前登録ゲート実行)
+
+**PRIMARY(校正、18-fold OOS, pl_topk+TE+isotonic)= 圧勝で合格**:
+- win LogLoss 0.21721 = 両者**完全一致**(max|Δ|=0、INV-S2 実証)
+- top2 ECE 0.00735→**0.00249**(約3倍改善)、LogLoss 0.34169→0.34112
+- top3 ECE 0.01914→**0.00385**(約5倍改善)、LogLoss 0.43219→0.42952
+- 勝ちfold 17/18、worst-fold top3 dLL +0.00000(ガード内)
+- λ̂ 収束・安定: λ₂≈0.82、λ₃≈0.70(1未満=過大 tail を平坦化、Benter 理論と整合)。fold 2008=identity(先行OOS無し)
+
+**MUST(exotic pseudo-ROI 非悪化、2025 H1、λ̂=(0.871,0.712) n_fit=3441)= 不合格**:
+- place ROI 1.0650→1.0803(+0.0153、改善)
+- wide ROI 1.6536→1.9626(+0.3090、改善)
+- **trio ROI 1.4096→0.9691(−0.4405、大幅悪化 ≪ 許容 −0.005)→ MUST=False**
+- 機序: top3 割引が本命の複勝質量を穴へ再配分 → 三連複 EV 選定が穴目に偏り、(疑似)オッズ上で回収悪化(バグでなく実効果。Σtrifecta=1・joint 整合は全テスト緑)
+
+**決定(憲法 III=事前登録ゲートを数値で動かさない)**: 製品デフォルトは **λ=1 のまま非採用**。実装は全て **opt-in(既定オフ)** で保全(FR-006、eval/校正インフラは無害でマージ可)。**残る判断: 表示(連対率/複勝率)の校正改善は大きく実在するのに、束ねた exotic trio ゲートが全体を veto している**——serving/表示のみのスコープ採用は spec が事前登録していないため、ユーザー判断事項(039 前例=機械ゲートのユーザー上書き)。
+
+---
+
+**Status(原文)**: Draft
 
 **Input**: User description: "win, place, show すべての精度改善 — top2/top3(連対・複勝)確率の校正。lgbm-042 の 18-fold OOS で win ECE 0.00057 に対し top2 ECE 0.00735(13倍)・top3 ECE 0.01944(34倍)。原因は Harville 逐次条件付けの既知バイアス(強い馬の 2〜3着確率を過大評価: Henery 1981 / Stern 1990 / Benter 実務補正)。stage 割引 p^λ_j を walk-forward MLE でフィットして是正する。"
 

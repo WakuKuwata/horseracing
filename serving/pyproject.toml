@@ -8,6 +8,7 @@ dependencies = [
     "horseracing-features",
     "horseracing-eval",
     "horseracing-training",
+    "horseracing-probability",
     "lightgbm>=4.3",
     "numpy>=1.26",
     "pandas>=2.2",
@@ -28,6 +29,7 @@ horseracing-db = { path = "../db", editable = true }
 horseracing-features = { path = "../features", editable = true }
 horseracing-eval = { path = "../eval", editable = true }
 horseracing-training = { path = "../training", editable = true }
+horseracing-probability = { path = "../probability", editable = true }
 
 [build-system]
 requires = ["hatchling"]

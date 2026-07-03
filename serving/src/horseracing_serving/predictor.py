@@ -40,7 +40,7 @@ def _jsonable(v):
 
 
 def predict_race(
-    model: ServingModel, race_id: str, feature_rows: pd.DataFrame
+    model: ServingModel, race_id: str, feature_rows: pd.DataFrame, *, stage_discount=None
 ) -> tuple[dict[str, Prediction], dict[str, dict], dict[str, dict | None]]:
     rows = feature_rows[feature_rows["race_id"] == race_id].copy()
     if rows.empty:
@@ -70,7 +70,10 @@ def predict_race(
 
     raw = model.raw_predict(X)
     calibrated = np.asarray(model.calibrator.transform(raw), dtype=float)
-    predictions = assemble_predictions(started_ids, calibrated, eps=DEFAULT_CLIP)
+    # Feature 049: stage_discount (opt-in) corrects top2/top3 only; win is untouched (INV-S2).
+    predictions = assemble_predictions(
+        started_ids, calibrated, eps=DEFAULT_CLIP, stage_discount=stage_discount
+    )
 
     # Feature 040: per-horse score-contribution explanation (display-only; NEVER a model feature).
     # Decomposes the RAW booster margin (before race-softmax/isotonic/009) — additive, top-K.

@@ -54,30 +54,59 @@ def run_serving(
     race_id: str | None = None,
     date: datetime.date | None = None,
     model_version: str | None = None,
+    apply_stage_discount: bool = False,
 ) -> list[ServingResult]:
+    """Feature 049: ``apply_stage_discount`` (opt-in, default OFF) enables the top2/top3 Benter
+    discount. It is OFF by default because the pre-registered exotic pseudo-ROI MUST gate failed
+    on trio (三連複) — the product default stays λ=1 pending a scoped adoption decision."""
     model = load_serving_model(session, model_version)
     target_date, race_ids = _targets(session, race_id, date)
     logic_version = f"feat={model.feature_version};serve={SERVING_LOGIC_VERSION}"
 
     feature_rows = build_feature_matrix(session, end_date=target_date)
     present = set(feature_rows["race_id"].unique())
+    # date-level cutoff matches the feature end_date; fit the discount once, strictly before it
+    sd = _fit_stage_discount(session, target_date) if apply_stage_discount else None
 
     results: list[ServingResult] = []
     for rid in race_ids:
         if rid not in present:  # no started horses / out of feature scope
             continue
-        results.append(_predict_persist(session, model, rid, feature_rows, logic_version))
+        results.append(
+            _predict_persist(session, model, rid, feature_rows, logic_version, stage_discount=sd)
+        )
     return results
 
 
+def _fit_stage_discount(session: Session, before_date):
+    """Feature 049: walk-forward top2/top3 discount fit from persisted predictions strictly
+    before ``before_date`` (raw model p — serving derivation has no two_gamma, so fit and apply
+    share one distribution, research D4). Under-sampled → identity (no-op)."""
+    from horseracing_probability.model_calibration import fit_product_stage_discount
+
+    return fit_product_stage_discount(session, before_date=before_date, calibrator=None)
+
+
+def _sdisc_lv(logic_version: str, sd) -> str:
+    from horseracing_eval.stage_discount import logic_version_fragment
+
+    frag = logic_version_fragment(sd)
+    return f"{logic_version};{frag}" if frag else logic_version
+
+
 def _predict_persist(
-    session: Session, model, race_id: str, feature_rows, logic_version: str
+    session: Session, model, race_id: str, feature_rows, logic_version: str, stage_discount=None
 ) -> ServingResult:
     """Predict one race + persist the run (shared by run_serving and run_serving_backfill).
 
     Identical per-race path so backfill predictions are byte-identical to run_serving (p-parity).
+    Feature 049: ``stage_discount`` discounts top2/top3 (win unchanged); its λ is recorded in the
+    persisted logic_version for audit/reproducibility.
     """
-    predictions, snapshots, explanations = predict_race(model, race_id, feature_rows)
+    predictions, snapshots, explanations = predict_race(
+        model, race_id, feature_rows, stage_discount=stage_discount
+    )
+    logic_version = _sdisc_lv(logic_version, stage_discount)
     check_consistency(predictions)  # fail-fast (INV-S2); nothing persisted on violation
     run_id = persist_run(
         session,
@@ -116,6 +145,7 @@ def run_serving_backfill(
     date_to: datetime.date,
     model_version: str | None = None,
     force: bool = False,
+    apply_stage_discount: bool = False,
 ) -> BackfillCounts:
     """Feature 044: generate predictions over a date range for the (single active) model.
 
@@ -139,6 +169,7 @@ def run_serving_backfill(
             if race_ids:
                 feature_rows = build_feature_matrix(session, end_date=day)
                 present = set(feature_rows["race_id"].unique())
+                sd = _fit_stage_discount(session, day) if apply_stage_discount else None
                 for rid in race_ids:
                     if rid not in present:
                         skip_no_started += 1
@@ -146,7 +177,9 @@ def run_serving_backfill(
                     if not force and _has_run_for_model(session, rid, model.model_version):
                         skip_exists += 1
                         continue
-                    _predict_persist(session, model, rid, feature_rows, logic_version)
+                    _predict_persist(
+                        session, model, rid, feature_rows, logic_version, stage_discount=sd
+                    )
                     gen += 1
         except Exception:  # noqa: BLE001 — one day must not abort the whole range
             session.rollback()
