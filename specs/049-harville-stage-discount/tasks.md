@@ -93,9 +93,9 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T024 全パッケージ回帰(quickstart §5)+ `front` の drift-check(openapi 不変確認)
-- [ ] T025 [P] `specs/049-harville-stage-discount/spec.md` の Status 更新(ADOPTED/負結果+実測数値)と CLAUDE.md SPECKIT ブロックの要約更新(agent-context)
-- [ ] T026 [P] メモリ更新: `~/.claude/.../memory/` に feature-049 結果ノート(採否・λ̂・top3 ECE 変化・「導出層は win レバー棚卸しの外」の学び)+ MEMORY.md 索引行
+- [x] T024 全パッケージ回帰(quickstart §5)+ `front` の drift-check(openapi 不変確認)
+- [x] T025 [P] `specs/049-harville-stage-discount/spec.md` の Status 更新(ADOPTED/負結果+実測数値)と CLAUDE.md SPECKIT ブロックの要約更新(agent-context)
+- [x] T026 [P] メモリ更新: `~/.claude/.../memory/` に feature-049 結果ノート(採否・λ̂・top3 ECE 変化・「導出層は win レバー棚卸しの外」の学び)+ MEMORY.md 索引行
 
 ---
 
