@@ -54,11 +54,14 @@ def run_serving(
     race_id: str | None = None,
     date: datetime.date | None = None,
     model_version: str | None = None,
-    apply_stage_discount: bool = False,
+    apply_stage_discount: bool = True,
 ) -> list[ServingResult]:
-    """Feature 049: ``apply_stage_discount`` (opt-in, default OFF) enables the top2/top3 Benter
-    discount. It is OFF by default because the pre-registered exotic pseudo-ROI MUST gate failed
-    on trio (三連複) — the product default stays λ=1 pending a scoped adoption decision."""
+    """Feature 049: ``apply_stage_discount`` (default ON) applies the top2/top3 Benter discount to
+    the PERSISTED top2/top3 — DISPLAY-only (連対率/複勝率). Adopted for serving on the strength of
+    the PRIMARY calibration gate (top3 ECE 0.019→0.0039, win byte-identical). The exotic BETTING
+    path recomputes its joint from win p and does NOT read these values, so it is unaffected and
+    stays λ=1 (the pre-registered exotic trio pseudo-ROI MUST gate failed — user decision
+    2026-07-03: display-only adoption). Under-sampled → identity (no-op)."""
     model = load_serving_model(session, model_version)
     target_date, race_ids = _targets(session, race_id, date)
     logic_version = f"feat={model.feature_version};serve={SERVING_LOGIC_VERSION}"
@@ -145,7 +148,7 @@ def run_serving_backfill(
     date_to: datetime.date,
     model_version: str | None = None,
     force: bool = False,
-    apply_stage_discount: bool = False,
+    apply_stage_discount: bool = True,
 ) -> BackfillCounts:
     """Feature 044: generate predictions over a date range for the (single active) model.
 

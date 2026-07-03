@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-02
 
-**Status**: **PARTIAL — PRIMARY 合格 / MUST 不合格(製品デフォルト非採用、opt-in で保全)**
+**Status**: **ADOPTED(表示のみ)— serving の top2/top3 表示に既定適用 / exotic 買い目は λ=1 据え置き**
 
 ## 実 DB 結果(2026-07-03、事前登録ゲート実行)
 
@@ -21,7 +21,10 @@
 - **trio ROI 1.4096→0.9691(−0.4405、大幅悪化 ≪ 許容 −0.005)→ MUST=False**
 - 機序: top3 割引が本命の複勝質量を穴へ再配分 → 三連複 EV 選定が穴目に偏り、(疑似)オッズ上で回収悪化(バグでなく実効果。Σtrifecta=1・joint 整合は全テスト緑)
 
-**決定(憲法 III=事前登録ゲートを数値で動かさない)**: 製品デフォルトは **λ=1 のまま非採用**。実装は全て **opt-in(既定オフ)** で保全(FR-006、eval/校正インフラは無害でマージ可)。**残る判断: 表示(連対率/複勝率)の校正改善は大きく実在するのに、束ねた exotic trio ゲートが全体を veto している**——serving/表示のみのスコープ採用は spec が事前登録していないため、ユーザー判断事項(039 前例=機械ゲートのユーザー上書き)。
+**決定(ユーザー判断 2026-07-03、039 前例=機械ゲートのユーザー上書きと同型)= 表示のみ採用**:
+- **serving は既定で割引を適用**(`run_serving`/`run_serving_backfill` の `apply_stage_discount=True`)→ 永続化 top2/top3 = API/front の**連対率・複勝率表示のみ**が校正済みになる。win は byte-identical。
+- **exotic 買い目(betting)は λ=1 据え置き**。根拠は設計上の分離: 買い目 EV は `joint_probabilities` を **win p から都度再計算**しており、永続化 top2/top3 を読まない → 表示の割引は三連複 EV に一切波及しない。betting 側の割引は opt-in(`--stage-discount`、既定 OFF、MUST 不合格のため無効のまま)。
+- trio が「なぜ悪化するか(本命複勝質量の穴への再配分が三連複選定を穴目に寄せる)」の実オッズ検証と、trio 単独の扱いは deferred(別 feature で再事前登録)。
 
 ---
 
