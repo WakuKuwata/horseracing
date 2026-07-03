@@ -14,3 +14,6 @@ export type CoverageResponse = S["CoverageResponse"];
 export type CoverageDay = S["CoverageDay"];
 export type JobListResponse = S["JobListResponse"];
 export type JobRow = S["JobRow"];
+
+export type SegmentEdgeResponse = S["SegmentEdgeResponse"];
+export type SegmentEdgeRow = S["SegmentEdgeRow"];

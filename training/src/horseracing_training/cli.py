@@ -212,6 +212,17 @@ def _run_feature_command(session: Session, args) -> int:
             print(f"  {row.axis:<12} {row.segment:<16} {row.n:>8} {row.win_rate:>7.4f} "
                   f"{row.logloss_p:>8.5f} {row.logloss_q:>8.5f} {row.gap:>+8.5f} "
                   f"{row.mean_p:>7.4f} {row.mean_q:>7.4f}")
+        if getattr(args, "persist", False):
+            # Feature 054: append the run to diagnostic_runs (verbatim transcription) so the
+            # admin console can display it (021 discipline). Display output above is unchanged.
+            from horseracing_eval.diagnostics_store import save_segment_edge_run
+            lv = (f"diag=segment_edge;axes=047-preregistered;from={args.from_};to={args.to};"
+                  f"seed={args.seed};v=diag-0.1.0")
+            run = save_segment_edge_run(
+                session, r, date_from=args.from_, date_to=args.to, logic_version=lv,
+            )
+            session.commit()
+            print(f"  persisted: diagnostic_run={run.diagnostic_run_id} (kind=segment_edge)")
         return 0
     if args.command == "model-eval":
         # Feature 036: modeling change (OOF target encoding) — NOT a feature-group change, so the
@@ -297,6 +308,8 @@ def main(argv: list[str] | None = None) -> int:
     sd = sub.add_parser("segment-diagnostic",
                         help="047: segment-wise p vs q diagnostic (SECONDARY, pre-registered)")
     _add_window(sd)
+    sd.add_argument("--persist", action="store_true",
+                    help="054: append the result to diagnostic_runs for the admin console")
 
     # Feature 036: OOF target encoding (modeling change; same feature columns as baseline).
     me = sub.add_parser("model-eval", help="036: OOF target-encode candidate vs no-TE baseline")

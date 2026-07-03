@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Numeric,
@@ -122,6 +123,31 @@ class Recommendation(TimestampMixin, Base):
     # Kelly effective bet-size fraction (Feature 016); NULL for flat (011/012) rows.
     stake_fraction: Mapped[Decimal | None] = mapped_column(Numeric)
     logic_version: Mapped[str] = mapped_column(Text, nullable=False)
+    computed_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+
+
+class DiagnosticRun(TimestampMixin, Base):
+    """Feature 054: persisted offline diagnostics (e.g. 047 segment-edge) for read-only display.
+
+    Heavy walk-forward diagnostics are computed OFFLINE (CLI) and persisted here so the read-only
+    API / admin console only ever transcribe (021 discipline — never recompute in-request).
+    Append-only; readers take the latest row per kind (computed_at DESC). ``payload`` is the
+    diagnostic's own output verbatim (no derived metrics added at read time, constitution III).
+    NEVER a model-feature input (constitution II leak boundary — market q / results live inside).
+    """
+
+    __tablename__ = "diagnostic_runs"
+
+    diagnostic_run_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    kind: Mapped[str] = mapped_column(Text, nullable=False)  # e.g. 'segment_edge'
+    date_from: Mapped[datetime.date | None] = mapped_column(Date)  # evaluation window
+    date_to: Mapped[datetime.date | None] = mapped_column(Date)
+    logic_version: Mapped[str] = mapped_column(Text, nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
     computed_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )

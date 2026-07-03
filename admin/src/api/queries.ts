@@ -7,6 +7,7 @@ import type {
   ImportanceResponse,
   JobListResponse,
   ModelListResponse,
+  SegmentEdgeResponse,
 } from "./types";
 
 // openapi-fetch returns { data, error, response }. Normalize the error branch into ErrorInfo and
@@ -66,5 +67,12 @@ export function useJobs(filters: { status?: string; job_type?: string; limit?: n
     queryKey: ["jobs", filters],
     queryFn: async () =>
       unwrap(await api.GET("/api/v1/jobs", { params: { query: filters } })),
+  });
+}
+
+export function useSegmentEdge() {
+  return useQuery<SegmentEdgeResponse, ErrorInfo>({
+    queryKey: ["diagnostics", "segment-edge"],
+    queryFn: async () => unwrap(await api.GET("/api/v1/diagnostics/segment-edge")),
   });
 }

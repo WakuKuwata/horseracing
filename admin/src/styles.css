@@ -71,3 +71,7 @@ tr[data-hole="true"] { background: #fff4e5; }  /* coverage hole — needs backfi
 .refresh-result { font-size: 0.8rem; }
 .refresh-result[data-state="error"] { color: #b3261e; }
 .refresh-jobid { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Feature 054: diagnostics viewer — factual display, no advantage sorting / P&L coloring */
+.diag-disclaimer { border-left: 3px solid var(--banner-fg); padding-left: 0.6rem; }
+.state--empty pre { background: #f6f6f6; padding: 0.5rem 0.7rem; border-radius: 4px; overflow-x: auto; }

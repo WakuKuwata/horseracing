@@ -13,6 +13,7 @@ import datetime
 
 from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus, ResultStatus
 from horseracing_db.models import (
+    DiagnosticRun,
     ExoticOdds,
     Horse,
     IngestionJob,
@@ -485,3 +486,13 @@ def list_jobs(
         IngestionJob.created_at.desc(), IngestionJob.ingestion_job_id
     ).limit(limit)
     return list(session.scalars(stmt))
+
+
+def latest_diagnostic_run(session: Session, kind: str) -> DiagnosticRun | None:
+    """Feature 054: newest persisted diagnostic run of a kind (read-only transcription source)."""
+    return session.scalars(
+        select(DiagnosticRun)
+        .where(DiagnosticRun.kind == kind)
+        .order_by(DiagnosticRun.computed_at.desc(), DiagnosticRun.diagnostic_run_id)
+        .limit(1)
+    ).first()

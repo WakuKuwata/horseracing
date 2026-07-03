@@ -389,3 +389,29 @@ class JobRow(BaseModel):
 
 class JobListResponse(BaseModel):
     items: list[JobRow] = []
+
+
+# --- diagnostics (Feature 054 admin console, read-only transcription) ----------------------------
+class SegmentEdgeRow(BaseModel):
+    """One 047 segment row — verbatim from the persisted payload (no derived metrics)."""
+
+    axis: str
+    segment: str
+    n: int
+    win_rate: float
+    logloss_p: float
+    logloss_q: float
+    gap: float          # logloss_p − logloss_q; positive = the market is better here
+    mean_p: float
+    mean_q: float
+
+
+class SegmentEdgeResponse(BaseModel):
+    kind: str = "segment_edge"
+    computed_at: datetime.datetime
+    date_from: datetime.date | None = None
+    date_to: datetime.date | None = None
+    logic_version: str
+    n_horses: int
+    note: str            # 047 standing disclaimer (SECONDARY, pre-registered, not a buy signal)
+    rows: list[SegmentEdgeRow] = []

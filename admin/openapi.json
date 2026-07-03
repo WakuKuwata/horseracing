@@ -2338,6 +2338,126 @@
         "title": "RunAudit",
         "type": "object"
       },
+      "SegmentEdgeResponse": {
+        "properties": {
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "kind": {
+            "default": "segment_edge",
+            "title": "Kind",
+            "type": "string"
+          },
+          "logic_version": {
+            "title": "Logic Version",
+            "type": "string"
+          },
+          "n_horses": {
+            "title": "N Horses",
+            "type": "integer"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "rows": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SegmentEdgeRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "computed_at",
+          "logic_version",
+          "n_horses",
+          "note"
+        ],
+        "title": "SegmentEdgeResponse",
+        "type": "object"
+      },
+      "SegmentEdgeRow": {
+        "description": "One 047 segment row — verbatim from the persisted payload (no derived metrics).",
+        "properties": {
+          "axis": {
+            "title": "Axis",
+            "type": "string"
+          },
+          "gap": {
+            "title": "Gap",
+            "type": "number"
+          },
+          "logloss_p": {
+            "title": "Logloss P",
+            "type": "number"
+          },
+          "logloss_q": {
+            "title": "Logloss Q",
+            "type": "number"
+          },
+          "mean_p": {
+            "title": "Mean P",
+            "type": "number"
+          },
+          "mean_q": {
+            "title": "Mean Q",
+            "type": "number"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "segment": {
+            "title": "Segment",
+            "type": "string"
+          },
+          "win_rate": {
+            "title": "Win Rate",
+            "type": "number"
+          }
+        },
+        "required": [
+          "axis",
+          "segment",
+          "n",
+          "win_rate",
+          "logloss_p",
+          "logloss_q",
+          "gap",
+          "mean_p",
+          "mean_q"
+        ],
+        "title": "SegmentEdgeRow",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -2496,6 +2616,27 @@
         "summary": "Coverage",
         "tags": [
           "coverage"
+        ]
+      }
+    },
+    "/api/v1/diagnostics/segment-edge": {
+      "get": {
+        "operationId": "segment_edge_api_v1_diagnostics_segment_edge_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentEdgeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Segment Edge",
+        "tags": [
+          "diagnostics"
         ]
       }
     },

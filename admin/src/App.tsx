@@ -13,6 +13,7 @@ export function App() {
           <Link to="/">モデル</Link>
           <Link to="/coverage">被覆率</Link>
           <Link to="/jobs">ジョブ</Link>
+          <Link to="/diagnostics">診断</Link>
         </nav>
         <span className="app__banner">localhost 専用・認証なし(公開禁止)</span>
       </header>

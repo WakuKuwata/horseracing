@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/diagnostics/segment-edge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Segment Edge */
+        get: operations["segment_edge_api_v1_diagnostics_segment_edge_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -1011,6 +1028,58 @@ export interface components {
             /** Prediction Run Id */
             prediction_run_id: string;
         };
+        /** SegmentEdgeResponse */
+        SegmentEdgeResponse: {
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Kind
+             * @default segment_edge
+             */
+            kind: string;
+            /** Logic Version */
+            logic_version: string;
+            /** N Horses */
+            n_horses: number;
+            /** Note */
+            note: string;
+            /**
+             * Rows
+             * @default []
+             */
+            rows: components["schemas"]["SegmentEdgeRow"][];
+        };
+        /**
+         * SegmentEdgeRow
+         * @description One 047 segment row — verbatim from the persisted payload (no derived metrics).
+         */
+        SegmentEdgeRow: {
+            /** Axis */
+            axis: string;
+            /** Gap */
+            gap: number;
+            /** Logloss P */
+            logloss_p: number;
+            /** Logloss Q */
+            logloss_q: number;
+            /** Mean P */
+            mean_p: number;
+            /** Mean Q */
+            mean_q: number;
+            /** N */
+            n: number;
+            /** Segment */
+            segment: string;
+            /** Win Rate */
+            win_rate: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -1084,6 +1153,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    segment_edge_api_v1_diagnostics_segment_edge_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentEdgeResponse"];
                 };
             };
         };

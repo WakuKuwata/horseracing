@@ -62,6 +62,6 @@ def test_materialized_columns_exclude_static_and_leaky_tokens():
 
 def test_no_schema_change():
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0008_"), versions[-1]
+    assert versions[-1].startswith("0009_"), versions[-1]
     for f in (_ROOT / "features" / "src" / "horseracing_features").rglob("*.py"):
         assert "__tablename__" not in f.read_text(encoding="utf-8"), f

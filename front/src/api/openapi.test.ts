@@ -45,6 +45,8 @@ describe("openapi snapshot", () => {
         // Feature 052: coverage + job history (read-only; consumed by the admin SPA)
         "/api/v1/coverage",
         "/api/v1/jobs",
+        // Feature 054: persisted diagnostics (read-only; consumed by the admin SPA)
+        "/api/v1/diagnostics/segment-edge",
         // Feature 029: horse + jockey profile + paged history (read-only)
         "/api/v1/horses/{horse_id}",
         "/api/v1/horses/{horse_id}/history",
