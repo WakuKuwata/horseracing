@@ -12,7 +12,7 @@ def test_no_live_migrations_and_head_unchanged():
     assert not (_ROOT / "live" / "migrations").exists()
     # the migration head remains 0006 (no new versions added by 019)
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0008_"), f"unexpected migration head: {versions[-1]}"
+    assert versions[-1].startswith("0009_"), f"unexpected migration head: {versions[-1]}"
 
 
 def test_live_package_has_no_orm_models():

@@ -49,6 +49,19 @@ export function PseudoValue({
   );
 }
 
+/**
+ * Feature 049: marks a REALIZED backtest fact (real result × real win odds) — the opposite of a
+ * pseudo value. Distinct from SourceBadge so "予測時(疑似)" and "結果(実績)" never blur together.
+ */
+export function ResultBadge() {
+  return (
+    <span className="badge badge--result" data-source="result"
+          title="実績(公式結果 × 実オッズの事後回収・予測時の疑似ROIとは別物)">
+      実績
+    </span>
+  );
+}
+
 /** Real/observed odds source badge (win=real, real_exotic=real). Distinct from pseudo. */
 export function SourceBadge({
   source,

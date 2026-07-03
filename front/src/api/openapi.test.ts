@@ -40,6 +40,13 @@ describe("openapi snapshot", () => {
         "/api/v1/models/{model_version}/calibration",
         // Feature 040: split-gain importance (read-only)
         "/api/v1/models/{model_version}/importance",
+        // Feature 051: model registry list (read-only; consumed by the admin SPA)
+        "/api/v1/models",
+        // Feature 052: coverage + job history (read-only; consumed by the admin SPA)
+        "/api/v1/coverage",
+        "/api/v1/jobs",
+        // Feature 054: persisted diagnostics (read-only; consumed by the admin SPA)
+        "/api/v1/diagnostics/segment-edge",
         // Feature 029: horse + jockey profile + paged history (read-only)
         "/api/v1/horses/{horse_id}",
         "/api/v1/horses/{horse_id}/history",

@@ -17,6 +17,7 @@ FORBIDDEN = {
     "horseracing_features",   # II: ingested odds/results must not become features
     "horseracing_serving",
     "horseracing_betting",
+    "horseracing_live",       # 053: range refresh runs the live CLI via subprocess, never imports it
     "horseracing_api",        # VI: write path must not import the read-only API
 }
 

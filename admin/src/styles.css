@@ -1,0 +1,77 @@
+:root {
+  --fg: #1a1a1a;
+  --muted: #667;
+  --border: #ddd;
+  --active-bg: #e6f4ea;
+  --active-fg: #137333;
+  --banner-bg: #fef3cd;
+  --banner-fg: #7a5d00;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Hiragino Sans", sans-serif; color: var(--fg); }
+
+.app__header {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.6rem 1rem; border-bottom: 1px solid var(--border);
+}
+.app__brand { font-weight: 700; text-decoration: none; color: var(--fg); }
+/* auth is deferred — keep the localhost-only fact permanently on screen */
+.app__banner {
+  font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+  background: var(--banner-bg); color: var(--banner-fg);
+}
+.app__main { padding: 1rem; max-width: 1100px; }
+
+.panel h1 { font-size: 1.3rem; margin: 0.2rem 0 0.4rem; }
+.panel h2 { font-size: 1.05rem; margin: 1.2rem 0 0.4rem; }
+.note { color: var(--muted); font-size: 0.85rem; margin: 0 0 0.6rem; }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { border-bottom: 1px solid var(--border); padding: 0.35rem 0.6rem; text-align: left; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr[data-active="true"] { background: var(--active-bg); }
+
+.badge {
+  display: inline-block; font-size: 0.72rem; font-weight: 700;
+  padding: 0.05rem 0.4rem; border-radius: 4px; white-space: nowrap;
+}
+.badge--active { background: var(--active-fg); color: #fff; }
+.badge--candidate { background: #eee; color: var(--muted); }
+.badge--retired, .badge--archived { background: #f3f3f3; color: #999; }
+
+.meta { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.4rem 1.2rem; margin: 0; }
+.meta > div { display: flex; gap: 0.5rem; }
+.meta dt { color: var(--muted); min-width: 9rem; }
+.meta dd { margin: 0; font-weight: 600; }
+
+.state { padding: 0.8rem; border-radius: 6px; font-size: 0.9rem; }
+.state--loading { color: var(--muted); }
+.state--empty { color: var(--muted); background: #fafafa; }
+.state--error { background: #fdecea; color: #b3261e; }
+
+/* Feature 052 */
+.app__nav { display: flex; gap: 0.8rem; font-size: 0.9rem; }
+.app__nav a { color: var(--fg); text-decoration: none; }
+.app__nav a:hover { text-decoration: underline; }
+.toolbar { display: flex; gap: 1rem; margin: 0.4rem 0 0.8rem; font-size: 0.85rem; align-items: center; }
+.toolbar label { display: flex; gap: 0.4rem; align-items: center; }
+tr[data-hole="true"] { background: #fff4e5; }  /* coverage hole — needs backfill */
+.badge--job-succeeded { background: var(--active-bg); color: var(--active-fg); }
+.badge--job-failed { background: #fdecea; color: #b3261e; }
+.badge--job-running, .badge--job-queued { background: #e8f0fe; color: #1a56db; }
+.badge--job-partial, .badge--job-skipped { background: #eee; color: var(--muted); }
+.job-error { font-size: 0.75rem; color: #b3261e; max-width: 28rem; overflow-wrap: anywhere; }
+
+/* Feature 053: range refresh action */
+.refresh-btn { font-size: 0.8rem; padding: 0.15rem 0.5rem; cursor: pointer; }
+.refresh-btn:disabled { opacity: 0.6; cursor: default; }
+.refresh-confirm { font-size: 0.8rem; display: inline-flex; gap: 0.4rem; align-items: center; }
+.refresh-confirm button { font-size: 0.78rem; padding: 0.1rem 0.45rem; cursor: pointer; }
+.refresh-result { font-size: 0.8rem; }
+.refresh-result[data-state="error"] { color: #b3261e; }
+.refresh-jobid { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Feature 054: diagnostics viewer — factual display, no advantage sorting / P&L coloring */
+.diag-disclaimer { border-left: 3px solid var(--banner-fg); padding-left: 0.6rem; }
+.state--empty pre { background: #f6f6f6; padding: 0.5rem 0.7rem; border-radius: 4px; overflow-x: auto; }

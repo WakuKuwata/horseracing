@@ -150,3 +150,60 @@ def list_pending(session: Session, *, date: datetime.date) -> list[str]:
         if guards.valid_race_id(rid)[0] and guards.is_result_pending(session, rid)[0]:
             out.append(rid)
     return out
+
+
+@dataclass(frozen=True)
+class RefreshReport:
+    """Feature 050: one-command range refresh — predict backfill then recommend backfill."""
+
+    date_from: datetime.date
+    date_to: datetime.date
+    predict: dict | None            # serving BackfillCounts as a dict; None = stage crashed
+    predict_error: str | None
+    recommend: dict | None          # betting recommend_backfill counts; None = stage crashed
+    recommend_error: str | None
+
+
+def refresh_range(
+    session: Session,
+    *,
+    date_from: datetime.date,
+    date_to: datetime.date,
+    force: bool = False,
+) -> RefreshReport:
+    """Feature 050: bundled product update = predict backfill (044) THEN recommend backfill (043).
+
+    Order matters: recommendations fit the walk-forward p calibrator on predictions strictly
+    before each day (046/048), so the prediction stage must complete over the WHOLE range first.
+    Both stages are idempotent with per-race/day exception isolation (existing behavior, no new
+    logic). A crash of the prediction stage does NOT skip the recommendation stage (idempotent →
+    safe; the error is reported). ``force`` re-generates predictions only (044 append-only).
+    """
+    from dataclasses import asdict
+
+    from horseracing_betting.cli import recommend_backfill
+    from horseracing_serving.pipeline import run_serving_backfill
+
+    predict: dict | None = None
+    predict_error: str | None = None
+    try:
+        predict = asdict(run_serving_backfill(
+            session, date_from=date_from, date_to=date_to, force=force,
+        ))
+    except Exception as exc:  # noqa: BLE001 — stage isolation; recommend is idempotent-safe
+        session.rollback()
+        predict_error = f"{type(exc).__name__}: {exc}"
+
+    recommend: dict | None = None
+    recommend_error: str | None = None
+    try:
+        recommend = recommend_backfill(session, date_from=date_from, date_to=date_to)
+    except Exception as exc:  # noqa: BLE001
+        session.rollback()
+        recommend_error = f"{type(exc).__name__}: {exc}"
+
+    return RefreshReport(
+        date_from=date_from, date_to=date_to,
+        predict=predict, predict_error=predict_error,
+        recommend=recommend, recommend_error=recommend_error,
+    )

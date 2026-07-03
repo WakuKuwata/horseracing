@@ -14,8 +14,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from ..backtest import win_realized
 from ..deps import get_session
-from ..queries import exotic_recommendations, get_race
+from ..queries import exotic_recommendations, get_race, race_finish_map
 from ..schemas import RecommendationResponse, RecommendationRow
 from ..selection import select_prediction_run
 
@@ -54,11 +55,20 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
     # re-generations and older runs never appear as duplicates. No run → typed-empty.
     run = select_prediction_run(session, race_id)
     run_id = run.prediction_run_id if run is not None else None
+    # Feature 049: load the race's official finishing map ONCE (empty ⇒ unsettled) for the
+    # retrospective WIN backtest. Results are display-only and never re-enter model features (II).
+    finish_map, n_winners = race_finish_map(session, race_id)
     items = []
     for r in exotic_recommendations(session, race_id, prediction_run_id=run_id):
         sel = _selection_numbers(r.selection)
         if sel is None:  # win row without a horse_number — not displayable
             continue
+        # Feature 049: realised outcome is WIN-only (real single-win odds); non-win → all null.
+        wr = (
+            win_realized(r.selection, r.market_odds_used,
+                         finish_map=finish_map, n_winners=n_winners)
+            if r.bet_type == "win" else None
+        )
         items.append(RecommendationRow(
             recommendation_id=str(r.recommendation_id),
             bet_type=r.bet_type, selection=sel,
@@ -69,5 +79,10 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
             pseudo_roi=_f(r.pseudo_roi), double_pseudo=bool(r.is_estimated_odds),
             logic_version=r.logic_version, computed_at=r.computed_at,
             prediction_run_id=str(r.prediction_run_id),
+            settled=wr.settled if wr is not None else False,
+            hit=wr.hit if wr is not None else None,
+            dead_heat=wr.dead_heat if wr is not None else False,
+            realized_return=wr.realized_return if wr is not None else None,
+            realized_roi=wr.realized_roi if wr is not None else None,
         ))
     return RecommendationResponse(race_id=race_id, items=items)

@@ -31,6 +31,35 @@ describe("RecommendationPanel", () => {
     assertPseudoLabelCoverage(container, ["1.23%"]);
   });
 
+  it("shows realized win backtest (的中/不的中 + real return) without a pseudo badge (049)", async () => {
+    server.use(...happyHandlers);
+    const { container } = renderWithProviders(
+      <RecommendationPanel raceId="200806010111" />,
+    );
+    // settled win rows: one hit (的中, ×3.2 real return), one miss (不的中)
+    await screen.findByTestId("win-backtest-summary");
+    expect(container.querySelector('[data-result="hit"]')).toHaveTextContent("的中");
+    expect(container.querySelector('[data-result="miss"]')).toHaveTextContent("不的中");
+    // realized figures are REAL — they must NOT be tagged pseudo (no data-pseudo on result cells)
+    const resultCells = container.querySelectorAll('[data-result]');
+    expect(resultCells.length).toBeGreaterThan(0);
+    resultCells.forEach((el) => {
+      expect(el.closest('[data-pseudo="true"]')).toBeNull();
+    });
+    // the existing pseudo coverage invariant still holds across the whole panel
+    assertPseudoLabelCoverage(container, ["18.0%", "×4.5", "×12.3"]);
+  });
+
+  it("shows a retrospective win summary labelled as past/参考, not a projection (049 US2)", async () => {
+    server.use(...happyHandlers);
+    renderWithProviders(<RecommendationPanel raceId="200806010111" />);
+    const summary = await screen.findByTestId("win-backtest-summary");
+    // 1 hit of 2 settled → 的中率 50.0%, recovery ×1.60 (=(3.2+0)/2)
+    expect(summary).toHaveTextContent("50.0%");
+    expect(summary).toHaveTextContent("×1.60");
+    expect(summary).toHaveTextContent("将来の的中・利益を示すものではありません");
+  });
+
   it("shows the empty state when there are no recommendations", async () => {
     server.use(
       http.get(`${BASE}/races/:id/recommendations`, () =>

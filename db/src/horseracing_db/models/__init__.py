@@ -6,6 +6,7 @@ from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from .ingestion import IdMapping, IngestionJob
 from .market import ExoticOdds, RaceLaps
 from .prediction import (
+    DiagnosticRun,
     FeatureSnapshot,
     ModelVersion,
     PredictionRun,
@@ -14,6 +15,7 @@ from .prediction import (
 )
 
 __all__ = [
+    "DiagnosticRun",
     "Race",
     "Horse",
     "Jockey",

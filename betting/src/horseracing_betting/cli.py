@@ -331,16 +331,17 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
     return 0
 
 
-def _cmd_recommend_backfill(session: Session, args) -> int:
-    """Feature 043 US3: idempotently generate the recommendation set for every race with a
-    prediction_run + odds in [from, to]. Per-race exception isolation (one failure doesn't abort);
-    prints generated / skipped-by-reason counts.
+def recommend_backfill(session: Session, *, date_from, date_to) -> dict:
+    """Feature 043 US3 core (extracted in 050 for the live refresh pipeline): idempotently
+    generate the recommendation set for every race with a prediction_run + odds in
+    [date_from, date_to]. Per-race exception isolation (one failure doesn't abort). Returns the
+    counts dict (+ ``races`` total); count reconciliation is asserted here.
     """
     from horseracing_db.models import Race
     rows = session.execute(
         select(Race.race_id, Race.race_date)
-        .where(Race.race_date >= args.from_)
-        .where(Race.race_date <= args.to)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
         .order_by(Race.race_date, Race.race_id)
     ).all()
     counts = {"generated": 0, "topped_up": 0, "skip_no_run": 0, "skip_no_odds": 0,
@@ -379,11 +380,16 @@ def _cmd_recommend_backfill(session: Session, args) -> int:
             counts["error"] += 1
             print(f"  error {rid}: {type(exc).__name__}: {exc}")
     total = len(rows)
-    print(f"recommend-backfill {args.from_}..{args.to}  races={total}")
+    assert sum(counts.values()) == total, "count reconciliation failed"
+    return {"races": total, **counts}
+
+
+def _cmd_recommend_backfill(session: Session, args) -> int:
+    counts = recommend_backfill(session, date_from=args.from_, date_to=args.to)
+    print(f"recommend-backfill {args.from_}..{args.to}  races={counts['races']}")
     print(f"  generated={counts['generated']} topped_up={counts['topped_up']} "
           f"skip_exists={counts['skip_exists']} skip_no_run={counts['skip_no_run']} "
           f"skip_no_odds={counts['skip_no_odds']} error={counts['error']}")
-    assert sum(counts.values()) == total, "count reconciliation failed"
     return 0
 
 

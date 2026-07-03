@@ -1,5 +1,5 @@
 """Feature 040 T021: display-derived explanation/importance/divergence are NEVER model features
-(憲法 II leak boundary, SC-007) + migration head is 0008 + features adds no ORM table.
+(憲法 II leak boundary, SC-007) + migration head is 0009 (054 diagnostic_runs) + features adds no ORM table.
 """
 
 from __future__ import annotations
@@ -26,9 +26,9 @@ def test_explanation_tokens_not_in_model_features():
             assert tok not in low, f"{name} looks like a 040 display-derived value"
 
 
-def test_migration_head_is_0008():
+def test_migration_head_is_0009():
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0008_"), versions[-1]
+    assert versions[-1].startswith("0009_"), versions[-1]
 
 
 def test_features_adds_no_orm_table():

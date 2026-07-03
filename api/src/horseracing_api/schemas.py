@@ -261,6 +261,12 @@ class RecommendationRow(BaseModel):
     logic_version: str
     computed_at: datetime.datetime
     prediction_run_id: str
+    # Feature 049: retrospective WIN backtest (real odds, NOT pseudo). win-only; null otherwise.
+    settled: bool = False              # race has an official result
+    hit: bool | None = None            # recommended horse finished 1st (null = void / unsettled)
+    dead_heat: bool = False            # 1st was a dead heat (real dividend is split)
+    realized_return: float | None = None  # per-unit payout multiple: real odds if hit else 0.0
+    realized_roi: float | None = None      # realized_return - 1
 
 
 class RecommendationResponse(BaseModel):
@@ -306,3 +312,106 @@ class ImportanceResponse(BaseModel):
     model_version: str
     type: str = "gain"
     values: list[ImportanceValue] = []
+
+
+# --- model registry (Feature 051 admin console, read-only) --------------------------------------
+class ModelVersionRow(BaseModel):
+    """Feature 051: one model_versions row for the admin registry — persisted values ONLY
+    (metrics_summary transcription, no recomputation = 021 discipline). Missing keys → null
+    (old models lack train_through — recorded since 050 — and pre-040 runs lack importance)."""
+
+    model_version: str
+    model_family: str | None = None
+    feature_version: str | None = None
+    label_schema: str
+    adoption_status: str
+    created_at: datetime.datetime
+    # eval overall (win) — OOS walk-forward persisted by the training harness
+    win_log_loss: float | None = None
+    win_auc: float | None = None
+    win_ece: float | None = None
+    win_brier: float | None = None
+    # training metadata (050: train_through/n_model_rows recorded at train time)
+    objective: str | None = None
+    calibration: str | None = None
+    train_through: str | None = None
+    n_model_rows: int | None = None
+    git_sha: str | None = None
+    adopted: bool | None = None          # adoption-gate verdict at save time
+    # whether the per-model detail endpoints have content (021 calibration / 040 importance)
+    has_calibration: bool = False
+    has_importance: bool = False
+
+
+class ModelListResponse(BaseModel):
+    items: list[ModelVersionRow] = []
+
+
+# --- coverage / jobs (Feature 052 admin console, read-only) --------------------------------------
+class CoverageDay(BaseModel):
+    """One race day's product coverage. n_predicted_active uses the ACTIVE model only (044
+    idempotency semantics); 0 when no model is active."""
+
+    date: datetime.date
+    n_races: int
+    n_with_odds: int
+    n_with_results: int
+    n_predicted_active: int
+    n_with_recommendations: int
+
+
+class CoverageResponse(BaseModel):
+    date_from: datetime.date
+    date_to: datetime.date
+    active_model_version: str | None = None  # null = no active model (predicted counts are 0)
+    days: list[CoverageDay] = []
+
+
+class JobRow(BaseModel):
+    """One ingestion_jobs row (audit trail; read-only transcription)."""
+
+    ingestion_job_id: str
+    source: str | None = None
+    job_type: str | None = None
+    scope: str | None = None
+    scope_value: str | None = None
+    status: str
+    trace_id: str | None = None
+    retry_count: int
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
+    error_message: str | None = None
+    processed_rows: int | None = None
+    skipped_rows: int | None = None
+    error_count: int | None = None
+    created_at: datetime.datetime
+
+
+class JobListResponse(BaseModel):
+    items: list[JobRow] = []
+
+
+# --- diagnostics (Feature 054 admin console, read-only transcription) ----------------------------
+class SegmentEdgeRow(BaseModel):
+    """One 047 segment row — verbatim from the persisted payload (no derived metrics)."""
+
+    axis: str
+    segment: str
+    n: int
+    win_rate: float
+    logloss_p: float
+    logloss_q: float
+    gap: float          # logloss_p − logloss_q; positive = the market is better here
+    mean_p: float
+    mean_q: float
+
+
+class SegmentEdgeResponse(BaseModel):
+    kind: str = "segment_edge"
+    computed_at: datetime.datetime
+    date_from: datetime.date | None = None
+    date_to: datetime.date | None = None
+    logic_version: str
+    n_horses: int
+    note: str            # 047 standing disclaimer (SECONDARY, pre-registered, not a buy signal)
+    rows: list[SegmentEdgeRow] = []

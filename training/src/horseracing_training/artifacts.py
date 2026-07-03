@@ -141,6 +141,11 @@ def save_model_version(
         "calibration": info.get("calibration"),
         "git_sha": git_sha,
         "adoption": metadata["adoption"],
+        # Feature 050 (V): training-data window in the DB, not only in the on-disk metadata.json —
+        # "what did this model train on, through when" must be answerable from model_versions alone.
+        "train_through": str(info["train_through"]) if info.get("train_through") else None,
+        "n_model_rows": info.get("n_model_rows"),
+        "n_calib_rows": info.get("n_calib_rows"),
     }
 
     status = AdoptionStatus.ACTIVE if decision.adopted else AdoptionStatus.CANDIDATE

@@ -31,6 +31,6 @@ def test_feature020_groups_registered():
 def test_no_new_migration_or_orm():
     # 020 adds no DB migration (head stays 0006) and no new ORM table
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0008_"), versions[-1]
+    assert versions[-1].startswith("0009_"), versions[-1]
     for f in (_ROOT / "features" / "src" / "horseracing_features").rglob("*.py"):
         assert "__tablename__" not in f.read_text(encoding="utf-8"), f

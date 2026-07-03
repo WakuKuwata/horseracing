@@ -11,12 +11,15 @@ from __future__ import annotations
 import dataclasses
 import datetime
 
-from horseracing_db.enums import BetType, EntryStatus, ResultStatus
+from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus, ResultStatus
 from horseracing_db.models import (
+    DiagnosticRun,
     ExoticOdds,
     Horse,
+    IngestionJob,
     Jockey,
     ModelVersion,
+    PredictionRun,
     Race,
     RaceHorse,
     RacePrediction,
@@ -215,6 +218,26 @@ def exotic_recommendations(
     )
 
 
+def race_finish_map(
+    session: Session, race_id: str
+) -> tuple[dict[str, tuple[int | None, str]], int]:
+    """Feature 049: official finishing map for a race (read-only, for the WIN backtest display).
+
+    Returns (finish_map, n_winners): finish_map maps horse_id → (finish_order, result_status) for
+    every result row; empty ⇒ the race has no official result yet (unsettled). n_winners = count of
+    FINISHED horses at finish_order==1 (>1 ⇒ dead heat). Display-only — never a model feature (II).
+    """
+    rows = session.execute(
+        select(RaceResult.horse_id, RaceResult.finish_order, RaceResult.result_status)
+        .where(RaceResult.race_id == race_id)
+    ).all()
+    finish_map = {hid: (fo, st) for hid, fo, st in rows}
+    n_winners = sum(
+        1 for fo, st in finish_map.values() if fo == 1 and st == ResultStatus.FINISHED
+    )
+    return finish_map, n_winners
+
+
 # --- horse / jockey profiles (Feature 029) — factual career aggregates, read-only ---------------
 # 母数規則 (research D2): 出走数=entry_status='started'; 着順率の分子=finished & finish_order;
 # 平均着順=完走のみ。取消/除外は出走数に含めない; 中止/失格は出走数に含むが率/平均から除外。
@@ -357,3 +380,119 @@ def jockey_history(session: Session, jockey_id: str, *, page: int, page_size: in
         .limit(page_size)
     ).all()
     return list(rows), int(total)
+
+
+def list_model_versions(session: Session) -> list[ModelVersion]:
+    """Feature 051: all model_versions for the admin registry — deterministic order
+    (active first → created_at DESC → model_version), same spirit as select_prediction_run."""
+    from sqlalchemy import case
+    active_first = case((ModelVersion.adoption_status == AdoptionStatus.ACTIVE, 0), else_=1)
+    return list(
+        session.scalars(
+            select(ModelVersion).order_by(
+                active_first, ModelVersion.created_at.desc(), ModelVersion.model_version
+            )
+        )
+    )
+
+
+def active_model_version(session: Session) -> str | None:
+    """Feature 052: the single ACTIVE model_version (None when no model is active)."""
+    return session.scalar(
+        select(ModelVersion.model_version)
+        .where(ModelVersion.adoption_status == AdoptionStatus.ACTIVE)
+        .order_by(ModelVersion.model_version.desc())
+        .limit(1)
+    )
+
+
+def coverage_by_date(session: Session, date_from, date_to) -> list[dict]:
+    """Feature 052: per-day product coverage (admin console) — grouped SQL, constant query count.
+
+    For each race day in [date_from, date_to]: total races, races with any win odds, races with
+    official results, races PREDICTED BY THE ACTIVE MODEL (same semantics as the 044 backfill
+    idempotency — the coverage that matters operationally; 0 everywhere when no model is active),
+    and races with recommendations. Read-only aggregation; days come from ``races`` only.
+    """
+    def _per_day(stmt) -> dict:
+        return {d: int(n) for d, n in session.execute(stmt).all()}
+
+    base = (
+        select(Race.race_date, func.count(Race.race_id))
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .group_by(Race.race_date)
+    )
+    races = _per_day(base)
+
+    odds = _per_day(
+        select(Race.race_date, func.count(func.distinct(RaceHorse.race_id)))
+        .join(RaceHorse, RaceHorse.race_id == Race.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .where(RaceHorse.odds.is_not(None))
+        .group_by(Race.race_date)
+    )
+    results = _per_day(
+        select(Race.race_date, func.count(func.distinct(RaceResult.race_id)))
+        .join(RaceResult, RaceResult.race_id == Race.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .group_by(Race.race_date)
+    )
+    recs = _per_day(
+        select(Race.race_date, func.count(func.distinct(Recommendation.race_id)))
+        .join(Recommendation, Recommendation.race_id == Race.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .group_by(Race.race_date)
+    )
+    active = active_model_version(session)
+    predicted: dict = {}
+    if active is not None:
+        predicted = _per_day(
+            select(Race.race_date, func.count(func.distinct(PredictionRun.race_id)))
+            .join(PredictionRun, PredictionRun.race_id == Race.race_id)
+            .where(Race.race_date >= date_from)
+            .where(Race.race_date <= date_to)
+            .where(PredictionRun.model_version == active)
+            .group_by(Race.race_date)
+        )
+
+    return [
+        {
+            "date": d,
+            "n_races": races[d],
+            "n_with_odds": odds.get(d, 0),
+            "n_with_results": results.get(d, 0),
+            "n_predicted_active": predicted.get(d, 0),
+            "n_with_recommendations": recs.get(d, 0),
+        }
+        for d in sorted(races)
+    ]
+
+
+def list_jobs(
+    session: Session, *, status: str | None, job_type: str | None, limit: int
+) -> list[IngestionJob]:
+    """Feature 052: ingestion_jobs history for the admin console — newest first, exact-match
+    filters (unknown values simply return empty, never an error)."""
+    stmt = select(IngestionJob)
+    if status is not None:
+        stmt = stmt.where(IngestionJob.status == status)
+    if job_type is not None:
+        stmt = stmt.where(IngestionJob.job_type == job_type)
+    stmt = stmt.order_by(
+        IngestionJob.created_at.desc(), IngestionJob.ingestion_job_id
+    ).limit(limit)
+    return list(session.scalars(stmt))
+
+
+def latest_diagnostic_run(session: Session, kind: str) -> DiagnosticRun | None:
+    """Feature 054: newest persisted diagnostic run of a kind (read-only transcription source)."""
+    return session.scalars(
+        select(DiagnosticRun)
+        .where(DiagnosticRun.kind == kind)
+        .order_by(DiagnosticRun.computed_at.desc(), DiagnosticRun.diagnostic_run_id)
+        .limit(1)
+    ).first()
