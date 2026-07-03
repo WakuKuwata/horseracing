@@ -1,4 +1,4 @@
-"""Operator CLI for live serving (Feature 019). live-serve / list-pending."""
+"""Operator CLI for live serving (Feature 019). live-serve / list-pending / refresh (050)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from horseracing_betting.kelly_types import KellyConfig
 from horseracing_db.session import create_db_engine
 from sqlalchemy.orm import Session
 
-from .orchestrate import list_pending, live_serve
+from .orchestrate import list_pending, live_serve, refresh_range
 
 
 def _parse_date(s: str) -> datetime.date:
@@ -44,6 +44,29 @@ def _cmd_list_pending(session: Session, args) -> int:
     return 0
 
 
+def _cmd_refresh(session: Session, args) -> int:
+    """Feature 050: one-command product update — predict backfill THEN recommend backfill."""
+    rep = refresh_range(
+        session, date_from=args.from_, date_to=args.to, force=args.force,
+    )
+    print(f"refresh {rep.date_from}..{rep.date_to}")
+    if rep.predict is not None:
+        p = rep.predict
+        print(f"  predict:   generated={p['generated']} skip_exists={p['skip_exists']} "
+              f"skip_no_started={p['skip_no_started']} error_days={p['error_days']}")
+    else:
+        print(f"  predict:   FAILED — {rep.predict_error}")
+    if rep.recommend is not None:
+        r = rep.recommend
+        print(f"  recommend: races={r['races']} generated={r['generated']} "
+              f"topped_up={r['topped_up']} skip_exists={r['skip_exists']} "
+              f"skip_no_run={r['skip_no_run']} skip_no_odds={r['skip_no_odds']} "
+              f"error={r['error']}")
+    else:
+        print(f"  recommend: FAILED — {rep.recommend_error}")
+    return 0 if (rep.predict_error is None and rep.recommend_error is None) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="live")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -62,6 +85,16 @@ def main(argv: list[str] | None = None) -> int:
     lp.add_argument("--date", type=_parse_date, required=True)
     lp.add_argument("--database-url", default=None)
 
+    rf = sub.add_parser("refresh",
+                        help="one-command product update: predict backfill → recommend backfill "
+                             "over a date range (050)")
+    rf.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    rf.add_argument("--to", type=_parse_date, required=True)
+    rf.add_argument("--force", action="store_true",
+                    help="re-generate predictions (044 append-only); recommendations stay "
+                         "group-wise idempotent")
+    rf.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
@@ -69,6 +102,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_live_serve(session, args)
         if args.command == "list-pending":
             return _cmd_list_pending(session, args)
+        if args.command == "refresh":
+            return _cmd_refresh(session, args)
     return 1
 
 

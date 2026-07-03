@@ -47,6 +47,12 @@ def test_train_evaluate_saves_row_and_artifacts(session, tmp_path):
     assert mv.weights_uri and mv.calibrator_uri
     assert mv.metrics_summary["eval"]["overall"]["win"]["log_loss"] is not None
     assert mv.metrics_summary["training"]["model_family"] == "lightgbm"
+    # Feature 050 (V): the training-data window is answerable from the DB row alone —
+    # same values as the on-disk metadata.json (train_through/n_model_rows/n_calib_rows).
+    tr = mv.metrics_summary["training"]
+    for key in ("train_through", "n_model_rows", "n_calib_rows"):
+        assert key in tr
+    assert tr["train_through"] is not None and tr["n_model_rows"] > 0
 
     art = tmp_path / "model_versions" / "lgbm-test"
     assert (art / "model.txt").exists()
