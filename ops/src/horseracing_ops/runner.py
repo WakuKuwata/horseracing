@@ -239,3 +239,46 @@ def run_day(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     session.add(job)
     session.commit()
     return job
+
+
+_LIVE_DIR = Path(__file__).resolve().parents[3] / "live"
+_LIVE_TIMEOUT_S = 3600  # a ≤35-day range ≈ ≤12 race days × ~45s predict + recommend — ample
+
+
+def _live_refresh(date_from: str, date_to: str) -> subprocess.CompletedProcess:
+    """Feature 053: invoke the live CLI in its OWN env (`uv run --project live`) — ops must not
+    import the live/serving/betting stack (boundary II/VI, same as _serving_predict). The 050
+    `refresh` command is idempotent (predict backfill → recommend backfill, stage-isolated).
+    Monkeypatched in tests."""
+    cmd = [
+        "uv", "run", "--project", str(_LIVE_DIR), "python", "-m", "horseracing_live",
+        "refresh", "--from", date_from, "--to", date_to,
+        "--database-url", owner_database_url(),
+    ]
+    env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
+    return subprocess.run(  # noqa: S603 — fixed argv, dates are endpoint-validated ISO dates
+        cmd, capture_output=True, text=True, timeout=_LIVE_TIMEOUT_S,
+        cwd=str(_LIVE_DIR), env=env,
+    )
+
+
+def run_refresh_range(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:
+    """Feature 053: run a range refresh by shelling out to the live CLI (no scrape; ``fetcher``
+    unused — kept for the worker's uniform runner call). rc 0 → SUCCEEDED (both stages ran; each
+    is idempotent with per-race/day isolation, 050); non-zero → FAILED with the output tail."""
+    scope_value = job.scope_value or ""
+    date_from, _, date_to = scope_value.partition("..")
+    proc = _live_refresh(date_from, date_to)
+    stdout = proc.stdout or ""
+    tail = ((proc.stderr or "") + stdout).strip()[-500:]
+    job.completed_at = _now()
+    if proc.returncode != 0:
+        job.status = JobStatus.FAILED
+        job.error_message = tail
+        job.summary = {"kind": "refresh_range", "source": "manual", "error": tail}
+    else:
+        job.status = JobStatus.SUCCEEDED
+        job.summary = {"kind": "refresh_range", "source": "manual", "output": tail}
+    session.add(job)
+    session.commit()
+    return job

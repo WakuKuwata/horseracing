@@ -62,3 +62,12 @@ tr[data-hole="true"] { background: #fff4e5; }  /* coverage hole — needs backfi
 .badge--job-running, .badge--job-queued { background: #e8f0fe; color: #1a56db; }
 .badge--job-partial, .badge--job-skipped { background: #eee; color: var(--muted); }
 .job-error { font-size: 0.75rem; color: #b3261e; max-width: 28rem; overflow-wrap: anywhere; }
+
+/* Feature 053: range refresh action */
+.refresh-btn { font-size: 0.8rem; padding: 0.15rem 0.5rem; cursor: pointer; }
+.refresh-btn:disabled { opacity: 0.6; cursor: default; }
+.refresh-confirm { font-size: 0.8rem; display: inline-flex; gap: 0.4rem; align-items: center; }
+.refresh-confirm button { font-size: 0.78rem; padding: 0.1rem 0.45rem; cursor: pointer; }
+.refresh-result { font-size: 0.8rem; }
+.refresh-result[data-state="error"] { color: #b3261e; }
+.refresh-jobid { color: var(--muted); font-variant-numeric: tabular-nums; }

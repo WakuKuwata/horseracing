@@ -16,7 +16,13 @@ from horseracing_db.validation import is_valid_race_id
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from . import JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RACE, JOB_TYPE_RECOMMEND
+from . import (
+    JOB_TYPE_DAY,
+    JOB_TYPE_PREDICT,
+    JOB_TYPE_RACE,
+    JOB_TYPE_RECOMMEND,
+    JOB_TYPE_REFRESH_RANGE,
+)
 from .config import CONFIG
 
 #: default freshness window — a same-race success within this many seconds is reused (US3/FR-015).
@@ -211,3 +217,35 @@ def count_by(session: Session, trace_id: str) -> dict[str, int]:
         .group_by(IngestionJob.status)
     ).all()
     return {status: int(c) for status, c in rows}
+
+
+def enqueue_refresh_range(
+    session: Session, date_from: datetime.date, date_to: datetime.date
+) -> tuple[IngestionJob, bool]:
+    """Feature 053: enqueue a range refresh (live CLI: predict backfill → recommend backfill).
+
+    In-flight-only dedup per range (advisory lock `refresh_range:{from..to}`) — a double-click
+    reuses the ACTIVE job; a completed job is NOT reused (an explicit click means "run again now",
+    the 050 pipeline underneath is idempotent). (job, reused); caller commits.
+    """
+    scope_value = f"{date_from.isoformat()}..{date_to.isoformat()}"
+    session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
+                    {"k": f"refresh_range:{scope_value}"})
+    active = session.scalars(
+        select(IngestionJob)
+        .where(IngestionJob.job_type == JOB_TYPE_REFRESH_RANGE)
+        .where(IngestionJob.scope_value == scope_value)
+        .where(IngestionJob.status.in_(_ACTIVE))
+        .order_by(IngestionJob.created_at.desc())
+    ).first()
+    if active is not None:
+        return active, True
+
+    job = IngestionJob(
+        source=Source.NETKEIBA, job_type=JOB_TYPE_REFRESH_RANGE,
+        scope="range", scope_value=scope_value,
+        status=JobStatus.QUEUED, summary={"kind": "refresh_range", "source": "manual"},
+    )
+    session.add(job)
+    session.flush()
+    return job, False

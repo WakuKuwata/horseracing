@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useCoverage } from "../api/queries";
+import { RefreshRangeButton } from "../components/RefreshRangeButton";
 import { QueryStateView } from "../components/StateView";
 import { formatInt, textOr } from "../lib/format";
 
@@ -34,6 +35,8 @@ export function CoveragePage() {
         <label>
           to <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </label>
+        {/* Feature 053: enqueue a predict+recommend backfill for the whole visible range. */}
+        <RefreshRangeButton dateFrom={from} dateTo={to} label="この範囲を更新" />
       </div>
       <QueryStateView
         isLoading={query.isLoading}
@@ -58,6 +61,7 @@ export function CoveragePage() {
                   <th className="num">結果</th>
                   <th className="num">予測(運用中)</th>
                   <th className="num">推奨</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -74,6 +78,10 @@ export function CoveragePage() {
                         {hole ? <span title="予測がレース数に満たない日(backfill の穴)"> ⚠</span> : null}
                       </td>
                       <td className="num">{formatInt(d.n_with_recommendations)}</td>
+                      <td>
+                        {/* Feature 053: update just this day (from=to=this date). */}
+                        <RefreshRangeButton dateFrom={d.date} dateTo={d.date} label="この日を更新" />
+                      </td>
                     </tr>
                   );
                 })}

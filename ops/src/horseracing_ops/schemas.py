@@ -30,7 +30,7 @@ class JobAccepted(BaseModel):
     job_id: uuid.UUID
     status: JobStatusT
     reused: bool
-    scope: Literal["race"] = "race"
+    scope: Literal["race", "range"] = "race"  # Feature 053: range refresh jobs
     scope_value: str
     poll_url: str
 

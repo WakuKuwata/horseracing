@@ -37,3 +37,18 @@ describe("admin openapi snapshot", () => {
     expect(raw).toBe(front);
   });
 });
+
+describe("admin ops-openapi snapshot (Feature 053)", () => {
+  const opsRaw = readFileSync(resolve(__dirname, "../../ops-openapi.json"), "utf8");
+  const opsSpec = JSON.parse(opsRaw) as { paths: Record<string, Record<string, unknown>> };
+
+  it("contains the ops action the admin SPA enqueues", () => {
+    expect(Object.keys(opsSpec.paths)).toContain("/ops/v1/refresh-range");
+    expect(opsSpec.paths["/ops/v1/refresh-range"].post).toBeDefined();
+  });
+
+  it("matches the front ops snapshot byte-for-byte (single 024/053 contract, no fork)", () => {
+    const front = readFileSync(resolve(__dirname, "../../../front/ops-openapi.json"), "utf8");
+    expect(opsRaw).toBe(front);
+  });
+});
