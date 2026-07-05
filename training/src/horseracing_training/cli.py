@@ -52,6 +52,8 @@ def train_evaluate(
     target_encode_cols: tuple[str, ...] = (),
     te_smoothing: float = 10.0,
     objective: str = "binary",
+    use_materialized: bool = False,
+    materialized_path: str | None = None,
 ) -> dict:
     eval_races = _load_eval_races(session)
 
@@ -60,6 +62,7 @@ def train_evaluate(
             session, seed=seed, calibration=calibration,
             hpo=hpo, target_encode_cols=target_encode_cols, te_smoothing=te_smoothing,
             objective=objective,
+            use_materialized=use_materialized, materialized_path=materialized_path,
         )
 
     predictor = _make()
@@ -260,13 +263,19 @@ def _run_feature_command(session: Session, args) -> int:
 
         te_cols = tuple(c for c in (args.target_encode or "").split(",") if c)
         objective = getattr(args, "objective", "binary")
+        # Feature 055: materialized reads are a pure input-path swap (bit-parity) — safe for both
+        # sides of the A/B (identical matrices either way).
+        mat = dict(
+            use_materialized=args.use_materialized,
+            materialized_path=args.materialized_path if args.use_materialized else None,
+        )
         candidate = LightGBMPredictor(
             session, seed=args.seed, target_encode_cols=te_cols,
             te_smoothing=args.te_smoothing, calibration=args.calibration,
-            objective=objective,
+            objective=objective, **mat,
         )
         # baseline = current production shape (binary). Feature 039 candidate = cond_logit.
-        baseline = LightGBMPredictor(session, seed=args.seed, calibration=args.calibration)
+        baseline = LightGBMPredictor(session, seed=args.seed, calibration=args.calibration, **mat)
         r = evaluate_feature_adoption(
             session, candidate=candidate, baseline=baseline,
             ece_tol=args.ece_tol, worst_fold_ece_tol=args.worst_fold_ece_tol,
@@ -313,6 +322,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     te.add_argument("--te-smoothing", type=float, default=10.0,
                     help="Feature 036: OOF TE smoothing (shrinkage toward prior)")
+    te.add_argument("--use-materialized", action="store_true",
+                    help="055: read as-of features from the 025 parquet (bit-parity, fail-closed)")
+    te.add_argument("--materialized-path", default="../artifacts/features.parquet")
     te.add_argument("--database-url", default=None)
 
     # Feature 020 — walk-forward adoption gate / ablation / market diagnostic.
@@ -352,6 +364,9 @@ def main(argv: list[str] | None = None) -> int:
     me.add_argument("--objective", choices=["binary", "cond_logit", "pl_topk"],
                     default="binary",
                     help="039/042: candidate win objective (baseline stays binary)")
+    me.add_argument("--use-materialized", action="store_true",
+                    help="055: read as-of features from the 025 parquet (bit-parity, fail-closed)")
+    me.add_argument("--materialized-path", default="../artifacts/features.parquet")
 
     # Feature 049: stage-discount A/B (derivation layer). Production predictor config defaults.
     sde = sub.add_parser("stage-discount-eval",
@@ -390,6 +405,8 @@ def main(argv: list[str] | None = None) -> int:
                 target_encode_cols=te_cols,
                 te_smoothing=args.te_smoothing,
                 objective=args.objective,
+                use_materialized=args.use_materialized,
+                materialized_path=args.materialized_path if args.use_materialized else None,
             )
         _print_summary(summary)
         return 0

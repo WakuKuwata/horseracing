@@ -37,7 +37,16 @@ class Frames:
     )
 
 
-def load_frames(session: Session, end_date: datetime.date | None = None) -> Frames:
+def load_frames(
+    session: Session,
+    end_date: datetime.date | None = None,
+    *,
+    start_after: datetime.date | None = None,
+) -> Frames:
+    """Load the feature-source pool. ``start_after`` (Feature 055, default None = unchanged
+    behavior) lower-bounds the race window to race_date > start_after — used ONLY to load the
+    (end_date, data_through] delta for fingerprint verification, never for feature building
+    (features always use the plain end_date-windowed load for static dtype parity)."""
     conn = session.connection()
 
     races_stmt = (
@@ -51,6 +60,8 @@ def load_frames(session: Session, end_date: datetime.date | None = None) -> Fram
     )
     if end_date is not None:
         races_stmt = races_stmt.where(Race.race_date <= end_date)
+    if start_after is not None:
+        races_stmt = races_stmt.where(Race.race_date > start_after)
     races = pd.read_sql(races_stmt, conn, parse_dates=["race_date"])
 
     rh_stmt = (
@@ -79,6 +90,9 @@ def load_frames(session: Session, end_date: datetime.date | None = None) -> Fram
     if end_date is not None:
         rh_stmt = rh_stmt.where(Race.race_date <= end_date)
         rr_stmt = rr_stmt.where(Race.race_date <= end_date)
+    if start_after is not None:
+        rh_stmt = rh_stmt.where(Race.race_date > start_after)
+        rr_stmt = rr_stmt.where(Race.race_date > start_after)
 
     race_horses = pd.read_sql(rh_stmt, conn)
     race_results = pd.read_sql(rr_stmt, conn)

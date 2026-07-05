@@ -11,6 +11,11 @@ from sqlalchemy.orm import Session
 from .model_loader import ServingError
 from .pipeline import run_serving, run_serving_backfill
 
+#: Feature 055: default parquet path for --use-materialized. Follows the weights_uri convention
+#: (relative to cwd=serving/, e.g. the 028 ops subprocess runs there). Fail-closed: missing/stale
+#: raises with re-materialize guidance, never a silent in-memory fallback.
+_MAT_DEFAULT = "../artifacts/features.parquet"
+
 
 def _parse_date(s: str) -> datetime.date:
     return datetime.date.fromisoformat(s)
@@ -24,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     pr.add_argument("--race-id", default=None)
     pr.add_argument("--date", type=_parse_date, default=None)
     pr.add_argument("--model-version", default=None, help="explicit model (else single active)")
+    pr.add_argument("--use-materialized", action="store_true",
+                    help="read as-of features from the 025 parquet (bit-parity, fail-closed)")
+    pr.add_argument("--materialized-path", default=_MAT_DEFAULT)
     pr.add_argument("--database-url", default=None)
 
     # Feature 044: date-range predict backfill (idempotent per model; fills the product with data).
@@ -33,6 +41,9 @@ def main(argv: list[str] | None = None) -> int:
     pb.add_argument("--model-version", default=None, help="explicit model (else single active)")
     pb.add_argument("--force", action="store_true",
                     help="regenerate even if the model already has a run for the race")
+    pb.add_argument("--use-materialized", action="store_true",
+                    help="read as-of features from the 025 parquet (verify once, then per-day)")
+    pb.add_argument("--materialized-path", default=_MAT_DEFAULT)
     pb.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)
@@ -43,6 +54,8 @@ def main(argv: list[str] | None = None) -> int:
                 counts = run_serving_backfill(
                     session, date_from=args.from_, date_to=args.to,
                     model_version=args.model_version, force=args.force,
+                    use_materialized=args.use_materialized,
+                    materialized_path=args.materialized_path if args.use_materialized else None,
                 )
         except ServingError as e:
             parser.error(str(e))
@@ -60,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
                 results = run_serving(
                     session, race_id=args.race_id, date=args.date,
                     model_version=args.model_version,
+                    use_materialized=args.use_materialized,
+                    materialized_path=args.materialized_path if args.use_materialized else None,
                 )
         except ServingError as e:
             parser.error(str(e))

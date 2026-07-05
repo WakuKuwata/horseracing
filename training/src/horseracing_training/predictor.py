@@ -61,6 +61,8 @@ class LightGBMPredictor:
         te_smoothing: float = DEFAULT_SMOOTHING,
         drop_features: tuple[str, ...] = (),
         objective: str = "binary",
+        use_materialized: bool = False,
+        materialized_path: str | None = None,
     ) -> None:
         self.session = session
         self.seed = seed
@@ -79,6 +81,10 @@ class LightGBMPredictor:
         # Feature 020: exclude these feature columns (e.g. to build a baseline without the new
         # features). Empty = no-op (validated MVP path unchanged bit-for-bit).
         self.drop_features = tuple(drop_features)
+        # Feature 055: opt-in materialized (025 parquet) feature reads — bit-parity guaranteed,
+        # fail-closed on stale/missing. Default False keeps the historical path unchanged.
+        self.use_materialized = use_materialized
+        self.materialized_path = materialized_path
 
         self._data: TrainingMatrix | None = None
         self.win_model_: WinModel | None = None
@@ -91,7 +97,11 @@ class LightGBMPredictor:
     # --- data (built once, reused across folds) ------------------------------
     def _ensure_data(self) -> TrainingMatrix:
         if self._data is None:
-            full = build_training_matrix(self.session)
+            full = build_training_matrix(
+                self.session,
+                use_materialized=self.use_materialized,
+                materialized_path=self.materialized_path,
+            )
             if self.drop_features:
                 # Feature 020: drop excluded columns from feature_cols (frame keeps them, unused).
                 # All downstream uses data.feature_cols, so a single filter propagates everywhere.

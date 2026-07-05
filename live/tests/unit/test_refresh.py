@@ -43,6 +43,31 @@ def test_refresh_runs_predict_then_recommend_with_args(monkeypatch):
     assert rep.predict_error is None and rep.recommend_error is None
 
 
+def test_refresh_propagates_materialized_to_predict_stage_only(monkeypatch):
+    # Feature 055: --use-materialized reaches the prediction stage (which builds features);
+    # the recommend stage builds no feature matrices, so its signature stays untouched.
+    seen = {}
+
+    def fake_predict(session, *, date_from, date_to, force=False,
+                     use_materialized=False, materialized_path=None):
+        seen["mat"] = (use_materialized, materialized_path)
+        return BackfillCounts(generated=0)
+
+    def fake_recommend(session, *, date_from, date_to):
+        return {"races": 0, "generated": 0, "topped_up": 0, "skip_no_run": 0,
+                "skip_no_odds": 0, "skip_exists": 0, "error": 0}
+
+    monkeypatch.setattr(serving_pipeline, "run_serving_backfill", fake_predict)
+    monkeypatch.setattr(betting_cli, "recommend_backfill", fake_recommend)
+
+    refresh_range(object(), date_from=_FROM, date_to=_TO,
+                  use_materialized=True, materialized_path="p.parquet")
+    assert seen["mat"] == (True, "p.parquet")
+
+    refresh_range(object(), date_from=_FROM, date_to=_TO)  # default OFF unchanged
+    assert seen["mat"] == (False, None)
+
+
 def test_predict_crash_does_not_skip_recommend(monkeypatch):
     ran = []
 

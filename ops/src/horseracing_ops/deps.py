@@ -26,7 +26,12 @@ def owner_database_url() -> str:
 
 
 def create_ops_engine() -> Engine:
-    return create_db_engine(owner_database_url())
+    # pool_pre_ping validates a pooled connection before use (a lightweight SELECT 1) and
+    # transparently reconnects a dead one; pool_recycle retires connections older than 5 min. The
+    # resident worker reuses connections for hours and the DB (docker Postgres) drops them across a
+    # laptop sleep/resume — without this the next query raises and the daemon dies. Scoped to ops so
+    # the shared create_db_engine default (every other service) is unchanged.
+    return create_db_engine(owner_database_url(), pool_pre_ping=True, pool_recycle=300)
 
 
 def get_session(request: Request) -> Iterator[Session]:

@@ -12,9 +12,12 @@ from sqlalchemy.orm import Session
 
 from .loader import Frames, load_frames
 from .materialize import (
+    MaterializationError,
     assert_fresh,
+    assert_manifest_compatible,
     build_asof_features,
     has_future_rows,
+    read_manifest,
     read_materialized,
 )
 from .registry import validate_columns
@@ -26,6 +29,7 @@ def _asof_block(
     frames: Frames, *, low_history_max: int, start_date, end_date,
     materialized_path: Path | None, use_materialized: bool,
     fingerprint_frames: Frames | None = None,
+    skip_fingerprint_verify: bool = False,
 ):
     """The as-of feature block: from materialized parquet (fast, opt-in) or computed in-memory.
 
@@ -34,14 +38,21 @@ def _asof_block(
     the parquet is fail-closed-verified (fingerprint over the materialized range); any in-range
     change/backfill raises, while in-scope races BEYOND the materialized range (serving new races)
     fall back to the same in-memory computation.
+
+    Feature 055: ``skip_fingerprint_verify`` skips ONLY the fingerprint comparison (a backfill run
+    verifies once up front via ``verify_materialized``); the frame-free compatibility checks
+    (feature_version / fingerprint algo) still run every time.
     """
-    if use_materialized and materialized_path is not None:
+    if use_materialized:
+        if materialized_path is None:  # fail-closed: never silently degrade to in-memory (FR-002)
+            raise MaterializationError("use_materialized=True requires materialized_path")
         df, manifest = read_materialized(materialized_path)   # raises if missing
-        # Staleness is verified over the FULL materialized range (fingerprint_frames), not the
-        # end_date-restricted `frames` — otherwise an end_date < data_through would mismatch the
-        # full-pool manifest. The rest (static/population/fallback) uses windowed `frames` so static
-        # dtypes don't depend on rows beyond end_date (parity).
-        assert_fresh(manifest, fingerprint_frames if fingerprint_frames is not None else frames)
+        if skip_fingerprint_verify:
+            assert_manifest_compatible(manifest)
+        else:
+            # fp-v2 is value-canonical, so any frames covering data_through verify identically —
+            # the caller passes the windowed frames (+ delta) instead of a second full-pool load.
+            assert_fresh(manifest, fingerprint_frames if fingerprint_frames is not None else frames)
         if has_future_rows(frames, manifest, start_date=start_date, end_date=end_date):
             return build_asof_features(frames, low_history_max=low_history_max)  # serving fallback
         return df                                             # parquet fast path
@@ -57,6 +68,7 @@ def assemble_feature_matrix(
     materialized_path: Path | None = None,
     use_materialized: bool = False,
     fingerprint_frames: Frames | None = None,
+    skip_fingerprint_verify: bool = False,
 ) -> pd.DataFrame:
     """Build the fixed-schema FeatureMatrix from in-memory Frames (DB-independent).
 
@@ -66,14 +78,15 @@ def assemble_feature_matrix(
     Feature 025: ``use_materialized`` reads the as-of block from ``materialized_path`` (parquet)
     when fresh & covered; otherwise/by default it is computed in-memory. Output is identical
     either way (parity gate) — static/current-race features are always computed here.
-    ``fingerprint_frames`` (full materialized-range pool) is used ONLY for the staleness check when
-    ``use_materialized``; ``frames`` stays end_date-windowed so static dtypes are pool-independent.
+    ``fingerprint_frames`` must cover races through the manifest's data_through and is used ONLY
+    for the staleness check; ``frames`` stays end_date-windowed so static dtypes are
+    pool-independent. Feature 055: ``skip_fingerprint_verify`` for verify-once backfill runs.
     """
     static = build_static_features(frames)
     asof = _asof_block(
         frames, low_history_max=low_history_max, start_date=start_date, end_date=end_date,
         materialized_path=materialized_path, use_materialized=use_materialized,
-        fingerprint_frames=fingerprint_frames,
+        fingerprint_frames=fingerprint_frames, skip_fingerprint_verify=skip_fingerprint_verify,
     )
     fm = static.merge(asof, on=["race_id", "horse_id"], how="left")
     # Feature 055: prize_rel = today's prize level − the horse's as-of prize class (昇降級度合い).
@@ -97,6 +110,62 @@ def assemble_feature_matrix(
     return matrix
 
 
+def _fingerprint_frames_for(
+    session: Session, frames: Frames, *, end_date: datetime.date | None,
+    materialized_path: Path,
+) -> Frames:
+    """Frames covering the materialized range for staleness verification (Feature 055).
+
+    fp-v1 required a second FULL-pool load (hash was dtype-sensitive and had to match the
+    materialize-time load exactly). fp-v2 is value-canonical, so:
+    - end_date is None or >= data_through: the windowed ``frames`` already cover the range — reuse
+      (zero extra load; ``source_fingerprint`` restricts to data_through internally).
+    - end_date < data_through: load ONLY the (end_date, data_through] delta and concat. The horses
+      table is loaded date-unfiltered by every load_frames call, so the delta's copy is dropped
+      (concat would duplicate rows and flip the hash); ``_restrict`` filters horses by runners.
+    """
+    manifest = read_manifest(materialized_path)
+    assert_manifest_compatible(manifest)
+    through = (
+        datetime.date.fromisoformat(manifest.data_through) if manifest.data_through else None
+    )
+    if end_date is None or through is None or end_date >= through:
+        return frames
+    delta = load_frames(session, end_date=through, start_after=end_date)
+
+    def _cat(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
+        # skip empty parts: read_sql of zero rows yields all-object dtypes, and concatenating
+        # them degrades float64 columns to object (the fp-v2 hash is value-canonical and thus
+        # robust to that, but skipping keeps frames small and dtype-clean).
+        if len(b) == 0:
+            return a
+        return a if len(a) == 0 else pd.concat([a, b], ignore_index=True)
+
+    return Frames(
+        races=_cat(frames.races, delta.races),
+        race_horses=_cat(frames.race_horses, delta.race_horses),
+        race_results=_cat(frames.race_results, delta.race_results),
+        horses=frames.horses,  # full table in both loads — keep one copy (no duplicate rows)
+    )
+
+
+def verify_materialized(session: Session, materialized_path: str | Path | None) -> None:
+    """One-shot fail-closed staleness verification (Feature 055).
+
+    Backfill runs call this ONCE up front, then build per day with skip_fingerprint_verify=True —
+    the fingerprint compares the same parquet against the same source state, so re-verifying every
+    day only re-pays the load. Raises MaterializationError on missing/stale/incompatible."""
+    if materialized_path is None:  # fail-closed (FR-002); mirrors build_feature_matrix
+        raise MaterializationError("use_materialized=True requires materialized_path")
+    manifest = read_manifest(Path(materialized_path))
+    assert_manifest_compatible(manifest)
+    through = (
+        datetime.date.fromisoformat(manifest.data_through) if manifest.data_through else None
+    )
+    frames = load_frames(session, end_date=through)
+    assert_fresh(manifest, frames)
+
+
 def build_feature_matrix(
     session: Session,
     *,
@@ -105,19 +174,23 @@ def build_feature_matrix(
     low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
     materialized_path: Path | None = None,
     use_materialized: bool = False,
+    skip_fingerprint_verify: bool = False,
 ) -> pd.DataFrame:
     # Always load the end_date-windowed pool for static/population/as-of: as-of values for races
     # <= end_date only look strictly before each race, and windowed loading keeps static dtypes
-    # independent of rows beyond end_date (parity). When using materialized parquet, also load the
-    # FULL pool ONLY to verify the staleness fingerprint over the whole materialized range (the
-    # manifest was generated over the full pool); this never feeds feature values.
+    # independent of rows beyond end_date (parity). Feature 055: fingerprint verification reuses
+    # this load (+ a (end_date, data_through] delta when needed) — fp-v2 is value-canonical, so
+    # the old second full-pool load is gone.
     frames = load_frames(session, end_date=end_date)
-    # full-pool frames for the staleness fingerprint only; reuse `frames` when already unrestricted.
     fp_frames = None
-    if use_materialized:
-        fp_frames = frames if end_date is None else load_frames(session, end_date=None)
+    if use_materialized and not skip_fingerprint_verify:
+        if materialized_path is None:  # fail-closed (FR-002); same error as _asof_block
+            raise MaterializationError("use_materialized=True requires materialized_path")
+        fp_frames = _fingerprint_frames_for(
+            session, frames, end_date=end_date, materialized_path=Path(materialized_path),
+        )
     return assemble_feature_matrix(
         frames, start_date=start_date, end_date=end_date, low_history_max=low_history_max,
         materialized_path=materialized_path, use_materialized=use_materialized,
-        fingerprint_frames=fp_frames,
+        fingerprint_frames=fp_frames, skip_fingerprint_verify=skip_fingerprint_verify,
     )
