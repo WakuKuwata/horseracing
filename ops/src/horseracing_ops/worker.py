@@ -10,6 +10,7 @@ worker): re-queue under max_retry, else mark FAILED. Operator-initiated only —
 from __future__ import annotations
 
 import datetime
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -45,6 +46,9 @@ _CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND,
 STALE_RUNNING_SECONDS = CONFIG.stale_running_seconds
 #: polling cadence for the daemon loop.
 POLL_SECONDS = CONFIG.poll_seconds
+#: after an unexpected loop error (e.g. the DB connection dropped across a laptop sleep) back off
+#: this long before retrying, so a persistent outage doesn't become a hot retry loop.
+ERROR_BACKOFF_SECONDS = 5.0
 
 
 def _now() -> datetime.datetime:
@@ -160,12 +164,21 @@ def drain_concurrent(
 
 
 def main() -> None:  # pragma: no cover — daemon entrypoint
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     engine = create_ops_engine()
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     with factory() as session:
         recover_stale(session)
+    logging.info("ops worker started (concurrency=%s)", CONFIG.worker_concurrency)
     while True:
-        processed = drain_concurrent(factory, max_workers=CONFIG.worker_concurrency)
+        try:
+            processed = drain_concurrent(factory, max_workers=CONFIG.worker_concurrency)
+        except Exception:  # noqa: BLE001 — a transient DB error (e.g. the connection dropped across
+            # a laptop sleep) must not kill the daemon; log, back off, and re-loop. pool_pre_ping
+            # reconnects on the next iteration once the DB is reachable again.
+            logging.exception("worker iteration failed; backing off %ss", ERROR_BACKOFF_SECONDS)
+            time.sleep(ERROR_BACKOFF_SECONDS)
+            continue
         if processed == 0:
             time.sleep(POLL_SECONDS)
 
