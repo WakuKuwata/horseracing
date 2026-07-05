@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+import decimal
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -45,6 +47,12 @@ _KEYS = ["race_id", "horse_id"]
 _HORSE_FP_COLS = ["horse_id", "sire_name", "dam_name", "damsire_name",
                   "sire_id", "dam_id", "damsire_id"]
 MANIFEST_VERSION = 1
+#: Feature 055: value-canonical fingerprint. fp-v1 hashed raw dtypes (hash_pandas_object is
+#: dtype-sensitive: int64(1) != float64(1.0)), which forced verification to re-load the FULL pool
+#: exactly like materialize time. fp-v2 canonicalizes values first (numeric -> float64, other ->
+#: str), so equal VALUES hash equal regardless of the load window — verification can then reuse
+#: the end_date-windowed frames (+ a small delta load) instead of a second full-pool load.
+FINGERPRINT_ALGO = "fp-v2"
 
 
 class MaterializationError(RuntimeError):
@@ -62,21 +70,50 @@ class Manifest:
     source_fingerprint: str
     materialized_columns: list[str]
     generated_at: str | None = None
+    #: Feature 055: fingerprint algorithm tag. Old manifests (field absent -> None) predate the
+    #: value-canonical hash and MUST be regenerated — fail-closed, never silently accepted.
+    fingerprint_algo: str | None = None
 
     def to_json(self) -> str:
         return json.dumps(dataclasses.asdict(self), ensure_ascii=False, sort_keys=True, indent=2)
 
 
-def _hash_frame(df: pd.DataFrame, cols: list[str]) -> str:
-    """Deterministic hash of a frame's projected columns (row-order independent via sorted keys).
+def _canon_cell(v) -> str:
+    """Canonical string for one cell: missing -> "", numeric -> repr(float), else str.
 
-    object columns may hold unhashable cells (e.g. race_results.corner_orders is a list), so they
-    are stringified before hashing — deterministic and sufficient for change detection.
+    Used for object/datetime columns whose cells may be None/NaN/Decimal/int/list — the numeric
+    branch makes an object-held Decimal('56.0')/int 56 hash identically to a float64 56.0 column
+    (repr(float) == str(float) in py3). Lists (race_results.corner_orders) fall through to str.
+    """
+    if v is None:
+        return ""
+    if isinstance(v, float) and math.isnan(v):
+        return ""
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, (int, float, decimal.Decimal)):
+        return repr(float(v))
+    return str(v)
+
+
+def _hash_frame(df: pd.DataFrame, cols: list[str]) -> str:
+    """Deterministic VALUE-canonical hash of a frame's projected columns (fp-v2, Feature 055).
+
+    Row-order independent via sorted keys. Every column is canonicalized to STRINGS before
+    hashing, so the hash depends only on values, never on pool-dependent dtypes: the 025/026
+    int->float drift (a column all-int inside one load window but NaN-bearing in another loads as
+    int64 vs float64), object-held Decimals from read_sql, and float64 columns degraded to object
+    by concatenating an EMPTY delta frame (read_sql of zero rows yields all-object dtypes) all
+    hash identically for equal values. Missing (None/NaN) canonicalizes to "".
     """
     sub = df[cols].sort_values([c for c in _KEYS if c in cols] or cols, kind="stable").copy()
     for c in sub.columns:
-        if sub[c].dtype == object:
-            sub[c] = sub[c].map(lambda v: "" if v is None else str(v))
+        s = sub[c]
+        if pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s):
+            f = s.astype("float64")  # vectorized fast path; astype(str) of float == repr(float)
+            sub[c] = f.astype(str).mask(f.isna(), "")
+        else:
+            sub[c] = s.map(_canon_cell)
     return hashlib.sha256(
         pd.util.hash_pandas_object(sub, index=False).values.tobytes()
     ).hexdigest()
@@ -187,29 +224,52 @@ def write_materialized(
         source_fingerprint=source_fingerprint(frames, through=through),
         materialized_columns=materialized_columns(),
         generated_at=generated_at,
+        fingerprint_algo=FINGERPRINT_ALGO,
     )
     _manifest_path(parquet_path).write_text(manifest.to_json(), encoding="utf-8")
     return manifest
 
 
-def read_materialized(parquet_path: str | Path) -> tuple[pd.DataFrame, Manifest]:
+def read_manifest(parquet_path: str | Path) -> Manifest:
+    """Load the manifest sidecar only (cheap JSON read — no parquet load). Feature 055: lets the
+    builder learn ``data_through`` up front to plan the fingerprint-verification load window."""
     parquet_path = Path(parquet_path)
     mpath = _manifest_path(parquet_path)
     if not parquet_path.exists() or not mpath.exists():
         raise MaterializationError(f"materialized parquet/manifest missing: {parquet_path}")
-    df = pd.read_parquet(parquet_path)
     raw = json.loads(mpath.read_text(encoding="utf-8"))
-    manifest = Manifest(**raw)
+    return Manifest(**raw)
+
+
+def read_materialized(parquet_path: str | Path) -> tuple[pd.DataFrame, Manifest]:
+    parquet_path = Path(parquet_path)
+    manifest = read_manifest(parquet_path)
+    df = pd.read_parquet(parquet_path)
     return df, manifest
 
 
-def assert_fresh(manifest: Manifest, frames: Frames) -> None:
-    """Fail-closed if the parquet is stale vs the current source (fingerprint/version), so callers
-    never silently serve outdated features (codex P0)."""
+def assert_manifest_compatible(manifest: Manifest) -> None:
+    """Frame-free compatibility checks (feature_version / fingerprint algo) — fail-closed.
+
+    Feature 055: split out of assert_fresh so a backfill run that already fingerprint-verified once
+    can still cheaply re-assert compatibility per day without any DB load."""
     if manifest.feature_version != FEATURE_VERSION:
         raise MaterializationError(
             f"feature_version mismatch: parquet={manifest.feature_version} now={FEATURE_VERSION}"
         )
+    if manifest.fingerprint_algo != FINGERPRINT_ALGO:
+        raise MaterializationError(
+            f"fingerprint algo mismatch: manifest={manifest.fingerprint_algo!r} "
+            f"now={FINGERPRINT_ALGO!r} (old-format manifest) — re-run `features materialize`"
+        )
+
+
+def assert_fresh(manifest: Manifest, frames: Frames) -> None:
+    """Fail-closed if the parquet is stale vs the current source (fingerprint/version), so callers
+    never silently serve outdated features (codex P0). ``frames`` must cover races through
+    ``manifest.data_through`` (fp-v2 is value-canonical, so any load window that covers the
+    materialized range verifies identically — Feature 055)."""
+    assert_manifest_compatible(manifest)
     through = datetime.date.fromisoformat(manifest.data_through) if manifest.data_through else None
     current = source_fingerprint(frames, through=through)
     if manifest.source_fingerprint != current:

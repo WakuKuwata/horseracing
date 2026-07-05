@@ -170,6 +170,8 @@ def refresh_range(
     date_from: datetime.date,
     date_to: datetime.date,
     force: bool = False,
+    use_materialized: bool = False,
+    materialized_path: str | None = None,
 ) -> RefreshReport:
     """Feature 050: bundled product update = predict backfill (044) THEN recommend backfill (043).
 
@@ -178,6 +180,9 @@ def refresh_range(
     Both stages are idempotent with per-race/day exception isolation (existing behavior, no new
     logic). A crash of the prediction stage does NOT skip the recommendation stage (idempotent →
     safe; the error is reported). ``force`` re-generates predictions only (044 append-only).
+
+    Feature 055: ``use_materialized`` propagates to the PREDICTION stage only (the recommendation
+    stage builds no feature matrices — it reads persisted predictions).
     """
     from dataclasses import asdict
 
@@ -189,6 +194,7 @@ def refresh_range(
     try:
         predict = asdict(run_serving_backfill(
             session, date_from=date_from, date_to=date_to, force=force,
+            use_materialized=use_materialized, materialized_path=materialized_path,
         ))
     except Exception as exc:  # noqa: BLE001 — stage isolation; recommend is idempotent-safe
         session.rollback()

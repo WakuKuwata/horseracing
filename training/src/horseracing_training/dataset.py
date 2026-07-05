@@ -89,9 +89,17 @@ def build_training_matrix(
     session: Session,
     *,
     end_date: datetime.date | None = None,
+    use_materialized: bool = False,
+    materialized_path: str | None = None,
 ) -> TrainingMatrix:
-    """Assemble the started-population feature matrix joined with race_date + win label."""
-    matrix = build_feature_matrix(session, end_date=end_date)
+    """Assemble the started-population feature matrix joined with race_date + win label.
+
+    Feature 055: ``use_materialized`` reads the as-of block from the 025 parquet (bit-parity,
+    fail-closed on stale/missing). Default False keeps the historical path byte-identical."""
+    matrix = build_feature_matrix(
+        session, end_date=end_date,
+        use_materialized=use_materialized, materialized_path=materialized_path,
+    )
     feature_cols = model_input_features()
 
     race_dates = _race_dates(session)

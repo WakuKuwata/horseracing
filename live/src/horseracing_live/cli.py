@@ -48,6 +48,8 @@ def _cmd_refresh(session: Session, args) -> int:
     """Feature 050: one-command product update — predict backfill THEN recommend backfill."""
     rep = refresh_range(
         session, date_from=args.from_, date_to=args.to, force=args.force,
+        use_materialized=args.use_materialized,
+        materialized_path=args.materialized_path if args.use_materialized else None,
     )
     print(f"refresh {rep.date_from}..{rep.date_to}")
     if rep.predict is not None:
@@ -93,6 +95,10 @@ def main(argv: list[str] | None = None) -> int:
     rf.add_argument("--force", action="store_true",
                     help="re-generate predictions (044 append-only); recommendations stay "
                          "group-wise idempotent")
+    rf.add_argument("--use-materialized", action="store_true",
+                    help="055: prediction stage reads as-of features from the 025 parquet "
+                         "(bit-parity, fail-closed; recommend stage builds no features)")
+    rf.add_argument("--materialized-path", default="../artifacts/features.parquet")
     rf.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)
