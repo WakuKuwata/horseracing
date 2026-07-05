@@ -76,8 +76,8 @@
 - [x] T018 [US3] `training/src/horseracing_training/cli.py`: feature-eval 既定 drop_groups を `_DEF_055 = "pace_first3f,owner_breeder,race_level,sire_line"` に更新(旧群は明示 --drop-groups で到達可能、041 同型)
 - [x] T019 [P] [US3] `training/tests` / `eval/tests`: 既定 drop 更新の単体(baseline が新 4 群を落とすこと)+ 既存 feature-eval 回帰
 - [x] T020 [US3] **実 DB でゲート実行(採否決定点)**: quickstart §4 の feature-eval(18-fold、シリーズ標準閾値)+ ablation diagnostic を実行し、fold 別数値・採否判定を spec の Status/結果セクションに記録。**不採用なら T021–T022 をスキップし負結果記録へ**
-- [ ] T021 [US3] (ADOPTED 時のみ)quickstart §5 の train-evaluate で lgbm-055 学習(pl_topk+TE+isotonic、baseline=uniform)→ 機械ゲート判定 → active 昇格・lgbm-042 retired・serving ロード(features-013)確認
-- [ ] T022 [US3] (ADOPTED 時のみ)実 DB E2E: serving predict 1 レースで新特徴込み予測が整合性テスト通過・feature_snapshots に新列・API 透過(openapi 不変)
+- [x] T021 [US3] (ADOPTED 時のみ)quickstart §5 の train-evaluate で lgbm-055 学習(pl_topk+TE+isotonic、baseline=uniform)→ 機械ゲート判定 → active 昇格・lgbm-042 retired・serving ロード(features-013)確認
+- [x] T022 [US3] (ADOPTED 時のみ)実 DB E2E: serving predict 1 レースで新特徴込み予測が整合性テスト通過・feature_snapshots に新列・API 透過(openapi 不変)
 
 **Checkpoint**: 採否確定(+採用時は lgbm-055 が production)
 
@@ -85,9 +85,9 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T023 全パッケージ回帰(quickstart §6: db/ingest/features/eval/probability/training/serving/betting)+ front drift-check(openapi 不変)
-- [ ] T024 [P] spec.md Status 更新(実測数値+採否)・CLAUDE.md SPECKIT 要約更新
-- [ ] T025 [P] メモリ更新: feature-055 結果ノート(採否・各群寄与・「生データ棚卸し」の学び)+ MEMORY.md 索引行
+- [x] T023 全パッケージ回帰(quickstart §6: db/ingest/features/eval/probability/training/serving/betting)+ front drift-check(openapi 不変)
+- [x] T024 [P] spec.md Status 更新(実測数値+採否)・CLAUDE.md SPECKIT 要約更新
+- [x] T025 [P] メモリ更新: feature-055 結果ノート(採否・各群寄与・「生データ棚卸し」の学び)+ MEMORY.md 索引行
 
 ---
 

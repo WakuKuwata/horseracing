@@ -4,7 +4,23 @@
 
 **Created**: 2026-07-03
 
-**Status**: Draft
+**Status**: **ADOPTED — lgbm-055 active(features-013)、機械ゲートは worst-fold ECE blip で False → ユーザー判断採用(023/039 前例、2026-07-03)**
+
+## 実測結果(2026-07-03〜05)
+
+**US1/US2(ingest+特徴)**: 全期間再 ingest(2007–2025、19年エラーゼロ・既存行追加ゼロ=バイト不変を実 DB 確認)。カバレッジ: first_3f 93.0%(as-of 特徴 85.3%)・prize 98.8%・owner/系統 ~90%。実 DB パリティ: **950,491行×108列 ビット一致**(materialize==in-memory)。
+
+**US3 採用ゲート(19-fold、2026 データ増で 19 fold)**:
+- win LogLoss 0.23212→**0.23105(−0.00107)**・AUC 0.75117→**0.75561(+0.0044=特徴束歴代最大級)**・Brier 改善
+- **19/19 fold 全勝(シリーズ初)**・worst_dLogLoss −0.00028(全 fold 改善)
+- mean ECE +0.00073(tol 1e-3 内=primary_pass)、**worst_dECE +0.00220 > 2e-3 のみ不通過 → 機械 ADOPTED=False**
+- **ユーザー判断で採用**(020/023 で確立した「識別力↑・単一 fold ECE blip」型。本番は isotonic+two_gamma 校正が ECE を管理、023/039 の上書き前例)
+
+**lgbm-055(本番構成 pl_topk+TE+isotonic、全ゲート PASS で active・lgbm-042 retired)**:
+- win LogLoss **0.21615**(042: 0.21706)・win ECE 0.00070・top2 LL 0.34002(042: 0.34156)・top3 LL 0.43037(042: 0.43220)— ※ 042 は 18-fold、055 は 2026 込み 19-fold の参考比較
+- 実 DB E2E: serving が features-013 の 108 列で予測、lv=`feat=features-013;serve=…;sdisc=harville;…`(049 stage 割引と正しく合成)、新特徴が feature_snapshots に記録、整合性テスト通過
+
+**運用ノート**: pl_topk フル構成の train-evaluate は実測十数時間(カスタム目的関数の Python 勾配+評価ローダ N+1+DB 競合)。途中 DB 再起動で 1 回全損 → nohup 切り離し+監視で完走。改善候補: 評価ローダ bulk 化(チップ登録済)・pl_topk 勾配ベクトル化・fold 毎チェックポイント。
 
 **Input**: User description: "win/place/show すべての精度改善のため、生 CSV 73 列中 35 列しか読んでいない ingest の未使用列(テン3F・馬主・生産者・本賞金・系統)を取り込み、features-013 候補束として feature 化する。"
 

@@ -331,7 +331,7 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
     return 0
 
 
-def recommend_backfill(session: Session, *, date_from, date_to) -> dict:
+def recommend_backfill(session: Session, *, date_from, date_to, stage_discount: bool = False) -> dict:
     """Feature 043 US3 core (extracted in 050 for the live refresh pipeline): idempotently
     generate the recommendation set for every race with a prediction_run + odds in
     [date_from, date_to]. Per-race exception isolation (one failure doesn't abort). Returns the
@@ -370,7 +370,7 @@ def recommend_backfill(session: Session, *, date_from, date_to) -> dict:
                 pcal = _fit_product_p_calibrator(session, before_date=rdate, target_race_id="")
                 # Feature 049 discount OPT-IN (default OFF — exotic trio MUST gate failed)
                 sdisc = (_fit_product_stage_discount(session, before_date=rdate, p_calibrator=pcal)
-                         if getattr(args, "stage_discount", False) else None)
+                         if stage_discount else None)
                 pcal_day = rdate
             _generate_product_set(session, run_id, p_calibrator=pcal, stage_discount=sdisc)
             # a partial run (043-era exotic-only) counts as a top-up, a bare run as generated
@@ -385,7 +385,8 @@ def recommend_backfill(session: Session, *, date_from, date_to) -> dict:
 
 
 def _cmd_recommend_backfill(session: Session, args) -> int:
-    counts = recommend_backfill(session, date_from=args.from_, date_to=args.to)
+    counts = recommend_backfill(session, date_from=args.from_, date_to=args.to,
+                                stage_discount=getattr(args, "stage_discount", False))
     print(f"recommend-backfill {args.from_}..{args.to}  races={counts['races']}")
     print(f"  generated={counts['generated']} topped_up={counts['topped_up']} "
           f"skip_exists={counts['skip_exists']} skip_no_run={counts['skip_no_run']} "
