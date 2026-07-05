@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Link, useParams } from "react-router-dom";
 
 import { usePredictions, useRace } from "../api/queries";
@@ -6,32 +8,43 @@ import { ImportanceChart } from "../components/ImportanceChart";
 import { JointPanel } from "../components/JointPanel";
 import { OddsPanel } from "../components/OddsPanel";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
-import { PQCompare } from "../components/PQCompare";
 import { PredictButton } from "../components/PredictButton";
 import { RecommendButton } from "../components/RecommendButton";
 import { RecommendationPanel } from "../components/RecommendationPanel";
 import { RefreshButton } from "../components/RefreshButton";
 import { RunAuditView } from "../components/RunAudit";
-import { QueryStateView } from "../components/StateView";
-import { PLACEHOLDER } from "../lib/format";
+import { ErrorView, LoadingView, QueryStateView } from "../components/StateView";
+import { formatDateTime, PLACEHOLDER } from "../lib/format";
 import { venueName } from "../lib/venues";
+
+type Tab = "recs" | "odds" | "model";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "recs", label: "買い目推奨" },
+  { key: "odds", label: "オッズ" },
+  { key: "model", label: "モデル情報" },
+];
 
 export function RaceDetailPage() {
   const { raceId = "" } = useParams();
   const raceQuery = useRace(raceId);
   // Per-horse predictions WITHOUT joint params (no bet_type/top) → flat win/top2/top3 only.
   const predQuery = usePredictions(raceId);
+  const [tab, setTab] = useState<Tab>("recs");
+
+  const pred = predQuery.data;
+  const hasPreds = (pred?.horses.length ?? 0) > 0;
 
   return (
     <section>
       <div className="detail-topbar">
         <Link to="/">← レース一覧</Link>
-        {/* US1: refresh THIS race from netkeiba (ops write service); display stays on 014. */}
-        <RefreshButton raceId={raceId} />
-        {/* 028: generate THIS race's model predictions on demand (ops write → 014 refetch). */}
-        <PredictButton raceId={raceId} />
-        {/* 043: generate THIS race's buy recommendations on demand (ops write → 014 refetch). */}
-        <RecommendButton raceId={raceId} />
+        {/* Ordered pipeline: refresh data → predict → recommend (024/028/043 ops writes). */}
+        <div className="detail-actions">
+          <RefreshButton raceId={raceId} />
+          <PredictButton raceId={raceId} />
+          <RecommendButton raceId={raceId} />
+        </div>
       </div>
 
       <div className="panel">
@@ -70,41 +83,79 @@ export function RaceDetailPage() {
         >
           {(r) => (
             <>
-              {predQuery.data?.run && <RunAuditView run={predQuery.data.run} />}
+              {predQuery.isLoading && <LoadingView label="予測を読み込み中…" />}
+              {predQuery.error && <ErrorView error={predQuery.error} />}
+              {pred?.run && <RunAuditView run={pred.run} />}
+              {/* 予測なし → 空の列を並べず生成導線を示す(read-onlyの表示は永続データのみ) */}
+              {predQuery.isSuccess && !hasPreds && (
+                <p className="state state--empty" data-testid="no-predictions-cta">
+                  このレースの予測はまだ生成されていません。右上の「予測する」で生成できます。
+                </p>
+              )}
+              {hasPreds && pred?.canonical_consistent === false && (
+                <p className="state state--empty" data-testid="pq-incomparable">
+                  モデル勝率と市場評価の母集団が一致しないため、「市場との差」は表示しません(比較不可)。
+                </p>
+              )}
               <HorseEntriesTable
                 entries={r.horses}
-                predictions={predQuery.data?.horses ?? []}
-                oddsAsOf={predQuery.data?.odds_as_of}
+                predictions={pred?.horses ?? []}
+                oddsAsOf={pred?.odds_as_of}
+                canonicalConsistent={pred?.canonical_consistent}
               />
               <p className="table-hint">
-                列見出しをクリックで並び替え（勝率p＝モデル予測 / 市場q＝オッズ由来・疑似）。
-                「スコア寄与」でモデルの判断要因を表示。
+                列見出しをクリックで並び替え（市場評価＝単勝オッズ由来の推定値・実測ではありません）。
+                「寄与」でモデルの判断要因を表示。
               </p>
+              {hasPreds && (
+                <>
+                  <p className="table-hint" data-testid="market-superiority-note">
+                    ※ 市場評価は実データでモデル勝率より win 予測が上手いことが確認されています(020)。
+                    「市場との差」は見解の相違（<span className="diff--model_higher">青=モデルが高い</span>
+                    ・<span className="diff--market_higher">紫=市場が高い</span>）であり、
+                    買い目の推奨ではありません。
+                  </p>
+                  <div className="audit">
+                    <span>
+                      オッズ時刻: <code>{formatDateTime(pred?.odds_as_of)}</code>
+                    </span>
+                    <span>
+                      オッズ種別: <code>{pred?.odds_source ?? PLACEHOLDER}</code>
+                    </span>
+                    <span>
+                      q 出所: <code>{pred?.market_prob_source ?? PLACEHOLDER}</code>
+                    </span>
+                  </div>
+                </>
+              )}
             </>
           )}
         </QueryStateView>
       </div>
 
-      <div className="panel">
-        <h2>モデル予測 p と市場推定 q の比較</h2>
-        <QueryStateView
-          isLoading={predQuery.isLoading}
-          error={predQuery.error ?? null}
-          data={predQuery.data}
-          isEmpty={(d) => d.horses.length === 0}
-          loadingLabel="予測を読み込み中…"
-          emptyMessage="この レースの予測はありません"
-        >
-          {(d) => <PQCompare data={d} />}
-        </QueryStateView>
+      <div className="tabbar" role="tablist" aria-label="詳細情報">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.key}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <CalibrationChart modelVersion={predQuery.data?.run?.model_version} />
-      <ImportanceChart modelVersion={predQuery.data?.run?.model_version} />
-
-      <JointPanel raceId={raceId} />
-      <OddsPanel raceId={raceId} />
-      <RecommendationPanel raceId={raceId} />
+      {tab === "recs" && <RecommendationPanel raceId={raceId} />}
+      {tab === "odds" && <OddsPanel raceId={raceId} />}
+      {tab === "model" && (
+        <>
+          <CalibrationChart modelVersion={pred?.run?.model_version} />
+          <ImportanceChart modelVersion={pred?.run?.model_version} />
+          <JointPanel raceId={raceId} />
+        </>
+      )}
     </section>
   );
 }

@@ -317,35 +317,43 @@ th.colgroup {
   gap: 1rem;
   margin: 0 0 0.5rem;
 }
-.refresh {
+.refresh,
+.predict {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
-.refresh__btn {
-  padding: 0.35rem 0.8rem;
+.refresh__btn,
+.predict__btn {
+  padding: 0.4rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--panel);
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
   color: var(--text);
   font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
-.refresh__btn:hover:not(:disabled) {
+.refresh__btn:hover:not(:disabled),
+.predict__btn:hover:not(:disabled) {
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, var(--panel));
 }
-.refresh__btn:disabled {
+.refresh__btn:disabled,
+.predict__btn:disabled {
   opacity: 0.6;
   cursor: default;
 }
-.refresh__status {
+.refresh__status,
+.predict__status {
   font-size: 0.78rem;
 }
-.refresh__status--pending { color: var(--muted); }
-.refresh__status--ok { color: var(--accent); }
-.refresh__status--warn { color: #c98a00; }
-.refresh__status--error { color: #c0392b; }
-.refresh__status--muted { color: var(--muted); }
+.refresh__status--pending, .predict__status--pending { color: var(--muted); }
+.refresh__status--ok, .predict__status--ok { color: var(--accent); }
+.refresh__status--warn, .predict__status--warn { color: #c98a00; }
+.refresh__status--error, .predict__status--error { color: #c0392b; }
+.refresh__status--muted, .predict__status--muted { color: var(--muted); }
 
 .race-status {
   margin-left: auto;
@@ -395,6 +403,18 @@ th.colgroup {
 }
 
 /* --- race detail: sortable entries table --- */
+.table-scroll {
+  overflow-x: auto;
+}
+.entries-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 1;
+}
+.entries-table tr.row--alt {
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+}
 .entries-table th.sortable {
   cursor: pointer;
   user-select: none;
@@ -402,6 +422,78 @@ th.colgroup {
 }
 .entries-table th.sortable:hover {
   color: var(--text);
+}
+/* probability cells: figure + thin comparable bar underneath (p=accent, q=muted; neutral) */
+.prob-cell {
+  position: relative;
+  min-width: 5.2rem;
+  padding-bottom: 0.7rem;
+}
+.prob-cell .prob-text {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* 連対/複勝 sub-line folded under the 勝率 figure (no extra columns) */
+.prob-cell .prob-sub {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.prob-bar {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 4px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.prob-bar--p {
+  background: color-mix(in srgb, var(--accent) 65%, transparent);
+}
+.prob-bar--q {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+.diff-cell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* 市場との差: divergence band as NEUTRAL categorical hues (blue=モデル高 / purple=市場高).
+   Deliberately NOT green/red — no profit/loss semantics (021/040 US3). similar stays muted. */
+.diff--model_higher {
+  color: var(--accent);
+  font-weight: 600;
+}
+.diff--market_higher {
+  color: #b98cf0;
+  font-weight: 600;
+}
+.diff--similar {
+  color: var(--muted);
+}
+/* score-contribution expander (chevron column) */
+.entries-table th.expand-head {
+  width: 2.2rem;
+  white-space: nowrap;
+}
+.expand-cell {
+  text-align: center;
+}
+.expand-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  width: 1.6rem;
+  height: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.expand-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.expand-btn[aria-expanded="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .entries-table .cell-main {
   display: block;
@@ -449,6 +541,151 @@ th.colgroup {
 .waku-7 { background: #fb8c00; color: #111; }
 .waku-8 { background: #ec407a; color: #fff; }
 .waku-0 { background: var(--panel); color: var(--muted); }
+
+/* --- badges that previously had no styles (history / cancelled / derived) --- */
+.badge--history {
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--muted);
+  font-weight: 500;
+}
+.badge--cancelled {
+  background: var(--error-bg);
+  color: var(--error-fg);
+  margin-left: 0.35rem;
+}
+.badge-derived {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  margin-left: 0.35rem;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0 0 0.5rem;
+}
+
+/* --- tab bar for the secondary panels (odds / recommendations / model info) --- */
+.tabbar {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 1rem;
+}
+.tabbar button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.tabbar button:hover {
+  color: var(--text);
+}
+.tabbar button[aria-selected="true"] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+/* --- topbar action group (refresh → predict → recommend pipeline) --- */
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* --- score contribution panel (040; previously unstyled) --- */
+.explanation {
+  padding: 0.6rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.explanation--empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.6rem 0.75rem;
+}
+.explanation-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.contrib-table {
+  font-size: 0.82rem;
+}
+.contrib-table td {
+  border-bottom: none;
+  padding: 0.2rem 0.5rem;
+}
+.contrib-feature {
+  white-space: nowrap;
+}
+.contrib-bar-cell {
+  width: 40%;
+  min-width: 8rem;
+}
+.contrib-bar {
+  display: block;
+  position: relative;
+  height: 8px;
+  background: color-mix(in srgb, var(--border) 55%, transparent);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.contrib-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.contrib-pos {
+  background: var(--accent);
+}
+.contrib-neg {
+  background: var(--muted);
+}
+.contrib-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.contrib-other {
+  color: var(--muted);
+}
+.explanation-note {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+/* --- importance chart (040 US2; previously unstyled) --- */
+.importance-table {
+  font-size: 0.82rem;
+}
+.imp-bar-cell {
+  width: 45%;
+  min-width: 8rem;
+}
+.imp-bar {
+  display: block;
+  height: 8px;
+  background: color-mix(in srgb, var(--border) 55%, transparent);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.imp-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+.imp-num {
+  font-variant-numeric: tabular-nums;
+}
 
 .race-title {
   margin: 0 0 0.5rem;
