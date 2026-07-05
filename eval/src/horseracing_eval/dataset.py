@@ -8,12 +8,12 @@ no finished horses are dropped.
 from __future__ import annotations
 
 import datetime
+from collections import defaultdict
 from dataclasses import dataclass
 
-from horseracing_db.enums import EntryStatus
-from horseracing_db.labels import derive_labels
-from horseracing_db.models import Race, RaceHorse
-from sqlalchemy import select
+from horseracing_db.enums import EntryStatus, ResultStatus
+from horseracing_db.models import Race, RaceHorse, RaceResult
+from sqlalchemy import case, select
 from sqlalchemy.orm import Session
 
 from .predictor import HorseEntry, RaceContext, ResultMarket
@@ -38,52 +38,82 @@ def load_eval_races(
     start_date: datetime.date | None = None,
     end_date: datetime.date | None = None,
 ) -> list[EvalRace]:
-    """Load races (sorted by race_date, race_id) with started population + finished labels."""
-    stmt = select(Race).order_by(Race.race_date, Race.race_id)
+    """Load races (sorted by race_date, race_id) with started population + finished labels.
+
+    Bulk-loaded in THREE queries (races / started horses / finished labels) instead of the
+    former per-race N+1 (~135k round-trips over 67k races → 63s). Each query is ordered so the
+    per-race grouping is byte-identical to the old per-race path: started horses keep
+    ``ORDER BY horse_number, horse_id`` (Postgres NULLS LAST), labels keep the
+    ``horseracing_db.labels`` semantics (finished-only, dead-heat-aware ``<=``,
+    ``ORDER BY finish_order, horse_id``). Result is identical to the old loop (equivalence-tested).
+    """
+    race_stmt = select(Race.race_id, Race.race_date).order_by(Race.race_date, Race.race_id)
     if start_date is not None:
-        stmt = stmt.where(Race.race_date >= start_date)
+        race_stmt = race_stmt.where(Race.race_date >= start_date)
     if end_date is not None:
-        stmt = stmt.where(Race.race_date <= end_date)
+        race_stmt = race_stmt.where(Race.race_date <= end_date)
+    race_rows = session.execute(race_stmt).all()
 
-    eval_races: list[EvalRace] = []
-    for race in session.scalars(stmt):
-        started = session.scalars(
-            select(RaceHorse)
-            .where(RaceHorse.race_id == race.race_id)
-            .where(RaceHorse.entry_status == EntryStatus.STARTED)
-            .order_by(RaceHorse.horse_number, RaceHorse.horse_id)
-        ).all()
-        if not started:
-            continue
+    # started horses (all races in range), grouped by race in (horse_number, horse_id) order
+    rh_stmt = (
+        select(
+            RaceHorse.race_id, RaceHorse.horse_id, RaceHorse.frame,
+            RaceHorse.horse_number, RaceHorse.odds, RaceHorse.popularity,
+        )
+        .join(Race, Race.race_id == RaceHorse.race_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+        .order_by(Race.race_date, Race.race_id, RaceHorse.horse_number, RaceHorse.horse_id)
+    )
+    # finished labels (all races in range), same columns/derivation as horseracing_db.labels
+    lbl_stmt = (
+        select(
+            RaceResult.race_id, RaceResult.horse_id,
+            case((RaceResult.finish_order == 1, 1), else_=0).label("win"),
+            case((RaceResult.finish_order <= 2, 1), else_=0).label("top2"),
+            case((RaceResult.finish_order <= 3, 1), else_=0).label("top3"),
+        )
+        .join(Race, Race.race_id == RaceResult.race_id)
+        .where(RaceResult.result_status == ResultStatus.FINISHED)
+        .order_by(Race.race_date, Race.race_id, RaceResult.finish_order, RaceResult.horse_id)
+    )
+    if start_date is not None:
+        rh_stmt = rh_stmt.where(Race.race_date >= start_date)
+        lbl_stmt = lbl_stmt.where(Race.race_date >= start_date)
+    if end_date is not None:
+        rh_stmt = rh_stmt.where(Race.race_date <= end_date)
+        lbl_stmt = lbl_stmt.where(Race.race_date <= end_date)
 
-        horses = tuple(
+    horses_by_race: dict[str, list] = defaultdict(list)
+    for rh in session.execute(rh_stmt):
+        horses_by_race[rh.race_id].append(
             HorseEntry(
-                horse_id=rh.horse_id,
-                frame=rh.frame,
-                horse_number=rh.horse_number,
+                horse_id=rh.horse_id, frame=rh.frame, horse_number=rh.horse_number,
                 result_market=ResultMarket(
                     odds=float(rh.odds) if rh.odds is not None else None,
                     popularity=rh.popularity,
                 ),
             )
-            for rh in started
+        )
+    labels_by_race: dict[str, list] = defaultdict(list)
+    for row in session.execute(lbl_stmt):
+        labels_by_race[row.race_id].append(
+            ScoringLabel(horse_id=row.horse_id, win=row.win, top2=row.top2, top3=row.top3)
         )
 
-        labels = tuple(
-            ScoringLabel(
-                horse_id=row["horse_id"], win=row["win"], top2=row["top2"], top3=row["top3"]
-            )
-            for row in derive_labels(session, race.race_id)
-        )
+    eval_races: list[EvalRace] = []
+    for race_id, race_date in race_rows:
+        horses = horses_by_race.get(race_id)
+        if not horses:  # no started horses
+            continue
+        labels = labels_by_race.get(race_id)
         if not labels:  # all non-finishers -> excluded from evaluation
             continue
-
         eval_races.append(
             EvalRace(
                 context=RaceContext(
-                    race_id=race.race_id, race_date=race.race_date, started_horses=horses
+                    race_id=race_id, race_date=race_date, started_horses=tuple(horses)
                 ),
-                labels=labels,
+                labels=tuple(labels),
             )
         )
     return eval_races
