@@ -89,7 +89,7 @@ def assemble_feature_matrix(
         fingerprint_frames=fingerprint_frames, skip_fingerprint_verify=skip_fingerprint_verify,
     )
     fm = static.merge(asof, on=["race_id", "horse_id"], how="left")
-    # Feature 055: prize_rel = today's prize level − the horse's as-of prize class (昇降級度合い).
+    # Feature 056: prize_rel = today's prize level − the horse's as-of prize class (昇降級度合い).
     # Composed here because it mixes a static with an as-of column; NaN-propagating (憲法 IV).
     fm["prize_rel"] = (fm["prize_money_log"] - fm["asof_prize_avg"]).astype("float64")
 

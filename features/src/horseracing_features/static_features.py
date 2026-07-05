@@ -18,7 +18,7 @@ _HORSE_COLS = [
 
 def build_static_features(frames: Frames) -> pd.DataFrame:
     race_cols = list(_RACE_COLS)
-    # Feature 055: prize_money (pre-published race condition) — optional so pre-055 fixtures work
+    # Feature 056: prize_money (pre-published race condition) — optional so pre-055 fixtures work
     has_prize = "prize_money" in frames.races.columns
     if has_prize:
         race_cols.append("prize_money")
@@ -52,7 +52,7 @@ def build_static_features(frames: Frames) -> pd.DataFrame:
     out["race_month"] = month.astype("float64")
     out["race_season"] = ((month % 12) // 3).astype("float64")
 
-    # Feature 055: prize level (log scale; NaN-propagating) + bloodline lines (static categoricals)
+    # Feature 056: prize level (log scale; NaN-propagating) + bloodline lines (static categoricals)
     if has_prize:
         out["prize_money_log"] = np.log1p(
             pd.to_numeric(out["prize_money"], errors="coerce")

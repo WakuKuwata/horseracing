@@ -13,7 +13,7 @@ from horseracing_features.loader import Frames
 _RACE_DEFAULTS = dict(
     venue_code="05", distance=1600, track_type="芝", going="良", weather="晴",
     race_class="未勝利", race_number=1,
-    prize_money=None,  # Feature 055: opt-in per spec
+    prize_money=None,  # Feature 056: opt-in per spec
 )
 # horse-level (race_horses) defaults
 _HORSE_DEFAULTS = dict(
@@ -42,7 +42,7 @@ def make_frames(specs: list[dict]) -> Frames:
                 "damsire_name": h.get("damsire_name"),
                 "sire_id": h.get("sire_id"), "dam_id": h.get("dam_id"),
                 "damsire_id": h.get("damsire_id"),
-                # Feature 055: owner/breeder keys + bloodline lines
+                # Feature 056: owner/breeder keys + bloodline lines
                 "owner_name": h.get("owner_name"), "breeder_name": h.get("breeder_name"),
                 "sire_line": h.get("sire_line"), "damsire_line": h.get("damsire_line"),
             })
@@ -60,7 +60,7 @@ def make_frames(specs: list[dict]) -> Frames:
                     "race_id": rid, "horse_id": h["horse_id"],
                     "finish_order": h.get("finish_order", 1) if finished else None,
                     "last_3f": h.get("last_3f", 35.0) if finished else None,
-                    "first_3f": h.get("first_3f") if finished else None,  # Feature 055 (opt-in)
+                    "first_3f": h.get("first_3f") if finished else None,  # Feature 056 (opt-in)
                     "finish_time": datetime.timedelta(seconds=ft) if finished else None,
                     "finish_time_diff": datetime.timedelta(seconds=fd) if finished else None,
                     "corner_orders": h.get("corner_orders") if finished else None,

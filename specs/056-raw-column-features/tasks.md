@@ -1,6 +1,6 @@
 # Tasks: JRA-VAN 生データ未使用カラムの活用 — テン3F・馬主/生産者・賞金レベル・系統
 
-**Input**: Design documents from `specs/055-raw-column-features/`
+**Input**: Design documents from `specs/056-raw-column-features/`
 
 **Prerequisites**: plan.md, spec.md, research.md (D1–D7), data-model.md, quickstart.md
 

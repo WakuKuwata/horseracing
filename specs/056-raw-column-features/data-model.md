@@ -1,4 +1,4 @@
-# Data Model: JRA-VAN 生データ未使用カラムの活用 (055)
+# Data Model: JRA-VAN 生データ未使用カラムの活用 (056)
 
 ## Migration 0010(head=0009 から、nullable 追加のみ)
 

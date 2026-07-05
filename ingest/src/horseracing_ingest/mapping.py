@@ -208,7 +208,7 @@ def to_core_records(row: ParsedRow) -> CoreRecords:
         "distance": _to_int(row.fields[layout.DISTANCE]),
         "going": _none_if_empty(row.fields[layout.GOING]),
         "weather": _none_if_empty(row.fields[layout.WEATHER]),
-        # Feature 055: 1着賞金 (万円) — race-constant pre-published condition; 0/empty -> NULL
+        # Feature 056: 1着賞金 (万円) — race-constant pre-published condition; 0/empty -> NULL
         "prize_money": _to_int(row.fields[layout.PRIZE_MONEY]) or None,
     }
 
@@ -221,7 +221,7 @@ def to_core_records(row: ParsedRow) -> CoreRecords:
         "dam_name": _none_if_empty(row.fields[layout.DAM_NAME]),
         "damsire_name": _none_if_empty(row.fields[layout.DAMSIRE_NAME]),
         "data_source": "jra_van",
-        # Feature 055: owner is last-write-wins (transfers rare, 026 sire_name precedent)
+        # Feature 056: owner is last-write-wins (transfers rare, 026 sire_name precedent)
         "owner_name": _none_if_empty(row.fields[layout.OWNER_NAME]),
         "breeder_name": _none_if_empty(row.fields[layout.BREEDER_NAME]),
         "sire_line": _none_if_empty(row.fields[layout.SIRE_LINE]),
@@ -269,7 +269,7 @@ def to_core_records(row: ParsedRow) -> CoreRecords:
             "finish_time_diff": _parse_time_diff(row.fields[layout.TIME_DIFF]),
             "corner_orders": _corner_orders(row),
             "last_3f": _to_decimal(row.fields[layout.LAST_3F]),
-            # Feature 055: テン3F — result-derived, as-of features only (II)
+            # Feature 056: テン3F — result-derived, as-of features only (II)
             "first_3f": _to_decimal(row.fields[layout.FIRST_3F]),
             "result_status": status.result_status,
         }

@@ -1,4 +1,4 @@
-# Research: JRA-VAN 生データ未使用カラムの活用 (055)
+# Research: JRA-VAN 生データ未使用カラムの活用 (056)
 
 Phase 0 決定記録。codex CLI 起動不可(セッション 5 回)→ single-opinion(spike 実測+シリーズ前例で補強、各決定に却下代替案を明記)。
 

@@ -57,7 +57,7 @@ class Race(TimestampMixin, Base):
     weather: Mapped[str | None] = mapped_column(Text)
     going: Mapped[str | None] = mapped_column(Text)
     post_time: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
-    #: Feature 055: 1着賞金 (万円) — race-constant, pre-published race condition (not a result)
+    #: Feature 056: 1着賞金 (万円) — race-constant, pre-published race condition (not a result)
     prize_money: Mapped[int | None] = mapped_column(Integer)
 
 
@@ -75,7 +75,7 @@ class Horse(TimestampMixin, Base):
     dam_name: Mapped[str | None] = mapped_column(Text)
     damsire_name: Mapped[str | None] = mapped_column(Text)
     data_source: Mapped[str | None] = mapped_column(Text)
-    #: Feature 055 — owner is last-write-wins (transfers rare, 026 sire_name precedent);
+    #: Feature 056 — owner is last-write-wins (transfers rare, 026 sire_name precedent);
     #: breeder / bloodline lines are immutable horse attributes.
     owner_name: Mapped[str | None] = mapped_column(Text)
     breeder_name: Mapped[str | None] = mapped_column(Text)
@@ -139,7 +139,7 @@ class RaceResult(TimestampMixin, Base):
     finish_time_diff: Mapped[datetime.timedelta | None] = mapped_column(Interval)
     corner_orders: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     last_3f: Mapped[Decimal | None] = mapped_column(Numeric)
-    #: Feature 055: テン3F (first 3F seconds). Result-derived → as-of features only (II).
+    #: Feature 056: テン3F (first 3F seconds). Result-derived → as-of features only (II).
     first_3f: Mapped[Decimal | None] = mapped_column(Numeric)
     result_status: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text(f"'{ResultStatus.FINISHED}'")

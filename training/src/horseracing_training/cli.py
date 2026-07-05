@@ -143,10 +143,10 @@ def _run_feature_command(session: Session, args) -> int:
         # drops from the CANDIDATE (Feature 030 per-group protocol: candidate=features-007+g via
         # candidate-drop = all-030-except-g, baseline-drop = all-030).
         gcols = _group_columns()
-        # Feature 055: default baseline drops the four raw-column groups (baseline=features-012,
+        # Feature 056: default baseline drops the four raw-column groups (baseline=features-012,
         # candidate=full features-013). Prior groups reachable via explicit --drop-groups.
-        _DEF_055 = "pace_first3f,owner_breeder,race_level,sire_line"
-        drop_groups = (args.drop_groups or _DEF_055).split(",")
+        _DEF_056 = "pace_first3f,owner_breeder,race_level,sire_line"
+        drop_groups = (args.drop_groups or _DEF_056).split(",")
         cand_drop_groups = (args.candidate_drop_groups.split(",")
                             if args.candidate_drop_groups else [])
         drop = tuple(c for g in drop_groups for c in gcols.get(g, []))

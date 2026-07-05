@@ -1,4 +1,4 @@
-"""Feature 055: leak boundary + value checks for the raw-column bundle (4 groups).
+"""Feature 056: leak boundary + value checks for the raw-column bundle (4 groups).
 
 INV: target-race result / same-day / future mutations never change the target's features
 (strictly-before as-of; owner/breeder use the daily cumsum − current-day discipline so the

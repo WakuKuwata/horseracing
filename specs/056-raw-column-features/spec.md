@@ -1,6 +1,6 @@
 # Feature Specification: JRA-VAN 生データ未使用カラムの活用 — テン3F・馬主/生産者・賞金レベル・系統
 
-**Feature Branch**: `055-raw-column-features`
+**Feature Branch**: `056-raw-column-features`
 
 **Created**: 2026-07-03
 

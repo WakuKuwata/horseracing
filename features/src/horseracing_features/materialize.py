@@ -48,7 +48,7 @@ _KEYS = ["race_id", "horse_id"]
 #: backfill (sire_name filled/corrected while the race tables stay unchanged) trips fail-closed.
 _HORSE_FP_COLS = ["horse_id", "sire_name", "dam_name", "damsire_name",
                   "sire_id", "dam_id", "damsire_id",
-                  # Feature 055: owner/breeder/lines backfill detection (fail-closed)
+                  # Feature 056: owner/breeder/lines backfill detection (fail-closed)
                   "owner_name", "breeder_name", "sire_line", "damsire_line"]
 MANIFEST_VERSION = 1
 #: Feature 055: value-canonical fingerprint. fp-v1 hashed raw dtypes (hash_pandas_object is
@@ -184,8 +184,8 @@ def build_asof_features(
     )
     condchg = build_condition_change_features(frames, pace=pace)  # Feature 033 (condition×ability)
     cornertraj = build_corner_trajectory_features(frames)  # Feature 041 (corner trajectory)
-    ownerbrd = build_owner_breeder_features(frames)  # Feature 055 (owner/breeder as-of rates)
-    racelevel = build_race_level_features(frames)    # Feature 055 (prize class, as-of half)
+    ownerbrd = build_owner_breeder_features(frames)  # Feature 056 (owner/breeder as-of rates)
+    racelevel = build_race_level_features(frames)    # Feature 056 (prize class, as-of half)
     out = (
         history.merge(extra, on=_KEYS, how="left")
         .merge(human, on=_KEYS, how="left")

@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 #: and kept only for the staleness fingerprint / future ID-based migration).
 _HORSE_COLUMNS = [
     "horse_id", "sire_name", "dam_name", "damsire_name", "sire_id", "dam_id", "damsire_id",
-    # Feature 055: owner/breeder (as-of aggregation keys) + bloodline lines (static categoricals)
+    # Feature 056: owner/breeder (as-of aggregation keys) + bloodline lines (static categoricals)
     "owner_name", "breeder_name", "sire_line", "damsire_line",
 ]
 
@@ -53,7 +53,7 @@ def load_frames(
         select(
             Race.race_id, Race.race_date, Race.venue_code, Race.distance,
             Race.track_type, Race.going, Race.weather, Race.race_class, Race.race_number,
-            Race.prize_money,  # Feature 055: pre-published race condition (race_level group)
+            Race.prize_money,  # Feature 056: pre-published race condition (race_level group)
         )
         .where(Race.race_date >= INGEST_SCOPE_START)
         .order_by(Race.race_date, Race.race_id)
@@ -82,7 +82,7 @@ def load_frames(
             RaceResult.last_3f, RaceResult.result_status,
             # Feature 023: pace/time result-time data — features aggregate PAST races only (as-of).
             RaceResult.finish_time, RaceResult.finish_time_diff, RaceResult.corner_orders,
-            RaceResult.first_3f,  # Feature 055: テン3F — as-of only, same discipline as last_3f
+            RaceResult.first_3f,  # Feature 056: テン3F — as-of only, same discipline as last_3f
         )
         .join(Race, Race.race_id == RaceResult.race_id)
         .where(Race.race_date >= INGEST_SCOPE_START)
@@ -102,7 +102,7 @@ def load_frames(
     horses_stmt = select(
         Horse.horse_id, Horse.sire_name, Horse.dam_name, Horse.damsire_name,
         Horse.sire_id, Horse.dam_id, Horse.damsire_id,
-        # Feature 055: owner/breeder keys + bloodline lines
+        # Feature 056: owner/breeder keys + bloodline lines
         Horse.owner_name, Horse.breeder_name, Horse.sire_line, Horse.damsire_line,
     )
     horses = pd.read_sql(horses_stmt, conn)

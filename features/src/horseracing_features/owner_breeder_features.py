@@ -1,4 +1,4 @@
-"""Feature 055: owner / breeder cross-entity as-of rates (human_form 同型).
+"""Feature 056: owner / breeder cross-entity as-of rates (human_form 同型).
 
 The raw CSV carries 馬主名/生産者名 at ~100% coverage — high-cardinality entities the model has
 never seen (jockey/trainer proved the entity-form pattern in 020/036). Keys are NFKC-normalized

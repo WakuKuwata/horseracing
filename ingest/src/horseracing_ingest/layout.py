@@ -58,7 +58,7 @@ DAM_NAME = 67  # col68 母名
 DAMSIRE_NAME = 68  # col69 母父名
 BIRTH_DATE = 72  # col73 "YYYYMMDD"
 
-# --- Feature 055: previously-unread columns (specs/055-raw-column-features) ---
+# --- Feature 056: previously-unread columns (specs/056-raw-column-features) ---
 # Semantics verified against the raw files (research.md): for 1200m (=6F) races
 # finish_time == FIRST_3F + LAST_3F held for 100.000% of ~30k rows (2010/2018/2024);
 # PRIZE_MONEY is race-constant (1着賞金 万円 — a pre-published race condition, not a result).

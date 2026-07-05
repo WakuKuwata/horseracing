@@ -1,11 +1,11 @@
-"""raw-column ingest widening: first_3f / prize_money / owner / breeder / bloodline lines (055)
+"""raw-column ingest widening: first_3f / prize_money / owner / breeder / bloodline lines (056)
 
 Revision ID: 0010_raw_column_features
 Revises: 0009_diagnostic_runs
 Create Date: 2026-07-03
 
-The JRA-VAN raw CSV carries 73 columns but ingest named only ~35; Feature 055 widens ingest
-with six pre-verified columns (specs/055-raw-column-features/research.md):
+The JRA-VAN raw CSV carries 73 columns but ingest named only ~35; Feature 056 widens ingest
+with six pre-verified columns (specs/056-raw-column-features/research.md):
 
 - race_results.first_3f  — テン3F (first 3-furlong seconds). Verified semantically: for 1200m
   (=6F) races  finish_time == first_3f + last_3f  held for 100.000% of ~30k races (2010/2018/

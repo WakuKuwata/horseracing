@@ -1,4 +1,4 @@
-"""Feature 055: race-level (prize-money) features — a continuous class axis.
+"""Feature 056: race-level (prize-money) features — a continuous class axis.
 
 races.prize_money (1着賞金, 万円) is a PRE-PUBLISHED race condition (race-constant, verified
 in research D4) — finer-grained than the categorical race_class. Two signals:

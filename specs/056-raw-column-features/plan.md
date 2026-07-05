@@ -1,8 +1,8 @@
 # Implementation Plan: JRA-VAN 生データ未使用カラムの活用 — テン3F・馬主/生産者・賞金レベル・系統
 
-**Branch**: `055-raw-column-features` | **Date**: 2026-07-03 | **Spec**: [spec.md](spec.md)
+**Branch**: `056-raw-column-features` | **Date**: 2026-07-03 | **Spec**: [spec.md](spec.md)
 
-**Input**: Feature specification from `specs/055-raw-column-features/spec.md`
+**Input**: Feature specification from `specs/056-raw-column-features/spec.md`
 
 ## Summary
 
@@ -45,7 +45,7 @@
 ### Documentation (this feature)
 
 ```text
-specs/055-raw-column-features/
+specs/056-raw-column-features/
 ├── spec.md / plan.md / research.md (D1-D7) / data-model.md / quickstart.md
 ├── checklists/requirements.md
 └── tasks.md (Phase 2 — /speckit-tasks)

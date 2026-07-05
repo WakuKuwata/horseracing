@@ -1,4 +1,4 @@
-# Quickstart: JRA-VAN 生データ未使用カラムの活用 (055) 検証ガイド
+# Quickstart: JRA-VAN 生データ未使用カラムの活用 (056) 検証ガイド
 
 前提: ローカル Postgres(`DATABASE_URL=postgresql+psycopg://aiuma:aiuma@localhost:15432/horseracing`)、raw_data/jra-van/2007..2025。
 
