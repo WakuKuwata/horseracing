@@ -34,6 +34,10 @@ export function ModelDetailPage() {
         <section>
           <h2>メタデータ</h2>
           <dl className="meta">
+            <div><dt>用途</dt>
+              <dd data-testid="model-display-name">{textOr(row.display_name)}</dd></div>
+            <div><dt>用途説明</dt>
+              <dd data-testid="model-purpose">{textOr(row.purpose)}</dd></div>
             <div><dt>状態</dt><dd data-adoption={row.adoption_status}>{row.adoption_status}</dd></div>
             <div><dt>採用ゲート判定</dt>
               <dd>{row.adopted === null || row.adopted === undefined

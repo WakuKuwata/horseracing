@@ -1,6 +1,52 @@
 {
   "components": {
     "schemas": {
+      "AvailableModel": {
+        "description": "Feature 057: a model that has a persisted prediction_run for THIS race (i.e. selectable on\nthe race-detail view). display_name/purpose are human labels (null until set). is_selected marks\nthe model whose run this response returns. adoption_status lets the front badge the active model\n('active') distinctly from the selected one (selected ≠ adopted).",
+        "properties": {
+          "adoption_status": {
+            "title": "Adoption Status",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "is_selected": {
+            "title": "Is Selected",
+            "type": "boolean"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          }
+        },
+        "required": [
+          "model_version",
+          "adoption_status",
+          "is_selected"
+        ],
+        "title": "AvailableModel",
+        "type": "object"
+      },
       "CalibrationBin": {
         "properties": {
           "count": {
@@ -1447,6 +1493,17 @@
             "title": "Created At",
             "type": "string"
           },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "feature_version": {
             "anyOf": [
               {
@@ -1519,6 +1576,17 @@
               }
             ],
             "title": "Objective"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
           },
           "train_through": {
             "anyOf": [
@@ -1732,6 +1800,14 @@
       },
       "PredictionResponse": {
         "properties": {
+          "available_models": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AvailableModel"
+            },
+            "title": "Available Models",
+            "type": "array"
+          },
           "canonical_consistent": {
             "anyOf": [
               {
@@ -3314,6 +3390,22 @@
               "minimum": 1,
               "title": "Top",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model_version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Version"
             }
           }
         ],

@@ -30,6 +30,7 @@ export function ModelRegistryPage() {
             <thead>
               <tr>
                 <th>モデル</th>
+                <th>用途</th>
                 <th>状態</th>
                 <th className="num">win LogLoss</th>
                 <th className="num">AUC</th>
@@ -46,6 +47,9 @@ export function ModelRegistryPage() {
                 <tr key={m.model_version} data-active={m.adoption_status === "active"}>
                   <td>
                     <Link to={`/models/${m.model_version}`}>{m.model_version}</Link>
+                  </td>
+                  <td data-testid="model-purpose" title={m.purpose ?? undefined}>
+                    {textOr(m.display_name)}
                   </td>
                   <td>
                     <span className={`badge badge--${m.adoption_status}`}

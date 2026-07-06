@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+import sys
 
 from horseracing_db.models import ModelVersion
 from horseracing_db.session import create_db_engine
@@ -295,6 +296,24 @@ def _run_feature_command(session: Session, args) -> int:
     return 1
 
 
+def _set_model_label(session: Session, args) -> int:
+    """Feature 057: write display_name/purpose on a model_versions row (display-only metadata).
+
+    Omitted arg (None) leaves the field unchanged; explicit empty string clears it to NULL. Never
+    mutates adoption_status (用途設定 ≠ 昇格, FR-009). Idempotent overwrite."""
+    mv = session.get(ModelVersion, args.model_version)
+    if mv is None:
+        print(f"model_version not found: {args.model_version}", file=sys.stderr)
+        return 1
+    if args.display_name is not None:
+        mv.display_name = args.display_name or None  # "" → NULL
+    if args.purpose is not None:
+        mv.purpose = args.purpose or None
+    session.commit()
+    print(f"updated {mv.model_version}: display_name={mv.display_name!r} purpose={mv.purpose!r}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="horseracing_training")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -382,7 +401,22 @@ def main(argv: list[str] | None = None) -> int:
                      help="OOF target-encode columns (production default)")
     sde.add_argument("--te-smoothing", type=float, default=10.0)
 
+    # Feature 057: set human-readable purpose metadata on a model (display-only; NOT adoption).
+    # Omitted arg = leave unchanged; empty string = clear to NULL. Never touches adoption_status.
+    sml = sub.add_parser("set-model-label",
+                         help="057: set display_name/purpose on a model (omit=keep, ''=clear)")
+    sml.add_argument("--model-version", required=True)
+    sml.add_argument("--display-name", default=None,
+                     help="human name; omit to keep current, pass '' to clear to NULL")
+    sml.add_argument("--purpose", default=None,
+                     help="purpose note; omit to keep current, pass '' to clear to NULL")
+    sml.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
+    if args.command == "set-model-label":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _set_model_label(session, args)
     if args.command in ("feature-eval", "feature-ablation", "feature-diagnostic",
                         "segment-diagnostic", "model-eval", "stage-discount-eval"):
         engine = create_db_engine(getattr(args, "database_url", None))

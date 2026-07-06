@@ -28,6 +28,16 @@ describe("ModelRegistryPage", () => {
     expect(container.textContent).toContain("—");
   });
 
+  it("shows the model purpose (display_name); unset renders em-dash (057)", async () => {
+    server.use(...happyHandlers);
+    renderWithProviders(<ModelRegistryPage />);
+    await screen.findByText("lgbm-042");
+    expect(screen.getByText("意思決定支援モデル")).toBeInTheDocument();  // lgbm-042 has a purpose
+    // lgbm-old has no display_name → the 用途 cell is an em-dash (null-safe)
+    const purposeCells = screen.getAllByTestId("model-purpose");
+    expect(purposeCells.some((c) => c.textContent === "—")).toBe(true);
+  });
+
   it("shows the typed empty state when no models exist", async () => {
     server.use(http.get(`${BASE}/models`, () => HttpResponse.json({ items: [] })));
     renderWithProviders(<ModelRegistryPage />);

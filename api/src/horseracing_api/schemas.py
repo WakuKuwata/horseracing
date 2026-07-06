@@ -193,6 +193,19 @@ class JointEntry(BaseModel):
     prob: float
 
 
+class AvailableModel(BaseModel):
+    """Feature 057: a model that has a persisted prediction_run for THIS race (i.e. selectable on
+    the race-detail view). display_name/purpose are human labels (null until set). is_selected marks
+    the model whose run this response returns. adoption_status lets the front badge the active model
+    ('active') distinctly from the selected one (selected ≠ adopted)."""
+
+    model_version: str
+    display_name: str | None = None
+    purpose: str | None = None
+    adoption_status: str
+    is_selected: bool
+
+
 class PredictionResponse(BaseModel):
     race_id: str
     run: RunAudit | None = None
@@ -207,6 +220,9 @@ class PredictionResponse(BaseModel):
     canonical_consistent: bool | None = None
     odds_as_of: datetime.datetime | None = None
     odds_source: Literal["final", "prerace"] | None = None
+    # Feature 057: models with a persisted run for this race (deterministic order: active-first →
+    # created_at DESC → model_version). Empty = no prediction yet. Additive field (backward compat).
+    available_models: list[AvailableModel] = []
 
 
 # --- odds (real vs estimated kept in SEPARATE fields) -----------------------
@@ -326,6 +342,9 @@ class ModelVersionRow(BaseModel):
     label_schema: str
     adoption_status: str
     created_at: datetime.datetime
+    # Feature 057: human-readable purpose metadata (null until set via set-model-label CLI).
+    display_name: str | None = None
+    purpose: str | None = None
     # eval overall (win) — OOS walk-forward persisted by the training harness
     win_log_loss: float | None = None
     win_auc: float | None = None

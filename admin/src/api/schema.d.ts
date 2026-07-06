@@ -286,6 +286,25 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AvailableModel
+         * @description Feature 057: a model that has a persisted prediction_run for THIS race (i.e. selectable on
+         *     the race-detail view). display_name/purpose are human labels (null until set). is_selected marks
+         *     the model whose run this response returns. adoption_status lets the front badge the active model
+         *     ('active') distinctly from the selected one (selected ≠ adopted).
+         */
+        AvailableModel: {
+            /** Adoption Status */
+            adoption_status: string;
+            /** Display Name */
+            display_name?: string | null;
+            /** Is Selected */
+            is_selected: boolean;
+            /** Model Version */
+            model_version: string;
+            /** Purpose */
+            purpose?: string | null;
+        };
         /** CalibrationBin */
         CalibrationBin: {
             /** Count */
@@ -758,6 +777,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Display Name */
+            display_name?: string | null;
             /** Feature Version */
             feature_version?: string | null;
             /** Git Sha */
@@ -782,6 +803,8 @@ export interface components {
             n_model_rows?: number | null;
             /** Objective */
             objective?: string | null;
+            /** Purpose */
+            purpose?: string | null;
             /** Train Through */
             train_through?: string | null;
             /** Win Auc */
@@ -854,6 +877,11 @@ export interface components {
         };
         /** PredictionResponse */
         PredictionResponse: {
+            /**
+             * Available Models
+             * @default []
+             */
+            available_models: components["schemas"]["AvailableModel"][];
             /** Canonical Consistent */
             canonical_consistent?: boolean | null;
             /**
@@ -1581,6 +1609,7 @@ export interface operations {
             query?: {
                 bet_type?: string | null;
                 top?: number;
+                model_version?: string | null;
             };
             header?: never;
             path: {

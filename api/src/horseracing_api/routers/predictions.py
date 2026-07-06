@@ -18,13 +18,21 @@ from sqlalchemy.orm import Session
 
 from ..deps import get_session
 from ..queries import (
+    available_models_for_race,
     get_race,
     prior_start_counts,
     race_has_results,
     run_predictions,
     win_odds_as_of,
 )
-from ..schemas import Explanation, HorsePrediction, JointEntry, PredictionResponse, RunAudit
+from ..schemas import (
+    AvailableModel,
+    Explanation,
+    HorsePrediction,
+    JointEntry,
+    PredictionResponse,
+    RunAudit,
+)
 from ..selection import (
     canonical_win_probs,
     divergence_band,
@@ -70,6 +78,7 @@ def predictions(
     race_id: str,
     bet_type: str | None = Query(default=None),
     top: int = Query(default=20, ge=1, le=200),
+    model_version: str | None = Query(default=None),
     session: Session = Depends(get_session),
 ):
     if not _RACE_ID.match(race_id):
@@ -79,9 +88,16 @@ def predictions(
     if bet_type is not None and bet_type not in _EXOTIC:
         return _err(422, "invalid_bet_type", f"bet_type must be one of {sorted(_EXOTIC)}")
 
-    run = select_prediction_run(session, race_id)
+    # Feature 057: optional model_version selects that model's run (else active). No silent
+    # fallback: a specified model with no run for this race is a typed 404, not the active model's.
+    run = select_prediction_run(session, race_id, model_version)
     if run is None:
-        return PredictionResponse(race_id=race_id, run=None, horses=[])  # typed-empty
+        if model_version is not None:
+            return _err(
+                404, "prediction_unavailable",
+                f"model {model_version} has no prediction for race {race_id}",
+            )
+        return PredictionResponse(race_id=race_id, run=None, horses=[])  # typed-empty (no runs)
 
     # Feature 021 US1: market vote-share q on the SAME canonical field as model p (R1). p_numbers is
     # the 009 canonical population; q is computed/renormalized on it. p≠q kept separate; q null when
@@ -118,12 +134,22 @@ def predictions(
         prediction_run_id=str(run.prediction_run_id), model_version=run.model_version,
         logic_version=run.logic_version, computed_at=run.computed_at,
     )
+    # Feature 057: models with a run for this race (for the front selector). is_selected marks the
+    # model this response returned. Deterministic order comes from the query (active-first → …).
+    available = [
+        AvailableModel(
+            model_version=m.model_version, display_name=m.display_name, purpose=m.purpose,
+            adoption_status=m.adoption_status, is_selected=(m.model_version == run.model_version),
+        )
+        for m in available_models_for_race(session, race_id)
+    ]
     resp = PredictionResponse(
         race_id=race_id, run=audit, horses=horses,
         market_prob_source="win_odds_vote_share",
         canonical_consistent=canonical_consistent,
         odds_as_of=win_odds_as_of(session, race_id),
         odds_source=("final" if race_has_results(session, race_id) else "prerace"),
+        available_models=available,
     )
 
     if bet_type is None:

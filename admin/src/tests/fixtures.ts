@@ -15,6 +15,8 @@ export const modelListResponse: ModelListResponse = {
       label_schema: "win_top2_top3",
       adoption_status: "active",
       created_at: "2026-07-02T06:35:44Z",
+      display_name: "意思決定支援モデル",
+      purpose: "市場から独立した予測",
       win_log_loss: 0.21706,
       win_auc: 0.7934,
       win_ece: 0.00058,

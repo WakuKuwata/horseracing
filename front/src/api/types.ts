@@ -7,6 +7,8 @@ export type RaceDetail = S["RaceDetail"];
 export type HorseEntry = S["HorseEntry"];
 export type PredictionResponse = S["PredictionResponse"];
 export type HorsePrediction = S["HorsePrediction"];
+// Feature 057: a selectable model for the race-detail model switcher
+export type AvailableModel = S["AvailableModel"];
 export type JointEntry = S["JointEntry"];
 export type RunAudit = S["RunAudit"];
 export type OddsResponse = S["OddsResponse"];

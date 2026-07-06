@@ -45,6 +45,8 @@ def _row(mv) -> ModelVersionRow:
         label_schema=mv.label_schema,
         adoption_status=mv.adoption_status,
         created_at=mv.created_at,
+        display_name=mv.display_name,
+        purpose=mv.purpose,
         win_log_loss=_f(win.get("log_loss")),
         win_auc=_f(win.get("auc")),
         win_ece=_f(win.get("ece")),

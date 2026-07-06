@@ -46,6 +46,11 @@ class ModelVersion(TimestampMixin, Base):
         Text, nullable=False, server_default=text(f"'{AdoptionStatus.CANDIDATE}'")
     )
     metrics_summary: Mapped[dict | None] = mapped_column(JSONB)
+    # Feature 057: human-readable purpose metadata (display-only). display_name is a short human
+    # name; purpose is a longer note. Distinct from label_schema (the label *scheme*). NULL until
+    # set via the set-model-label CLI. NEVER a model feature (leak boundary II).
+    display_name: Mapped[str | None] = mapped_column(Text)
+    purpose: Mapped[str | None] = mapped_column(Text)
     weights_uri: Mapped[str | None] = mapped_column(Text)
     calibrator_uri: Mapped[str | None] = mapped_column(Text)
     registered_at: Mapped[datetime.datetime] = mapped_column(

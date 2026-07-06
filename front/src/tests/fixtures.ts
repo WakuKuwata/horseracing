@@ -71,6 +71,7 @@ export const predictionResponse: PredictionResponse = {
   canonical_consistent: true,
   odds_as_of: "2008-06-01T05:00:00Z",
   odds_source: "final",
+  available_models: [],
   run: {
     prediction_run_id: "run-abc",
     logic_version: "009.1",

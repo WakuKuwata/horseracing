@@ -396,6 +396,27 @@ def list_model_versions(session: Session) -> list[ModelVersion]:
     )
 
 
+def available_models_for_race(session: Session, race_id: str) -> list[ModelVersion]:
+    """Feature 057: models that have a persisted prediction_run for ``race_id`` (i.e. selectable on
+    the race-detail view). Deterministic order: active-first → created_at DESC → model_version (same
+    rule as list_model_versions / select_prediction_run, constitution V reproducibility). Read-only.
+    """
+    from sqlalchemy import case
+    with_runs = (
+        select(PredictionRun.model_version)
+        .where(PredictionRun.race_id == race_id)
+        .distinct()
+    )
+    active_first = case((ModelVersion.adoption_status == AdoptionStatus.ACTIVE, 0), else_=1)
+    return list(
+        session.scalars(
+            select(ModelVersion)
+            .where(ModelVersion.model_version.in_(with_runs))
+            .order_by(active_first, ModelVersion.created_at.desc(), ModelVersion.model_version)
+        )
+    )
+
+
 def active_model_version(session: Session) -> str | None:
     """Feature 052: the single ACTIVE model_version (None when no model is active)."""
     return session.scalar(
