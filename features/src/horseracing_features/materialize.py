@@ -37,10 +37,11 @@ from .loader import Frames
 from .lowcost_features import build_lowcost_features
 from .owner_breeder_features import build_owner_breeder_features
 from .pace_features import build_pace_features
-from .race_level_features import build_race_level_features
 from .pace_scenario_features import build_pace_scenario_features
 from .pedigree_features import build_pedigree_features
+from .race_level_features import build_race_level_features
 from .registry import FEATURE_VERSION, materialized_columns
+from .relative_ability_features import build_relative_ability_features
 from .schema import DEFAULT_LOW_HISTORY_MAX
 
 _KEYS = ["race_id", "horse_id"]
@@ -199,6 +200,10 @@ def build_asof_features(
         .merge(ownerbrd, on=_KEYS, how="left")
         .merge(racelevel, on=_KEYS, how="left")
     )
+    # Feature 059: within-race relative ability — depends on the ASSEMBLED as-of ability columns
+    # (win_rate / rel_time_avg / ...), so it runs AFTER the merges over the full `out` frame.
+    relability = build_relative_ability_features(frames, ability_frame=out)
+    out = out.merge(relability, on=_KEYS, how="left")
     cols = [*_KEYS, *materialized_columns()]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)
 

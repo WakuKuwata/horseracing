@@ -23,7 +23,8 @@ RACE_LEVEL_ASOF_COLUMNS = ["asof_prize_avg"]
 
 
 def build_race_level_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id): asof_prize_avg over past started races (float64, NaN-propagating)."""
+    """Per (race_id, horse_id): asof_prize_avg over past started races (float64, NaN-propagating).
+    """
     races_cols = ["race_id", "race_date"]
     has_prize = "prize_money" in frames.races.columns
     if has_prize:

@@ -169,6 +169,20 @@ REGISTRY: dict[str, FeatureMeta] = {
     "prize_rel": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
     "sire_line": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
     "damsire_line": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 059: within-race relative ability (leave-one-out deviation + field rank) ---
+    "win_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "recent_win_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "place_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "show_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "dist_band_win_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "surface_win_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "rel_time_avg_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "rel_last3f_avg_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "finish_diff_best_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "jockey_win_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "trainer_win_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "win_rate_field_rank": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    "rel_time_avg_field_rank": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -263,10 +277,25 @@ FEATURE_GROUPS: dict[str, str] = {
     "prize_rel": "race_level",
     "sire_line": "sire_line",
     "damsire_line": "sire_line",
+    # Feature 059: within-race relative ability (leave-one-out deviation + field rank)
+    "win_rate_vs_field": "relative_ability",
+    "recent_win_rate_vs_field": "relative_ability",
+    "place_rate_vs_field": "relative_ability",
+    "show_rate_vs_field": "relative_ability",
+    "dist_band_win_rate_vs_field": "relative_ability",
+    "surface_win_rate_vs_field": "relative_ability",
+    "rel_time_avg_vs_field": "relative_ability",
+    "rel_last3f_avg_vs_field": "relative_ability",
+    "finish_diff_best_vs_field": "relative_ability",
+    "jockey_win_rate_vs_field": "relative_ability",
+    "trainer_win_rate_vs_field": "relative_ability",
+    "win_rate_field_rank": "relative_ability",
+    "rel_time_avg_field_rank": "relative_ability",
 }
 
-#: feature schema version. 026/030-033; 041 (corner trajectory); bumped by 056 (raw columns).
-FEATURE_VERSION = "features-013"
+#: feature schema version. 026/030-033; 041 (corner trajectory); 056 (raw columns);
+#: bumped by 059 (within-race relative ability).
+FEATURE_VERSION = "features-014"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
