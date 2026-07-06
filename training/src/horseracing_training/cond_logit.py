@@ -93,16 +93,13 @@ def cond_logit_objective(group_sizes: list[int]):
 STAGE_WEIGHTS: tuple[float, ...] = (1.0, 0.5, 0.25)
 
 
-def pl_topk_objective(group_sizes: list[int], ranks):
-    """Feature 042: Plackett-Luce top-k (k=len(STAGE_WEIGHTS)) sequential objective.
+def _pl_topk_objective_loop(group_sizes: list[int], ranks):
+    """Reference (per-group Python loop) PL top-k objective — the correctness ORACLE.
 
-    ``ranks``: per-row finishing rank (1..k) or 0 (others/DNF), aligned to the sorted rows.
-    Stage j softmaxes over the not-yet-placed horses and targets the j-th finisher:
-    grad += w_j(p − y_j), hess += w_j·p(1−p) on the remaining set. Stage 1 without a
-    unique winner neutralizes the whole group (as cond_logit); a later stage without a
-    unique target (dead-heat / missing) or with <2 remaining horses breaks — earlier
-    stages' gradients are kept. Sample weight is applied explicitly (LightGBM does not
-    auto-apply it to custom objectives); no weight -> unchanged.
+    Retained for the equivalence test and for exact reproduction of models trained before the
+    vectorized default (the vectorized version below differs by ~1 ulp on the softmax denominator
+    — mathematically identical, not bit-identical; user decision 2026-07-06 accepted this for the
+    ~4x speedup, so the vectorized form is the default). Semantics: see ``pl_topk_objective``.
     """
     ranks = np.asarray(ranks)
 
@@ -134,6 +131,87 @@ def pl_topk_objective(group_sizes: list[int], ranks):
                 grad[sl] = gsub
                 hess[sl] = hsub
                 remaining = remaining & ~target
+        hess = np.maximum(hess, _HESS_FLOOR)
+        w_arr = dataset.get_weight()
+        if w_arr is not None:
+            w_arr = np.asarray(w_arr, dtype=float)
+            grad *= w_arr
+            hess *= w_arr
+        return grad, hess
+
+    return fobj
+
+
+#: masking sentinel for already-placed horses: exp(NEG − max) underflows to 0.0 (excludes them
+#: from the softmax) while staying FINITE, so a non-firing group never yields NaN (−inf − (−inf)).
+_NEG_SENTINEL = -1e30
+
+
+def pl_topk_objective(group_sizes: list[int], ranks):
+    """Feature 042: Plackett-Luce top-k (k=len(STAGE_WEIGHTS)) sequential objective.
+
+    ``ranks``: per-row finishing rank (1..k) or 0 (others/DNF), aligned to the sorted rows.
+    Stage j softmaxes over the not-yet-placed horses and targets the j-th finisher:
+    grad += w_j(p − y_j), hess += w_j·p(1−p) on the remaining set. Stage 1 without a
+    unique winner neutralizes the whole group (as cond_logit); a later stage without a
+    unique target (dead-heat / missing) or with <2 remaining horses breaks — earlier
+    stages' gradients are kept. Sample weight is applied explicitly (LightGBM does not
+    auto-apply it to custom objectives); no weight -> unchanged.
+
+    VECTORIZED (Feature perf): ``ranks``/``group_sizes`` are fixed across boosting rounds, so all
+    membership/validity/break masks are precomputed ONCE here; each ``fobj`` call (per round) does
+    only whole-array softmax arithmetic via segment reductions (no Python per-group loop) — ~4x
+    faster (fobj was ~83% of fit). Segment sums differ from the loop by ~1 ulp (accepted; see
+    ``_pl_topk_objective_loop``), so the result is allclose, not bit-identical.
+    """
+    ranks = np.asarray(ranks)
+    gsize = np.asarray(group_sizes, dtype=np.int64)
+    n = int(gsize.sum())
+    n_groups = len(gsize)
+    # row -> group id, and per-group start offsets for reduceat
+    group_id = np.repeat(np.arange(n_groups), gsize)
+    group_start = np.concatenate(([0], np.cumsum(gsize)[:-1])).astype(np.intp)
+
+    k = len(STAGE_WEIGHTS)
+    # per-group count of rank==j (j=1..k)
+    counts = [
+        np.bincount(group_id, weights=(ranks == j), minlength=n_groups) for j in range(1, k + 1)
+    ]
+
+    # cumulative per-group fire masks: stage j fires iff every prior stage fired AND stage-j target
+    # is unique AND >=2 horses remain before stage j (remaining = group_size − (j−1)).
+    fire_group: list[np.ndarray] = []
+    prev = np.ones(n_groups, dtype=bool)
+    for j in range(1, k + 1):
+        remaining_before = gsize.astype(float) - (j - 1)  # size before removing stage-j horse
+        fj = prev & (counts[j - 1] == 1) & (remaining_before >= 2)
+        fire_group.append(fj)
+        prev = fj
+
+    # per-row precomputed arrays for each stage
+    stages = []
+    for j in range(1, k + 1):
+        w = STAGE_WEIGHTS[j - 1]
+        placed_before = (ranks >= 1) & (ranks <= j - 1)  # rows removed by earlier stages
+        target = (ranks == j).astype(float)
+        fire_row = fire_group[j - 1][group_id]           # this row's group fires stage j
+        remaining_row = fire_row & ~placed_before        # rows still in play (get hess)
+        stages.append(
+            (w, placed_before, target, fire_row.astype(float), remaining_row.astype(float))
+        )
+
+    def fobj(preds, dataset):
+        preds = np.asarray(preds, dtype=float)
+        grad = np.zeros(n, dtype=float)
+        hess = np.zeros(n, dtype=float)
+        for w, placed_before, target, fire_row, remaining_row in stages:
+            masked = np.where(placed_before, _NEG_SENTINEL, preds)
+            seg_max = np.maximum.reduceat(masked, group_start)          # [n_groups]
+            e = np.exp(masked - seg_max[group_id])                       # placed -> underflow 0.0
+            seg_sum = np.add.reduceat(e, group_start)                    # [n_groups]
+            p = e / seg_sum[group_id]                                    # softmax over remaining
+            grad += w * (p - target) * fire_row                         # placed rows contribute 0
+            hess += w * np.maximum(p * (1.0 - p), _HESS_FLOOR) * remaining_row
         hess = np.maximum(hess, _HESS_FLOOR)
         w_arr = dataset.get_weight()
         if w_arr is not None:
