@@ -28,7 +28,7 @@ def test_explanation_tokens_not_in_model_features():
 
 def test_migration_head_is_0009():
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0010_"), versions[-1]
+    assert versions[-1].startswith("0011_"), versions[-1]
 
 
 def test_features_adds_no_orm_table():

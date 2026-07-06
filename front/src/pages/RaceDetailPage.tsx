@@ -6,6 +6,7 @@ import { usePredictions, useRace } from "../api/queries";
 import { CalibrationChart } from "../components/CalibrationChart";
 import { ImportanceChart } from "../components/ImportanceChart";
 import { JointPanel } from "../components/JointPanel";
+import { ModelSelector } from "../components/ModelSelector";
 import { OddsPanel } from "../components/OddsPanel";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
 import { PredictButton } from "../components/PredictButton";
@@ -28,12 +29,19 @@ const TABS: { key: Tab; label: string }[] = [
 export function RaceDetailPage() {
   const { raceId = "" } = useParams();
   const raceQuery = useRace(raceId);
+  // Feature 057: which model to predict with (undefined = adopted/active model, the default).
+  const [modelVersion, setModelVersion] = useState<string | undefined>(undefined);
   // Per-horse predictions WITHOUT joint params (no bet_type/top) → flat win/top2/top3 only.
-  const predQuery = usePredictions(raceId);
+  const predQuery = usePredictions(raceId, undefined, modelVersion);
   const [tab, setTab] = useState<Tab>("recs");
 
   const pred = predQuery.data;
   const hasPreds = (pred?.horses.length ?? 0) > 0;
+  // Feature 057: a selected model with no run for this race → typed 404 (未生成), distinct from
+  // loading / empty / other errors (a 503 with the same code is a real fetch error → alert).
+  const modelUnavailable =
+    predQuery.error?.status === 404 &&
+    predQuery.error?.code === "prediction_unavailable";
 
   return (
     <section>
@@ -83,8 +91,23 @@ export function RaceDetailPage() {
         >
           {(r) => (
             <>
+              {/* Feature 057: model switcher (only when this race has predictions from >1 model). */}
+              {(pred?.available_models?.length ?? 0) > 0 && (
+                <ModelSelector
+                  models={pred?.available_models ?? []}
+                  selected={modelVersion}
+                  onChange={setModelVersion}
+                />
+              )}
               {predQuery.isLoading && <LoadingView label="予測を読み込み中…" />}
-              {predQuery.error && <ErrorView error={predQuery.error} />}
+              {/* Feature 057: selected model has no prediction for this race — a distinct state. */}
+              {modelUnavailable ? (
+                <p className="state state--empty" data-testid="model-unavailable">
+                  選択したモデルはこのレースをまだ予測していません。別のモデルを選ぶか、予測を生成してください。
+                </p>
+              ) : (
+                predQuery.error && <ErrorView error={predQuery.error} />
+              )}
               {pred?.run && <RunAuditView run={pred.run} />}
               {/* 予測なし → 空の列を並べず生成導線を示す(read-onlyの表示は永続データのみ) */}
               {predQuery.isSuccess && !hasPreds && (

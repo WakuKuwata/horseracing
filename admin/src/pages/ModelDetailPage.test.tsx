@@ -26,6 +26,9 @@ describe("ModelDetailPage", () => {
     expect(screen.getByText("jockey_place_rate")).toBeInTheDocument();  // importance row
     expect(screen.getByText("0.0480")).toBeInTheDocument();             // realized_rate bin
     expect(screen.getByText("2025-10-25")).toBeInTheDocument();         // train_through
+    // Feature 057: purpose metadata rendered
+    expect(screen.getByTestId("model-display-name")).toHaveTextContent("意思決定支援モデル");
+    expect(screen.getByTestId("model-purpose")).toHaveTextContent("市場から独立した予測");
   });
 
   it("shows 未収録 for typed 404 calibration_unavailable / importance_unavailable", async () => {

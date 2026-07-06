@@ -60,15 +60,20 @@ export function useRace(raceId: string) {
 export function usePredictions(
   raceId: string,
   joint?: { bet_type: string; top: number },
+  modelVersion?: string,
 ) {
   return useQuery<PredictionResponse, ErrorInfo>({
-    queryKey: ["predictions", raceId, joint ?? null],
+    // Feature 057: modelVersion is part of the key so switching refetches. Omitted → active model.
+    queryKey: ["predictions", raceId, joint ?? null, modelVersion ?? null],
     queryFn: async () =>
       unwrap(
         await api.GET("/api/v1/races/{race_id}/predictions", {
           params: {
             path: { race_id: raceId },
-            query: joint ? { bet_type: joint.bet_type, top: joint.top } : {},
+            query: {
+              ...(joint ? { bet_type: joint.bet_type, top: joint.top } : {}),
+              ...(modelVersion ? { model_version: modelVersion } : {}),
+            },
           },
         }),
       ),

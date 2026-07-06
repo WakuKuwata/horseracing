@@ -18,18 +18,32 @@ from sqlalchemy.orm import Session
 from .queries import canonical_win_odds
 
 
-def select_prediction_run(session: Session, race_id: str) -> PredictionRun | None:
-    """Deterministic latest run: active model → computed_at DESC → prediction_run_id DESC."""
+def select_prediction_run(
+    session: Session, race_id: str, model_version: str | None = None
+) -> PredictionRun | None:
+    """Deterministic run selection.
+
+    ``model_version=None`` (default, Feature 014): active model → computed_at DESC →
+    prediction_run_id DESC — unchanged, backward compatible.
+
+    ``model_version`` given (Feature 057): restrict to that model's runs, computed_at DESC →
+    prediction_run_id DESC (the active-first tie-break does NOT apply — active status must not
+    affect which model is selected). Returns None when that model has no run (caller → 404).
+    """
+    recency = (PredictionRun.computed_at.desc(), PredictionRun.prediction_run_id.desc())
+    if model_version is not None:
+        return session.scalars(
+            select(PredictionRun)
+            .where(PredictionRun.race_id == race_id)
+            .where(PredictionRun.model_version == model_version)
+            .order_by(*recency)
+        ).first()
     active_first = case((ModelVersion.adoption_status == AdoptionStatus.ACTIVE, 0), else_=1)
     return session.scalars(
         select(PredictionRun)
         .join(ModelVersion, PredictionRun.model_version == ModelVersion.model_version)
         .where(PredictionRun.race_id == race_id)
-        .order_by(
-            active_first,
-            PredictionRun.computed_at.desc(),
-            PredictionRun.prediction_run_id.desc(),
-        )
+        .order_by(active_first, *recency)
     ).first()
 
 
