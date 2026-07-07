@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 from horseracing_eval.stage_discount import StageDiscount
 from horseracing_training.calibration import Calibrator

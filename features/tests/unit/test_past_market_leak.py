@@ -105,3 +105,48 @@ def test_columns_clean_names_and_registry_group():
             assert tok not in low, (name, tok)
     cols = [c for c, g in FEATURE_GROUPS.items() if g == "past_market"]
     assert sorted(cols) == sorted(PAST_MARKET_COLUMNS)
+
+
+def test_past_market_is_purely_additive():
+    """Feature 058 (案C' safety): past_market must ADD columns only — never perturb existing ones.
+
+    The build wires it as ``out.merge(pastmkt, on=[race_id,horse_id], how='left')``. A left-merge
+    can only change existing columns' values or the row count if the right side has (a) duplicate
+    keys (row multiplication) or (b) column-name collisions. This test proves neither happens, so
+    building features-015 leaves every features-014 column byte-identical — the load-bearing
+    assumption behind is_feature_version_servable('features-014'). (Confirmed empirically on 73,633
+    real rows: features-014 build == features-015 build on all 121 shared columns, check_exact.)
+    """
+    pm = build_past_market_features(make_frames(_specs()))
+    keys = ["race_id", "horse_id"]
+    # (a) exactly keys + the 4 declared columns — no extra/renamed columns leak in
+    assert set(pm.columns) == set(keys) | set(PAST_MARKET_COLUMNS)
+    # (b) unique keys on the right side -> a left-merge cannot multiply rows
+    assert not pm.duplicated(subset=keys).any()
+    # (c) past_market column names are disjoint from every other model input feature
+    from horseracing_features.registry import model_input_features
+    others = set(model_input_features()) - set(PAST_MARKET_COLUMNS)
+    assert others.isdisjoint(set(PAST_MARKET_COLUMNS))
+
+
+def test_feature_version_servability():
+    """Compat servability is CROSS-version + pinned-hash only. Same-version is NOT special-cased
+    here (the loader's exact hash-equality flag handles it), so a same-version model whose hash
+    differs from the current schema must fail closed — the blocker codex flagged."""
+    from horseracing_features.registry import (
+        COMPATIBLE_PRIOR_FEATURE_VERSIONS,
+        FEATURE_VERSION,
+        is_feature_version_servable,
+    )
+
+    pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-015"]["features-014"]
+    assert FEATURE_VERSION == "features-015"
+    assert is_feature_version_servable("features-014", pinned)            # compat: pinned hash
+    assert not is_feature_version_servable("features-014", "deadbeef")    # compat: WRONG hash
+    assert not is_feature_version_servable("features-014", None)          # compat: hash required
+    assert not is_feature_version_servable("features-013", pinned)        # not declared
+    assert not is_feature_version_servable("features-016", pinned)        # future/unknown
+    # BLOCKER guard: current version claiming compat with a NON-current hash must NOT pass here
+    # (removed the same-version short-circuit; drop_features/corrupted same-version -> fail closed).
+    assert not is_feature_version_servable("features-015", "deadbeef")
+    assert not is_feature_version_servable(FEATURE_VERSION, pinned)

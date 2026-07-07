@@ -20,7 +20,11 @@ import numpy as np
 import pandas as pd
 from horseracing_db.enums import AdoptionStatus
 from horseracing_db.models import ModelVersion
-from horseracing_features.registry import model_input_features
+from horseracing_features.registry import (
+    FEATURE_VERSION,
+    is_feature_version_servable,
+    model_input_features,
+)
 from horseracing_training.artifacts import feature_hash
 from horseracing_training.dataset import CATEGORICAL_FEATURES
 from horseracing_training.target_encoding import DEFAULT_SMOOTHING
@@ -78,29 +82,66 @@ def resolve_model_version(session: Session, explicit: str | None = None) -> str:
     return actives[0].model_version
 
 
-def _load_preprocessor(art_dir: Path, metadata: dict, expected_hash: str) -> dict:
+def _load_preprocessor(art_dir: Path, metadata: dict, model_hash: str, exact: bool) -> dict:
+    """Resolve the model's own feature schema and verify it is buildable + self-consistent.
+
+    ``model_hash`` is the model's OWN trained feature_hash (metadata.feature_hash), NOT the
+    current global hash. On the compatibility path (``exact=False``) the model was trained on a
+    subset/older feature version; its columns must (a) hash to their stored value (integrity)
+    and (b) be a subset of the current buildable columns (buildability) — else fail-closed.
+    """
+    current_cols = model_input_features()
     prep_path = art_dir / "preprocessor.pkl"
     if prep_path.exists():
         with prep_path.open("rb") as fh:
             prep = pickle.load(fh)
-        if prep.get("feature_hash") != expected_hash:
+        if prep.get("feature_hash") != model_hash:
             raise ServingError("preprocessor feature_hash mismatch vs metadata")
+        prep_cols = list(prep["feature_cols"])
+        # integrity: the stored hash must actually be the hash of the stored columns.
+        if feature_hash(prep_cols) != model_hash:
+            raise ServingError("preprocessor feature_cols do not match stored feature_hash")
+        # buildability: every column the model needs must exist in the current registry.
+        missing = [c for c in prep_cols if c not in current_cols]
+        if missing:
+            raise ServingError(
+                f"model feature_cols not buildable under current registry: {missing}"
+            )
+        # consistency: categorical/encoder columns must be within the declared feature set, else
+        # predict_race()/raw_predict() would KeyError at inference instead of failing closed here.
+        col_set = set(prep_cols)
+        bad_cat = [c for c in prep.get("categorical_cols", []) if c not in col_set]
+        if bad_cat:
+            raise ServingError(f"categorical_cols not in feature_cols: {bad_cat}")
+        bad_enc = [c for c in prep.get("encoders", {}) if c not in col_set]
+        if bad_enc:
+            raise ServingError(f"encoder columns not in feature_cols: {bad_enc}")
+        # a TE model whose preprocessor carries NO fitted encoders would silently skip encoding
+        # at inference -> fail closed instead (codex review).
+        if metadata.get("target_encode_cols") and not prep.get("encoders"):
+            raise ServingError(
+                "metadata declares target_encode_cols but preprocessor has no encoders"
+            )
         return prep
-    # backward-compat: no preprocessor artifact
+    # backward-compat: no preprocessor artifact. Only the exact-version path is supported here
+    # (a subset/older model without a preprocessor cannot declare its own columns).
+    if not exact:
+        raise ServingError(
+            "compat-version model has no preprocessor.pkl to declare its feature_cols; re-save"
+        )
     if metadata.get("target_encode_cols"):
         raise ServingError(
             "model used target encoding but preprocessor.pkl is missing; re-save the model"
         )
-    feature_cols = model_input_features()
-    if feature_hash(feature_cols) != expected_hash:
+    if feature_hash(current_cols) != model_hash:
         raise ServingError("feature_hash mismatch: trained schema differs from current features")
     return {
-        "feature_cols": feature_cols,
-        "categorical_cols": [c for c in CATEGORICAL_FEATURES if c in feature_cols],
+        "feature_cols": current_cols,
+        "categorical_cols": [c for c in CATEGORICAL_FEATURES if c in current_cols],
         "target_encode_cols": [],
         "te_smoothing": DEFAULT_SMOOTHING,
         "encoders": {},
-        "feature_hash": expected_hash,
+        "feature_hash": model_hash,
     }
 
 
@@ -118,14 +159,22 @@ def load_serving_model(
         raise ServingError(f"metadata.json missing for '{mv_name}'")
     metadata = json.loads(meta_path.read_text())
 
-    # INV-S4: current feature schema must match the trained one
+    # INV-S4: the trained feature schema must be servable under the current registry.
+    # Fast path: the trained hash IS the current global hash (behaviour byte-identical to pre-058).
+    # Compat path (Feature 058, 案C'): an OLDER version whose columns are an additive subset of the
+    # current registry may serve by selecting its own columns — allowed only for a parity-tested
+    # transition (is_feature_version_servable) with subset+integrity enforced in _load_preprocessor.
     current_hash = feature_hash(model_input_features())
-    if metadata.get("feature_hash") != current_hash:
+    model_hash = metadata.get("feature_hash")
+    model_fv = metadata.get("feature_version", "")
+    exact = model_hash == current_hash
+    if not exact and not is_feature_version_servable(model_fv, model_hash):
         raise ServingError(
-            f"feature_hash mismatch for '{mv_name}': trained != current model_input_features()"
+            f"feature_hash mismatch for '{mv_name}': trained {model_fv!r} not servable under "
+            f"current {FEATURE_VERSION!r} (no parity-tested compatibility for this hash)"
         )
 
-    prep = _load_preprocessor(art_dir, metadata, current_hash)
+    prep = _load_preprocessor(art_dir, metadata, model_hash, exact)
 
     # booster vs degenerate constant (training writes JSON when no booster)
     degenerate = bool(metadata.get("model_degenerate"))
@@ -148,7 +197,7 @@ def load_serving_model(
         categorical_cols=list(prep["categorical_cols"]),
         encoders=dict(prep.get("encoders", {})),
         feature_version=metadata.get("feature_version", ""),
-        feature_hash=current_hash,
+        feature_hash=model_hash,
         # Feature 039: prefer preprocessor, fall back to metadata, default binary (pre-039)
         objective=prep.get("objective", metadata.get("objective", "binary")),
         metadata=metadata,

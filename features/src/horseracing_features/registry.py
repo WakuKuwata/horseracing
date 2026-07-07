@@ -307,6 +307,40 @@ FEATURE_GROUPS: dict[str, str] = {
 #: 059 (within-race relative ability); 058 (past market-assessment / accuracy-first).
 FEATURE_VERSION = "features-015"
 
+#: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
+#: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
+#: its EXACT trained feature_hash, AND (b) the columns V' declares are a subset of V's columns
+#: (checked at load time), AND (c) those shared columns are BYTE-IDENTICAL between the V' build and
+#: the V build. (c) cannot be re-checked at runtime (the old registry is gone), so it is proven by
+#: test_past_market_is_purely_additive (structural: additive left-merge cannot perturb shared
+#: columns) + a one-time empirical check (features-014 build == features-015 build on all 121
+#: shared columns over 73,633 rows, check_exact + check_dtype). Pinning the exact hash (not just
+#: the version string) prevents an unrelated subset artifact that merely CLAIMS 'features-014' from
+#: passing. Do NOT add an entry without the parity guarantee holding (weakens fail-closed).
+COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
+    "features-015": {
+        # canonical features-014 model_input_features() hash (059 / lgbm-057 lineage)
+        "features-014": "37cd6eb1fa9c066ad3482f6be103f93bd66bd3e1fe3860f4d98528c8c5090bee",
+    },
+}
+
+
+def is_feature_version_servable(
+    trained_fv: str, trained_hash: str | None = None, current_fv: str = FEATURE_VERSION
+) -> bool:
+    """True only if a model trained on an OLDER, parity-tested feature version may be served under
+    ``current_fv`` via the compat path.
+
+    This checks CROSS-version compatibility ONLY. An exact same-version match is handled by the
+    caller's hash-equality flag, NOT here — so this deliberately does NOT special-case
+    ``trained_fv == current_fv``. A same-version model whose hash does NOT match the current schema
+    (e.g. a ``drop_features`` ablation build, or a corrupted artifact) must fail closed exactly as
+    it did before Feature 058. An older version holds only via an explicit
+    COMPATIBLE_PRIOR_FEATURE_VERSIONS entry whose PINNED hash equals ``trained_hash``.
+    """
+    pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS.get(current_fv, {}).get(trained_fv)
+    return pinned is not None and trained_hash == pinned
+
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
 

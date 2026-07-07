@@ -92,7 +92,32 @@ description: "Task list for 058 past-market as-of features (accuracy-first model
 ## Phase 6: Polish & Cross-Cutting
 
 - [X] T018 features unit 161 緑 + past_market leak 6 緑 + ruff クリーン。058 変更は features/ のみ(training/serving/eval 未変更=回帰なし)。既存 leak-guard/parity 回帰なし。
-- [X] T019 spec.md Status 更新(採否数値・serving 互換=案D を記録)、CLAUDE.md ポインタ反映、メモリ [[feature-058-market-history-result]] 記録。
+- [X] T019 spec.md Status 更新(採否数値・serving 互換を記録)、CLAUDE.md ポインタ反映、メモリ [[feature-058-market-history-result]] 記録。
+
+---
+
+## Phase 7: 案C' — serving per-model 互換化(features-015 を本番 main へ)
+
+**course change(2026-07-08)**: 当初 T013 は案D(本番 features-014 据え置き)だったが、ユーザー判断で案C'
+(features-015 を本番 main にマージ・accuracy モデルの live 予測も可能に)へ切替。default lgbm-057
+(features-014)の serving を byte-parity で維持することが最優先。
+
+- [X] C1 de-risk(最重要): features-014 build vs features-015 build の共有列がバイト一致するか実証。
+  同一 end_date(2008-06-30, 73,633 行)で両版を build → **共有 121 列が check_exact + check_dtype 一致**、
+  差は past_market 4 列のみ。past_market は additive left-merge=既存列を perturb しない。GO。
+- [X] C2 registry: `COMPATIBLE_PRIOR_FEATURE_VERSIONS`(hash ピン留め)+ `is_feature_version_servable`。
+- [X] C3 model_loader: グローバル hash ゲートを exact-path(バイト不変)/ compat-path(互換版 pinned-hash
+  + buildability + 自己整合 + categorical/encoder ⊆ cols)に分離、破れば fail-closed。ServingModel.feature_hash
+  =model 自身。codex#3/#4 反映(hash ピン留め・categorical/encoder 検証)。
+- [X] C4 audit(codex#7): compat 実行の logic_version に `reg=<現行版>` 付与(native と区別)。
+- [X] C5 テスト: loader unit(exact/compat/subset/integrity/missing-preprocessor/hash-mismatch 9件)+
+  `test_past_market_is_purely_additive`(構造的加算性)+ `test_feature_version_servability`(pinned-hash)。
+  features 164 / serving 38 / training 67 / eval 72 緑・ruff クリーン。
+- [X] C6 実 DB E2E: lgbm-057 が features-015 registry 下で compat-load、race 202506010101 の win prob が
+  persisted features-014 値とバイト完全一致(16頭 mismatch 0)=SC-005 死守。監査マーカー確認。
+- [X] C7 契約更新: serving.md の INV-S4 緩和を明記。
+- [ ] C8 main マージ(codex 最終レビュー通過後)。
+- [ ] C9 マージ後: 本番 serving で lgbm-057 が features-015 下で動くことを確認・メモリ更新。
 
 ---
 

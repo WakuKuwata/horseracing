@@ -26,7 +26,13 @@ def load_serving_model(session, model_version: str | None = None) -> ServingMode
     # 2. 成果物 model.txt / calibrator.pkl / preprocessor.pkl をロード
     #    preprocessor 欠落時: metadata.target_encode_cols が空なら再構成(feature_cols=model_input_features())、
     #    feature_hash 一致を検証。TE 使用かつ欠落は ServingError で fail-fast。
-    # 3. 現行 model_input_features() の feature_hash と保存 feature_hash が不一致なら fail-fast (INV-S4)。
+    # 3. INV-S4 (Feature 058/案C' で緩和): 保存 feature_hash が現行 model_input_features() の hash と
+    #    一致すれば従来どおり(exact path・挙動バイト不変)。不一致でも、モデルの feature_version が現行版に
+    #    対する parity-tested な互換版(COMPATIBLE_PRIOR_FEATURE_VERSIONS、trained_hash ピン留め)で、かつ
+    #    モデルの feature_cols が現行 model_input_features() の部分集合(buildability)で自己整合(hash=cols)、
+    #    categorical/encoder ⊆ feature_cols なら COMPAT path で許可(モデル固有列を選択)。それ以外は fail-fast。
+    #    共有列のバイト一致は runtime では再検証不能なため offline(構造的加算性テスト + 一度きりの全列
+    #    check_exact 実証)で担保。COMPAT 実行は logic_version に reg=<現行版> を付与し native 実行と区別。
 ```
 
 ## 推論
