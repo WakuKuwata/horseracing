@@ -183,6 +183,11 @@ REGISTRY: dict[str, FeatureMeta] = {
     "trainer_win_rate_vs_field": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
     "win_rate_field_rank": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
     "rel_time_avg_field_rank": FeatureMeta("relative", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 058 (B1): past market-assessment (popularity) as-of, accuracy-first model only ---
+    "asof_mkt_rank_avg": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_mkt_rank_norm_avg": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_mkt_rank_best": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_beat_mkt_avg": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -291,11 +296,16 @@ FEATURE_GROUPS: dict[str, str] = {
     "trainer_win_rate_vs_field": "relative_ability",
     "win_rate_field_rank": "relative_ability",
     "rel_time_avg_field_rank": "relative_ability",
+    # Feature 058 (B1): past market-assessment (popularity) as-of, accuracy-first model only
+    "asof_mkt_rank_avg": "past_market",
+    "asof_mkt_rank_norm_avg": "past_market",
+    "asof_mkt_rank_best": "past_market",
+    "asof_beat_mkt_avg": "past_market",
 }
 
 #: feature schema version. 026/030-033; 041 (corner trajectory); 056 (raw columns);
-#: bumped by 059 (within-race relative ability).
-FEATURE_VERSION = "features-014"
+#: 059 (within-race relative ability); 058 (past market-assessment / accuracy-first).
+FEATURE_VERSION = "features-015"
 
 #: identifier columns present in the matrix but NOT model features.
 IDENTIFIER_COLUMNS: tuple[str, ...] = ("race_id", "horse_id")
