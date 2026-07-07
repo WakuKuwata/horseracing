@@ -116,8 +116,8 @@ description: "Task list for 058 past-market as-of features (accuracy-first model
 - [X] C6 実 DB E2E: lgbm-057 が features-015 registry 下で compat-load、race 202506010101 の win prob が
   persisted features-014 値とバイト完全一致(16頭 mismatch 0)=SC-005 死守。監査マーカー確認。
 - [X] C7 契約更新: serving.md の INV-S4 緩和を明記。
-- [ ] C8 main マージ(codex 最終レビュー通過後)。
-- [ ] C9 マージ後: 本番 serving で lgbm-057 が features-015 下で動くことを確認・メモリ更新。
+- [X] C8 main マージ: codex 最終レビューでブロッカー(同一版 hash 不一致バイパス)発見→修正+loader reject テスト 3 件追加後、`--no-ff` で merge(commit f2c2a33)。main FEATURE_VERSION=features-015。main の無関係な未コミット作業(admin/front/ops/betting/training win_model.py)とは disjoint=非干渉。
+- [X] C9 マージ後検証: main(features-015)で active=lgbm-057 が compat-load・race 202506010101 の予測が persisted features-014 値とバイト完全一致(16頭 mismatch 0)、lgbm-058-acc は exact-load。serving 41 + features 164 緑。メモリ [[feature-058-market-history-result]] を案C' に更新。
 
 ---
 
