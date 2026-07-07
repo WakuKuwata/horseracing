@@ -38,6 +38,7 @@ from .lowcost_features import build_lowcost_features
 from .owner_breeder_features import build_owner_breeder_features
 from .pace_features import build_pace_features
 from .pace_scenario_features import build_pace_scenario_features
+from .past_market_features import build_past_market_features  # Feature 058 (B1)
 from .pedigree_features import build_pedigree_features
 from .race_level_features import build_race_level_features
 from .registry import FEATURE_VERSION, materialized_columns
@@ -204,6 +205,10 @@ def build_asof_features(
     # (win_rate / rel_time_avg / ...), so it runs AFTER the merges over the full `out` frame.
     relability = build_relative_ability_features(frames, ability_frame=out)
     out = out.merge(relability, on=_KEYS, how="left")
+    # Feature 058 (B1): past market-assessment (popularity) — independent as-of block over
+    # race_horses.popularity (does not read assembled ability columns). Accuracy-first model only.
+    pastmkt = build_past_market_features(frames)
+    out = out.merge(pastmkt, on=_KEYS, how="left")
     cols = [*_KEYS, *materialized_columns()]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)
 

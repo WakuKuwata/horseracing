@@ -72,6 +72,7 @@ def load_frames(
             RaceHorse.jockey_weight,  # Feature 030: 斤量 (carried weight, pre-race)
             RaceHorse.entry_status,
             RaceHorse.running_style,  # Feature 023: past 脚質 (as-of only, never the target race)
+            RaceHorse.popularity,  # Feature 058 (B1): past market assessment — as-of ONLY, never R
         )
         .join(Race, Race.race_id == RaceHorse.race_id)
         .where(Race.race_date >= INGEST_SCOPE_START)

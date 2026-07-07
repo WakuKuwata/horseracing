@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from horseracing_db.models import PredictionRun, Race
 from horseracing_eval.consistency import check_consistency
 from horseracing_features.builder import build_feature_matrix, verify_materialized
+from horseracing_features.registry import FEATURE_VERSION
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,6 +21,16 @@ from . import SERVING_LOGIC_VERSION
 from .model_loader import ServingError, load_serving_model
 from .persistence import persist_run
 from .predictor import predict_race
+
+
+def _base_logic_version(model) -> str:
+    """Feature 058 (案C'): when a model is served on the COMPAT path (its trained feature_version
+    differs from the runtime registry), record the runtime registry version too, so a compat run is
+    distinguishable in audit from a native run of that feature_version."""
+    lv = f"feat={model.feature_version};serve={SERVING_LOGIC_VERSION}"
+    if model.feature_version != FEATURE_VERSION:
+        lv += f";reg={FEATURE_VERSION}"
+    return lv
 
 
 @dataclass(frozen=True)
@@ -69,7 +80,7 @@ def run_serving(
     Default False keeps the historical path byte-identical."""
     model = load_serving_model(session, model_version)
     target_date, race_ids = _targets(session, race_id, date)
-    logic_version = f"feat={model.feature_version};serve={SERVING_LOGIC_VERSION}"
+    logic_version = _base_logic_version(model)
 
     feature_rows = build_feature_matrix(
         session, end_date=target_date,
@@ -173,7 +184,7 @@ def run_serving_backfill(
     failure aborts the whole run (fail-closed), it is NOT swallowed into error_days.
     """
     model = load_serving_model(session, model_version)
-    logic_version = f"feat={model.feature_version};serve={SERVING_LOGIC_VERSION}"
+    logic_version = _base_logic_version(model)
     if use_materialized:
         verify_materialized(session, materialized_path)  # raises: missing/stale/incompatible
     gen = skip_exists = skip_no_started = error_days = 0
