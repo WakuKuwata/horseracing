@@ -214,6 +214,8 @@ def build_asof_features(
     # source columns => source_fingerprint unchanged). Additive left-merge (INV-F2).
     spdfig = build_speed_figure_features(frames)
     out = out.merge(spdfig, on=_KEYS, how="left")
+    # Feature 063 (closing figure) was rejected at the full 19-fold gate (redundant with 061 over
+    # the full period) — NOT wired in. closing_figure_features.py + tests kept as negative result.
     # Feature 062 (Elo rating) was rejected at the pre-registered gate (redundant under pl_topk), so
     # it is NOT wired into the default as-of source. rating_features.py + its unit tests remain as
     # the documented negative result; re-enable this block only if a future variant passes.

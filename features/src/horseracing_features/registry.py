@@ -199,6 +199,10 @@ REGISTRY: dict[str, FeatureMeta] = {
     # NEGATIVE on both recent folds). Not merged into the default set (027 precedent: a rejected
     # FEATURE_VERSION bump would force the active model onto the compat path). The module
     # rating_features.py + its unit tests are preserved as the documented negative result.
+    # Feature 063 (closing-speed figure) was REJECTED at the full 19-fold gate: the absolute
+    # closing-3F axis is ~redundant with 061's absolute finish-time figure over the full period
+    # (corr 0.727; recent-fold pl_topk gain washed to 0.00000 full-mean, 9/19 folds). Not merged
+    # (027 precedent). closing_figure_features.py + tests kept as the documented negative result.
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -318,12 +322,13 @@ FEATURE_GROUPS: dict[str, str] = {
     "asof_spdfig_recent3": "speed_figure",
     "asof_spdfig_last": "speed_figure",
     "asof_spdfig_count": "speed_figure",
-    # Feature 062 (rating) rejected at the pre-registered gate — not in the default set.
+    # Feature 062 (rating) / 063 (closing figure) rejected at the gate — not in the default set.
 }
 
 #: feature schema version. 026/030-033; 041 (corner trajectory); 056 (raw columns);
 #: 059 (within-race relative ability); 058 (past market-assessment / accuracy-first);
-#: 061 (speed figure). 062 (Elo rating) was evaluated and REJECTED (redundant under pl_topk).
+#: 061 (speed figure). 062 (Elo rating) and 063 (closing-speed figure) were evaluated and
+#: REJECTED (062 redundant under pl_topk; 063 redundant with 061 over the full period).
 FEATURE_VERSION = "features-016"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
