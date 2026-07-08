@@ -44,6 +44,7 @@ from .race_level_features import build_race_level_features
 from .registry import FEATURE_VERSION, materialized_columns
 from .relative_ability_features import build_relative_ability_features
 from .schema import DEFAULT_LOW_HISTORY_MAX
+from .speed_figure_features import build_speed_figure_features  # Feature 061
 
 _KEYS = ["race_id", "horse_id"]
 #: Feature 026: horses pedigree columns folded into the staleness fingerprint, so a pedigree
@@ -209,6 +210,13 @@ def build_asof_features(
     # race_horses.popularity (does not read assembled ability columns). Accuracy-first model only.
     pastmkt = build_past_market_features(frames)
     out = out.merge(pastmkt, on=_KEYS, how="left")
+    # Feature 061: speed figure — independent as-of block (races/race_results only, no new
+    # source columns => source_fingerprint unchanged). Additive left-merge (INV-F2).
+    spdfig = build_speed_figure_features(frames)
+    out = out.merge(spdfig, on=_KEYS, how="left")
+    # Feature 062 (Elo rating) was rejected at the pre-registered gate (redundant under pl_topk), so
+    # it is NOT wired into the default as-of source. rating_features.py + its unit tests remain as
+    # the documented negative result; re-enable this block only if a future variant passes.
     cols = [*_KEYS, *materialized_columns()]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)
 

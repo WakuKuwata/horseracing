@@ -139,13 +139,13 @@ def test_feature_version_servability():
         is_feature_version_servable,
     )
 
-    pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-015"]["features-014"]
-    assert FEATURE_VERSION == "features-015"
-    assert is_feature_version_servable("features-014", pinned)            # compat: pinned hash
-    assert not is_feature_version_servable("features-014", "deadbeef")    # compat: WRONG hash
-    assert not is_feature_version_servable("features-014", None)          # compat: hash required
+    # servability is checked against the CURRENT version (features-016), whose pins are 014/015.
+    pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-016"]["features-015"]
+    assert FEATURE_VERSION == "features-016"
+    assert is_feature_version_servable("features-015", pinned)            # compat: pinned hash
+    assert not is_feature_version_servable("features-015", "deadbeef")    # compat: WRONG hash
+    assert not is_feature_version_servable("features-015", None)          # compat: hash required
     assert not is_feature_version_servable("features-013", pinned)        # not declared
-    assert not is_feature_version_servable("features-016", pinned)        # future/unknown
     # BLOCKER guard: current version claiming compat with a NON-current hash must NOT pass here
     # (removed the same-version short-circuit; drop_features/corrupted same-version -> fail closed).
     assert not is_feature_version_servable("features-015", "deadbeef")

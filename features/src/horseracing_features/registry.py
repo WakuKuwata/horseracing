@@ -188,6 +188,17 @@ REGISTRY: dict[str, FeatureMeta] = {
     "asof_mkt_rank_norm_avg": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
     "asof_mkt_rank_best": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
     "asof_beat_mkt_avg": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 061: speed figure — absolute time vs as-of course-condition baseline ---
+    "asof_spdfig_avg": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.NULL),
+    "asof_spdfig_best": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.NULL),
+    "asof_spdfig_recent3": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.NULL),
+    "asof_spdfig_last": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.NULL),
+    "asof_spdfig_count": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.ZERO_OK),
+    # Feature 062 (as-of Elo rating) was REJECTED at the pre-registered gate — the opponent-quality
+    # axis is redundant with the existing ability features under pl_topk (binary +/−0.0002, pl_topk
+    # NEGATIVE on both recent folds). Not merged into the default set (027 precedent: a rejected
+    # FEATURE_VERSION bump would force the active model onto the compat path). The module
+    # rating_features.py + its unit tests are preserved as the documented negative result.
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -301,11 +312,19 @@ FEATURE_GROUPS: dict[str, str] = {
     "asof_mkt_rank_norm_avg": "past_market",
     "asof_mkt_rank_best": "past_market",
     "asof_beat_mkt_avg": "past_market",
+    # Feature 061: speed figure (absolute time axis)
+    "asof_spdfig_avg": "speed_figure",
+    "asof_spdfig_best": "speed_figure",
+    "asof_spdfig_recent3": "speed_figure",
+    "asof_spdfig_last": "speed_figure",
+    "asof_spdfig_count": "speed_figure",
+    # Feature 062 (rating) rejected at the pre-registered gate — not in the default set.
 }
 
 #: feature schema version. 026/030-033; 041 (corner trajectory); 056 (raw columns);
-#: 059 (within-race relative ability); 058 (past market-assessment / accuracy-first).
-FEATURE_VERSION = "features-015"
+#: 059 (within-race relative ability); 058 (past market-assessment / accuracy-first);
+#: 061 (speed figure). 062 (Elo rating) was evaluated and REJECTED (redundant under pl_topk).
+FEATURE_VERSION = "features-016"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -321,6 +340,14 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
     "features-015": {
         # canonical features-014 model_input_features() hash (059 / lgbm-057 lineage)
         "features-014": "37cd6eb1fa9c066ad3482f6be103f93bd66bd3e1fe3860f4d98528c8c5090bee",
+    },
+    # Feature 061: speed_figure is purely additive on top of features-015 (same structural
+    # additive-left-merge guarantee + one-time empirical shared-column parity, 058 note above).
+    "features-016": {
+        "features-014": "37cd6eb1fa9c066ad3482f6be103f93bd66bd3e1fe3860f4d98528c8c5090bee",
+        # canonical features-015 hash (058/060 lineage: lgbm-058-acc, lgbm-060-mkt) — measured
+        # 2026-07-08 against both models' metadata.feature_hash BEFORE the 061 bump.
+        "features-015": "0a93f210765ebb656088d753c5133685581e9a61d29dce17472c7be35dec2839",
     },
 }
 
