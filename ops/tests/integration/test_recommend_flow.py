@@ -40,7 +40,7 @@ def test_recommend_succeeded(session, monkeypatch):
     assert job.summary["kind"] == "recommend" and job.summary["source"] == "manual"
 
 
-def test_recommend_skipped_no_odds(session, monkeypatch):
+def test_recommend_skipped_no_odds(session, monkeypatch, client):
     seed_race(session, race_id=RID)
     monkeypatch.setattr(runner_mod, "_betting_recommend",
                         lambda rid: _proc(0, f"SKIPPED: no win odds for race {rid} (need odds)"))
@@ -50,6 +50,10 @@ def test_recommend_skipped_no_odds(session, monkeypatch):
     session.refresh(job)
     assert job.status == "skipped"
     assert "odds" in job.summary["reason"]
+    # the poll endpoint surfaces the skip reason so the front can distinguish 生成済み /
+    # 予測未生成 / オッズ未取得 instead of one opaque 対象なし
+    body = client.get(f"/ops/v1/jobs/{job.ingestion_job_id}").json()
+    assert body["status"] == "skipped" and "odds" in body["reason"]
 
 
 def test_recommend_failed_no_retry(session, monkeypatch):

@@ -188,6 +188,17 @@
             ],
             "title": "Error Message"
           },
+          "followup_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Followup Job Id"
+          },
           "job_id": {
             "format": "uuid",
             "title": "Job Id",
@@ -200,12 +211,6 @@
           "kind": {
             "anyOf": [
               {
-                "enum": [
-                  "entries+odds",
-                  "results",
-                  "predict",
-                  "recommend"
-                ],
                 "type": "string"
               },
               {
@@ -224,6 +229,17 @@
               }
             ],
             "title": "Processed Rows"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           },
           "retry_count": {
             "default": 0,

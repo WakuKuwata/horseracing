@@ -34,6 +34,22 @@ const TONE: Record<JobStatus, string> = {
   skipped: "muted",
 };
 
+// A skipped job carries the betting CLI's reason — distinguish the benign 生成済み from the two
+// actionable prerequisites instead of one opaque 対象なし. Matched on stable CLI substrings
+// (cli.py recommend-serve); unknown reasons fall back to the generic label.
+function skipLabel(reason: string | null | undefined): { tone: string; text: string } {
+  if (reason?.includes("already exist")) {
+    return { tone: "ok", text: "生成済み(既存の買い目を表示中)" };
+  }
+  if (reason?.includes("no prediction_run")) {
+    return { tone: "warn", text: "予測未生成 — 先に「予測する」を実行してください" };
+  }
+  if (reason?.includes("no win odds")) {
+    return { tone: "warn", text: "オッズ未取得 — 先に「データ更新」を実行してください" };
+  }
+  return { tone: TONE.skipped, text: LABEL.skipped };
+}
+
 export function RecommendButton({
   raceId,
   pollMs = 1500,
@@ -58,6 +74,8 @@ export function RecommendButton({
     queryFn: () => getJob(jobId as string),
     enabled: jobId != null,
     refetchInterval: (q) => (isTerminal(q.state.data?.status) ? false : pollMs),
+    // Keep polling while the tab is hidden (default pauses the interval — see RefreshButton).
+    refetchIntervalInBackground: true,
   });
 
   const status = poll.data?.status;
@@ -77,9 +95,16 @@ export function RecommendButton({
   if (start.isError) {
     tone = "error";
     text = `生成失敗: ${start.error?.detail ?? ""}`;
+  } else if (running && poll.isError) {
+    // Surface a failing status poll instead of a silent 生成中… forever (same blindspot as the
+    // refresh/predict buttons — the job can finish while the poll endpoint errors).
+    tone = "error";
+    text = `状態確認エラー(再試行中): ${poll.error?.detail ?? ""}`;
   } else if (running) {
     tone = "pending";
     text = status ? LABEL[status] : "受付済み…";
+  } else if (status === "skipped") {
+    ({ tone, text } = skipLabel(poll.data?.reason));
   } else if (status) {
     tone = TONE[status];
     text = LABEL[status];

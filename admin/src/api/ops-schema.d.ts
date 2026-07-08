@@ -216,6 +216,8 @@ export interface components {
             error_count?: number | null;
             /** Error Message */
             error_message?: string | null;
+            /** Followup Job Id */
+            followup_job_id?: string | null;
             /**
              * Job Id
              * Format: uuid
@@ -224,9 +226,11 @@ export interface components {
             /** Job Type */
             job_type: string;
             /** Kind */
-            kind?: ("entries+odds" | "results" | "predict" | "recommend") | null;
+            kind?: string | null;
             /** Processed Rows */
             processed_rows?: number | null;
+            /** Reason */
+            reason?: string | null;
             /**
              * Retry Count
              * @default 0

@@ -45,6 +45,26 @@ describe("DayRefreshButton", () => {
     expect(await screen.findByText(/完了 2\/2 成功/)).toBeInTheDocument();
   });
 
+  it("shows a batch poll error instead of silent progress, then recovers to 完了", async () => {
+    let calls = 0;
+    server.use(
+      http.post(`${BASE}/days/${DATE}/refresh`, () => accept()),
+      http.get(`${BASE}/batches/${TRACE}`, () => {
+        calls += 1;
+        return calls <= 2
+          ? HttpResponse.json(
+              { status: 500, code: "internal", detail: "boom" },
+              { status: 500 },
+            )
+          : batch("succeeded", 2, 0);
+      }),
+    );
+    renderWithProviders(<DayRefreshButton date={DATE} pollMs={10} />);
+    await userEvent.click(screen.getByRole("button", { name: "この日を更新" }));
+    expect(await screen.findByText(/状態確認エラー/)).toBeInTheDocument();
+    expect(await screen.findByText(/完了 2\/2 成功/)).toBeInTheDocument();
+  });
+
   it("surfaces partial failure and offers a failed-only re-run", async () => {
     server.use(
       http.post(`${BASE}/days/${DATE}/refresh`, () => accept()),

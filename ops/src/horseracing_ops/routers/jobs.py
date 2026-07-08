@@ -30,10 +30,11 @@ def _err(status: int, code: str, detail: str) -> JSONResponse:
 
 
 def _to_job(j: IngestionJob) -> Job:
-    kind = (j.summary or {}).get("kind") if isinstance(j.summary, dict) else None
+    summary = j.summary if isinstance(j.summary, dict) else {}
     return Job(
         job_id=j.ingestion_job_id, job_type=j.job_type, status=j.status, scope=j.scope,
-        scope_value=j.scope_value, trace_id=j.trace_id, kind=kind,
+        scope_value=j.scope_value, trace_id=j.trace_id, kind=summary.get("kind"),
+        reason=summary.get("reason"), followup_job_id=summary.get("recommend_job_id"),
         processed_rows=j.processed_rows, skipped_rows=j.skipped_rows, error_count=j.error_count,
         retry_count=j.retry_count, started_at=j.started_at, completed_at=j.completed_at,
         error_message=j.error_message,

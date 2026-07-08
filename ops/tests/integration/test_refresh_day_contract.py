@@ -5,7 +5,12 @@ from netkeiba and fans out children later; the front polls the batch for progres
 
 from __future__ import annotations
 
+import datetime
+
 import pytest
+
+from horseracing_ops.enqueue import enqueue_day_parent
+from horseracing_ops.worker import drain
 
 pytestmark = pytest.mark.integration
 
@@ -31,6 +36,21 @@ def test_batch_poll_readable_before_discovery(client):
     body = r.json()
     assert body["trace_id"] == trace_id and body["scope_value"] == DATE
     assert body["total"] == 0 and body["children"] == [] and body["status"] == "queued"
+
+
+def test_batch_poll_readable_after_children_finish(client, session, fixture_fetcher):
+    # Regression: finished children carry summary kind="entries+results+odds"; the embedded Job
+    # schema must accept it or the batch poll 500s exactly when children reach a terminal state.
+    parent = enqueue_day_parent(session, datetime.date(2024, 12, 28))
+    session.commit()
+    drain(session, fetcher=fixture_fetcher)
+
+    r = client.get(f"/ops/v1/batches/{parent.trace_id}")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] == 2 and body["running"] == 0
+    kinds = {c["kind"] for c in body["children"]}
+    assert "entries+results+odds" in kinds
 
 
 def test_unknown_day_still_accepted(client):

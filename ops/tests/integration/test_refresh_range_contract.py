@@ -25,6 +25,16 @@ def test_refresh_range_accepts_202_with_audit(client, session):
     assert job.summary["kind"] == "refresh_range" and job.summary["source"] == "manual"
 
 
+def test_refresh_range_job_pollable_from_enqueue(client):
+    # Regression: refresh_range writes summary kind="refresh_range" AT ENQUEUE time — the job must
+    # be pollable immediately (a kind Literal in the Job schema once 500'd this from the start).
+    job_id = client.post("/ops/v1/refresh-range", json=_BODY).json()["job_id"]
+    r = client.get(f"/ops/v1/jobs/{job_id}")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["kind"] == "refresh_range" and body["status"] == "queued"
+
+
 def test_refresh_range_dedups_active_job(client):
     first = client.post("/ops/v1/refresh-range", json=_BODY).json()
     second = client.post("/ops/v1/refresh-range", json=_BODY).json()

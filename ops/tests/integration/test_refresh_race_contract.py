@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pytest
 
+from horseracing_ops.enqueue import enqueue_race
+from horseracing_ops.worker import drain
 from tests._synth import seed_race
 
 pytestmark = pytest.mark.integration
@@ -29,6 +31,22 @@ def test_job_status_readable(client, session):
     body = r.json()
     assert body["job_id"] == job_id and body["job_type"] == "refresh_race"
     assert body["status"] == "queued" and body["scope_value"] == RID
+
+
+def test_terminal_job_status_readable(client, session, fixture_fetcher):
+    # Regression: the runner writes summary kind="entries+results+odds" at completion; the Job
+    # schema must accept it — a Literal mismatch here 500'd the poll exactly at the terminal
+    # transition, so the front never saw 完了 and stayed on 更新中… forever.
+    seed_race(session, race_id=RID)
+    job, _ = enqueue_race(session, RID)
+    session.commit()
+    drain(session, fetcher=fixture_fetcher)
+
+    r = client.get(f"/ops/v1/jobs/{job.ingestion_job_id}")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "succeeded"
+    assert body["kind"] == "entries+results+odds"
 
 
 def test_unknown_race_404(client):

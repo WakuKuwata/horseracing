@@ -13,7 +13,7 @@ from horseracing_db.models import (
     Recommendation,
 )
 from horseracing_db.session import create_db_engine
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, select, text
 from sqlalchemy.orm import Session
 
 from .backtest import run_backtest
@@ -183,6 +183,13 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     if run_id is None:
         print(f"SKIPPED: no prediction_run for race {race_id} (predict first)")
         return 0
+    # Serialize per prediction_run: the idempotency below is check-then-insert, and two concurrent
+    # generators (manual 買い目生成 + the predict auto-follow-up, ops worker concurrency=2) could
+    # otherwise both pass the check and double-insert into the append-only recommendations table.
+    # SESSION-level lock (not xact): the win/exotic generators commit mid-flow, which would release
+    # an xact lock between the groups. Released automatically when this CLI process disconnects.
+    session.execute(text("SELECT pg_advisory_lock(hashtext(:k))"),
+                    {"k": f"recommend-run:{run_id}"})
     if _has_group(session, run_id, BetType.ALL):
         # some group exists — top up only the missing groups (045); all present → full skip
         if (_has_group(session, run_id, (BetType.WIN,))

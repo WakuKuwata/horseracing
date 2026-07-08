@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { RefreshButton } from "./RefreshButton";
 import { server } from "../tests/server";
@@ -48,6 +48,50 @@ describe("RefreshButton", () => {
     renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
     await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
     expect(await screen.findByText("対象なし")).toBeInTheDocument();
+  });
+
+  it("on success refetches race, odds AND predictions (the views a refresh feeds)", async () => {
+    server.use(
+      http.post(`${BASE}/races/${RID}/refresh`, () => accept()),
+      http.get(`${BASE}/jobs/${JOB}`, () => job("succeeded")),
+    );
+    const { queryClient } = renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
+    await screen.findByText("更新完了");
+
+    const keys = invalidate.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
+    expect(keys).toContain(JSON.stringify(["race", RID]));
+    expect(keys).toContain(JSON.stringify(["odds", RID]));
+    expect(keys).toContain(JSON.stringify(["predictions", RID]));
+  });
+
+  it("shows a poll error instead of a silent 更新中…, then recovers to 更新完了", async () => {
+    // Regression: the job status endpoint once 500'd exactly at the terminal transition — the
+    // button sat on 更新中… forever with no hint. The poll error must be visible, and polling must
+    // keep going so a recovered endpoint still settles the button.
+    let calls = 0;
+    server.use(
+      http.post(`${BASE}/races/${RID}/refresh`, () => accept()),
+      http.get(`${BASE}/jobs/${JOB}`, () => {
+        calls += 1;
+        return calls <= 2
+          ? HttpResponse.json(
+              { status: 500, code: "internal", detail: "boom" },
+              { status: 500 },
+            )
+          : job("succeeded");
+      }),
+    );
+    renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
+    expect(await screen.findByText(/状態確認エラー/)).toBeInTheDocument();
+    // still disabled — the job may well be running server-side
+    expect(screen.getByRole("button", { name: "更新中…" })).toBeDisabled();
+    // once the endpoint recovers, the terminal state lands
+    expect(await screen.findByText("更新完了")).toBeInTheDocument();
   });
 
   it("surfaces a typed error without crashing", async () => {

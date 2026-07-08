@@ -38,6 +38,8 @@ export function DayRefreshButton({
     queryFn: () => getBatch(traceId as string),
     enabled: traceId != null,
     refetchInterval: (q) => (isBatchDone(q.state.data?.status) ? false : pollMs),
+    // Keep polling while the tab is hidden (default pauses the interval — see RefreshButton).
+    refetchIntervalInBackground: true,
   });
 
   const b = poll.data;
@@ -70,7 +72,14 @@ export function DayRefreshButton({
         </span>
       )}
 
-      {b && (
+      {/* A failing batch poll must not look like silent progress (same blindspot as RefreshButton). */}
+      {!start.isError && running && poll.isError && (
+        <span className="refresh__status refresh__status--error" role="status">
+          状態確認エラー(再試行中): {poll.error?.detail ?? ""}
+        </span>
+      )}
+
+      {b && !(running && poll.isError) && (
         <span
           className={`refresh__status refresh__status--${done ? (failed ? "warn" : "ok") : "pending"}`}
           role="status"

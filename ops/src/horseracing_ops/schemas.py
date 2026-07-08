@@ -13,7 +13,11 @@ from typing import Literal
 from pydantic import BaseModel
 
 JobStatusT = Literal["queued", "running", "succeeded", "partial", "failed", "skipped"]
-KindT = Literal["entries+odds", "results", "predict", "recommend"]  # 028 predict / 043 recommend
+# kind is an informational label transcribed from the worker's summary (e.g. entries+results+odds /
+# predict / recommend / refresh_range / discover). Plain str, NOT a Literal: the poll endpoint must
+# never 500 on a cosmetic field for a job already committed to the DB — a Literal here once rejected
+# the runner's actual "entries+results+odds" and made every terminal refresh job unreadable, so the
+# front stayed on 更新中… forever.
 
 
 class ErrorBody(BaseModel):
@@ -51,7 +55,14 @@ class Job(BaseModel):
     scope: str | None = None
     scope_value: str | None = None
     trace_id: str | None = None
-    kind: KindT | None = None
+    kind: str | None = None
+    # why a job ended SKIPPED (transcribed from summary["reason"], e.g. the betting CLI's
+    # "recommendations already exist for run …") — lets the front distinguish 生成済み from
+    # 予測未生成/オッズ未取得 instead of one opaque 対象なし. Plain str (same rule as kind).
+    reason: str | None = None
+    # a job this one enqueued as a follow-up (predict → auto recommend, transcribed from
+    # summary["recommend_job_id"]) — lets the front keep polling until the buy-ups land too.
+    followup_job_id: str | None = None
     processed_rows: int | None = None
     skipped_rows: int | None = None
     error_count: int | None = None

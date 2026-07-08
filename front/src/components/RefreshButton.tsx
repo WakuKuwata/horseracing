@@ -57,14 +57,21 @@ export function RefreshButton({
     queryFn: () => getJob(jobId as string),
     enabled: jobId != null,
     refetchInterval: (q) => (isTerminal(q.state.data?.status) ? false : pollMs),
+    // Keep polling while the tab is hidden — the default pauses the interval, so a user who
+    // switches away during a long job came back to an eternal 更新中… instead of 完了.
+    refetchIntervalInBackground: true,
   });
 
   const status = poll.data?.status;
 
-  // On a terminal success/partial, refetch the 014 race detail so the table shows fresh data.
+  // On a terminal success/partial, refetch the 014 views that a refresh feeds: the race detail
+  // (entries/results), the odds panel, and the predictions (market q is derived from odds at read
+  // time) — so the whole page reflects the new data without a manual reload.
   useEffect(() => {
     if (!invalidated && (status === "succeeded" || status === "partial")) {
       void qc.invalidateQueries({ queryKey: ["race", raceId] });
+      void qc.invalidateQueries({ queryKey: ["odds", raceId] });
+      void qc.invalidateQueries({ queryKey: ["predictions", raceId] });
       setInvalidated(true);
     }
   }, [status, invalidated, qc, raceId]);
@@ -77,6 +84,11 @@ export function RefreshButton({
   if (start.isError) {
     tone = "error";
     text = `更新失敗: ${start.error?.detail ?? ""}`;
+  } else if (running && poll.isError) {
+    // The job may still be running — but say the poll itself is failing instead of sitting on a
+    // silent 更新中… forever (this exact blindspot hid an ops 500 on the status endpoint).
+    tone = "error";
+    text = `状態確認エラー(再試行中): ${poll.error?.detail ?? ""}`;
   } else if (running) {
     tone = "pending";
     text = status ? LABEL[status] : "受付済み…";

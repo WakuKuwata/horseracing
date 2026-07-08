@@ -36,7 +36,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .deps import owner_database_url
-from .enqueue import enqueue_race
+from .enqueue import enqueue_race, enqueue_recommend
 
 _USER_AGENT = "horseracing-ops/0.1 (personal use; contact via repo)"
 
@@ -165,7 +165,17 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
         job.summary = {"kind": "predict", "source": "manual", "reason": "no started horses"}
     else:
         job.status = JobStatus.SUCCEEDED
-        job.summary = {"kind": "predict", "source": "manual", "output": tail}
+        # 043 deferred item: a fresh prediction_run starts with zero recommendations (they are
+        # per-run), so chase the new run with a recommend job — the user gets buy-ups without a
+        # second click. Follow-up-job (not in-job chaining) so enqueue_recommend's in-flight dedup
+        # converges with a concurrent manual 買い目生成 instead of double-generating. Same
+        # transaction as the terminal predict status (committed below). summary is assigned ONCE
+        # after the enqueue — its session.flush() would otherwise write the dict early and a later
+        # in-place mutation is invisible to JSONB change tracking (no MutableDict).
+        followup, _ = enqueue_recommend(session, race_id, source="auto_after_predict",
+                                        reuse_running=False)
+        job.summary = {"kind": "predict", "source": "manual", "output": tail,
+                       "recommend_job_id": str(followup.ingestion_job_id)}
     session.add(job)
     session.commit()
     return job
@@ -196,6 +206,8 @@ def run_recommend(session: Session, job: IngestionJob, *, fetcher=None) -> Inges
     not worker-retried); rc 0 + a "SKIPPED:" marker (no run / no odds / already generated) → SKIPPED
     (no half-baked state); otherwise → SUCCEEDED. The CLI persists recommendations itself."""
     race_id = job.scope_value or ""
+    # preserve the enqueue-time audit label ("manual" button / "auto_after_predict" follow-up)
+    source = (job.summary or {}).get("source", "manual")
     proc = _betting_recommend(race_id)
     stdout = proc.stdout or ""
     tail = ((proc.stderr or "") + stdout).strip()[-500:]
@@ -203,14 +215,14 @@ def run_recommend(session: Session, job: IngestionJob, *, fetcher=None) -> Inges
     if proc.returncode != 0:
         job.status = JobStatus.FAILED
         job.error_message = tail
-        job.summary = {"kind": "recommend", "source": "manual", "error": tail}
+        job.summary = {"kind": "recommend", "source": source, "error": tail}
     elif "SKIPPED:" in stdout:
         job.status = JobStatus.SKIPPED
         reason = stdout.split("SKIPPED:", 1)[1].strip()[:200]
-        job.summary = {"kind": "recommend", "source": "manual", "reason": reason}
+        job.summary = {"kind": "recommend", "source": source, "reason": reason}
     else:
         job.status = JobStatus.SUCCEEDED
-        job.summary = {"kind": "recommend", "source": "manual", "output": tail}
+        job.summary = {"kind": "recommend", "source": source, "output": tail}
     session.add(job)
     session.commit()
     return job

@@ -120,7 +120,9 @@ def enqueue_predict(session: Session, race_id: str) -> tuple[IngestionJob, bool]
     return job, False
 
 
-def enqueue_recommend(session: Session, race_id: str) -> tuple[IngestionJob, bool]:
+def enqueue_recommend(
+    session: Session, race_id: str, *, source: str = "manual", reuse_running: bool = True
+) -> tuple[IngestionJob, bool]:
     """Feature 043: enqueue a recommend job (in-flight-only dedup). (job, reused); caller commits.
 
     Same shape as enqueue_predict (028): reuse only an ACTIVE (queued/running) recommend job for the
@@ -128,14 +130,24 @@ def enqueue_recommend(session: Session, race_id: str) -> tuple[IngestionJob, boo
     `recommend:{race_id}` (distinct from predict/refresh), so the three never block each other. The
     generation itself is idempotent per prediction_run (betting recommend-serve skips if a set
     already exists), so re-clicking after completion is safe.
+
+    ``source`` is an audit label: "manual" (the 買い目生成 button) or "auto_after_predict" (the
+    follow-up run_predict enqueues on success so a fresh run gets its buy-ups without a second
+    click). The dedup makes the two paths converge on one job when both fire.
+
+    ``reuse_running=False`` (the auto-follow-up): a RUNNING recommend job may already have resolved
+    the PRE-predict run, so reusing it as "the fresh run's buy-ups" would silently target the wrong
+    run — reuse only QUEUED jobs (they resolve their run when claimed, i.e. after this predict).
+    Concurrent double-generation is prevented by the betting-side per-run advisory lock.
     """
     session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
                     {"k": f"recommend:{race_id}"})
+    reusable = _ACTIVE if reuse_running else (JobStatus.QUEUED,)
     active = session.scalars(
         select(IngestionJob)
         .where(IngestionJob.job_type == JOB_TYPE_RECOMMEND)
         .where(IngestionJob.scope_value == race_id)
-        .where(IngestionJob.status.in_(_ACTIVE))
+        .where(IngestionJob.status.in_(reusable))
         .order_by(IngestionJob.created_at.desc())
     ).first()
     if active is not None:
@@ -143,7 +155,7 @@ def enqueue_recommend(session: Session, race_id: str) -> tuple[IngestionJob, boo
 
     job = IngestionJob(
         source=Source.NETKEIBA, job_type=JOB_TYPE_RECOMMEND, scope="race", scope_value=race_id,
-        status=JobStatus.QUEUED, summary={"kind": "recommend", "source": "manual"},
+        status=JobStatus.QUEUED, summary={"kind": "recommend", "source": source},
     )
     session.add(job)
     session.flush()
