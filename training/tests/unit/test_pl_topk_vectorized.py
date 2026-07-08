@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from horseracing_training.cond_logit import (
     _HESS_FLOOR,

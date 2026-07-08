@@ -40,8 +40,13 @@ def _jsonable(v):
 
 
 def predict_race(
-    model: ServingModel, race_id: str, feature_rows: pd.DataFrame, *, stage_discount=None
+    model: ServingModel, race_id: str, feature_rows: pd.DataFrame, *,
+    stage_discount=None, win_odds: dict[str, float | None] | None = None,
 ) -> tuple[dict[str, Prediction], dict[str, dict], dict[str, dict | None]]:
+    """Feature 060: for a market-offset model the caller supplies ``win_odds``
+    (horse_id -> win odds of THIS race); the devig log-q offset is rebuilt here with the
+    same pure functions as training (INV-M1). Missing/invalid odds for ANY started horse
+    fails closed — no silent no-offset fallback (INV-M4)."""
     rows = feature_rows[feature_rows["race_id"] == race_id].copy()
     if rows.empty:
         raise ValueError(f"no started horses for race {race_id}")
@@ -68,7 +73,19 @@ def predict_race(
     else:
         X = base
 
-    raw = model.raw_predict(X)
+    offsets = None
+    if model.market_offset is not None:
+        from horseracing_training.market_offset import log_q_offset, valid_odds_mask
+
+        odds = np.asarray(
+            [(win_odds or {}).get(hid) for hid in started_ids], dtype=float
+        )
+        if not valid_odds_mask(odds).all():
+            raise ValueError(
+                f"market-offset model: race {race_id} lacks full odds coverage (fail-closed)"
+            )
+        offsets = log_q_offset(odds)
+    raw = model.raw_predict(X, offsets=offsets)
     calibrated = np.asarray(model.calibrator.transform(raw), dtype=float)
     # Feature 049: stage_discount (opt-in) corrects top2/top3 only; win is untouched (INV-S2).
     predictions = assemble_predictions(

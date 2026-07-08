@@ -49,18 +49,30 @@ def race_softmax(scores, group_sizes: list[int]) -> np.ndarray:
     return out
 
 
-def cond_logit_objective(group_sizes: list[int]):
+def cond_logit_objective(group_sizes: list[int], offsets=None):
     """LightGBM 4.x custom objective: fobj(preds, dataset) -> (grad, hess).
 
     Per race group: p = softmax(preds); if the group has exactly one winner
     (sum(y)==1), grad = p − y and hess = max(p(1−p), floor) (multinomial diagonal
     Newton approx). Groups with sum(y) != 1 (no winner / dead-heat) are neutralized
     (grad = 0, hess = floor) so they contribute no learning signal.
+
+    Feature 060: ``offsets`` (row-aligned to the SORTED rows, or None) shifts the
+    softmax score to ``preds + offsets`` (market log-q base; the trees learn the
+    residual). The per-row offset is constant across boosting rounds, so the gradient
+    formulas are unchanged — only the softmax input shifts. ``None`` keeps the
+    pre-060 path byte-identical (no addition is performed).
     """
+    if offsets is not None:
+        offsets = np.asarray(offsets, dtype=float)
+        if not np.isfinite(offsets).all():
+            raise ValueError("cond_logit_objective: non-finite offsets (fail-closed)")
 
     def fobj(preds, dataset):
         y = np.asarray(dataset.get_label(), dtype=float)
         preds = np.asarray(preds, dtype=float)
+        if offsets is not None:
+            preds = preds + offsets
         grad = np.zeros_like(preds)
         hess = np.full_like(preds, _HESS_FLOOR)
         start = 0
@@ -93,7 +105,7 @@ def cond_logit_objective(group_sizes: list[int]):
 STAGE_WEIGHTS: tuple[float, ...] = (1.0, 0.5, 0.25)
 
 
-def _pl_topk_objective_loop(group_sizes: list[int], ranks):
+def _pl_topk_objective_loop(group_sizes: list[int], ranks, offsets=None):
     """Reference (per-group Python loop) PL top-k objective — the correctness ORACLE.
 
     Retained for the equivalence test and for exact reproduction of models trained before the
@@ -102,9 +114,13 @@ def _pl_topk_objective_loop(group_sizes: list[int], ranks):
     ~4x speedup, so the vectorized form is the default). Semantics: see ``pl_topk_objective``.
     """
     ranks = np.asarray(ranks)
+    if offsets is not None:
+        offsets = np.asarray(offsets, dtype=float)
 
     def fobj(preds, dataset):
         preds = np.asarray(preds, dtype=float)
+        if offsets is not None:
+            preds = preds + offsets
         grad = np.zeros_like(preds)
         hess = np.zeros_like(preds)
         start = 0
@@ -147,7 +163,7 @@ def _pl_topk_objective_loop(group_sizes: list[int], ranks):
 _NEG_SENTINEL = -1e30
 
 
-def pl_topk_objective(group_sizes: list[int], ranks):
+def pl_topk_objective(group_sizes: list[int], ranks, offsets=None):
     """Feature 042: Plackett-Luce top-k (k=len(STAGE_WEIGHTS)) sequential objective.
 
     ``ranks``: per-row finishing rank (1..k) or 0 (others/DNF), aligned to the sorted rows.
@@ -163,8 +179,16 @@ def pl_topk_objective(group_sizes: list[int], ranks):
     only whole-array softmax arithmetic via segment reductions (no Python per-group loop) — ~4x
     faster (fobj was ~83% of fit). Segment sums differ from the loop by ~1 ulp (accepted; see
     ``_pl_topk_objective_loop``), so the result is allclose, not bit-identical.
+
+    Feature 060: ``offsets`` (row-aligned to the SORTED rows, or None) shifts every stage's
+    softmax input to ``preds + offsets`` (market log-q base). ``None`` is byte-identical to
+    the pre-060 path (no addition performed).
     """
     ranks = np.asarray(ranks)
+    if offsets is not None:
+        offsets = np.asarray(offsets, dtype=float)
+        if not np.isfinite(offsets).all():
+            raise ValueError("pl_topk_objective: non-finite offsets (fail-closed)")
     gsize = np.asarray(group_sizes, dtype=np.int64)
     n = int(gsize.sum())
     n_groups = len(gsize)
@@ -202,6 +226,8 @@ def pl_topk_objective(group_sizes: list[int], ranks):
 
     def fobj(preds, dataset):
         preds = np.asarray(preds, dtype=float)
+        if offsets is not None:
+            preds = preds + offsets
         grad = np.zeros(n, dtype=float)
         hess = np.zeros(n, dtype=float)
         for w, placed_before, target, fire_row, remaining_row in stages:

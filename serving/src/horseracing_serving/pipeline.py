@@ -10,7 +10,8 @@ from __future__ import annotations
 import datetime
 from dataclasses import dataclass
 
-from horseracing_db.models import PredictionRun, Race
+from horseracing_db.enums import EntryStatus
+from horseracing_db.models import PredictionRun, Race, RaceHorse
 from horseracing_eval.consistency import check_consistency
 from horseracing_features.builder import build_feature_matrix, verify_materialized
 from horseracing_features.registry import FEATURE_VERSION
@@ -26,11 +27,33 @@ from .predictor import predict_race
 def _base_logic_version(model) -> str:
     """Feature 058 (案C'): when a model is served on the COMPAT path (its trained feature_version
     differs from the runtime registry), record the runtime registry version too, so a compat run is
-    distinguishable in audit from a native run of that feature_version."""
+    distinguishable in audit from a native run of that feature_version.
+
+    Feature 060 (INV-M6): market-offset predictions carry ``mkt=logq`` so the market usage is
+    auditable from the persisted logic_version alone."""
     lv = f"feat={model.feature_version};serve={SERVING_LOGIC_VERSION}"
     if model.feature_version != FEATURE_VERSION:
         lv += f";reg={FEATURE_VERSION}"
+    if getattr(model, "market_offset", None) is not None:
+        lv += ";mkt=logq"
     return lv
+
+
+class MarketOffsetSkip(ServingError):
+    """Feature 060: the target race lacks full odds coverage for a market-offset model.
+
+    A TYPED skip — the race gets no prediction row (a silent no-offset prediction would drop
+    the market base, INV-M4). Ordinary models never raise this."""
+
+
+def _race_win_odds(session: Session, race_id: str) -> dict[str, float | None]:
+    """Started horses' win odds of ONE race (the market-offset source, race_horses.odds)."""
+    rows = session.execute(
+        select(RaceHorse.horse_id, RaceHorse.odds)
+        .where(RaceHorse.race_id == race_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    ).all()
+    return {r.horse_id: (float(r.odds) if r.odds is not None else None) for r in rows}
 
 
 @dataclass(frozen=True)
@@ -94,9 +117,18 @@ def run_serving(
     for rid in race_ids:
         if rid not in present:  # no started horses / out of feature scope
             continue
-        results.append(
-            _predict_persist(session, model, rid, feature_rows, logic_version, stage_discount=sd)
-        )
+        try:
+            results.append(
+                _predict_persist(
+                    session, model, rid, feature_rows, logic_version, stage_discount=sd
+                )
+            )
+        except MarketOffsetSkip:
+            # Feature 060: single-race invocation surfaces the typed error to the caller;
+            # date-mode skips the race (visibly) and continues with the rest of the day.
+            if race_id is not None:
+                raise
+            print(f"skip (market-offset, no full odds): {rid}")
     return results
 
 
@@ -125,9 +157,21 @@ def _predict_persist(
     Feature 049: ``stage_discount`` discounts top2/top3 (win unchanged); its λ is recorded in the
     persisted logic_version for audit/reproducibility.
     """
-    predictions, snapshots, explanations = predict_race(
-        model, race_id, feature_rows, stage_discount=stage_discount
-    )
+    win_odds = None
+    if getattr(model, "market_offset", None) is not None:
+        win_odds = _race_win_odds(session, race_id)
+        try:
+            predictions, snapshots, explanations = predict_race(
+                model, race_id, feature_rows, stage_discount=stage_discount, win_odds=win_odds
+            )
+        except ValueError as exc:
+            if "odds coverage" in str(exc):  # predictor's fail-closed check -> typed skip
+                raise MarketOffsetSkip(str(exc)) from exc
+            raise
+    else:
+        predictions, snapshots, explanations = predict_race(
+            model, race_id, feature_rows, stage_discount=stage_discount
+        )
     logic_version = _sdisc_lv(logic_version, stage_discount)
     check_consistency(predictions)  # fail-fast (INV-S2); nothing persisted on violation
     run_id = persist_run(
@@ -152,11 +196,13 @@ class BackfillCounts:
     skip_exists: int = 0      # target model already has a run for the race (idempotent)
     skip_no_started: int = 0  # no started horses / out of feature scope
     error_days: int = 0       # days whose processing raised (isolated, not aborting)
+    skip_no_odds: int = 0     # Feature 060: market-offset model, race lacks full odds
 
     def as_dict(self) -> dict:
         return {
             "generated": self.generated, "skip_exists": self.skip_exists,
             "skip_no_started": self.skip_no_started, "error_days": self.error_days,
+            "skip_no_odds": self.skip_no_odds,
         }
 
 
@@ -187,7 +233,7 @@ def run_serving_backfill(
     logic_version = _base_logic_version(model)
     if use_materialized:
         verify_materialized(session, materialized_path)  # raises: missing/stale/incompatible
-    gen = skip_exists = skip_no_started = error_days = 0
+    gen = skip_exists = skip_no_started = error_days = skip_no_odds = 0
 
     day = date_from
     while day <= date_to:
@@ -212,9 +258,13 @@ def run_serving_backfill(
                     if not force and _has_run_for_model(session, rid, model.model_version):
                         skip_exists += 1
                         continue
-                    _predict_persist(
-                        session, model, rid, feature_rows, logic_version, stage_discount=sd
-                    )
+                    try:
+                        _predict_persist(
+                            session, model, rid, feature_rows, logic_version, stage_discount=sd
+                        )
+                    except MarketOffsetSkip:
+                        skip_no_odds += 1  # typed skip: no prediction row (INV-M4)
+                        continue
                     gen += 1
         except Exception:  # noqa: BLE001 — one day must not abort the whole range
             session.rollback()
@@ -224,6 +274,7 @@ def run_serving_backfill(
     return BackfillCounts(
         generated=gen, skip_exists=skip_exists,
         skip_no_started=skip_no_started, error_days=error_days,
+        skip_no_odds=skip_no_odds,
     )
 
 

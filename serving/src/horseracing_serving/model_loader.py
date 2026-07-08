@@ -49,16 +49,34 @@ class ServingModel:
     feature_hash: str = ""
     objective: str = "binary"  # 039/042: "binary" | "cond_logit" | "pl_topk"
     metadata: dict = field(default_factory=dict)
+    #: Feature 060: market-offset definition dict (metadata.market_offset) for models whose
+    #: race-softmax score is log-q + trees. None for every ordinary model (path unchanged).
+    market_offset: dict | None = None
 
-    def raw_predict(self, X: pd.DataFrame) -> np.ndarray:
+    def raw_predict(self, X: pd.DataFrame, offsets: np.ndarray | None = None) -> np.ndarray:
         """Per-horse win score. binary: booster P(win). cond_logit: race-softmax.
 
         Feature 039: predict_race passes ONE race's started horses, so a cond_logit
         booster's raw margins are softmaxed over the whole batch (= that race).
+
+        Feature 060: a market-offset model REQUIRES row-aligned ``offsets`` (log-q of the
+        target race's own odds) added to the raw margin BEFORE the softmax — the booster
+        stores only the residual trees. Mismatches fail closed in both directions.
         """
+        if self.market_offset is not None and offsets is None:
+            raise ServingError(
+                f"model '{self.model_version}' is market-offset; raw_predict requires offsets"
+            )
+        if self.market_offset is None and offsets is not None:
+            raise ServingError("offsets passed to a non-market-offset model")
         if self.booster is None:
             return np.full(len(X), self.degenerate_constant, dtype=float)
         raw = np.asarray(self.booster.predict(X[self.feature_cols]), dtype=float)
+        if offsets is not None:
+            off = np.asarray(offsets, dtype=float)
+            if len(off) != len(raw) or not np.isfinite(off).all():
+                raise ServingError("invalid market offsets (length/finite check failed)")
+            raw = raw + off
         if self.objective in ("cond_logit", "pl_topk"):  # same race-softmax postprocess
             from horseracing_training.cond_logit import race_softmax
 
@@ -188,6 +206,24 @@ def load_serving_model(
     with Path(mv.calibrator_uri).open("rb") as fh:
         calibrator = pickle.load(fh)
 
+    # Feature 060: market-offset models carry their offset definition in metadata (and the
+    # preprocessor, when present — a disagreement between the two is a broken artifact).
+    market_offset = metadata.get("market_offset")
+    prep_mo = prep.get("market_offset")
+    if (market_offset is None) != (prep_mo is None) or (
+        market_offset is not None and prep_mo is not None
+        and market_offset.get("kind") != prep_mo.get("kind")
+    ):
+        raise ServingError(
+            f"market_offset mismatch between metadata and preprocessor for '{mv_name}'"
+        )
+    if market_offset is not None and degenerate:
+        raise ServingError(f"market-offset model '{mv_name}' is degenerate (no booster)")
+    if market_offset is not None and market_offset.get("kind") != "log_q_devig":
+        raise ServingError(
+            f"unsupported market_offset kind {market_offset.get('kind')!r} for '{mv_name}'"
+        )
+
     return ServingModel(
         model_version=mv_name,
         booster=booster,
@@ -201,4 +237,5 @@ def load_serving_model(
         # Feature 039: prefer preprocessor, fall back to metadata, default binary (pre-039)
         objective=prep.get("objective", metadata.get("objective", "binary")),
         metadata=metadata,
+        market_offset=market_offset,
     )

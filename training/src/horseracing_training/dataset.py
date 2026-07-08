@@ -20,7 +20,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 from horseracing_db.enums import ResultStatus
-from horseracing_db.models import Race, RaceResult
+from horseracing_db.models import Race, RaceHorse, RaceResult
 from horseracing_features.builder import build_feature_matrix
 from horseracing_features.registry import model_input_features
 from sqlalchemy import select
@@ -48,6 +48,10 @@ WIN_LABEL = "win"
 #: objective. Label-side only (same leak boundary as ``win``) — never a model feature.
 RANK_LABEL = "finish_rank"
 RACE_DATE = "race_date"
+#: Feature 060: the target race's own win odds (race_horses.odds, closing-leaning) as an
+#: auxiliary LABEL-SIDE column for the market-offset model. Same contract as finish_rank:
+#: never in feature_cols / feature_hash / feature_snapshots (INV-M1/M3).
+MKT_ODDS = "mkt_odds"
 
 
 @dataclass(frozen=True)
@@ -88,6 +92,14 @@ def _race_dates(session: Session) -> dict[str, datetime.date]:
     return {r.race_id: r.race_date for r in rows}
 
 
+def _odds_map(session: Session) -> dict[tuple[str, str], float | None]:
+    """Feature 060: (race_id, horse_id) -> win odds (None where unset)."""
+    rows = session.execute(
+        select(RaceHorse.race_id, RaceHorse.horse_id, RaceHorse.odds)
+    ).all()
+    return {(r.race_id, r.horse_id): r.odds for r in rows}
+
+
 def build_training_matrix(
     session: Session,
     *,
@@ -120,6 +132,19 @@ def build_training_matrix(
         ranks.get((rid, hid), 0)
         for rid, hid in zip(df["race_id"], df["horse_id"], strict=True)
     ]
+    # Feature 060: own-race win odds (label-side aux, not a feature). Decimal/None -> float/NaN.
+    odds_map = _odds_map(session)
+    df[MKT_ODDS] = pd.to_numeric(
+        pd.Series(
+            [
+                odds_map.get((rid, hid))
+                for rid, hid in zip(df["race_id"], df["horse_id"], strict=True)
+            ],
+            index=df.index,
+            dtype=object,
+        ),
+        errors="coerce",
+    ).astype(float)
 
     categorical_cols = [c for c in CATEGORICAL_FEATURES if c in feature_cols]
     for col in categorical_cols:

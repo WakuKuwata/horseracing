@@ -53,7 +53,7 @@ def build_preprocessor(predictor: LightGBMPredictor, feature_version: str) -> di
     by ``horseracing_serving`` which path-depends on training, so TargetEncoder resolves)."""
     info = predictor.fit_info_ or {}
     fcols = info.get("feature_cols", predictor.feature_cols_ or [])
-    return {
+    prep = {
         "feature_cols": list(fcols),
         "categorical_cols": list(info.get("categorical_cols", [])),
         "target_encode_cols": list(predictor.te_cols_),
@@ -67,6 +67,12 @@ def build_preprocessor(predictor: LightGBMPredictor, feature_version: str) -> di
         "objective": info.get("objective", "binary"),
         "postprocess": info.get("postprocess", "sigmoid"),
     }
+    # Feature 060: the market-offset definition serving must reconstruct (log-q devig from
+    # the target race's own odds). Key ABSENT for every non-offset model — existing artifacts
+    # and re-saves of ordinary models stay byte-identical (INV-M3).
+    if info.get("market_offset"):
+        prep["market_offset"] = dict(info["market_offset"])
+    return prep
 
 
 def save_model_version(
@@ -80,8 +86,14 @@ def save_model_version(
     artifacts_root: Path | str,
     feature_version: str,
     git_sha: str | None = None,
+    register_as_candidate: bool = False,
 ) -> Path:
-    """Write artifacts and upsert the model_versions row. Returns the artifacts dir."""
+    """Write artifacts and upsert the model_versions row. Returns the artifacts dir.
+
+    Feature 060: ``register_as_candidate=True`` pins the row to CANDIDATE even when the
+    decision passed — accuracy-first models never auto-activate (FR-006); promotion to
+    default is a separate explicit user decision. Default False keeps the pre-060
+    pass->ACTIVE behaviour byte-identical."""
     info = predictor.fit_info_ or {}
     fcols = info.get("feature_cols", predictor.feature_cols_ or [])
 
@@ -122,6 +134,11 @@ def save_model_version(
         "calibrator_degenerate": info.get("calibrator_degenerate"),
         "adoption": {"adopted": decision.adopted, **asdict(gate), "reasons": decision.reasons},
     }
+    # Feature 060: market-offset definition + closing-leaning limitation (FR-008). Key absent
+    # for ordinary models (INV-M3: their metadata stays byte-identical).
+    if info.get("market_offset"):
+        metadata["market_offset"] = dict(info["market_offset"])
+        metadata["market_offset_excluded_races"] = info.get("market_offset_excluded_races")
     meta_path.write_text(json.dumps(metadata, indent=2, sort_keys=True, default=str))
 
     # 2. metrics_summary (eval shape + training meta) -> DB
@@ -147,8 +164,12 @@ def save_model_version(
         "n_model_rows": info.get("n_model_rows"),
         "n_calib_rows": info.get("n_calib_rows"),
     }
+    if info.get("market_offset"):  # Feature 060: visible from model_versions alone (V)
+        summary["training"]["market_offset"] = dict(info["market_offset"])
 
-    status = AdoptionStatus.ACTIVE if decision.adopted else AdoptionStatus.CANDIDATE
+    status = AdoptionStatus.ACTIVE if (
+        decision.adopted and not register_as_candidate
+    ) else AdoptionStatus.CANDIDATE
     values = dict(
         model_version=model_version,
         model_family=MODEL_FAMILY,

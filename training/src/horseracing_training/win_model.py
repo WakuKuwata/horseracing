@@ -48,6 +48,10 @@ class WinModel:
     booster_: lgb.LGBMClassifier | lgb.Booster | None = None
     feature_cols_: list[str] | None = None
     _constant: float | None = None
+    #: Feature 060: True when fit with market offsets — predict then REQUIRES offsets
+    #: (and vice versa), so a mismatch fails closed instead of silently dropping the
+    #: market base from the score.
+    offset_trained_: bool = False
 
     #: objectives whose raw score is softmaxed within each race (identical predict path).
     SOFTMAX_OBJECTIVES = ("cond_logit", "pl_topk")
@@ -60,8 +64,12 @@ class WinModel:
         categorical_cols: list[str] | None = None,
         group_ids=None,
         ranks=None,
+        offsets=None,
     ) -> WinModel:
         self.feature_cols_ = list(X.columns)
+        if offsets is not None and self.objective not in self.SOFTMAX_OBJECTIVES:
+            raise ValueError("offsets require a softmax objective (cond_logit/pl_topk)")
+        self.offset_trained_ = offsets is not None
         y = np.asarray(y)
         # Degenerate single-class training data: a classifier is undefined, so fall
         # back to the constant base rate. Calibration + race-normalization still yield
@@ -74,7 +82,7 @@ class WinModel:
         self._constant = None
         cat = [c for c in (categorical_cols or []) if c in X.columns]
         if self.objective in self.SOFTMAX_OBJECTIVES:
-            self._fit_softmax(X, y, cat, group_ids, ranks)
+            self._fit_softmax(X, y, cat, group_ids, ranks, offsets)
         else:
             clf = lgb.LGBMClassifier(
                 random_state=self.seed,
@@ -88,7 +96,7 @@ class WinModel:
             self.booster_ = clf
         return self
 
-    def _fit_softmax(self, X, y, cat, group_ids, ranks) -> None:
+    def _fit_softmax(self, X, y, cat, group_ids, ranks, offsets=None) -> None:
         if group_ids is None:
             raise ValueError(f"{self.objective} objective requires group_ids (race ids)")
         if self.objective == "pl_topk" and ranks is None:
@@ -98,10 +106,12 @@ class WinModel:
         Xs = X.iloc[order].reset_index(drop=True)
         ys = np.asarray(y, dtype=float)[order]
         gsizes = group_sizes_from_race_ids(np.asarray(group_ids)[order])
+        # Feature 060: offsets are sorted with the same order so they stay row-aligned
+        off_sorted = np.asarray(offsets, dtype=float)[order] if offsets is not None else None
         if self.objective == "pl_topk":
-            obj = pl_topk_objective(gsizes, np.asarray(ranks)[order])
+            obj = pl_topk_objective(gsizes, np.asarray(ranks)[order], offsets=off_sorted)
         else:
-            obj = cond_logit_objective(gsizes)
+            obj = cond_logit_objective(gsizes, offsets=off_sorted)
 
         params = {k: v for k, v in self.params.items() if k != "objective"}
         num_round = int(params.pop("n_estimators", 300))
@@ -118,12 +128,21 @@ class WinModel:
         )
         self.booster_ = lgb.train(params, dtrain, num_boost_round=num_round)
 
-    def predict(self, X: pd.DataFrame, *, group_ids=None) -> np.ndarray:
+    def predict(self, X: pd.DataFrame, *, group_ids=None, offsets=None) -> np.ndarray:
         """Per-horse win prob. binary -> P(win); cond_logit/pl_topk -> per-race softmax.
 
         Softmax objectives REQUIRE group_ids (race ids aligned to X rows) so the softmax
         normalizes within each race; None raises (group is mandatory at every entry).
+
+        Feature 060: an offset-trained model REQUIRES row-aligned ``offsets`` (market
+        log-q) — ``booster.predict(raw_score=True)`` returns only the tree sum, so the
+        market base must be re-added here before the softmax. Mismatches fail closed in
+        both directions (INV-M2/M4).
         """
+        if self.offset_trained_ and offsets is None:
+            raise ValueError("offset-trained model: predict requires offsets (fail-closed)")
+        if not self.offset_trained_ and offsets is not None:
+            raise ValueError("offsets passed to a model not trained with offsets")
         if self.booster_ is None:
             const = 0.0 if self._constant is None else self._constant
             return np.full(len(X), const, dtype=float)
@@ -135,6 +154,11 @@ class WinModel:
             raw = self.booster_.predict(
                 X[self.feature_cols_].iloc[order], raw_score=True
             )
+            if offsets is not None:
+                off = np.asarray(offsets, dtype=float)
+                if not np.isfinite(off).all():
+                    raise ValueError("predict: non-finite offsets (fail-closed)")
+                raw = raw + off[order]
             gsizes = group_sizes_from_race_ids(gids[order])
             p_sorted = race_softmax(raw, gsizes)
             out = np.empty(len(X), dtype=float)

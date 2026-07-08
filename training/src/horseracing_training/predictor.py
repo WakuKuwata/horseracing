@@ -29,8 +29,17 @@ from .calibration import (
     fit_calibrator,
     split_train_by_time,
 )
-from .dataset import RACE_DATE, RANK_LABEL, WIN_LABEL, TrainingMatrix, build_training_matrix
+from .dataset import (
+    MKT_ODDS,
+    RACE_DATE,
+    RANK_LABEL,
+    WIN_LABEL,
+    TrainingMatrix,
+    build_training_matrix,
+)
 from .hpo import select_params_cv
+from .market_offset import METADATA as MARKET_OFFSET_METADATA
+from .market_offset import offsets_by_race
 from .target_encoding import (
     DEFAULT_SMOOTHING,
     TargetEncoder,
@@ -63,6 +72,7 @@ class LightGBMPredictor:
         objective: str = "binary",
         use_materialized: bool = False,
         materialized_path: str | None = None,
+        market_offset: bool = False,
     ) -> None:
         self.session = session
         self.seed = seed
@@ -85,6 +95,15 @@ class LightGBMPredictor:
         # fail-closed on stale/missing. Default False keeps the historical path unchanged.
         self.use_materialized = use_materialized
         self.materialized_path = materialized_path
+        # Feature 060: market-residual mode — devig log q of the TARGET race's own win odds
+        # becomes the race-softmax offset; trees learn the residual. Intentionally reads
+        # result-time (closing-leaning) odds, so the leaky-reference flag is set truthfully.
+        # Default False keeps every existing path byte-identical.
+        if market_offset and objective not in WinModel.SOFTMAX_OBJECTIVES:
+            raise ValueError("market_offset requires a softmax objective (cond_logit/pl_topk)")
+        self.market_offset = market_offset
+        if market_offset:
+            self.is_leaky_reference = True
 
         self._data: TrainingMatrix | None = None
         self.win_model_: WinModel | None = None
@@ -124,6 +143,23 @@ class LightGBMPredictor:
         train_df = df[df["race_id"].isin(train_ids)].reset_index(drop=True)
         if train_df.empty:
             raise ValueError("no training rows for the given train_races")
+
+        # Feature 060: races where ANY row lacks a valid win odds are dropped ENTIRELY
+        # (fail-closed, INV-M4 — no fabricated market info, no partial devig). Counts are
+        # recorded so the exclusion volume is auditable (research D4).
+        offset_excluded_races = 0
+        offset_excluded_rows = 0
+        train_offsets: np.ndarray | None = None
+        if self.market_offset:
+            offs, eligible = offsets_by_race(
+                train_df["race_id"].to_numpy(), train_df[MKT_ODDS].to_numpy()
+            )
+            offset_excluded_races = int(train_df.loc[~eligible, "race_id"].nunique())
+            offset_excluded_rows = int((~eligible).sum())
+            if not eligible.any():
+                raise ValueError("market_offset: no training race has full odds coverage")
+            train_df = train_df[eligible].reset_index(drop=True)
+            train_offsets = offs[eligible]
 
         race_dates = dict(zip(train_df["race_id"], train_df[RACE_DATE], strict=True))
         model_mask, calib_mask = split_train_by_time(
@@ -174,15 +210,23 @@ class LightGBMPredictor:
         model_ranks = (
             model_df[RANK_LABEL].to_numpy() if self.objective == "pl_topk" else None
         )
+        # Feature 060: row-aligned market offsets for the model-fit / calib partitions.
+        # train_offsets is aligned to train_df, so the same masks slice it.
+        model_offsets = train_offsets[model_mask] if train_offsets is not None else None
+        calib_offsets = train_offsets[calib_mask] if (
+            train_offsets is not None and calib_mask.any()
+        ) else None
         self.win_model_ = WinModel(
             seed=self.seed, params=params, objective=self.objective
         ).fit(
             model_X, y_model, categorical_cols=cat_for_model,
-            group_ids=model_groups, ranks=model_ranks,
+            group_ids=model_groups, ranks=model_ranks, offsets=model_offsets,
         )
 
         if calib_mask.any():
-            raw_c = self.win_model_.predict(calib_X, group_ids=calib_groups)
+            raw_c = self.win_model_.predict(
+                calib_X, group_ids=calib_groups, offsets=calib_offsets
+            )
             self.calibrator_ = fit_calibrator(
                 raw_c, calib_df[WIN_LABEL].to_numpy(), method=self.calibration, clip=self.ece_clip
             )
@@ -211,6 +255,10 @@ class LightGBMPredictor:
             "feature_cols": list(data.feature_cols),
             "categorical_cols": list(cat_for_model),
         }
+        if self.market_offset:
+            self.fit_info_["market_offset"] = dict(MARKET_OFFSET_METADATA)
+            self.fit_info_["market_offset_excluded_races"] = offset_excluded_races
+            self.fit_info_["market_offset_excluded_rows"] = offset_excluded_rows
 
     def _select_params(self, model_df, data: TrainingMatrix, cat_for_model: list[str]) -> dict:
         if not self.hpo:
@@ -258,7 +306,20 @@ class LightGBMPredictor:
             [race.race_id] * len(started_ids)
             if self.objective in WinModel.SOFTMAX_OBJECTIVES else None
         )
-        raw = self.win_model_.predict(X, group_ids=group_ids)
+        # Feature 060: the target race's own odds -> devig log-q offset. Any invalid odds
+        # fails closed (the caller must restrict evaluation to fully-covered races; a
+        # silent no-offset fallback would drop the market base, INV-M4).
+        offsets = None
+        if self.market_offset:
+            offs, eligible = offsets_by_race(
+                np.full(len(started_ids), race.race_id), rows[MKT_ODDS].to_numpy()
+            )
+            if not eligible.all():
+                raise ValueError(
+                    f"market_offset: race {race.race_id} lacks full odds coverage (fail-closed)"
+                )
+            offsets = offs
+        raw = self.win_model_.predict(X, group_ids=group_ids, offsets=offsets)
         cal = self.calibrator_.transform(raw)
         return assemble_predictions(started_ids, cal, eps=self.ece_clip)
 

@@ -296,6 +296,115 @@ def _run_feature_command(session: Session, args) -> int:
     return 1
 
 
+def _market_gate_eval(session: Session, args) -> int:
+    """Feature 060: 3-way pre-registered gate (candidate vs market-q vs acc) on the
+    odds-restricted population. --tail-folds N = spike mode (FR-009 go/no-go)."""
+    import json
+    from pathlib import Path
+
+    from .market_gate import market_gate_eval
+
+    te_cols = tuple(c for c in (args.target_encode or "").split(",") if c)
+    report = market_gate_eval(
+        session,
+        seed=args.seed,
+        calibration=args.calibration,
+        target_encode_cols=te_cols,
+        te_smoothing=args.te_smoothing,
+        first_valid_year=args.first_valid_year,
+        tail_folds=args.tail_folds,
+        use_materialized=args.use_materialized,
+        materialized_path=args.materialized_path if args.use_materialized else None,
+    )
+    cov = report["coverage"]
+    print(f"market-gate-eval mode={report['mode']} first_valid_year={report['first_valid_year']}")
+    print(f"  coverage: kept={cov['n_kept_races']}/{cov['n_total_races']} "
+          f"excluded={cov['n_excluded_races']} by_year={cov['excluded_by_year']}")
+    for name in ("market", "acc", "candidate"):
+        m = report["overall"][name]
+        print(f"  {name:9s} win={m['win']['log_loss']:.5f} top2={m['top2']['log_loss']:.5f} "
+              f"top3={m['top3']['log_loss']:.5f} win_ece={m['win']['ece']}")
+    for g, ok in report["gates"].items():
+        print(f"  gate {g}: {'PASS' if ok else 'FAIL'}")
+    print(f"  ALL_GATES_PASS={report['all_gates_pass']}")
+    if args.out:
+        Path(args.out).write_text(json.dumps(report, indent=2, sort_keys=True, default=str))
+        print(f"  report written to {args.out}")
+    return 0
+
+
+def _register_market_model(session: Session, args) -> int:
+    """Feature 060 T013: train the final market-offset model and register it as CANDIDATE.
+
+    The walk-forward metrics come from the market-gate-eval JSON report (no re-evaluation);
+    the training CONFIG is read from the same report so the registered model can never
+    diverge from the gate-evaluated configuration. Registration requires all_gates_pass
+    unless --allow-gate-fail (an explicit, recorded user decision — 023/039 precedent)."""
+    import json
+    from pathlib import Path
+
+    from horseracing_eval.dataset import load_eval_races
+    from horseracing_eval.harness import EvalResult
+
+    from .adoption import AdoptionDecision
+    from .market_gate import restrict_to_full_odds
+
+    report = json.loads(Path(args.gate_report).read_text())
+    if report.get("mode") != "full":
+        print("gate report is not a FULL run (spike reports cannot register)", file=sys.stderr)
+        return 1
+    override = False
+    if not report.get("all_gates_pass"):
+        if not args.allow_gate_fail:
+            print("gates not all passed; refusing to register "
+                  "(--allow-gate-fail records an explicit user-decision override)",
+                  file=sys.stderr)
+            return 1
+        override = True
+
+    summ = report["eval_summaries"]["candidate"]
+    eval_result = EvalResult(
+        scheme=summ["scheme"], valid_years=summ["valid_years"], tolerance=summ["tolerance"],
+        ece_bins=summ["ece_bins"], overall=summ["overall"], by_fold=summ["by_fold"],
+        by_field_size_ece=summ["by_field_size_ece"], reliability=summ.get("reliability", {}),
+    )
+    cfg = report["config"]
+    final = LightGBMPredictor(
+        session, seed=int(cfg["seed"]), calibration=cfg["calibration"],
+        objective=cfg["objective"], target_encode_cols=tuple(cfg["target_encode_cols"]),
+        market_offset=True,
+    )
+    eval_races = load_eval_races(session)
+    kept, coverage = restrict_to_full_odds(eval_races)
+    final.fit([er.context for er in kept])
+
+    decision = AdoptionDecision(
+        adopted=False,  # accuracy-first model: never active via this path (FR-006)
+        reasons={
+            "market_gates": report["gates"],
+            "all_gates_pass": report["all_gates_pass"],
+            "gate_report": str(args.gate_report),
+            "user_override": override,
+            "registration_coverage": coverage,
+        },
+    )
+    art_dir = save_model_version(
+        session,
+        model_version=args.model_version,
+        predictor=final,
+        eval_result=eval_result,
+        decision=decision,
+        gate=AdoptionGate(ece_threshold=0.0),  # unused for 060; market gates live in reasons
+        artifacts_root=args.artifacts_dir,
+        feature_version=FEATURE_VERSION,
+        git_sha=_git_sha(),
+        register_as_candidate=True,
+    )
+    print(f"registered {args.model_version} as CANDIDATE (never auto-active) at {art_dir}")
+    print(f"  gates={report['gates']} all_pass={report['all_gates_pass']} override={override}")
+    return 0
+
+
 def _set_model_label(session: Session, args) -> int:
     """Feature 057: write display_name/purpose on a model_versions row (display-only metadata).
 
@@ -401,6 +510,35 @@ def main(argv: list[str] | None = None) -> int:
                      help="OOF target-encode columns (production default)")
     sde.add_argument("--te-smoothing", type=float, default=10.0)
 
+    # Feature 060: market-residual model — pre-registered 3-way gate on the odds-restricted
+    # population. --tail-folds = spike (go/no-go before full implementation, FR-009).
+    mge = sub.add_parser("market-gate-eval",
+                         help="060: candidate(pl_topk+offset) vs market-q vs acc gate eval")
+    mge.add_argument("--first-valid-year", type=int, default=2008)
+    mge.add_argument("--tail-folds", type=int, default=None,
+                     help="spike mode: evaluate only the last N year-folds (train still expands)")
+    mge.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="isotonic")
+    mge.add_argument("--target-encode", default="jockey_id,trainer_id",
+                     help="OOF target-encode columns (production default)")
+    mge.add_argument("--te-smoothing", type=float, default=10.0)
+    mge.add_argument("--seed", type=int, default=42)
+    mge.add_argument("--out", default=None, help="write the full JSON report to this path")
+    mge.add_argument("--use-materialized", action="store_true",
+                     help="055: read as-of features from the 025 parquet (bit-parity, fail-closed)")
+    mge.add_argument("--materialized-path", default="../artifacts/features.parquet")
+    mge.add_argument("--database-url", default=None)
+
+    # Feature 060: register the market-offset model as CANDIDATE from a full gate report.
+    rmm = sub.add_parser("register-market-model",
+                         help="060: train final market-offset model + register as candidate")
+    rmm.add_argument("--gate-report", required=True,
+                     help="JSON written by market-gate-eval --out (must be a FULL run)")
+    rmm.add_argument("--model-version", default="lgbm-060-mkt")
+    rmm.add_argument("--artifacts-dir", default="artifacts")
+    rmm.add_argument("--allow-gate-fail", action="store_true",
+                     help="explicit user-decision override when gates did not all pass")
+    rmm.add_argument("--database-url", default=None)
+
     # Feature 057: set human-readable purpose metadata on a model (display-only; NOT adoption).
     # Omitted arg = leave unchanged; empty string = clear to NULL. Never touches adoption_status.
     sml = sub.add_parser("set-model-label",
@@ -413,6 +551,14 @@ def main(argv: list[str] | None = None) -> int:
     sml.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)
+    if args.command == "market-gate-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _market_gate_eval(session, args)
+    if args.command == "register-market-model":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _register_market_model(session, args)
     if args.command == "set-model-label":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
