@@ -21,7 +21,12 @@ from .cond_logit import (
 )
 
 #: fixed, deterministic defaults. ``num_threads=1`` + ``deterministic=True`` make
-#: training bit-reproducible for a given seed (SC-006).
+#: training bit-reproducible for a given seed (SC-006). The fit calls also force
+#: ``force_row_wise=True``: a memory-layout choice that is BYTE-IDENTICAL to
+#: ``force_col_wise`` (verified maxΔ=0.0 over binary/cond_logit/pl_topk on the real DB)
+#: but ~1.6x faster on this many-row/wide pool. Raising num_threads was rejected: with the
+#: custom softmax objectives it breaks cross-thread reproducibility (nt=4 shifted per-horse
+#: p by ~2.5e-2), so num_threads stays 1.
 DEFAULT_PARAMS: dict = {
     "objective": "binary",
     "n_estimators": 300,
@@ -75,7 +80,7 @@ class WinModel:
                 random_state=self.seed,
                 deterministic=True,
                 num_threads=1,
-                force_col_wise=True,
+                force_row_wise=True,
                 verbose=-1,
                 **self.params,
             )
@@ -105,7 +110,7 @@ class WinModel:
             seed=self.seed,
             deterministic=True,
             num_threads=1,
-            force_col_wise=True,
+            force_row_wise=True,
             verbose=-1,
         )
         dtrain = lgb.Dataset(
