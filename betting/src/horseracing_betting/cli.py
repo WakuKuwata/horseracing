@@ -96,6 +96,24 @@ def _has_group(session: Session, run_id, bet_types) -> bool:
     ).first() is not None
 
 
+def _has_win_group(session: Session, run_id, win_odds_cap: float | None) -> bool:
+    """Feature 064: policy-aware win idempotency. A win group is considered present only for the
+    SAME policy: cap-off (win_odds_cap=None) matches win recs WITHOUT an ``;oddscap=`` fragment
+    (legacy/current behaviour byte-identical); a cap policy matches win recs whose logic_version
+    carries ``;oddscap=<v>``. This lets a cap policy be added to a legacy win run without
+    duplicating, and skips re-running the same policy."""
+    q = (
+        select(Recommendation.recommendation_id)
+        .where(Recommendation.prediction_run_id == run_id)
+        .where(Recommendation.bet_type == BetType.WIN)
+    )
+    if win_odds_cap is not None:
+        q = q.where(Recommendation.logic_version.contains(f";oddscap={win_odds_cap}"))
+    else:
+        q = q.where(~Recommendation.logic_version.contains(";oddscap="))
+    return session.scalars(q).first() is not None
+
+
 def _fit_product_p_calibrator(session: Session, *, before_date, target_race_id: str):
     """Feature 046/048: walk-forward model-p calibrator for the product path (017 machinery).
 
@@ -145,7 +163,7 @@ def _fit_product_stage_discount(session: Session, *, before_date, p_calibrator=N
 
 
 def _generate_product_set(
-    session: Session, run_id, *, p_calibrator=None, stage_discount=None
+    session: Session, run_id, *, p_calibrator=None, stage_discount=None, win_odds_cap=None
 ) -> tuple[int, int, list[str]]:
     """Generate the missing bet_type groups for one run (group-wise idempotent, Feature 045).
 
@@ -159,11 +177,12 @@ def _generate_product_set(
     cfg = KellyConfig()
     n_win = n_exotic = 0
     skipped: list[str] = []
-    if _has_group(session, run_id, (BetType.WIN,)):
+    if _has_win_group(session, run_id, win_odds_cap):  # Feature 064: policy-aware win idempotency
         skipped.append("win")
     else:
         n_win = len(generate_recommendations(
-            session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator))
+            session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator,
+            win_odds_cap=win_odds_cap))
     if _has_group(session, run_id, BetType.EXOTIC):
         skipped.append("exotic")
     else:
@@ -190,9 +209,11 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     # an xact lock between the groups. Released automatically when this CLI process disconnects.
     session.execute(text("SELECT pg_advisory_lock(hashtext(:k))"),
                     {"k": f"recommend-run:{run_id}"})
+    win_odds_cap = getattr(args, "win_odds_cap", None)  # Feature 064 (None = current behaviour)
     if _has_group(session, run_id, BetType.ALL):
-        # some group exists — top up only the missing groups (045); all present → full skip
-        if (_has_group(session, run_id, (BetType.WIN,))
+        # some group exists — top up only the missing groups (045); all present → full skip.
+        # Feature 064: win presence is policy-aware, so a cap policy tops up a legacy win run.
+        if (_has_win_group(session, run_id, win_odds_cap)
                 and _has_group(session, run_id, BetType.EXOTIC)):
             print(f"SKIPPED: recommendations already exist for run {run_id}")
             return 0
@@ -212,7 +233,7 @@ def _cmd_recommend_serve(session: Session, args) -> int:
         session, before_date=race.race_date, p_calibrator=pcal,
     ) if (has_date and getattr(args, "stage_discount", False)) else None
     n_win, n_exotic, skipped = _generate_product_set(
-        session, run_id, p_calibrator=pcal, stage_discount=sdisc,
+        session, run_id, p_calibrator=pcal, stage_discount=sdisc, win_odds_cap=win_odds_cap,
     )
     note = f" (skipped groups: {','.join(skipped)})" if skipped else ""
     pnote = f" pcal={pcal.logic_version}" if pcal is not None else ""
@@ -338,7 +359,10 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
     return 0
 
 
-def recommend_backfill(session: Session, *, date_from, date_to, stage_discount: bool = False) -> dict:
+def recommend_backfill(
+    session: Session, *, date_from, date_to, stage_discount: bool = False,
+    win_odds_cap: float | None = None,
+) -> dict:
     """Feature 043 US3 core (extracted in 050 for the live refresh pipeline): idempotently
     generate the recommendation set for every race with a prediction_run + odds in
     [date_from, date_to]. Per-race exception isolation (one failure doesn't abort). Returns the
@@ -364,7 +388,7 @@ def recommend_backfill(session: Session, *, date_from, date_to, stage_discount: 
             if run_id is None:
                 counts["skip_no_run"] += 1
                 continue
-            has_win = _has_group(session, run_id, (BetType.WIN,))
+            has_win = _has_win_group(session, run_id, win_odds_cap)  # Feature 064: policy-aware
             has_exotic = _has_group(session, run_id, BetType.EXOTIC)
             if has_win and has_exotic:  # group-wise idempotent (045)
                 counts["skip_exists"] += 1
@@ -379,7 +403,8 @@ def recommend_backfill(session: Session, *, date_from, date_to, stage_discount: 
                 sdisc = (_fit_product_stage_discount(session, before_date=rdate, p_calibrator=pcal)
                          if stage_discount else None)
                 pcal_day = rdate
-            _generate_product_set(session, run_id, p_calibrator=pcal, stage_discount=sdisc)
+            _generate_product_set(session, run_id, p_calibrator=pcal, stage_discount=sdisc,
+                                  win_odds_cap=win_odds_cap)
             # a partial run (043-era exotic-only) counts as a top-up, a bare run as generated
             counts["topped_up" if (has_win or has_exotic) else "generated"] += 1
         except Exception as exc:  # noqa: BLE001 — one race must not abort the whole backfill
@@ -393,7 +418,8 @@ def recommend_backfill(session: Session, *, date_from, date_to, stage_discount: 
 
 def _cmd_recommend_backfill(session: Session, args) -> int:
     counts = recommend_backfill(session, date_from=args.from_, date_to=args.to,
-                                stage_discount=getattr(args, "stage_discount", False))
+                                stage_discount=getattr(args, "stage_discount", False),
+                                win_odds_cap=getattr(args, "win_odds_cap", None))
     print(f"recommend-backfill {args.from_}..{args.to}  races={counts['races']}")
     print(f"  generated={counts['generated']} topped_up={counts['topped_up']} "
           f"skip_exists={counts['skip_exists']} skip_no_run={counts['skip_no_run']} "
@@ -582,6 +608,9 @@ def main(argv: list[str] | None = None) -> int:
     rs.add_argument("--stage-discount", dest="stage_discount", action="store_true",
                     help="049: apply top2/top3 Benter discount to exotic P_model (OPT-IN; default "
                          "OFF — exotic trio pseudo-ROI MUST gate failed)")
+    rs.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
+                    help="064: win upper odds cap (e.g. 21); over-cap horses excluded from win "
+                         "bets (still in prob denominator). OPT-IN; default None = current")
     rs.add_argument("--database-url", default=None)
 
     rb = sub.add_parser("recommend-backfill",
@@ -590,6 +619,8 @@ def main(argv: list[str] | None = None) -> int:
     rb.add_argument("--to", type=_parse_date, required=True)
     rb.add_argument("--stage-discount", dest="stage_discount", action="store_true",
                     help="049: apply top2/top3 discount to exotic P_model (OPT-IN; default OFF)")
+    rb.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
+                    help="064: win upper odds cap (e.g. 21); OPT-IN; default None = current")
     rb.add_argument("--database-url", default=None)
 
     kc = sub.add_parser("kelly-calibration-compare",

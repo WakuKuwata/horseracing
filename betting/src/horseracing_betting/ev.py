@@ -59,8 +59,18 @@ def eligible_started(horses: list[dict]) -> list[dict]:
     return [h for h in horses if _is_started(h) and _valid_odds(h)]
 
 
-def select_ev_bets(horses: list[dict], *, threshold: float, stake: float) -> list[Bet]:
-    """All started, odds-valid horses whose renormalized EV >= threshold (INV-B2..B4)."""
+def select_ev_bets(
+    horses: list[dict], *, threshold: float, stake: float, odds_cap: float | None = None
+) -> list[Bet]:
+    """All started, odds-valid horses whose renormalized EV >= threshold (INV-B2..B4).
+
+    Feature 064: ``odds_cap`` (win upper cap) excludes horses whose odds >= cap from BETTING —
+    they stay in the probability denominator (renormalized_started_probs is untouched: a capped
+    horse can still win, mirroring the odds-missing handling) so win_prob is byte-identical.
+    ``odds_cap is None`` reproduces the pre-064 behaviour exactly (byte parity). The cap lives HERE
+    (inside the EV loop) and NOT in eligible_started(), so the odds-only ROI baselines
+    (FavoriteROIBaseline / UniformROIBaseline) are unaffected.
+    """
     probs = renormalized_started_probs(horses)
     bets: list[Bet] = []
     for h in eligible_started(horses):
@@ -68,6 +78,8 @@ def select_ev_bets(horses: list[dict], *, threshold: float, stake: float) -> lis
         if p <= 0.0:
             continue
         odds = float(h["odds"])
+        if odds_cap is not None and odds >= odds_cap:  # Feature 064: over-cap → no bet (in denom)
+            continue
         ev = p * odds
         if ev >= threshold - _EPS:
             bets.append(

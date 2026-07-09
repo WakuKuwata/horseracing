@@ -69,4 +69,54 @@ describe("RecommendationPanel", () => {
     renderWithProviders(<RecommendationPanel raceId="200806010111" />);
     expect(await screen.findByText("この条件の推奨はありません")).toBeInTheDocument();
   });
+
+  // --- Feature 064: honest decision-support display ------------------------------------------
+  it("always shows the neutral no-edge note with no profit language", async () => {
+    server.use(...happyHandlers);
+    const { container } = renderWithProviders(<RecommendationPanel raceId="200806010111" />);
+    const note = await screen.findByTestId("no-edge-note");
+    expect(note).toHaveTextContent("市場に対する再現可能な優位を持ちません");
+    expect(note).toHaveTextContent("将来の的中・利益を示すものではありません");
+    // no profit language anywhere in the panel
+    expect(container.textContent).not.toMatch(/儲か|勝てる|稼げる/);
+  });
+
+  it("shows honest baselines (no-bet ×1.00 + favorite) without P/L coloring or ranking", async () => {
+    server.use(
+      http.get(`${BASE}/races/:id/recommendations`, () =>
+        HttpResponse.json({
+          ...recommendationResponse,
+          win_policy_status: "generated",
+          favorite_baseline: {
+            horse_number: 3, odds: 2.0, settled: true, hit: false, dead_heat: false,
+            realized_return: 0.0, realized_roi: -1.0,
+          },
+        }),
+      ),
+    );
+    const { container } = renderWithProviders(<RecommendationPanel raceId="200806010111" />);
+    const baselines = await screen.findByTestId("win-baselines");
+    expect(baselines).toHaveTextContent("賭けない");
+    expect(baselines).toHaveTextContent("×1.00");
+    expect(baselines).toHaveTextContent("本命ベタ買い");
+    // baselines carry no profit/loss coloring hooks (no data-result) — neutral facts only
+    expect(baselines.querySelectorAll("[data-result]").length).toBe(0);
+    // odds-band breakdown of the displayed settled win rows is present
+    expect(container.querySelector('[data-testid="win-odds-band"]')).not.toBeNull();
+  });
+
+  it("surfaces an honest skip reason instead of a blank when the win policy selected nothing", async () => {
+    server.use(
+      http.get(`${BASE}/races/:id/recommendations`, () =>
+        HttpResponse.json({
+          ...recommendationResponse,
+          win_policy_status: "no_win_selected",
+          items: recommendationResponse.items.filter((i) => i.bet_type !== "win"),
+        }),
+      ),
+    );
+    renderWithProviders(<RecommendationPanel raceId="200806010111" />);
+    const skip = await screen.findByTestId("win-skip-reason");
+    expect(skip).toHaveTextContent("単勝は見送り");
+  });
 });

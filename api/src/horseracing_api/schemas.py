@@ -285,9 +285,26 @@ class RecommendationRow(BaseModel):
     realized_roi: float | None = None      # realized_return - 1
 
 
+class FavoriteBaseline(BaseModel):
+    """Feature 064: the market baseline (flat-bet the favorite) realised for THIS race. Honest
+    reference line — NOT a profit strategy. All-null when unsettled / no priced horse."""
+    horse_number: int | None = None
+    odds: float | None = None
+    settled: bool = False
+    hit: bool | None = None
+    dead_heat: bool = False
+    realized_return: float | None = None
+    realized_roi: float | None = None
+
+
 class RecommendationResponse(BaseModel):
     race_id: str
     items: list[RecommendationRow] = []
+    # Feature 064: read-time honest-display context (no schema change; derived, never a feature).
+    # win_policy_status distinguishes an empty win section: no_run (no prediction) / not_generated
+    # (recommend not run) / no_win_selected (win policy ran, selected nothing) / generated.
+    win_policy_status: str = "no_run"
+    favorite_baseline: FavoriteBaseline | None = None
 
 
 # --- calibration / reliability (Feature 021 US2, walk-forward OOS, read-only) ----------------

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { useRecommendations } from "../api/queries";
-import type { RecommendationRow } from "../api/types";
+import type { RecommendationResponse, RecommendationRow } from "../api/types";
 import { betTypeLabel } from "../lib/betTypes";
 import { formatOdds, formatPct, formatSelection } from "../lib/format";
 import { PseudoValue, ResultBadge, SourceBadge } from "./PseudoValue";
@@ -54,6 +54,12 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
   return (
     <div className="panel">
       <h2>買い目推奨(永続データ・推奨は生成しない)</h2>
+      {/* Feature 064 (FR-007): always-on neutral disclosure — no profit language, no coloring. */}
+      <p className="note" data-testid="no-edge-note">
+        このモデルは市場に対する再現可能な優位を持ちません。買い目は損失を抑えるための判断材料であり、
+        将来の的中・利益を示すものではありません。過去実績は closing オッズによる事後・in-sample の
+        参考値です。
+      </p>
       <div className="toolbar">
         <label htmlFor="rec-bet-type">券種</label>
         <select
@@ -159,7 +165,7 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
                 ))}
               </tbody>
             </table>
-            <WinBacktestSummary rows={rows} />
+            <WinBacktestSummary rows={rows} data={query.data} />
           </>
         )}
       </QueryStateView>
@@ -172,14 +178,45 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
  * the rows it aggregates). Factual only (n / 的中率 / 回収率), labeled 過去実績・参考 with no profit
  * language, no P/L coloring, no sorting — it is NOT a projection or a strategy claim (021 規律).
  */
-function WinBacktestSummary({ rows }: { rows: RecommendationRow[] }) {
-  const settled = rows.filter((r) => r.bet_type === "win" && r.settled && r.hit !== null &&
-    r.hit !== undefined && r.realized_return !== null && r.realized_return !== undefined);
+/** Feature 064: honest win_policy_status → neutral message when the win section is empty. */
+const WIN_POLICY_MESSAGE: Record<string, string> = {
+  no_run: "このレースの予測がまだありません。",
+  not_generated: "単勝の買い目はまだ生成されていません。",
+  no_win_selected: "単勝は見送りです(policy が条件を満たす買い目を選定しませんでした)。",
+};
+
+/** Feature 064: odds bands for the retrospective recovery breakdown (neutral, not sorted). */
+const ODDS_BANDS: Array<[string, (o: number) => boolean]> = [
+  ["<3", (o) => o < 3],
+  ["3–6", (o) => o >= 3 && o < 6],
+  ["6–11", (o) => o >= 6 && o < 11],
+  ["11–21", (o) => o >= 11 && o < 21],
+  ["21–51", (o) => o >= 21 && o < 51],
+  ["51+", (o) => o >= 51],
+];
+
+function WinBacktestSummary(
+  { rows, data }: { rows: RecommendationRow[]; data?: RecommendationResponse },
+) {
+  const winRows = rows.filter((r) => r.bet_type === "win");
+  const settled = winRows.filter((r) => r.settled && r.hit !== null && r.hit !== undefined &&
+    r.realized_return !== null && r.realized_return !== undefined);
+
+  // Empty win section → surface the honest skip reason (never a blank).
+  if (winRows.length === 0) {
+    const msg = data ? WIN_POLICY_MESSAGE[data.win_policy_status] : undefined;
+    return msg ? (
+      <p className="note" data-testid="win-skip-reason">{msg}</p>
+    ) : null;
+  }
   if (settled.length === 0) return null;
+
   const nHit = settled.filter((r) => r.hit).length;
   const totalReturn = settled.reduce((s, r) => s + (r.realized_return ?? 0), 0);
   const hitRate = nHit / settled.length;
   const recovery = totalReturn / settled.length; // per-unit 回収率(平均回収倍率)
+  const fav = data?.favorite_baseline;
+
   return (
     <div className="backtest-summary" data-testid="win-backtest-summary">
       <h3>単勝推奨の過去実績(参考)</h3>
@@ -193,6 +230,56 @@ function WinBacktestSummary({ rows }: { rows: RecommendationRow[] }) {
         <div><dt>的中率</dt><dd>{formatPct(hitRate)}</dd></div>
         <div><dt>回収率(平均回収倍率)</dt><dd>×{recovery.toFixed(2)}</dd></div>
       </dl>
+      {/* Feature 064: honest reference lines — NOT profit strategies (no coloring, no ranking). */}
+      <table className="baseline-table" data-testid="win-baselines">
+        <thead>
+          <tr><th>基準</th><th className="num">回収</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>賭けない(資金を減らさない基準)</td>
+            <td className="num">×1.00</td>
+          </tr>
+          <tr>
+            <td>本命ベタ買い(市場ベースライン{fav?.horse_number ? `・${fav.horse_number}番` : ""})</td>
+            <td className="num">
+              {fav && fav.settled && fav.realized_return !== null && fav.realized_return !== undefined
+                ? `×${fav.realized_return.toFixed(2)}${fav.hit ? "(的中)" : "(不的中)"}`
+                : "—"}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <WinOddsBandBreakdown settled={settled} />
     </div>
+  );
+}
+
+/** Feature 064: retrospective recovery by odds band — the longshot-tail bleed made visible. */
+function WinOddsBandBreakdown({ settled }: { settled: RecommendationRow[] }) {
+  const bands = ODDS_BANDS.map(([label, test]) => {
+    const inBand = settled.filter((r) => {
+      const o = r.market_odds_used;
+      return o !== null && o !== undefined && test(o);
+    });
+    const ret = inBand.reduce((s, r) => s + (r.realized_return ?? 0), 0);
+    return { label, n: inBand.length, recovery: inBand.length ? ret / inBand.length : null };
+  }).filter((b) => b.n > 0);
+  if (bands.length === 0) return null;
+  return (
+    <table className="oddsband-table" data-testid="win-odds-band">
+      <thead>
+        <tr><th>オッズ帯</th><th className="num">件数</th><th className="num">回収</th></tr>
+      </thead>
+      <tbody>
+        {bands.map((b) => (
+          <tr key={b.label}>
+            <td>{b.label}</td>
+            <td className="num">{b.n}</td>
+            <td className="num">{b.recovery !== null ? `×${b.recovery.toFixed(2)}` : "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

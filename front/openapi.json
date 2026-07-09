@@ -394,6 +394,78 @@
         "title": "ExplanationItem",
         "type": "object"
       },
+      "FavoriteBaseline": {
+        "description": "Feature 064: the market baseline (flat-bet the favorite) realised for THIS race. Honest\nreference line — NOT a profit strategy. All-null when unsettled / no priced horse.",
+        "properties": {
+          "dead_heat": {
+            "default": false,
+            "title": "Dead Heat",
+            "type": "boolean"
+          },
+          "hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds"
+          },
+          "realized_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Return"
+          },
+          "realized_roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Roi"
+          },
+          "settled": {
+            "default": false,
+            "title": "Settled",
+            "type": "boolean"
+          }
+        },
+        "title": "FavoriteBaseline",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2216,6 +2288,16 @@
       },
       "RecommendationResponse": {
         "properties": {
+          "favorite_baseline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FavoriteBaseline"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "items": {
             "default": [],
             "items": {
@@ -2226,6 +2308,11 @@
           },
           "race_id": {
             "title": "Race Id",
+            "type": "string"
+          },
+          "win_policy_status": {
+            "default": "no_run",
+            "title": "Win Policy Status",
             "type": "string"
           }
         },

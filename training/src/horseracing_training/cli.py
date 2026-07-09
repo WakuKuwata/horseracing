@@ -8,6 +8,7 @@ vs a stored baseline -> persist model_versions row + artifacts -> print a summar
 from __future__ import annotations
 
 import argparse
+import datetime
 import subprocess
 import sys
 
@@ -21,6 +22,10 @@ from .adoption import AdoptionGate, evaluate_gate
 from .artifacts import save_model_version
 from .dataset import build_training_matrix  # noqa: F401  (re-exported convenience)
 from .predictor import LightGBMPredictor
+
+
+def _parse_date(s: str) -> datetime.date:
+    return datetime.date.fromisoformat(s)
 
 
 def _git_sha() -> str | None:
@@ -423,6 +428,64 @@ def _set_model_label(session: Session, args) -> int:
     return 0
 
 
+def _policy_gate_eval(session: Session, args) -> int:
+    """Feature 064: walk-forward betting-policy adoption gate. Collects genuine OOS per-horse rows
+    (each fold fit on strictly-prior years, predict the valid year) with CLOSING odds + result, then
+    hands them to the PURE eval scorer (evaluate_policy_gate): current EV vs odds-cap policy (plus
+    favorite/uniform/no-bet baselines). cap is a FIXED pre-registered arg."""
+    from horseracing_eval.dataset import load_eval_races
+    from horseracing_eval.policy_gate import evaluate_policy_gate
+    from horseracing_eval.splits import expanding_folds
+    from sqlalchemy import text
+
+    te_cols = tuple(c for c in (args.target_encode or "").split(",") if c)
+    predictor = LightGBMPredictor(
+        session, seed=args.seed, calibration=args.calibration,
+        target_encode_cols=te_cols, te_smoothing=args.te_smoothing, objective=args.objective,
+    )
+    races = load_eval_races(session, start_date=args.from_, end_date=args.to)
+    jump = set() if args.include_jump else {
+        r[0] for r in session.execute(text(
+            "SELECT race_id FROM races WHERE track_type='障' OR race_name LIKE '%障害%'"))
+    }
+    rows: list[dict] = []
+    for fold in expanding_folds(races, args.first_valid_year):
+        predictor.fit([er.context for er in fold.train])
+        for er in fold.valid:
+            if er.context.race_id in jump:
+                continue
+            preds = predictor.predict_race(er.context)
+            winners = {sl.horse_id for sl in er.labels if sl.win == 1}
+            for h in er.context.started_horses:
+                o = h.result_market.odds
+                pr = preds.get(h.horse_id)
+                if pr is None or o is None or o <= 0:
+                    continue
+                rows.append({
+                    "race_id": er.context.race_id, "year": er.context.race_date.year,
+                    "p": float(pr.win), "odds": float(o),
+                    "won": 1 if h.horse_id in winners else 0,
+                })
+    rep = evaluate_policy_gate(rows, cap=args.cap, threshold=args.threshold)
+    print(f"policy-gate-eval objective={args.objective} cap={args.cap} thr={args.threshold} "
+          f"rows={rep.n_rows} races={rep.n_races} folds={rep.n_folds}")
+    for name, r in rep.policies.items():
+        ref = " (=×1.00 no-loss ref)" if name == "no_bet" else ""
+        print(f"  {name:14s} n_bets={r.n_bets:7d} hit={r.hit_rate:6.4f} "
+              f"recovery={r.recovery:.4f}{ref}")
+    print("  by fold (year: ev → cap, Δ):")
+    for f in rep.by_fold:
+        print(f"    {f['year']}: {f['ev']:.4f} → {f['cap']:.4f}  Δ={f['delta']:+.4f}")
+    print("  ev recovery by odds band:")
+    for b in rep.by_odds_band:
+        print(f"    {b['band']:>6s}: n={b['n']:6d} recovery={b['ev_recovery']:.4f}")
+    print(f"  folds_improved={rep.n_folds_improved}/{rep.n_folds} "
+          f"worst_fold_delta={rep.worst_fold_delta:+.4f}")
+    print(f"  ADOPTED={rep.adopted}  (relative recovery↑ + majority folds↑ + worst fold ≥ −tol)")
+    print(f"  NOTE: {rep.note}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="horseracing_training")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -539,6 +602,25 @@ def main(argv: list[str] | None = None) -> int:
                      help="explicit user-decision override when gates did not all pass")
     rmm.add_argument("--database-url", default=None)
 
+    # Feature 064: walk-forward betting-policy adoption gate (current EV vs odds-cap).
+    pge = sub.add_parser("policy-gate-eval",
+                         help="064: walk-forward current-EV vs odds-cap betting policy comparison")
+    pge.add_argument("--from", dest="from_", type=_parse_date, default=None)
+    pge.add_argument("--to", type=_parse_date, default=None)
+    pge.add_argument("--first-valid-year", type=int, default=2008)
+    pge.add_argument("--cap", type=float, default=21.0,
+                     help="PRE-REGISTERED win odds cap (fixed; never chosen from results)")
+    pge.add_argument("--threshold", type=float, default=1.0)
+    pge.add_argument("--objective", choices=["binary", "cond_logit", "pl_topk"], default="binary",
+                     help="binary = fast proxy; pl_topk = production-faithful (long job)")
+    pge.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="isotonic")
+    pge.add_argument("--target-encode", default="jockey_id,trainer_id")
+    pge.add_argument("--te-smoothing", type=float, default=20.0)
+    pge.add_argument("--include-jump", action="store_true",
+                     help="include mis-labelled jump races (default: excluded)")
+    pge.add_argument("--seed", type=int, default=42)
+    pge.add_argument("--database-url", default=None)
+
     # Feature 057: set human-readable purpose metadata on a model (display-only; NOT adoption).
     # Omitted arg = leave unchanged; empty string = clear to NULL. Never touches adoption_status.
     sml = sub.add_parser("set-model-label",
@@ -555,6 +637,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _market_gate_eval(session, args)
+    if args.command == "policy-gate-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _policy_gate_eval(session, args)
     if args.command == "register-market-model":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:

@@ -27,7 +27,8 @@ DEFAULT_STAKE = 100.0
 
 
 def default_logic_version(
-    threshold: float, stake: float, *, cfg: KellyConfig | None = None
+    threshold: float, stake: float, *, cfg: KellyConfig | None = None,
+    win_odds_cap: float | None = None,
 ) -> str:
     lv = (
         f"ev=win_prob*odds;thr={threshold};stake={stake};"
@@ -38,6 +39,8 @@ def default_logic_version(
             f";kelly=lam_real={cfg.lambda_real};cap_bet={cfg.cap_bet};"
             f"cap_total={cfg.cap_total};alloc={cfg.allocation};bankroll={cfg.bankroll}"
         )
+    if win_odds_cap is not None:  # Feature 064: win odds cap (conditional → cap-off byte parity)
+        lv += f";oddscap={win_odds_cap}"
     return lv
 
 
@@ -114,18 +117,21 @@ def generate_recommendations(
     logic_version: str | None = None,
     cfg: KellyConfig | None = None,
     p_calibrator=None,
+    win_odds_cap: float | None = None,
 ) -> list[uuid.UUID]:
     run = session.get(PredictionRun, prediction_run_id)
     if run is None:
         raise ValueError(f"prediction_run {prediction_run_id} not found")
-    lv = logic_version or default_logic_version(threshold, stake, cfg=cfg)
+    lv = logic_version or default_logic_version(
+        threshold, stake, cfg=cfg, win_odds_cap=win_odds_cap
+    )
     if p_calibrator is not None:  # Feature 046: record the model-p calibrator (same as 017/kelly)
         lv = f"{lv};{p_calibrator.logic_version}"
 
     horses = _load_horses(session, prediction_run_id, run.race_id)
     if p_calibrator is not None:  # calibrate model p only; odds untouched (p≠q)
         horses = _apply_p_calibration(horses, p_calibrator)
-    bets = select_ev_bets(horses, threshold=threshold, stake=stake)
+    bets = select_ev_bets(horses, threshold=threshold, stake=stake, odds_cap=win_odds_cap)
     # Feature 045: opt-in Kelly sizing (cfg=None keeps the original flat behaviour, NULL stake).
     fractions = _win_stake_fractions(bets, cfg) if cfg is not None else [None] * len(bets)
 
