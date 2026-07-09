@@ -14,10 +14,10 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from ..backtest import win_realized
+from ..backtest import favorite_realized, win_realized
 from ..deps import get_session
-from ..queries import exotic_recommendations, get_race, race_finish_map
-from ..schemas import RecommendationResponse, RecommendationRow
+from ..queries import exotic_recommendations, get_race, race_finish_map, win_odds
+from ..schemas import FavoriteBaseline, RecommendationResponse, RecommendationRow
 from ..selection import select_prediction_run
 
 router = APIRouter()
@@ -58,8 +58,9 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
     # Feature 049: load the race's official finishing map ONCE (empty ⇒ unsettled) for the
     # retrospective WIN backtest. Results are display-only and never re-enter model features (II).
     finish_map, n_winners = race_finish_map(session, race_id)
+    rows = list(exotic_recommendations(session, race_id, prediction_run_id=run_id))
     items = []
-    for r in exotic_recommendations(session, race_id, prediction_run_id=run_id):
+    for r in rows:
         sel = _selection_numbers(r.selection)
         if sel is None:  # win row without a horse_number — not displayable
             continue
@@ -85,4 +86,24 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
             realized_return=wr.realized_return if wr is not None else None,
             realized_roi=wr.realized_roi if wr is not None else None,
         ))
-    return RecommendationResponse(race_id=race_id, items=items)
+    # Feature 064: honest-display context (read-time; never re-enters model features, II).
+    has_win = any(i.bet_type == "win" for i in items)
+    if run_id is None:
+        win_policy_status = "no_run"
+    elif has_win:
+        win_policy_status = "generated"
+    elif rows:                       # some recs (exotic) but no win → win policy ran, selected none
+        win_policy_status = "no_win_selected"
+    else:
+        win_policy_status = "not_generated"
+    fav = favorite_realized(
+        win_odds(session, race_id), finish_map=finish_map, n_winners=n_winners
+    )
+    favorite_baseline = FavoriteBaseline(
+        horse_number=fav.horse_number, odds=fav.odds, settled=fav.settled, hit=fav.hit,
+        dead_heat=fav.dead_heat, realized_return=fav.realized_return, realized_roi=fav.realized_roi,
+    )
+    return RecommendationResponse(
+        race_id=race_id, items=items, win_policy_status=win_policy_status,
+        favorite_baseline=favorite_baseline,
+    )

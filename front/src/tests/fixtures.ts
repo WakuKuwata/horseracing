@@ -107,6 +107,8 @@ export const oddsResponse: OddsResponse = {
 
 export const recommendationResponse: RecommendationResponse = {
   race_id: "200806010111",
+  win_policy_status: "generated",
+  favorite_baseline: null,
   items: [
     {
       recommendation_id: "rec-1",

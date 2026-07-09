@@ -28,6 +28,25 @@ class EVStrategy:
         return select_ev_bets(horses, threshold=self.threshold, stake=stake)
 
 
+class OddsCappedEVStrategy:
+    """Feature 064: EV>=threshold bets restricted to odds < odds_cap (win upper cap).
+
+    Used by the adoption gate to compare the current EV policy against the odds-capped policy on
+    the SAME OOS race set. Delegates to select_ev_bets(odds_cap=) so the denominator/renorm is
+    identical to EVStrategy (capped horses stay in the probability denominator).
+    """
+
+    def __init__(self, threshold: float, odds_cap: float) -> None:
+        self.threshold = threshold
+        self.odds_cap = odds_cap
+        self.name = f"ev_oddscap{int(odds_cap)}"
+
+    def bets_for_race(self, horses: list[dict], *, stake: float) -> list[Bet]:
+        return select_ev_bets(
+            horses, threshold=self.threshold, stake=stake, odds_cap=self.odds_cap
+        )
+
+
 class FavoriteROIBaseline:
     """Always bet the favorite (lowest odds) to win, flat stake."""
 

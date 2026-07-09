@@ -471,6 +471,33 @@ export interface components {
             /** Value */
             value?: number | string | null;
         };
+        /**
+         * FavoriteBaseline
+         * @description Feature 064: the market baseline (flat-bet the favorite) realised for THIS race. Honest
+         *     reference line — NOT a profit strategy. All-null when unsettled / no priced horse.
+         */
+        FavoriteBaseline: {
+            /**
+             * Dead Heat
+             * @default false
+             */
+            dead_heat: boolean;
+            /** Hit */
+            hit?: boolean | null;
+            /** Horse Number */
+            horse_number?: number | null;
+            /** Odds */
+            odds?: number | null;
+            /** Realized Return */
+            realized_return?: number | null;
+            /** Realized Roi */
+            realized_roi?: number | null;
+            /**
+             * Settled
+             * @default false
+             */
+            settled: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -986,6 +1013,7 @@ export interface components {
         };
         /** RecommendationResponse */
         RecommendationResponse: {
+            favorite_baseline?: components["schemas"]["FavoriteBaseline"] | null;
             /**
              * Items
              * @default []
@@ -993,6 +1021,11 @@ export interface components {
             items: components["schemas"]["RecommendationRow"][];
             /** Race Id */
             race_id: string;
+            /**
+             * Win Policy Status
+             * @default no_run
+             */
+            win_policy_status: string;
         };
         /** RecommendationRow */
         RecommendationRow: {

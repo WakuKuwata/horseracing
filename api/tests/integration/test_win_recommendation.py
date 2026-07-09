@@ -59,3 +59,25 @@ def test_win_row_without_horse_number_is_dropped(client, session):
              selection={"horse_id": "H9", "horse_number": None})
     items = client.get(f"/api/v1/races/{_RACE}/recommendations").json()["items"]
     assert all(i["bet_type"] != "win" for i in items)  # undisplayable row excluded, no 500
+
+
+def test_win_policy_status_and_favorite_baseline(client, session):
+    """Feature 064: win_policy_status distinguishes an empty win section; favorite_baseline is the
+    read-time market reference (favorite = lowest odds)."""
+    seed_model(session)
+    run_id = seed_race(session, race_id=_RACE, horses={
+        1: {"win": 0.4, "odds": 2.0}, 2: {"win": 0.3, "odds": 3.0},
+    })
+    # run exists, only an exotic rec (win policy selected nothing) → no_win_selected
+    add_recommendation(session, race_id=_RACE, run_id=run_id,
+                       bet_type=BetType.EXACTA, selection=(1, 2))
+    body = client.get(f"/api/v1/races/{_RACE}/recommendations").json()
+    assert body["win_policy_status"] == "no_win_selected"
+    assert body["favorite_baseline"]["horse_number"] == 1     # lowest odds (2.0)
+    assert body["favorite_baseline"]["odds"] == 2.0
+
+    # add a win rec → generated
+    _add_win(session, race_id=_RACE, run_id=run_id,
+             selection={"horse_id": "H1", "horse_number": 1}, stake=0.02)
+    body2 = client.get(f"/api/v1/races/{_RACE}/recommendations").json()
+    assert body2["win_policy_status"] == "generated"

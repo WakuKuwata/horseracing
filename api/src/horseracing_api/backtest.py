@@ -70,3 +70,45 @@ def win_realized(
         )
     # finished-but-not-1st, or DNF (stopped/disqualified) → a loss
     return WinRealized(settled=True, hit=False, realized_return=0.0, realized_roi=-1.0)
+
+
+@dataclasses.dataclass(frozen=True)
+class FavoriteRealized:
+    """Feature 064: retrospective outcome of the market baseline (flat-bet the favorite to win).
+
+    An honest reference line for the decision-support display — NOT a profit strategy. The
+    favorite is the started horse with the lowest win odds; realised via the SAME real-odds
+    predicate as win_realized. All-null when the race is unsettled or has no priced horse."""
+
+    horse_number: int | None = None
+    odds: float | None = None
+    settled: bool = False
+    hit: bool | None = None
+    dead_heat: bool = False
+    realized_return: float | None = None
+    realized_roi: float | None = None
+
+
+def favorite_realized(
+    odds_rows, *, finish_map: dict[str, tuple[int | None, str]], n_winners: int
+) -> FavoriteRealized:
+    """Compute the favorite's realised WIN outcome (pure, read-only, betting-independent).
+
+    ``odds_rows`` = iterable of rows whose first three fields are (horse_number, horse_id, odds)
+    for started horses (queries.win_odds yields a trailing updated_at, ignored here). The favorite
+    = the row with the lowest positive odds. Delegates to win_realized so the hit/void/dead-heat/
+    return semantics match the recommendation rows. Display-only; never a feature (II)."""
+    priced = [
+        (row[0], row[1], float(row[2]))
+        for row in odds_rows if row[2] is not None and float(row[2]) > 0.0
+    ]
+    if not priced:
+        return FavoriteRealized()
+    hn, hid, odds = min(priced, key=lambda r: r[2])
+    wr = win_realized(
+        {"horse_id": hid, "horse_number": hn}, odds, finish_map=finish_map, n_winners=n_winners
+    )
+    return FavoriteRealized(
+        horse_number=hn, odds=odds, settled=wr.settled, hit=wr.hit, dead_heat=wr.dead_heat,
+        realized_return=wr.realized_return, realized_roi=wr.realized_roi,
+    )
