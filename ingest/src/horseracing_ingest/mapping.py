@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import datetime
+import re
+import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
@@ -15,6 +17,38 @@ from .parser import ParsedRow
 
 class MappingError(ValueError):
     """Raised when a row cannot be mapped (unknown venue/status, bad race_id)."""
+
+
+# Steeplechase (障害) races run on turf/dirt courses, so JRA-VAN col14 (track_type) reads 芝/ダ; the
+# only jump markers are the race name (e.g. "障害未勝利", "中山グランドジャンプ") or the jump-grade
+# class (ＪＧ１/２/３). Reading col14 alone mislabeled ~2,400 jump races (2007-2025) as
+# flat turf/dirt, contaminating the flat win model. Detect jumps here and store track_type='障',
+# matching the netkeiba scrape path (parse/entries.py distance regex already yields 障).
+_JUMP_NAME_RE = re.compile(r"障害|ジャンプ|ハードル|大障")
+_JUMP_CLASSES = {"JG1", "JG2", "JG3"}
+
+
+def _is_jump_race(
+    name_short: str | None, name_full: str | None, race_class: str | None
+) -> bool:
+    for name in (name_short, name_full):
+        if name and _JUMP_NAME_RE.search(name):
+            return True
+    if race_class and unicodedata.normalize("NFKC", race_class).strip() in _JUMP_CLASSES:
+        return True
+    return False
+
+
+def _derive_track_type(row: ParsedRow) -> str | None:
+    """col14 surface (芝/ダ), overridden to '障' for steeplechase races (jump marker is in the
+    race name / jump-grade class, never col14)."""
+    if _is_jump_race(
+        _none_if_empty(row.fields[layout.RACE_NAME_SHORT]),
+        _none_if_empty(row.fields[layout.RACE_NAME_FULL]),
+        _none_if_empty(row.fields[layout.RACE_CLASS]),
+    ):
+        return "障"
+    return _none_if_empty(row.fields[layout.TRACK_TYPE])
 
 
 @dataclass
@@ -204,7 +238,7 @@ def to_core_records(row: ParsedRow) -> CoreRecords:
         "race_name_short": _none_if_empty(row.fields[layout.RACE_NAME_SHORT]),
         "race_class": _none_if_empty(row.fields[layout.RACE_CLASS]),
         "grade": _none_if_empty(row.fields[layout.GRADE]),
-        "track_type": _none_if_empty(row.fields[layout.TRACK_TYPE]),
+        "track_type": _derive_track_type(row),
         "distance": _to_int(row.fields[layout.DISTANCE]),
         "going": _none_if_empty(row.fields[layout.GOING]),
         "weather": _none_if_empty(row.fields[layout.WEATHER]),

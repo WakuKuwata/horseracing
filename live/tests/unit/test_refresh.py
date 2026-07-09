@@ -38,7 +38,7 @@ def test_refresh_runs_predict_then_recommend_with_args(monkeypatch):
     assert calls[0] == ("predict", _FROM, _TO, True)          # force propagates to predict only
     assert calls[1] == ("recommend", _FROM, _TO)
     assert rep.predict == {"generated": 3, "skip_exists": 0, "skip_no_started": 0,
-                           "error_days": 0}
+                           "error_days": 0, "skip_no_odds": 0}  # Feature 060 added skip_no_odds
     assert rep.recommend["generated"] == 3
     assert rep.predict_error is None and rep.recommend_error is None
 

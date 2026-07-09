@@ -14,6 +14,7 @@ from horseracing_db.enums import EntryStatus, ResultStatus
 from horseracing_db.models import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from horseracing_eval.dataset import load_eval_races
 from horseracing_eval.harness import evaluate
+from horseracing_features.registry import FEATURE_VERSION
 from horseracing_training.adoption import AdoptionDecision, AdoptionGate
 from horseracing_training.artifacts import save_model_version
 from horseracing_training.predictor import LightGBMPredictor
@@ -74,7 +75,7 @@ def make_active_model(session: Session, artifacts_root, *, model_version="live-t
         session, model_version=model_version, predictor=final, eval_result=result,
         decision=AdoptionDecision(adopted=True, reasons={}),
         gate=AdoptionGate(ece_threshold=1.0), artifacts_root=str(artifacts_root),
-        feature_version="features-004", git_sha=None,
+        feature_version=FEATURE_VERSION, git_sha=None,
     )
     return model_version
 

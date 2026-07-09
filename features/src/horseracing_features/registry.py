@@ -329,7 +329,13 @@ FEATURE_GROUPS: dict[str, str] = {
 #: 059 (within-race relative ability); 058 (past market-assessment / accuracy-first);
 #: 061 (speed figure). 062 (Elo rating) and 063 (closing-speed figure) were evaluated and
 #: REJECTED (062 redundant under pl_topk; 063 redundant with 061 over the full period).
-FEATURE_VERSION = "features-016"
+#: 017 (data-quality bugfix): class_rank normalization revives class_transition (coverage
+#: 34.8%->88.7% at entry level; 19-fold A/B win LogLoss 0.21502->0.21491, AUC/ECE both improve,
+#: 14/19 folds) + steeplechase (障害) races relabeled track_type='障' (ingest col14-only bug; the
+#: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
+#: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
+#: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
+FEATURE_VERSION = "features-017"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -354,6 +360,12 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
         # 2026-07-08 against both models' metadata.feature_hash BEFORE the 061 bump.
         "features-015": "0a93f210765ebb656088d753c5133685581e9a61d29dce17472c7be35dec2839",
     },
+    # Feature 017 is a VALUE-CHANGING bump (class_transition + track_type values changed) with the
+    # SAME column set. The compat path requires shared columns to be BYTE-IDENTICAL between the old
+    # build and the current build (note above) — that guarantee is now BROKEN for every prior
+    # version (class_transition/track_type are shared columns whose values moved), so NO prior model
+    # is servable under features-017. Empty = fail-closed: all pre-017 models must be retrained.
+    "features-017": {},
 }
 
 

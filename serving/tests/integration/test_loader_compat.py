@@ -59,3 +59,20 @@ def test_unpinned_prior_version_fails_closed(session, tmp_path):
     meta_path.write_text(json.dumps(meta))
     with pytest.raises(ServingError):
         load_serving_model(session, mv)
+
+
+def test_prior_version_with_current_hash_fails_closed(session, tmp_path):
+    # Feature 017 core guard: feature_hash is column-name-only, so a VALUE-changing same-column bump
+    # leaves an old model's hash == the current hash. Such a model must STILL fail closed (it was
+    # trained on different VALUES for the same columns) — it may only serve if explicitly pinned in
+    # COMPATIBLE_PRIOR_FEATURE_VERSIONS. This is exactly the loophole the exact-path version gate
+    # closes; before the fix this model would have loaded on the exact path and been mis-served.
+    seed_learnable(session, years=(2007, 2008), races_per_year=10, field_size=8)
+    mv = make_active_model(session, tmp_path)  # writes the CURRENT hash + CURRENT feature_version
+    meta_path = _metadata_path(session, mv)
+    meta = json.loads(meta_path.read_text())
+    assert meta["feature_version"] == FEATURE_VERSION  # hash is current (exact path pre-fix)
+    meta["feature_version"] = "features-016"  # ...but claims an unpinned older, value-incompatible ver
+    meta_path.write_text(json.dumps(meta))
+    with pytest.raises(ServingError):
+        load_serving_model(session, mv)

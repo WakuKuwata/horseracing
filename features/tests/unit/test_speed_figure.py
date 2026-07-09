@@ -198,12 +198,19 @@ def test_registry_version_and_compat_pins():
         model_input_features,
     )
 
-    assert FEATURE_VERSION == "features-016"
+    assert FEATURE_VERSION == "features-017"
+    # 061's historical compat story (features-016 pinned 014/015) still holds when checked against
+    # that version explicitly.
     pins = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-016"]
     assert set(pins) == {"features-014", "features-015"}
-    assert is_feature_version_servable("features-015", pins["features-015"])
-    assert is_feature_version_servable("features-014", pins["features-014"])
-    assert not is_feature_version_servable("features-015", "deadbeef")
+    assert is_feature_version_servable("features-015", pins["features-015"], "features-016")
+    assert is_feature_version_servable("features-014", pins["features-014"], "features-016")
+    assert not is_feature_version_servable("features-015", "deadbeef", "features-016")
+    # Feature 017 is a value-changing bump: its compat map is EMPTY, so NO pre-017 model is servable
+    # under the current registry (fail-closed; all must be retrained).
+    assert COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-017"] == {}
+    assert not is_feature_version_servable("features-016", pins["features-015"])
+    assert not is_feature_version_servable("features-015", pins["features-015"])
     # 061 columns are as-of (materialized), NEVER static; and they are model inputs
     assert not (set(SPEED_FIGURE_COLUMNS) & set(STATIC_COLUMNS))
     assert set(SPEED_FIGURE_COLUMNS) <= set(model_input_features())

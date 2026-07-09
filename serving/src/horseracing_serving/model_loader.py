@@ -178,14 +178,20 @@ def load_serving_model(
     metadata = json.loads(meta_path.read_text())
 
     # INV-S4: the trained feature schema must be servable under the current registry.
-    # Fast path: the trained hash IS the current global hash (behaviour byte-identical to pre-058).
+    # Fast path: the trained hash IS the current global hash AND the trained feature_version IS the
+    # current one. The version check is REQUIRED because feature_hash covers only the column NAMES
+    # (artifacts.feature_hash), not their VALUE semantics: a value-changing, same-column bump (e.g.
+    # Feature 017 — class_transition/track_type values changed) leaves the hash identical, so an old
+    # model would otherwise pass the exact path and be fed features it was never trained on. Gating
+    # on feature_version fails those closed; an older version may still serve ONLY via the compat
+    # path below when explicitly pinned (values proven byte-identical).
     # Compat path (Feature 058, 案C'): an OLDER version whose columns are an additive subset of the
     # current registry may serve by selecting its own columns — allowed only for a parity-tested
     # transition (is_feature_version_servable) with subset+integrity enforced in _load_preprocessor.
     current_hash = feature_hash(model_input_features())
     model_hash = metadata.get("feature_hash")
     model_fv = metadata.get("feature_version", "")
-    exact = model_hash == current_hash
+    exact = model_hash == current_hash and model_fv == FEATURE_VERSION
     if not exact and not is_feature_version_servable(model_fv, model_hash):
         raise ServingError(
             f"feature_hash mismatch for '{mv_name}': trained {model_fv!r} not servable under "

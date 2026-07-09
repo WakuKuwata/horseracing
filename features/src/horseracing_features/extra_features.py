@@ -9,6 +9,8 @@ same-day duplicate). No results of the target race (or same-day races) enter its
 
 from __future__ import annotations
 
+import unicodedata
+
 import numpy as np
 import pandas as pd
 from horseracing_db.enums import EntryStatus, ResultStatus
@@ -22,11 +24,30 @@ EXTRA_COLUMNS = [
 ]
 
 # coarse, deterministic JRA class ordinal (higher = stronger). Unknown → NaN (no fabricated rank).
+#
+# Keys are NFKC-normalized (see _normalize_class): the raw DB race_class carries full/half-width
+# variants (Ｇ３, ｵｰﾌﾟﾝ, １勝) AND the pre-2019 money naming (500万 == 1勝クラス, 1000万 == 2勝)
+# coexisting with the post-2019 win-class naming. Mapping against the raw strings left 55.7% of
+# races NaN (only 新馬/未勝利/オープン matched) → class_transition was effectively dead.
+# We list both the current DB values and the canonical suffixed forms so the map is robust to either
+# source (JRA-VAN raw, netkeiba). JG1/JG2/JG3 (障害重賞) and the ambiguous 重賞 stay unmapped → NaN:
+# jumps are a separate ladder (excluded from the flat model) so a jump prior yields no comparable
+# class transition.
 _CLASS_RANK: dict[str, int] = {
-    "新馬": 0, "未勝利": 0, "1勝クラス": 1, "500万下": 1, "2勝クラス": 2, "1000万下": 2,
-    "3勝クラス": 3, "1600万下": 3, "オープン": 4, "OP": 4, "L": 4, "リステッド": 4,
+    "新馬": 0, "未勝利": 0,
+    "1勝": 1, "1勝クラス": 1, "500万": 1, "500万下": 1,
+    "2勝": 2, "2勝クラス": 2, "1000万": 2, "1000万下": 2,
+    "3勝": 3, "3勝クラス": 3, "1600万": 3, "1600万下": 3,
+    "オープン": 4, "OP": 4, "OP(L)": 4, "L": 4, "リステッド": 4,
     "G3": 5, "GIII": 5, "G2": 6, "GII": 6, "G1": 7, "GI": 7,
 }
+
+
+def _normalize_class(s: pd.Series) -> pd.Series:
+    """NFKC (full-width↔half-width kana/digits, e.g. Ｇ３→G3, ｵｰﾌﾟﾝ→オープン, １勝→1勝) + strip.
+    NaN stays NaN. Mirrors the 026/056 entity-name normalization; here it aligns the raw race_class
+    variants onto the _CLASS_RANK keys so class_transition is not silently NaN for most races."""
+    return s.map(lambda v: unicodedata.normalize("NFKC", v).strip() if isinstance(v, str) else v)
 
 _DIST_BINS = [-np.inf, 1400, 1800, 2200, np.inf]   # sprint / mile / mid / long
 _RECENT_FORM_N = 5
@@ -45,7 +66,7 @@ def _enriched_runs(frames: Frames) -> pd.DataFrame:
     runs["is_win"] = ((runs["is_finished"] == 1) & (runs["finish_order"] == 1)).astype(int)
     runs["finish_for_avg"] = np.where(runs["is_finished"] == 1, runs["finish_order"], np.nan)
     runs["dist_band"] = pd.cut(runs["distance"], bins=_DIST_BINS, labels=False).astype("Int64")
-    runs["class_rank"] = runs["race_class"].map(_CLASS_RANK).astype("float64")
+    runs["class_rank"] = _normalize_class(runs["race_class"]).map(_CLASS_RANK).astype("float64")
     return runs
 
 

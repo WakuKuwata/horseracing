@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 from horseracing_db.models import FeatureSnapshot, PredictionRun, RacePrediction
+from horseracing_features.registry import FEATURE_VERSION
 from sqlalchemy import select
 
 from horseracing_serving.pipeline import run_serving
@@ -37,5 +38,5 @@ def test_run_serving_persists_all_three_tables(session, tmp_path):
         select(FeatureSnapshot).where(FeatureSnapshot.prediction_run_id == run_id)
     ).all()
     assert len(fss) == 8
-    assert fss[0].feature_version == "features-004"
+    assert fss[0].feature_version == FEATURE_VERSION
     assert "_raw_win" in fss[0].features and "_calibrated_win" in fss[0].features

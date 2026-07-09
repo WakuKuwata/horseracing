@@ -139,14 +139,16 @@ def test_feature_version_servability():
         is_feature_version_servable,
     )
 
-    # servability is checked against the CURRENT version (features-016), whose pins are 014/015.
+    # 058's compat story is checked against ITS version (features-016 pinned 014/015) explicitly.
     pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-016"]["features-015"]
-    assert FEATURE_VERSION == "features-016"
-    assert is_feature_version_servable("features-015", pinned)            # compat: pinned hash
-    assert not is_feature_version_servable("features-015", "deadbeef")    # compat: WRONG hash
-    assert not is_feature_version_servable("features-015", None)          # compat: hash required
-    assert not is_feature_version_servable("features-013", pinned)        # not declared
+    assert FEATURE_VERSION == "features-017"
+    assert is_feature_version_servable("features-015", pinned, "features-016")       # compat: pinned
+    assert not is_feature_version_servable("features-015", "deadbeef", "features-016")  # WRONG hash
+    assert not is_feature_version_servable("features-015", None, "features-016")     # hash required
+    assert not is_feature_version_servable("features-013", pinned, "features-016")   # not declared
     # BLOCKER guard: current version claiming compat with a NON-current hash must NOT pass here
     # (removed the same-version short-circuit; drop_features/corrupted same-version -> fail closed).
-    assert not is_feature_version_servable("features-015", "deadbeef")
-    assert not is_feature_version_servable(FEATURE_VERSION, pinned)
+    assert not is_feature_version_servable("features-015", "deadbeef", "features-016")
+    assert not is_feature_version_servable("features-016", pinned, "features-016")
+    # Feature 017 (value-changing bump) has an EMPTY compat map -> nothing pre-017 serves.
+    assert not is_feature_version_servable("features-015", pinned)  # default current_fv == 017
