@@ -2621,6 +2621,124 @@
         "title": "SegmentEdgeRow",
         "type": "object"
       },
+      "ShadowLogMonth": {
+        "properties": {
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "n_settled": {
+            "title": "N Settled",
+            "type": "integer"
+          },
+          "recovery": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery"
+          }
+        },
+        "required": [
+          "month",
+          "n_settled"
+        ],
+        "title": "ShadowLogMonth",
+        "type": "object"
+      },
+      "ShadowLogResponse": {
+        "description": "Feature 065: prospective shadow-betting log roll-up (real bettable frozen odds; prospective;\nNOT closing; NOT a profit claim). Empty (n_prospective=0) ⇒ instrument still filling.",
+        "properties": {
+          "by_month": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ShadowLogMonth"
+            },
+            "title": "By Month",
+            "type": "array"
+          },
+          "first_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First At"
+          },
+          "hit_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Rate"
+          },
+          "last_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last At"
+          },
+          "n_hit": {
+            "default": 0,
+            "title": "N Hit",
+            "type": "integer"
+          },
+          "n_pending": {
+            "default": 0,
+            "title": "N Pending",
+            "type": "integer"
+          },
+          "n_prospective": {
+            "default": 0,
+            "title": "N Prospective",
+            "type": "integer"
+          },
+          "n_settled": {
+            "default": 0,
+            "title": "N Settled",
+            "type": "integer"
+          },
+          "n_void": {
+            "default": 0,
+            "title": "N Void",
+            "type": "integer"
+          },
+          "recovery_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Rate"
+          },
+          "weak_pretime": {
+            "default": 0,
+            "title": "Weak Pretime",
+            "type": "integer"
+          }
+        },
+        "title": "ShadowLogResponse",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -3563,6 +3681,27 @@
         "summary": "Recommendations",
         "tags": [
           "recommendations"
+        ]
+      }
+    },
+    "/api/v1/shadow-log": {
+      "get": {
+        "operationId": "shadow_log_api_v1_shadow_log_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShadowLogResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Shadow Log",
+        "tags": [
+          "shadow-log"
         ]
       }
     }
