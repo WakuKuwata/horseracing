@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import pickle
+from pathlib import Path
 
 import pytest
 from horseracing_db.models import ModelVersion
@@ -45,6 +46,10 @@ def test_train_evaluate_saves_row_and_artifacts(session, tmp_path):
     assert mv.label_schema == "win_top2_top3"
     assert mv.adoption_status in ("active", "candidate")
     assert mv.weights_uri and mv.calibrator_uri
+    # URIs must be ABSOLUTE so they resolve from any cwd — the ops predict job shells out to the
+    # serving CLI with cwd=serving/, and a bare-relative URI would fail "metadata.json missing".
+    assert Path(mv.weights_uri).is_absolute()
+    assert Path(mv.calibrator_uri).is_absolute()
     assert mv.metrics_summary["eval"]["overall"]["win"]["log_loss"] is not None
     assert mv.metrics_summary["training"]["model_family"] == "lightgbm"
     # Feature 050 (V): the training-data window is answerable from the DB row alone —

@@ -97,7 +97,13 @@ def save_model_version(
     info = predictor.fit_info_ or {}
     fcols = info.get("feature_cols", predictor.feature_cols_ or [])
 
-    root = Path(artifacts_root)
+    # Resolve to an ABSOLUTE path before deriving the URIs persisted below. weights_uri /
+    # calibrator_uri are read back by the serving CLI, which the ops predict job shells out to with
+    # cwd=serving/ (ops/runner.py). A bare-relative --artifacts-dir (the CLI default is "artifacts")
+    # would store a relative URI that resolves to serving/artifacts/... under that cwd and fail with
+    # "metadata.json missing". Storing absolute makes the URI resolve from any cwd. Do NOT revert to
+    # a relative path here.
+    root = Path(artifacts_root).resolve()
     art_dir = root / "model_versions" / model_version
     art_dir.mkdir(parents=True, exist_ok=True)
     model_path = art_dir / "model.txt"
