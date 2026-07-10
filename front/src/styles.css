@@ -47,6 +47,12 @@ a:hover {
   font-size: 1.25rem;
   margin: 0;
 }
+.app__nav {
+  display: flex;
+  gap: 1rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+}
 .app__header p {
   color: var(--muted);
   margin: 0.25rem 0 0;
