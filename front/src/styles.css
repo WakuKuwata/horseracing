@@ -755,3 +755,74 @@ th.colgroup {
   color: var(--muted);
   font-weight: 600;
 }
+
+/* ── Feature 066: 荒れ度 (race dispersion) readout ─────────────────────────────
+   5-step gauge in a NEUTRAL single-hue ramp (accent at increasing opacity) —
+   deliberately NOT green/red, no profit/loss semantics (021/040/049 discipline).
+   The whole q-derived body is one <PseudoValue> so the 市場推定 badge is mandatory. */
+.dispersion {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem 0.7rem;
+  margin: 0.75rem 0;
+  background: var(--panel);
+}
+.dispersion__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.dispersion__sub { font-weight: 400; font-size: 0.72rem; color: var(--muted); }
+/* single <PseudoValue> wrapper: block body with the badge pinned top-right */
+.dispersion .pseudo-value { display: block; position: relative; }
+.dispersion .pseudo-value > .badge--pseudo { position: absolute; top: -1.9rem; right: 0; }
+.dispersion__band { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
+.dispersion__band-name { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.02em; color: var(--accent); }
+.dispersion__band-name[data-lvl="0"] { opacity: 0.62; }
+.dispersion__band-name[data-lvl="1"] { opacity: 0.74; }
+.dispersion__band-name[data-lvl="2"] { opacity: 0.85; }
+.dispersion__band-name[data-lvl="3"] { opacity: 0.93; }
+.dispersion__band-name[data-lvl="4"] { opacity: 1; }
+.dispersion__band-cap { font-size: 0.75rem; color: var(--muted); }
+.dispersion__gauge { margin-bottom: 0.8rem; }
+.dispersion__segs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+.dispersion__seg {
+  position: relative; height: 12px; border-radius: 3px;
+  background: var(--accent); opacity: 0.24; transition: opacity 0.2s;
+}
+.dispersion__seg[data-lvl="0"] { opacity: 0.20; }
+.dispersion__seg[data-lvl="1"] { opacity: 0.26; }
+.dispersion__seg[data-lvl="2"] { opacity: 0.32; }
+.dispersion__seg[data-lvl="3"] { opacity: 0.38; }
+.dispersion__seg[data-lvl="4"] { opacity: 0.44; }
+.dispersion__seg.is-active { opacity: 1; box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--accent); }
+.dispersion__caret {
+  position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 5px solid var(--accent);
+}
+.dispersion__ticks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 5px; }
+.dispersion__ticks span { font-size: 0.62rem; color: var(--muted); text-align: center; }
+.dispersion__ticks .on { color: var(--text); font-weight: 700; }
+.dispersion__facts { margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.dispersion__fact { display: grid; grid-template-columns: 6.5rem 1fr; align-items: center; gap: 0.6rem; }
+.dispersion__fact dt { font-size: 0.75rem; color: var(--muted); }
+.dispersion__fact .dispersion__mut { font-size: 0.66rem; }
+.dispersion__fact dd { margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+.dispersion__bar { flex: 1; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
+.dispersion__bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.dispersion__scale { position: relative; flex: 1; height: 8px; background: var(--border); border-radius: 999px; }
+.dispersion__scale i {
+  position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--panel); border: 2.5px solid var(--accent); transform: translate(-50%, -50%);
+}
+.dispersion__fact b { font-variant-numeric: tabular-nums; font-size: 0.8rem; min-width: 2.8rem; text-align: right; }
+.dispersion__note {
+  font-size: 0.68rem; color: var(--muted); margin: 0.75rem 0 0;
+  border-top: 1px solid var(--border); padding-top: 0.5rem;
+}
+.dispersion__note code { font-size: 0.66rem; background: var(--border); padding: 1px 5px; border-radius: 4px; }
+.dispersion__hint { font-size: 0.72rem; color: var(--muted); margin: 0 0 0.7rem; }
+.dispersion__empty { font-size: 0.78rem; color: var(--muted); margin: 0; }

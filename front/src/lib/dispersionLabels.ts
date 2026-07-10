@@ -16,6 +16,24 @@ export const BAND_LABEL: Record<Band, string> = {
   open: "波乱含み",
 };
 
+/** Ascending concentration order (matches eval BANDS). Index = gauge level 0..4. */
+export const BAND_ORDER: Band[] = [
+  "firm",
+  "somewhat_firm",
+  "standard",
+  "somewhat_open",
+  "open",
+];
+
+/** NEUTRAL one-line descriptions of the market's implied concentration (not advice). */
+export const BAND_CAPTION: Record<Band, string> = {
+  firm: "本命中心で決まりやすい",
+  somewhat_firm: "やや本命中心",
+  standard: "標準的なばらつき",
+  somewhat_open: "やや割れやすい",
+  open: "総流れ・本命が飛びやすい",
+};
+
 type Reason = NonNullable<RaceDispersion["unavailable_reason"]>;
 
 export const UNAVAILABLE_LABEL: Record<Reason, string> = {
