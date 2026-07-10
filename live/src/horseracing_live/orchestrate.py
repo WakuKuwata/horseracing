@@ -62,6 +62,105 @@ def _odds_as_of(session: Session, race_id: str) -> datetime.datetime | None:
     )
 
 
+# --- Feature 065: prospective shadow-betting log collection -----------------------------------
+@dataclass(frozen=True)
+class ProspectiveReport:
+    n_races: int
+    generated: int = 0
+    skip_not_pending: int = 0     # had results (before or after scrape) — not truly pre-race
+    skip_no_odds: int = 0
+    skip_no_run: int = 0
+    skip_exists: int = 0          # this (race, model, prospective policy) already recorded
+    skip_post_time: int = 0       # capture happened at/after post_time — not pre-race
+    weak_pretime: int = 0         # generated but post_time unknown (weaker pre-race guarantee)
+    errors: int = 0
+    per_race: list[dict] = field(default_factory=list)
+
+
+def collect_prospective(
+    session: Session,
+    *,
+    race_ids: list[str],
+    scrape_fn,
+    win_odds_cap: float | None = None,
+    now: datetime.datetime | None = None,
+) -> ProspectiveReport:
+    """Feature 065: record PROSPECTIVE win bets on FRESHLY-CAPTURED pre-race odds, with the capture
+    discipline that keeps the closing-oracle out (codex).
+
+    ``scrape_fn(session, race_id) -> capture_at | None``: performs a fresh pre-race odds capture
+    (updates race_horses.odds for the result-pending race, 008) and returns the CAPTURE timestamp;
+    None ⇒ capture failed → skip (never fall back to stale/closing odds). The recorded odds_asof IS
+    this capture timestamp — never RaceHorse.updated_at (generic row freshness).
+
+    Per race: (1) result-pending guard, (2) fresh scrape → capture_at, (3) RE-CHECK result-pending
+    after scrape (race may have ended mid-flow), (4) post_time guard (capture < post_time; unknown ⇒
+    weak_pretime flag), (5) advisory lock on (race, model, policy), (6) race-scoped idempotency
+    across runs, (7) WIN prospective generation. Never uses the exotic Kelly path.
+    """
+    from horseracing_betting.cli import _has_win_group, _resolve_active_run
+    from horseracing_betting.recommend import generate_recommendations
+    from sqlalchemy import text
+
+    now = now or _now()
+    gen = weak = 0
+    per_race: list[dict] = []
+    counts = {"skip_not_pending": 0, "skip_no_odds": 0, "skip_no_run": 0,
+              "skip_exists": 0, "skip_post_time": 0, "errors": 0}
+
+    def _skip(rid, key, status):
+        counts[key] += 1
+        per_race.append({"race_id": rid, "status": status})
+
+    for rid in race_ids:
+        try:
+            if not guards.is_result_pending(session, rid)[0]:
+                _skip(rid, "skip_not_pending", "not_pending")
+                continue
+            capture_at = scrape_fn(session, rid)      # fresh pre-race odds capture
+            if capture_at is None:
+                _skip(rid, "skip_no_odds", "scrape_failed")
+                continue
+            # RE-CHECK after scrape: results may have landed mid-flow → not truly pre-race
+            if not guards.is_result_pending(session, rid)[0]:
+                _skip(rid, "skip_not_pending", "ended_mid_flow")
+                continue
+            if not guards.odds_present(session, rid)[0]:
+                _skip(rid, "skip_no_odds", "no_odds")
+                continue
+            race = session.get(Race, rid)
+            post_time = getattr(race, "post_time", None)
+            is_weak = post_time is None
+            if post_time is not None and capture_at >= post_time:
+                _skip(rid, "skip_post_time", "post_time")
+                continue
+            # advisory lock on (race, policy) — check-then-insert is otherwise race-prone
+            session.execute(text("SELECT pg_advisory_lock(hashtext(:k))"),
+                            {"k": f"prospective:{rid}:{win_odds_cap}"})
+            run_id = _resolve_active_run(session, rid)
+            if run_id is None:
+                _skip(rid, "skip_no_run", "no_run")
+                continue
+            if _has_win_group(session, run_id, win_odds_cap, prospective=True, race_id=rid):
+                _skip(rid, "skip_exists", "exists")
+                continue
+            generate_recommendations(
+                session, prediction_run_id=run_id, win_odds_cap=win_odds_cap,
+                prospective=True, odds_asof=capture_at,
+            )
+            gen += 1
+            weak += int(is_weak)
+            per_race.append({"race_id": rid, "status": "generated", "weak_pretime": is_weak,
+                             "odds_asof": capture_at.isoformat()})
+        except Exception as exc:  # noqa: BLE001 — one race must not abort the whole collection
+            session.rollback()
+            _skip(rid, "errors", f"error:{type(exc).__name__}")
+
+    return ProspectiveReport(
+        n_races=len(race_ids), generated=gen, weak_pretime=weak, per_race=per_race, **counts,
+    )
+
+
 def live_serve(
     session: Session,
     *,

@@ -307,6 +307,28 @@ class RecommendationResponse(BaseModel):
     favorite_baseline: FavoriteBaseline | None = None
 
 
+class ShadowLogMonth(BaseModel):
+    month: str
+    n_settled: int
+    recovery: float | None = None
+
+
+class ShadowLogResponse(BaseModel):
+    """Feature 065: prospective shadow-betting log roll-up (real bettable frozen odds; prospective;
+    NOT closing; NOT a profit claim). Empty (n_prospective=0) ⇒ instrument still filling."""
+    n_prospective: int = 0
+    n_settled: int = 0
+    n_hit: int = 0
+    hit_rate: float | None = None
+    recovery_rate: float | None = None
+    n_pending: int = 0
+    n_void: int = 0
+    weak_pretime: int = 0
+    by_month: list[ShadowLogMonth] = []
+    first_at: str | None = None
+    last_at: str | None = None
+
+
 # --- calibration / reliability (Feature 021 US2, walk-forward OOS, read-only) ----------------
 class CalibrationBin(BaseModel):
     pred_lo: float

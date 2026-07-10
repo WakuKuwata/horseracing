@@ -89,6 +89,87 @@ class FavoriteRealized:
     realized_roi: float | None = None
 
 
+def is_prospective(logic_version: str | None) -> bool:
+    """Feature 065: EXACT prospective marker parse (codex) — split by ';', not loose contains, so a
+    stray substring cannot false-positive. A row is prospective iff it carries the ``prospective=1``
+    token that ONLY the live prospective collection path writes."""
+    if not logic_version:
+        return False
+    return "prospective=1" in logic_version.split(";")
+
+
+@dataclasses.dataclass(frozen=True)
+class ShadowLogSummary:
+    """Feature 065: read-time roll-up of PROSPECTIVE settled real-win recommendations, valued on the
+    FROZEN bet-time odds (never current/closing). Honest instrument — not a profit claim."""
+
+    n_prospective: int = 0           # prospective win rows in scope (settled + pending)
+    n_settled: int = 0               # valued (hit True/False) — the ROI/hit denominator
+    n_hit: int = 0
+    hit_rate: float | None = None
+    recovery_rate: float | None = None   # Σ realized_return / n_settled (frozen odds)
+    n_pending: int = 0               # marker present but no result yet (excluded from ROI)
+    n_void: int = 0                  # settled but hit=None (scratch/void) — excluded from ROI
+    weak_pretime: int = 0            # rows whose pre-race guarantee is weak (post_time unknown)
+    by_month: list[dict] = dataclasses.field(default_factory=list)  # [{month,n_settled,recovery}]
+    first_at: str | None = None
+    last_at: str | None = None
+
+
+def shadow_log_summary(rows) -> ShadowLogSummary:
+    """Aggregate PROSPECTIVE win rows (pure, read-only, betting-independent). Each row is a dict:
+    ``logic_version, selection, market_odds_used, is_estimated_odds, estimated_market_odds_used,
+    bet_type, computed_at, finish_map, n_winners``. Only bet_type==win ∧ exact prospective marker ∧
+    real single-win odds (is_estimated_odds False, market_odds_used>0, estimated None) ∧ valid WIN
+    dict selection are counted. Valuation uses win_realized on the FROZEN market_odds_used — the
+    current race_horses.odds and favorite_realized are NEVER read here (that would be closing).
+    Voids (hit=None) and unsettled (pending) are excluded from the ROI/hit denominator."""
+    n_prospective = n_settled = n_hit = n_pending = n_void = weak = 0
+    total_return = 0.0
+    months: dict[str, list[float]] = {}
+    stamps: list[str] = []
+    for r in rows:
+        if r.get("bet_type") != "win" or not is_prospective(r.get("logic_version")):
+            continue
+        if r.get("is_estimated_odds") or r.get("estimated_market_odds_used") is not None:
+            continue
+        odds = r.get("market_odds_used")
+        sel = r.get("selection")
+        if odds is None or float(odds) <= 0.0 or not isinstance(sel, dict):
+            continue
+        n_prospective += 1
+        if "weak_pretime=1" in (r.get("logic_version") or "").split(";"):
+            weak += 1
+        if r.get("computed_at") is not None:
+            stamps.append(str(r["computed_at"]))
+        wr = win_realized(sel, odds, finish_map=r.get("finish_map") or {},
+                          n_winners=int(r.get("n_winners") or 0))
+        if not wr.settled:
+            n_pending += 1
+            continue
+        if wr.hit is None:            # settled but void (scratch etc.) — out of ROI denominator
+            n_void += 1
+            continue
+        n_settled += 1
+        ret = wr.realized_return or 0.0
+        total_return += ret
+        if wr.hit:
+            n_hit += 1
+        month = str(r.get("computed_at"))[:7] if r.get("computed_at") is not None else "?"
+        months.setdefault(month, []).append(ret)
+    by_month = [
+        {"month": m, "n_settled": len(v), "recovery": (sum(v) / len(v)) if v else None}
+        for m, v in sorted(months.items())
+    ]
+    return ShadowLogSummary(
+        n_prospective=n_prospective, n_settled=n_settled, n_hit=n_hit,
+        hit_rate=(n_hit / n_settled) if n_settled else None,
+        recovery_rate=(total_return / n_settled) if n_settled else None,
+        n_pending=n_pending, n_void=n_void, weak_pretime=weak, by_month=by_month,
+        first_at=(min(stamps) if stamps else None), last_at=(max(stamps) if stamps else None),
+    )
+
+
 def favorite_realized(
     odds_rows, *, finish_map: dict[str, tuple[int | None, str]], n_winners: int
 ) -> FavoriteRealized:

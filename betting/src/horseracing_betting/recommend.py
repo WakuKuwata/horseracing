@@ -118,6 +118,8 @@ def generate_recommendations(
     cfg: KellyConfig | None = None,
     p_calibrator=None,
     win_odds_cap: float | None = None,
+    prospective: bool = False,
+    odds_asof=None,
 ) -> list[uuid.UUID]:
     run = session.get(PredictionRun, prediction_run_id)
     if run is None:
@@ -127,6 +129,11 @@ def generate_recommendations(
     )
     if p_calibrator is not None:  # Feature 046: record the model-p calibrator (same as 017/kelly)
         lv = f"{lv};{p_calibrator.logic_version}"
+    if prospective:  # Feature 065: prospective shadow-log marker — appended AFTER custom/default
+        # resolution so a custom logic_version can never drop it (codex). odds_asof = the pre-race
+        # odds CAPTURE timestamp (not RaceHorse.updated_at). prospective off ⇒ byte-identical.
+        asof = odds_asof.isoformat() if hasattr(odds_asof, "isoformat") else str(odds_asof)
+        lv = f"{lv};prospective=1;odds_asof={asof}"
 
     horses = _load_horses(session, prediction_run_id, run.race_id)
     if p_calibrator is not None:  # calibrate model p only; odds untouched (p≠q)

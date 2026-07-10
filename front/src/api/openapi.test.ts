@@ -37,6 +37,8 @@ describe("openapi snapshot", () => {
         "/api/v1/races/{race_id}/odds",
         "/api/v1/races/{race_id}/predictions",
         "/api/v1/races/{race_id}/recommendations",
+        // Feature 065: prospective shadow-betting log (read-only honest instrument)
+        "/api/v1/shadow-log",
         "/api/v1/models/{model_version}/calibration",
         // Feature 040: split-gain importance (read-only)
         "/api/v1/models/{model_version}/importance",

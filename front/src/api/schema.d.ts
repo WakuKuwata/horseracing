@@ -282,6 +282,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/shadow-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shadow Log */
+        get: operations["shadow_log_api_v1_shadow_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1141,6 +1158,65 @@ export interface components {
             /** Win Rate */
             win_rate: number;
         };
+        /** ShadowLogMonth */
+        ShadowLogMonth: {
+            /** Month */
+            month: string;
+            /** N Settled */
+            n_settled: number;
+            /** Recovery */
+            recovery?: number | null;
+        };
+        /**
+         * ShadowLogResponse
+         * @description Feature 065: prospective shadow-betting log roll-up (real bettable frozen odds; prospective;
+         *     NOT closing; NOT a profit claim). Empty (n_prospective=0) ⇒ instrument still filling.
+         */
+        ShadowLogResponse: {
+            /**
+             * By Month
+             * @default []
+             */
+            by_month: components["schemas"]["ShadowLogMonth"][];
+            /** First At */
+            first_at?: string | null;
+            /** Hit Rate */
+            hit_rate?: number | null;
+            /** Last At */
+            last_at?: string | null;
+            /**
+             * N Hit
+             * @default 0
+             */
+            n_hit: number;
+            /**
+             * N Pending
+             * @default 0
+             */
+            n_pending: number;
+            /**
+             * N Prospective
+             * @default 0
+             */
+            n_prospective: number;
+            /**
+             * N Settled
+             * @default 0
+             */
+            n_settled: number;
+            /**
+             * N Void
+             * @default 0
+             */
+            n_void: number;
+            /** Recovery Rate */
+            recovery_rate?: number | null;
+            /**
+             * Weak Pretime
+             * @default 0
+             */
+            weak_pretime: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -1699,6 +1775,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    shadow_log_api_v1_shadow_log_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShadowLogResponse"];
                 };
             };
         };

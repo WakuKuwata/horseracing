@@ -96,17 +96,33 @@ def _has_group(session: Session, run_id, bet_types) -> bool:
     ).first() is not None
 
 
-def _has_win_group(session: Session, run_id, win_odds_cap: float | None) -> bool:
-    """Feature 064: policy-aware win idempotency. A win group is considered present only for the
-    SAME policy: cap-off (win_odds_cap=None) matches win recs WITHOUT an ``;oddscap=`` fragment
-    (legacy/current behaviour byte-identical); a cap policy matches win recs whose logic_version
-    carries ``;oddscap=<v>``. This lets a cap policy be added to a legacy win run without
-    duplicating, and skips re-running the same policy."""
-    q = (
-        select(Recommendation.recommendation_id)
-        .where(Recommendation.prediction_run_id == run_id)
-        .where(Recommendation.bet_type == BetType.WIN)
-    )
+def _has_win_group(
+    session: Session, run_id, win_odds_cap: float | None,
+    *, prospective: bool = False, race_id: str | None = None,
+) -> bool:
+    """Feature 064/065: policy-aware win idempotency across FOUR policies
+    (legacy / cap / prospective / prospective+cap) so they never collide.
+
+    - non-prospective (backfill/serve): RUN-scoped, and EXCLUDES prospective rows.
+    - prospective (065): RACE-scoped ACROSS RUNS (live's run_serving is append-only and creates a
+      NEW prediction_run each collection, so a run-scoped check would let duplicates through —
+      codex). Matches only rows carrying ``;prospective=1``.
+    Cap dimension is orthogonal: ``win_odds_cap`` present ⇒ require ``;oddscap=<v>``; absent ⇒
+    require its absence.
+    """
+    q = select(Recommendation.recommendation_id).where(Recommendation.bet_type == BetType.WIN)
+    if prospective:
+        q = (
+            q.join(PredictionRun,
+                   PredictionRun.prediction_run_id == Recommendation.prediction_run_id)
+            .where(PredictionRun.race_id == race_id)
+            .where(Recommendation.logic_version.contains(";prospective=1"))
+        )
+    else:
+        q = (
+            q.where(Recommendation.prediction_run_id == run_id)
+            .where(~Recommendation.logic_version.contains(";prospective=1"))
+        )
     if win_odds_cap is not None:
         q = q.where(Recommendation.logic_version.contains(f";oddscap={win_odds_cap}"))
     else:

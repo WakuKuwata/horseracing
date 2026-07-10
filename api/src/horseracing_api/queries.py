@@ -218,6 +218,21 @@ def exotic_recommendations(
     )
 
 
+def prospective_win_recommendations(session: Session) -> list[Recommendation]:
+    """Feature 065: ALL prospective WIN recommendations ACROSS RUNS (not active-run scoped — a
+    prospective bet can live on any of the append-only live runs, codex). Narrowed to win rows whose
+    logic_version carries the ``prospective=1`` token; the exact-token filter + real-odds predicate
+    is applied downstream in shadow_log_summary."""
+    return list(
+        session.scalars(
+            select(Recommendation)
+            .where(Recommendation.bet_type == BetType.WIN)
+            .where(Recommendation.logic_version.contains("prospective=1"))
+            .order_by(Recommendation.computed_at.asc())
+        )
+    )
+
+
 def race_finish_map(
     session: Session, race_id: str
 ) -> tuple[dict[str, tuple[int | None, str]], int]:

@@ -32,6 +32,7 @@ from .routers import (
     predictions,
     races,
     recommendations,
+    shadow_log,
 )
 
 
@@ -93,5 +94,6 @@ app.include_router(models.router, prefix=API_PREFIX)
 app.include_router(coverage.router, prefix=API_PREFIX)
 app.include_router(jobs.router, prefix=API_PREFIX)
 app.include_router(diagnostics.router, prefix=API_PREFIX)
+app.include_router(shadow_log.router, prefix=API_PREFIX)
 app.include_router(horses.router, prefix=API_PREFIX)
 app.include_router(jockeys.router, prefix=API_PREFIX)
