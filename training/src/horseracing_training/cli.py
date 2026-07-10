@@ -632,7 +632,27 @@ def main(argv: list[str] | None = None) -> int:
                      help="purpose note; omit to keep current, pass '' to clear to NULL")
     sml.add_argument("--database-url", default=None)
 
+    # Feature 066: fit dispersion band boundaries (frozen-window entropy quintiles, results never
+    # consulted) + optional SECONDARY OOS realized-chaos diagnostic (never an adoption gate).
+    dbd = sub.add_parser("dispersion-bands",
+                         help="066: fit荒れ度 band boundaries (frozen quintiles)")
+    dbd.add_argument("--fit-from", dest="fit_from", type=_parse_date, required=True)
+    dbd.add_argument("--fit-to", dest="fit_to", type=_parse_date, required=True)
+    dbd.add_argument("--field-buckets", choices=["global"], default="global",
+                     help="v1=global; per-field-size quintiles (v2) deferred")
+    dbd.add_argument("--version", default="dispbands-v1", help="artifact/logic version token")
+    dbd.add_argument("--out", default="artifacts/dispersion_bands/dispbands-v1.json",
+                     help="write the boundary artifact JSON here")
+    dbd.add_argument("--diagnose-from", dest="diagnose_from", type=_parse_date, default=None,
+                     help="SECONDARY: OOS realized-chaos window start (must be after --fit-to)")
+    dbd.add_argument("--diagnose-to", dest="diagnose_to", type=_parse_date, default=None)
+    dbd.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
+    if args.command == "dispersion-bands":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _dispersion_bands(session, args)
     if args.command == "market-gate-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -677,6 +697,46 @@ def main(argv: list[str] | None = None) -> int:
         _print_summary(summary)
         return 0
     return 1
+
+
+def _dispersion_bands(session: Session, args) -> int:
+    """Feature 066: fit + write the band-boundary artifact. Results are NEVER consulted for the
+    edges (Feature 047/048). Bands are a decision-support display readout — NOT an adoption gate."""
+    from horseracing_eval.dispersion_bands import fit_boundary
+
+    if args.fit_from > args.fit_to:
+        print(f"error: --fit-from {args.fit_from} is after --fit-to {args.fit_to}", file=sys.stderr)
+        return 2
+    boundary = fit_boundary(
+        session, fit_from=args.fit_from, fit_to=args.fit_to,
+        field_buckets=args.field_buckets, version=args.version,
+    )
+    path = boundary.write(args.out)
+    print(f"dispersion-bands: fit {boundary.n_races_fit} races "
+          f"[{boundary.fit_from}..{boundary.fit_to}] metric={boundary.metric}")
+    print(f"  quintile_edges = {[round(e, 4) for e in boundary.quintile_edges]}")
+    print(f"  version={boundary.version}  -> {path}")
+    print("  NOTE: bands are a SECONDARY decision-support readout, not an adoption gate (047).")
+
+    if args.diagnose_from is not None and args.diagnose_to is not None:
+        from horseracing_eval.dispersion_bands import diagnose_bands
+        rows = diagnose_bands(session, boundary=boundary,
+                              diagnose_from=args.diagnose_from, diagnose_to=args.diagnose_to)
+        print(f"\nOOS realized-chaos diagnostic [{args.diagnose_from}..{args.diagnose_to}] "
+              "(SECONDARY — NOT a gate):")
+        hdr = f"  {'band':<14} {'n':>6} {'void':>5} {'fav_loss':>9} {'CI':>15}"
+        print(hdr + f" {'high_payout':>11} {'sep':>4}")
+        for r in rows:
+            fl = f"{r.favorite_loss_rate:.3f}" if r.favorite_loss_rate is not None else "  -"
+            ci = (f"[{r.ci_low:.2f},{r.ci_high:.2f}]"
+                  if r.ci_low is not None else "  -")
+            hp = f"{r.high_payout_rate:.3f}" if r.high_payout_rate is not None else "  -"
+            sep = ("" if r.separated_from_prev is None
+                   else ("yes" if r.separated_from_prev else "NO"))
+            print(f"  {r.band:<14} {r.n:>6} {r.n_void:>5} {fl:>9} {ci:>15}"
+                  f" {hp:>11} {sep:>4}")
+        print("  'sep=NO' = adjacent bands not separated by CI — disclosed, not merged (047)")
+    return 0
 
 
 if __name__ == "__main__":

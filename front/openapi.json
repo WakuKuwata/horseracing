@@ -1974,6 +1974,26 @@
             ],
             "title": "Odds Source"
           },
+          "race_dispersion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RaceDispersion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "race_divergence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RaceDivergence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "race_id": {
             "title": "Race Id",
             "type": "string"
@@ -2109,6 +2129,244 @@
           "horses"
         ],
         "title": "RaceDetail",
+        "type": "object"
+      },
+      "RaceDispersion": {
+        "description": "Feature 066 axis A: race-level decision-support readout of how OPEN (chaotic) the race is,\nsummarised from the MARKET vote-share q on the canonical field. NOT a new edge — a read-time\nfunction of existing q. q is market-derived pseudo/display data (is_pseudo), never a true prob,\nnever a model feature. band from FROZEN quintile edges (results never consulted); raw numbers\nshown beside it (favourite win prob / top-3 share / normalised entropy). q missing → available\nfalse, band/numbers null, NO fallback to model p.",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "band": {
+            "anyOf": [
+              {
+                "enum": [
+                  "firm",
+                  "somewhat_firm",
+                  "standard",
+                  "somewhat_open",
+                  "open"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Band"
+          },
+          "boundary_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boundary Version"
+          },
+          "favorite_win_prob": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Win Prob"
+          },
+          "is_pseudo": {
+            "default": true,
+            "title": "Is Pseudo",
+            "type": "boolean"
+          },
+          "model_delta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RaceDispersionDelta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "normalized_entropy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Entropy"
+          },
+          "odds_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds As Of"
+          },
+          "odds_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "final",
+                  "prerace"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Source"
+          },
+          "top3_cumulative": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top3 Cumulative"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_market_odds",
+                  "partial_market_odds"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "RaceDispersion",
+        "type": "object"
+      },
+      "RaceDispersionDelta": {
+        "description": "Feature 066 axis A: calibrated-model-p concentration relative to the market's. DEFERRED —\nthe honest delta needs a pre-computed 048 two_gamma calibrator surfaced to this read path (the\nserved win p is isotonic- but NOT two_gamma-calibrated, so using it raw would reintroduce the\n047 favourite tail-compression bias). Currently always null; shipped as a typed placeholder.",
+        "properties": {
+          "direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "model_more_open",
+                  "model_more_firm",
+                  "similar"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "normalized_entropy_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Entropy Delta"
+          }
+        },
+        "title": "RaceDispersionDelta",
+        "type": "object"
+      },
+      "RaceDivergence": {
+        "description": "Feature 066 axis B: race-level summary of where model p and market q DISAGREE — the material\nfor a human's favourite-vs-longshot judgement. NEVER says the model is right (047: q predicts\nbetter) — it only points at the disagreement (040 discipline). Suppressed (available=false, all\nnull) when p/q populations differ (canonical_consistent=false) or q is missing. The per-horse\n040 divergence_band is unchanged and lives on HorsePrediction.",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "favorite_direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "model_higher",
+                  "model_lower",
+                  "similar"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Direction"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "rank_agreement": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Agreement"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "underrated_longshots": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/UnderratedLongshot"
+            },
+            "title": "Underrated Longshots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "RaceDivergence",
         "type": "object"
       },
       "RaceSummary": {
@@ -2737,6 +2995,47 @@
           }
         },
         "title": "ShadowLogResponse",
+        "type": "object"
+      },
+      "UnderratedLongshot": {
+        "description": "Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT rank\ntop 3 (popularity_rank > 3). A NEUTRAL FACT (\"model and market disagree here\"), NOT a buy call.",
+        "properties": {
+          "horse_number": {
+            "title": "Horse Number",
+            "type": "integer"
+          },
+          "p": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P"
+          },
+          "popularity_rank": {
+            "title": "Popularity Rank",
+            "type": "integer"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q"
+          }
+        },
+        "required": [
+          "horse_number",
+          "popularity_rank"
+        ],
+        "title": "UnderratedLongshot",
         "type": "object"
       },
       "ValidationError": {

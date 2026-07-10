@@ -9,6 +9,8 @@ import { JointPanel } from "../components/JointPanel";
 import { ModelSelector } from "../components/ModelSelector";
 import { OddsPanel } from "../components/OddsPanel";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
+import { RaceDispersionPanel } from "../components/RaceDispersionPanel";
+import { RaceDivergenceSummary } from "../components/RaceDivergenceSummary";
 import { PredictButton } from "../components/PredictButton";
 import { RecommendButton } from "../components/RecommendButton";
 import { RecommendationPanel } from "../components/RecommendationPanel";
@@ -109,6 +111,10 @@ export function RaceDetailPage() {
                 predQuery.error && <ErrorView error={predQuery.error} />
               )}
               {pred?.run && <RunAuditView run={pred.run} />}
+              {/* Feature 066 axis A: race-level 荒れ度 readout (market-q dispersion, display-only). */}
+              {hasPreds && <RaceDispersionPanel dispersion={pred?.race_dispersion} />}
+              {/* Feature 066 axis B: neutral model-vs-market divergence summary (人気/穴の材料). */}
+              {hasPreds && <RaceDivergenceSummary divergence={pred?.race_divergence} />}
               {/* 予測なし → 空の列を並べず生成導線を示す(read-onlyの表示は永続データのみ) */}
               {predQuery.isSuccess && !hasPreds && (
                 <p className="state state--empty" data-testid="no-predictions-cta">
