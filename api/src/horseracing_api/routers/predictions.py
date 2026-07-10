@@ -17,6 +17,7 @@ from horseracing_probability.engine import joint_probabilities
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
+from ..dispersion import build_race_dispersion, build_race_divergence, load_boundary
 from ..queries import (
     available_models_for_race,
     get_race,
@@ -143,13 +144,31 @@ def predictions(
         )
         for m in available_models_for_race(session, race_id)
     ]
+    odds_as_of = win_odds_as_of(session, race_id)
+    odds_source = "final" if race_has_results(session, race_id) else "prerace"
+    # Feature 066 axis A: race-level dispersion from market q on the SAME canonical field. Band from
+    # a frozen boundary artifact (omitted when absent, F8); raw numbers always shown when q covers
+    # the field. q missing/partial → unavailable, NO fallback to model p.
+    race_dispersion = build_race_dispersion(
+        qmap=qmap, p_numbers=set(pmap),
+        odds_as_of=odds_as_of, odds_source=odds_source,
+        boundary=load_boundary(),
+    )
+    # Feature 066 axis B: neutral p-vs-q divergence summary (suppressed when canonical_consistent
+    # is false / q missing). model_version records which selected model's p is compared (057).
+    race_divergence = build_race_divergence(
+        pmap=pmap, qmap=qmap, canonical_consistent=canonical_consistent,
+        model_version=run.model_version,
+    )
     resp = PredictionResponse(
         race_id=race_id, run=audit, horses=horses,
         market_prob_source="win_odds_vote_share",
         canonical_consistent=canonical_consistent,
-        odds_as_of=win_odds_as_of(session, race_id),
-        odds_source=("final" if race_has_results(session, race_id) else "prerace"),
+        odds_as_of=odds_as_of,
+        odds_source=odds_source,
         available_models=available,
+        race_dispersion=race_dispersion,
+        race_divergence=race_divergence,
     )
 
     if bet_type is None:

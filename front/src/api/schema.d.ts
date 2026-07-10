@@ -945,6 +945,8 @@ export interface components {
             odds_as_of?: string | null;
             /** Odds Source */
             odds_source?: ("final" | "prerace") | null;
+            race_dispersion?: components["schemas"]["RaceDispersion"] | null;
+            race_divergence?: components["schemas"]["RaceDivergence"] | null;
             /** Race Id */
             race_id: string;
             run?: components["schemas"]["RunAudit"] | null;
@@ -976,6 +978,79 @@ export interface components {
             track_type?: string | null;
             /** Venue Code */
             venue_code?: string | null;
+        };
+        /**
+         * RaceDispersion
+         * @description Feature 066 axis A: race-level decision-support readout of how OPEN (chaotic) the race is,
+         *     summarised from the MARKET vote-share q on the canonical field. NOT a new edge — a read-time
+         *     function of existing q. q is market-derived pseudo/display data (is_pseudo), never a true prob,
+         *     never a model feature. band from FROZEN quintile edges (results never consulted); raw numbers
+         *     shown beside it (favourite win prob / top-3 share / normalised entropy). q missing → available
+         *     false, band/numbers null, NO fallback to model p.
+         */
+        RaceDispersion: {
+            /** Available */
+            available: boolean;
+            /** Band */
+            band?: ("firm" | "somewhat_firm" | "standard" | "somewhat_open" | "open") | null;
+            /** Boundary Version */
+            boundary_version?: string | null;
+            /** Favorite Win Prob */
+            favorite_win_prob?: number | null;
+            /**
+             * Is Pseudo
+             * @default true
+             */
+            is_pseudo: boolean;
+            model_delta?: components["schemas"]["RaceDispersionDelta"] | null;
+            /** Normalized Entropy */
+            normalized_entropy?: number | null;
+            /** Odds As Of */
+            odds_as_of?: string | null;
+            /** Odds Source */
+            odds_source?: ("final" | "prerace") | null;
+            /** Top3 Cumulative */
+            top3_cumulative?: number | null;
+            /** Unavailable Reason */
+            unavailable_reason?: ("no_market_odds" | "partial_market_odds") | null;
+        };
+        /**
+         * RaceDispersionDelta
+         * @description Feature 066 axis A: calibrated-model-p concentration relative to the market's. DEFERRED —
+         *     the honest delta needs a pre-computed 048 two_gamma calibrator surfaced to this read path (the
+         *     served win p is isotonic- but NOT two_gamma-calibrated, so using it raw would reintroduce the
+         *     047 favourite tail-compression bias). Currently always null; shipped as a typed placeholder.
+         */
+        RaceDispersionDelta: {
+            /** Direction */
+            direction?: ("model_more_open" | "model_more_firm" | "similar") | null;
+            /** Normalized Entropy Delta */
+            normalized_entropy_delta?: number | null;
+        };
+        /**
+         * RaceDivergence
+         * @description Feature 066 axis B: race-level summary of where model p and market q DISAGREE — the material
+         *     for a human's favourite-vs-longshot judgement. NEVER says the model is right (047: q predicts
+         *     better) — it only points at the disagreement (040 discipline). Suppressed (available=false, all
+         *     null) when p/q populations differ (canonical_consistent=false) or q is missing. The per-horse
+         *     040 divergence_band is unchanged and lives on HorsePrediction.
+         */
+        RaceDivergence: {
+            /** Available */
+            available: boolean;
+            /** Favorite Direction */
+            favorite_direction?: ("model_higher" | "model_lower" | "similar") | null;
+            /** Model Version */
+            model_version?: string | null;
+            /** Rank Agreement */
+            rank_agreement?: number | null;
+            /** Summary */
+            summary?: string | null;
+            /**
+             * Underrated Longshots
+             * @default []
+             */
+            underrated_longshots: components["schemas"]["UnderratedLongshot"][];
         };
         /** RaceSummary */
         RaceSummary: {
@@ -1216,6 +1291,21 @@ export interface components {
              * @default 0
              */
             weak_pretime: number;
+        };
+        /**
+         * UnderratedLongshot
+         * @description Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT rank
+         *     top 3 (popularity_rank > 3). A NEUTRAL FACT ("model and market disagree here"), NOT a buy call.
+         */
+        UnderratedLongshot: {
+            /** Horse Number */
+            horse_number: number;
+            /** P */
+            p?: number | null;
+            /** Popularity Rank */
+            popularity_rank: number;
+            /** Q */
+            q?: number | null;
         };
         /** ValidationError */
         ValidationError: {

@@ -188,6 +188,63 @@ class HorsePrediction(BaseModel):
     divergence: Literal["market_higher", "model_higher", "similar"] | None = None
 
 
+class RaceDispersionDelta(BaseModel):
+    """Feature 066 axis A: calibrated-model-p concentration relative to the market's. DEFERRED —
+    the honest delta needs a pre-computed 048 two_gamma calibrator surfaced to this read path (the
+    served win p is isotonic- but NOT two_gamma-calibrated, so using it raw would reintroduce the
+    047 favourite tail-compression bias). Currently always null; shipped as a typed placeholder."""
+
+    normalized_entropy_delta: float | None = None
+    direction: Literal["model_more_open", "model_more_firm", "similar"] | None = None
+
+
+class RaceDispersion(BaseModel):
+    """Feature 066 axis A: race-level decision-support readout of how OPEN (chaotic) the race is,
+    summarised from the MARKET vote-share q on the canonical field. NOT a new edge — a read-time
+    function of existing q. q is market-derived pseudo/display data (is_pseudo), never a true prob,
+    never a model feature. band from FROZEN quintile edges (results never consulted); raw numbers
+    shown beside it (favourite win prob / top-3 share / normalised entropy). q missing → available
+    false, band/numbers null, NO fallback to model p."""
+
+    available: bool
+    unavailable_reason: Literal["no_market_odds", "partial_market_odds"] | None = None
+    band: Literal["firm", "somewhat_firm", "standard", "somewhat_open", "open"] | None = None
+    normalized_entropy: float | None = None
+    favorite_win_prob: float | None = None
+    top3_cumulative: float | None = None
+    model_delta: RaceDispersionDelta | None = None
+    # odds provenance mirrors 021 (final=closing-leaning / prerace); is_pseudo drives front badge.
+    odds_as_of: datetime.datetime | None = None
+    odds_source: Literal["final", "prerace"] | None = None
+    is_pseudo: bool = True
+    boundary_version: str | None = None  # null when no boundary artifact loaded (F8)
+
+
+class UnderratedLongshot(BaseModel):
+    """Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT
+    rank top 3 (popularity_rank > 3). A NEUTRAL FACT (model/market disagree), NOT a buy call."""
+
+    horse_number: int
+    popularity_rank: int
+    p: float | None = None
+    q: float | None = None
+
+
+class RaceDivergence(BaseModel):
+    """Feature 066 axis B: race-level summary of where model p and market q DISAGREE — the material
+    for a human's favourite-vs-longshot judgement. NEVER says the model is right (047: q predicts
+    better) — it only points at the disagreement (040 discipline). Suppressed (available=false, all
+    null) when p/q populations differ (canonical_consistent=false) or q is missing. The per-horse
+    040 divergence_band is unchanged and lives on HorsePrediction."""
+
+    available: bool
+    summary: str | None = None
+    favorite_direction: Literal["model_higher", "model_lower", "similar"] | None = None
+    underrated_longshots: list[UnderratedLongshot] = []
+    rank_agreement: float | None = None
+    model_version: str | None = None  # 057: which selected model's p is being compared
+
+
 class JointEntry(BaseModel):
     selection: list[int]
     prob: float
@@ -223,6 +280,11 @@ class PredictionResponse(BaseModel):
     # Feature 057: models with a persisted run for this race (deterministic order: active-first →
     # created_at DESC → model_version). Empty = no prediction yet. Additive field (backward compat).
     available_models: list[AvailableModel] = []
+    # Feature 066 axis A: race-level dispersion (how open the race is) from market q. Additive,
+    # nullable. Null only when there is no run at all (typed-empty response).
+    race_dispersion: RaceDispersion | None = None
+    # Feature 066 axis B: race-level model-vs-market divergence summary (favourite/longshot info).
+    race_divergence: RaceDivergence | None = None
 
 
 # --- odds (real vs estimated kept in SEPARATE fields) -----------------------

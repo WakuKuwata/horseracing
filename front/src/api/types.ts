@@ -10,6 +10,9 @@ export type HorsePrediction = S["HorsePrediction"];
 // Feature 057: a selectable model for the race-detail model switcher
 export type AvailableModel = S["AvailableModel"];
 export type JointEntry = S["JointEntry"];
+// Feature 066: race-level dispersion (荒れ度) + p/q divergence readout
+export type RaceDispersion = S["RaceDispersion"];
+export type RaceDivergence = S["RaceDivergence"];
 export type RunAudit = S["RunAudit"];
 export type OddsResponse = S["OddsResponse"];
 export type WinOddsRow = S["WinOddsRow"];
