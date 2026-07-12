@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+from pathlib import Path
 
 from horseracing_db.session import create_db_engine
 from sqlalchemy.orm import Session
@@ -12,7 +13,11 @@ from .builder import build_feature_matrix
 from .loader import load_frames
 from .materialize import write_materialized
 
-_DEFAULT_PARQUET = "artifacts/features.parquet"
+# Repo-root-anchored default so it does NOT depend on the CWD the CLI is invoked from
+# (cli.py -> horseracing_features -> src -> features -> repo root). A bare relative path
+# silently wrote to <cwd>/artifacts and diverged from the serving default (../artifacts).
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_PARQUET = str(_REPO_ROOT / "artifacts" / "features.parquet")
 
 
 def _parse_date(s: str) -> datetime.date:
@@ -54,7 +59,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.end is not None:
         kwargs["end_date"] = args.end
     if args.use_materialized:
-        from pathlib import Path
         kwargs["use_materialized"] = True
         kwargs["materialized_path"] = Path(args.materialized)
     with Session(engine) as session:
@@ -64,3 +68,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote matrix {len(matrix)} rows -> {args.out}")
     print(f"rows={len(matrix)} cols={len(matrix.columns)}")
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

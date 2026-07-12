@@ -131,6 +131,20 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--min-interval", type=float, default=1.0)
     sl.add_argument("--database-url", default=None)
 
+    # Feature 067: identity resolution + physical split repair (operator, idempotent, dry-run)
+    ri = sub.add_parser("resolve-identities",
+                        help="promote UNMAPPED netkeiba id_mappings to MAPPED/CONFLICT by identity")
+    ri.add_argument("--entity", choices=["horse", "jockey", "trainer", "all"], default="all")
+    ri.add_argument("--dry-run", action="store_true")
+    ri.add_argument("--database-url", default=None)
+
+    rs = sub.add_parser("repair-splits",
+                        help="physically re-key MAPPED surrogates to canonical + delete orphans")
+    rs.add_argument("--entity", choices=["horse", "jockey", "trainer", "all"], default="all")
+    rs.add_argument("--dry-run", action="store_true")
+    rs.add_argument("--limit", type=int, default=None, help="max surrogate->canonical pairs")
+    rs.add_argument("--database-url", default=None)
+
     cap = sub.add_parser("capture-fixture", help="one-off: save a real netkeiba page as a fixture")
     cap.add_argument("--kind", required=True, choices=list(_CAPTURE))
     cap.add_argument("--race-id", help="JRA-VAN 12-digit race_id (entries/results/odds)")
@@ -154,6 +168,33 @@ def main(argv: list[str] | None = None) -> int:
                 print(rid)
         print(f"# {len(listing.race_ids)} races for {listing.kaisai_date}")
         return 0
+
+    if args.command == "resolve-identities":
+        from .repair import resolve_identities
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            rep = resolve_identities(session, entity=args.entity, dry_run=args.dry_run)
+        for ent in sorted(rep.resolved):
+            print(f"{ent}: resolved={rep.resolved.get(ent, 0)} "
+                  f"conflict={rep.conflicts.get(ent, 0)} "
+                  f"insufficient={rep.insufficient.get(ent, 0)}")
+            for ex in rep.examples.get(ent, []):
+                print(f"    {ex}")
+        print(f"# resolve-identities dry_run={rep.dry_run}")
+        return 0
+
+    if args.command == "repair-splits":
+        from .repair import repair_splits
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            rep = repair_splits(session, entity=args.entity, dry_run=args.dry_run, limit=args.limit)
+        print(f"pairs_processed={rep.pairs_processed} affected_from={rep.affected_from}")
+        print(f"rekeyed_rows={rep.rekeyed_rows}")
+        print(f"orphans_deleted={rep.orphans_deleted} collisions={rep.collisions} held={rep.held}")
+        if rep.errors:
+            print(f"errors({len(rep.errors)}): {rep.errors[:5]}")
+        print(f"# repair-splits dry_run={rep.dry_run}")
+        return 0 if not rep.errors else 1
 
     if args.command == "scrape-laps":
         fetcher = _make_fetcher(args.min_interval, args.cache_dir)

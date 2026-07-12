@@ -102,9 +102,17 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
         "grade": scraped.race.grade, "post_time": scraped.race.post_time,
     }, ("race_id",))
 
+    # Feature 067: entries carry the horse/jockey/trainer NAME (and horse AGE), so identity
+    # evidence is available here — resolve_entity can promote to canonical instead of minting a new
+    # surrogate. 馬齢 = calendar year − birth_year (JRA 満年齢, since 2001) → birth_year derivation.
+    race_year = scraped.race.race_date.year if scraped.race.race_date else None
     for h in scraped.horses:
         c.processed += 1
-        horse_id = resolve_entity(session, entity_type="horse", netkeiba_id=h.netkeiba_horse_id)
+        birth_year = (race_year - h.age) if (race_year is not None and h.age is not None) else None
+        horse_id = resolve_entity(
+            session, entity_type="horse", netkeiba_id=h.netkeiba_horse_id,
+            candidate_name=h.horse_name, candidate_birth_year=birth_year,
+        )
         # never clobber an existing (JRA-VAN) entity; new surrogate horses get inserted
         horse_vals = {"horse_id": horse_id, "horse_name": h.horse_name}
         if horse_id.startswith("nk:"):
@@ -114,12 +122,14 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
         jockey_id = trainer_id = None
         if h.netkeiba_jockey_id:
             jockey_id = resolve_entity(session, entity_type="jockey",
-                                       netkeiba_id=h.netkeiba_jockey_id)
+                                       netkeiba_id=h.netkeiba_jockey_id,
+                                       candidate_name=h.jockey_name)
             _insert_ignore(session, Jockey,
                            {"jockey_id": jockey_id, "jockey_name": h.jockey_name}, ("jockey_id",))
         if h.netkeiba_trainer_id:
             trainer_id = resolve_entity(session, entity_type="trainer",
-                                        netkeiba_id=h.netkeiba_trainer_id)
+                                        netkeiba_id=h.netkeiba_trainer_id,
+                                        candidate_name=h.trainer_name)
             _insert_ignore(session, Trainer,
                            {"trainer_id": trainer_id, "trainer_name": h.trainer_name},
                            ("trainer_id",))
