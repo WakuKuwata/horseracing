@@ -23,7 +23,7 @@ from pathlib import Path
 
 import httpx
 from horseracing_db.enums import JobStatus
-from horseracing_db.models import IngestionJob, RaceResult
+from horseracing_db.models import IngestionJob, ModelVersion, PredictionRun, RaceResult
 from horseracing_scrape.fetch import HttpFetcher
 from horseracing_scrape.pipeline import (
     discover_races,
@@ -36,7 +36,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .deps import owner_database_url
-from .enqueue import enqueue_race, enqueue_recommend
+from .enqueue import enqueue_predict, enqueue_race, enqueue_recommend
 
 _USER_AGENT = "horseracing-ops/0.1 (personal use; contact via repo)"
 
@@ -86,12 +86,39 @@ def _terminal(*, entries_failed: bool, any_failed: bool, errors: int, written: i
     return JobStatus.SUCCEEDED
 
 
+def _has_active_prediction(session: Session, race_id: str) -> bool:
+    """True if ``race_id`` already has a prediction_run for the currently ACTIVE model — the same
+    run the read API (014 select_prediction_run) would surface. Used to precompute predictions
+    ONCE per race (below) without re-predicting on every odds refresh. Pure DB read (no ML import —
+    boundary II/VI): ops resolves the active model straight from model_versions."""
+    active = session.scalars(
+        select(ModelVersion.model_version).where(ModelVersion.adoption_status == "active")
+    ).first()
+    if active is None:  # no active model → nothing meaningful to precompute; leave it to a click
+        return True
+    return (
+        session.scalars(
+            select(PredictionRun.prediction_run_id)
+            .where(PredictionRun.race_id == race_id)
+            .where(PredictionRun.model_version == active)
+        ).first()
+        is not None
+    )
+
+
 def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:
     """Full refresh of one race: entries + results + odds. Sets terminal status/counts, commits.
 
     All three run regardless of result-pending state — the scrape-layer safety rules keep it sound
     (results INSERT-only, odds fill-null-on-finished / overwrite-on-pending). A not-yet-run race has
-    no result page, so its results sub-step fails benignly and the job ends PARTIAL, not FAILED."""
+    no result page, so its results sub-step fails benignly and the job ends PARTIAL, not FAILED.
+
+    Precompute (predict-ahead): once entries land, chase them with a predict job so the race-detail
+    page reads a persisted run instead of blocking on a ~1-minute on-demand build. Only when entries
+    didn't fail AND the ACTIVE model has no run yet (so repeated odds refreshes don't re-predict);
+    predict itself is odds-independent for the default model (a market-offset model just typed-skips
+    until odds exist). Follow-up job (not in-job chaining) so enqueue_predict's in-flight dedup
+    converges with a concurrent manual 予測生成. The predict job then chains recommend as usual."""
     fetcher = fetcher or make_fetcher()
     race_id = job.scope_value or ""
 
@@ -113,12 +140,20 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     job.skipped_rows = sum(s.skipped for s in summaries)
     job.error_count = errors
     job.completed_at = _now()
-    job.summary = {
+    summary = {
         "kind": "entries+results+odds",
         "written": written,
         "calls": [{"job_type": s.job_type, "status": s.status, "written": s.written,
                    "skipped": s.skipped, "errors": s.errors} for s in summaries],
     }
+    # precompute predictions once entries exist (see docstring). enqueue in THIS transaction, then
+    # assign summary ONCE (a later in-place mutation of a flushed dict is invisible to JSONB change
+    # tracking — same pattern as run_predict's recommend follow-up).
+    if entries.status != JobStatus.FAILED and not _has_active_prediction(session, race_id):
+        followup, reused = enqueue_predict(session, race_id)
+        if not reused:
+            summary["predict_job_id"] = str(followup.ingestion_job_id)
+    job.summary = summary
     session.add(job)
     session.commit()
     return job
