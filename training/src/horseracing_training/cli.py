@@ -648,11 +648,26 @@ def main(argv: list[str] | None = None) -> int:
     dbd.add_argument("--diagnose-to", dest="diagnose_to", type=_parse_date, default=None)
     dbd.add_argument("--database-url", default=None)
 
+    # Feature 066 model_delta: fit + write the FROZEN two_gamma p-calibrator artifact (048 machinery
+    # reuse) for the read-time calibrated-p vs q delta. Display-only; never a model feature.
+    dpc = sub.add_parser("dispersion-pcal",
+                         help="066: fit frozen two_gamma p-calibrator for model_delta")
+    dpc.add_argument("--from", dest="fit_from", type=_parse_date, required=True)
+    dpc.add_argument("--to", dest="fit_to", type=_parse_date, required=True)
+    dpc.add_argument("--version", default="pcal-v1", help="artifact/logic version token")
+    dpc.add_argument("--out", default="artifacts/dispersion_bands/pcal-v1.json",
+                     help="write the p-calibrator artifact JSON here")
+    dpc.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     if args.command == "dispersion-bands":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _dispersion_bands(session, args)
+    if args.command == "dispersion-pcal":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _dispersion_pcal(session, args)
     if args.command == "market-gate-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -736,6 +751,51 @@ def _dispersion_bands(session: Session, args) -> int:
             print(f"  {r.band:<14} {r.n:>6} {r.n_void:>5} {fl:>9} {ci:>15}"
                   f" {hp:>11} {sep:>4}")
         print("  'sep=NO' = adjacent bands not separated by CI — disclosed, not merged (047)")
+    return 0
+
+
+def _dispersion_pcal(session: Session, args) -> int:
+    """Feature 066 model_delta: fit + write the FROZEN two_gamma p-calibrator artifact.
+
+    Reuses the 048 machinery (probability.load_p_samples + fit_p_calibrator method=two_gamma) on a
+    frozen window that should sit strictly BEFORE the display/serving target (same frozen discipline
+    as the band boundary). The calibrator is just a few floats (gamma_lo/hi/pivot); the API loads it
+    read-time to show H(calibrated p) − H(q). The calibrated p is display-only — never persisted,
+    never a model feature (II). Under-sampled → identity fallback (delta from raw p)."""
+    from horseracing_eval.dispersion_bands import DispersionPCalibrator
+    from horseracing_probability.model_calibration import (
+        TWO_GAMMA_PIVOT,
+        fit_p_calibrator,
+        load_p_samples,
+    )
+
+    if args.fit_from > args.fit_to:
+        print(f"error: --from {args.fit_from} is after --to {args.fit_to}", file=sys.stderr)
+        return 2
+    samples = load_p_samples(session, date_from=args.fit_from, date_to=args.fit_to)
+    cal = fit_p_calibrator(
+        [(p, w) for (_rid, _d, p, w, _dh) in samples], method="two_gamma"
+    )
+    params = cal.params or {}
+    art = DispersionPCalibrator(
+        method=cal.method,
+        gamma_lo=float(params.get("gamma_lo", 1.0)),
+        gamma_hi=float(params.get("gamma_hi", 1.0)),
+        pivot=float(params.get("pivot", TWO_GAMMA_PIVOT)),
+        fit_from=args.fit_from.isoformat(),
+        fit_to=args.fit_to.isoformat(),
+        as_of=args.fit_to.isoformat(),
+        version=args.version,
+        n_races=cal.n_races,
+    )
+    path = art.write(args.out)
+    print(f"dispersion-pcal: method={art.method} n_races={art.n_races} "
+          f"[{art.fit_from}..{art.fit_to}]")
+    print(f"  gamma_lo={art.gamma_lo:.5f} gamma_hi={art.gamma_hi:.5f} pivot={art.pivot}")
+    print(f"  version={art.version}  -> {path}")
+    if cal.method != "two_gamma":
+        print("  NOTE: under-sampled -> identity fallback; model_delta will use raw p.")
+    print("  NOTE: display-only calibrator; the calibrated p is never a model feature (II).")
     return 0
 
 

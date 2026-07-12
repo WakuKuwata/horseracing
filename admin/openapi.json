@@ -394,6 +394,78 @@
         "title": "ExplanationItem",
         "type": "object"
       },
+      "FavoriteBaseline": {
+        "description": "Feature 064: the market baseline (flat-bet the favorite) realised for THIS race. Honest\nreference line — NOT a profit strategy. All-null when unsettled / no priced horse.",
+        "properties": {
+          "dead_heat": {
+            "default": false,
+            "title": "Dead Heat",
+            "type": "boolean"
+          },
+          "hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds"
+          },
+          "realized_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Return"
+          },
+          "realized_roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Roi"
+          },
+          "settled": {
+            "default": false,
+            "title": "Settled",
+            "type": "boolean"
+          }
+        },
+        "title": "FavoriteBaseline",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1902,6 +1974,26 @@
             ],
             "title": "Odds Source"
           },
+          "race_dispersion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RaceDispersion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "race_divergence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RaceDivergence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "race_id": {
             "title": "Race Id",
             "type": "string"
@@ -2037,6 +2129,255 @@
           "horses"
         ],
         "title": "RaceDetail",
+        "type": "object"
+      },
+      "RaceDispersion": {
+        "description": "Feature 066 axis A: race-level decision-support readout of how OPEN (chaotic) the race is,\nsummarised from the MARKET vote-share q on the canonical field. NOT a new edge — a read-time\nfunction of existing q. q is market-derived pseudo/display data (is_pseudo), never a true prob,\nnever a model feature. band from FROZEN quintile edges (results never consulted); raw numbers\nshown beside it (favourite win prob / top-3 share / normalised entropy). q missing → available\nfalse, band/numbers null, NO fallback to model p.",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "band": {
+            "anyOf": [
+              {
+                "enum": [
+                  "firm",
+                  "somewhat_firm",
+                  "standard",
+                  "somewhat_open",
+                  "open"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Band"
+          },
+          "boundary_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boundary Version"
+          },
+          "favorite_win_prob": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Win Prob"
+          },
+          "is_pseudo": {
+            "default": true,
+            "title": "Is Pseudo",
+            "type": "boolean"
+          },
+          "model_delta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RaceDispersionDelta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "normalized_entropy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Entropy"
+          },
+          "odds_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds As Of"
+          },
+          "odds_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "final",
+                  "prerace"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Source"
+          },
+          "top3_cumulative": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top3 Cumulative"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_market_odds",
+                  "partial_market_odds"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "RaceDispersion",
+        "type": "object"
+      },
+      "RaceDispersionDelta": {
+        "description": "Feature 066 axis A: calibrated-model-p concentration relative to the market's — the neutral\nfact ``H(calibrated p) − H(q)``. Computed at read time when a FROZEN 048 two_gamma calibrator\nis loaded (``DISPERSION_PCAL_PATH``); the calibrator removes the 047 favourite tail-compression\nbias that raw served p would carry. direction is a neutral bucket (model sees the race as open /\nmore firm / similar vs the market) — NO buy/edge/value semantics. Null when no calibrator is\nloaded or the field is degenerate. The calibrated p is display-only, never a model feature.",
+        "properties": {
+          "calibrator_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibrator Version"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "model_more_open",
+                  "model_more_firm",
+                  "similar"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "normalized_entropy_delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Entropy Delta"
+          }
+        },
+        "title": "RaceDispersionDelta",
+        "type": "object"
+      },
+      "RaceDivergence": {
+        "description": "Feature 066 axis B: race-level summary of where model p and market q DISAGREE — the material\nfor a human's favourite-vs-longshot judgement. NEVER says the model is right (047: q predicts\nbetter) — it only points at the disagreement (040 discipline). Suppressed (available=false, all\nnull) when p/q populations differ (canonical_consistent=false) or q is missing. The per-horse\n040 divergence_band is unchanged and lives on HorsePrediction.",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "favorite_direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "model_higher",
+                  "model_lower",
+                  "similar"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Direction"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "rank_agreement": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Agreement"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "underrated_longshots": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/UnderratedLongshot"
+            },
+            "title": "Underrated Longshots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "RaceDivergence",
         "type": "object"
       },
       "RaceSummary": {
@@ -2216,6 +2557,16 @@
       },
       "RecommendationResponse": {
         "properties": {
+          "favorite_baseline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FavoriteBaseline"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "items": {
             "default": [],
             "items": {
@@ -2226,6 +2577,11 @@
           },
           "race_id": {
             "title": "Race Id",
+            "type": "string"
+          },
+          "win_policy_status": {
+            "default": "no_run",
+            "title": "Win Policy Status",
             "type": "string"
           }
         },
@@ -2532,6 +2888,165 @@
           "mean_q"
         ],
         "title": "SegmentEdgeRow",
+        "type": "object"
+      },
+      "ShadowLogMonth": {
+        "properties": {
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "n_settled": {
+            "title": "N Settled",
+            "type": "integer"
+          },
+          "recovery": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery"
+          }
+        },
+        "required": [
+          "month",
+          "n_settled"
+        ],
+        "title": "ShadowLogMonth",
+        "type": "object"
+      },
+      "ShadowLogResponse": {
+        "description": "Feature 065: prospective shadow-betting log roll-up (real bettable frozen odds; prospective;\nNOT closing; NOT a profit claim). Empty (n_prospective=0) ⇒ instrument still filling.",
+        "properties": {
+          "by_month": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ShadowLogMonth"
+            },
+            "title": "By Month",
+            "type": "array"
+          },
+          "first_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First At"
+          },
+          "hit_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Rate"
+          },
+          "last_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last At"
+          },
+          "n_hit": {
+            "default": 0,
+            "title": "N Hit",
+            "type": "integer"
+          },
+          "n_pending": {
+            "default": 0,
+            "title": "N Pending",
+            "type": "integer"
+          },
+          "n_prospective": {
+            "default": 0,
+            "title": "N Prospective",
+            "type": "integer"
+          },
+          "n_settled": {
+            "default": 0,
+            "title": "N Settled",
+            "type": "integer"
+          },
+          "n_void": {
+            "default": 0,
+            "title": "N Void",
+            "type": "integer"
+          },
+          "recovery_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Rate"
+          },
+          "weak_pretime": {
+            "default": 0,
+            "title": "Weak Pretime",
+            "type": "integer"
+          }
+        },
+        "title": "ShadowLogResponse",
+        "type": "object"
+      },
+      "UnderratedLongshot": {
+        "description": "Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT\nrank top 3 (popularity_rank > 3). A NEUTRAL FACT (model/market disagree), NOT a buy call.",
+        "properties": {
+          "horse_number": {
+            "title": "Horse Number",
+            "type": "integer"
+          },
+          "p": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P"
+          },
+          "popularity_rank": {
+            "title": "Popularity Rank",
+            "type": "integer"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q"
+          }
+        },
+        "required": [
+          "horse_number",
+          "popularity_rank"
+        ],
+        "title": "UnderratedLongshot",
         "type": "object"
       },
       "ValidationError": {
@@ -3476,6 +3991,27 @@
         "summary": "Recommendations",
         "tags": [
           "recommendations"
+        ]
+      }
+    },
+    "/api/v1/shadow-log": {
+      "get": {
+        "operationId": "shadow_log_api_v1_shadow_log_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShadowLogResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Shadow Log",
+        "tags": [
+          "shadow-log"
         ]
       }
     }

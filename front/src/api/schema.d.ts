@@ -1016,12 +1016,16 @@ export interface components {
         };
         /**
          * RaceDispersionDelta
-         * @description Feature 066 axis A: calibrated-model-p concentration relative to the market's. DEFERRED —
-         *     the honest delta needs a pre-computed 048 two_gamma calibrator surfaced to this read path (the
-         *     served win p is isotonic- but NOT two_gamma-calibrated, so using it raw would reintroduce the
-         *     047 favourite tail-compression bias). Currently always null; shipped as a typed placeholder.
+         * @description Feature 066 axis A: calibrated-model-p concentration relative to the market's — the neutral
+         *     fact ``H(calibrated p) − H(q)``. Computed at read time when a FROZEN 048 two_gamma calibrator
+         *     is loaded (``DISPERSION_PCAL_PATH``); the calibrator removes the 047 favourite tail-compression
+         *     bias that raw served p would carry. direction is a neutral bucket (model sees the race as open /
+         *     more firm / similar vs the market) — NO buy/edge/value semantics. Null when no calibrator is
+         *     loaded or the field is degenerate. The calibrated p is display-only, never a model feature.
          */
         RaceDispersionDelta: {
+            /** Calibrator Version */
+            calibrator_version?: string | null;
             /** Direction */
             direction?: ("model_more_open" | "model_more_firm" | "similar") | null;
             /** Normalized Entropy Delta */
@@ -1294,8 +1298,8 @@ export interface components {
         };
         /**
          * UnderratedLongshot
-         * @description Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT rank
-         *     top 3 (popularity_rank > 3). A NEUTRAL FACT ("model and market disagree here"), NOT a buy call.
+         * @description Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT
+         *     rank top 3 (popularity_rank > 3). A NEUTRAL FACT (model/market disagree), NOT a buy call.
          */
         UnderratedLongshot: {
             /** Horse Number */

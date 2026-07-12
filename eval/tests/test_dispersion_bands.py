@@ -11,7 +11,10 @@ import math
 import pytest
 
 from horseracing_eval.dispersion_bands import (
+    DELTA_EPS,
+    DispersionPCalibrator,
     assign_band,
+    entropy_delta_direction,
     favorite_win_prob,
     fit_quintile_edges,
     normalized_entropy,
@@ -75,3 +78,47 @@ def test_entropy_matches_manual_formula():
     q = [0.5, 0.3, 0.2]
     manual = -sum(v * math.log(v) for v in q) / math.log(3)
     assert normalized_entropy(q) == pytest.approx(manual)
+
+
+# --- Feature 066 model_delta numerics -----------------------------------------
+
+
+def test_entropy_delta_direction_model_more_open():
+    delta, direction = entropy_delta_direction(0.95, 0.80)
+    assert delta == pytest.approx(0.15)
+    assert direction == "model_more_open"
+
+
+def test_entropy_delta_direction_model_more_firm():
+    delta, direction = entropy_delta_direction(0.60, 0.90)
+    assert delta == pytest.approx(-0.30)
+    assert direction == "model_more_firm"
+
+
+def test_entropy_delta_direction_similar_within_eps():
+    # |ΔH| within the pre-registered dead-band → similar (no false disagreement).
+    delta, direction = entropy_delta_direction(0.80 + DELTA_EPS / 2, 0.80)
+    assert direction == "similar"
+    assert abs(delta) <= DELTA_EPS
+
+
+def test_entropy_delta_direction_none_when_degenerate():
+    assert entropy_delta_direction(None, 0.8) == (None, None)
+    assert entropy_delta_direction(0.8, None) == (None, None)
+
+
+def test_dispersion_pcalibrator_json_roundtrip():
+    art = DispersionPCalibrator(
+        method="two_gamma", gamma_lo=1.63, gamma_hi=0.47, pivot=0.15,
+        fit_from="2024-01-01", fit_to="2024-12-31", as_of="2024-12-31",
+        version="pcal-v1", n_races=3200,
+    )
+    import json
+
+    data = json.loads(art.to_json())
+    assert data["method"] == "two_gamma"
+    assert data["gamma_lo"] == pytest.approx(1.63)
+    assert data["gamma_hi"] == pytest.approx(0.47)
+    assert data["pivot"] == pytest.approx(0.15)
+    assert data["version"] == "pcal-v1" and data["n_races"] == 3200
+    assert data["as_of"] == "2024-12-31"

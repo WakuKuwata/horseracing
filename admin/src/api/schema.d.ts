@@ -282,6 +282,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/shadow-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shadow Log */
+        get: operations["shadow_log_api_v1_shadow_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -470,6 +487,33 @@ export interface components {
             feature: string;
             /** Value */
             value?: number | string | null;
+        };
+        /**
+         * FavoriteBaseline
+         * @description Feature 064: the market baseline (flat-bet the favorite) realised for THIS race. Honest
+         *     reference line — NOT a profit strategy. All-null when unsettled / no priced horse.
+         */
+        FavoriteBaseline: {
+            /**
+             * Dead Heat
+             * @default false
+             */
+            dead_heat: boolean;
+            /** Hit */
+            hit?: boolean | null;
+            /** Horse Number */
+            horse_number?: number | null;
+            /** Odds */
+            odds?: number | null;
+            /** Realized Return */
+            realized_return?: number | null;
+            /** Realized Roi */
+            realized_roi?: number | null;
+            /**
+             * Settled
+             * @default false
+             */
+            settled: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -901,6 +945,8 @@ export interface components {
             odds_as_of?: string | null;
             /** Odds Source */
             odds_source?: ("final" | "prerace") | null;
+            race_dispersion?: components["schemas"]["RaceDispersion"] | null;
+            race_divergence?: components["schemas"]["RaceDivergence"] | null;
             /** Race Id */
             race_id: string;
             run?: components["schemas"]["RunAudit"] | null;
@@ -932,6 +978,83 @@ export interface components {
             track_type?: string | null;
             /** Venue Code */
             venue_code?: string | null;
+        };
+        /**
+         * RaceDispersion
+         * @description Feature 066 axis A: race-level decision-support readout of how OPEN (chaotic) the race is,
+         *     summarised from the MARKET vote-share q on the canonical field. NOT a new edge — a read-time
+         *     function of existing q. q is market-derived pseudo/display data (is_pseudo), never a true prob,
+         *     never a model feature. band from FROZEN quintile edges (results never consulted); raw numbers
+         *     shown beside it (favourite win prob / top-3 share / normalised entropy). q missing → available
+         *     false, band/numbers null, NO fallback to model p.
+         */
+        RaceDispersion: {
+            /** Available */
+            available: boolean;
+            /** Band */
+            band?: ("firm" | "somewhat_firm" | "standard" | "somewhat_open" | "open") | null;
+            /** Boundary Version */
+            boundary_version?: string | null;
+            /** Favorite Win Prob */
+            favorite_win_prob?: number | null;
+            /**
+             * Is Pseudo
+             * @default true
+             */
+            is_pseudo: boolean;
+            model_delta?: components["schemas"]["RaceDispersionDelta"] | null;
+            /** Normalized Entropy */
+            normalized_entropy?: number | null;
+            /** Odds As Of */
+            odds_as_of?: string | null;
+            /** Odds Source */
+            odds_source?: ("final" | "prerace") | null;
+            /** Top3 Cumulative */
+            top3_cumulative?: number | null;
+            /** Unavailable Reason */
+            unavailable_reason?: ("no_market_odds" | "partial_market_odds") | null;
+        };
+        /**
+         * RaceDispersionDelta
+         * @description Feature 066 axis A: calibrated-model-p concentration relative to the market's — the neutral
+         *     fact ``H(calibrated p) − H(q)``. Computed at read time when a FROZEN 048 two_gamma calibrator
+         *     is loaded (``DISPERSION_PCAL_PATH``); the calibrator removes the 047 favourite tail-compression
+         *     bias that raw served p would carry. direction is a neutral bucket (model sees the race as open /
+         *     more firm / similar vs the market) — NO buy/edge/value semantics. Null when no calibrator is
+         *     loaded or the field is degenerate. The calibrated p is display-only, never a model feature.
+         */
+        RaceDispersionDelta: {
+            /** Calibrator Version */
+            calibrator_version?: string | null;
+            /** Direction */
+            direction?: ("model_more_open" | "model_more_firm" | "similar") | null;
+            /** Normalized Entropy Delta */
+            normalized_entropy_delta?: number | null;
+        };
+        /**
+         * RaceDivergence
+         * @description Feature 066 axis B: race-level summary of where model p and market q DISAGREE — the material
+         *     for a human's favourite-vs-longshot judgement. NEVER says the model is right (047: q predicts
+         *     better) — it only points at the disagreement (040 discipline). Suppressed (available=false, all
+         *     null) when p/q populations differ (canonical_consistent=false) or q is missing. The per-horse
+         *     040 divergence_band is unchanged and lives on HorsePrediction.
+         */
+        RaceDivergence: {
+            /** Available */
+            available: boolean;
+            /** Favorite Direction */
+            favorite_direction?: ("model_higher" | "model_lower" | "similar") | null;
+            /** Model Version */
+            model_version?: string | null;
+            /** Rank Agreement */
+            rank_agreement?: number | null;
+            /** Summary */
+            summary?: string | null;
+            /**
+             * Underrated Longshots
+             * @default []
+             */
+            underrated_longshots: components["schemas"]["UnderratedLongshot"][];
         };
         /** RaceSummary */
         RaceSummary: {
@@ -986,6 +1109,7 @@ export interface components {
         };
         /** RecommendationResponse */
         RecommendationResponse: {
+            favorite_baseline?: components["schemas"]["FavoriteBaseline"] | null;
             /**
              * Items
              * @default []
@@ -993,6 +1117,11 @@ export interface components {
             items: components["schemas"]["RecommendationRow"][];
             /** Race Id */
             race_id: string;
+            /**
+             * Win Policy Status
+             * @default no_run
+             */
+            win_policy_status: string;
         };
         /** RecommendationRow */
         RecommendationRow: {
@@ -1107,6 +1236,80 @@ export interface components {
             segment: string;
             /** Win Rate */
             win_rate: number;
+        };
+        /** ShadowLogMonth */
+        ShadowLogMonth: {
+            /** Month */
+            month: string;
+            /** N Settled */
+            n_settled: number;
+            /** Recovery */
+            recovery?: number | null;
+        };
+        /**
+         * ShadowLogResponse
+         * @description Feature 065: prospective shadow-betting log roll-up (real bettable frozen odds; prospective;
+         *     NOT closing; NOT a profit claim). Empty (n_prospective=0) ⇒ instrument still filling.
+         */
+        ShadowLogResponse: {
+            /**
+             * By Month
+             * @default []
+             */
+            by_month: components["schemas"]["ShadowLogMonth"][];
+            /** First At */
+            first_at?: string | null;
+            /** Hit Rate */
+            hit_rate?: number | null;
+            /** Last At */
+            last_at?: string | null;
+            /**
+             * N Hit
+             * @default 0
+             */
+            n_hit: number;
+            /**
+             * N Pending
+             * @default 0
+             */
+            n_pending: number;
+            /**
+             * N Prospective
+             * @default 0
+             */
+            n_prospective: number;
+            /**
+             * N Settled
+             * @default 0
+             */
+            n_settled: number;
+            /**
+             * N Void
+             * @default 0
+             */
+            n_void: number;
+            /** Recovery Rate */
+            recovery_rate?: number | null;
+            /**
+             * Weak Pretime
+             * @default 0
+             */
+            weak_pretime: number;
+        };
+        /**
+         * UnderratedLongshot
+         * @description Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT
+         *     rank top 3 (popularity_rank > 3). A NEUTRAL FACT (model/market disagree), NOT a buy call.
+         */
+        UnderratedLongshot: {
+            /** Horse Number */
+            horse_number: number;
+            /** P */
+            p?: number | null;
+            /** Popularity Rank */
+            popularity_rank: number;
+            /** Q */
+            q?: number | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1666,6 +1869,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    shadow_log_api_v1_shadow_log_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShadowLogResponse"];
                 };
             };
         };

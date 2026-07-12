@@ -2265,8 +2265,19 @@
         "type": "object"
       },
       "RaceDispersionDelta": {
-        "description": "Feature 066 axis A: calibrated-model-p concentration relative to the market's. DEFERRED —\nthe honest delta needs a pre-computed 048 two_gamma calibrator surfaced to this read path (the\nserved win p is isotonic- but NOT two_gamma-calibrated, so using it raw would reintroduce the\n047 favourite tail-compression bias). Currently always null; shipped as a typed placeholder.",
+        "description": "Feature 066 axis A: calibrated-model-p concentration relative to the market's — the neutral\nfact ``H(calibrated p) − H(q)``. Computed at read time when a FROZEN 048 two_gamma calibrator\nis loaded (``DISPERSION_PCAL_PATH``); the calibrator removes the 047 favourite tail-compression\nbias that raw served p would carry. direction is a neutral bucket (model sees the race as open /\nmore firm / similar vs the market) — NO buy/edge/value semantics. Null when no calibrator is\nloaded or the field is degenerate. The calibrated p is display-only, never a model feature.",
         "properties": {
+          "calibrator_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibrator Version"
+          },
           "direction": {
             "anyOf": [
               {
@@ -2998,7 +3009,7 @@
         "type": "object"
       },
       "UnderratedLongshot": {
-        "description": "Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT rank\ntop 3 (popularity_rank > 3). A NEUTRAL FACT (\"model and market disagree here\"), NOT a buy call.",
+        "description": "Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT\nrank top 3 (popularity_rank > 3). A NEUTRAL FACT (model/market disagree), NOT a buy call.",
         "properties": {
           "horse_number": {
             "title": "Horse Number",

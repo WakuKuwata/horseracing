@@ -14,12 +14,18 @@ from pathlib import Path
 
 from horseracing_eval.dispersion_bands import (
     assign_band,
+    entropy_delta_direction,
     favorite_win_prob,
     normalized_entropy,
     top3_cumulative,
 )
+from horseracing_probability.model_calibration import (
+    TWO_GAMMA_PIVOT,
+    PCalibrator,
+    apply_p_calibrator,
+)
 
-from .schemas import RaceDispersion, RaceDivergence, UnderratedLongshot
+from .schemas import RaceDispersion, RaceDispersionDelta, RaceDivergence, UnderratedLongshot
 from .selection import divergence_band
 
 
@@ -58,26 +64,82 @@ def load_boundary(path: str | os.PathLike[str] | None = None) -> LoadedBoundary:
         return _EMPTY_BOUNDARY
 
 
+def load_p_calibrator(path: str | os.PathLike[str] | None = None) -> PCalibrator | None:
+    """Load the FROZEN two_gamma p-calibrator artifact (Feature 066 model_delta), else None.
+
+    Path resolution: explicit arg → ``DISPERSION_PCAL_PATH`` env → none. Malformed/missing fails
+    OPEN to None (model_delta is then omitted) — a missing calibrator is a benign display gap, not
+    a correctness hazard (mirrors ``load_boundary``). The calibrator is a few floats (gamma_lo/hi/
+    pivot + version); apply is read-only/pure and never touches odds/q (p⊥q)."""
+    p = path or os.environ.get("DISPERSION_PCAL_PATH")
+    if not p:
+        return None
+    try:
+        data = json.loads(Path(p).read_text())
+        method = str(data.get("method") or "two_gamma")
+        params = {
+            "gamma_lo": float(data["gamma_lo"]),
+            "gamma_hi": float(data["gamma_hi"]),
+            "pivot": float(data.get("pivot", TWO_GAMMA_PIVOT)),
+        }
+        version = str(data.get("version")) if data.get("version") is not None else ""
+        return PCalibrator(
+            method=method, params=params, train_window=None, n_races=int(data.get("n_races", 0)),
+            n_samples=int(data.get("n_races", 0)), prob_range=(0.0, 1.0), select="mle",
+            base_model_version=None, logic_version=version,
+            sufficient=(method == "two_gamma"),
+        )
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _build_model_delta(
+    pmap: dict[int, float], q_entropy: float | None, calibrator: PCalibrator | None
+) -> RaceDispersionDelta | None:
+    """H(calibrated model p) − H(q) + neutral direction, over the canonical field. None when no
+    calibrator is loaded (fail-open), or when either entropy is degenerate. The calibrated p is
+    display-only — computed at read time, returned in the response, NEVER persisted and NEVER a
+    model feature (constitution II)."""
+    if calibrator is None:
+        return None
+    try:
+        calibrated = apply_p_calibrator({str(n): pmap[n] for n in pmap}, calibrator)
+        p_entropy = normalized_entropy(list(calibrated.values()))
+    except (ValueError, ZeroDivisionError):
+        return None  # display must never break serving — omit the delta on any numeric failure
+    delta, direction = entropy_delta_direction(p_entropy, q_entropy)
+    if delta is None:
+        return None
+    return RaceDispersionDelta(
+        normalized_entropy_delta=delta,
+        direction=direction,  # type: ignore[arg-type]  # entropy_delta_direction returns the literal
+        calibrator_version=calibrator.logic_version or None,
+    )
+
+
 def build_race_dispersion(
     *,
     qmap: dict[int, float],
-    p_numbers: set[int],
+    pmap: dict[int, float],
     odds_as_of,
     odds_source: str | None,
     boundary: LoadedBoundary = _EMPTY_BOUNDARY,
+    p_calibrator: PCalibrator | None = None,
 ) -> RaceDispersion:
     """Axis A read-out from market q over the canonical field.
 
-    ``qmap`` is the 021 market vote-share ({horse_number -> q}) on the same started population.
-    ``p_numbers`` is the model-p canonical population: availability requires q to cover it exactly
-    (else partial/no market odds → unavailable, and we do NOT fall back to model p). model_delta is
-    DEFERRED (see RaceDispersionDelta) — null here.
+    ``qmap`` is the 021 market vote-share ({horse_number -> q}) on the started population; ``pmap``
+    is the model-p canonical population ({horse_number -> p}). Availability requires q to cover the
+    p field exactly (else partial/no market odds → unavailable, and we do NOT fall back to model p).
+    The BAND and raw numbers are functions of q ONLY — ``pmap`` feeds ``model_delta`` (the
+    calibrated p vs q concentration difference) and nothing else, so the band is byte-identical
+    regardless of p.
     """
     q_values = list(qmap.values())
     if not q_values:
         return RaceDispersion(available=False, unavailable_reason="no_market_odds")
     # q must cover the full model-p canonical field, else the concentration is over a partial field.
-    if not p_numbers or set(qmap) != p_numbers:
+    if not pmap or set(qmap) != set(pmap):
         return RaceDispersion(available=False, unavailable_reason="partial_market_odds")
 
     entropy = normalized_entropy(q_values)
@@ -88,7 +150,7 @@ def build_race_dispersion(
         normalized_entropy=entropy,
         favorite_win_prob=favorite_win_prob(q_values),
         top3_cumulative=top3_cumulative(q_values),
-        model_delta=None,  # DEFERRED until a two_gamma calibrator is exposed to the read path
+        model_delta=_build_model_delta(pmap, entropy, p_calibrator),
         odds_as_of=odds_as_of,
         odds_source=odds_source,  # type: ignore[arg-type]  # 021 already constrains to final/prerace
         is_pseudo=True,

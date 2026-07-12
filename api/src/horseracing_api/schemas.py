@@ -189,13 +189,16 @@ class HorsePrediction(BaseModel):
 
 
 class RaceDispersionDelta(BaseModel):
-    """Feature 066 axis A: calibrated-model-p concentration relative to the market's. DEFERRED —
-    the honest delta needs a pre-computed 048 two_gamma calibrator surfaced to this read path (the
-    served win p is isotonic- but NOT two_gamma-calibrated, so using it raw would reintroduce the
-    047 favourite tail-compression bias). Currently always null; shipped as a typed placeholder."""
+    """Feature 066 axis A: calibrated-model-p concentration relative to the market's — the neutral
+    fact ``H(calibrated p) − H(q)``. Computed at read time when a FROZEN 048 two_gamma calibrator
+    is loaded (``DISPERSION_PCAL_PATH``); the calibrator removes the 047 favourite tail-compression
+    bias that raw served p would carry. direction is a neutral bucket (model sees the race as open /
+    more firm / similar vs the market) — NO buy/edge/value semantics. Null when no calibrator is
+    loaded or the field is degenerate. The calibrated p is display-only, never a model feature."""
 
     normalized_entropy_delta: float | None = None
     direction: Literal["model_more_open", "model_more_firm", "similar"] | None = None
+    calibrator_version: str | None = None  # audit (V): which frozen calibrator produced the delta
 
 
 class RaceDispersion(BaseModel):

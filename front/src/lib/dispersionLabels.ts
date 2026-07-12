@@ -40,3 +40,18 @@ export const UNAVAILABLE_LABEL: Record<Reason, string> = {
   no_market_odds: "市場オッズが無いため、荒れ度は表示できません。",
   partial_market_odds: "一部の出走馬に市場オッズが無いため、荒れ度は表示できません。",
 };
+
+/**
+ * Feature 066 model_delta: NEUTRAL description of how the (calibrated) model's view of the race's
+ * openness compares with the market's. A fact about disagreement — NOT a claim the model is right
+ * (047: the market predicts better) and NOT a buy signal. No profit/danger/value wording.
+ */
+type Direction = NonNullable<
+  NonNullable<RaceDispersion["model_delta"]>["direction"]
+>;
+
+export const DIRECTION_LABEL: Record<Direction, string> = {
+  model_more_open: "市場より荒れ寄り",
+  model_more_firm: "市場より締まり寄り",
+  similar: "市場とほぼ同じ",
+};

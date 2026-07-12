@@ -58,6 +58,31 @@ describe("RaceDispersionPanel", () => {
     expect(screen.getByText("31.0%")).toBeInTheDocument(); // raw numbers still there
   });
 
+  it("renders the neutral model_delta line when a calibrated delta is present", () => {
+    render(
+      <RaceDispersionPanel
+        dispersion={{
+          ...AVAILABLE,
+          model_delta: {
+            normalized_entropy_delta: 0.12,
+            direction: "model_more_open",
+            calibrator_version: "pcal-v1",
+          },
+        }}
+      />,
+    );
+    const row = screen.getByTestId("dispersion-model-delta");
+    expect(row).toHaveTextContent("市場より荒れ寄り");
+    expect(row).toHaveTextContent("0.120");
+    // neutral wording only — no buy/edge/value framing on the model line either.
+    expect(row.textContent).not.toMatch(/妙味|買|勝てる|お得|edge/);
+  });
+
+  it("omits the model_delta line when null (no calibrator loaded)", () => {
+    render(<RaceDispersionPanel dispersion={AVAILABLE} />);
+    expect(screen.queryByTestId("dispersion-model-delta")).toBeNull();
+  });
+
   it("renders nothing when dispersion is absent", () => {
     const { container } = render(<RaceDispersionPanel dispersion={null} />);
     expect(container.firstChild).toBeNull();

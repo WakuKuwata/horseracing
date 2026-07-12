@@ -93,6 +93,37 @@ def assign_band(entropy: float | None, edges: Sequence[float] | None) -> str | N
     return BANDS[min(band_idx, len(BANDS) - 1)]
 
 
+# --- axis A model_delta: calibrated-p concentration vs market-q concentration -----
+
+# Fixed pre-registered dead-band for the direction bucket (Feature 066 D1). |ΔH| within this is
+# "similar" — avoids reading noise as a model/market disagreement. Not tuned on outcomes.
+DELTA_EPS = 0.03
+
+
+def entropy_delta_direction(
+    p_entropy: float | None,
+    q_entropy: float | None,
+    eps: float = DELTA_EPS,
+) -> tuple[float | None, str | None]:
+    """``ΔH = H(calibrated p) − H(q)`` plus a neutral direction bucket (Feature 066 model_delta).
+
+    Positive ΔH = the model's win-prob distribution is MORE spread (model_more_open = model sees the
+    race as more chaotic than the market); negative = model_more_firm; within ±eps = similar. Either
+    entropy None (degenerate field) → ``(None, None)``. Pure/shared numerics — the read-time API and
+    any offline diagnostic compute the delta the SAME way (no duplicated formula).
+    """
+    if p_entropy is None or q_entropy is None:
+        return (None, None)
+    delta = p_entropy - q_entropy
+    if delta > eps:
+        direction = "model_more_open"
+    elif delta < -eps:
+        direction = "model_more_firm"
+    else:
+        direction = "similar"
+    return (delta, direction)
+
+
 # --- boundary fit (offline, results NEVER consulted) --------------------------
 
 BOUNDARY_METRIC = "normalized_entropy"
@@ -112,6 +143,35 @@ class DispersionBoundary:
     version: str
     quintile_edges: list[float]
     n_races_fit: int
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2, sort_keys=True) + "\n"
+
+    def write(self, path: str | Path) -> Path:
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(self.to_json())
+        return p
+
+
+@dataclass(frozen=True)
+class DispersionPCalibrator:
+    """Reproducible two_gamma p-calibrator artifact for the model_delta read-out (Feature 066,
+    constitution V). Mirrors DispersionBoundary: a small JSON of a FEW FLOATS (048 two_gamma params)
+    + audit metadata, regenerable from the DB, NO schema/DB. Pure data — no probability import here
+    (probability→eval is the dependency direction); the fit lives in the training CLI. as_of =
+    fit_to (deterministic). Applied at read time to display a calibrated-p concentration vs q — the
+    calibrated p is NEVER persisted and NEVER a model feature (constitution II)."""
+
+    method: str  # "two_gamma" (or "identity" when under-sampled → delta from raw p)
+    gamma_lo: float
+    gamma_hi: float
+    pivot: float
+    fit_from: str  # ISO date
+    fit_to: str  # ISO date
+    as_of: str  # ISO date (= fit_to)
+    version: str
+    n_races: int
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), indent=2, sort_keys=True) + "\n"

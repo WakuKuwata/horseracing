@@ -1,6 +1,12 @@
 import type { RaceDispersion } from "../api/types";
 import { formatPct, formatNum, PLACEHOLDER } from "../lib/format";
-import { BAND_LABEL, BAND_ORDER, BAND_CAPTION, UNAVAILABLE_LABEL } from "../lib/dispersionLabels";
+import {
+  BAND_LABEL,
+  BAND_ORDER,
+  BAND_CAPTION,
+  UNAVAILABLE_LABEL,
+  DIRECTION_LABEL,
+} from "../lib/dispersionLabels";
 import { PseudoValue } from "./PseudoValue";
 
 /**
@@ -103,6 +109,15 @@ export function RaceDispersionPanel({
           </dl>
         </div>
       </PseudoValue>
+      {dispersion.model_delta?.direction && (
+        <p className="dispersion__model-delta" data-testid="dispersion-model-delta">
+          <span className="dispersion__mut">モデル目線（校正済み）</span>
+          <b>{DIRECTION_LABEL[dispersion.model_delta.direction]}</b>
+          <span className="dispersion__mut">
+            （集中度差 {formatNum(dispersion.model_delta.normalized_entropy_delta, 3)}）
+          </span>
+        </p>
+      )}
       <p className="dispersion__note" data-testid="dispersion-note">
         市場のオッズ由来の見方の要約です。買い目の推奨ではなく、実際に荒れるかの保証でもありません。
         （オッズ種別 <code>{dispersion.odds_source ?? PLACEHOLDER}</code>

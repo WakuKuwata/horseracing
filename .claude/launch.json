@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "api",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd api && DATABASE_URL='postgresql+psycopg://aiuma:aiuma@localhost:15432/horseracing' DISPERSION_BOUNDARY_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/dispbands-v1.json\" DISPERSION_PCAL_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/pcal-v1.json\" uv run uvicorn horseracing_api.app:app --host 127.0.0.1 --port 8000"],
+      "port": 8000
+    },
+    {
       "name": "racefront",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["-C", "front", "dev", "--host", "127.0.0.1", "--port", "5173"],

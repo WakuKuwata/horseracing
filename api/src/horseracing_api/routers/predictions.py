@@ -17,7 +17,12 @@ from horseracing_probability.engine import joint_probabilities
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
-from ..dispersion import build_race_dispersion, build_race_divergence, load_boundary
+from ..dispersion import (
+    build_race_dispersion,
+    build_race_divergence,
+    load_boundary,
+    load_p_calibrator,
+)
 from ..queries import (
     available_models_for_race,
     get_race,
@@ -148,11 +153,12 @@ def predictions(
     odds_source = "final" if race_has_results(session, race_id) else "prerace"
     # Feature 066 axis A: race-level dispersion from market q on the SAME canonical field. Band from
     # a frozen boundary artifact (omitted when absent, F8); raw numbers always shown when q covers
-    # the field. q missing/partial → unavailable, NO fallback to model p.
+    # the field. q missing/partial → unavailable, NO fallback to model p. model_delta = calibrated-p
+    # vs q concentration (frozen two_gamma calibrator, omitted when absent); band stays q-only.
     race_dispersion = build_race_dispersion(
-        qmap=qmap, p_numbers=set(pmap),
+        qmap=qmap, pmap=pmap,
         odds_as_of=odds_as_of, odds_source=odds_source,
-        boundary=load_boundary(),
+        boundary=load_boundary(), p_calibrator=load_p_calibrator(),
     )
     # Feature 066 axis B: neutral p-vs-q divergence summary (suppressed when canonical_consistent
     # is false / q missing). model_version records which selected model's p is compared (057).
