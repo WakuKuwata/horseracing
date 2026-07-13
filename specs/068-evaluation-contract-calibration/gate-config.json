@@ -1,0 +1,11 @@
+{
+  "_comment": "T001: pre-registered adoption + screening gate (fixed BEFORE seeing OOS results, constitution III). Do not edit after OOS results are generated (T017 rejects tampering).",
+  "primary": "winner_nll",
+  "stat_guard": {"ci_upper_lt": 0.0},
+  "recent_guard": {"windows_years": [3, 5], "mode": "AND_non_degrade"},
+  "top_noninferior": {"top2": 0.0005, "top3": 0.0005},
+  "calibration": {"metric": "mean_ece", "noninferior_width": 0.001, "worst_fold": "audit_only", "emergency_abs_ece": 0.05},
+  "bootstrap": {"b": 2000, "seed": 20260712, "block": "race_day", "scheme": "moving_block", "alpha": 0.05},
+  "determinism": {"tolerance": 1e-9, "num_threads": 1},
+  "screening": {"metric": "winner_nll", "margin": 0.0, "no_decision_ci_straddles_zero": true, "basis": "inner_valid"}
+}

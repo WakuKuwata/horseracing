@@ -90,3 +90,98 @@ def compute_label_metrics(
         "ndcg": ndcg_label(probs, labels, race_ids),
         "ece": ece_label(probs, labels, bins=bins),
     }
+
+
+# ---------------------------------------------------------------------------
+# Feature 068 (evaluation contract): race-level PRIMARY + started-all + ECE variants.
+# All pure functions, no DB. See specs/068-evaluation-contract-calibration/data-model.md §1.
+# ---------------------------------------------------------------------------
+
+
+def winner_nll(winner_probs) -> tuple[float, int]:
+    """Race-level PRIMARY (FR-001): mean of ``-log(p_winner)`` over eligible races.
+
+    ``winner_probs`` is one entry per race: the predicted win prob of the race's
+    actual single winner, or ``None`` for an INELIGIBLE race (dead heat / no winner /
+    unresolved / partial-ingest — spec Edge Cases). Returns ``(nll, n_excluded)`` where
+    ``n_excluded`` counts the ``None`` races (surfaced, not silently dropped, D1).
+    """
+    eligible = [float(p) for p in winner_probs if p is not None]
+    n_excluded = len(list(winner_probs)) - len(eligible)
+    if not eligible:
+        return float("nan"), n_excluded
+    p = np.clip(np.asarray(eligible, dtype=float), _CLIP, 1 - _CLIP)
+    return float(np.mean(-np.log(p))), n_excluded
+
+
+def uniform_baseline_winner_nll(field_sizes) -> float:
+    """Sanity-only uniform baseline (FR-007): winner NLL of the 1/N predictor.
+
+    For a race of N started horses the uniform win prob is 1/N, so ``-log(1/N)=log(N)``.
+    Computed only; NEVER a promotion comparator (T017 enforces non-use).
+    """
+    fs = np.asarray([f for f in field_sizes if f and f > 0], dtype=float)
+    if fs.size == 0:
+        return float("nan")
+    return float(np.mean(np.log(fs)))
+
+
+def started_all_metrics(probs, labels) -> dict:
+    """Started-all diagnostic (FR-002, N1): per-horse LogLoss/Brier over the STARTED
+    population (DNF/失格 carry win=0). Reuses the label metrics; the difference is the
+    population fed in (started, not finished). Diagnostic-only — not a gate condition.
+    """
+    return {"log_loss": log_loss_label(probs, labels), "brier": brier_label(probs, labels)}
+
+
+def ece_equal_mass(probs, labels, bins: int = DEFAULT_ECE_BINS) -> dict:
+    """Equal-mass (quantile) ECE, tie-safe (C10): predictions are sorted and split into
+    ~equal-count bins WITHOUT splitting a tied-probability plateau across a bin boundary.
+
+    Returns ``{"ece", "n_bins", "bin_counts"}`` so the actual bin count (which can be < ``bins``
+    when ties collapse boundaries) and per-bin sizes are auditable rather than hidden.
+    """
+    p = np.asarray(probs, dtype=float)
+    y = np.asarray(labels, dtype=float)
+    n = len(p)
+    if n == 0:
+        return {"ece": 0.0, "n_bins": 0, "bin_counts": []}
+    order = np.argsort(p, kind="mergesort")  # stable
+    p_sorted, y_sorted = p[order], y[order]
+    target = max(1, n // max(1, bins))
+    ece = 0.0
+    counts: list[int] = []
+    start = 0
+    while start < n:
+        end = min(start + target, n)
+        # tie-safe: extend the bin to include all rows sharing the boundary probability
+        while end < n and p_sorted[end] == p_sorted[end - 1]:
+            end += 1
+        seg_p = p_sorted[start:end]
+        seg_y = y_sorted[start:end]
+        cnt = end - start
+        ece += (cnt / n) * abs(seg_p.mean() - seg_y.mean())
+        counts.append(cnt)
+        start = end
+    return {"ece": float(ece), "n_bins": len(counts), "bin_counts": counts}
+
+
+def ece_by_prob_band(probs, labels, band_edges) -> dict[str, float]:
+    """ECE within pre-fixed probability bands (FR-006). ``band_edges`` is a fixed,
+    OOS-frozen ascending list of interior cut points (e.g. ``[0.05, 0.15, 0.30]``);
+    bands are ``[0,e0), [e0,e1), ..., [ek,1]``. Empty bands are omitted.
+    """
+    p = np.asarray(probs, dtype=float)
+    y = np.asarray(labels, dtype=float)
+    edges = [0.0, *list(band_edges), 1.0]
+    out: dict[str, float] = {}
+    for b in range(len(edges) - 1):
+        lo, hi = edges[b], edges[b + 1]
+        last = b == len(edges) - 2
+        mask = (p >= lo) & (p <= hi) if last else (p >= lo) & (p < hi)
+        cnt = int(mask.sum())
+        if cnt == 0:
+            continue
+        key = f"[{lo:.2f},{hi:.2f}{']' if last else ')'}"
+        out[key] = float(abs(p[mask].mean() - y[mask].mean()))
+    return out

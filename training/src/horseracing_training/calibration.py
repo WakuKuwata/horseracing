@@ -51,6 +51,31 @@ def split_train_by_time(
     return ~calib_mask, calib_mask
 
 
+def split_train_by_day(
+    race_ids, race_dates, *, calib_frac: float = DEFAULT_CALIB_FRAC
+) -> tuple[np.ndarray, np.ndarray]:
+    """Feature 068 (FR-014b, codex C4): DAY-level chronological split.
+
+    The latest ``calib_frac`` of distinct RACE-DAYS (not races) become the calibration set, so a
+    single race-day never straddles the model-fit / calibration boundary (the race-count split
+    ``split_train_by_time`` can split a day). This aligns the split unit with the block-bootstrap
+    unit (open day). Returns ``(model_mask, calib_mask)``; if either side would be empty,
+    ``calib_mask`` is all-False (caller falls back to identity calibration).
+    """
+    race_ids = np.asarray(race_ids)
+    days = sorted({race_dates[rid] for rid in race_ids})
+    n_days = len(days)
+    n_calib_days = int(round(n_days * calib_frac))
+    if n_calib_days < 1 or n_calib_days >= n_days:
+        if n_days >= 2:
+            n_calib_days = 1
+        else:
+            return np.ones(len(race_ids), dtype=bool), np.zeros(len(race_ids), dtype=bool)
+    calib_days = set(days[n_days - n_calib_days:])
+    calib_mask = np.array([race_dates[rid] in calib_days for rid in race_ids], dtype=bool)
+    return ~calib_mask, calib_mask
+
+
 @dataclass
 class Calibrator:
     method: str  # 'platt' | 'isotonic' | 'identity'

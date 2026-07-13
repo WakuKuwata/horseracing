@@ -659,7 +659,48 @@ def main(argv: list[str] | None = None) -> int:
                      help="write the p-calibrator artifact JSON here")
     dpc.add_argument("--database-url", default=None)
 
+    # Feature 068: paired candidate↔active evaluation (recipe-refit per fold, no saved booster).
+    pe = sub.add_parser("paired-eval",
+                        help="068: paired candidate vs active winner-NLL eval + adoption gate")
+    pe.add_argument("--candidate", default="pl_topk:isotonic",
+                    help="recipe spec 'objective:calibration' (e.g. pl_topk:isotonic)")
+    pe.add_argument("--active", default="pl_topk:none",
+                    help="baseline recipe spec 'objective:calibration'")
+    pe.add_argument("--from", dest="from_", type=_parse_date, default=None)
+    pe.add_argument("--to", dest="to", type=_parse_date, default=None)
+    pe.add_argument("--first-valid-year", type=int, default=2008)
+    pe.add_argument("--seed", type=int, default=20260712)
+    pe.add_argument("--bootstrap-b", type=int, default=2000)
+    pe.add_argument("--num-threads", type=int, default=None)
+    pe.add_argument("--gate-config", default=None, help="pre-registered gate-config.json path")
+    pe.add_argument("--json", dest="json_out", default=None, help="write PairedReport JSON here")
+    pe.add_argument("--database-url", default=None)
+
+    # Feature 068 US2: A/B/C/D calibration-split driver (screening + confirmation, disjoint).
+    cse = sub.add_parser("calib-split-eval",
+                         help="068 US2: A/B/C/D calib-split screening + confirmation")
+    cse.add_argument("--objective", default="pl_topk",
+                     choices=["binary", "cond_logit", "pl_topk"])
+    cse.add_argument("--screen-from", dest="screen_from", type=_parse_date, required=True)
+    cse.add_argument("--screen-to", dest="screen_to", type=_parse_date, required=True)
+    cse.add_argument("--confirm-from", dest="confirm_from", type=_parse_date, required=True)
+    cse.add_argument("--confirm-to", dest="confirm_to", type=_parse_date, required=True)
+    cse.add_argument("--seed", type=int, default=20260712)
+    cse.add_argument("--bootstrap-b", type=int, default=1000)
+    cse.add_argument("--num-threads", type=int, default=None)
+    cse.add_argument("--gate-config", default=None)
+    cse.add_argument("--json", dest="json_out", default=None)
+    cse.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
+    if args.command == "paired-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _paired_eval(session, args)
+    if args.command == "calib-split-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _calib_split_eval(session, args)
     if args.command == "dispersion-bands":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -712,6 +753,133 @@ def main(argv: list[str] | None = None) -> int:
         _print_summary(summary)
         return 0
     return 1
+
+
+def _recipe_from_spec(spec: str):
+    """Parse 'objective:calibration[:calib_frac]' → ModelRecipe.
+
+    The optional 3rd field is the calibration holdout fraction, so the calib-split arms A/B
+    (068 US2) are expressible as e.g. 'pl_topk:isotonic:0.3' (A) vs 'pl_topk:isotonic:0.1' (B).
+    """
+    from .calibration import DEFAULT_CALIB_FRAC
+    from .recipe import ModelRecipe
+    parts = spec.split(":")
+    objective = parts[0]
+    calibration = parts[1] if len(parts) > 1 else "isotonic"
+    calib_frac = float(parts[2]) if len(parts) > 2 else DEFAULT_CALIB_FRAC
+    return ModelRecipe(
+        objective=objective, calibration=calibration, calib_frac=calib_frac, label=spec
+    )
+
+
+def _factory_from_spec(session, spec: str):
+    """Build the right PredictorFactory for a recipe spec.
+
+    ``objective:oof_power`` → C/D arm (full-history booster + strict-past OOF power calibrator);
+    anything else → A/B arm (train-internal calibration holdout via RecipeFactory)."""
+    parts = spec.split(":")
+    if len(parts) > 1 and parts[1] == "oof_power":
+        from .calib_split import CalibSplitFactory
+        from .recipe import ModelRecipe
+        return CalibSplitFactory(
+            session, ModelRecipe(objective=parts[0], calibration="none", label=spec)
+        )
+    from .recipe import RecipeFactory
+    return RecipeFactory(session, _recipe_from_spec(spec))
+
+
+def _paired_eval(session: Session, args) -> int:
+    """Feature 068 (T018): build two RecipeFactory arms, run paired_eval, print + optional JSON.
+
+    Both arms are re-fit per fold from their ModelRecipe (never a saved booster, codex C1) and
+    scored on the same model-blind valid race set. eval owns the orchestration; the CLI only
+    injects the training-side factories (020 boundary)."""
+    import json
+
+    from horseracing_eval.dataset import load_eval_races
+    from horseracing_eval.paired import paired_eval
+
+    gate_cfg = None
+    if args.gate_config:
+        with open(args.gate_config) as fh:
+            gate_cfg = json.load(fh)
+
+    eval_races = load_eval_races(session, start_date=args.from_, end_date=args.to)
+    cand = _factory_from_spec(session, args.candidate)
+    act = _factory_from_spec(session, args.active)
+    report = paired_eval(
+        cand, act, eval_races,
+        gate_config=gate_cfg,
+        first_valid_year=args.first_valid_year,
+        bootstrap_seed=args.seed,
+        bootstrap_b=args.bootstrap_b,
+        num_threads=args.num_threads,
+        snapshot={"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
+                  "candidate_spec": args.candidate, "active_spec": args.active},
+    )
+    g = report.gate
+    print(f"paired-eval candidate={args.candidate} active={args.active} "
+          f"n_races={report.n_races} n_eligible={report.n_eligible}")
+    _u = report.uniform_baseline_winner_nll
+    print(f"  winner_nll: cand={report.periods['all']['candidate']:.6f} "
+          f"active={report.periods['all']['active']:.6f} "
+          f"diff={report.periods['all']['diff']:+.6f} (uniform={_u:.4f})")
+    ci = report.bootstrap_ci
+    print(f"  bootstrap CI(95%): [{ci['ci_low']}, {ci['ci_high']}] "
+          f"point={ci['point']:+.6f} days={ci['n_days']} no_decision={ci['no_decision']}")
+    print(f"  gate: primary={g.primary} stat_guard={g.stat_guard} recent={g.recent_guard} "
+          f"top_ni={g.top_noninferior} calib={g.calibration} -> ADOPTED={g.adopted}")
+    if args.json_out:
+        with open(args.json_out, "w") as fh:
+            json.dump(report.to_dict(), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _calib_split_eval(session: Session, args) -> int:
+    """Feature 068 US2 (T026/T027/T028): drive A/B/C/D screening + confirmation."""
+    import json
+
+    from .calib_split_eval import run_calib_split_eval
+
+    gate_cfg = None
+    if args.gate_config:
+        with open(args.gate_config) as fh:
+            gate_cfg = json.load(fh)
+
+    report = run_calib_split_eval(
+        session,
+        make_factory=lambda spec: _factory_from_spec(session, spec),
+        objective=args.objective,
+        screen_window=(args.screen_from, args.screen_to),
+        confirm_window=(args.confirm_from, args.confirm_to),
+        gate_config=gate_cfg,
+        seed=args.seed,
+        bootstrap_b=args.bootstrap_b,
+        num_threads=args.num_threads,
+    )
+    print(f"calib-split-eval objective={report.objective} ref={report.reference}")
+    print(f"  screen={args.screen_from}..{args.screen_to} "
+          f"confirm={args.confirm_from}..{args.confirm_to}")
+    for a in report.arms:
+        if a.name == report.reference:
+            print(f"  {a.name:4s} [{a.spec}] = REFERENCE")
+            continue
+        sci = a.screen_ci or {}
+        line = (f"  {a.name:4s} [{a.spec}] screen_diff={a.screen_diff:+.5f} "
+                f"CI[{sci.get('ci_low')},{sci.get('ci_high')}] go={a.go} ({a.go_reason})")
+        print(line)
+        if a.confirm is not None:
+            g = a.confirm.gate
+            cci = a.confirm.bootstrap_ci
+            print(f"       CONFIRM diff={a.confirm.periods['all']['diff']:+.5f} "
+                  f"CI[{cci['ci_low']},{cci['ci_high']}] ADOPTED={g.adopted}")
+    if args.json_out:
+        import dataclasses
+        with open(args.json_out, "w") as fh:
+            json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
 
 
 def _dispersion_bands(session: Session, args) -> int:

@@ -33,6 +33,57 @@ class EvalRace:
     labels: tuple[ScoringLabel, ...]  # finished horses only
 
 
+@dataclass(frozen=True)
+class RacePopulation:
+    """Feature 068 (FR-002/FR-001, codex population golden): started-all labels + winner
+    eligibility for one race, derived purely from an already-loaded ``EvalRace`` (no DB).
+
+    ``started_*`` map every STARTED horse to a 0/1 label; a started horse absent from the
+    finished labels (DNF / 失格 / unplaced) gets 0 — the win教師 population that training uses.
+    ``winner_horse_id`` is the single winner or ``None``; ``eligible`` is True only when the race
+    has EXACTLY one winner (dead-heat n_winners>1, no-winner n_winners==0, and partial-ingest
+    races are ineligible for winner NLL and surfaced, spec Edge Cases).
+    """
+
+    race_id: str
+    started_horse_ids: tuple[str, ...]
+    field_size: int
+    started_win: dict[str, int]
+    started_top2: dict[str, int]
+    started_top3: dict[str, int]
+    winner_horse_id: str | None
+    n_winners: int
+    eligible: bool
+
+
+def population_masks(er: EvalRace) -> RacePopulation:
+    """Classify one race's started population and winner eligibility (T004, pure)."""
+    label_by_id = {sl.horse_id: sl for sl in er.labels}
+    started_ids = tuple(h.horse_id for h in er.context.started_horses)
+    started_win: dict[str, int] = {}
+    started_top2: dict[str, int] = {}
+    started_top3: dict[str, int] = {}
+    for hid in started_ids:
+        sl = label_by_id.get(hid)
+        started_win[hid] = int(sl.win) if sl is not None else 0
+        started_top2[hid] = int(sl.top2) if sl is not None else 0
+        started_top3[hid] = int(sl.top3) if sl is not None else 0
+    winners = [hid for hid, w in started_win.items() if w == 1]
+    n_winners = len(winners)
+    eligible = n_winners == 1
+    return RacePopulation(
+        race_id=er.context.race_id,
+        started_horse_ids=started_ids,
+        field_size=len(started_ids),
+        started_win=started_win,
+        started_top2=started_top2,
+        started_top3=started_top3,
+        winner_horse_id=winners[0] if eligible else None,
+        n_winners=n_winners,
+        eligible=eligible,
+    )
+
+
 def load_eval_races(
     session: Session,
     start_date: datetime.date | None = None,

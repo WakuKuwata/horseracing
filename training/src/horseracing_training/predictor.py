@@ -252,6 +252,12 @@ class LightGBMPredictor:
             "model_degenerate": self.win_model_.booster_ is None,
             "calibrator_degenerate": self.calibrator_.identity,
             "train_through": _max_date(train_df[RACE_DATE]),
+            # Feature 068 US3 provenance (FR-015): the booster's ACTUAL last-learned day
+            # (model-fit split) vs the calibration window — distinct from train_through when a
+            # calib holdout is carved off the latest rows. Existing rows are not backfilled.
+            "model_fit_through": _max_date(model_df[RACE_DATE]),
+            "calib_from": _min_date(calib_df[RACE_DATE]) if calib_mask.any() else None,
+            "calib_through": _max_date(calib_df[RACE_DATE]) if calib_mask.any() else None,
             "feature_cols": list(data.feature_cols),
             "categorical_cols": list(cat_for_model),
         }
@@ -360,6 +366,16 @@ def _max_date(series) -> str | None:
     if not vals:
         return None
     m = max(vals)
+    if isinstance(m, datetime.date):
+        return m.isoformat()
+    return str(m)
+
+
+def _min_date(series) -> str | None:
+    vals = [v for v in series if v is not None]
+    if not vals:
+        return None
+    m = min(vals)
     if isinstance(m, datetime.date):
         return m.isoformat()
     return str(m)

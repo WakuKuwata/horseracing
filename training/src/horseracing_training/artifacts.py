@@ -136,6 +136,9 @@ def save_model_version(
         "train_through": info.get("train_through"),
         "n_model_rows": info.get("n_model_rows"),
         "n_calib_rows": info.get("n_calib_rows"),
+        "model_fit_through": info.get("model_fit_through"),  # Feature 068 US3 (FR-015)
+        "calib_from": info.get("calib_from"),
+        "calib_through": info.get("calib_through"),
         "model_degenerate": info.get("model_degenerate"),
         "calibrator_degenerate": info.get("calibrator_degenerate"),
         "adoption": {"adopted": decision.adopted, **asdict(gate), "reasons": decision.reasons},
@@ -169,6 +172,13 @@ def save_model_version(
         "train_through": str(info["train_through"]) if info.get("train_through") else None,
         "n_model_rows": info.get("n_model_rows"),
         "n_calib_rows": info.get("n_calib_rows"),
+        # Feature 068 US3 (FR-015): booster's actual last-learned day + calib window, so a
+        # calib-holdout model's model_fit_through < train_through is visible from the DB alone.
+        "model_fit_through": (
+            str(info["model_fit_through"]) if info.get("model_fit_through") else None
+        ),
+        "calib_from": str(info["calib_from"]) if info.get("calib_from") else None,
+        "calib_through": str(info["calib_through"]) if info.get("calib_through") else None,
     }
     if info.get("market_offset"):  # Feature 060: visible from model_versions alone (V)
         summary["training"]["market_offset"] = dict(info["market_offset"])
