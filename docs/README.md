@@ -10,6 +10,7 @@
 - [scraping-netkeiba.md](scraping-netkeiba.md): netkeiba スクレイピング対象、URL、raceId仕様。
 - [modeling.md](modeling.md): 予測ラベル、特徴量、学習、walk-forward、リーク防止。
 - [odds-roi.md](odds-roi.md): 疑似オッズ、疑似ROI、市場オッズ、買い目計算の方針。
+- [market-aware-betting-policy-proposal.md](market-aware-betting-policy-proposal.md): 回収率目的の market-aware betting policy 提案。
 - [architecture.md](architecture.md): RaceFront、AdminFront、API、スクレイピング、学習サーバーの責務。
 - [open-decisions.md](open-decisions.md): これから設計する未決事項。
 
@@ -21,4 +22,3 @@
 - オッズはスナップショット保存しない。取得できた最新オッズで上書きする。
 - 未来レースの判断には、予測確率から算出した疑似オッズと疑似ROIを使用する。
 - JRA-VAN データは 2007 年以降を使用する。2006 年以前は ID 体系が異なるため、初期取込・学習・評価対象から除外する。
-

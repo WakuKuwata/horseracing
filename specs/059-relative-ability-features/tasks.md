@@ -124,7 +124,7 @@ Foundational フェーズは空。US1 から着手する。）
 - [X] T013 [US2] ユーザー承認後、T012 で学習済みの **lgbm-057 を昇格**: `model_versions` で lgbm-057
   active / lgbm-056 retired（DB 更新）。**追加学習は不要**（T012 の train-evaluate が artifact
   `artifacts/model_versions/lgbm-057/` を生成済み）。採用ゲート PASS を artifact metadata で確認。
-- [ ] T014 [US2] serving 疎通: `serving predict --race-id <rid>` が `feature_version: features-014`・
+- [X] T014 [US2] serving 疎通: `serving predict --race-id <rid>` が `feature_version: features-014`・
   feature 列 +13 をロードすることを確認。
 
 ---
@@ -137,7 +137,7 @@ Foundational フェーズは空。US1 から着手する。）
 - [X] T016 [P] drift-check / migration head 不変を確認（API/OpenAPI 不変・head assert 変更なし）。
 - [X] T017 spec/plan の Status 更新（実装完了サマリ）、CLAUDE.md の 059 ポインタを「実装完了」に更新、
   memory（feature-059 結果 + MEMORY.md index）を記録。採否・実測値・overlap 検証結果を明記。
-- [ ] T018 worktree を main へマージ（fast-forward）、worktree 撤去。
+- [X] T018 worktree を main へマージ（fast-forward）、worktree 撤去。
 
 ---
 
