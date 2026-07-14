@@ -71,6 +71,14 @@ def test_column_names_avoid_leak_tokens():
         assert "odds" not in c and "popularity" not in c
 
 
+def test_no_eval_derived_subgroup_token_in_features():
+    # T023a (FR-017): evaluation-derived subgroup/CI/audit values must never be feature columns.
+    from horseracing_features.registry import REGISTRY
+    forbidden = ("subgroup", "winner_nll", "_guard", "bootstrap")
+    for col in REGISTRY:
+        assert not any(tok in col for tok in forbidden), col
+
+
 def test_row_and_horse_order_invariant():
     specs = _base_specs()
     out1 = build_pm_core_strength_features(make_frames(specs))

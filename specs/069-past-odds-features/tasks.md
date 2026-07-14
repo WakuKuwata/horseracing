@@ -60,7 +60,7 @@ description: "Task list for 069 past-odds features + subgroup gate"
 - [X] T008 [US1] `eval/src/horseracing_eval/paired.py` を拡張: per-race winner NLL 差と started-all per-horse loss を subgroup 集計(T003 注入)、subgroup 別 block bootstrap CI(068 bootstrap 再利用)、`SubgroupGateResult`(data-model §4)。既存 068 ゲートは不変で加算(FR-005)。**`--subgroups` なしの PairedReport が 068 baseline とバイト同等である後方互換 assert を追加**(共有 paired.py の回帰面を明示テスト、analyze C1)。
 - [X] T009 [US1] `paired.py` に subgroup ガード: critical(2026_only/nk/2026_nk)の三値判定を intersection-union で採否に加算、cand−uniform 絶対水準を診断併記(FR-002/003, codex C2/C6)。gate-config から閾値読取。**gate-config の top_noninferior/calibration/subgroup margin が実際に `_build_gate` へ届くことをテストで検証**(068 は top-level 読み=069 config も top-level、distinctive 値を入れて gate が使うか assert、analyze F1)。
 - [X] T010 [US1] `training/src/horseracing_training/cli.py` の `paired-eval` に `--subgroups` フラグ追加(未指定時 068 と byte 同等=後方互換)。属性(race_date/nk: prefix/厳密前観測数)を eval に注入。
-- [ ] T011 [US1] `eval/tests/integration/test_subgroup_e2e.py`(testcontainers): 実 DB で 2 recipe を `--subgroups` paired 評価し race/horse subgroup CI・三値ガードが出る(SC-001)。同一 seed・単一スレッドで決定論。
+- [X] T011 [US1] `eval/tests/integration/test_subgroup_e2e.py`(testcontainers): 実 DB で 2 recipe を `--subgroups` paired 評価し race/horse subgroup CI・三値ガードが出る(SC-001)。同一 seed・単一スレッドで決定論。
 
 **Checkpoint**: US1 単独で「2026/nk: を見る物差し」が動く(F02 なしでも既存モデル比較に使える)。
 
@@ -95,11 +95,11 @@ description: "Task list for 069 past-odds features + subgroup gate"
 
 ## Phase 5: Polish & Cross-Cutting
 
-- [ ] T022 [P] 契約不変の回帰: スキーマ/API/OpenAPI/migration に diff なし、FEATURE_VERSION bump は compat pin のみ(SC-006, FR-016)。
-- [ ] T023 [P] quickstart.md の SC-001〜006 を通し**スモーク実行**(実 DB: features-018 parity + lgbm-063 compat + subgroup 付き F02 paired-eval + coverage-audit)。**採否 verdict の正本記録は T021a**(T023 は smoke 再実行のみ・二重記録しない、analyze L2)。
-- [ ] T023a [P] `eval/tests/unit/test_subgroup_leak_guard.py`: subgroup CI・coverage-audit 出力がモデル特徴に戻らない(import-graph + behavioral、II、analyze F6)。既存 068 leak-guard と同型。
-- [ ] T024 [P] `docs/plan/model-accuracy-improvement-proposal.md` の Phase 3 に 069 実装状況を反映。
-- [ ] T025 ruff/lint クリーン(069 変更ファイル)+ features/eval/training/serving テストスイート緑。
+- [X] T022 [P] 契約不変の回帰: スキーマ/API/OpenAPI/migration に diff なし、FEATURE_VERSION bump は compat pin のみ(SC-006, FR-016)。
+- [X] T023 [P] quickstart.md の SC-001〜006 を通し**スモーク実行**(実 DB: features-018 parity + lgbm-063 compat + subgroup 付き F02 paired-eval + coverage-audit)。**採否 verdict の正本記録は T021a**(T023 は smoke 再実行のみ・二重記録しない、analyze L2)。
+- [X] T023a [P] `eval/tests/unit/test_subgroup_leak_guard.py`: subgroup CI・coverage-audit 出力がモデル特徴に戻らない(import-graph + behavioral、II、analyze F6)。既存 068 leak-guard と同型。
+- [X] T024 [P] `docs/plan/model-accuracy-improvement-proposal.md` の Phase 3 に 069 実装状況を反映。
+- [X] T025 ruff/lint クリーン(069 変更ファイル)+ features/eval/training/serving テストスイート緑。
 
 ---
 

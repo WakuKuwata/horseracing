@@ -201,6 +201,8 @@ C/Dでは、OOFモデルと全履歴refitモデルのraw score分布が変わる
 
 ### Phase 3: 過去オッズ特徴の拡張
 
+**実装・採用状況(2026-07-14)**: F02 pm_core_strength(`s=log(q×N)`)を [specs/069-past-odds-features](../../specs/069-past-odds-features/spec.md) で実装(features-018 純加算・068ゲートを 2026/nk: subgroup 三値 intersection-union へ拡張)。**本番採否 = ADOPT**: pl_topk 2024-2026 walk-forward で winner NLL −0.0057・068ゲート全 PASS・2026/nk: subgroup 全 PASS(067 のID断層下でも非劣化)。フル19-fold で **lgbm-064-f02acc(win LogLoss 0.21406=歴代最良 accuracy-first、−0.00083 vs lgbm-063)を CANDIDATE 登録**(default 意思決定支援モデルは p⊥q 維持で lgbm-063 のまま不変)。067 repair は実質適用済み(2026馬の76.7%連結)で当初懸念(coverage約15%)より良好。F03/F04/F05 は段階別 spec。
+
 対象レース自身のオッズは使用せず、過去レースの確定オッズだけを履歴特徴にする。
 
 2025–2026の `nk:` ID断層（2026年の過去5走coverage約15%）が過去履歴連結を弱めているため、本Phaseは [specs/067-entity-identity-resolution](../../specs/067-entity-identity-resolution/spec.md) によるID解決の進捗を前提条件とする。
