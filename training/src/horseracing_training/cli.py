@@ -60,6 +60,8 @@ def train_evaluate(
     objective: str = "binary",
     use_materialized: bool = False,
     materialized_path: str | None = None,
+    drop_features: tuple[str, ...] = (),
+    register_as_candidate: bool = False,
 ) -> dict:
     eval_races = _load_eval_races(session)
 
@@ -67,7 +69,7 @@ def train_evaluate(
         return LightGBMPredictor(
             session, seed=seed, calibration=calibration,
             hpo=hpo, target_encode_cols=target_encode_cols, te_smoothing=te_smoothing,
-            objective=objective,
+            objective=objective, drop_features=drop_features,
             use_materialized=use_materialized, materialized_path=materialized_path,
         )
 
@@ -96,6 +98,7 @@ def train_evaluate(
         artifacts_root=artifacts_dir,
         feature_version=FEATURE_VERSION,
         git_sha=_git_sha(),
+        register_as_candidate=register_as_candidate,
     )
 
     overall = result.to_summary()["eval"]["overall"]
@@ -516,6 +519,11 @@ def main(argv: list[str] | None = None) -> int:
     te.add_argument("--use-materialized", action="store_true",
                     help="055: read as-of features from the 025 parquet (bit-parity, fail-closed)")
     te.add_argument("--materialized-path", default="../artifacts/features.parquet")
+    te.add_argument("--register-candidate", action="store_true",
+                    help="060/069: pin the saved row to CANDIDATE (non-active) even if the gate "
+                         "passes — for accuracy-first models kept out of the default p⊥q model")
+    te.add_argument("--drop-groups", dest="te_drop_groups", default="",
+                    help="069: FEATURE_GROUPS to drop (expanded to columns), comma-separated")
     te.add_argument("--database-url", default=None)
 
     # Feature 020 — walk-forward adoption gate / ablation / market diagnostic.
@@ -747,6 +755,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "train-evaluate":
         engine = create_db_engine(args.database_url)
         te_cols = tuple(c for c in args.target_encode.split(",") if c)
+        drop_groups = tuple(g for g in getattr(args, "te_drop_groups", "").split(",") if g)
+        drop_cols = _expand_group_drops(drop_groups) if drop_groups else ()
         with Session(engine) as session:
             summary = train_evaluate(
                 session,
@@ -763,6 +773,8 @@ def main(argv: list[str] | None = None) -> int:
                 objective=args.objective,
                 use_materialized=args.use_materialized,
                 materialized_path=args.materialized_path if args.use_materialized else None,
+                drop_features=drop_cols,
+                register_as_candidate=getattr(args, "register_candidate", False),
             )
         _print_summary(summary)
         return 0
