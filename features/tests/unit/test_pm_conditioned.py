@@ -115,18 +115,14 @@ def test_pool_end_independent_future_and_leak():
     pd.testing.assert_frame_equal(base, _target(make_frames(s)), check_exact=True)
 
 
-def test_two_groups_and_parity():
-    from horseracing_features.registry import FEATURE_GROUPS, model_input_features
-    sup = [c for c, g in FEATURE_GROUPS.items() if g == "pm_conditioned_support"]
-    res = [c for c, g in FEATURE_GROUPS.items() if g == "pm_conditioned_residual"]
-    assert sorted(sup) == sorted(PM_CONDITIONED_SUPPORT_COLUMNS)
-    assert sorted(res) == sorted(PM_CONDITIONED_RESIDUAL_COLUMNS)
+def test_support_residual_columns_and_parity():
+    # 070 REJECTED + reverted (unwired); module kept as negative result — no registry checks.
+    assert len(PM_CONDITIONED_SUPPORT_COLUMNS) == 6
+    assert len(PM_CONDITIONED_RESIDUAL_COLUMNS) == 2
     pm = build_pm_conditioned_features(make_frames(_specs()))
     keys = ["race_id", "horse_id"]
     assert set(pm.columns) == set(keys) | set(PM_CONDITIONED_COLUMNS)
     assert not pm.duplicated(subset=keys).any()
-    others = set(model_input_features()) - set(PM_CONDITIONED_COLUMNS)
-    assert others.isdisjoint(set(PM_CONDITIONED_COLUMNS))
     for name in PM_CONDITIONED_COLUMNS:
         low = name.lower()
         for tok in ("odds", "popularity", "payout", "dividend"):

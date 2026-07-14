@@ -113,15 +113,13 @@ def test_leak_invariant_to_target_and_future_and_positive():
     assert not base.equals(changed)
 
 
-def test_clean_names_and_group():
-    from horseracing_features.registry import FEATURE_GROUPS
-
+def test_clean_names():
+    # 070 was REJECTED + reverted (not in the registry); the module is kept as a negative result,
+    # so this tests the leak-guard token discipline of the columns only (no FEATURE_GROUPS check).
     for name in PM_RANK_ROBUST_COLUMNS:
         low = name.lower()
         for tok in ("odds", "popularity", "payout", "dividend", "result", "finish_order"):
             assert tok not in low, (name, tok)
-    cols = [c for c, g in FEATURE_GROUPS.items() if g == "pm_rank_robust"]
-    assert sorted(cols) == sorted(PM_RANK_ROBUST_COLUMNS)
 
 
 def test_is_purely_additive():
@@ -129,6 +127,3 @@ def test_is_purely_additive():
     keys = ["race_id", "horse_id"]
     assert set(pm.columns) == set(keys) | set(PM_RANK_ROBUST_COLUMNS)
     assert not pm.duplicated(subset=keys).any()
-    from horseracing_features.registry import model_input_features
-    others = set(model_input_features()) - set(PM_RANK_ROBUST_COLUMNS)
-    assert others.isdisjoint(set(PM_RANK_ROBUST_COLUMNS))

@@ -109,7 +109,7 @@ def test_resid_sd5_min_obs2():
 
 
 def test_leak_and_clean_names_and_parity():
-    from horseracing_features.registry import FEATURE_GROUPS, model_input_features
+    # 070 REJECTED + reverted (unwired); module kept as negative result — no registry checks.
     base = _target(make_frames(_specs()))
     # target-race result/odds change -> no effect (strictly-before)
     s = _specs()
@@ -124,7 +124,3 @@ def test_leak_and_clean_names_and_parity():
     keys = ["race_id", "horse_id"]
     assert set(pm.columns) == set(keys) | set(PM_EXPECTATION_RESIDUAL_COLUMNS)
     assert not pm.duplicated(subset=keys).any()
-    cols = [c for c, g in FEATURE_GROUPS.items() if g == "pm_expectation_residual"]
-    assert sorted(cols) == sorted(PM_EXPECTATION_RESIDUAL_COLUMNS)
-    others = set(model_input_features()) - set(PM_EXPECTATION_RESIDUAL_COLUMNS)
-    assert others.isdisjoint(set(PM_EXPECTATION_RESIDUAL_COLUMNS))

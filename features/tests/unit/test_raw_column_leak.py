@@ -175,7 +175,7 @@ def test_groups_registered_for_feature_eval_default():
         "asof_breeder_win_rate", "asof_owner_place_rate", "asof_owner_win_rate"]
     assert sorted(groups["race_level"]) == ["asof_prize_avg", "prize_money_log", "prize_rel"]
     assert sorted(groups["sire_line"]) == ["damsire_line", "sire_line"]
-    assert FEATURE_VERSION == "features-019"  # 070 F03/F04/F05 past-market bundle
+    assert FEATURE_VERSION == "features-018"  # 070 rejected+reverted; 069 F02
 
 
 def test_no_forbidden_tokens_in_new_modules():
