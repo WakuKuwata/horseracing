@@ -1,0 +1,204 @@
+{
+  "candidate_recipe_meta": {
+    "objective": "pl_topk",
+    "calibration": "isotonic",
+    "calib_frac": 0.3,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0,
+    "seed": 42,
+    "drop_features": [],
+    "market_offset": false,
+    "label": "pl_topk:isotonic"
+  },
+  "active_recipe_meta": {
+    "objective": "pl_topk",
+    "calibration": "isotonic",
+    "calib_frac": 0.3,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0,
+    "seed": 42,
+    "drop_features": [
+      "asof_pm_support_last",
+      "asof_pm_support_mean3",
+      "asof_pm_support_mean5",
+      "asof_pm_support_best5",
+      "asof_pm_support_career",
+      "asof_pm_support_trend",
+      "asof_pm_support_sd5",
+      "asof_pm_obs_count",
+      "asof_pm_has_obs"
+    ],
+    "market_offset": false,
+    "label": "pl_topk:isotonic:drop=pm_core_strength"
+  },
+  "candidate_recipe_hash": "4b4577000194e44ff9e1ef8ba76354910b5db4f53f58894001116b74efc0af27",
+  "active_recipe_hash": "f1cab0d8f2bc629f5ffb865bcc0cdcd1d8ba3bd432760119f0b848103e2c7c6b",
+  "race_id_set_hash": "0d2f089604949e22100b2d24e9edb5be3e1f726e8e11674cfe1545b2de676802",
+  "n_races": 8773,
+  "n_eligible": 8760,
+  "uniform_baseline_winner_nll": 2.5950334999109783,
+  "periods": {
+    "all": {
+      "candidate": 2.0513280855544376,
+      "active": 2.057076906367023,
+      "diff": -0.005748820812585542,
+      "n_races": 8773
+    },
+    "recent_3y": {
+      "candidate": 2.0513280855544376,
+      "active": 2.057076906367023,
+      "diff": -0.005748820812585542,
+      "n_races": 8773
+    },
+    "recent_5y": {
+      "candidate": 2.0513280855544376,
+      "active": 2.057076906367023,
+      "diff": -0.005748820812585542,
+      "n_races": 8773
+    }
+  },
+  "bootstrap_ci": {
+    "point": -0.005748820812585194,
+    "ci_low": -0.010038102584757144,
+    "ci_high": -0.0013424287355669239,
+    "b": 2000,
+    "seed": 20260713,
+    "block": "race_day",
+    "n_days": 273,
+    "no_decision": false
+  },
+  "gate": {
+    "primary": true,
+    "stat_guard": true,
+    "recent_guard": true,
+    "top_noninferior": true,
+    "calibration": true,
+    "adopted": true,
+    "reasons": {
+      "winner_nll_diff": -0.005748820812585542,
+      "ci_high": -0.0013424287355669239,
+      "top2_diff": -0.0008800237618414308,
+      "top3_diff": -0.001113707976202194,
+      "cand_ece": 0.0015016121895404895,
+      "act_ece": 0.0012870534837659234,
+      "emergency_stop": false,
+      "recent": {
+        "pass": true,
+        "windows": {
+          "recent_3y": {
+            "diff": -0.005748820812585542,
+            "degraded": false
+          },
+          "recent_5y": {
+            "diff": -0.005748820812585542,
+            "degraded": false
+          }
+        }
+      }
+    }
+  },
+  "snapshot": {
+    "git_sha": "8034df5b513b9ddb5906798a9da4e39096bec8ce",
+    "feature_version": "features-018",
+    "candidate_spec": "pl_topk:isotonic",
+    "active_spec": "pl_topk:isotonic:drop=pm_core_strength"
+  },
+  "subgroups": {
+    "race_subgroups": {
+      "2026_only": {
+        "bootstrap_ci": {
+          "point": -0.007052125746894625,
+          "ci_low": -0.016228280646673237,
+          "ci_high": 0.0023546530967769085,
+          "b": 2000,
+          "seed": 20260713,
+          "block": "race_day",
+          "n_days": 58,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 58,
+        "cand_minus_uniform": -0.5307386184289332
+      },
+      "2026_field_has_nk": {
+        "bootstrap_ci": {
+          "point": -0.008431445199730896,
+          "ci_low": -0.02139044937248674,
+          "ci_high": 0.004295844037712965,
+          "b": 2000,
+          "seed": 20260713,
+          "block": "race_day",
+          "n_days": 58,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 58,
+        "cand_minus_uniform": -0.5853280571122397
+      }
+    },
+    "horse_subgroups": {
+      "canonical": {
+        "bootstrap_ci": {
+          "point": -0.00045439497179426577,
+          "ci_low": -0.0008498607158559156,
+          "ci_high": -4.157772694660334e-05,
+          "b": 2000,
+          "seed": 20260713,
+          "block": "race_day",
+          "n_days": 273,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 273,
+        "cand_minus_uniform": -0.043901485825757584
+      },
+      "nk": {
+        "bootstrap_ci": {
+          "point": -0.00041644641387398516,
+          "ci_low": -0.0014881036124472402,
+          "ci_high": 0.0006671040355117112,
+          "b": 2000,
+          "seed": 20260713,
+          "block": "race_day",
+          "n_days": 84,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 84,
+        "cand_minus_uniform": -0.042645432336420035
+      },
+      "2026_nk": {
+        "bootstrap_ci": {
+          "point": -0.00044188841895824595,
+          "ci_low": -0.0017793360621616012,
+          "ci_high": 0.0008312048040872671,
+          "b": 2000,
+          "seed": 20260713,
+          "block": "race_day",
+          "n_days": 58,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 58,
+        "cand_minus_uniform": -0.044110759337756315
+      }
+    },
+    "critical": [
+      "2026_only",
+      "nk",
+      "2026_nk"
+    ],
+    "subgroup_guard": true,
+    "subgroup_decisions": {
+      "2026_only": "PASS",
+      "nk": "PASS",
+      "2026_nk": "PASS"
+    }
+  }
+}
