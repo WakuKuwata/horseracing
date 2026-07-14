@@ -1,0 +1,99 @@
+{
+  "_comment": "070: pre-registered F03/F04/F05 staged adoption + subgroup gate (fixed BEFORE OOS, III). Reuses 069 paired-eval/subgroup machinery. Per-bundle keep/drop matrix + formula params frozen here. top_noninferior/calibration are TOP-LEVEL to match 068 _build_gate cfg.get() reads (never nest).",
+  "primary": "winner_nll",
+  "top_noninferior": {"top2": 0.0005, "top3": 0.0005},
+  "calibration": {"metric": "mean_ece", "noninferior_width": 0.001, "emergency_abs_ece": 0.05},
+  "subgroup_guard": {
+    "_comment": "Same intersection-union three-way as 069. adopted requires ALL critical subgroups PASS.",
+    "critical_subgroups": ["2026_only", "nk", "2026_nk"],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "three_way",
+    "race_level_subgroups": ["2026_only", "2026_field_has_nk"],
+    "horse_level_subgroups": ["canonical", "nk", "2026_nk", "cov_0", "cov_1_2", "cov_3plus"],
+    "absolute_benchmark": "candidate_minus_uniform",
+    "no_decision_min_days": 10,
+    "_coverage_bands_note": "DIAGNOSTIC-ONLY: cov_0/cov_1_2/cov_3plus need obs_count wiring (not live-wired in current CLI, codex B2) and are NOT in critical_subgroups — they do not gate adoption.",
+    "coverage_bands": [[0, 0], [1, 2], [3, null]]
+  },
+  "eval_window": {
+    "_comment": "Pre-registered OOS window (III). Same as 069 so verdicts are comparable.",
+    "from": "2019-01-01",
+    "to": "2026-07-12"
+  },
+  "bootstrap": {"b": 2000, "seed": 20260714, "block": "race_day", "scheme": "moving_block", "alpha": 0.05},
+  "staged_evaluation": {
+    "_comment": "FR-006a per-arm keep/drop matrix. RECORD-ONLY: current CLI does NOT consume this block (codex 論点3) — the operator runs each stage's explicit --candidate/--active recipe from contracts/cli.md. group names expanded to columns via _expand_group_drops, dropped SYMMETRICALLY from both arms. Each stage verdict fixed BEFORE next baseline. Final verdict = gate.adopted AND subgroup_guard (driver-applied, codex B2). F05 residual only if F04 ADOPT.",
+    "_stage_numbering": "num = paired-eval 通し番号 (段1-5); bookkeeping entries have num=null. spec FR-006a / tasks / contracts all use this 段1-5 mapping.",
+    "stages": [
+      {"id": "f03_replace", "num": 1, "_base_note": "base = accuracy-first (lgbm-064-f02acc) recipe keeping pm_core_strength (F02); NOT the p⊥q default lgbm-063 (codex/analyze I1).", "candidate_keep_minus": ["past_market"], "candidate_add": ["pm_rank_robust"], "baseline_keep": "accuracy_first_base", "both_drop": ["pm_expectation_residual", "pm_conditioned_support", "pm_conditioned_residual"]},
+      {"id": "f03_verdict_resolution", "num": null, "_note": "BOOKKEEPING (not a paired-eval): after stage f03_replace, the WINNER stays in base and the LOSER is dropped from BOTH arms downstream. ADOPT(F03) => drop past_market (058 loser); REJECT(F03) => drop pm_rank_robust (F03 loser). This is spec FR-006a step 2 (analyze I2/F1)."},
+      {"id": "f04_add", "num": 2, "candidate_add": ["pm_expectation_residual"], "both_drop": ["pm_conditioned_support", "pm_conditioned_residual"], "_base": "F03-resolved base (keeps F03-winner per f03_verdict_resolution)"},
+      {"id": "f04_verdict_resolution", "num": null, "_note": "BOOKKEEPING (not a paired-eval, symmetric to f03_verdict_resolution, analyze F1): after f04_add, the WINNER stays in the downstream base. ADOPT(F04) => downstream base KEEPS pm_expectation_residual; REJECT(F04) => pm_expectation_residual dropped from stages 3-5 base. This prevents F05 support/residual being credited for variance an adopted F04 already explains (III attribution)."},
+      {"id": "f05_support", "num": 3, "candidate_add": ["pm_conditioned_support"], "both_drop": ["pm_conditioned_residual"], "_base": "F03-resolved + F04-resolved base (keeps F03-winner AND adopted F04). candidate = base + pm_conditioned_support; active = base."},
+      {"id": "f05_residual", "num": 4, "requires": "f04_add==ADOPT", "_adopt_def": "ADOPT = composite gate.adopted AND subgroup_guard (analyze A1, same as FR-006a final verdict).", "candidate_add": ["pm_conditioned_residual"], "_base": "ACCUMULATED base = F03-winner + adopted F04 + adopted F05 support (consistent with the accumulating staged pattern; residual's marginal is measured BEYOND an adopted support so overlap is not double-credited, III attribution). If f05_support was REJECTED, support is dropped from this base. Matches contracts <F05supportD> placeholder (analyze F1 v2)."},
+      {"id": "stack_safety_check", "num": 5, "vs": "lgbm-064-f02acc", "_base": "ALL adopted groups (F03-winner + adopted F04 + adopted F05 support/residual).", "_note": "NOT an independent confirmatory — same 2019-2026 OOS after staged selection; true confirmation needs an unused time holdout (deferred)."}
+    ]
+  },
+  "f03_formula": {
+    "_comment": "OOS-frozen (III). tie=competition rank (never broken by horse_id/row order). POPULARITY-ONLY complete-field (odds-insensitive robust fallback, codex 見落とし). percentile u=1-(rank-1)/(N_started-1), N=1 => u=1. Columns = spec canonical.",
+    "columns": ["asof_pm_rankpct_last", "asof_pm_rankpct_mean5", "asof_pm_favorite_rate5", "asof_pm_top3fav_rate5", "asof_pm_rank_obs_count"],
+    "tie": "competition_rank",
+    "percentile": "1-(rank-1)/(N_started-1)",
+    "n1_u": 1.0,
+    "complete_field": "all_started_have_valid_popularity",
+    "fav_rank": 1,
+    "top3_rank_le": 3,
+    "_top3_tie_note": "under competition rank, top3fav_rate5 counts ALL horses with competition-rank <= 3; ties can push >3 horses to rank<=3 (deterministic, codex B2).",
+    "recent_k_basis": "valid_market_observations",
+    "min_obs": 3,
+    "_min_obs_note": "ALL F03 columns incl. asof_pm_rankpct_last require obs>=3 (analyze A3): a single-observation percentile is unstable/high-variance; the tree gets NaN+has_obs below 3 rather than a noisy 1-obs value.",
+    "rank_obs_count_separate_from_f02": true,
+    "mean_window": 5,
+    "fav_window": 5,
+    "_fav_window_note": "favorite_rate5 / top3fav_rate5 rate window = 5 (same as mean_window; explicit so T006a constant-binding can assert it, analyze A2)."
+  },
+  "f04_formula": {
+    "_comment": "OOS-frozen. 2-population split: finish_residual on finished, win_residual on started (non-winner=0, 068 population). v denominator = N_started (matches u scale, NOT N_fin, codex 見落とし). q shared from F02 primitive. Columns = spec canonical (win=mean10, single result_obs_count + resid_sd5).",
+    "columns": ["asof_pm_finish_resid_mean5", "asof_pm_finish_resid_career", "asof_pm_win_resid_mean10", "asof_pm_win_resid_career", "asof_pm_resid_sd5", "asof_pm_result_obs_count"],
+    "finish_residual": "v-u",
+    "finish_v_percentile": "1-(finish_order-1)/(N_started-1)",
+    "finish_population": "finished_only",
+    "win_residual": "I(win)-q",
+    "win_q_source": "f02_shared_primitive_complete_field",
+    "win_population": "started_all",
+    "finish_window": 5,
+    "win_window": 10,
+    "_window_note": "win_resid uses a longer window (10) than finish_resid/sd (5) by design (analyze F5): win events are rarer/noisier per race (1 winner) so a longer window stabilises the mean; finish residual and sd are denser per-horse so 5 suffices. Frozen pre-OOS (III).",
+    "sd_ddof": 1,
+    "sd_window": 5,
+    "sd_residual": "win_residual",
+    "_sd_residual_note": "asof_pm_resid_sd5 measures the sd of WIN residual (I(win)-q) over the started population (matches the surfaced started result_obs_count); NOT the finish residual (analyze U1).",
+    "min_obs": 3,
+    "_sd_min_obs_note": "asof_pm_resid_sd5 uses obs<2 -> NaN (ddof=1 needs >=2); the other F04 mean columns use min_obs=3 (codex B1).",
+    "finish_resid_gate_count": "finished_observations",
+    "win_resid_gate_count": "started_observations",
+    "_2pop_gate_note": "OOS-FROZEN DECISION (III, analyze U1): finish_resid_* columns are NaN when the FINISHED-observation count < min_obs (computed internally, NOT the started count) — a horse with many starts but 1 finish must not surface a 1-obs high-variance finish residual. win_resid_* and the surfaced asof_pm_result_obs_count use the STARTED count. Only ONE count column is surfaced (started); the finished-count gate is internal to keep the 6-column contract."
+  },
+  "f05_formula": {
+    "_comment": "OOS-frozen. 2 registry groups (codex B3): pm_conditioned_support (F02-dep) / pm_conditioned_residual (F04-dep). lambda=5 shrinkage. As-of: fetch latest-cell cumsum/count AND target-prior overall-parent sum/count SEPARATELY then shrink (no carried stale value, codex 論点1). parent=cumsum-current (pool-end independent). PER-AXIS valid_count = REAL cell obs only (codex B5).",
+    "support_columns": ["asof_pm_support_surface", "asof_pm_support_distband", "asof_pm_support_venue"],
+    "support_counts": ["asof_pm_support_cond_count_surface", "asof_pm_support_cond_count_distband", "asof_pm_support_cond_count_venue"],
+    "residual_columns": ["asof_pm_finish_resid_surface"],
+    "residual_counts": ["asof_pm_finish_resid_surface_count"],
+    "condition_axes": ["surface", "distband", "venue"],
+    "distband_bins": "existing_020_023",
+    "lambda": 5,
+    "parent_fallback_when_n_cell_0": true,
+    "valid_count_excludes_parent_fallback": true,
+    "support_requires": "f02_adopted",
+    "residual_requires": "f04_adopted"
+  },
+  "serving": {
+    "_comment": "codex 論点4/6. features-019 compat pins 018 AND 017 DIRECTLY (non-transitive), using FULL hashes read from artifact metadata (fill at implementation). ANY same-version column-subset drop => NOT_SERVABLE.",
+    "feature_version": "features-019",
+    "compat_pins": {"features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f", "features-017": "300b28a9312a3fb6e171b1dfd38cc88413ccbae2a0cfa9936ed278b5d14b66ac"},
+    "byte_parity_target": "model_input_137_cols",
+    "not_servable": "ANY same-version artifact that drops >=1 column (F03 replacement AND any final candidate dropping unadopted F04/F05) is NOT_SERVABLE_PENDING_PROFILE"
+  }
+}

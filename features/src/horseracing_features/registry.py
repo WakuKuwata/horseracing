@@ -204,6 +204,29 @@ REGISTRY: dict[str, FeatureMeta] = {
     "asof_pm_support_sd5": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
     "asof_pm_obs_count": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
     "asof_pm_has_obs": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
+    # --- Feature 070 (F03): robust past-market RANK PERCENTILE (accuracy-first) ---
+    "asof_pm_rankpct_last": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_rankpct_mean5": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_favorite_rate5": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_top3fav_rate5": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_rank_obs_count": FeatureMeta("market_history", _T.PRE_ENTRY, _M.ZERO_OK),
+    # --- Feature 070 (F04): past-market EXPECTATION RESIDUAL (finish/win 2-pop, accuracy-first) ---
+    "asof_pm_finish_resid_mean5": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_finish_resid_career": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_win_resid_mean10": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_win_resid_career": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_resid_sd5": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_result_obs_count": FeatureMeta("market_history", _T.PRE_ENTRY, _M.ZERO_OK),
+    # --- Feature 070 (F05): CONDITIONED past-market — support (F02) group, accuracy-first ---
+    "asof_pm_support_surface": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_distband": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_venue": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_cond_count_surface": FeatureMeta("market_history", _T.PRE_ENTRY, _M.ZERO_OK),
+    "asof_pm_support_cond_count_distband": FeatureMeta("market_history", _T.PRE_ENTRY, _M.ZERO_OK),
+    "asof_pm_support_cond_count_venue": FeatureMeta("market_history", _T.PRE_ENTRY, _M.ZERO_OK),
+    # --- Feature 070 (F05): CONDITIONED past-market — residual (F04) group, accuracy-first ---
+    "asof_pm_finish_resid_surface": FeatureMeta("market_history", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_finish_resid_surface_count": FeatureMeta("market_history", _T.PRE_ENTRY, _M.ZERO_OK),
     # Feature 062 (as-of Elo rating) was REJECTED at the pre-registered gate — the opponent-quality
     # axis is redundant with the existing ability features under pl_topk (binary +/−0.0002, pl_topk
     # NEGATIVE on both recent folds). Not merged into the default set (027 precedent: a rejected
@@ -343,6 +366,30 @@ FEATURE_GROUPS: dict[str, str] = {
     "asof_pm_support_sd5": "pm_core_strength",
     "asof_pm_obs_count": "pm_core_strength",
     "asof_pm_has_obs": "pm_core_strength",
+    # Feature 070 (F03): robust rank percentile — recipe REPLACEMENT candidate for 058 past_market
+    # (candidate drops past_market + adds this; never adopted together, FR-002 attribution).
+    "asof_pm_rankpct_last": "pm_rank_robust",
+    "asof_pm_rankpct_mean5": "pm_rank_robust",
+    "asof_pm_favorite_rate5": "pm_rank_robust",
+    "asof_pm_top3fav_rate5": "pm_rank_robust",
+    "asof_pm_rank_obs_count": "pm_rank_robust",
+    # Feature 070 (F04): expectation residual — additive (finish/win 2-population).
+    "asof_pm_finish_resid_mean5": "pm_expectation_residual",
+    "asof_pm_finish_resid_career": "pm_expectation_residual",
+    "asof_pm_win_resid_mean10": "pm_expectation_residual",
+    "asof_pm_win_resid_career": "pm_expectation_residual",
+    "asof_pm_resid_sd5": "pm_expectation_residual",
+    "asof_pm_result_obs_count": "pm_expectation_residual",
+    # Feature 070 (F05): conditioned — TWO groups so support (F02-dep) / residual (F04-dep) can be
+    # dropped independently in the staged keep/drop matrix (codex B3).
+    "asof_pm_support_surface": "pm_conditioned_support",
+    "asof_pm_support_distband": "pm_conditioned_support",
+    "asof_pm_support_venue": "pm_conditioned_support",
+    "asof_pm_support_cond_count_surface": "pm_conditioned_support",
+    "asof_pm_support_cond_count_distband": "pm_conditioned_support",
+    "asof_pm_support_cond_count_venue": "pm_conditioned_support",
+    "asof_pm_finish_resid_surface": "pm_conditioned_residual",
+    "asof_pm_finish_resid_surface_count": "pm_conditioned_residual",
     # Feature 062 (rating) / 063 (closing figure) rejected at the gate — not in the default set.
 }
 
@@ -356,7 +403,11 @@ FEATURE_GROUPS: dict[str, str] = {
 #: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
 #: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
 #: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
-FEATURE_VERSION = "features-018"
+#: 070 (F03/F04/F05 past-market bundle): additive (F03 rank-percentile / F04 residual / F05
+#: conditioned) over features-018. PURELY ADDITIVE (disjoint asof_pm_* column names, no new source
+#: columns => source_fingerprint unchanged). Compat pins 018 AND 017 DIRECTLY (non-transitive) so
+#: lgbm-064-f02acc (features-018) and lgbm-063 (features-017) stay servable byte-parity.
+FEATURE_VERSION = "features-019"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -394,6 +445,15 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
     # by measuring metadata.feature_hash at T015 before this literal is trusted (analyze V1). Keeps
     # lgbm-063 (features-017) servable under features-018 via the compat path.
     "features-018": {
+        "features-017": "300b28a9312a3fb6e171b1dfd38cc88413ccbae2a0cfa9936ed278b5d14b66ac",
+    },
+    # Feature 070 (F03/F04/F05): purely additive over features-018 (disjoint asof_pm_* names, same
+    # structural additive-left-merge guarantee as 058/061/069 + one-time empirical shared-137-col
+    # parity, test_features019_parity). compat is NON-TRANSITIVE, so 019 pins BOTH 018 and 017
+    # DIRECTLY (codex #4). Hashes measured 2026-07-14 from lgbm-064-f02acc / lgbm-063 metadata
+    # (T002): 018=263ef6b7… (lgbm-064-f02acc), 017=300b28a9… (lgbm-063).
+    "features-019": {
+        "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f",
         "features-017": "300b28a9312a3fb6e171b1dfd38cc88413ccbae2a0cfa9936ed278b5d14b66ac",
     },
 }

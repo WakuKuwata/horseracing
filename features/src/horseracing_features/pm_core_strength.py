@@ -60,13 +60,15 @@ def _valid_odds(o: pd.Series) -> pd.Series:
     return o.notna() & np.isfinite(o) & (o >= _ODDS_MIN) & (o < _ODDS_CAP)
 
 
-def _race_support(runs: pd.DataFrame) -> pd.DataFrame:
-    """Per (race_id, horse_id) market support ``s`` for COMPLETE-FIELD past started races only.
+def race_market_primitive(runs: pd.DataFrame) -> pd.DataFrame:
+    """Feature 070 (shared primitive): per (race_id, horse_id) COMPLETE-FIELD past market
+    quantities ``q`` (vote-share), ``s = log(q·N)`` (support), and ``N`` (started field size)
+    for past started races only. F02/F04/F05 all consume this single source (no re-computation,
+    codex 論点2). ``runs`` rows are started horses with ``odds`` + ``race_date``.
 
-    ``runs`` rows are started horses with an ``odds`` column and ``field_size`` (started count).
-    A race contributes ``s`` for all its horses iff EVERY started horse has valid odds; otherwise
-    the race is dropped entirely (complete-field, FR-006). Returns rows with columns
-    ``race_id, horse_id, race_date, s``.
+    A race contributes iff EVERY started horse has valid odds (complete-field, FR-006); otherwise
+    the race is dropped entirely (never renormalize a partial field, II). N=1 -> q=1, s=0 (counted).
+    Returns columns ``race_id, horse_id, race_date, q, s, N``.
     """
     r = runs.copy()
     r["_valid"] = _valid_odds(r["odds"])
@@ -77,13 +79,25 @@ def _race_support(runs: pd.DataFrame) -> pd.DataFrame:
     r["_complete"] = valid_count == started_count
     q = r[r["_complete"]].copy()
     if q.empty:
-        return q.assign(s=pd.Series(dtype=float))[["race_id", "horse_id", "race_date", "s"]]
+        empty = q.assign(q=pd.Series(dtype=float), s=pd.Series(dtype=float),
+                         N=pd.Series(dtype=float))
+        return empty[["race_id", "horse_id", "race_date", "q", "s", "N"]]
     inv = 1.0 / pd.to_numeric(q["odds"], errors="coerce")
     denom = q.groupby("race_id")["odds"].transform(lambda o: (1.0 / pd.to_numeric(o)).sum())
     q["q"] = inv / denom
     n = q.groupby("race_id")["odds"].transform("size")
+    q["N"] = n.astype(float)
     q["s"] = np.log(q["q"] * n)  # N=1 -> q=1, s=log(1*1)=0 (counted)
-    return q[["race_id", "horse_id", "race_date", "s"]]
+    return q[["race_id", "horse_id", "race_date", "q", "s", "N"]]
+
+
+def _race_support(runs: pd.DataFrame) -> pd.DataFrame:
+    """Per (race_id, horse_id) market support ``s`` for COMPLETE-FIELD past started races only.
+
+    Thin wrapper over :func:`race_market_primitive` returning only ``s`` — kept so the 069 F02
+    output is byte-identical after the 070 primitive refactor (T003).
+    """
+    return race_market_primitive(runs)[["race_id", "horse_id", "race_date", "s"]]
 
 
 def _ols_slope(y: np.ndarray) -> float:

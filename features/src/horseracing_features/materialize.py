@@ -40,7 +40,10 @@ from .pace_features import build_pace_features
 from .pace_scenario_features import build_pace_scenario_features
 from .past_market_features import build_past_market_features  # Feature 058 (B1)
 from .pedigree_features import build_pedigree_features
+from .pm_conditioned import build_pm_conditioned_features  # Feature 070 (F05)
 from .pm_core_strength import build_pm_core_strength_features  # Feature 069 (F02)
+from .pm_expectation_residual import build_pm_expectation_residual_features  # Feature 070 (F04)
+from .pm_rank_robust import build_pm_rank_robust_features  # Feature 070 (F03)
 from .race_level_features import build_race_level_features
 from .registry import FEATURE_VERSION, materialized_columns
 from .relative_ability_features import build_relative_ability_features
@@ -220,6 +223,16 @@ def build_asof_features(
     # did not, so source_fingerprint MUST include odds (a fresh materialize is required).
     pmcs = build_pm_core_strength_features(frames)
     out = out.merge(pmcs, on=_KEYS, how="left")
+    # Feature 070 (F03/F04/F05): additive past-market bundles over race_horses.popularity/odds +
+    # race_results.finish_order — NO new source columns (already read by 058/069) => source
+    # fingerprint UNCHANGED. Additive left-merge over disjoint asof_pm_* names (INV-F2). F04 shares
+    # F02's q and F03's u primitive; F05 shares F02 s / F04 finish_residual (no re-computation).
+    pmrr = build_pm_rank_robust_features(frames)          # F03
+    out = out.merge(pmrr, on=_KEYS, how="left")
+    pmer = build_pm_expectation_residual_features(frames)  # F04
+    out = out.merge(pmer, on=_KEYS, how="left")
+    pmcond = build_pm_conditioned_features(frames)         # F05 (support + residual groups)
+    out = out.merge(pmcond, on=_KEYS, how="left")
     # Feature 063 (closing figure) was rejected at the full 19-fold gate (redundant with 061 over
     # the full period) — NOT wired in. closing_figure_features.py + tests kept as negative result.
     # Feature 062 (Elo rating) was rejected at the pre-registered gate (redundant under pl_topk), so
