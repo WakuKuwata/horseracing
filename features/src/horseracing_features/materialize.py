@@ -40,6 +40,7 @@ from .pace_features import build_pace_features
 from .pace_scenario_features import build_pace_scenario_features
 from .past_market_features import build_past_market_features  # Feature 058 (B1)
 from .pedigree_features import build_pedigree_features
+from .pm_core_strength import build_pm_core_strength_features  # Feature 069 (F02)
 from .race_level_features import build_race_level_features
 from .registry import FEATURE_VERSION, materialized_columns
 from .relative_ability_features import build_relative_ability_features
@@ -214,6 +215,11 @@ def build_asof_features(
     # source columns => source_fingerprint unchanged). Additive left-merge (INV-F2).
     spdfig = build_speed_figure_features(frames)
     out = out.merge(spdfig, on=_KEYS, how="left")
+    # Feature 069 (F02): past market SUPPORT (s=log(q×N)) — independent as-of block over
+    # race_horses.odds. Additive left-merge (INV-F2). Reads a NEW source column (odds) that 058
+    # did not, so source_fingerprint MUST include odds (a fresh materialize is required).
+    pmcs = build_pm_core_strength_features(frames)
+    out = out.merge(pmcs, on=_KEYS, how="left")
     # Feature 063 (closing figure) was rejected at the full 19-fold gate (redundant with 061 over
     # the full period) — NOT wired in. closing_figure_features.py + tests kept as negative result.
     # Feature 062 (Elo rating) was rejected at the pre-registered gate (redundant under pl_topk), so

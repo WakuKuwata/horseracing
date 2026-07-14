@@ -75,6 +75,9 @@ class PairedReport:
     bootstrap_ci: dict
     gate: GateResult
     snapshot: dict = field(default_factory=dict)
+    #: Feature 069 US1: race/horse-level subgroup CIs + intersection-union guard (None unless
+    #: paired_eval(subgroups=True)). 068 reports are byte-identical when omitted (FR-005).
+    subgroups: dict | None = None
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -174,6 +177,95 @@ def _build_gate(cand: ArmScores, act: ArmScores, ci: dict, recent: dict, cfg: di
     )
 
 
+def _horse_logloss(p: float, y: int) -> float:
+    p = min(max(p, 1e-15), 1.0 - 1e-15)
+    return -(math.log(p) if y == 1 else math.log(1.0 - p))
+
+
+def _ci_and_decision(diffs_by_day, uniform_by_day, *, b, seed, margin):
+    """Bootstrap CI + three-way decision + subgroup-internal cand−uniform for one subgroup."""
+    from .subgroups import three_way
+    ci = moving_block_bootstrap_ci(diffs_by_day, b=b, seed=seed)
+    d = asdict(ci)
+    decision = three_way(d.get("ci_low"), d.get("ci_high"), margin)
+    all_u = [u for us in uniform_by_day.values() for u in us]
+    cand_minus_uniform = (sum(all_u) / len(all_u)) if all_u else None
+    return {
+        "bootstrap_ci": d, "decision": decision,
+        "n_days": d.get("n_days"), "cand_minus_uniform": cand_minus_uniform,
+    }
+
+
+def _compute_subgroups(
+    valid_races, cand_preds, act_preds, cand_wp, act_wp, cfg, *,
+    obs_count=None, b=2000, seed=20260712,
+) -> dict:
+    """Race-level (winner NLL) + horse-level (started-all per-horse logloss) subgroup CIs + the
+    intersection-union three-way guard (FR-001/002/003, codex C1/C2/C3/C6). ``obs_count`` maps
+    (race_id, horse_id) -> strictly-before market-obs count for coverage bands (None = omit)."""
+    from .subgroups import (
+        horse_subgroup_labels,
+        is_nk,
+        race_subgroup_labels,
+        subgroup_guard,
+    )
+    sg = cfg.get("subgroup_guard", {})
+    m_win = sg.get("non_inferior_margin_winner_nll", 0.005)
+    m_horse = sg.get("non_inferior_margin_horse_logloss", 0.001)
+    critical = sg.get("critical_subgroups", ["2026_only", "nk", "2026_nk"])
+
+    # race-level: per-race winner-NLL paired diff, grouped by (subgroup -> day)
+    race_diffs: dict = {}
+    race_unif: dict = {}
+    for er, cp, ap in zip(valid_races, cand_wp, act_wp, strict=True):
+        if cp is None or ap is None:
+            continue
+        yr = er.context.race_date.year
+        field_has_nk = any(is_nk(h.horse_id) for h in er.context.started_horses)
+        day = er.context.race_date.isoformat()
+        n = len(er.context.started_horses)
+        u = math.log(n) if n > 0 else 0.0  # uniform winner NLL = -log(1/N) = log(N)
+        for lab in race_subgroup_labels(yr, field_has_nk):
+            race_diffs.setdefault(lab, {}).setdefault(day, []).append(_clip_nll(cp) - _clip_nll(ap))
+            race_unif.setdefault(lab, {}).setdefault(day, []).append(_clip_nll(cp) - u)
+
+    # horse-level: per started-horse started-all logloss paired diff, grouped by (subgroup -> day)
+    horse_diffs: dict = {}
+    horse_unif: dict = {}
+    for er in valid_races:
+        pop = population_masks(er)
+        yr = er.context.race_date.year
+        day = er.context.race_date.isoformat()
+        cpreds, apreds = cand_preds[er.context.race_id], act_preds[er.context.race_id]
+        n = pop.field_size
+        u_p = 1.0 / n if n > 0 else 0.5
+        for hid in pop.started_horse_ids:
+            y = pop.started_win[hid]
+            cll = _horse_logloss(float(cpreds[hid].win), y)
+            dc = cll - _horse_logloss(float(apreds[hid].win), y)
+            du = cll - _horse_logloss(u_p, y)
+            oc = obs_count.get((er.context.race_id, hid)) if obs_count else None
+            for lab in horse_subgroup_labels(hid, yr, obs_count=oc):
+                horse_diffs.setdefault(lab, {}).setdefault(day, []).append(dc)
+                horse_unif.setdefault(lab, {}).setdefault(day, []).append(du)
+
+    race_out = {
+        lab: _ci_and_decision(d, race_unif[lab], b=b, seed=seed, margin=m_win)
+        for lab, d in race_diffs.items()
+    }
+    horse_out = {
+        lab: _ci_and_decision(d, horse_unif[lab], b=b, seed=seed, margin=m_horse)
+        for lab, d in horse_diffs.items()
+    }
+    decisions = {lab: v["decision"] for lab, v in {**race_out, **horse_out}.items()}
+    guard_pass = subgroup_guard(decisions, critical)
+    return {
+        "race_subgroups": race_out, "horse_subgroups": horse_out,
+        "critical": critical, "subgroup_guard": guard_pass,
+        "subgroup_decisions": {c: decisions.get(c, "MISSING") for c in critical},
+    }
+
+
 def paired_eval(
     candidate: PredictorFactory,
     active: PredictorFactory,
@@ -186,6 +278,8 @@ def paired_eval(
     num_threads: int | None = None,
     band_edges: tuple[float, ...] = DEFAULT_BAND_EDGES,
     snapshot: dict | None = None,
+    subgroups: bool = False,
+    obs_count: dict | None = None,
 ) -> PairedReport:
     cfg = gate_config or {}
     cand_preds, valid_races = predict_over_folds(
@@ -247,6 +341,13 @@ def paired_eval(
     recent = {"pass": recent_pass, "windows": recent_detail}
 
     gate = _build_gate(cand_scores, act_scores, asdict(ci), recent, cfg)
+    sg = None
+    if subgroups:
+        sg = _compute_subgroups(
+            valid_races, cand_preds, act_preds, cand_wp, act_wp, cfg,
+            obs_count=obs_count, b=boot_cfg.get("b", bootstrap_b),
+            seed=boot_cfg.get("seed", bootstrap_seed),
+        )
     return PairedReport(
         candidate_recipe_meta=candidate.recipe_meta,
         active_recipe_meta=active.recipe_meta,
@@ -262,4 +363,5 @@ def paired_eval(
         bootstrap_ci=asdict(ci),
         gate=gate,
         snapshot=snapshot or {},
+        subgroups=sg,
     )

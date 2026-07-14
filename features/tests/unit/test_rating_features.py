@@ -218,7 +218,7 @@ def test_rating_is_not_in_the_default_feature_set():
         model_input_features,
     )
 
-    assert FEATURE_VERSION == "features-017"  # 062 rating still rejected; 017 = class/jump bugfix
+    assert FEATURE_VERSION == "features-018"  # 062 rating still rejected; 018 = 069 F02 pm_core_strength
     rating_cols = {
         "asof_rating", "asof_rating_recent_delta", "asof_rating_max",
         "asof_rating_starts", "asof_rating_vs_field",

@@ -1,0 +1,38 @@
+{
+  "_comment": "069: pre-registered F02 adoption + subgroup gate (fixed BEFORE OOS, III). recent-K/formula params also frozen here. top_noninferior/calibration are TOP-LEVEL to match 068 _build_gate's cfg.get() reads (analyze F1) — nesting them would be silently ignored.",
+  "primary": "winner_nll",
+  "top_noninferior": {"top2": 0.0005, "top3": 0.0005},
+  "calibration": {"metric": "mean_ece", "noninferior_width": 0.001, "emergency_abs_ece": 0.05},
+  "subgroup_guard": {
+    "_comment": "intersection-union: adopted requires ALL critical subgroups PASS (no multiple-comparison correction). Three-way per subgroup: PASS ci_upper<margin, FAIL ci_lower>margin, else NO_DECISION.",
+    "critical_subgroups": ["2026_only", "nk", "2026_nk"],
+    "_margin_note": "Per-GRAIN margins: race-level winner-NLL diffs are ~5-10x larger in magnitude than horse-level per-horse logloss diffs, so a single margin would make the horse-grain (nk/2026_nk) guard too permissive (analyze A1). T001 confirms the diff scale at each grain before freeze; margins may only TIGHTEN pre-OOS.",
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "three_way",
+    "race_level_subgroups": ["2026_only", "2026_field_has_nk"],
+    "horse_level_subgroups": ["canonical", "nk", "2026_nk", "cov_0", "cov_1_2", "cov_3plus"],
+    "absolute_benchmark": "candidate_minus_uniform",
+    "no_decision_min_days": 10,
+    "coverage_bands": [[0, 0], [1, 2], [3, null]]
+  },
+  "eval_window": {
+    "_comment": "Pre-registered OOS window (III): frozen BEFORE seeing results so a post-hoc window can't move the 2026-subgroup verdict (analyze C1).",
+    "from": "2019-01-01",
+    "to": "2026-07-12"
+  },
+  "bootstrap": {"b": 2000, "seed": 20260713, "block": "race_day", "scheme": "moving_block", "alpha": 0.05},
+  "f02_formula": {
+    "recent_k_basis": "valid_market_observations",
+    "shrinkage_prior": 0.0,
+    "lambda_mean3": 2, "lambda_mean5": 2, "lambda_career": 5,
+    "trend_min_obs": 2, "trend_window": 3,
+    "sd5_ddof": 1, "sd5_min_obs": 2, "sd5_window": 5,
+    "best5_window": 5,
+    "q_complete_field_required": true,
+    "count_n1_s0_in_obs": true,
+    "_count_n1_note": "N=1 races yield q=1, s=0 (uninformative but valid). Counted in obs_count by default — this drives coverage-band subgroup assignment (cov_0/1_2/3plus) so it is frozen here pre-OOS (III, analyze U1).",
+    "_odds_valid_range_note": "1.0 is a LEGIT 元返し heavy-favorite floor (JRA win odds >= 1.0) and is KEPT VALID — excluding it would void the whole race under complete-field (FR-006) and systematically shed the most informative strong-favorite races (analyze D1). Sentinels are data-error markers only: <=0, non-finite. 999.9 (netkeiba cap) is treated as invalid PENDING T001 source-conditional confirmation. Provisional: PRE-OOS T001/T020 may finalize the range in EITHER direction (e.g. re-include 999.9 if source-confirmed legit); only POST-OOS is frozen (never relax post-OOS), III.",
+    "odds_valid_range": {"ge": 1.0, "lt": 999.9, "exclude_sentinels": [0.0], "cap_pending_confirm": 999.9}
+  }
+}

@@ -95,6 +95,6 @@ def test_not_in_default_feature_set():
     out = build_closing_figure_features(frames)
     assert not out.duplicated(subset=["race_id", "horse_id"]).any()
     assert list(out.columns) == ["race_id", "horse_id", *CLOSING_FIGURE_COLUMNS]
-    assert FEATURE_VERSION == "features-017"  # 063 still rejected; 017 bumped for class/jump bugfix
+    assert FEATURE_VERSION == "features-018"  # 063 still rejected; 018 = 069 F02 pm_core_strength
     assert not (set(CLOSING_FIGURE_COLUMNS) & set(model_input_features()))
     assert "closing_figure" not in set(FEATURE_GROUPS.values())

@@ -673,6 +673,8 @@ def main(argv: list[str] | None = None) -> int:
     pe.add_argument("--bootstrap-b", type=int, default=2000)
     pe.add_argument("--num-threads", type=int, default=None)
     pe.add_argument("--gate-config", default=None, help="pre-registered gate-config.json path")
+    pe.add_argument("--subgroups", action="store_true",
+                    help="069: report 2026/nk/coverage subgroup CIs + intersection-union guard")
     pe.add_argument("--json", dest="json_out", default=None, help="write PairedReport JSON here")
     pe.add_argument("--database-url", default=None)
 
@@ -692,11 +694,23 @@ def main(argv: list[str] | None = None) -> int:
     cse.add_argument("--json", dest="json_out", default=None)
     cse.add_argument("--database-url", default=None)
 
+    # Feature 069 (SC-005): past-market coverage audit (year × ID source × obs bands). Read-only.
+    ca = sub.add_parser("coverage-audit",
+                        help="069: F02 past-market coverage by year × ID source (canonical/nk:)")
+    ca.add_argument("--from", dest="from_", type=_parse_date, default=None)
+    ca.add_argument("--to", dest="to", type=_parse_date, default=None)
+    ca.add_argument("--json", dest="json_out", default=None)
+    ca.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     if args.command == "paired-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _paired_eval(session, args)
+    if args.command == "coverage-audit":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _coverage_audit(session, args)
     if args.command == "calib-split-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -755,20 +769,44 @@ def main(argv: list[str] | None = None) -> int:
     return 1
 
 
-def _recipe_from_spec(spec: str):
-    """Parse 'objective:calibration[:calib_frac]' → ModelRecipe.
+def _expand_group_drops(group_names: tuple[str, ...]) -> tuple[str, ...]:
+    """Feature 069 (codex F1): expand FEATURE_GROUPS names → their column names.
 
-    The optional 3rd field is the calibration holdout fraction, so the calib-split arms A/B
-    (068 US2) are expressible as e.g. 'pl_topk:isotonic:0.3' (A) vs 'pl_topk:isotonic:0.1' (B).
+    ``drop_features`` is a tuple of COLUMN names (predictor filters ``c not in drop_features``);
+    passing a bare GROUP name would drop nothing (fail-open → active arm == candidate, wrong F02
+    verdict + p⊥q leak). So a group-drop is expanded to the group's columns here."""
+    from horseracing_features.registry import FEATURE_GROUPS
+    want = set(group_names)
+    cols = tuple(c for c, g in FEATURE_GROUPS.items() if g in want)
+    missing = want - {g for g in FEATURE_GROUPS.values()}
+    if missing:
+        raise ValueError(f"unknown feature group(s): {sorted(missing)}")
+    return cols
+
+
+def _recipe_from_spec(spec: str):
+    """Parse 'objective:calibration[:calib_frac][:drop=g1,g2]' → ModelRecipe.
+
+    The optional 3rd field is the calibration holdout fraction (068 A/B: 'pl_topk:isotonic:0.3').
+    A trailing 'drop=<groups>' segment (069) drops those FEATURE_GROUPS (expanded to columns), e.g.
+    active arm 'pl_topk:isotonic:0.3:drop=pm_core_strength' for the F02 paired-eval baseline.
     """
     from .calibration import DEFAULT_CALIB_FRAC
     from .recipe import ModelRecipe
     parts = spec.split(":")
     objective = parts[0]
     calibration = parts[1] if len(parts) > 1 else "isotonic"
-    calib_frac = float(parts[2]) if len(parts) > 2 else DEFAULT_CALIB_FRAC
+    calib_frac = DEFAULT_CALIB_FRAC
+    drop_features: tuple[str, ...] = ()
+    for seg in parts[2:]:
+        if seg.startswith("drop="):
+            groups = tuple(g for g in seg[len("drop="):].split(",") if g)
+            drop_features = _expand_group_drops(groups)
+        elif seg:
+            calib_frac = float(seg)
     return ModelRecipe(
-        objective=objective, calibration=calibration, calib_frac=calib_frac, label=spec
+        objective=objective, calibration=calibration, calib_frac=calib_frac,
+        drop_features=drop_features, label=spec,
     )
 
 
@@ -816,6 +854,7 @@ def _paired_eval(session: Session, args) -> int:
         num_threads=args.num_threads,
         snapshot={"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
                   "candidate_spec": args.candidate, "active_spec": args.active},
+        subgroups=getattr(args, "subgroups", False),
     )
     g = report.gate
     print(f"paired-eval candidate={args.candidate} active={args.active} "
@@ -829,9 +868,70 @@ def _paired_eval(session: Session, args) -> int:
           f"point={ci['point']:+.6f} days={ci['n_days']} no_decision={ci['no_decision']}")
     print(f"  gate: primary={g.primary} stat_guard={g.stat_guard} recent={g.recent_guard} "
           f"top_ni={g.top_noninferior} calib={g.calibration} -> ADOPTED={g.adopted}")
+    if report.subgroups:  # Feature 069 US1
+        sg = report.subgroups
+        for grain in ("race_subgroups", "horse_subgroups"):
+            for lab, v in sg[grain].items():
+                cci = v["bootstrap_ci"]
+                print(f"  subgroup[{lab}]: decision={v['decision']} "
+                      f"CI[{cci['ci_low']},{cci['ci_high']}] days={v['n_days']} "
+                      f"cand_minus_uniform={v['cand_minus_uniform']}")
+        print(f"  subgroup_guard(critical={sg['critical']}): {sg['subgroup_guard']} "
+              f"decisions={sg['subgroup_decisions']}")
     if args.json_out:
         with open(args.json_out, "w") as fh:
             json.dump(report.to_dict(), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _coverage_audit(session: Session, args) -> int:
+    """Feature 069 SC-005 (D7): F02 past-market coverage + odds-provenance quality, by year × ID
+    source (canonical / nk:). Read-only; NEVER flows to features (II). Surfaces the 2026 nk: ID
+    gap so a low-coverage nk: horse is not mistaken for a market-less 新馬."""
+    import json
+
+    import numpy as np
+    import pandas as pd
+    from horseracing_features.loader import load_frames
+    from horseracing_features.pm_core_strength import build_pm_core_strength_features
+
+    frames = load_frames(session, end_date=args.to)
+    feat = build_pm_core_strength_features(frames)
+    races = frames.races[["race_id", "race_date"]].copy()
+    races["year"] = races["race_date"].astype("datetime64[ns]").dt.year
+    df = feat.merge(races, on="race_id", how="left")
+    if args.from_ is not None:
+        df = df[df["race_date"] >= np.datetime64(args.from_)]
+    df["source"] = np.where(df["horse_id"].astype(str).str.startswith("nk:"), "nk", "canonical")
+
+    report: dict = {}
+    for (yr, src), grp in df.groupby(["year", "source"]):
+        n = len(grp)
+        oc = grp["asof_pm_obs_count"].to_numpy()
+        report[f"{int(yr)}/{src}"] = {
+            "started": int(n),
+            "cov_ge1": round(float((oc >= 1).mean()), 4),
+            "cov_ge3": round(float((oc >= 3).mean()), 4),
+            "cov_ge5": round(float((oc >= 5).mean()), 4),
+        }
+    # odds-provenance quality (boundary values that gate complete-field q)
+    odds = pd.to_numeric(frames.race_horses.get("odds"), errors="coerce")
+    prov = {
+        "odds_present": round(float(odds.notna().mean()), 4),
+        "odds_eq_1_0": int((odds == 1.0).sum()),
+        "odds_eq_999_9": int((odds == 999.9).sum()),
+        "odds_le_0": int((odds <= 0).sum()),
+    }
+    print("coverage-audit (F02 past-market, year × ID source):")
+    for k in sorted(report):
+        v = report[k]
+        print(f"  {k:14s} started={v['started']:6d} "
+              f"cov>=1={v['cov_ge1']:.3f} cov>=3={v['cov_ge3']:.3f} cov>=5={v['cov_ge5']:.3f}")
+    print(f"  provenance: {prov}")
+    if args.json_out:
+        with open(args.json_out, "w") as fh:
+            json.dump({"coverage": report, "provenance": prov}, fh, indent=2, default=str)
         print(f"  wrote {args.json_out}")
     return 0
 

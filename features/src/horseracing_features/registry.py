@@ -194,6 +194,16 @@ REGISTRY: dict[str, FeatureMeta] = {
     "asof_spdfig_recent3": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.NULL),
     "asof_spdfig_last": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.NULL),
     "asof_spdfig_count": FeatureMeta("speed_figure", _T.PRE_ENTRY, _M.ZERO_OK),
+    # --- Feature 069 (F02): past market SUPPORT s=log(q×N) as-of, accuracy-first model only ---
+    "asof_pm_support_last": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_mean3": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_mean5": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_best5": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_career": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_trend": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_support_sd5": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
+    "asof_pm_obs_count": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
+    "asof_pm_has_obs": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
     # Feature 062 (as-of Elo rating) was REJECTED at the pre-registered gate — the opponent-quality
     # axis is redundant with the existing ability features under pl_topk (binary +/−0.0002, pl_topk
     # NEGATIVE on both recent folds). Not merged into the default set (027 precedent: a rejected
@@ -322,6 +332,17 @@ FEATURE_GROUPS: dict[str, str] = {
     "asof_spdfig_recent3": "speed_figure",
     "asof_spdfig_last": "speed_figure",
     "asof_spdfig_count": "speed_figure",
+    # Feature 069 (F02): past market support — independent group (kept separate from past_market
+    # 058 rank for attribution; both dropped together for the p⊥q default model).
+    "asof_pm_support_last": "pm_core_strength",
+    "asof_pm_support_mean3": "pm_core_strength",
+    "asof_pm_support_mean5": "pm_core_strength",
+    "asof_pm_support_best5": "pm_core_strength",
+    "asof_pm_support_career": "pm_core_strength",
+    "asof_pm_support_trend": "pm_core_strength",
+    "asof_pm_support_sd5": "pm_core_strength",
+    "asof_pm_obs_count": "pm_core_strength",
+    "asof_pm_has_obs": "pm_core_strength",
     # Feature 062 (rating) / 063 (closing figure) rejected at the gate — not in the default set.
 }
 
@@ -335,7 +356,7 @@ FEATURE_GROUPS: dict[str, str] = {
 #: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
 #: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
 #: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
-FEATURE_VERSION = "features-017"
+FEATURE_VERSION = "features-018"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -366,6 +387,15 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
     # version (class_transition/track_type are shared columns whose values moved), so NO prior model
     # is servable under features-017. Empty = fail-closed: all pre-017 models must be retrained.
     "features-017": {},
+    # Feature 069 (F02): pm_core_strength is PURELY ADDITIVE on top of features-017 (additive
+    # left-merge over disjoint column names => the 128 features-017 columns are byte-identical,
+    # same structural guarantee as 058/061 + a one-time empirical shared-column parity check,
+    # test_features018_parity). The pinned hash is lgbm-063's OWN trained feature_hash — VERIFIED
+    # by measuring metadata.feature_hash at T015 before this literal is trusted (analyze V1). Keeps
+    # lgbm-063 (features-017) servable under features-018 via the compat path.
+    "features-018": {
+        "features-017": "300b28a9312a3fb6e171b1dfd38cc88413ccbae2a0cfa9936ed278b5d14b66ac",
+    },
 }
 
 
