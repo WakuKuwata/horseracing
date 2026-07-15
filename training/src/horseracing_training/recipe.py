@@ -18,7 +18,11 @@ from horseracing_eval.hashing import stable_hash
 from horseracing_eval.predictor import Predictor, RaceContext
 from sqlalchemy.orm import Session
 
-from .calibration import DEFAULT_CALIB_FRAC
+from .calibration import (
+    CALIBRATION_SPLIT_UNITS,
+    DEFAULT_CALIB_FRAC,
+    LEGACY_CALIBRATION_SPLIT_UNIT,
+)
 from .predictor import LightGBMPredictor
 from .target_encoding import DEFAULT_SMOOTHING
 
@@ -32,6 +36,9 @@ class ModelRecipe:
     objective: str = "pl_topk"
     calibration: str = "isotonic"
     calib_frac: float = DEFAULT_CALIB_FRAC
+    # Feature 073 (US2, FR-009): explicit calibration split unit. Default = legacy race-count
+    # split so existing recipes stay byte-identical (see recipe_hash back-compat below, D1).
+    calibration_split_unit: str = LEGACY_CALIBRATION_SPLIT_UNIT
     target_encode_cols: tuple[str, ...] = ("jockey_id", "trainer_id")
     te_smoothing: float = DEFAULT_SMOOTHING
     seed: int = 42
@@ -46,13 +53,33 @@ class ModelRecipe:
                 "068 recipes must set market_offset=False (reading the target race's own "
                 "odds is a leak, FR-019)"
             )
+        # Feature 073 FR-009/FR-002: fail closed on an unknown split unit.
+        if self.calibration_split_unit not in CALIBRATION_SPLIT_UNITS:
+            raise ValueError(
+                f"unknown calibration_split_unit: {self.calibration_split_unit!r} "
+                f"(expected one of {CALIBRATION_SPLIT_UNITS})"
+            )
 
     def meta(self) -> dict:
-        """Plain-dict audit view (no training types cross the eval boundary, analyze C1)."""
+        """Plain-dict audit view (no training types cross the eval boundary, analyze C1).
+
+        The full view (including ``calibration_split_unit``) is what audit artifacts record.
+        """
         return asdict(self)
 
     def recipe_hash(self) -> str:
-        return stable_hash(self.meta())
+        """Content hash with Feature 073 back-compat canonicalization (D1).
+
+        The legacy default split unit (``race_count_v1``) is OMITTED from the hashed dict so
+        every recipe authored before 073 keeps a byte-identical ``recipe_hash`` (SC-006). Only a
+        non-legacy split (``race_day_v1``) enters the hash — changing the split therefore forces
+        a new ``recipe_hash`` and ``model_version``. Serving prediction bytes are artifact-derived
+        and independent of ``recipe_hash``, so SC-005 holds regardless of this field.
+        """
+        d = self.meta()
+        if d.get("calibration_split_unit") == LEGACY_CALIBRATION_SPLIT_UNIT:
+            d = {k: v for k, v in d.items() if k != "calibration_split_unit"}
+        return stable_hash(d)
 
 
 @dataclass
@@ -88,6 +115,7 @@ class RecipeFactory:
                 drop_features=self.recipe.drop_features,
                 objective=self.recipe.objective,
                 market_offset=self.recipe.market_offset,
+                calibration_split_unit=self.recipe.calibration_split_unit,
             )
         self._pred.fit(train_races)
         return self._pred

@@ -1,0 +1,12 @@
+{
+  "artifact_digests": {
+    "calibrator.pkl": "4babdda763605c1300c39d1b73ebc233e22030d46cef74c39afdc9931826d4b6",
+    "model.txt": "1a85b03519a7ed78d4c1457c96c11c5652e7a9deee4a159fdb8d00d15c9cb348",
+    "preprocessor.pkl": "cf1d518dae1cc60ff3bd6f7161d21e9b2280bc5773a7a91e46ab4fecb9559711"
+  },
+  "calibration_split_unit": "race_count_v1",
+  "feature": "073-eval-contract-correctness",
+  "frozen_at": "2026-07-15",
+  "model_version": "lgbm-063",
+  "note": "Parity oracle for SC-005. This model predates Feature 073 and used the legacy race-count calibration split. Serving prediction bytes must be invariant across 073."
+}

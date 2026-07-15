@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass, field
 
 from .consistency import DEFAULT_TOLERANCE, check_consistency
-from .dataset import EvalRace
+from .dataset import EvalRace, population_masks
 from .metrics import DEFAULT_ECE_BINS, compute_label_metrics, ece_by_field_size
 from .predictor import Predictor
 from .splits import FIRST_VALID_YEAR, expanding_folds
@@ -79,21 +79,25 @@ class EvalResult:
     #: Feature 021 US2: walk-forward OOS reliability per label {label: {bins, n_total}} (read by the
     #: API calibration endpoint via metrics_summary). OOS by construction (pooled valid folds).
     reliability: dict[str, dict] = field(default_factory=dict)
+    #: Feature 073 US1 (FR-003): started-all WIN metrics (DNF=0) when evaluate(started_all=True).
+    #: None (key omitted from the summary) otherwise, so existing summaries stay byte-identical.
+    started_all_win: dict | None = None
 
     def to_summary(self) -> dict:
         """data-model.md metrics_summary jsonb 形。"""
-        return {
-            "eval": {
-                "scheme": self.scheme,
-                "valid_years": self.valid_years,
-                "tolerance": self.tolerance,
-                "ece_bins": self.ece_bins,
-                "overall": self.overall,
-                "by_fold": self.by_fold,
-                "by_field_size_ece": self.by_field_size_ece,
-                "reliability": self.reliability,
-            }
+        eval_block = {
+            "scheme": self.scheme,
+            "valid_years": self.valid_years,
+            "tolerance": self.tolerance,
+            "ece_bins": self.ece_bins,
+            "overall": self.overall,
+            "by_fold": self.by_fold,
+            "by_field_size_ece": self.by_field_size_ece,
+            "reliability": self.reliability,
         }
+        if self.started_all_win is not None:  # Feature 073: additive, absent by default
+            eval_block["started_all_win"] = self.started_all_win
+        return {"eval": eval_block}
 
 
 def _score_race(rows_by_label: dict[str, _Rows], er: EvalRace, preds) -> None:
@@ -108,6 +112,21 @@ def _score_race(rows_by_label: dict[str, _Rows], er: EvalRace, preds) -> None:
             r.labels.append(int(getattr(sl, label)))
             r.race_ids.append(er.context.race_id)
             r.field_sizes.append(field_size)
+
+
+def _score_race_started_all(rows: _Rows, er: EvalRace, preds) -> None:
+    """Feature 073 US1 (FR-003): score WIN over ALL started horses (DNF/DSQ label = 0), matching
+    the paired-eval started-all population so the harness body and the adoption path agree on the
+    scored population (training learns on started-all; finished-only scoring was a mismatch)."""
+    pop = population_masks(er)
+    for hid in pop.started_horse_ids:
+        pred = preds.get(hid)
+        if pred is None:
+            continue
+        rows.probs.append(float(pred.win))
+        rows.labels.append(int(pop.started_win[hid]))
+        rows.race_ids.append(er.context.race_id)
+        rows.field_sizes.append(pop.field_size)
 
 
 def _metrics_for(rows_by_label: dict[str, _Rows], bins: int) -> dict[str, dict]:
@@ -127,9 +146,12 @@ def evaluate(
     first_valid_year: int = FIRST_VALID_YEAR,
     ece_bins: int = DEFAULT_ECE_BINS,
     tolerance: dict[str, float] | None = None,
+    started_all: bool = False,
 ) -> EvalResult:
     tol = tolerance or DEFAULT_TOLERANCE
     overall = {label: _Rows() for label in _LABELS}
+    # Feature 073 US1 (FR-003): opt-in started-all WIN accumulator (default off => byte-identical).
+    started_all_rows = _Rows()
     by_fold: list[dict] = []
     valid_years: list[int] = []
 
@@ -141,6 +163,8 @@ def evaluate(
             preds = predictor.predict_race(er.context)
             check_consistency(preds, tol)  # over started horses, fail-fast
             _score_race(fold_rows, er, preds)
+            if started_all:
+                _score_race_started_all(started_all_rows, er, preds)
             n_races += 1
         valid_years.append(fold.valid_year)
         by_fold.append(
@@ -151,6 +175,14 @@ def evaluate(
             overall[label].labels.extend(fold_rows[label].labels)
             overall[label].race_ids.extend(fold_rows[label].race_ids)
             overall[label].field_sizes.extend(fold_rows[label].field_sizes)
+
+    started_all_win = None
+    if started_all and started_all_rows.probs:
+        started_all_win = compute_label_metrics(
+            started_all_rows.probs, started_all_rows.labels,
+            started_all_rows.race_ids, started_all_rows.field_sizes, bins=ece_bins,
+        )
+        started_all_win["n_started"] = len(started_all_rows.probs)
 
     by_field = {
         label: ece_by_field_size(r.probs, r.labels, r.field_sizes, bins=ece_bins)
@@ -171,4 +203,5 @@ def evaluate(
         by_fold=by_fold,
         by_field_size_ece=by_field,
         reliability=reliability,
+        started_all_win=started_all_win,
     )

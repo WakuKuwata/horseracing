@@ -1,0 +1,54 @@
+{
+  "_comment": "073: pre-registered Evaluation Contract v2 gate (fixed BEFORE any OOS run, III). Extends the 068/069 gate with a single tri-value decision, wired eval_window / no_decision_min_days, banded/tail ECE, and a renamed bootstrap primary + diagnostic sensitivities. Do not edit after OOS results are generated (confirmatory mode rejects a hash mismatch).",
+  "evaluation_contract_version": "v2",
+  "primary": "winner_nll",
+  "top_noninferior": {"top2": 0.0005, "top3": 0.0005},
+  "calibration": {"metric": "mean_ece", "noninferior_width": 0.001, "emergency_abs_ece": 0.05},
+  "subgroup_guard": {
+    "_comment": "intersection-union: ADOPT requires ALL critical subgroups PASS. A critical subgroup that is NO_DECISION (underpowered) maps the OVERALL decision to NO_DECISION (not REJECT); a critical subgroup FAIL maps to REJECT.",
+    "critical_subgroups": ["2026_only", "nk", "2026_nk"],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "three_way",
+    "race_level_subgroups": ["2026_only", "2026_field_has_nk"],
+    "horse_level_subgroups": ["canonical", "nk", "2026_nk", "cov_0", "cov_1_2", "cov_3plus"],
+    "absolute_benchmark": "candidate_minus_uniform",
+    "no_decision_min_days": 10,
+    "coverage_bands": [[0, 0], [1, 2], [3, null]]
+  },
+  "eval_window": {
+    "_comment": "Pre-registered OOS window (III), frozen before results. 2008-2026 is development evidence (US4); a real confirmatory window is registered separately in the DORMANT prospective holdout.",
+    "from": "2019-01-01",
+    "to": "2026-07-12",
+    "min_eval_days": 10
+  },
+  "ece_subsets": {
+    "_comment": "FR-006: ECE measured over the whole plus fixed-boundary subsets. Each subset carries a missing bucket, a min_count and min_days floor, and a NO_DECISION rule when underpowered. Stage limited to raw + model-internal calibrated win prob (FR-007); two-gamma / stage-discount stages depend on Feature 074.",
+    "prob_bands": [0.05, 0.15, 0.30],
+    "odds_bands": [3.0, 7.0, 21.0],
+    "p_bands": [0.05, 0.15, 0.30],
+    "q_bands": [0.05, 0.15, 0.30],
+    "min_count": 200,
+    "min_days": 10,
+    "stages": ["raw", "model_internal_calibrated"]
+  },
+  "tail_mask": {
+    "_comment": "FR-006: the tail is defined by a pre-registered common mask (result-blind), NOT by each arm's own bet selection (which would move the eval set per arm). Arm-specific tail is diagnostic only.",
+    "kind": "active_result_blind",
+    "definition": "top_q_share",
+    "threshold": 0.30
+  },
+  "bootstrap": {
+    "_comment": "FR-013/014: primary estimator is the race-day cluster bootstrap (renamed from the misnomer 'moving_block'; identical numbers). Sensitivities are DIAGNOSTIC only and are never ANDed into the gate. seed/block kept from 069 so v1 numbers reproduce.",
+    "b": 2000,
+    "seed": 20260713,
+    "alpha": 0.05,
+    "primary": "race_day_cluster_bootstrap_ci_v1",
+    "sensitivity": ["2d", "3d", "4d", "week", "meeting"]
+  },
+  "determinism": {
+    "_comment": "SC-003: same seed + single thread reproduces primary metrics within tolerance.",
+    "tolerance": 1e-9,
+    "num_threads": 1
+  }
+}

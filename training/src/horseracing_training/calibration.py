@@ -76,6 +76,26 @@ def split_train_by_day(
     return ~calib_mask, calib_mask
 
 
+# Feature 073 (US2, FR-009): the calibration split unit is an explicit recipe semantic, not an
+# implicit default. ``race_count_v1`` is the legacy production behaviour (distinct-race split,
+# ``split_train_by_time``); ``race_day_v1`` is the open-day split (``split_train_by_day``, aligns
+# with the block-bootstrap unit). The legacy default is byte-identical to every model trained
+# before 073 (SC-006 / SC-005).
+LEGACY_CALIBRATION_SPLIT_UNIT = "race_count_v1"
+CALIBRATION_SPLIT_UNITS = (LEGACY_CALIBRATION_SPLIT_UNIT, "race_day_v1")
+
+
+def select_split_fn(unit: str):
+    """Map a ``calibration_split_unit`` to its split function (fail-closed on unknown, FR-002)."""
+    if unit == "race_count_v1":
+        return split_train_by_time
+    if unit == "race_day_v1":
+        return split_train_by_day
+    raise ValueError(
+        f"unknown calibration_split_unit: {unit!r} (expected one of {CALIBRATION_SPLIT_UNITS})"
+    )
+
+
 @dataclass
 class Calibrator:
     method: str  # 'platt' | 'isotonic' | 'identity'
