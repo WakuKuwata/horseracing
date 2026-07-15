@@ -51,8 +51,14 @@ def _rolling_asof(
     )
 
 
-def build_past_market_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id) past-market as-of features. All aggregate race_date < R."""
+def build_past_market_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) past-market as-of features. All aggregate race_date < R.
+
+    Feature 072: the ``field_size`` race-level primitive stays computed over the FULL frame; only
+    the per-horse rolling SOURCE and the target rows are restricted to the target races' horses —
+    byte-identical on those rows (INV-P1)."""
     races = frames.races[["race_id", "race_date"]].copy()
     races["race_date"] = pd.to_datetime(races["race_date"])
     has_pop = "popularity" in frames.race_horses.columns
@@ -83,6 +89,9 @@ def build_past_market_features(frames: Frames) -> pd.DataFrame:
     targets = runs[["race_id", "horse_id", "race_date"]].copy()
     # aggregate over STARTED past races that carry a market rank
     src = runs[(runs["is_started"] == 1) & runs["mkt_rank"].notna()]
+    if target_race_ids is not None:  # Feature 072: restrict output + per-horse source (field full)
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        src = src[src["horse_id"].isin(frozenset(targets["horse_id"]))]
     feat = _rolling_asof(
         src, targets,
         {

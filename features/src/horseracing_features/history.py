@@ -83,13 +83,20 @@ def _previous_lookups(runs: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame
     )
     out = pd.merge_asof(t, finished, on="race_date", by="horse_id",
                         direction="backward", allow_exact_matches=False)
+    # prev_finish comes from int finish_order; merge_asof leaves NaN for no-prev (float64 in the
+    # full pool, which always has debuts). Pin float64 so a projected set with no debut stays byte-
+    # identical to the full dtype (Feature 072). prev_last3f is already float64 (last_3f is float).
+    out["prev_finish"] = out["prev_finish"].astype("float64")
 
     started = runs[runs["is_started"] == 1][["horse_id", "race_date"]].copy()
     started["last_started"] = started["race_date"]
     started = started.sort_values("race_date", kind="stable")
     out = pd.merge_asof(out, started, on="race_date", by="horse_id",
                         direction="backward", allow_exact_matches=False)
-    out["days_since_last"] = (out["race_date"] - out["last_started"]).dt.days
+    # ``.dt.days`` yields int64 when no gap is NaT and float64 otherwise; the full pool always has a
+    # debut (NaT) so it is float64. Pin float64 so a projected build whose target horses all have
+    # history (no NaT) stays byte-identical to the full build's dtype (Feature 072, INV-P1).
+    out["days_since_last"] = (out["race_date"] - out["last_started"]).dt.days.astype("float64")
 
     appear = runs.groupby(["horse_id", "race_date"], as_index=False).agg(
         prev_was_cancel=("is_cancel", "max"),
@@ -103,10 +110,19 @@ def _previous_lookups(runs: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame
     return out.drop(columns=["last_started"])
 
 
-def build_history_features(frames: Frames, *, low_history_max: int = 2) -> pd.DataFrame:
-    """Return per (race_id, horse_id) history features (as-of race_date < R)."""
+def build_history_features(
+    frames: Frames, *, low_history_max: int = 2, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Return per (race_id, horse_id) history features (as-of race_date < R).
+
+    Feature 072: purely per-horse (cumulative-before + previous-lookup both grouped/merged by
+    horse_id). ``target_race_ids`` restricts output to those races and the source to the target
+    horses — byte-identical on those rows (INV-P1)."""
     runs = _runs(frames)
     targets = runs[["race_id", "horse_id", "race_date"]].copy()
+    if target_race_ids is not None:
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        runs = runs[runs["horse_id"].isin(frozenset(targets["horse_id"]))]
 
     cum = _cumulative_before(runs, targets)
     prev = _previous_lookups(runs, targets)

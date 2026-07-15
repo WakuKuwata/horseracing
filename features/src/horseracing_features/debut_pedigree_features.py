@@ -92,18 +92,27 @@ def _gate(gate: pd.Series, value: pd.Series) -> np.ndarray:
 def build_debut_pedigree_features(
     frames: Frames, *, history: pd.DataFrame | None = None,
     pedigree: pd.DataFrame | None = None, min_starts: int = MIN_STARTS,
+    target_race_ids: frozenset[str] | None = None,
 ) -> pd.DataFrame:
     """Per (race_id, horse_id) Feature-032 debut_pedigree columns. history/pedigree may be passed
-    (precomputed) to avoid recomputation from the materialize chain; otherwise computed here."""
+    (precomputed) to avoid recomputation from the materialize chain; otherwise computed here.
+
+    Feature 072: gates read the (already-projected) history/pedigree of the target field; the base
+    row set is restricted to the target races. ``sire_debut_win_rate`` (other-offspring, self- and
+    same-day excluded) stays computed over the full frame — only target rows are kept.
+    Byte-identical on the target rows (INV-P1)."""
     if history is None:
-        history = build_history_features(frames)
+        history = build_history_features(frames, target_race_ids=target_race_ids)
     if pedigree is None:
-        pedigree = build_pedigree_features(frames)
+        pedigree = build_pedigree_features(frames, target_race_ids=target_race_ids)
 
     sdw = _sire_debut_win_rate(frames, min_starts=min_starts)
     h = history[[*_KEYS, "is_debut", "is_low_history"]]
     p = pedigree[[*_KEYS, "sire_win_rate", "sire_dist_band_win_rate"]]
-    out = (frames.race_horses[_KEYS].drop_duplicates()
+    base = frames.race_horses[_KEYS].drop_duplicates()
+    if target_race_ids is not None:
+        base = base[base["race_id"].isin(target_race_ids)]
+    out = (base
            .merge(sdw, on=_KEYS, how="left")
            .merge(h, on=_KEYS, how="left")
            .merge(p, on=_KEYS, how="left"))

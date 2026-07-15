@@ -81,11 +81,20 @@ def _traj_runs(frames: Frames) -> pd.DataFrame:
     return runs
 
 
-def build_corner_trajectory_features(frames: Frames) -> pd.DataFrame:
+def build_corner_trajectory_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
     """Per (race_id, horse_id) Feature-041 columns. All as-of race_date < target (same-day
     excluded); the cumulative state attached to a past run already includes that run, so the
-    backward as-of merge yields exactly the strictly-before aggregate for the target row."""
+    backward as-of merge yields exactly the strictly-before aggregate for the target row.
+
+    Feature 072: the ``field_size`` primitive in ``_traj_runs`` stays over the FULL frame; only the
+    per-horse cumulative source and the target rows are restricted (INV-P1)."""
     runs = _traj_runs(frames)
+    targets_all = runs[["race_id", "horse_id", "race_date"]].copy()
+    if target_race_ids is not None:
+        targets_all = targets_all[targets_all["race_id"].isin(target_race_ids)]
+        runs = runs[runs["horse_id"].isin(frozenset(targets_all["horse_id"]))]
 
     src = runs.sort_values(["horse_id", "race_date", "race_id"], kind="stable").copy()
     grp = src.groupby("horse_id", sort=False)
@@ -99,7 +108,7 @@ def build_corner_trajectory_features(frames: Frames) -> pd.DataFrame:
     src["cum_late_gain_best"] = grp["late_gain"].cummax()
     cum_cols.append("cum_late_gain_best")
 
-    targets = runs[["race_id", "horse_id", "race_date"]].copy()
+    targets = targets_all
     t = targets.sort_values("race_date", kind="stable")
     merged = pd.merge_asof(
         t,

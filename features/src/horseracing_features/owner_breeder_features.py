@@ -78,10 +78,21 @@ def _rate_before(runs: pd.DataFrame, key: str, num_col: str, out_col: str) -> pd
     return daily[[key, "race_date", out_col]]
 
 
-def build_owner_breeder_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id) owner/breeder as-of rates (target-day excluded; float64)."""
+def build_owner_breeder_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) owner/breeder as-of rates (target-day excluded; float64).
+
+    Feature 072 (cross-entity, no self-exclusion): restrict the source to rows whose owner OR
+    breeder is a target entity — keeps each entity's whole history (incl. same-day), so the daily
+    cumsum−current-day rate is byte-identical on the target rows (INV-P1)."""
     runs = _runs(frames)
     targets = runs[["race_id", "horse_id", "race_date", "owner_name", "breeder_name"]].copy()
+    if target_race_ids is not None:
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        town = frozenset(targets["owner_name"].dropna())
+        tbrd = frozenset(targets["breeder_name"].dropna())
+        runs = runs[runs["owner_name"].isin(town) | runs["breeder_name"].isin(tbrd)]
 
     o_win = _rate_before(runs, "owner_name", "is_win", "asof_owner_win_rate")
     o_plc = _rate_before(runs, "owner_name", "is_place", "asof_owner_place_rate")
