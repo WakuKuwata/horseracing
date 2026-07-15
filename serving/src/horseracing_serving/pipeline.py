@@ -108,6 +108,10 @@ def run_serving(
     feature_rows = build_feature_matrix(
         session, end_date=target_date,
         use_materialized=use_materialized, materialized_path=materialized_path,
+        # Build only the columns this model reads (+ mandatory ones): predict_race slices
+        # model.feature_cols anyway, so skipping candidate-only leaf blocks the model omits (e.g.
+        # F02 for the features-017 active model) is byte-identical yet ~11s cheaper per matrix.
+        wanted=frozenset(model.feature_cols),
     )
     present = set(feature_rows["race_id"].unique())
     # date-level cutoff matches the feature end_date; fit the discount once, strictly before it
@@ -248,6 +252,7 @@ def run_serving_backfill(
                     session, end_date=day,
                     use_materialized=use_materialized, materialized_path=materialized_path,
                     skip_fingerprint_verify=use_materialized,  # verified once above
+                    wanted=frozenset(model.feature_cols),  # skip leaf blocks the model omits
                 )
                 present = set(feature_rows["race_id"].unique())
                 sd = _fit_stage_discount(session, day) if apply_stage_discount else None

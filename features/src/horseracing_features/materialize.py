@@ -40,7 +40,10 @@ from .pace_features import build_pace_features
 from .pace_scenario_features import build_pace_scenario_features
 from .past_market_features import build_past_market_features  # Feature 058 (B1)
 from .pedigree_features import build_pedigree_features
-from .pm_core_strength import build_pm_core_strength_features  # Feature 069 (F02)
+from .pm_core_strength import (  # Feature 069 (F02)
+    PM_CORE_STRENGTH_COLUMNS,
+    build_pm_core_strength_features,
+)
 from .race_level_features import build_race_level_features
 from .registry import FEATURE_VERSION, materialized_columns
 from .relative_ability_features import build_relative_ability_features
@@ -48,6 +51,33 @@ from .schema import DEFAULT_LOW_HISTORY_MAX
 from .speed_figure_features import build_speed_figure_features  # Feature 061
 
 _KEYS = ["race_id", "horse_id"]
+
+#: Optional as-of blocks that are independent LEAVES — nothing downstream reads their columns, so
+#: SKIPPING one only drops its own columns and leaves every other column byte-identical (proven by
+#: the projected-build parity test). Serving may skip a leaf whose columns the loaded model never
+#: reads. F02 (069 pm_core_strength) is candidate-only: the default active model (features-017)
+#: does not read it, yet building it costs ~11s per matrix. Keep this map MINIMAL — add a block
+#: only after confirming it is merged after every consumer (i.e. a true leaf).
+_OPTIONAL_LEAF_BLOCKS: dict[str, tuple[str, ...]] = {
+    "pm_core_strength": tuple(PM_CORE_STRENGTH_COLUMNS),
+}
+
+
+def skip_blocks_for_wanted(wanted: frozenset[str] | None) -> frozenset[str]:
+    """Which optional leaf blocks are safe to skip because ``wanted`` needs none of their columns.
+
+    ``wanted=None`` (materialize / training / backfill default) skips nothing — the full matrix is
+    byte-unchanged. A leaf is skipped only when EVERY one of its columns is outside ``wanted`` (a
+    block is all-or-nothing; a model that reads even one F02 column gets the whole block)."""
+    if wanted is None:
+        return frozenset()
+    return frozenset(
+        name for name, cols in _OPTIONAL_LEAF_BLOCKS.items() if wanted.isdisjoint(cols)
+    )
+
+
+def _skipped_columns(skip_blocks: frozenset[str]) -> set[str]:
+    return {c for b in skip_blocks for c in _OPTIONAL_LEAF_BLOCKS[b]}
 #: Feature 026: horses pedigree columns folded into the staleness fingerprint, so a pedigree
 #: backfill (sire_name filled/corrected while the race tables stay unchanged) trips fail-closed.
 _HORSE_FP_COLS = ["horse_id", "sire_name", "dam_name", "damsire_name",
@@ -170,12 +200,23 @@ def source_fingerprint(frames: Frames, *, through: datetime.date | None = None) 
 
 
 def build_asof_features(
-    frames: Frames, *, low_history_max: int = DEFAULT_LOW_HISTORY_MAX
+    frames: Frames,
+    *,
+    low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
+    skip_blocks: frozenset[str] = frozenset(),
 ) -> pd.DataFrame:
     """THE single as-of source: per-(race_id, horse_id) materialized columns.
 
     Calls the same block functions as the in-memory builder / serving fallback (no duplicate logic).
-    """
+
+    ``skip_blocks`` (default empty = full matrix, byte-unchanged) names optional LEAF blocks to omit
+    (see ``_OPTIONAL_LEAF_BLOCKS``); their columns are simply absent from the result while every
+    other column stays byte-identical. Used by serving to avoid computing candidate-only blocks the
+    loaded model never reads. The remaining blocks run the exact same code (025: single as-of
+    implementation — this is block selection, NOT a second formula)."""
+    unknown = skip_blocks - _OPTIONAL_LEAF_BLOCKS.keys()
+    if unknown:
+        raise ValueError(f"unknown skip_blocks: {sorted(unknown)}")
     history = build_history_features(frames, low_history_max=low_history_max)
     extra = build_extra_features(frames)
     human = build_human_form_features(frames)
@@ -218,8 +259,10 @@ def build_asof_features(
     # Feature 069 (F02): past market SUPPORT (s=log(q×N)) — independent as-of block over
     # race_horses.odds. Additive left-merge (INV-F2). Reads a NEW source column (odds) that 058
     # did not, so source_fingerprint MUST include odds (a fresh materialize is required).
-    pmcs = build_pm_core_strength_features(frames)
-    out = out.merge(pmcs, on=_KEYS, how="left")
+    # Independent leaf (see _OPTIONAL_LEAF_BLOCKS): serving may skip it when the model omits F02.
+    if "pm_core_strength" not in skip_blocks:
+        pmcs = build_pm_core_strength_features(frames)
+        out = out.merge(pmcs, on=_KEYS, how="left")
     # Feature 070 (F03/F04/F05 past-market bundle) was rejected at the staged gate — NOT wired in
     # (bump reverted). pm_rank_robust/pm_expectation_residual/pm_conditioned.py kept as the
     # documented negative result (their unit tests call the build functions directly).
@@ -228,7 +271,8 @@ def build_asof_features(
     # Feature 062 (Elo rating) was rejected at the pre-registered gate (redundant under pl_topk), so
     # it is NOT wired into the default as-of source. rating_features.py + its unit tests remain as
     # the documented negative result; re-enable this block only if a future variant passes.
-    cols = [*_KEYS, *materialized_columns()]
+    skipped = _skipped_columns(skip_blocks)
+    cols = [*_KEYS, *(c for c in materialized_columns() if c not in skipped)]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)
 
 

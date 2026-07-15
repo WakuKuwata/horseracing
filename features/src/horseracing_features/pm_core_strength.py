@@ -136,9 +136,11 @@ def _asof_reductions(src: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame:
     src["asof_pm_support_sd5"] = (
         g.rolling(_SD_WINDOW, min_periods=2).std(ddof=1).reset_index(level=0, drop=True)
     )
+    # raw=True hands _ols_slope the window ndarray directly (same arithmetic, same order) instead
+    # of building a Series per window — bit-identical, ~2x faster on the full pool.
     src["asof_pm_support_trend"] = (
         g.rolling(_TREND_WINDOW, min_periods=2)
-        .apply(lambda w: _ols_slope(w.to_numpy()), raw=False)
+        .apply(_ols_slope, raw=True)
         .reset_index(level=0, drop=True)
     )
     out_cols = ["horse_id", "race_date", *PM_CORE_STRENGTH_COLUMNS]

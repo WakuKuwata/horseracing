@@ -75,11 +75,14 @@ def _recent_form(runs: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame:
         ["horse_id", "race_date"], kind="stable"
     ).copy()
     g = fin.groupby("horse_id", sort=False)
-    fin["avg_last3_finish"] = g["finish_order"].transform(
-        lambda s: s.rolling(3, min_periods=1).mean()
+    # Same pandas rolling kernel as ``transform(lambda s: s.rolling(...).mean())`` but without the
+    # per-group Python callback (bit-identical, ~6x faster on the full pool). ``g[col].rolling``
+    # returns a (horse_id, orig_index) MultiIndex; drop the group level to realign to ``fin``.
+    fin["avg_last3_finish"] = (
+        g["finish_order"].rolling(3, min_periods=1).mean().reset_index(level=0, drop=True)
     )
-    fin["recent_win_rate"] = g["is_win"].transform(
-        lambda s: s.rolling(_RECENT_FORM_N, min_periods=1).mean()
+    fin["recent_win_rate"] = (
+        g["is_win"].rolling(_RECENT_FORM_N, min_periods=1).mean().reset_index(level=0, drop=True)
     )
     cols = ["horse_id", "race_date", "avg_last3_finish", "recent_win_rate"]
     t = targets.sort_values("race_date", kind="stable")

@@ -13,14 +13,16 @@ from sqlalchemy.orm import Session
 from .loader import Frames, load_frames
 from .materialize import (
     MaterializationError,
+    _skipped_columns,
     assert_fresh,
     assert_manifest_compatible,
     build_asof_features,
     has_future_rows,
     read_manifest,
     read_materialized,
+    skip_blocks_for_wanted,
 )
-from .registry import validate_columns
+from .registry import FeatureSchemaError, validate_columns
 from .schema import ALL_COLUMNS, DEFAULT_LOW_HISTORY_MAX
 from .static_features import build_static_features
 
@@ -30,6 +32,7 @@ def _asof_block(
     materialized_path: Path | None, use_materialized: bool,
     fingerprint_frames: Frames | None = None,
     skip_fingerprint_verify: bool = False,
+    skip_blocks: frozenset[str] = frozenset(),
 ):
     """The as-of feature block: from materialized parquet (fast, opt-in) or computed in-memory.
 
@@ -54,9 +57,11 @@ def _asof_block(
             # the caller passes the windowed frames (+ delta) instead of a second full-pool load.
             assert_fresh(manifest, fingerprint_frames if fingerprint_frames is not None else frames)
         if has_future_rows(frames, manifest, start_date=start_date, end_date=end_date):
-            return build_asof_features(frames, low_history_max=low_history_max)  # serving fallback
-        return df                                             # parquet fast path
-    return build_asof_features(frames, low_history_max=low_history_max)
+            return build_asof_features(  # serving fallback
+                frames, low_history_max=low_history_max, skip_blocks=skip_blocks
+            )
+        return df           # parquet fast path (full matrix; projection happens at final selection)
+    return build_asof_features(frames, low_history_max=low_history_max, skip_blocks=skip_blocks)
 
 
 def assemble_feature_matrix(
@@ -69,6 +74,7 @@ def assemble_feature_matrix(
     use_materialized: bool = False,
     fingerprint_frames: Frames | None = None,
     skip_fingerprint_verify: bool = False,
+    wanted: frozenset[str] | None = None,
 ) -> pd.DataFrame:
     """Build the fixed-schema FeatureMatrix from in-memory Frames (DB-independent).
 
@@ -81,12 +87,20 @@ def assemble_feature_matrix(
     ``fingerprint_frames`` must cover races through the manifest's data_through and is used ONLY
     for the staleness check; ``frames`` stays end_date-windowed so static dtypes are
     pool-independent. Feature 055: ``skip_fingerprint_verify`` for verify-once backfill runs.
+
+    ``wanted`` (default None = full fixed schema) is the set of columns the caller actually needs
+    (serving passes ``model.feature_cols``). When given, optional LEAF blocks whose columns are all
+    outside ``wanted`` are skipped (see ``skip_blocks_for_wanted``); the returned matrix drops those
+    columns but is byte-identical to the full matrix on every column it keeps. Materialize /
+    training / backfill leave it None, so their output is byte-unchanged.
     """
+    skip_blocks = skip_blocks_for_wanted(wanted)
     static = build_static_features(frames)
     asof = _asof_block(
         frames, low_history_max=low_history_max, start_date=start_date, end_date=end_date,
         materialized_path=materialized_path, use_materialized=use_materialized,
         fingerprint_frames=fingerprint_frames, skip_fingerprint_verify=skip_fingerprint_verify,
+        skip_blocks=skip_blocks,
     )
     fm = static.merge(asof, on=["race_id", "horse_id"], how="left")
     # Feature 056: prize_rel = today's prize level − the horse's as-of prize class (昇降級度合い).
@@ -105,7 +119,12 @@ def assemble_feature_matrix(
         fm = fm[fm["race_date"] <= pd.Timestamp(end_date)]
 
     fm = fm.sort_values(["race_id", "horse_id"], kind="stable").reset_index(drop=True)
-    matrix = fm[list(ALL_COLUMNS)].copy()
+    skipped = _skipped_columns(skip_blocks)
+    output_cols = [c for c in ALL_COLUMNS if c not in skipped]
+    if wanted is not None and not wanted.issubset(output_cols):
+        missing = sorted(wanted.difference(output_cols))  # fail-closed: never serve a short matrix
+        raise FeatureSchemaError(f"wanted columns not in projected matrix: {missing}")
+    matrix = fm[list(output_cols)].copy()
     validate_columns(list(matrix.columns))
     return matrix
 
@@ -175,6 +194,7 @@ def build_feature_matrix(
     materialized_path: Path | None = None,
     use_materialized: bool = False,
     skip_fingerprint_verify: bool = False,
+    wanted: frozenset[str] | None = None,
 ) -> pd.DataFrame:
     # Always load the end_date-windowed pool for static/population/as-of: as-of values for races
     # <= end_date only look strictly before each race, and windowed loading keeps static dtypes
@@ -193,4 +213,5 @@ def build_feature_matrix(
         frames, start_date=start_date, end_date=end_date, low_history_max=low_history_max,
         materialized_path=materialized_path, use_materialized=use_materialized,
         fingerprint_frames=fp_frames, skip_fingerprint_verify=skip_fingerprint_verify,
+        wanted=wanted,
     )
