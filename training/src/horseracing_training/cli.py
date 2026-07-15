@@ -683,6 +683,13 @@ def main(argv: list[str] | None = None) -> int:
     pe.add_argument("--gate-config", default=None, help="pre-registered gate-config.json path")
     pe.add_argument("--subgroups", action="store_true",
                     help="069: report 2026/nk/coverage subgroup CIs + intersection-union guard")
+    pe.add_argument("--confirmatory", action="store_true",
+                    help="073: fail closed if gate-config is missing/unknown-version or its hash "
+                         "mismatches --gate-config-hash (confirmatory-mode contract)")
+    pe.add_argument("--gate-config-hash", default=None,
+                    help="073: expected canonical gate-config hash for --confirmatory")
+    pe.add_argument("--compute-sensitivity", action="store_true",
+                    help="073: also compute diagnostic block-width bootstrap sensitivities")
     pe.add_argument("--json", dest="json_out", default=None, help="write PairedReport JSON here")
     pe.add_argument("--database-url", default=None)
 
@@ -854,6 +861,12 @@ def _paired_eval(session: Session, args) -> int:
         with open(args.gate_config) as fh:
             gate_cfg = json.load(fh)
 
+    # Feature 073 US1 (FR-002): confirmatory mode fails closed on a missing / wrong-version /
+    # tampered gate-config BEFORE any eval runs.
+    if getattr(args, "confirmatory", False):
+        from horseracing_eval.decision import assert_confirmatory
+        assert_confirmatory(gate_cfg, expected_hash=getattr(args, "gate_config_hash", None))
+
     eval_races = load_eval_races(session, start_date=args.from_, end_date=args.to)
     cand = _factory_from_spec(session, args.candidate)
     act = _factory_from_spec(session, args.active)
@@ -867,6 +880,7 @@ def _paired_eval(session: Session, args) -> int:
         snapshot={"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
                   "candidate_spec": args.candidate, "active_spec": args.active},
         subgroups=getattr(args, "subgroups", False),
+        compute_sensitivity=getattr(args, "compute_sensitivity", False),
     )
     g = report.gate
     print(f"paired-eval candidate={args.candidate} active={args.active} "
@@ -880,6 +894,10 @@ def _paired_eval(session: Session, args) -> int:
           f"point={ci['point']:+.6f} days={ci['n_days']} no_decision={ci['no_decision']}")
     print(f"  gate: primary={g.primary} stat_guard={g.stat_guard} recent={g.recent_guard} "
           f"top_ni={g.top_noninferior} calib={g.calibration} -> ADOPTED={g.adopted}")
+    # Feature 073 US1 (FR-001): single machine-decided tri-value verdict (operator judgement=0).
+    print(f"  DECISION={report.decision} "
+          f"(cause={report.decision_reason.get('cause')}) "
+          f"contract={report.evaluation_contract_version} gate_hash={report.gate_config_hash[:12]}")
     if report.subgroups:  # Feature 069 US1
         sg = report.subgroups
         for grain in ("race_subgroups", "horse_subgroups"):

@@ -15,8 +15,14 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass, field
 
-from .bootstrap import moving_block_bootstrap_ci
+from .bootstrap import race_day_cluster_bootstrap_ci_v1
 from .dataset import EvalRace, population_masks
+from .decision import (
+    EVALUATION_CONTRACT_VERSION,
+    NO_DECISION,
+    final_decision,
+    gate_config_hash,
+)
 from .foldfit import PredictorFactory, predict_over_folds
 from .metrics import (
     ece_by_prob_band,
@@ -78,6 +84,15 @@ class PairedReport:
     #: Feature 069 US1: race/horse-level subgroup CIs + intersection-union guard (None unless
     #: paired_eval(subgroups=True)). 068 reports are byte-identical when omitted (FR-005).
     subgroups: dict | None = None
+    #: Feature 073 US1: single tri-value machine decision (ADOPT/REJECT/NO_DECISION) folding the
+    #: main gate + subgroup guard + eval-window sufficiency, plus audit provenance (FR-001/005).
+    decision: str = NO_DECISION
+    decision_reason: dict = field(default_factory=dict)
+    evaluation_contract_version: str = EVALUATION_CONTRACT_VERSION
+    gate_config_hash: str = ""
+    #: Feature 073 US3 (FR-014): diagnostic block-width sensitivities (2/3/4-day, week). Empty
+    #: unless paired_eval(compute_sensitivity=True). NEVER ANDed into the gate — diagnostic only.
+    bootstrap_sensitivity: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -185,7 +200,7 @@ def _horse_logloss(p: float, y: int) -> float:
 def _ci_and_decision(diffs_by_day, uniform_by_day, *, b, seed, margin):
     """Bootstrap CI + three-way decision + subgroup-internal cand−uniform for one subgroup."""
     from .subgroups import three_way
-    ci = moving_block_bootstrap_ci(diffs_by_day, b=b, seed=seed)
+    ci = race_day_cluster_bootstrap_ci_v1(diffs_by_day, b=b, seed=seed)
     d = asdict(ci)
     decision = three_way(d.get("ci_low"), d.get("ci_high"), margin)
     all_u = [u for us in uniform_by_day.values() for u in us]
@@ -280,6 +295,7 @@ def paired_eval(
     snapshot: dict | None = None,
     subgroups: bool = False,
     obs_count: dict | None = None,
+    compute_sensitivity: bool = False,
 ) -> PairedReport:
     cfg = gate_config or {}
     cand_preds, valid_races = predict_over_folds(
@@ -311,10 +327,20 @@ def paired_eval(
         day = er.context.race_date.isoformat()
         diffs_by_day.setdefault(day, []).append(_clip_nll(cp) - _clip_nll(ap))
     boot_cfg = cfg.get("bootstrap", {})
-    ci = moving_block_bootstrap_ci(
+    ci = race_day_cluster_bootstrap_ci_v1(
         diffs_by_day, b=boot_cfg.get("b", bootstrap_b),
         seed=boot_cfg.get("seed", bootstrap_seed),
     )
+    # Feature 073 US3 (FR-014): diagnostic-only block-width sensitivities (never gate the decision).
+    bootstrap_sensitivity: dict = {}
+    if compute_sensitivity:
+        from .bootstrap import race_day_cluster_bootstrap_sensitivity_v2
+        bootstrap_sensitivity = {
+            k: asdict(v) for k, v in race_day_cluster_bootstrap_sensitivity_v2(
+                diffs_by_day, b=boot_cfg.get("b", bootstrap_b),
+                seed=boot_cfg.get("seed", bootstrap_seed),
+            ).items()
+        }
 
     # periods: all / recent 3y / recent 5y (FR-005), by the latest valid race_date.
     max_date = max(er.context.race_date for er in valid_races)
@@ -348,6 +374,9 @@ def paired_eval(
             obs_count=obs_count, b=boot_cfg.get("b", bootstrap_b),
             seed=boot_cfg.get("seed", bootstrap_seed),
         )
+    # Feature 073 US1: one machine-decided tri-value verdict (FR-001/002). n_days from the
+    # primary CI drives the eval-window sufficiency check (empty/short window -> NO_DECISION).
+    decision, decision_reason = final_decision(gate, sg, n_days=ci.n_days, cfg=cfg)
     return PairedReport(
         candidate_recipe_meta=candidate.recipe_meta,
         active_recipe_meta=active.recipe_meta,
@@ -364,4 +393,9 @@ def paired_eval(
         gate=gate,
         snapshot=snapshot or {},
         subgroups=sg,
+        decision=decision,
+        decision_reason=decision_reason,
+        evaluation_contract_version=EVALUATION_CONTRACT_VERSION,
+        gate_config_hash=gate_config_hash(cfg),
+        bootstrap_sensitivity=bootstrap_sensitivity,
     )

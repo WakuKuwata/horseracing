@@ -25,9 +25,10 @@ from sqlalchemy.orm import Session
 from .calibration import (
     DEFAULT_CALIB_FRAC,
     DEFAULT_CLIP,
+    LEGACY_CALIBRATION_SPLIT_UNIT,
     Calibrator,
     fit_calibrator,
-    split_train_by_time,
+    select_split_fn,
 )
 from .dataset import (
     MKT_ODDS,
@@ -73,9 +74,15 @@ class LightGBMPredictor:
         use_materialized: bool = False,
         materialized_path: str | None = None,
         market_offset: bool = False,
+        calibration_split_unit: str = LEGACY_CALIBRATION_SPLIT_UNIT,
     ) -> None:
         self.session = session
         self.seed = seed
+        # Feature 073 (US2): explicit calibration split unit. Default = legacy race-count split,
+        # byte-identical to every pre-073 model (validated by SC-005/SC-006). ``race_day_v1``
+        # selects the open-day split. Fail-closed on unknown values (select_split_fn).
+        self.calibration_split_unit = calibration_split_unit
+        select_split_fn(calibration_split_unit)  # validate eagerly (fail-closed at construction)
         # Feature 039/042: "binary" | "cond_logit" (race-softmax) | "pl_topk" (PL top-3).
         self.objective = objective
         self.calibration = calibration
@@ -162,7 +169,8 @@ class LightGBMPredictor:
             train_offsets = offs[eligible]
 
         race_dates = dict(zip(train_df["race_id"], train_df[RACE_DATE], strict=True))
-        model_mask, calib_mask = split_train_by_time(
+        split_fn = select_split_fn(self.calibration_split_unit)
+        model_mask, calib_mask = split_fn(
             train_df["race_id"].to_numpy(), race_dates, calib_frac=self.calib_frac
         )
         model_df = train_df[model_mask].reset_index(drop=True)
@@ -243,6 +251,8 @@ class LightGBMPredictor:
             "params": self.win_model_.params,
             "calibration": self.calibrator_.method,
             "calib_frac": self.calib_frac,
+            # Feature 073 (US2, FR-009): the explicit calibration split unit used for this fit.
+            "calibration_split_unit": self.calibration_split_unit,
             "hpo": self.hpo,
             "target_encode_cols": list(self.te_cols_),
             "te_smoothing": self.te_smoothing if self.te_cols_ else None,

@@ -29,6 +29,25 @@ from .predictor import LightGBMPredictor
 
 MODEL_FAMILY = "lightgbm"
 LABEL_SCHEMA = "win_top2_top3"
+_LEGACY_SPLIT_UNIT = "race_count_v1"  # Feature 073: pre-073 rows had no explicit split unit
+
+
+def assert_split_unit_compatible(
+    prior_split: str | None, new_split: str | None, *, model_version: str
+) -> None:
+    """Feature 073 US2 (FR-010): fail closed on a split change under the same model_version.
+
+    ``None`` (pre-073 rows / unset) is treated as the legacy race-count split. First save or an
+    unchanged split is a no-op; a differing split raises (a split change must mint a NEW
+    model_version, else the parity oracle would be silently overwritten)."""
+    prior = prior_split or _LEGACY_SPLIT_UNIT
+    new = new_split or _LEGACY_SPLIT_UNIT
+    if prior != new:
+        raise ValueError(
+            f"refusing to overwrite model_version {model_version!r}: stored "
+            f"calibration_split_unit={prior!r} != new {new!r}. A split change must use a new "
+            "model_version (FR-010)."
+        )
 
 
 def feature_hash(feature_cols: list[str]) -> str:
@@ -126,6 +145,7 @@ def save_model_version(
         "seed": info.get("seed"),
         "params": info.get("params"),
         "calibration": info.get("calibration"),
+        "calibration_split_unit": info.get("calibration_split_unit"),  # Feature 073 US2 (FR-009)
         "calibrator_params": predictor.calibrator_.params_dict() if predictor.calibrator_ else None,
         "fold_boundaries": list(eval_result.valid_years),
         "feature_version": feature_version,
@@ -179,9 +199,22 @@ def save_model_version(
         ),
         "calib_from": str(info["calib_from"]) if info.get("calib_from") else None,
         "calib_through": str(info["calib_through"]) if info.get("calib_through") else None,
+        # Feature 073 US2 (FR-009): the calibration split unit is visible from model_versions alone.
+        "calibration_split_unit": info.get("calibration_split_unit"),
     }
     if info.get("market_offset"):  # Feature 060: visible from model_versions alone (V)
         summary["training"]["market_offset"] = dict(info["market_offset"])
+
+    # Feature 073 US2 (FR-010): fail closed if a model_version already exists with a DIFFERENT
+    # calibration split unit (a split change must mint a new model_version, not overwrite one).
+    existing = session.get(ModelVersion, model_version)
+    if existing is not None:
+        prior_split = ((existing.metrics_summary or {}).get("training") or {}).get(
+            "calibration_split_unit"
+        )
+        assert_split_unit_compatible(
+            prior_split, info.get("calibration_split_unit"), model_version=model_version
+        )
 
     status = AdoptionStatus.ACTIVE if (
         decision.adopted and not register_as_candidate
