@@ -89,12 +89,26 @@ def _recent_rate(runs: pd.DataFrame, targets: pd.DataFrame, by: str, hit: str, o
                          on="race_date", by=by, direction="backward", allow_exact_matches=False)
 
 
-def build_lowcost_features(frames: Frames, *, min_starts: int = MIN_STARTS) -> pd.DataFrame:
-    """Per (race_id, horse_id) Feature-030 as-of columns. All as-of race_date < R."""
+def build_lowcost_features(
+    frames: Frames, *, min_starts: int = MIN_STARTS,
+    target_race_ids: frozenset[str] | None = None,
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) Feature-030 as-of columns. All as-of race_date < R.
+
+    Feature 072: MIXED per-horse + cross-entity. Restrict the source to rows whose horse_id,
+    jockey_id OR trainer_id is a target entity — every per-horse (place/venue/handicap) and cross
+    (jockey/trainer/jt-combo) aggregation then has each relevant key's whole history, so the target
+    rows stay byte-identical (INV-P1). Output columns are already float64-pinned."""
     runs = _runs(frames)
-    base = runs[_KEYS].copy()
     tk = runs[["race_id", "horse_id", "race_date", "dist_band", "track_type", "venue_code",
                "jockey_id", "trainer_id", "cw"]].copy()
+    if target_race_ids is not None:
+        tk = tk[tk["race_id"].isin(target_race_ids)]
+        th, tj, tt = (frozenset(tk["horse_id"]), frozenset(tk["jockey_id"].dropna()),
+                      frozenset(tk["trainer_id"].dropna()))
+        runs = runs[runs["horse_id"].isin(th) | runs["jockey_id"].isin(tj)
+                    | runs["trainer_id"].isin(tt)]
+    base = tk[_KEYS].copy()
     out = base.copy()
 
     # --- self place / show (overall) + dist-band place (conditional) ---

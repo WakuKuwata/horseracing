@@ -116,14 +116,29 @@ def _other_offspring(
     return out
 
 
-def build_pedigree_features(frames: Frames, *, min_starts: int = MIN_STARTS) -> pd.DataFrame:
-    """Per (race_id, horse_id) sire/damsire aptitude. All as-of race_date < R, self-excluded."""
+def build_pedigree_features(
+    frames: Frames, *, min_starts: int = MIN_STARTS,
+    target_race_ids: frozenset[str] | None = None,
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) sire/damsire aptitude. All as-of race_date < R, self-excluded.
+
+    Feature 072 (cross-entity): restrict the source to rows whose sire OR damsire is an entity of a
+    target horse. That set includes every target horse's own rows (their sire is a target sire), so
+    the self-exclusion (other-offspring = sire cumsum − self) and the sire/damsire aggregations stay
+    byte-identical on the target rows (INV-P1)."""
     runs = _runs(frames)
-    base = runs[["race_id", "horse_id"]].copy()
     targets = runs[
         ["race_id", "horse_id", "race_date", "sire_name", "damsire_name",
          "dist_band", "track_type"]
     ].copy()
+    if target_race_ids is not None:
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        tsire = frozenset(targets["sire_name"].dropna())
+        tdam = frozenset(targets["damsire_name"].dropna())
+        runs = runs[runs["sire_name"].isin(tsire) | runs["damsire_name"].isin(tdam)]
+    # base row set = the (target) appearances; equals runs[_KEYS] in the full build (targets is
+    # runs[cols]) and the target rows when projecting.
+    base = targets[["race_id", "horse_id"]].copy()
 
     # sire overall
     so = _other_offspring(targets, runs, "sire_name")

@@ -135,12 +135,21 @@ def _class_transition(runs: pd.DataFrame, targets_with_keys: pd.DataFrame) -> pd
     return out.drop(columns=["prev_class_rank"])
 
 
-def build_extra_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id) Feature-020 horse features. All as-of race_date < R."""
+def build_extra_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) Feature-020 horse features. All as-of race_date < R.
+
+    Feature 072: purely per-horse (recent_form / aptitude / class_transition are all grouped or
+    merged by horse_id). When ``target_race_ids`` is set, emit only those races' rows and restrict
+    the source to the target horses — byte-identical to the full build on those rows (INV-P1)."""
     runs = _enriched_runs(frames)
     targets = runs[
         ["race_id", "horse_id", "race_date", "dist_band", "track_type", "class_rank"]
     ].copy()
+    if target_race_ids is not None:
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        runs = runs[runs["horse_id"].isin(frozenset(targets["horse_id"]))]
 
     rf = _recent_form(runs, targets[["race_id", "horse_id", "race_date"]])
     apt = _aptitude(runs, targets[["race_id", "horse_id", "race_date", "dist_band", "track_type"]])

@@ -204,6 +204,7 @@ def build_asof_features(
     *,
     low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
     skip_blocks: frozenset[str] = frozenset(),
+    target_race_ids: frozenset[str] | None = None,
 ) -> pd.DataFrame:
     """THE single as-of source: per-(race_id, horse_id) materialized columns.
 
@@ -213,23 +214,39 @@ def build_asof_features(
     (see ``_OPTIONAL_LEAF_BLOCKS``); their columns are simply absent from the result while every
     other column stays byte-identical. Used by serving to avoid computing candidate-only blocks the
     loaded model never reads. The remaining blocks run the exact same code (025: single as-of
-    implementation — this is block selection, NOT a second formula)."""
+    implementation — this is block selection, NOT a second formula).
+
+    ``target_race_ids`` (Feature 072, default None = full build, byte-unchanged) restricts the
+    OUTPUT to those races' rows. Converted blocks (currently pace) compute only the target rows
+    (fast); un-converted blocks compute full and are sliced at the end (correct, not yet fast). A
+    converted block's output feeding a within-race consumer (031/033/059) still carries the target
+    race's WHOLE field (a race id pulls its entire started field), so those consumers stay
+    byte-identical on the target rows. Result is byte-identical to the full build restricted to the
+    target rows (INV-P1)."""
     unknown = skip_blocks - _OPTIONAL_LEAF_BLOCKS.keys()
     if unknown:
         raise ValueError(f"unknown skip_blocks: {sorted(unknown)}")
-    history = build_history_features(frames, low_history_max=low_history_max)
-    extra = build_extra_features(frames)
+    history = build_history_features(  # Feature 072: per-horse
+        frames, low_history_max=low_history_max, target_race_ids=target_race_ids
+    )
+    extra = build_extra_features(frames, target_race_ids=target_race_ids)  # 072: per-horse
     human = build_human_form_features(frames)
-    pace = build_pace_features(frames)
-    pedigree = build_pedigree_features(frames)  # Feature 026 (single as-of source)
-    lowcost = build_lowcost_features(frames)    # Feature 030 (single as-of source)
+    pace = build_pace_features(frames, target_race_ids=target_race_ids)  # Feature 072: per-horse
+    pedigree = build_pedigree_features(  # Feature 026 / 072: cross-entity (sire/damsire key)
+        frames, target_race_ids=target_race_ids
+    )
+    lowcost = build_lowcost_features(frames, target_race_ids=target_race_ids)  # 030/072: mixed
     scenario = build_pace_scenario_features(frames, pace=pace)  # Feature 031 (field-composition)
-    debutped = build_debut_pedigree_features(  # Feature 032 (debut/low-history × pedigree)
-        frames, history=history, pedigree=pedigree
+    debutped = build_debut_pedigree_features(  # Feature 032 / 072 (consumes projected history/ped)
+        frames, history=history, pedigree=pedigree, target_race_ids=target_race_ids
     )
     condchg = build_condition_change_features(frames, pace=pace)  # Feature 033 (condition×ability)
-    cornertraj = build_corner_trajectory_features(frames)  # Feature 041 (corner trajectory)
-    ownerbrd = build_owner_breeder_features(frames)  # Feature 056 (owner/breeder as-of rates)
+    cornertraj = build_corner_trajectory_features(  # Feature 041 / 072: per-horse (field_size full)
+        frames, target_race_ids=target_race_ids
+    )
+    ownerbrd = build_owner_breeder_features(  # Feature 056 / 072: cross-entity (owner/breeder key)
+        frames, target_race_ids=target_race_ids
+    )
     racelevel = build_race_level_features(frames)    # Feature 056 (prize class, as-of half)
     out = (
         history.merge(extra, on=_KEYS, how="left")
@@ -250,11 +267,11 @@ def build_asof_features(
     out = out.merge(relability, on=_KEYS, how="left")
     # Feature 058 (B1): past market-assessment (popularity) — independent as-of block over
     # race_horses.popularity (does not read assembled ability columns). Accuracy-first model only.
-    pastmkt = build_past_market_features(frames)
+    pastmkt = build_past_market_features(frames, target_race_ids=target_race_ids)  # 072: per-horse
     out = out.merge(pastmkt, on=_KEYS, how="left")
     # Feature 061: speed figure — independent as-of block (races/race_results only, no new
     # source columns => source_fingerprint unchanged). Additive left-merge (INV-F2).
-    spdfig = build_speed_figure_features(frames)
+    spdfig = build_speed_figure_features(frames, target_race_ids=target_race_ids)  # 072: per-horse
     out = out.merge(spdfig, on=_KEYS, how="left")
     # Feature 069 (F02): past market SUPPORT (s=log(q×N)) — independent as-of block over
     # race_horses.odds. Additive left-merge (INV-F2). Reads a NEW source column (odds) that 058
@@ -271,6 +288,11 @@ def build_asof_features(
     # Feature 062 (Elo rating) was rejected at the pre-registered gate (redundant under pl_topk), so
     # it is NOT wired into the default as-of source. rating_features.py + its unit tests remain as
     # the documented negative result; re-enable this block only if a future variant passes.
+    if target_race_ids is not None:
+        # Feature 072: emit only the target races' rows. Converted blocks already computed only
+        # these rows; un-converted blocks computed full and are sliced here. Byte-identical to the
+        # full build on these keys (INV-P1) — the parity gate proves it per block.
+        out = out[out["race_id"].isin(target_race_ids)]
     skipped = _skipped_columns(skip_blocks)
     cols = [*_KEYS, *(c for c in materialized_columns() if c not in skipped)]
     return out[cols].sort_values(_KEYS, kind="stable").reset_index(drop=True)

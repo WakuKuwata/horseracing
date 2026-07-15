@@ -33,6 +33,7 @@ def _asof_block(
     fingerprint_frames: Frames | None = None,
     skip_fingerprint_verify: bool = False,
     skip_blocks: frozenset[str] = frozenset(),
+    target_race_ids: frozenset[str] | None = None,
 ):
     """The as-of feature block: from materialized parquet (fast, opt-in) or computed in-memory.
 
@@ -58,10 +59,14 @@ def _asof_block(
             assert_fresh(manifest, fingerprint_frames if fingerprint_frames is not None else frames)
         if has_future_rows(frames, manifest, start_date=start_date, end_date=end_date):
             return build_asof_features(  # serving fallback
-                frames, low_history_max=low_history_max, skip_blocks=skip_blocks
+                frames, low_history_max=low_history_max, skip_blocks=skip_blocks,
+                target_race_ids=target_race_ids,
             )
         return df           # parquet fast path (full matrix; projection happens at final selection)
-    return build_asof_features(frames, low_history_max=low_history_max, skip_blocks=skip_blocks)
+    return build_asof_features(
+        frames, low_history_max=low_history_max, skip_blocks=skip_blocks,
+        target_race_ids=target_race_ids,
+    )
 
 
 def assemble_feature_matrix(
@@ -75,6 +80,7 @@ def assemble_feature_matrix(
     fingerprint_frames: Frames | None = None,
     skip_fingerprint_verify: bool = False,
     wanted: frozenset[str] | None = None,
+    target_race_ids: frozenset[str] | None = None,
 ) -> pd.DataFrame:
     """Build the fixed-schema FeatureMatrix from in-memory Frames (DB-independent).
 
@@ -96,11 +102,19 @@ def assemble_feature_matrix(
     """
     skip_blocks = skip_blocks_for_wanted(wanted)
     static = build_static_features(frames)
+    if target_race_ids is not None:
+        # Feature 072: restrict the row base to target races BEFORE merging the projected
+        # (target-only) as-of block. Otherwise the left-merge of full `static` with the target-only
+        # `asof` NaN-fills non-target rows and upcasts int columns (e.g. career_starts int64->
+        # float64); the later population slice cannot undo a sticky dtype. Static columns are
+        # computed over the full frame (dtypes pool-correct) and only ROW-filtered here, so
+        # values/dtypes stay byte-identical.
+        static = static[static["race_id"].isin(target_race_ids)]
     asof = _asof_block(
         frames, low_history_max=low_history_max, start_date=start_date, end_date=end_date,
         materialized_path=materialized_path, use_materialized=use_materialized,
         fingerprint_frames=fingerprint_frames, skip_fingerprint_verify=skip_fingerprint_verify,
-        skip_blocks=skip_blocks,
+        skip_blocks=skip_blocks, target_race_ids=target_race_ids,
     )
     fm = static.merge(asof, on=["race_id", "horse_id"], how="left")
     # Feature 056: prize_rel = today's prize level − the horse's as-of prize class (昇降級度合い).
@@ -117,6 +131,8 @@ def assemble_feature_matrix(
     fm = fm[fm["race_date"] >= pd.Timestamp(start_date)]
     if end_date is not None:
         fm = fm[fm["race_date"] <= pd.Timestamp(end_date)]
+    if target_race_ids is not None:  # Feature 072: emit only the target races' rows (INV-P1)
+        fm = fm[fm["race_id"].isin(target_race_ids)]
 
     fm = fm.sort_values(["race_id", "horse_id"], kind="stable").reset_index(drop=True)
     skipped = _skipped_columns(skip_blocks)
@@ -195,6 +211,7 @@ def build_feature_matrix(
     use_materialized: bool = False,
     skip_fingerprint_verify: bool = False,
     wanted: frozenset[str] | None = None,
+    target_race_ids: frozenset[str] | None = None,
 ) -> pd.DataFrame:
     # Always load the end_date-windowed pool for static/population/as-of: as-of values for races
     # <= end_date only look strictly before each race, and windowed loading keeps static dtypes
@@ -213,5 +230,5 @@ def build_feature_matrix(
         frames, start_date=start_date, end_date=end_date, low_history_max=low_history_max,
         materialized_path=materialized_path, use_materialized=use_materialized,
         fingerprint_frames=fp_frames, skip_fingerprint_verify=skip_fingerprint_verify,
-        wanted=wanted,
+        wanted=wanted, target_race_ids=target_race_ids,
     )

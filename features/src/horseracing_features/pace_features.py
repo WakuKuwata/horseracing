@@ -128,13 +128,28 @@ def _rolling_asof(
     )
 
 
-def build_pace_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id) Feature-023 pace/time features. All as-of race_date < R."""
+def build_pace_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) Feature-023 pace/time features. All as-of race_date < R.
+
+    Feature 072: when ``target_race_ids`` is set, emit only those races' rows and restrict the
+    rolling SOURCE to the target horses. The per-horse rolling / merge_asof is independent per
+    horse_id, so filtering the source to the target horses cannot change any target row's value —
+    byte-identical to the full build restricted to those rows (proven by test_pace_projection).
+    The in-race relative primitives (``_pace_runs``) are still computed over the FULL frame.
+    """
     runs = _pace_runs(frames)
     targets = runs[["race_id", "horse_id", "race_date"]].copy()
+    fin = runs[runs["is_finished"] == 1]
+    started = runs[runs["is_started"] == 1]
+    if target_race_ids is not None:
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        target_horses = frozenset(targets["horse_id"])
+        fin = fin[fin["horse_id"].isin(target_horses)]
+        started = started[started["horse_id"].isin(target_horses)]
 
     # pace_time + corner: aggregate over FINISHED past races (where time/last3f/corner exist).
-    fin = runs[runs["is_finished"] == 1]
     fin_feat = _rolling_asof(
         fin, targets,
         {
@@ -151,7 +166,6 @@ def build_pace_features(frames: Frames) -> pd.DataFrame:
         },
     )
     # style: aggregate over STARTED past races (running_style is an entry attribute).
-    started = runs[runs["is_started"] == 1]
     sty_feat = _rolling_asof(
         started, targets,
         {"front_runner_rate": ("is_front", "mean"), "closer_rate": ("is_closer", "mean")},

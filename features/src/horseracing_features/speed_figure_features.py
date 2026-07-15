@@ -106,14 +106,23 @@ def _figure_runs(frames: Frames) -> pd.DataFrame:
     return runs[runs["spdfig_z"].notna()][["horse_id", "race_date", "spdfig_z"]]
 
 
-def build_speed_figure_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id) speed_figure columns. All as-of race_date < R (same-day excluded)."""
+def build_speed_figure_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) speed_figure columns. All as-of race_date < R (same-day excluded).
+
+    Feature 072: the (venue×track×dist×going) cell BASELINE in ``_figure_runs`` stays computed over
+    the FULL frame; only the per-horse expanding/rolling source and the target rows are restricted
+    to the target races' horses — byte-identical on those rows (INV-P1)."""
     rh = frames.race_horses[["race_id", "horse_id"]].copy()
     races = frames.races[["race_id", "race_date"]].copy()
     races["race_date"] = pd.to_datetime(races["race_date"])
     targets = rh.merge(races, on="race_id", how="left")
 
     src = _figure_runs(frames).sort_values(["horse_id", "race_date"], kind="stable")
+    if target_race_ids is not None:
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        src = src[src["horse_id"].isin(frozenset(targets["horse_id"]))]
     if src.empty:
         out = targets[["race_id", "horse_id"]].copy()
         for c in SPEED_FIGURE_COLUMNS:
