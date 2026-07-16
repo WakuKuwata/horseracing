@@ -51,7 +51,7 @@ description: "Task list for feature 073 — Evaluation Contract v2 & Historical 
 
 - [X] T005 [P] [US1] `eval/tests/unit/test_gate_decision.py` に三値真理値表テスト(ADOPT/REJECT/NO_DECISION の全分岐)。**PASS**。
 - [X] T006 [P] [US1] 同上ファイルに境界テスト(開催日 9 vs 10・空 window(n_days=None)・underpowered/MISSING critical subgroup が黙って PASS しない)+ confirmatory fail-closed(config 欠落/hash 不一致/window 不一致)。**PASS**。
-- [ ] T007 [P] [US1] `eval/tests/integration/test_determinism_073.py` に同一 seed・単一 thread で paired-eval を 2 回実行し winner NLL・paired 差・CI の絶対差 <1e-9 を assert。**未着手**(要 testcontainer)。
+- [X] T007 [P] [US1] `eval/tests/unit/test_paired.py::test_paired_eval_is_deterministic_same_seed` に同一 seed で paired-eval を 2 回実行し winner NLL・paired 差・CI・decision・`to_dict()` 全体が <1e-9/完全一致を assert(SC-003)。DB-free fake factory で eval 契約の決定論を検証(LightGBM 単一 thread 決定論は training の既存 test_determinism が担保)。**PASS**。
 - [X] T008 [P] [US1] `eval/tests/unit/test_started_all_harness.py` に harness 本体の started-all(DNF=win0)採点を assert(default off=byte 同一・on で全 starter 採点)。**PASS**。
 - [X] T009 [P] [US1] leak-guard: eval→training import 境界は既存 `test_leak_guard_068.test_no_eval_file_imports_training` が新 `decision.py` も含め全 eval ファイルを網羅。加えて `test_gate_decision.py` に `final_decision` の入力非変更(純粋性)を assert。**PASS**。
 

@@ -117,6 +117,29 @@ def test_period_windows_partition_by_boundary():
     assert rep.periods["recent_5y"]["n_races"] <= rep.periods["all"]["n_races"]
 
 
+def test_paired_eval_is_deterministic_same_seed(monkeypatch):
+    # Feature 073 US1 (T007, SC-003): same inputs + same bootstrap seed => bit-identical report
+    # (winner NLL, paired diff, CI, tri-value decision). The eval contract must be reproducible;
+    # the gate-config records the <1e-9 tolerance. Fake factories remove model-fit nondeterminism,
+    # so the only stochastic element is the seeded bootstrap RNG — two runs must match exactly.
+    races = _races()
+    cfg = {"bootstrap": {"seed": 20260713, "b": 300}}
+    r1 = paired_eval(_FakeFactory(0.6, "c"), _FakeFactory(0.5, "a"), races,
+                     first_valid_year=2020, gate_config=cfg, subgroups=True)
+    r2 = paired_eval(_FakeFactory(0.6, "c"), _FakeFactory(0.5, "a"), races,
+                     first_valid_year=2020, gate_config=cfg, subgroups=True)
+    tol = 1e-9
+    assert abs(r1.periods["all"]["diff"] - r2.periods["all"]["diff"]) < tol
+    assert abs(r1.bootstrap_ci["ci_low"] - r2.bootstrap_ci["ci_low"]) < tol
+    assert abs(r1.bootstrap_ci["ci_high"] - r2.bootstrap_ci["ci_high"]) < tol
+    assert abs(r1.bootstrap_ci["point"] - r2.bootstrap_ci["point"]) < tol
+    # tri-value decision + audit provenance reproduce exactly
+    assert r1.decision == r2.decision
+    assert r1.gate_config_hash == r2.gate_config_hash
+    # full serialized report is identical (strongest determinism assertion)
+    assert r1.to_dict() == r2.to_dict()
+
+
 def test_one_sided_missing_prediction_is_contract_failure():
     class _DropFactory(_FakeFactory):
         def fit(self, train_races, *, num_threads=None):
