@@ -86,9 +86,9 @@ description: "Task list for feature 074 — OOF-faithful Calibration Evidence"
 
 ### Tests for User Story 3
 
-- [ ] T015 [P] [US3] `probability/tests/integration/test_oof_calibration.py` に two-gamma/λ が prior OOF fold のみで fit・fit fold を評価 CI に含めない(prequential)ことを assert。
-- [ ] T016 [P] [US3] 同上に ECE が strictly-later OOF block で測られ fit sample では測らない(SC-007)、verdict が ADOPT/REJECT/NO_DECISION、transfer-check ミスマッチ=NO_DECISION を assert。
-- [ ] T017 [P] [US3] 073 の既存 verdict/result が上書き・再分類されないこと(SC-009)を assert。
+- [X] T015 [P] [US3] `probability/tests/integration/test_oof_calibration.py` に two-gamma/λ が prior OOF fold のみで fit・fit fold を評価 CI に含めない(prequential)ことを assert。
+- [X] T016 [P] [US3] 同上に ECE が strictly-later OOF block で測られ fit sample では測らない(SC-007)、verdict が ADOPT/REJECT/NO_DECISION、transfer-check ミスマッチ=NO_DECISION を assert。
+- [X] T017 [P] [US3] 073 の既存 verdict/result が上書き・再分類されないこと(SC-009)を assert。
 
 ### Implementation for User Story 3
 
