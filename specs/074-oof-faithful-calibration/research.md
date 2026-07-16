@@ -70,6 +70,27 @@
 
 **Rationale**: 074 のスコープ肥大を防ぐ(1 feature 1 関心)。是正は production 結線を伴うため 076。
 
+## D9. features-017/018 gap の解決 — OOF fit を lgbm-063 の正確な列に制限
+
+**問題(実装で判明)**: `build_training_matrix` は `feature_cols = model_input_features()`(現行 **features-018** の全列)を常に返す([dataset.py:118](../../training/src/horseracing_training/dataset.py))。lgbm-063 は **features-017**(F02 なし)で学習されたが、attestation から復元した recipe は `drop_features` を持たないため、OOF fit が **F02 列込みの features-018** で走る=lgbm-063 と非同一の特徴集合。これは recipe-faithful 性を崩す。
+
+**なぜ byte-faithful に解ける**: 069 が **features-018 = features-017 + additive F02(left-merge・共有列 byte 一致を check_exact で実証)**を確立済み。したがって features-018 build を **features-017 の列だけに制限**すれば、features-017 build と **byte 一致**の特徴値が得られる(058/069 の serving COMPATIBLE_PRIOR パリティと同じ保証を OOF fit に適用)。近似ではなく厳密。
+
+**Decision**: OOF fit を **attestation の `ordered_feature_columns`(lgbm-063 の正確な順序付き列)に制限**する。
+
+- **機構**: `LightGBMPredictor` に `restrict_features: tuple[str,...] | None = None`(inclusion)を追加。`_ensure_data` で full matrix 構築後、`restrict_features` 指定時:
+  - `missing = set(restrict_features) − set(full.feature_cols)` → 空でなければ fail-closed(`ValueError`=特徴が現行から消えた=再現不能)。
+  - `keep = list(restrict_features)`(**lgbm-063 の正確な順序**をそのまま採用=order 保存)。`feature_cols=keep`・`categorical_cols` も keep で filter。
+- **`drop_features`(除外)で代替可だが不採用**: `drop = model_input_features() − ordered_cols` を静的計算して drop に足せば予測器改変ゼロで済む(F02 が末尾追加なら順序も保たれる)が、**列が再順序化された場合に drop は順序を復元できない**。`restrict_features`(inclusion)は subset+reorder の両方を厳密に扱えるため堅い(LightGBM は単一 thread でも列順で tie-break が変わりうる=faithful には順序一致が安全)。
+- **配線**: `legacy_attest.factory_from_attestation(session, att)`(新)= recipe 復元 + `RecipeFactory(session, recipe, restrict_features=tuple(att["ordered_feature_columns"]))`。`oof_generate.generate_oof_bundle` はこれを使う(現行の raw recipe→factory を置換)。
+- **TE 整合**: 予測器は既に `te_cols_ = [c for c in target_encode_cols if c in data.feature_cols]` で filter 済み。lgbm-063 の TE(jockey_id/trainer_id)は features-017 ⊆ restrict なので不変。
+
+**Rationale**: 069 のパリティを再利用するため近似でなく byte-faithful。予測器への追加は opt-in(`restrict_features=None` で既存挙動 byte 不変)= ModelRecipe の hash を汚さない(recipe field にせず factory 経由)。fail-closed で「lgbm-063 の列が現行に無い=再現不能」を検出。
+
+**Alternatives**: (a) features-017 コードを checkout して matrix 再構築 → 重い・不要(additive superset ゆえ制限で足りる)。(b) 「superset ゆえ許容」だけの明文化 → 制限しなければ fit は余分な F02 を使う=faithful でない、単独では誤り。→ `restrict_features` による厳密制限を採用。
+
+**実装スコープ**: `predictor.py`(restrict_features 追加・_ensure_data filter)+ `recipe.py`(RecipeFactory に restrict_features field)+ `legacy_attest.py`(factory_from_attestation)+ `oof_generate.py`(差し替え)+ テスト(restrict で features-017 列のみ・missing で fail-closed・restrict=None で byte 不変)。**features/training path + パリティ変更のため実装前に codex レビュー MUST**(憲法品質ゲート)。
+
 ## 未解決
 
-なし。計算コスト(fold 再学習=長時間)は tasks で smoke→フルに段階化(実装可否は smoke で判定)。
+なし。計算コスト(fold 再学習=長時間)は tasks で smoke→フルに段階化(実装可否は smoke で判定)。features-017 gap は D9 で解決設計済み(実装は codex レビュー後)。

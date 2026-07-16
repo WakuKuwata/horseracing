@@ -8,7 +8,7 @@
 
 - **active=lgbm-063(features-017)**・073 freeze oracle 存在(`specs/073-.../legacy-freeze-lgbm-063.json`、SC-006 で digest 一致=win byte 不変を機械確認済み)。
 - 073 の calibrated-stage ECE(FR-007)は未完=074 が参照 fulfill する前提であることを確認。
-- **⚠️ feature-version gap(T014 smoke 前に要解決)**: 現 `FEATURE_VERSION=features-018` だが lgbm-063 attestation=features-017。`build_training_matrix` は今 features-018 を生成するため、フル recipe-faithful OOF 生成には **features-017 matrix の再構築(または「additive superset ゆえ許容」の明文化)**が要る。統合テスト(T008–T011)は factory 注入で features-version 非依存にメカニズム検証済み。
+- **feature-version gap = 解決設計済み(research D9)**: 現 `FEATURE_VERSION=features-018` だが lgbm-063=features-017。**069 が features-018=features-017+additive F02(共有列 byte 一致)を実証済み**なので、OOF fit を attestation の `ordered_feature_columns` に **`restrict_features`(inclusion・fail-closed)で制限**すれば byte-faithful に features-017 を再現できる(近似でなく厳密)。実装=T032(codex レビュー後)。統合テスト(T008–T011)は factory 注入で features-version 非依存にメカニズム検証済み。
 
 ## 1. legacy attestation(US2)
 

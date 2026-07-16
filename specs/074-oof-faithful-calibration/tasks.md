@@ -72,6 +72,7 @@ description: "Task list for feature 074 — OOF-faithful Calibration Evidence"
 
 - [X] T012 [US1] `training/src/horseracing_training/oof_generate.py`(新)を実装: recipe-faithful factory(T007)を `eval/foldfit.predict_over_folds` に通し per-race OOF prediction を得て `oof_bundle`(T003)へ直列化。同日除外は `race_date<target_date`(FR-003)。
 - [X] T013 [US1] `training/src/horseracing_training/cli.py` に `oof-generate` サブコマンド(`--base-model-version`/`--from`/`--to`/`--first-valid-year`/`--seed`/`--num-threads`/`--out`/`--smoke`)。read-only・atomic publish。contracts/cli.md。
+- [ ] T032 [US1] **features-017 gap 解決(research D9・T014 の前提・codex レビュー MUST)**: `predictor.py` に `restrict_features`(inclusion・_ensure_data で fail-closed filter・order 保存・restrict=None で byte 不変)、`recipe.py` RecipeFactory に restrict_features field、`legacy_attest.py` に `factory_from_attestation`(ordered_feature_columns で制限)、`oof_generate` を差し替え。テスト=restrict で features-017 列のみ・missing で fail-closed・restrict=None 後方互換。069 の additive パリティ再利用で byte-faithful。
 - [ ] ⏳ T014 [US1] `--smoke`(小 fold・合成 or 小窓)で OOF 生成を実行し T008–T011 を緑にする(**実装可否ゲート**)。フル 2008–2026 生成は operator 長時間 job(quickstart §2、セッション外)。
 
 **Checkpoint**: OOF-faithful bundle が smoke で生成・検証できる=リーク是正の本体が成立。
