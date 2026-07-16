@@ -42,22 +42,33 @@ def code_sha() -> str:
 def generate_oof_bundle(
     session: Session,
     *,
-    active_dir: Path | str,
+    active_dir: Path | str | None = None,
     out_root: Path | str,
     date_from=None,
     date_to=None,
     first_valid_year: int = 2008,
     num_threads: int = 1,
     attestation: dict | None = None,
+    factory: RecipeFactory | None = None,
+    attestation_digest: str | None = None,
 ) -> tuple[Path, dict]:
     """Generate and publish the recipe-faithful OOF bundle for the attested base model.
 
     Returns ``(bundle_path, payload)``. Idempotent: re-generating identical content re-publishes
     the same content-addressed artifact.
+
+    Normal use builds the factory from the base model's legacy attestation (``active_dir`` or an
+    explicit ``attestation``). Tests may inject a pre-built ``factory`` + ``attestation_digest`` to
+    exercise the OOF *mechanism* (strict-past / determinism / result-invariance) with a fast recipe,
+    independent of the base model's exact feature version.
     """
-    att = attestation or attestation_from_model_dir(active_dir, code_sha=code_sha())
-    recipe = recipe_from_attestation(att)
-    factory = RecipeFactory(session=session, recipe=recipe)
+    if factory is None:
+        att = attestation or attestation_from_model_dir(active_dir, code_sha=code_sha())
+        recipe = recipe_from_attestation(att)
+        factory = RecipeFactory(session=session, recipe=recipe)
+        attestation_digest = att["attestation_digest"]
+    elif attestation_digest is None:
+        attestation_digest = "injected-factory"
 
     eval_races = load_eval_races(session, start_date=date_from, end_date=date_to)
 
@@ -84,14 +95,14 @@ def generate_oof_bundle(
             "valid_race_set_hash": race_set_hash(valid_ids),
             "train_through": str(train_through) if train_through is not None else "none",
             # per-fold model identity: same recipe, distinct train set => distinct fresh fit.
-            "model_digest": stable_hash({"recipe": recipe.recipe_hash(), "train": train_hash}),
+            "model_digest": stable_hash({"recipe": factory.recipe_hash, "train": train_hash}),
         })
 
     payload = oof_bundle.build_payload(
         predictions=predictions,
         fold_boundaries=fold_boundaries,
         per_fold=per_fold,
-        attestation_digest=att["attestation_digest"],
+        attestation_digest=attestation_digest,
     )
     path = oof_bundle.write_bundle(out_root, payload)
     return path, payload

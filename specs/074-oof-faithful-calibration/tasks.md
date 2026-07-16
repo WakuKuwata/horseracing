@@ -63,10 +63,10 @@ description: "Task list for feature 074 — OOF-faithful Calibration Evidence"
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] `training/tests/integration/test_oof_strict_past.py` に全 OOF race で booster/内部校正/TE の `max(train_date) < race_date` を assert(SC-001)。
+- [X] T008 [P] [US1] `training/tests/integration/test_oof_strict_past.py` に全 OOF race で booster/内部校正/TE の `max(train_date) < race_date` を assert(SC-001)。
 - [ ] T009 [P] [US1] `training/tests/integration/test_oof_same_day_excluded.py` に同日レースが downstream fit に混入しない(`race_date<target_date`)ことを assert(SC-002)。
 - [ ] T010 [P] [US1] `training/tests/integration/test_oof_result_invariance.py` に対象レース結果を変更しても当該 OOF prediction がバイト不変・result hash のみ変化を assert(SC-003, leak-guard)。
-- [ ] T011 [P] [US1] `training/tests/integration/test_oof_digest_stable.py` に別モデル/full-history latest run を DB に追加しても bundle digest 不変(SC-004)、2 回生成で byte 一致(SC-005)を assert。
+- [X] T011 [P] [US1] `training/tests/integration/test_oof_digest_stable.py` に別モデル/full-history latest run を DB に追加しても bundle digest 不変(SC-004)、2 回生成で byte 一致(SC-005)を assert。
 
 ### Implementation for User Story 1
 
