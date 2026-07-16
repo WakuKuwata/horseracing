@@ -229,12 +229,17 @@ def fit_p_calibrator(
 
 
 # --- walk-forward sample loader ---------------------------------------------
-def _latest_run_predictions(session: Session, race_id: str) -> dict[str, float]:
-    run = session.scalars(
-        select(PredictionRun)
-        .where(PredictionRun.race_id == race_id)
-        .order_by(PredictionRun.computed_at.desc())
-    ).first()
+def _latest_run_predictions(
+    session: Session, race_id: str, *, base_model_version: str | None = None
+) -> dict[str, float]:
+    # Feature 074 US3 (defense-in-depth, research D1): optionally pin the run to a base model
+    # version so a calibration sample can never silently mix model generations. The OOF-faithful
+    # sample source (load_p_samples_from_oof) is the real leak fix; this filter is a guard for the
+    # remaining latest-run path. Default None keeps the pre-074 behaviour byte-identical.
+    stmt = select(PredictionRun).where(PredictionRun.race_id == race_id)
+    if base_model_version is not None:
+        stmt = stmt.where(PredictionRun.model_version == base_model_version)
+    run = session.scalars(stmt.order_by(PredictionRun.computed_at.desc())).first()
     if run is None:
         return {}
     rows = session.execute(
@@ -280,6 +285,27 @@ def load_p_samples(session: Session, *, date_from, date_to):
         p = _latest_run_predictions(session, race_id)
         winner, dead_heat = _winner(session, race_id)
         out.append((race_id, race_date, p, winner, dead_heat))
+    return out
+
+
+def load_p_samples_from_oof(session: Session, bundle: dict):
+    """Feature 074 US3 (FR-001): p-calibration samples sourced from an OOF bundle, NOT the leaky
+    latest persisted run.
+
+    ``p`` comes from the OOF prediction (win prob over the bundle's horses for each race); the
+    winner label still comes from DB results (results used ONLY as a fit label, 憲法 II). Returns
+    the SAME shape as :func:`load_p_samples` — ``[(race_id, race_date, p_dict, winner|None,
+    is_dead_heat)]`` ordered by ``(race_date, race_id)`` — so the existing two-gamma / power fit
+    functions consume it unchanged.
+    """
+    predictions = bundle["predictions"]
+    out = []
+    for race_id, horses in predictions.items():
+        p = {hid: float(pr["win"]) for hid, pr in horses.items()}
+        race_date = session.scalar(select(Race.race_date).where(Race.race_id == race_id))
+        winner, dead_heat = _winner(session, race_id)
+        out.append((race_id, race_date, p, winner, dead_heat))
+    out.sort(key=lambda s: (s[1], s[0]))
     return out
 
 
