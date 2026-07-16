@@ -518,6 +518,10 @@ class AttestedRecipeFactory(RecipeFactory):
                 objective=self.recipe.objective,
                 market_offset=self.recipe.market_offset,
                 calibration_split_unit=self.recipe.calibration_split_unit,
+                # Feature 074 (D9): restrict the fit to lgbm-063's exact features-017 columns on the
+                # current features-018 schema (069 additive parity => byte-faithful). Fail-closed if
+                # any attested column is absent. This makes the order check below pass faithfully.
+                restrict_features=self.ordered_feature_columns,
             )
         self._pred.fit(train_races)
         actual_columns = tuple(self._pred.feature_cols_ or ())

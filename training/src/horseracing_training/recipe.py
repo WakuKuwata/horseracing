@@ -93,6 +93,12 @@ class RecipeFactory:
 
     session: Session
     recipe: ModelRecipe
+    #: Feature 074 (D9): restrict the fit to a legacy model's exact ordered columns (e.g. lgbm-063
+    #: features-017 columns) so OOF regeneration on the current features-018 schema is recipe-
+    #: faithful. None = use the recipe's full schema. NOT part of recipe_hash (fit-scope, not
+    #: model identity) — the restriction is recorded via the legacy attestation the OOF bundle
+    #: references.
+    restrict_features: tuple[str, ...] | None = None
     _pred: LightGBMPredictor | None = field(default=None, init=False, repr=False)
 
     @property
@@ -116,6 +122,7 @@ class RecipeFactory:
                 objective=self.recipe.objective,
                 market_offset=self.recipe.market_offset,
                 calibration_split_unit=self.recipe.calibration_split_unit,
+                restrict_features=self.restrict_features,
             )
         self._pred.fit(train_races)
         return self._pred

@@ -75,9 +75,17 @@ class LightGBMPredictor:
         materialized_path: str | None = None,
         market_offset: bool = False,
         calibration_split_unit: str = LEGACY_CALIBRATION_SPLIT_UNIT,
+        restrict_features: tuple[str, ...] | None = None,
     ) -> None:
         self.session = session
         self.seed = seed
+        # Feature 074 (US1/D9): restrict the fit to EXACTLY these ordered columns (inclusion) —
+        # used to reproduce a legacy model (e.g. lgbm-063 = features-017) on the current
+        # features-018 schema. 069 proved features-018 = features-017 + additive F02 (shared
+        # columns byte-identical), so restricting to the legacy columns is byte-faithful, not an
+        # approximation. Fail-closed if any requested column is absent. None = no-op (byte
+        # unchanged). Takes precedence over drop_features when set.
+        self.restrict_features = tuple(restrict_features) if restrict_features is not None else None
         # Feature 073 (US2): explicit calibration split unit. Default = legacy race-count split,
         # byte-identical to every pre-073 model (validated by SC-005/SC-006). ``race_day_v1``
         # selects the open-day split. Fail-closed on unknown values (select_split_fn).
@@ -128,7 +136,26 @@ class LightGBMPredictor:
                 use_materialized=self.use_materialized,
                 materialized_path=self.materialized_path,
             )
-            if self.drop_features:
+            if self.restrict_features is not None:
+                # Feature 074 (D9): keep EXACTLY the legacy model's ordered columns (inclusion).
+                # Fail-closed if any is absent (a column that lgbm-063 used has since been removed
+                # => cannot faithfully reproduce). Order is taken from restrict_features (the legacy
+                # order), so column order matches the legacy model for a faithful fresh fit.
+                import dataclasses
+                available = set(full.feature_cols)
+                missing = [c for c in self.restrict_features if c not in available]
+                if missing:
+                    raise ValueError(
+                        "restrict_features not present in the current feature schema (cannot "
+                        f"reproduce the legacy model faithfully): {missing}"
+                    )
+                keep = list(self.restrict_features)
+                full = dataclasses.replace(
+                    full,
+                    feature_cols=keep,
+                    categorical_cols=[c for c in full.categorical_cols if c in keep],
+                )
+            elif self.drop_features:
                 # Feature 020: drop excluded columns from feature_cols (frame keeps them, unused).
                 # All downstream uses data.feature_cols, so a single filter propagates everywhere.
                 import dataclasses

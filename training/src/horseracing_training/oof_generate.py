@@ -24,7 +24,7 @@ from horseracing_probability import oof_bundle
 from horseracing_probability.oof_bundle import race_set_hash
 from sqlalchemy.orm import Session
 
-from .legacy_attest import attestation_from_model_dir, recipe_from_attestation
+from .legacy_attest import attestation_from_model_dir, factory_from_attestation
 from .recipe import RecipeFactory
 
 
@@ -64,8 +64,10 @@ def generate_oof_bundle(
     """
     if factory is None:
         att = attestation or attestation_from_model_dir(active_dir, code_sha=code_sha())
-        recipe = recipe_from_attestation(att)
-        factory = RecipeFactory(session=session, recipe=recipe)
+        # Feature 074 (D9): recipe-faithful factory — applies resolved params AND restricts the fit
+        # to the attested (features-017) ordered columns, so OOF on the current features-018 schema
+        # reproduces lgbm-063 byte-faithfully (069 additive parity).
+        factory = factory_from_attestation(session, att)
         attestation_digest = att["attestation_digest"]
     elif attestation_digest is None:
         attestation_digest = "injected-factory"
