@@ -1,0 +1,36 @@
+{
+  "evaluation_contract_version": "v2",
+  "stage": "two_gamma_win",
+  "base_model_version": "lgbm-063",
+  "bundle_digest": "5130197ccb6424db145853d4bc6c3c1f8549d36c3947b683bdc6257c62d8ad3b",
+  "fit": {
+    "gamma_lo": 1.0344644345269174,
+    "gamma_hi": 1.0015764897295103,
+    "pivot": 0.15,
+    "n_held_out_folds": 1
+  },
+  "ece": {
+    "raw": 0.003994708247904125,
+    "calibrated": 0.0034375202268056254,
+    "delta": -0.0005571880210984994
+  },
+  "transfer_check": {
+    "ks": 0.03447939374225964,
+    "reference": "full_history_latest_run"
+  },
+  "verdict": "NO_DECISION",
+  "verdict_reason": {
+    "cause": "within_margin",
+    "delta_ece": -0.0005571880210984994
+  },
+  "n_eval_days": 167,
+  "n_dead_heat_excluded": 7,
+  "gate_config_hash": "daede50f2e440ce417a8781bbe1377a5555c2ec3d8cbd05d7c177ecf3c7732d2",
+  "diagnostics": {
+    "same_type_leak_deferred_to_076": [
+      "training.cli dispersion two-gamma (066) uses the generation-unfiltered loader",
+      "probability.calibration joint calibration uses a generation-unfiltered latest run"
+    ],
+    "development_evidence": "2008-2026 OOF ECE is development evidence, not confirmatory"
+  }
+}

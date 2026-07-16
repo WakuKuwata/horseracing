@@ -717,7 +717,46 @@ def main(argv: list[str] | None = None) -> int:
     ca.add_argument("--json", dest="json_out", default=None)
     ca.add_argument("--database-url", default=None)
 
+    # Feature 074 US1: generate a recipe-faithful OOF prediction bundle (content-addressed disk).
+    og = sub.add_parser("oof-generate",
+                        help="074: generate OOF prediction bundle from a base model recipe")
+    og.add_argument("--base-model-version", default="lgbm-063")
+    og.add_argument("--active-dir", default="artifacts/model_versions/lgbm-063",
+                    help="directory holding the base model's metadata.json (+073 freeze)")
+    og.add_argument("--from", dest="from_", type=_parse_date, default=None)
+    og.add_argument("--to", dest="to", type=_parse_date, default=None)
+    og.add_argument("--first-valid-year", type=int, default=2008)
+    og.add_argument("--num-threads", type=int, default=1)
+    og.add_argument("--out", default="artifacts/oof", help="artifacts/oof root")
+    og.add_argument("--smoke", action="store_true", help="small-fold gate (implementability)")
+    og.add_argument("--database-url", default=None)
+
+    # Feature 074 US3: OOF-faithful two-gamma re-validation (calibrated-stage ECE + 048 verdict).
+    co = sub.add_parser("calibrate-oof",
+                        help="074: re-validate two-gamma calibration on an OOF bundle")
+    co.add_argument("--bundle", required=True, help="path to OOF bundle dir or bundle.json")
+    co.add_argument("--base-model-version", default="lgbm-063")
+    co.add_argument("--gate-config",
+                    default="specs/074-oof-faithful-calibration/gate-config.json")
+    co.add_argument("--json", dest="json_out", default=None,
+                    help="write the append-only evaluation artifact here")
+    co.add_argument("--database-url", default=None)
+
+    # Feature 074 US4: verify a content-addressed calibration manifest (fail-closed).
+    vm = sub.add_parser("verify-manifest", help="074: verify a content-addressed calib manifest")
+    vm.add_argument("--manifest", required=True, help="path to manifest.json")
+
     args = parser.parse_args(argv)
+    if args.command == "oof-generate":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _oof_generate(session, args)
+    if args.command == "calibrate-oof":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _calibrate_oof(session, args)
+    if args.command == "verify-manifest":
+        return _verify_manifest_cmd(args)
     if args.command == "paired-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -843,6 +882,67 @@ def _factory_from_spec(session, spec: str):
         )
     from .recipe import RecipeFactory
     return RecipeFactory(session, _recipe_from_spec(spec))
+
+
+def _oof_generate(session: Session, args) -> int:
+    """Feature 074 US1: generate + publish a recipe-faithful OOF bundle (content-addressed disk)."""
+    from .oof_generate import generate_oof_bundle
+
+    first_valid = 2024 if getattr(args, "smoke", False) else args.first_valid_year
+    path, payload = generate_oof_bundle(
+        session,
+        active_dir=args.active_dir,
+        out_root=args.out,
+        date_from=args.from_,
+        date_to=args.to,
+        first_valid_year=first_valid,
+        num_threads=args.num_threads,
+    )
+    print(f"oof-generate base={args.base_model_version} smoke={getattr(args, 'smoke', False)}")
+    print(f"  races={len(payload['predictions'])} folds={payload['fold_boundaries']}")
+    print(f"  bundle_digest={payload.get('bundle_digest', '(stamped on write)')}")
+    print(f"  wrote {path}")
+    return 0
+
+
+def _calibrate_oof(session: Session, args) -> int:
+    """Feature 074 US3: OOF-faithful two-gamma re-validation → append-only evaluation artifact."""
+    import json
+
+    from horseracing_probability.oof_bundle import read_bundle
+    from horseracing_probability.oof_calibration import calibrate_oof
+
+    bundle = read_bundle(args.bundle)
+    gate_cfg: dict = {}
+    if args.gate_config:
+        with open(args.gate_config) as fh:
+            gate_cfg = json.load(fh)
+    art = calibrate_oof(
+        session, bundle, gate_config=gate_cfg, base_model_version=args.base_model_version
+    )
+    print(f"calibrate-oof stage={art['stage']} base={art['base_model_version']}")
+    print(f"  ECE raw={art['ece']['raw']:.6f} calibrated={art['ece']['calibrated']:.6f} "
+          f"delta={art['ece']['delta']:+.6f}")
+    print(f"  transfer_ks={art['transfer_check']['ks']:.4f} n_days={art['n_eval_days']}")
+    print(f"  VERDICT={art['verdict']} (cause={art['verdict_reason'].get('cause')}) "
+          f"contract={art['evaluation_contract_version']}")
+    if args.json_out:  # append-only evidence (073 verdicts are never rewritten)
+        with open(args.json_out, "w") as fh:
+            json.dump(art, fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _verify_manifest_cmd(args) -> int:
+    """Feature 074 US4: verify a content-addressed calibration manifest (fail-closed)."""
+    from .calib_manifest import ManifestError, verify_manifest
+    try:
+        verify_manifest(args.manifest)
+    except ManifestError as exc:
+        print(f"verify-manifest FAIL: {exc}")
+        return 1
+    print(f"verify-manifest OK: {args.manifest}")
+    return 0
 
 
 def _paired_eval(session: Session, args) -> int:

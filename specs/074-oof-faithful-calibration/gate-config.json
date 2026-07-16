@@ -1,0 +1,35 @@
+{
+  "_comment": "074: pre-registered gate for the OOF re-validation of two-gamma (048) / stage discount (049). Fixed BEFORE any OOF result is generated (III). verdict is tri-value (ADOPT/REJECT/NO_DECISION) per the 073 contract; a distribution transfer-check mismatch forces NO_DECISION. Do not edit after OOF results exist.",
+  "evaluation_contract_version": "v2",
+  "primary": "calibrated_stage_ece",
+  "stages": ["two_gamma_win", "stage_discount_top2", "stage_discount_top3"],
+  "ece": {
+    "_comment": "measured on strictly-later OOF blocks only (never the prequential fit sample). Banded per 073 (prob/odds/p/q + common tail).",
+    "prob_bands": [0.05, 0.15, 0.30],
+    "min_count": 200,
+    "min_days": 10
+  },
+  "verdict": {
+    "_comment": "048 re-validation: ADOPT requires calibrated-stage ECE non-inferior vs raw with CI upper < margin; REJECT if confidently worse; NO_DECISION if underpowered OR transfer-check mismatch.",
+    "decision": "three_way",
+    "non_inferior_margin_ece": 0.001,
+    "no_decision_min_days": 10
+  },
+  "transfer_check": {
+    "_comment": "OOF vs full-history score distribution mismatch => NO_DECISION/fallback (codex). Pinned BEFORE any OOF result (III): two-sample KS on the raw pre-sigmoid scores; mismatch when the KS distance exceeds ks_distance_max. Result-blind (scores only, no labels). Fixed method + numeric cutoff so the NO_DECISION trigger is fully pre-registered.",
+    "enabled": true,
+    "method": "ks_two_sample",
+    "statistic": "raw_score",
+    "ks_distance_max": 0.10,
+    "mismatch_action": "no_decision"
+  },
+  "prequential": {
+    "_comment": "each fold's two-gamma/lambda is fit on PRIOR OOF folds only; the fit fold is excluded from the eval CI.",
+    "fit_scope": "prior_oof_only",
+    "exclude_fit_fold_from_ci": true
+  },
+  "bootstrap": {"b": 2000, "seed": 20260716, "alpha": 0.05, "primary": "race_day_cluster_bootstrap_ci_v1"},
+  "determinism": {"tolerance": 1e-9, "num_threads": 1},
+  "eval_window": {"from": "2019-01-01", "to": "2026-07-12", "min_eval_days": 10},
+  "development_evidence_note": "2008-2026 is development evidence, NOT confirmatory (073 US4). A confirmatory verdict needs the DORMANT prospective holdout + unused data."
+}
