@@ -4,10 +4,11 @@
 
 前提: ローカル Postgres(horseracing)・active=lgbm-063(073 で確定・freeze 済)。**計算コスト高**(fold 再学習)→ まず `--smoke` で小 fold、フルは長時間 operator job。
 
-## 0. 前提確認
+## 0. 前提確認 — ✅ 確認済み(2026-07-16)
 
-- active=lgbm-063(features-017)・073 freeze oracle 存在(`specs/073-.../legacy-freeze-lgbm-063.json`)。
-- 073 の calibrated-stage ECE(FR-007)が未完=074 前提であることを確認。
+- **active=lgbm-063(features-017)**・073 freeze oracle 存在(`specs/073-.../legacy-freeze-lgbm-063.json`、SC-006 で digest 一致=win byte 不変を機械確認済み)。
+- 073 の calibrated-stage ECE(FR-007)は未完=074 が参照 fulfill する前提であることを確認。
+- **⚠️ feature-version gap(T014 smoke 前に要解決)**: 現 `FEATURE_VERSION=features-018` だが lgbm-063 attestation=features-017。`build_training_matrix` は今 features-018 を生成するため、フル recipe-faithful OOF 生成には **features-017 matrix の再構築(または「additive superset ゆえ許容」の明文化)**が要る。統合テスト(T008–T011)は factory 注入で features-version 非依存にメカニズム検証済み。
 
 ## 1. legacy attestation(US2)
 

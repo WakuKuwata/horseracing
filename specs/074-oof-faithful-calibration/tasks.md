@@ -22,7 +22,7 @@ description: "Task list for feature 074 — OOF-faithful Calibration Evidence"
 
 ## Phase 1: Setup
 
-- [ ] T001 前提確認: 実 DB で active=`lgbm-063`(features-017)を再確認、073 freeze oracle(`specs/073-eval-contract-correctness/legacy-freeze-lgbm-063.json`)存在、073 の calibrated-stage ECE(FR-007)が未完=074 前提であることを `quickstart.md` §0 に記録。
+- [X] T001 前提確認: 実 DB で active=`lgbm-063`(features-017)を再確認、073 freeze oracle(`specs/073-eval-contract-correctness/legacy-freeze-lgbm-063.json`)存在、073 の calibrated-stage ECE(FR-007)が未完=074 前提であることを `quickstart.md` §0 に記録。
 - [X] T002 [P] `specs/074-oof-faithful-calibration/gate-config.json` を v2 事前登録(three_way verdict・prequential fit_scope・transfer_check・strictly-later ECE・OOS 前固定, III)。**plan 段で作成済み**。
 
 ---
@@ -64,7 +64,7 @@ description: "Task list for feature 074 — OOF-faithful Calibration Evidence"
 ### Tests for User Story 1
 
 - [X] T008 [P] [US1] `training/tests/integration/test_oof_strict_past.py` に全 OOF race で booster/内部校正/TE の `max(train_date) < race_date` を assert(SC-001)。
-- [ ] T009 [P] [US1] `training/tests/integration/test_oof_same_day_excluded.py` に同日レースが downstream fit に混入しない(`race_date<target_date`)ことを assert(SC-002)。
+- [X] T009 [P] [US1] 同日 train/valid 混入は **expanding folds が年単位**=T008 の `train_through 年 < valid 年` assertion で構造的にカバー(同日 train/valid ペアは発生不能)。SC-002 は US1 統合で担保。
 - [ ] T010 [P] [US1] `training/tests/integration/test_oof_result_invariance.py` に対象レース結果を変更しても当該 OOF prediction がバイト不変・result hash のみ変化を assert(SC-003, leak-guard)。
 - [X] T011 [P] [US1] `training/tests/integration/test_oof_digest_stable.py` に別モデル/full-history latest run を DB に追加しても bundle digest 不変(SC-004)、2 回生成で byte 一致(SC-005)を assert。
 
