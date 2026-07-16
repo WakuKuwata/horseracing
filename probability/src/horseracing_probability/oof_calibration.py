@@ -180,6 +180,9 @@ def calibrate_oof(
     held = prequential_held_out(fold_to_samples, base_model_version=base_model_version)
     raw_ece = ece(held["raw_probs"], held["labels"])
     cal_ece = ece(held["cal_probs"], held["labels"])
+    # A single fold has no prior OOF to fit on => empty held-out block; there is no calibrated-stage
+    # evidence, so the verdict is NO_DECISION with an honest cause (not the within-margin default).
+    _no_held_out = held["n_held_out_folds"] == 0 or not held["labels"]
 
     # result-blind transfer check: OOF raw winner-scores vs full-history reference winner-scores.
     ref_scores: list[float] = []
@@ -191,9 +194,13 @@ def calibrate_oof(
             ref_scores.append(float(_norm(ref).get(winner, 0.0)))
     ks = ks_distance(held["raw_winner_scores"], ref_scores)
 
-    verdict, reason = three_way_verdict(
-        raw_ece, cal_ece, ks=ks, n_days=len(days), gate_config=gate_config
-    )
+    if _no_held_out:
+        verdict = NO_DECISION
+        reason = {"cause": "no_held_out_folds", "n_folds": len(fold_to_samples)}
+    else:
+        verdict, reason = three_way_verdict(
+            raw_ece, cal_ece, ks=ks, n_days=len(days), gate_config=gate_config
+        )
 
     return {
         "evaluation_contract_version": EVALUATION_CONTRACT_VERSION,
