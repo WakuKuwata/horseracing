@@ -731,6 +731,17 @@ def main(argv: list[str] | None = None) -> int:
     og.add_argument("--smoke", action="store_true", help="small-fold gate (implementability)")
     og.add_argument("--database-url", default=None)
 
+    # Feature 074 US3: OOF-faithful two-gamma re-validation (calibrated-stage ECE + 048 verdict).
+    co = sub.add_parser("calibrate-oof",
+                        help="074: re-validate two-gamma calibration on an OOF bundle")
+    co.add_argument("--bundle", required=True, help="path to OOF bundle dir or bundle.json")
+    co.add_argument("--base-model-version", default="lgbm-063")
+    co.add_argument("--gate-config",
+                    default="specs/074-oof-faithful-calibration/gate-config.json")
+    co.add_argument("--json", dest="json_out", default=None,
+                    help="write the append-only evaluation artifact here")
+    co.add_argument("--database-url", default=None)
+
     # Feature 074 US4: verify a content-addressed calibration manifest (fail-closed).
     vm = sub.add_parser("verify-manifest", help="074: verify a content-addressed calib manifest")
     vm.add_argument("--manifest", required=True, help="path to manifest.json")
@@ -740,6 +751,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _oof_generate(session, args)
+    if args.command == "calibrate-oof":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _calibrate_oof(session, args)
     if args.command == "verify-manifest":
         return _verify_manifest_cmd(args)
     if args.command == "paired-eval":
@@ -887,6 +902,34 @@ def _oof_generate(session: Session, args) -> int:
     print(f"  races={len(payload['predictions'])} folds={payload['fold_boundaries']}")
     print(f"  bundle_digest={payload.get('bundle_digest', '(stamped on write)')}")
     print(f"  wrote {path}")
+    return 0
+
+
+def _calibrate_oof(session: Session, args) -> int:
+    """Feature 074 US3: OOF-faithful two-gamma re-validation → append-only evaluation artifact."""
+    import json
+
+    from horseracing_probability.oof_bundle import read_bundle
+    from horseracing_probability.oof_calibration import calibrate_oof
+
+    bundle = read_bundle(args.bundle)
+    gate_cfg: dict = {}
+    if args.gate_config:
+        with open(args.gate_config) as fh:
+            gate_cfg = json.load(fh)
+    art = calibrate_oof(
+        session, bundle, gate_config=gate_cfg, base_model_version=args.base_model_version
+    )
+    print(f"calibrate-oof stage={art['stage']} base={art['base_model_version']}")
+    print(f"  ECE raw={art['ece']['raw']:.6f} calibrated={art['ece']['calibrated']:.6f} "
+          f"delta={art['ece']['delta']:+.6f}")
+    print(f"  transfer_ks={art['transfer_check']['ks']:.4f} n_days={art['n_eval_days']}")
+    print(f"  VERDICT={art['verdict']} (cause={art['verdict_reason'].get('cause')}) "
+          f"contract={art['evaluation_contract_version']}")
+    if args.json_out:  # append-only evidence (073 verdicts are never rewritten)
+        with open(args.json_out, "w") as fh:
+            json.dump(art, fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
     return 0
 
 

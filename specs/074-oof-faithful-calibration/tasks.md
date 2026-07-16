@@ -93,9 +93,9 @@ description: "Task list for feature 074 — OOF-faithful Calibration Evidence"
 ### Implementation for User Story 3
 
 - [X] T018 [US3] `probability/src/horseracing_probability/model_calibration.py` の校正 sample source を **OOF bundle 差し替え**に対応(`load_p_samples` 経路に bundle 入力を追加、既定は現行=後方互換)。加えて `_latest_run_predictions` に `base_model_version` フィルタ(defense-in-depth)。
-- [ ] T019 [US3] `probability/src/horseracing_probability/model_calibration.py` に prequential fit(prior OOF のみ)+ transfer-check(OOF→full-history 分布ミスマッチ→NO_DECISION/fallback)を実装(gate-config 参照)。
-- [ ] T020 [US3] calibrated-stage ECE(two-gamma 後 win / stage discount 後 top2/top3)を 073 の帯別 ECE で strictly-later OOF block に適用。stage discount は win 非適用(win 不変)。
-- [ ] T021 [US3] `training/src/horseracing_training/cli.py` に `calibrate-oof` サブコマンド。`evaluation_contract_version=v2` append-only evaluation artifact を出力(data-model §3)。073 FR-007 を参照 fulfill(過去 verdict 不変)。contracts/cli.md。
+- [X] T019 [US3] `probability/src/horseracing_probability/model_calibration.py` に prequential fit(prior OOF のみ)+ transfer-check(OOF→full-history 分布ミスマッチ→NO_DECISION/fallback)を実装(gate-config 参照)。
+- [X] T020 [US3] calibrated-stage ECE(two-gamma 後 win / stage discount 後 top2/top3)を 073 の帯別 ECE で strictly-later OOF block に適用。stage discount は win 非適用(win 不変)。
+- [X] T021 [US3] `training/src/horseracing_training/cli.py` に `calibrate-oof` サブコマンド。`evaluation_contract_version=v2` append-only evaluation artifact を出力(data-model §3)。073 FR-007 を参照 fulfill(過去 verdict 不変)。contracts/cli.md。
 - [ ] ⏳ T022 [US3] smoke bundle で `calibrate-oof` を実行し 048 の OOF verdict を artifact に記録(フル窓は operator job)。
 
 **Checkpoint**: 048/049 の採否が OOF-faithful に測り直され、073 FR-007 の calibrated-stage ECE が evidence として存在。
@@ -123,12 +123,12 @@ description: "Task list for feature 074 — OOF-faithful Calibration Evidence"
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T026 [P] `model_internal_win_parity`(SC-006): 074 が serving/persisted 予測を触らないことを **artifact digest 不変**で静的確認(lgbm-063 の model/calibrator/preprocessor digest = 073 freeze oracle と一致)。任意で 1 レース runtime spot-check(16 頭 mismatch 0)を併記。
-- [ ] T027 [P] production 非結線を検証(SC-010): 074 の新規/変更コードが serving/betting/api を import せず・既存 PredictionRun/Recommendation を書かないことを境界 test で assert(FR-015)。
-- [ ] T028 [P] leak-guard: OOF/校正の派生値(ECE/γ/λ/verdict)がモデル特徴に還流しないことを assert(FR-018, II)。
-- [ ] T029 [P] schema-zero 検証: db/ 変更ゼロ・migration head 不変・新モジュールに `__tablename__` ゼロ(FR-017)。
-- [ ] T030 ruff/lint クリーン・既存スイート(probability/training/eval)緑(回帰なし)。
-- [ ] T031 066 dispersion / joint calibration の同型 leak(research D7 に記載済)を、074 の **最終 evaluation artifact の diagnostics セクション**に転記(是正は 076・本 feature では結線しない)。research の重複でなく成果物へ集約。
+- [X] T026 [P] `model_internal_win_parity`(SC-006): 074 が serving/persisted 予測を触らないことを **artifact digest 不変**で静的確認(lgbm-063 の model/calibrator/preprocessor digest = 073 freeze oracle と一致)。任意で 1 レース runtime spot-check(16 頭 mismatch 0)を併記。
+- [X] T027 [P] production 非結線を検証(SC-010): 074 の新規/変更コードが serving/betting/api を import せず・既存 PredictionRun/Recommendation を書かないことを境界 test で assert(FR-015)。
+- [X] T028 [P] leak-guard: OOF/校正の派生値(ECE/γ/λ/verdict)がモデル特徴に還流しないことを assert(FR-018, II)。
+- [X] T029 [P] schema-zero 検証: db/ 変更ゼロ・migration head 不変・新モジュールに `__tablename__` ゼロ(FR-017)。
+- [X] T030 ruff/lint クリーン・既存スイート(probability/training/eval)緑(回帰なし)。
+- [X] T031 066 dispersion / joint calibration の同型 leak(research D7 に記載済)を、074 の **最終 evaluation artifact の diagnostics セクション**に転記(是正は 076・本 feature では結線しない)。research の重複でなく成果物へ集約。
 
 ---
 
