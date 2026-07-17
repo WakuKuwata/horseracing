@@ -12,10 +12,11 @@ import { QueryStateView } from "./StateView";
  * is_estimated_odds / pseudo_odds / pseudo_roi / double_pseudo so the front CANNOT present
  * pseudo-ROI as realized return. Every non-real figure routes through <PseudoValue>.
  *
- * Feature 049: WIN rows also carry a RETROSPECTIVE backtest (settled/hit/realized_return/
- * realized_roi) from REAL win odds × official result — these are REAL facts (not pseudo), shown in
- * a separate 「結果(実績)」 column group with a <ResultBadge> so they are never read as the
- * decision-time pseudo-ROI beside them.
+ * Feature 075: WIN rows carry a counterfactual snapshot backtest (settled/hit/
+ * counterfactual_snapshot_gross_return/counterfactual_snapshot_net_return) from frozen
+ * decision-time win odds × official result. They are shown in a separate
+ * 「反実仮想(判断時オッズ)」 column group so they are never read as literally realized returns or
+ * confused with the decision-time pseudo-ROI beside them.
  */
 function pseudoRoiKind(row: RecommendationRow): "pseudo" | "double_pseudo" {
   return row.double_pseudo ? "double_pseudo" : "pseudo";
@@ -91,7 +92,7 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
                 <tr>
                   <th colSpan={2} />
                   <th className="colgroup" colSpan={4}>予測時(疑似)</th>
-                  <th className="colgroup" colSpan={2}>結果(実績)</th>
+                  <th className="colgroup" colSpan={2}>反実仮想(判断時オッズ)</th>
                 </tr>
                 <tr>
                   <th>券種</th>
@@ -101,7 +102,7 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
                   <th className="num">疑似ROI</th>
                   <th className="num">Kelly比率</th>
                   <th>的中</th>
-                  <th className="num">実現回収</th>
+                  <th className="num">回収</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,13 +148,15 @@ export function RecommendationPanel({ raceId }: { raceId: string }) {
                       <HitCell row={r} />
                     </td>
                     <td className="num">
-                      {r.bet_type === "win" && r.settled && r.realized_return !== null &&
-                      r.realized_return !== undefined ? (
+                      {r.bet_type === "win" && r.settled &&
+                      r.counterfactual_snapshot_gross_return !== null &&
+                      r.counterfactual_snapshot_gross_return !== undefined ? (
                         <>
-                          {formatOdds(r.realized_return)}{" "}
+                          {formatOdds(r.counterfactual_snapshot_gross_return)}{" "}
                           <span data-result="roi">
-                            ({r.realized_roi !== null && r.realized_roi !== undefined
-                              ? `${r.realized_roi >= 0 ? "+" : ""}${(r.realized_roi * 100).toFixed(0)}%`
+                            ({r.counterfactual_snapshot_net_return !== null &&
+                            r.counterfactual_snapshot_net_return !== undefined
+                              ? `${r.counterfactual_snapshot_net_return >= 0 ? "+" : ""}${(r.counterfactual_snapshot_net_return * 100).toFixed(0)}%`
                               : "—"})
                           </span>
                         </>
@@ -200,7 +203,8 @@ function WinBacktestSummary(
 ) {
   const winRows = rows.filter((r) => r.bet_type === "win");
   const settled = winRows.filter((r) => r.settled && r.hit !== null && r.hit !== undefined &&
-    r.realized_return !== null && r.realized_return !== undefined);
+    r.counterfactual_snapshot_gross_return !== null &&
+    r.counterfactual_snapshot_gross_return !== undefined);
 
   // Empty win section → surface the honest skip reason (never a blank).
   if (winRows.length === 0) {
@@ -212,23 +216,26 @@ function WinBacktestSummary(
   if (settled.length === 0) return null;
 
   const nHit = settled.filter((r) => r.hit).length;
-  const totalReturn = settled.reduce((s, r) => s + (r.realized_return ?? 0), 0);
+  const totalReturn = settled.reduce(
+    (s, r) => s + (r.counterfactual_snapshot_gross_return ?? 0),
+    0,
+  );
   const hitRate = nHit / settled.length;
   const recovery = totalReturn / settled.length; // per-unit 回収率(平均回収倍率)
   const fav = data?.favorite_baseline;
 
   return (
     <div className="backtest-summary" data-testid="win-backtest-summary">
-      <h3>単勝推奨の過去実績(参考)</h3>
+      <h3>単勝推奨の反実仮想(判断時オッズ)(参考)</h3>
       <p className="note">
-        確定済みの単勝推奨に対する事後集計(retrospective・in-sample)。実オッズ×公式結果の事実であり、
-        将来の的中・利益を示すものではありません。
+        確定済みの単勝推奨に対する事後集計(retrospective・in-sample)。判断時に凍結したオッズ×
+        公式結果に基づく反実仮想値であり、将来の的中・利益を示すものではありません。
       </p>
       <dl className="backtest-stats">
         <div><dt>確定件数</dt><dd>{settled.length}</dd></div>
         <div><dt>的中</dt><dd>{nHit}</dd></div>
         <div><dt>的中率</dt><dd>{formatPct(hitRate)}</dd></div>
-        <div><dt>回収率(平均回収倍率)</dt><dd>×{recovery.toFixed(2)}</dd></div>
+        <div><dt>反実仮想(判断時オッズ)回収率(平均回収倍率)</dt><dd>×{recovery.toFixed(2)}</dd></div>
       </dl>
       {/* Feature 064: honest reference lines — NOT profit strategies (no coloring, no ranking). */}
       <table className="baseline-table" data-testid="win-baselines">
@@ -241,10 +248,11 @@ function WinBacktestSummary(
             <td className="num">×1.00</td>
           </tr>
           <tr>
-            <td>本命ベタ買い(市場ベースライン{fav?.horse_number ? `・${fav.horse_number}番` : ""})</td>
+            <td>本命ベタ買い(市場ベースライン・現在オッズ基準{fav?.horse_number ? `・${fav.horse_number}番` : ""})</td>
             <td className="num">
-              {fav && fav.settled && fav.realized_return !== null && fav.realized_return !== undefined
-                ? `×${fav.realized_return.toFixed(2)}${fav.hit ? "(的中)" : "(不的中)"}`
+              {fav && fav.settled && fav.current_odds_gross_return !== null &&
+                fav.current_odds_gross_return !== undefined
+                ? `×${fav.current_odds_gross_return.toFixed(2)}${fav.hit ? "(的中)" : "(不的中)"}`
                 : "—"}
             </td>
           </tr>
@@ -262,8 +270,15 @@ function WinOddsBandBreakdown({ settled }: { settled: RecommendationRow[] }) {
       const o = r.market_odds_used;
       return o !== null && o !== undefined && test(o);
     });
-    const ret = inBand.reduce((s, r) => s + (r.realized_return ?? 0), 0);
-    return { label, n: inBand.length, recovery: inBand.length ? ret / inBand.length : null };
+    const ret = inBand.reduce(
+      (s, r) => s + (r.counterfactual_snapshot_gross_return ?? 0),
+      0,
+    );
+    return {
+      label,
+      n: inBand.length,
+      counterfactual_snapshot_recovery: inBand.length ? ret / inBand.length : null,
+    };
   }).filter((b) => b.n > 0);
   if (bands.length === 0) return null;
   return (
@@ -276,7 +291,11 @@ function WinOddsBandBreakdown({ settled }: { settled: RecommendationRow[] }) {
           <tr key={b.label}>
             <td>{b.label}</td>
             <td className="num">{b.n}</td>
-            <td className="num">{b.recovery !== null ? `×${b.recovery.toFixed(2)}` : "—"}</td>
+            <td className="num">
+              {b.counterfactual_snapshot_recovery !== null
+                ? `×${b.counterfactual_snapshot_recovery.toFixed(2)}`
+                : "—"}
+            </td>
           </tr>
         ))}
       </tbody>

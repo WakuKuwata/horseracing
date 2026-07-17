@@ -397,6 +397,28 @@
       "FavoriteBaseline": {
         "description": "Feature 064: the market baseline (flat-bet the favorite) realised for THIS race. Honest\nreference line — NOT a profit strategy. All-null when unsettled / no priced horse.",
         "properties": {
+          "current_odds_gross_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Odds Gross Return"
+          },
+          "current_odds_net_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Odds Net Return"
+          },
           "dead_heat": {
             "default": false,
             "title": "Dead Heat",
@@ -435,32 +457,21 @@
             ],
             "title": "Odds"
           },
-          "realized_return": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Realized Return"
-          },
-          "realized_roi": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Realized Roi"
-          },
           "settled": {
             "default": false,
             "title": "Settled",
             "type": "boolean"
+          },
+          "valuation_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Basis"
           }
         },
         "title": "FavoriteBaseline",
@@ -2602,6 +2613,28 @@
             "title": "Computed At",
             "type": "string"
           },
+          "counterfactual_snapshot_gross_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counterfactual Snapshot Gross Return"
+          },
+          "counterfactual_snapshot_net_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counterfactual Snapshot Net Return"
+          },
           "dead_heat": {
             "default": false,
             "title": "Dead Heat",
@@ -2678,28 +2711,6 @@
             ],
             "title": "Pseudo Roi"
           },
-          "realized_return": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Realized Return"
-          },
-          "realized_roi": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Realized Roi"
-          },
           "recommendation_id": {
             "title": "Recommendation Id",
             "type": "string"
@@ -2726,6 +2737,17 @@
               }
             ],
             "title": "Stake Fraction"
+          },
+          "valuation_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Basis"
           }
         },
         "required": [
@@ -2891,16 +2913,9 @@
         "type": "object"
       },
       "ShadowLogMonth": {
+        "additionalProperties": false,
         "properties": {
-          "month": {
-            "title": "Month",
-            "type": "string"
-          },
-          "n_settled": {
-            "title": "N Settled",
-            "type": "integer"
-          },
-          "recovery": {
+          "counterfactual_snapshot_recovery": {
             "anyOf": [
               {
                 "type": "number"
@@ -2909,7 +2924,15 @@
                 "type": "null"
               }
             ],
-            "title": "Recovery"
+            "title": "Counterfactual Snapshot Recovery"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "n_settled": {
+            "title": "N Settled",
+            "type": "integer"
           }
         },
         "required": [
@@ -2929,6 +2952,17 @@
             },
             "title": "By Month",
             "type": "array"
+          },
+          "counterfactual_snapshot_recovery_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counterfactual Snapshot Recovery Rate"
           },
           "first_at": {
             "anyOf": [
@@ -2988,16 +3022,16 @@
             "title": "N Void",
             "type": "integer"
           },
-          "recovery_rate": {
+          "valuation_basis": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Recovery Rate"
+            "title": "Valuation Basis"
           },
           "weak_pretime": {
             "default": 0,

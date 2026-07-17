@@ -14,6 +14,7 @@ describe("ShadowLogPanel", () => {
     const { container } = renderWithProviders(<ShadowLogPanel />);
     const labels = await screen.findByTestId("shadow-log-labels");
     expect(labels).toHaveTextContent("実際に約定できたオッズ");
+    expect(labels).toHaveTextContent("反実仮想(判断時オッズ)");
     expect(labels).toHaveTextContent("前向き");
     expect(labels).toHaveTextContent("将来の的中・利益を約束するものではありません");
     expect(container.textContent).not.toMatch(/儲か|勝てる|稼げる/);

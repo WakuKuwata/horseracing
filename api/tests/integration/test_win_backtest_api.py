@@ -1,5 +1,5 @@
 """Feature 049: the recommendations endpoint returns retrospective WIN backtest fields
-(settled/hit/dead_heat/realized_return/realized_roi) — real odds, win-only, unsettled → null.
+(settled/hit/dead_heat/counterfactual_snapshot_gross_return/net_return) — real odds, win-only, unsettled → null.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ def test_win_hit_reports_real_realized_return(client, session):
     _add_win(session, race_id=_RACE, run_id=run_id, horse_number=1, odds="4.2", stake=0.02)
     w = _win_row(client, _RACE, 1)
     assert w["settled"] is True and w["hit"] is True and w["dead_heat"] is False
-    assert w["realized_return"] == 4.2 and w["realized_roi"] == pytest.approx(3.2)
+    assert w["counterfactual_snapshot_gross_return"] == 4.2 and w["counterfactual_snapshot_net_return"] == pytest.approx(3.2)
 
 
 def test_win_miss_is_minus_one(client, session):
@@ -58,7 +58,7 @@ def test_win_miss_is_minus_one(client, session):
     _add_win(session, race_id=_RACE, run_id=run_id, horse_number=1)
     w = _win_row(client, _RACE, 1)
     assert w["settled"] is True and w["hit"] is False
-    assert w["realized_return"] == 0.0 and w["realized_roi"] == -1.0
+    assert w["counterfactual_snapshot_gross_return"] == 0.0 and w["counterfactual_snapshot_net_return"] == -1.0
 
 
 def test_win_dead_heat_flagged(client, session):
@@ -70,7 +70,7 @@ def test_win_dead_heat_flagged(client, session):
     })
     _add_win(session, race_id=_RACE, run_id=run_id, horse_number=1, odds="4.2")
     w = _win_row(client, _RACE, 1)
-    assert w["hit"] is True and w["dead_heat"] is True and w["realized_return"] == 4.2
+    assert w["hit"] is True and w["dead_heat"] is True and w["counterfactual_snapshot_gross_return"] == 4.2
 
 
 def test_win_unsettled_is_null(client, session):
@@ -82,7 +82,7 @@ def test_win_unsettled_is_null(client, session):
     _add_win(session, race_id=_RACE, run_id=run_id, horse_number=1)
     w = _win_row(client, _RACE, 1)
     assert w["settled"] is False and w["hit"] is None
-    assert w["realized_return"] is None and w["realized_roi"] is None
+    assert w["counterfactual_snapshot_gross_return"] is None and w["counterfactual_snapshot_net_return"] is None
 
 
 def test_win_void_when_horse_has_no_result(client, session):
@@ -95,7 +95,7 @@ def test_win_void_when_horse_has_no_result(client, session):
     _add_win(session, race_id=_RACE, run_id=run_id, horse_number=1)
     w = _win_row(client, _RACE, 1)
     assert w["settled"] is True and w["hit"] is None  # void, not a loss
-    assert w["realized_return"] is None
+    assert w["counterfactual_snapshot_gross_return"] is None
 
 
 def test_exotic_row_has_no_realized_fields(client, session):
@@ -108,4 +108,4 @@ def test_exotic_row_has_no_realized_fields(client, session):
     items = client.get(f"/api/v1/races/{_RACE}/recommendations").json()["items"]
     ex = [i for i in items if i["bet_type"] == "exacta"][0]
     # exotic uses estimated odds → realised valuation is win-only; stays null (settled False)
-    assert ex["settled"] is False and ex["hit"] is None and ex["realized_roi"] is None
+    assert ex["settled"] is False and ex["hit"] is None and ex["counterfactual_snapshot_net_return"] is None

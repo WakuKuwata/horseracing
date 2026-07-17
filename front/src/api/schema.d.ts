@@ -494,6 +494,10 @@ export interface components {
          *     reference line — NOT a profit strategy. All-null when unsettled / no priced horse.
          */
         FavoriteBaseline: {
+            /** Current Odds Gross Return */
+            current_odds_gross_return?: number | null;
+            /** Current Odds Net Return */
+            current_odds_net_return?: number | null;
             /**
              * Dead Heat
              * @default false
@@ -505,15 +509,13 @@ export interface components {
             horse_number?: number | null;
             /** Odds */
             odds?: number | null;
-            /** Realized Return */
-            realized_return?: number | null;
-            /** Realized Roi */
-            realized_roi?: number | null;
             /**
              * Settled
              * @default false
              */
             settled: boolean;
+            /** Valuation Basis */
+            valuation_basis?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1132,6 +1134,10 @@ export interface components {
              * Format: date-time
              */
             computed_at: string;
+            /** Counterfactual Snapshot Gross Return */
+            counterfactual_snapshot_gross_return?: number | null;
+            /** Counterfactual Snapshot Net Return */
+            counterfactual_snapshot_net_return?: number | null;
             /**
              * Dead Heat
              * @default false
@@ -1155,10 +1161,6 @@ export interface components {
             pseudo_odds?: number | null;
             /** Pseudo Roi */
             pseudo_roi?: number | null;
-            /** Realized Return */
-            realized_return?: number | null;
-            /** Realized Roi */
-            realized_roi?: number | null;
             /** Recommendation Id */
             recommendation_id: string;
             /** Selection */
@@ -1170,6 +1172,8 @@ export interface components {
             settled: boolean;
             /** Stake Fraction */
             stake_fraction?: number | null;
+            /** Valuation Basis */
+            valuation_basis?: string | null;
         };
         /** RunAudit */
         RunAudit: {
@@ -1239,12 +1243,12 @@ export interface components {
         };
         /** ShadowLogMonth */
         ShadowLogMonth: {
+            /** Counterfactual Snapshot Recovery */
+            counterfactual_snapshot_recovery?: number | null;
             /** Month */
             month: string;
             /** N Settled */
             n_settled: number;
-            /** Recovery */
-            recovery?: number | null;
         };
         /**
          * ShadowLogResponse
@@ -1257,6 +1261,8 @@ export interface components {
              * @default []
              */
             by_month: components["schemas"]["ShadowLogMonth"][];
+            /** Counterfactual Snapshot Recovery Rate */
+            counterfactual_snapshot_recovery_rate?: number | null;
             /** First At */
             first_at?: string | null;
             /** Hit Rate */
@@ -1288,8 +1294,8 @@ export interface components {
              * @default 0
              */
             n_void: number;
-            /** Recovery Rate */
-            recovery_rate?: number | null;
+            /** Valuation Basis */
+            valuation_basis?: string | null;
             /**
              * Weak Pretime
              * @default 0
