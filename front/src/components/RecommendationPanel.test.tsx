@@ -31,16 +31,16 @@ describe("RecommendationPanel", () => {
     assertPseudoLabelCoverage(container, ["1.23%"]);
   });
 
-  it("shows realized win backtest (的中/不的中 + real return) without a pseudo badge (049)", async () => {
+  it("shows counterfactual win backtest (的中/不的中 + snapshot return) without a pseudo badge (075)", async () => {
     server.use(...happyHandlers);
     const { container } = renderWithProviders(
       <RecommendationPanel raceId="200806010111" />,
     );
-    // settled win rows: one hit (的中, ×3.2 real return), one miss (不的中)
+    // settled win rows: one hit (的中, ×3.2 snapshot return), one miss (不的中)
     await screen.findByTestId("win-backtest-summary");
     expect(container.querySelector('[data-result="hit"]')).toHaveTextContent("的中");
     expect(container.querySelector('[data-result="miss"]')).toHaveTextContent("不的中");
-    // realized figures are REAL — they must NOT be tagged pseudo (no data-pseudo on result cells)
+    // counterfactual snapshot figures must NOT be tagged as model-pseudo values
     const resultCells = container.querySelectorAll('[data-result]');
     expect(resultCells.length).toBeGreaterThan(0);
     resultCells.forEach((el) => {
@@ -57,6 +57,7 @@ describe("RecommendationPanel", () => {
     // 1 hit of 2 settled → 的中率 50.0%, recovery ×1.60 (=(3.2+0)/2)
     expect(summary).toHaveTextContent("50.0%");
     expect(summary).toHaveTextContent("×1.60");
+    expect(summary).toHaveTextContent("反実仮想(判断時オッズ)");
     expect(summary).toHaveTextContent("将来の的中・利益を示すものではありません");
   });
 
@@ -89,7 +90,7 @@ describe("RecommendationPanel", () => {
           win_policy_status: "generated",
           favorite_baseline: {
             horse_number: 3, odds: 2.0, settled: true, hit: false, dead_heat: false,
-            realized_return: 0.0, realized_roi: -1.0,
+            current_odds_gross_return: 0.0, current_odds_net_return: -1.0,
           },
         }),
       ),
@@ -99,6 +100,7 @@ describe("RecommendationPanel", () => {
     expect(baselines).toHaveTextContent("賭けない");
     expect(baselines).toHaveTextContent("×1.00");
     expect(baselines).toHaveTextContent("本命ベタ買い");
+    expect(baselines).toHaveTextContent("現在オッズ基準");
     // baselines carry no profit/loss coloring hooks (no data-result) — neutral facts only
     expect(baselines.querySelectorAll("[data-result]").length).toBe(0);
     // odds-band breakdown of the displayed settled win rows is present

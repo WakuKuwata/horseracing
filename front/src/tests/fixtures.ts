@@ -145,8 +145,8 @@ export const recommendationResponse: RecommendationResponse = {
       settled: true,
       hit: true,
       dead_heat: false,
-      realized_return: 3.2,
-      realized_roi: 2.2,
+      counterfactual_snapshot_gross_return: 3.2,
+      counterfactual_snapshot_net_return: 2.2,
     },
     {
       // Feature 049: a SETTLED win recommendation that MISSED (return 0 → -100%).
@@ -166,8 +166,8 @@ export const recommendationResponse: RecommendationResponse = {
       settled: true,
       hit: false,
       dead_heat: false,
-      realized_return: 0.0,
-      realized_roi: -1.0,
+      counterfactual_snapshot_gross_return: 0.0,
+      counterfactual_snapshot_net_return: -1.0,
     },
   ],
 };
@@ -203,9 +203,10 @@ export const importanceResponse: ImportanceResponse = {
 };
 
 export const shadowLogResponse = {
-  n_prospective: 3, n_settled: 2, n_hit: 1, hit_rate: 0.5, recovery_rate: 0.9,
+  n_prospective: 3, n_settled: 2, n_hit: 1, hit_rate: 0.5,
+  counterfactual_snapshot_recovery_rate: 0.9,
   n_pending: 1, n_void: 0, weak_pretime: 0,
-  by_month: [{ month: "2026-08", n_settled: 2, recovery: 0.9 }],
+  by_month: [{ month: "2026-08", n_settled: 2, counterfactual_snapshot_recovery: 0.9 }],
   first_at: "2026-08-01T09:00:00", last_at: "2026-08-15T09:00:00",
 };
 

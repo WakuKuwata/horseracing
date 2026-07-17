@@ -3,11 +3,12 @@ import { formatPct } from "../lib/format";
 import { QueryStateView } from "./StateView";
 
 /**
- * Feature 065: prospective shadow-betting log — the HONEST instrument. Shows realized results of
- * bets recorded BEFORE each race on the frozen, actually-bettable odds (NOT closing). Kept in its
- * OWN panel, fully separate from the retrospective closing backtest (049/064 RecommendationPanel),
- * so the two are never conflated. Permanent honest labelling; empty state is shown truthfully (the
- * instrument fills going-forward). No profit language, no P/L coloring, no sorting.
+ * Feature 075: prospective shadow-betting log — the HONEST instrument. Shows observed outcomes and
+ * counterfactual returns for bets recorded BEFORE each race using frozen, actually-bettable odds
+ * (NOT closing). Kept in its OWN panel, fully separate from the retrospective backtest in
+ * RecommendationPanel, so the two are never conflated. Permanent honest labelling; empty state is
+ * shown truthfully (the instrument fills going-forward). No profit language, no P/L coloring or
+ * sorting.
  */
 export function ShadowLogPanel() {
   const query = useShadowLog();
@@ -16,7 +17,8 @@ export function ShadowLogPanel() {
       <h2>前向き実績(prospective shadow-log)</h2>
       <p className="note" data-testid="shadow-log-labels">
         発走前に記録した買い目を、その時点で<strong>実際に約定できたオッズ(凍結)</strong>で事後精算した
-        <strong>前向き(prospective)</strong>の実績です。closing(確定)オッズの事後集計ではなく、
+        <strong>反実仮想(判断時オッズ)</strong>の<strong>前向き(prospective)</strong>集計です。
+        closing(確定)オッズの事後集計ではなく、
         将来の的中・利益を約束するものではありません。計器はこれから貯まります。
       </p>
       <QueryStateView
@@ -34,8 +36,13 @@ export function ShadowLogPanel() {
               <div><dt>的中</dt><dd>{d.n_hit}</dd></div>
               <div><dt>的中率</dt><dd>{d.hit_rate === null || d.hit_rate === undefined ? "—" : formatPct(d.hit_rate)}</dd></div>
               <div>
-                <dt>回収率(平均回収倍率)</dt>
-                <dd>{d.recovery_rate === null || d.recovery_rate === undefined ? "—" : `×${d.recovery_rate.toFixed(2)}`}</dd>
+                <dt>反実仮想(判断時オッズ)回収率(平均回収倍率)</dt>
+                <dd>
+                  {d.counterfactual_snapshot_recovery_rate === null ||
+                    d.counterfactual_snapshot_recovery_rate === undefined
+                    ? "—"
+                    : `×${d.counterfactual_snapshot_recovery_rate.toFixed(2)}`}
+                </dd>
               </div>
               <div><dt>集計待ち(未確定)</dt><dd>{d.n_pending}</dd></div>
               <div><dt>無効(void)</dt><dd>{d.n_void}</dd></div>
@@ -52,7 +59,10 @@ export function ShadowLogPanel() {
                       <td>{m.month}</td>
                       <td className="num">{m.n_settled}</td>
                       <td className="num">
-                        {m.recovery === null || m.recovery === undefined ? "—" : `×${m.recovery.toFixed(2)}`}
+                        {m.counterfactual_snapshot_recovery === null ||
+                          m.counterfactual_snapshot_recovery === undefined
+                          ? "—"
+                          : `×${m.counterfactual_snapshot_recovery.toFixed(2)}`}
                       </td>
                     </tr>
                   ))}

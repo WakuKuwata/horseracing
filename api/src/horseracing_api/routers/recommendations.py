@@ -83,8 +83,10 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
             settled=wr.settled if wr is not None else False,
             hit=wr.hit if wr is not None else None,
             dead_heat=wr.dead_heat if wr is not None else False,
-            realized_return=wr.realized_return if wr is not None else None,
-            realized_roi=wr.realized_roi if wr is not None else None,
+            # Feature 075: frozen market_odds_used valuation = counterfactual snapshot provenance.
+            counterfactual_snapshot_gross_return=wr.gross_return if wr is not None else None,
+            counterfactual_snapshot_net_return=wr.net_return if wr is not None else None,
+            valuation_basis=("frozen_snapshot_odds" if (wr is not None and wr.settled) else None),
         ))
     # Feature 064: honest-display context (read-time; never re-enters model features, II).
     has_win = any(i.bet_type == "win" for i in items)
@@ -101,7 +103,10 @@ def recommendations(race_id: str, session: Session = Depends(get_session)):
     )
     favorite_baseline = FavoriteBaseline(
         horse_number=fav.horse_number, odds=fav.odds, settled=fav.settled, hit=fav.hit,
-        dead_heat=fav.dead_heat, realized_return=fav.realized_return, realized_roi=fav.realized_roi,
+        dead_heat=fav.dead_heat,
+        # Feature 075: favorite is valued on CURRENT odds = current_odds provenance (not snapshot).
+        current_odds_gross_return=fav.gross_return, current_odds_net_return=fav.net_return,
+        valuation_basis=("current_odds" if fav.settled else None),
     )
     return RecommendationResponse(
         race_id=race_id, items=items, win_policy_status=win_policy_status,

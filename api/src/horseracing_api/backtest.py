@@ -26,8 +26,8 @@ class WinRealized:
     settled: bool = False
     hit: bool | None = None
     dead_heat: bool = False
-    realized_return: float | None = None  # per-unit payout multiple: real odds if hit else 0.0
-    realized_roi: float | None = None  # realized_return - 1 (odds-1 on hit, -1 on miss)
+    gross_return: float | None = None  # per-unit payout multiple: real odds if hit else 0.0
+    net_return: float | None = None  # gross_return - 1 (odds-1 on hit, -1 on miss)
 
 
 _UNSETTLED = WinRealized()
@@ -66,10 +66,10 @@ def win_realized(
             return WinRealized(settled=True, hit=True, dead_heat=n_winners > 1)
         return WinRealized(
             settled=True, hit=True, dead_heat=n_winners > 1,
-            realized_return=odds, realized_roi=odds - 1.0,
+            gross_return=odds, net_return=odds - 1.0,
         )
     # finished-but-not-1st, or DNF (stopped/disqualified) → a loss
-    return WinRealized(settled=True, hit=False, realized_return=0.0, realized_roi=-1.0)
+    return WinRealized(settled=True, hit=False, gross_return=0.0, net_return=-1.0)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -85,8 +85,8 @@ class FavoriteRealized:
     settled: bool = False
     hit: bool | None = None
     dead_heat: bool = False
-    realized_return: float | None = None
-    realized_roi: float | None = None
+    gross_return: float | None = None
+    net_return: float | None = None
 
 
 def is_prospective(logic_version: str | None) -> bool:
@@ -107,7 +107,7 @@ class ShadowLogSummary:
     n_settled: int = 0               # valued (hit True/False) — the ROI/hit denominator
     n_hit: int = 0
     hit_rate: float | None = None
-    recovery_rate: float | None = None   # Σ realized_return / n_settled (frozen odds)
+    recovery_rate: float | None = None   # Σ gross_return / n_settled (frozen odds)
     n_pending: int = 0               # marker present but no result yet (excluded from ROI)
     n_void: int = 0                  # settled but hit=None (scratch/void) — excluded from ROI
     weak_pretime: int = 0            # rows whose pre-race guarantee is weak (post_time unknown)
@@ -151,7 +151,7 @@ def shadow_log_summary(rows) -> ShadowLogSummary:
             n_void += 1
             continue
         n_settled += 1
-        ret = wr.realized_return or 0.0
+        ret = wr.gross_return or 0.0
         total_return += ret
         if wr.hit:
             n_hit += 1
@@ -191,5 +191,5 @@ def favorite_realized(
     )
     return FavoriteRealized(
         horse_number=hn, odds=odds, settled=wr.settled, hit=wr.hit, dead_heat=wr.dead_heat,
-        realized_return=wr.realized_return, realized_roi=wr.realized_roi,
+        gross_return=wr.gross_return, net_return=wr.net_return,
     )

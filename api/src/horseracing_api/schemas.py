@@ -346,8 +346,10 @@ class RecommendationRow(BaseModel):
     settled: bool = False              # race has an official result
     hit: bool | None = None            # recommended horse finished 1st (null = void / unsettled)
     dead_heat: bool = False            # 1st was a dead heat (real dividend is split)
-    realized_return: float | None = None  # per-unit payout multiple: real odds if hit else 0.0
-    realized_roi: float | None = None      # realized_return - 1
+    # Feature 075: FROZEN market_odds_used = counterfactual snapshot (NOT closing).
+    counterfactual_snapshot_gross_return: float | None = None  # frozen odds if hit else 0.0
+    counterfactual_snapshot_net_return: float | None = None    # gross - 1
+    valuation_basis: str | None = None  # "frozen_snapshot_odds" when settled (provenance, 075)
 
 
 class FavoriteBaseline(BaseModel):
@@ -358,8 +360,10 @@ class FavoriteBaseline(BaseModel):
     settled: bool = False
     hit: bool | None = None
     dead_heat: bool = False
-    realized_return: float | None = None
-    realized_roi: float | None = None
+    # Feature 075: favorite baseline is valued on CURRENT race_horses.odds (not a frozen snapshot).
+    current_odds_gross_return: float | None = None
+    current_odds_net_return: float | None = None
+    valuation_basis: str | None = None  # "current_odds" when settled (provenance, 075)
 
 
 class RecommendationResponse(BaseModel):
@@ -373,9 +377,10 @@ class RecommendationResponse(BaseModel):
 
 
 class ShadowLogMonth(BaseModel):
+    model_config = {"extra": "forbid"}  # Feature 075: fail loud on splat key drift (analyze I1)
     month: str
     n_settled: int
-    recovery: float | None = None
+    counterfactual_snapshot_recovery: float | None = None  # frozen-snapshot recovery (075)
 
 
 class ShadowLogResponse(BaseModel):
@@ -385,7 +390,9 @@ class ShadowLogResponse(BaseModel):
     n_settled: int = 0
     n_hit: int = 0
     hit_rate: float | None = None
-    recovery_rate: float | None = None
+    # Feature 075: FROZEN-snapshot recovery (Σ gross_return / n_settled) — NOT closing/realized.
+    counterfactual_snapshot_recovery_rate: float | None = None
+    valuation_basis: str | None = None  # "frozen_snapshot_odds" (provenance, 075)
     n_pending: int = 0
     n_void: int = 0
     weak_pretime: int = 0

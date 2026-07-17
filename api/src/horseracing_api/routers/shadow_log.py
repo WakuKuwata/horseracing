@@ -47,7 +47,18 @@ def shadow_log(session: Session = Depends(get_session)):
     s = shadow_log_summary(rows)
     return ShadowLogResponse(
         n_prospective=s.n_prospective, n_settled=s.n_settled, n_hit=s.n_hit,
-        hit_rate=s.hit_rate, recovery_rate=s.recovery_rate, n_pending=s.n_pending,
+        # Feature 075: frozen-snapshot recovery provenance (NOT closing/realized).
+        hit_rate=s.hit_rate, counterfactual_snapshot_recovery_rate=s.recovery_rate,
+        valuation_basis=("frozen_snapshot_odds" if s.n_settled else None),
+        n_pending=s.n_pending,
         n_void=s.n_void, weak_pretime=s.weak_pretime, first_at=s.first_at, last_at=s.last_at,
-        by_month=[ShadowLogMonth(**m) for m in s.by_month],
+        # Feature 075 (analyze I1): explicit keyword map — the internal dict key is the neutral
+        # "recovery"; map it to the provenance field so the splat cannot silently drop it.
+        by_month=[
+            ShadowLogMonth(
+                month=m["month"], n_settled=m["n_settled"],
+                counterfactual_snapshot_recovery=m["recovery"],
+            )
+            for m in s.by_month
+        ],
     )
