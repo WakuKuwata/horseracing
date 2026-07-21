@@ -314,6 +314,29 @@ def split_before(samples, target_date, target_id):
     return [s for s in samples if race_before(s[1], s[0], target_date, target_id)]
 
 
+def load_topk_samples_from_oof(session: Session, bundle: dict):
+    """Feature 078 US1: OOF-faithful top-k stage samples, sourced from an OOF bundle — the stage-λ
+    analogue of :func:`load_p_samples_from_oof` (NOT the leaky latest persisted run).
+
+    ``p`` is the OOF win prediction over the bundle's horses for each race; the placings come from
+    DB results via :func:`_placed_finishers` (results are used ONLY as fit labels, 憲法 II). Returns
+    the SAME shape as :func:`load_topk_samples` — ``[(race_id, race_date, p_dict, (id1|None,
+    id2|None, id3|None))]`` ordered by ``(race_date, race_id)`` — so the existing
+    ``fit_stage_discount`` core consumes it unchanged. A non-unique placing (dead heat) yields
+    ``None`` for that position, and the fit's ``races2``/``races3`` construction (1st+2nd unique for
+    λ2; 1st-3rd unique for λ3, so a 2nd dead heat drops λ3 too) enforces the dead-heat matrix
+    downstream (research D4)."""
+    predictions = bundle["predictions"]
+    out = []
+    for race_id, horses in predictions.items():
+        p = {hid: float(pr["win"]) for hid, pr in horses.items()}
+        race_date = session.scalar(select(Race.race_date).where(Race.race_id == race_id))
+        placings = _placed_finishers(session, race_id)
+        out.append((race_id, race_date, p, placings))
+    out.sort(key=lambda s: (s[1], s[0]))
+    return out
+
+
 # --- Feature 049: top2/top3 fitting sample loader ---------------------------
 def _placed_finishers(session: Session, race_id: str) -> tuple[str | None, str | None, str | None]:
     """(1st, 2nd, 3rd) horse_ids; a position is None when missing or a dead heat (non-unique).

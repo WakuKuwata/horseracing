@@ -231,3 +231,185 @@ def calibrate_oof(
             "development_evidence": "2008-2026 OOF ECE is development evidence, not confirmatory",
         },
     }
+
+
+class _BundlePredictor:
+    """Feature 078 US1: an eval ``Predictor`` backed by the OOF bundle's stored per-race preds.
+
+    ``fit`` is a no-op — the OOF predictions are ALREADY the fold-fit output (the saved booster is
+    never applied to past races, 074 C1), so there is nothing to re-fit. ``predict_race`` returns
+    the bundle's win/top2/top3 for the race. Reusing this with the pre-registered 049
+    ``evaluate_stage_discount`` gives the SAME hardened stage gate (top2+top3 LogLoss/ECE improve +
+    fold-majority + worst-fold guard, research D3) with the λ fit prequentially on RAW OOF win
+    (research D1: serving applies λ to raw p, so the OOF λ is fit on raw win — no two-gamma)."""
+
+    is_leaky_reference = False
+
+    def __init__(self, bundle: dict) -> None:
+        self._preds = bundle["predictions"]
+
+    def fit(self, train_races) -> None:  # noqa: D401 - no-op (predictions are pre-computed OOF)
+        return None
+
+    def predict_race(self, race):
+        from horseracing_eval.predictor import Prediction
+        raw = self._preds.get(race.race_id, {})
+        return {
+            hid: Prediction(win=float(v["win"]), top2=float(v["top2"]), top3=float(v["top3"]))
+            for hid, v in raw.items()
+        }
+
+
+def calibrate_stage_oof(
+    session: Session,
+    bundle: dict,
+    *,
+    gate_config: dict | None = None,
+    base_model_version: str = "lgbm-063",
+    min_held_out_folds: int = 1,
+    min_races: int | None = None,
+    eval_races=None,
+) -> dict:
+    """Feature 078 US1/US2: OOF-faithful re-validation of the stage-discount λ (top2/top3).
+
+    Runs the pre-registered 049 walk-forward gate over a bundle-backed predictor, so λ2/λ3 are fit
+    prequentially on RAW OOF win (D1) and the top2/top3 LogLoss/ECE improvement + fold-majority +
+    worst-fold guard verdict is the SAME contract 049 uses (D3). Returns an append-only evaluation
+    artifact whose verdict is tri-value (D6): ADOPT when the gate adopts, REJECT when it evaluated a
+    candidate that did not beat baseline, NO_DECISION when there is no strictly-later held-out block
+    (or every fold fell back to identity for want of samples). The ``prequential`` fold λ are EVAL
+    params, NOT the shipped params — the deployment final-fit (all-OOF, D2) is a separate step.
+
+    Results are used only as scoring labels (憲法 II); win is identical by construction (candidate
+    reuses the baseline win vector), so this never moves win.
+    """
+    from horseracing_eval.dataset import load_eval_races
+    from horseracing_eval.splits import FIRST_VALID_YEAR
+    from horseracing_eval.stage_discount import DEFAULT_MIN_RACES
+    from horseracing_eval.stage_discount_eval import evaluate_stage_discount
+
+    covered = set(bundle["predictions"])
+    races = eval_races if eval_races is not None else load_eval_races(session)
+    races = [er for er in races if er.context.race_id in covered]
+    report = evaluate_stage_discount(
+        _BundlePredictor(bundle), races,
+        first_valid_year=FIRST_VALID_YEAR,
+        min_races=DEFAULT_MIN_RACES if min_races is None else min_races,
+    )
+
+    # a fold contributes real candidate evidence only when a NON-identity λ was actually fit (the
+    # first fold and any under-sampled / fallback fold ship λ=1.0 = identity = no candidate).
+    fitted = [
+        fl for fl in report.fold_lambdas
+        if fl["lambda2"] != 1.0 or fl["lambda3"] != 1.0
+    ]
+    if report.n_folds <= min_held_out_folds or not fitted:
+        verdict, reason = NO_DECISION, {
+            "cause": "no_held_out_stage_evidence",
+            "n_folds": report.n_folds, "n_fitted_folds": len(fitted),
+        }
+    elif report.adopted:
+        verdict, reason = ADOPT, {"primary_pass": True, "guard_pass": True, "win_identical": True}
+    else:
+        verdict, reason = REJECT, {
+            "primary_pass": report.primary_pass, "guard_pass": report.guard_pass,
+            "win_identical": report.win_identical,
+        }
+
+    last = fitted[-1] if fitted else {"lambda2": 1.0, "lambda3": 1.0}
+    return {
+        "evaluation_contract_version": EVALUATION_CONTRACT_VERSION,
+        "stage": "stage_discount_topk",
+        "consumer_pipeline": "serving_raw",  # D1: λ applied to RAW win (serving display path)
+        "base_model_version": base_model_version,
+        "bundle_digest": bundle.get("bundle_digest"),
+        # prequential (EVAL) λ — NOT the shipped params (deployment final-fit is D2/T006)
+        "prequential": {
+            "fold_lambdas": report.fold_lambdas,
+            "last_lambda2": last["lambda2"], "last_lambda3": last["lambda3"],
+        },
+        "metrics": {
+            "top2": {"baseline": report.baseline["top2"], "candidate": report.candidate["top2"]},
+            "top3": {"baseline": report.baseline["top3"], "candidate": report.candidate["top3"]},
+            "win_max_abs_diff": report.win_max_abs_diff,
+            "winning_folds_top3": report.winning_folds_top3,
+            "worst_fold_top3_dloss": report.worst_fold_top3_dloss,
+        },
+        "gate": {
+            "primary_pass": report.primary_pass, "guard_pass": report.guard_pass,
+            "win_identical": report.win_identical, "n_folds": report.n_folds,
+        },
+        "verdict": verdict,
+        "verdict_reason": reason,
+        "gate_config_hash": _gate_config_hash(gate_config),
+    }
+
+
+# --- Feature 078 US2 (T006): deployment final-fit (D2) ----------------------
+# The prequential fit is for the VERDICT (each fold's prior-only params). The SHIPPED params come
+# from a separate fit over ALL eligible OOF samples, gated on the verdict: a non-ADOPT stage
+# explicit identity (research D6). fit_through = the last date the shipped params saw (D5).
+
+def _identity_stage_deployment() -> dict:
+    return {"lambda2": 1.0, "lambda3": 1.0, "fit_through": None,
+            "fit_race_set_hash": None, "n_fit": 0, "fallback": False, "identity": True}
+
+
+def stage_deployment_fit(
+    session: Session, bundle: dict, *, adopt: bool, min_races: int | None = None, eval_races=None,
+) -> dict:
+    """D2: fit stage λ on ALL OOF samples (raw win, D1) for deployment, gated by the verdict.
+
+    ``adopt=False`` (REJECT / NO_DECISION) → explicit identity, no fit_through. ``adopt=True`` → the
+    fitted λ + provenance (fit_through = max contributing race_date, fit_race_set_hash, n_fit). If
+    the all-OOF fit itself falls back to identity (should not happen when prior folds fit), the
+    identity is shipped and flagged — the manifest policy (D9) keeps eligibility consistent."""
+    if not adopt:
+        return _identity_stage_deployment()
+    from horseracing_eval.stage_discount import DEFAULT_MIN_RACES, fit_stage_discount
+
+    from .model_calibration import load_topk_samples_from_oof, to_topk_samples
+
+    raw = load_topk_samples_from_oof(session, bundle)
+    samples = to_topk_samples(raw, calibrator=None)  # calibrator=None → RAW win (D1)
+    sd = fit_stage_discount(
+        samples, min_races=DEFAULT_MIN_RACES if min_races is None else min_races)
+    used = [(rid, rd) for (rid, rd, p, placed) in raw if placed[0] is not None and placed[0] in p]
+    fit_through = max((rd for _r, rd in used), default=None)
+    race_ids = sorted(rid for rid, _ in used)
+    return {
+        "lambda2": sd.lambda2, "lambda3": sd.lambda3,
+        "fit_through": fit_through.isoformat() if fit_through else None,
+        "fit_race_set_hash": stable_hash(race_ids), "n_fit": len(race_ids),
+        "fallback": sd.fallback, "identity": sd.is_identity,
+    }
+
+
+def _identity_two_gamma_deployment() -> dict:
+    return {"gamma_lo": 1.0, "gamma_hi": 1.0, "pivot": TWO_GAMMA_PIVOT, "fit_through": None,
+            "fit_race_set_hash": None, "n_fit": 0, "identity": True}
+
+
+def two_gamma_deployment_fit(
+    session: Session, bundle: dict, *, adopt: bool, base_model_version: str = "lgbm-063",
+) -> dict:
+    """D2: fit two-gamma γ on ALL OOF (p, winner) samples for deployment, gated by the verdict.
+
+    ``adopt=False`` → explicit identity. ``adopt=True`` → fitted γ + provenance. An under-sampled
+    fit returns method='identity' (γ=1) — shipped as identity, flagged."""
+    if not adopt:
+        return _identity_two_gamma_deployment()
+    samples = load_p_samples_from_oof(session, bundle)
+    pairs = [(p, w) for (_rid, _rd, p, w, dh) in samples if not dh and w is not None]
+    cal = fit_p_calibrator(pairs, method="two_gamma", base_model_version=base_model_version)
+    used = [(rid, rd) for (rid, rd, _p, w, dh) in samples if not dh and w is not None]
+    fit_through = max((rd for _r, rd in used), default=None)
+    race_ids = sorted(rid for rid, _ in used)
+    g = cal.params
+    return {
+        "gamma_lo": float(g.get("gamma_lo", 1.0)), "gamma_hi": float(g.get("gamma_hi", 1.0)),
+        "pivot": float(g.get("pivot", TWO_GAMMA_PIVOT)),
+        "fit_through": fit_through.isoformat() if fit_through else None,
+        "fit_race_set_hash": stable_hash(race_ids), "n_fit": len(race_ids),
+        "identity": cal.method != "two_gamma",
+    }
