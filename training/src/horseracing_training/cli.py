@@ -754,6 +754,21 @@ def main(argv: list[str] | None = None) -> int:
     vm = sub.add_parser("verify-manifest", help="074: verify a content-addressed calib manifest")
     vm.add_argument("--manifest", required=True, help="path to manifest.json")
 
+    # Feature 078: generate a REAL OOF calibration manifest (v3) — first build_manifest caller.
+    gm = sub.add_parser("generate-manifest",
+                        help="078: generate a REAL OOF calibration manifest (two-gamma + stage-λ)")
+    gm.add_argument("--bundle", required=True, help="path to OOF bundle dir or bundle.json")
+    gm.add_argument("--model-dir", required=True,
+                    help="lgbm-063 model dir (metadata.json) for the recipe attestation")
+    gm.add_argument("--out-root", required=True, help="artifact root (manifests written under it)")
+    gm.add_argument("--gate-config",
+                    default="specs/074-oof-faithful-calibration/gate-config.json")
+    gm.add_argument("--seed", type=int, default=0)
+    gm.add_argument("--num-threads", dest="num_threads", type=int, default=1)
+    gm.add_argument("--allow-dirty", action="store_true",
+                    help="build a NON-production (fixture-scope) manifest at a dirty/unknown SHA")
+    gm.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     if args.command == "oof-generate":
         engine = create_db_engine(args.database_url)
@@ -765,6 +780,10 @@ def main(argv: list[str] | None = None) -> int:
             return _calibrate_oof(session, args)
     if args.command == "verify-manifest":
         return _verify_manifest_cmd(args)
+    if args.command == "generate-manifest":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _generate_manifest(session, args)
     if args.command == "paired-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -938,6 +957,49 @@ def _calibrate_oof(session: Session, args) -> int:
         with open(args.json_out, "w") as fh:
             json.dump(art, fh, indent=2, default=str)
         print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _generate_manifest(session: Session, args) -> int:
+    """Feature 078 (T011): generate + publish a REAL OOF calibration manifest (v3). The FIRST
+    production caller of build_manifest — orchestrates the two OOF verdicts + all-OOF deployment
+    fits into a content-addressed, verifier-recomputed-eligibility manifest. Activates nothing."""
+    import json
+
+    from horseracing_probability.oof_bundle import read_bundle
+
+    from .legacy_attest import attestation_from_model_dir
+    from .oof_generate import code_sha
+    from .oof_manifest import build_oof_manifest
+
+    sha = code_sha()
+    # D7: a dirty tree / unknown code SHA is not reproducible → refuse a production artifact.
+    if not args.allow_dirty and ("dirty" in sha or sha == "unknown"):
+        print(f"ERROR: refusing to build a production manifest at code_sha={sha!r} "
+              f"(pass --allow-dirty to override for a NON-production build)")
+        return 2
+    bundle = read_bundle(args.bundle)
+    attestation = attestation_from_model_dir(args.model_dir, code_sha=sha)
+    gate_cfg: dict = {}
+    if args.gate_config:
+        with open(args.gate_config) as fh:
+            gate_cfg = json.load(fh)
+    scope = "fixture" if args.allow_dirty else "production"
+    path, manifest = build_oof_manifest(
+        session, bundle, attestation=attestation, code_sha=sha, out_root=args.out_root,
+        seed=args.seed, num_threads=args.num_threads, gate_config=gate_cfg, artifact_scope=scope,
+    )
+    se = manifest["stages_evaluation"]
+    print(f"generate-manifest schema_v={manifest['schema_version']} "
+          f"scope={manifest['artifact_scope']}")
+    print(f"  two_gamma verdict={se['two_gamma_win']['verdict']} "
+          f"identity={se['two_gamma_win']['identity']}")
+    print(f"  stage     verdict={se['stage_discount_topk']['verdict']} "
+          f"identity={se['stage_discount_topk']['identity']}")
+    print(f"  activation_eligible={manifest['activation_eligible']} "
+          f"fit_through={manifest['fit_through']}")
+    print(f"  manifest_digest={manifest['manifest_digest']}")
+    print(f"  wrote {path}")
     return 0
 
 
