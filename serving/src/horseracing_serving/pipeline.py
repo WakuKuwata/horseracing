@@ -89,6 +89,9 @@ def run_serving(
     date: datetime.date | None = None,
     model_version: str | None = None,
     apply_stage_discount: bool = True,
+    stage_discount: object | None = None,
+    calib_manifest: str | None = None,
+    calib_mode: str = "legacy-runtime",
     use_materialized: bool = False,
     materialized_path: str | None = None,
 ) -> list[ServingResult]:
@@ -116,8 +119,13 @@ def run_serving(
         target_race_ids=frozenset(race_ids),
     )
     present = set(feature_rows["race_id"].unique())
-    # date-level cutoff matches the feature end_date; fit the discount once, strictly before it
-    sd = _fit_stage_discount(session, target_date) if apply_stage_discount else None
+    # date-level cutoff matches the feature end_date; fit the discount once, strictly before it.
+    # Feature 076 priority: OFF (apply_stage_discount=False) > explicit injection > manifest > fit.
+    sd, calib_digest = _resolve_stage_discount(
+        session, model_version=model.model_version, target_date=target_date,
+        apply_stage_discount=apply_stage_discount, injected=stage_discount,
+        calib_mode=calib_mode, manifest_path=calib_manifest,
+    )
 
     results: list[ServingResult] = []
     for rid in race_ids:
@@ -126,7 +134,8 @@ def run_serving(
         try:
             results.append(
                 _predict_persist(
-                    session, model, rid, feature_rows, logic_version, stage_discount=sd
+                    session, model, rid, feature_rows, logic_version, stage_discount=sd,
+                    calib_digest=calib_digest,
                 )
             )
         except MarketOffsetSkip:
@@ -147,6 +156,46 @@ def _fit_stage_discount(session: Session, before_date):
     return fit_product_stage_discount(session, before_date=before_date, calibrator=None)
 
 
+def _resolve_stage_discount(
+    session: Session, *, model_version: str, target_date, apply_stage_discount: bool,
+    injected, calib_mode: str, manifest_path: str | None,
+):
+    """Feature 076: pick the stage discount λ + its manifest digest (for the audit logic_version).
+
+    Priority (data-model): ``apply_stage_discount=False`` (OFF) wins over everything → (None, None).
+    Then an explicitly injected ``StageDiscount`` replaces the runtime fit. Then
+    ``manifest-required`` reads λ from the artifact (fail-closed). Otherwise the legacy fit."""
+    if not apply_stage_discount:
+        return None, None
+    if injected is not None:
+        return injected, None
+    if calib_mode == "manifest-required":
+        act = _manifest_activation(
+            session, model_version=model_version, target_date=target_date,
+            manifest_path=manifest_path,
+        )
+        return act.stage_discount, act.digest12
+    return _fit_stage_discount(session, target_date), None
+
+
+def _manifest_activation(session: Session, *, model_version: str, target_date, manifest_path: str):
+    """Feature 076 (US2): load the stage-discount λ from the immutable 074 manifest instead of the
+    runtime ``_fit_stage_discount`` leak path (persisted predictions = non-OOS).
+
+    Binds the manifest to the served model_version (name) + content-addressed digest.
+    ``attestation_verifier=None``: the strong attestation recompute needs a REAL manifest whose
+    ``attestation_digest`` matches the lgbm-063 artifacts; fixture manifests use a synthetic one
+    so 076 (fixture-first) uses name+digest binding for every caller. The strong verifier
+    (``training.calib_binding.model_dir_attestation_verifier`` over ``Path(mv.weights_uri).parent``)
+    is wired-and-ready for the real-manifest follow-up (D11). WIN is untouched (stage discount is
+    top2/top3 display only), so win byte-parity holds regardless of mode."""
+    from horseracing_probability.calib_activation import Profile, load_calibration
+    return load_calibration(
+        manifest_path, active_model_version=model_version, target_date=target_date,
+        profile=Profile.PRODUCTION, attestation_verifier=None,
+    )
+
+
 def _sdisc_lv(logic_version: str, sd) -> str:
     from horseracing_eval.stage_discount import logic_version_fragment
 
@@ -155,13 +204,16 @@ def _sdisc_lv(logic_version: str, sd) -> str:
 
 
 def _predict_persist(
-    session: Session, model, race_id: str, feature_rows, logic_version: str, stage_discount=None
+    session: Session, model, race_id: str, feature_rows, logic_version: str, stage_discount=None,
+    calib_digest: str | None = None,
 ) -> ServingResult:
     """Predict one race + persist the run (shared by run_serving and run_serving_backfill).
 
     Identical per-race path so backfill predictions are byte-identical to run_serving (p-parity).
     Feature 049: ``stage_discount`` discounts top2/top3 (win unchanged); its λ is recorded in the
     persisted logic_version for audit/reproducibility.
+    Feature 076: ``calib_digest`` (when the λ came from a manifest) is recorded too, so the
+    persisted top2/top3 are traceable to the exact immutable artifact (V). WIN is untouched.
     """
     win_odds = None
     if getattr(model, "market_offset", None) is not None:
@@ -179,6 +231,8 @@ def _predict_persist(
             model, race_id, feature_rows, stage_discount=stage_discount
         )
     logic_version = _sdisc_lv(logic_version, stage_discount)
+    if calib_digest is not None:  # Feature 076: manifest provenance for the discounted top2/top3
+        logic_version = f"{logic_version};calib={calib_digest};calibmode=manifest"
     check_consistency(predictions)  # fail-fast (INV-S2); nothing persisted on violation
     run_id = persist_run(
         session,
@@ -220,6 +274,9 @@ def run_serving_backfill(
     model_version: str | None = None,
     force: bool = False,
     apply_stage_discount: bool = True,
+    stage_discount: object | None = None,
+    calib_manifest: str | None = None,
+    calib_mode: str = "legacy-runtime",
     use_materialized: bool = False,
     materialized_path: str | None = None,
 ) -> BackfillCounts:
@@ -239,6 +296,15 @@ def run_serving_backfill(
     logic_version = _base_logic_version(model)
     if use_materialized:
         verify_materialized(session, materialized_path)  # raises: missing/stale/incompatible
+    # Feature 076: fail-closed load+verify BEFORE the per-day isolation loop (FR-022). Bound to the
+    # served model_version; per-day temporal gating via assert_applies inside the loop (FR-021).
+    calib_act = None
+    if calib_mode == "manifest-required":
+        calib_act = _manifest_activation(
+            session, model_version=model.model_version, target_date=None,
+            manifest_path=calib_manifest,
+        )
+    calib_digest = calib_act.digest12 if calib_act is not None else None
     gen = skip_exists = skip_no_started = error_days = skip_no_odds = 0
 
     day = date_from
@@ -258,17 +324,30 @@ def run_serving_backfill(
                     target_race_ids=frozenset(race_ids),  # Feature 072: only the day's races
                 )
                 present = set(feature_rows["race_id"].unique())
-                sd = _fit_stage_discount(session, day) if apply_stage_discount else None
+                # Feature 076 priority (as run_serving); a manifest whose window covers this
+                # day fails closed here (per-day, isolated into error_days — FR-021).
+                if not apply_stage_discount:
+                    sd = None
+                elif stage_discount is not None:
+                    sd = stage_discount
+                elif calib_act is not None:
+                    calib_act.assert_applies(day)
+                    sd = calib_act.stage_discount
+                else:
+                    sd = _fit_stage_discount(session, day)
                 for rid in race_ids:
                     if rid not in present:
                         skip_no_started += 1
                         continue
-                    if not force and _has_run_for_model(session, rid, model.model_version):
+                    if not force and _has_run_for_model(
+                        session, rid, model.model_version, calib_digest=calib_digest
+                    ):
                         skip_exists += 1
                         continue
                     try:
                         _predict_persist(
-                            session, model, rid, feature_rows, logic_version, stage_discount=sd
+                            session, model, rid, feature_rows, logic_version, stage_discount=sd,
+                            calib_digest=calib_digest,
                         )
                     except MarketOffsetSkip:
                         skip_no_odds += 1  # typed skip: no prediction row (INV-M4)
@@ -286,10 +365,23 @@ def run_serving_backfill(
     )
 
 
-def _has_run_for_model(session: Session, race_id: str, model_version: str) -> bool:
-    """True if the race already has a prediction_run for this model_version (idempotency)."""
-    return session.scalars(
+def _has_run_for_model(
+    session: Session, race_id: str, model_version: str, *, calib_digest: str | None = None
+) -> bool:
+    """True if the race already has a prediction_run for this model_version (idempotency).
+
+    Feature 076 (codex 076-gap): the check is calibration-aware. In manifest mode a race that only
+    has a LEGACY run for the model must still generate the manifest version (a bare model check
+    would skip it and the manifest run would never be produced); a non-manifest backfill likewise
+    ignores manifest runs. Runs are separate prediction_runs (unlike betting's in-run groups); the
+    read API picks the latest, so serving needs no conflict-refusal — only correct gap-filling."""
+    q = (
         select(PredictionRun.prediction_run_id)
         .where(PredictionRun.race_id == race_id)
         .where(PredictionRun.model_version == model_version)
-    ).first() is not None
+    )
+    if calib_digest is not None:
+        q = q.where(PredictionRun.logic_version.contains(f";calib={calib_digest};"))
+    else:
+        q = q.where(~PredictionRun.logic_version.contains(";calib="))
+    return session.scalars(q).first() is not None

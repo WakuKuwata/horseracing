@@ -31,13 +31,35 @@ def _default_scrape_fn(session: Session, race_id):
         return None
 
 
+def _validate_and_calib(args) -> tuple[str, str | None] | None:
+    """Feature 076: shared calib-arg validation for the live commands. Returns (mode, path) or None
+    on a validation error (caller prints + returns 2)."""
+    from horseracing_betting.cli import _validate_calib_args
+    try:
+        return _validate_calib_args(args)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return None
+
+
 def _cmd_collect_prospective(session: Session, args) -> int:
     """Feature 065: record prospective win bets on freshly-captured pre-race odds for pending races
     on a date (thin bundle over collect_prospective; scrape/settle stay separate commands)."""
+    from horseracing_probability.calib_activation import ActivationError
+    from horseracing_probability.calib_manifest import ManifestError
+    mp = _validate_and_calib(args)
+    if mp is None:
+        return 2
+    mode, path = mp
     ids = list_pending(session, date=args.date)
-    rep = collect_prospective(
-        session, race_ids=ids, scrape_fn=_default_scrape_fn, win_odds_cap=args.win_odds_cap,
-    )
+    try:
+        rep = collect_prospective(
+            session, race_ids=ids, scrape_fn=_default_scrape_fn, win_odds_cap=args.win_odds_cap,
+            calib_manifest=path, calib_mode=mode,
+        )
+    except (ActivationError, ManifestError) as exc:  # Feature 076: fail-closed before the loop
+        print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
+        return 1
     print(f"collect-prospective {args.date}  pending={rep.n_races} generated={rep.generated} "
           f"weak_pretime={rep.weak_pretime}")
     print(f"  skip: not_pending={rep.skip_not_pending} no_odds={rep.skip_no_odds} "
@@ -51,11 +73,22 @@ def _parse_date(s: str) -> datetime.date:
 
 
 def _cmd_live_serve(session: Session, args) -> int:
+    from horseracing_probability.calib_activation import ActivationError
+    from horseracing_probability.calib_manifest import ManifestError
+    mp = _validate_and_calib(args)
+    if mp is None:
+        return 2
+    mode, path = mp
     cfg = KellyConfig(bankroll=args.bankroll, allocation=args.allocation)
-    rep = live_serve(
-        session, race_id=args.race_id, model_version=args.model_version,
-        recommend=not args.no_recommend, cfg=cfg, threshold=args.threshold, top_k=args.top_k,
-    )
+    try:
+        rep = live_serve(
+            session, race_id=args.race_id, model_version=args.model_version,
+            recommend=not args.no_recommend, cfg=cfg, threshold=args.threshold, top_k=args.top_k,
+            calib_manifest=path, calib_mode=mode,
+        )
+    except (ActivationError, ManifestError) as exc:  # Feature 076: fail-closed
+        print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
+        return 1
     if rep.rejected:
         print(f"REJECTED race={rep.race_id}: {rep.reason}")
         for k, (ok, reason) in rep.guards.items():
@@ -80,11 +113,24 @@ def _cmd_list_pending(session: Session, args) -> int:
 
 def _cmd_refresh(session: Session, args) -> int:
     """Feature 050: one-command product update — predict backfill THEN recommend backfill."""
-    rep = refresh_range(
-        session, date_from=args.from_, date_to=args.to, force=args.force,
-        use_materialized=args.use_materialized,
-        materialized_path=args.materialized_path if args.use_materialized else None,
-    )
+    from horseracing_betting.cli import _validate_calib_args
+    from horseracing_probability.calib_activation import ActivationError
+    from horseracing_probability.calib_manifest import ManifestError
+    try:
+        mode, path = _validate_calib_args(args)  # Feature 076: abs path / mode↔manifest contradiction
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    try:
+        rep = refresh_range(
+            session, date_from=args.from_, date_to=args.to, force=args.force,
+            calib_manifest=path, calib_mode=mode,
+            use_materialized=args.use_materialized,
+            materialized_path=args.materialized_path if args.use_materialized else None,
+        )
+    except (ActivationError, ManifestError) as exc:  # Feature 076: preflight fail-closed (T018)
+        print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
+        return 1
     print(f"refresh {rep.date_from}..{rep.date_to}")
     if rep.predict is not None:
         p = rep.predict
@@ -115,6 +161,8 @@ def main(argv: list[str] | None = None) -> int:
     ls.add_argument("--allocation", choices=["exact", "heuristic"], default="exact")
     ls.add_argument("--threshold", type=float, default=1.0)
     ls.add_argument("--top-k", type=int, default=5)
+    from horseracing_betting.cli import _add_calib_manifest_args
+    _add_calib_manifest_args(ls)  # Feature 076: stage-λ (serving) + two-gamma (recommend)
     ls.add_argument("--database-url", default=None)
 
     lp = sub.add_parser("list-pending", help="list valid result-pending races on a date")
@@ -133,6 +181,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="055: prediction stage reads as-of features from the 025 parquet "
                          "(bit-parity, fail-closed; recommend stage builds no features)")
     rf.add_argument("--materialized-path", default="../artifacts/features.parquet")
+    from horseracing_betting.cli import _add_calib_manifest_args
+    _add_calib_manifest_args(rf)  # Feature 076: --calib-manifest / --calib-mode (both stages)
     rf.add_argument("--database-url", default=None)
 
     cp = sub.add_parser("collect-prospective",
@@ -141,6 +191,8 @@ def main(argv: list[str] | None = None) -> int:
     cp.add_argument("--date", type=_parse_date, required=True)
     cp.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
                     help="064: optional win odds cap policy for the prospective bets")
+    from horseracing_betting.cli import _add_calib_manifest_args as _acm
+    _acm(cp)  # Feature 076: manifest two-gamma for prospective recommendations
     cp.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)

@@ -7,6 +7,7 @@ dependencies = [
     "horseracing-db",
     "horseracing-serving",
     "horseracing-betting",
+    "horseracing-probability",
     "horseracing-scrape",
     "sqlalchemy>=2.0",
     "psycopg[binary]>=3.1",
@@ -23,6 +24,7 @@ dev = [
 horseracing-db = { path = "../db", editable = true }
 horseracing-serving = { path = "../serving", editable = true }
 horseracing-betting = { path = "../betting", editable = true }
+horseracing-probability = { path = "../probability", editable = true }
 horseracing-scrape = { path = "../scrape", editable = true }
 
 [build-system]

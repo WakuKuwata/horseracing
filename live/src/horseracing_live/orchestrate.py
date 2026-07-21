@@ -83,6 +83,8 @@ def collect_prospective(
     race_ids: list[str],
     scrape_fn,
     win_odds_cap: float | None = None,
+    calib_manifest: str | None = None,
+    calib_mode: str = "legacy-runtime",
     now: datetime.datetime | None = None,
 ) -> ProspectiveReport:
     """Feature 065: record PROSPECTIVE win bets on FRESHLY-CAPTURED pre-race odds, with the capture
@@ -98,9 +100,20 @@ def collect_prospective(
     weak_pretime flag), (5) advisory lock on (race, model, policy), (6) race-scoped idempotency
     across runs, (7) WIN prospective generation. Never uses the exotic Kelly path.
     """
-    from horseracing_betting.cli import _has_win_group, _resolve_active_run
+    from horseracing_betting.cli import (
+        _active_model_version,
+        _has_win_group,
+        _resolve_active_run,
+    )
     from horseracing_betting.recommend import generate_recommendations
     from sqlalchemy import text
+
+    # Feature 076 (076-gap): load the manifest two-gamma ONCE before the loop (fail-closed, bound to
+    # the active model). Prospective races are result-pending (future) → always after the OOF window,
+    # so the temporal check passes; target_date=None here, per-race is future by construction.
+    prospective_pcal = _live_manifest_two_gamma(
+        session, model_version=_active_model_version(session), target_date=None,
+        calib_manifest=calib_manifest, calib_mode=calib_mode)
 
     now = now or _now()
     gen = weak = 0
@@ -146,7 +159,7 @@ def collect_prospective(
                 continue
             generate_recommendations(
                 session, prediction_run_id=run_id, win_odds_cap=win_odds_cap,
-                prospective=True, odds_asof=capture_at,
+                prospective=True, odds_asof=capture_at, p_calibrator=prospective_pcal,
             )
             gen += 1
             weak += int(is_weak)
@@ -161,6 +174,20 @@ def collect_prospective(
     )
 
 
+def _live_manifest_two_gamma(session, *, model_version, target_date, calib_manifest, calib_mode):
+    """Feature 076 (076-gap): the two-gamma calibrator from the manifest for the live/prospective
+    recommendation lane, bound to the resolved run model + race date. None for legacy. Fail-closed
+    (raises ActivationError/ManifestError). Result-pending (future) races are always after the OOF
+    fit window, so the temporal check passes cleanly."""
+    if calib_mode != "manifest-required":
+        return None
+    from horseracing_probability.calib_activation import Profile, load_calibration
+    return load_calibration(
+        calib_manifest, active_model_version=model_version, target_date=target_date,
+        profile=Profile.PRODUCTION, attestation_verifier=None,
+    ).two_gamma
+
+
 def live_serve(
     session: Session,
     *,
@@ -172,10 +199,15 @@ def live_serve(
     recommend: bool = True,
     cfg: KellyConfig | None = None,
     p_calibrator=None,
+    calib_manifest: str | None = None,
+    calib_mode: str = "legacy-runtime",
     threshold: float = 1.0,
     top_k: int = 5,
 ) -> LiveServeReport:
-    """Serve one upcoming (result-pending) race. See module docstring for the flow."""
+    """Serve one upcoming (result-pending) race. See module docstring for the flow.
+
+    Feature 076 (076-gap): ``manifest-required`` reads the serving stage-λ AND the recommendation
+    two-gamma from the immutable manifest (fail-closed) instead of the runtime fits."""
     gmap: dict = {}
     race = session.get(Race, race_id)
     race_date = race.race_date if race else None
@@ -211,7 +243,10 @@ def live_serve(
         return _rejected(race_id, race_date, gmap, res[1])
 
     # --- predict (run_serving: as-of features, leak-safe, result-pending safe) ---
-    serving_results = run_serving(session, race_id=race_id, model_version=model_version)
+    serving_results = run_serving(
+        session, race_id=race_id, model_version=model_version,
+        calib_manifest=calib_manifest, calib_mode=calib_mode,
+    )
     if not serving_results:
         return _rejected(race_id, race_date, gmap, "no prediction produced (race out of feature scope)")
     sr = serving_results[0]
@@ -223,9 +258,14 @@ def live_serve(
         ores = guards.odds_present(session, race_id)
         gmap["odds_present"] = ores
         if ores[0]:
+            # Feature 076: manifest two-gamma overrides the passed p_calibrator in manifest mode
+            manifest_pcal = _live_manifest_two_gamma(
+                session, model_version=sr.model_version, target_date=race_date,
+                calib_manifest=calib_manifest, calib_mode=calib_mode)
             ids = generate_kelly_recommendations(
                 session, prediction_run_id=sr.prediction_run_id, cfg=cfg or KellyConfig(),
-                threshold=threshold, top_k=top_k, use_real_odds=True, p_calibrator=p_calibrator,
+                threshold=threshold, top_k=top_k, use_real_odds=True,
+                p_calibrator=manifest_pcal if manifest_pcal is not None else p_calibrator,
             )
             n_rec = len(ids)
         else:
@@ -263,12 +303,37 @@ class RefreshReport:
     recommend_error: str | None
 
 
+def _preflight_manifest(session: Session, *, calib_mode: str, manifest_path: str | None) -> None:
+    """Feature 076 (T018): fail-closed ONCE, before either stage runs.
+
+    Both ``run_serving_backfill`` and ``recommend_backfill`` already fail closed on a bad manifest,
+    but doing so independently would surface the same root cause as two separate stage errors (and
+    only after the prediction stage had already run). A structural + generation + scope check against
+    the ACTIVE model here aborts the whole refresh up front (the recommendation `_active_model_version`
+    lane and serving both bind to the active/served model). Per-day temporal gating still happens
+    inside each stage (target_date=None here)."""
+    if calib_mode != "manifest-required":
+        return
+    from horseracing_betting.cli import _active_model_version
+    from horseracing_probability.calib_activation import Profile, load_calibration
+    active_mv = _active_model_version(session)
+    if active_mv is None:
+        from horseracing_probability.calib_activation import ActivationError
+        raise ActivationError("manifest-required refresh: no ACTIVE model to bind against")
+    load_calibration(
+        manifest_path, active_model_version=active_mv, target_date=None,
+        profile=Profile.PRODUCTION, attestation_verifier=None,
+    )  # raises ActivationError/ManifestError on any structural/generation/scope failure
+
+
 def refresh_range(
     session: Session,
     *,
     date_from: datetime.date,
     date_to: datetime.date,
     force: bool = False,
+    calib_manifest: str | None = None,
+    calib_mode: str = "legacy-runtime",
     use_materialized: bool = False,
     materialized_path: str | None = None,
 ) -> RefreshReport:
@@ -282,17 +347,24 @@ def refresh_range(
 
     Feature 055: ``use_materialized`` propagates to the PREDICTION stage only (the recommendation
     stage builds no feature matrices — it reads persisted predictions).
+
+    Feature 076: ``manifest-required`` reads the two-gamma / stage-λ from the immutable 074 manifest
+    in BOTH stages (serving stage-discount λ, betting recommendation two-gamma). A preflight fails
+    the whole refresh closed up front (before either stage) on a structurally-bad manifest.
     """
     from dataclasses import asdict
 
     from horseracing_betting.cli import recommend_backfill
     from horseracing_serving.pipeline import run_serving_backfill
 
+    _preflight_manifest(session, calib_mode=calib_mode, manifest_path=calib_manifest)
+
     predict: dict | None = None
     predict_error: str | None = None
     try:
         predict = asdict(run_serving_backfill(
             session, date_from=date_from, date_to=date_to, force=force,
+            calib_manifest=calib_manifest, calib_mode=calib_mode,
             use_materialized=use_materialized, materialized_path=materialized_path,
         ))
     except Exception as exc:  # noqa: BLE001 — stage isolation; recommend is idempotent-safe
@@ -302,7 +374,10 @@ def refresh_range(
     recommend: dict | None = None
     recommend_error: str | None = None
     try:
-        recommend = recommend_backfill(session, date_from=date_from, date_to=date_to)
+        recommend = recommend_backfill(
+            session, date_from=date_from, date_to=date_to,
+            calib_mode=calib_mode, manifest_path=calib_manifest,
+        )
     except Exception as exc:  # noqa: BLE001
         session.rollback()
         recommend_error = f"{type(exc).__name__}: {exc}"
