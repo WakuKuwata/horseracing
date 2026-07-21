@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import os
 
 from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus
 from horseracing_db.models import (
@@ -13,6 +14,8 @@ from horseracing_db.models import (
     Recommendation,
 )
 from horseracing_db.session import create_db_engine
+from horseracing_probability.calib_activation import ActivationError
+from horseracing_probability.calib_manifest import ManifestError
 from sqlalchemy import case, func, select, text
 from sqlalchemy.orm import Session
 
@@ -87,18 +90,30 @@ def _race_has_win_odds(session: Session, race_id: str) -> bool:
     return row is not None
 
 
-def _has_group(session: Session, run_id, bet_types) -> bool:
-    """Feature 045: does the run already have a recommendation in this bet_type group?"""
-    return session.scalars(
+def _has_group(session: Session, run_id, bet_types, *, calib_digest: str | None = None) -> bool:
+    """Feature 045: does the run already have a recommendation in this bet_type group?
+
+    Feature 076: ``calib_digest`` is an orthogonal idempotency dimension (like oddscap) — a manifest
+    group requires ``;calib=<digest12>;`` present, a non-manifest group requires its absence, so a
+    different manifest digest is a DIFFERENT GROUP inside the run and never collides with the legacy
+    group (FR-010). NOTE: this is group-level, not run-level — the read API returns every row of a
+    run, so mixing groups on one run is prevented up front by ``_conflicting_calib_group``.
+    """
+    q = (
         select(Recommendation.recommendation_id)
         .where(Recommendation.prediction_run_id == run_id)
         .where(Recommendation.bet_type.in_(bet_types))
-    ).first() is not None
+    )
+    if calib_digest is not None:  # bounded token (trailing ';'): a shared prefix can't match
+        q = q.where(Recommendation.logic_version.contains(f";calib={calib_digest};"))
+    else:
+        q = q.where(~Recommendation.logic_version.contains(";calib="))
+    return session.scalars(q).first() is not None
 
 
 def _has_win_group(
     session: Session, run_id, win_odds_cap: float | None,
-    *, prospective: bool = False, race_id: str | None = None,
+    *, prospective: bool = False, race_id: str | None = None, calib_digest: str | None = None,
 ) -> bool:
     """Feature 064/065: policy-aware win idempotency across FOUR policies
     (legacy / cap / prospective / prospective+cap) so they never collide.
@@ -127,6 +142,30 @@ def _has_win_group(
         q = q.where(Recommendation.logic_version.contains(f";oddscap={win_odds_cap}"))
     else:
         q = q.where(~Recommendation.logic_version.contains(";oddscap="))
+    if calib_digest is not None:  # Feature 076: manifest-activation dimension (orthogonal, bounded)
+        q = q.where(Recommendation.logic_version.contains(f";calib={calib_digest};"))
+    else:
+        q = q.where(~Recommendation.logic_version.contains(";calib="))
+    return session.scalars(q).first() is not None
+
+
+def _conflicting_calib_group(session: Session, run_id, calib_digest: str | None) -> bool:
+    """Feature 076 (codex P0-1): would generating this group MIX calibration modes on one run?
+
+    The read API returns EVERY recommendation of a prediction_run, so a run holding both a legacy
+    group and a manifest group (or two different manifests) would display mutually inconsistent bets
+    side by side. Generation refuses instead of silently creating that state. Prospective rows (065)
+    are a separate lane (race-scoped, live-generated) and are excluded from the check.
+    """
+    q = (
+        select(Recommendation.recommendation_id)
+        .where(Recommendation.prediction_run_id == run_id)
+        .where(~Recommendation.logic_version.contains(";prospective=1"))
+    )
+    if calib_digest is None:  # about to write a legacy group -> any manifest group conflicts
+        q = q.where(Recommendation.logic_version.contains(";calib="))
+    else:  # about to write THIS manifest -> legacy rows and other digests both conflict
+        q = q.where(~Recommendation.logic_version.contains(f";calib={calib_digest};"))
     return session.scalars(q).first() is not None
 
 
@@ -178,8 +217,76 @@ def _fit_product_stage_discount(session: Session, *, before_date, p_calibrator=N
     return fit_product_stage_discount(session, before_date=before_date, calibrator=cal)
 
 
+def _add_calib_manifest_args(p: argparse.ArgumentParser) -> None:
+    """Feature 076: shared --calib-manifest / --calib-mode flags (recommend-serve/backfill)."""
+    p.add_argument("--calib-manifest", dest="calib_manifest", default=None,
+                   help="076: absolute path to the immutable 074 calibration manifest. Requires "
+                        "--calib-mode manifest-required.")
+    p.add_argument("--calib-mode", dest="calib_mode",
+                   choices=["legacy-runtime", "manifest-required"], default="legacy-runtime",
+                   help="076: legacy-runtime (default, byte-identical) fits two-gamma at runtime; "
+                        "manifest-required reads it from --calib-manifest (fail-closed).")
+
+
+def _validate_calib_args(args) -> tuple[str, str | None]:
+    """Feature 076: validate the (calib_mode, calib_manifest) pair (cli-contract). Raises ValueError
+
+    - ``manifest-required`` requires ``--calib-manifest`` (else there is nothing to activate).
+    - ``--calib-manifest`` requires ``manifest-required`` (a path with legacy mode contradicts).
+    - a manifest path must be ABSOLUTE (relative paths break across package cwds — D5).
+    """
+    mode = getattr(args, "calib_mode", "legacy-runtime")
+    path = getattr(args, "calib_manifest", None)
+    if mode == "manifest-required" and not path:
+        raise ValueError("--calib-mode manifest-required requires --calib-manifest")
+    if path and mode != "manifest-required":
+        raise ValueError("--calib-manifest requires --calib-mode manifest-required")
+    if path and not os.path.isabs(path):
+        raise ValueError(f"--calib-manifest must be an absolute path (got {path!r})")
+    return mode, path
+
+
+def _run_model_version(session: Session, run_id) -> str:
+    """The model_version of a resolved prediction_run (the manifest generation-binding target)."""
+    from horseracing_db.models import PredictionRun
+    return session.scalar(
+        select(PredictionRun.model_version)
+        .where(PredictionRun.prediction_run_id == run_id)
+    )
+
+
+def _active_model_version(session: Session) -> str | None:
+    """The single ACTIVE model_version (the backfill manifest generation-binding target)."""
+    return session.scalar(
+        select(ModelVersion.model_version)
+        .where(ModelVersion.adoption_status == AdoptionStatus.ACTIVE)
+    )
+
+
+def _load_manifest_activation(session: Session, *, run_id, target_date, manifest_path: str):
+    """Feature 076 (US1): load the two-gamma calibrator (+stage discount) from the immutable 074
+    manifest instead of the runtime ``load_p_samples``/``fit_p_calibrator`` leak path.
+
+    Binds the manifest to the SELECTED run's model_version (name) + content-addressed digest.
+    ``attestation_verifier=None``: betting has no ``training`` dependency so it cannot recompute the
+    recipe attestation — the strong overwrite binding for every caller rides with the 077 registry
+    (research D11). ``target_date`` = the race date (single-race) so a manifest whose fit window
+    covers the race is rejected fail-closed (FR-021).
+    """
+    from horseracing_probability.calib_activation import Profile, load_calibration
+    model_version = _run_model_version(session, run_id)
+    return load_calibration(
+        manifest_path,
+        active_model_version=model_version,
+        target_date=target_date,
+        profile=Profile.PRODUCTION,
+        attestation_verifier=None,
+    )
+
+
 def _generate_product_set(
-    session: Session, run_id, *, p_calibrator=None, stage_discount=None, win_odds_cap=None
+    session: Session, run_id, *, p_calibrator=None, stage_discount=None, win_odds_cap=None,
+    calib_digest: str | None = None,
 ) -> tuple[int, int, list[str]]:
     """Generate the missing bet_type groups for one run (group-wise idempotent, Feature 045).
 
@@ -193,13 +300,14 @@ def _generate_product_set(
     cfg = KellyConfig()
     n_win = n_exotic = 0
     skipped: list[str] = []
-    if _has_win_group(session, run_id, win_odds_cap):  # Feature 064: policy-aware win idempotency
+    # Feature 064/076: policy- and manifest-digest-aware win idempotency
+    if _has_win_group(session, run_id, win_odds_cap, calib_digest=calib_digest):
         skipped.append("win")
     else:
         n_win = len(generate_recommendations(
             session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator,
             win_odds_cap=win_odds_cap))
-    if _has_group(session, run_id, BetType.EXOTIC):
+    if _has_group(session, run_id, BetType.EXOTIC, calib_digest=calib_digest):
         skipped.append("exotic")
     else:
         n_exotic = len(generate_kelly_recommendations(
@@ -213,6 +321,11 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     active-model run, group-wise idempotent. Prints a machine-parseable SKIPPED/OK line the ops
     runner maps to skipped/succeeded (028-style). Exit non-zero only on genuine failure.
     """
+    try:
+        _validate_calib_args(args)  # Feature 076: reject relative path / mode↔manifest mismatch
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 2
     race_id = args.race_id
     run_id = _resolve_active_run(session, race_id)
     if run_id is None:
@@ -226,30 +339,57 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     session.execute(text("SELECT pg_advisory_lock(hashtext(:k))"),
                     {"k": f"recommend-run:{run_id}"})
     win_odds_cap = getattr(args, "win_odds_cap", None)  # Feature 064 (None = current behaviour)
-    if _has_group(session, run_id, BetType.ALL):
+    from horseracing_db.models import Race
+    race = session.get(Race, race_id)
+    has_date = race is not None and race.race_date is not None
+    # Feature 076: manifest-required loads two-gamma (+stage discount) from the immutable 074
+    # artifact — no runtime load_p_samples/fit. Fail-closed: a bad manifest is an ERROR (exit!=0),
+    # never a silent legacy fallback (FR-005). The digest is loaded BEFORE the idempotency pre-check
+    # so a different manifest is a different run (FR-010).
+    act = None
+    if getattr(args, "calib_mode", "legacy-runtime") == "manifest-required":
+        if not has_date:
+            print(f"ERROR: race {race_id} has no race_date; cannot activate manifest")
+            return 1
+        try:
+            act = _load_manifest_activation(
+                session, run_id=run_id, target_date=race.race_date,
+                manifest_path=args.calib_manifest,
+            )
+        except (ActivationError, ManifestError) as exc:
+            print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
+            return 1
+    calib_digest = act.digest12 if act is not None else None
+    if _conflicting_calib_group(session, run_id, calib_digest):
+        print(f"ERROR: run {run_id} already has recommendations from a different calibration "
+              f"mode/manifest; generating this group would show conflicting bets together")
+        return 1
+    if _has_group(session, run_id, BetType.ALL, calib_digest=calib_digest):
         # some group exists — top up only the missing groups (045); all present → full skip.
         # Feature 064: win presence is policy-aware, so a cap policy tops up a legacy win run.
-        if (_has_win_group(session, run_id, win_odds_cap)
-                and _has_group(session, run_id, BetType.EXOTIC)):
+        if (_has_win_group(session, run_id, win_odds_cap, calib_digest=calib_digest)
+                and _has_group(session, run_id, BetType.EXOTIC, calib_digest=calib_digest)):
             print(f"SKIPPED: recommendations already exist for run {run_id}")
             return 0
     if not _race_has_win_odds(session, race_id):
         print(f"SKIPPED: no win odds for race {race_id} (recommendations need odds)")
         return 0
-    # Feature 046: walk-forward p calibrator (strictly before this race; identity when thin)
-    from horseracing_db.models import Race
-    race = session.get(Race, race_id)
-    has_date = race is not None and race.race_date is not None
-    pcal = _fit_product_p_calibrator(
-        session, before_date=race.race_date, target_race_id=race_id,
-    ) if has_date else None
-    # Feature 049: top2/top3 discount for exotic P_model — OPT-IN (default OFF). The pre-registered
-    # exotic pseudo-ROI MUST gate failed on trio, so the product default stays λ=1.
-    sdisc = _fit_product_stage_discount(
-        session, before_date=race.race_date, p_calibrator=pcal,
-    ) if (has_date and getattr(args, "stage_discount", False)) else None
+    if act is not None:  # Feature 076: manifest-sourced calibration (leak-free)
+        pcal = act.two_gamma
+        sdisc = act.stage_discount if getattr(args, "stage_discount", False) else None
+    else:
+        # Feature 046: walk-forward p calibrator (strictly before this race; identity when thin)
+        pcal = _fit_product_p_calibrator(
+            session, before_date=race.race_date, target_race_id=race_id,
+        ) if has_date else None
+        # Feature 049: top2/top3 discount for exotic P_model — OPT-IN (default OFF). The pre-reg
+        # exotic pseudo-ROI MUST gate failed on trio, so the product default stays λ=1.
+        sdisc = _fit_product_stage_discount(
+            session, before_date=race.race_date, p_calibrator=pcal,
+        ) if (has_date and getattr(args, "stage_discount", False)) else None
     n_win, n_exotic, skipped = _generate_product_set(
         session, run_id, p_calibrator=pcal, stage_discount=sdisc, win_odds_cap=win_odds_cap,
+        calib_digest=calib_digest,
     )
     note = f" (skipped groups: {','.join(skipped)})" if skipped else ""
     pnote = f" pcal={pcal.logic_version}" if pcal is not None else ""
@@ -378,13 +518,31 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
 def recommend_backfill(
     session: Session, *, date_from, date_to, stage_discount: bool = False,
     win_odds_cap: float | None = None,
+    calib_mode: str = "legacy-runtime", manifest_path: str | None = None,
 ) -> dict:
     """Feature 043 US3 core (extracted in 050 for the live refresh pipeline): idempotently
     generate the recommendation set for every race with a prediction_run + odds in
     [date_from, date_to]. Per-race exception isolation (one failure doesn't abort). Returns the
     counts dict (+ ``races`` total); count reconciliation is asserted here.
+
+    Feature 076: ``manifest-required`` loads + verifies the manifest ONCE **before** the per-race
+    isolation loop (FR-022) — a bad manifest raises here so the whole backfill fails closed rather
+    than being swallowed race-by-race. The Activation is then reused (load-once, D5); each day is
+    gated by ``assert_applies`` (FR-021), and each race's run must carry the manifest's base model.
     """
     from horseracing_db.models import Race
+    # Feature 076: fail-closed BEFORE the loop (FR-022). Bound to the ACTIVE model (backfill).
+    act = None
+    if calib_mode == "manifest-required":
+        active_mv = _active_model_version(session)
+        if active_mv is None:
+            raise ActivationError("manifest-required backfill: no ACTIVE model to bind against")
+        from horseracing_probability.calib_activation import Profile, load_calibration
+        act = load_calibration(
+            manifest_path, active_model_version=active_mv, target_date=None,
+            profile=Profile.PRODUCTION, attestation_verifier=None,
+        )
+    calib_digest = act.digest12 if act is not None else None
     rows = session.execute(
         select(Race.race_id, Race.race_date)
         .where(Race.race_date >= date_from)
@@ -392,7 +550,7 @@ def recommend_backfill(
         .order_by(Race.race_date, Race.race_id)
     ).all()
     counts = {"generated": 0, "topped_up": 0, "skip_no_run": 0, "skip_no_odds": 0,
-              "skip_exists": 0, "error": 0}
+              "skip_exists": 0, "skip_manifest_scope": 0, "error": 0}
     # Feature 046: fit the p calibrator ONCE per day (samples strictly before that day — the
     # date-level cutoff excludes same-day races, matching the 004 date-level convention).
     pcal_day = None
@@ -404,15 +562,32 @@ def recommend_backfill(
             if run_id is None:
                 counts["skip_no_run"] += 1
                 continue
-            has_win = _has_win_group(session, run_id, win_odds_cap)  # Feature 064: policy-aware
-            has_exotic = _has_group(session, run_id, BetType.EXOTIC)
+            if act is not None:
+                # A race whose run is a different generation, or whose day is within the fit window
+                # (FR-021), is OUT of this manifest's scope — a clean skip, not an error (codex E).
+                # Genuine faults still raise into the ``error`` bucket below.
+                if _run_model_version(session, run_id) != act.two_gamma.base_model_version:
+                    counts["skip_manifest_scope"] += 1
+                    continue
+                if not act.applies_to(rdate):
+                    counts["skip_manifest_scope"] += 1
+                    continue
+            if _conflicting_calib_group(session, run_id, calib_digest):
+                # would mix calibration modes on one run (codex P0-1) — skip, don't corrupt the run
+                counts["skip_manifest_scope"] += 1
+                continue
+            has_win = _has_win_group(session, run_id, win_odds_cap, calib_digest=calib_digest)
+            has_exotic = _has_group(session, run_id, BetType.EXOTIC, calib_digest=calib_digest)
             if has_win and has_exotic:  # group-wise idempotent (045)
                 counts["skip_exists"] += 1
                 continue
             if not _race_has_win_odds(session, rid):
                 counts["skip_no_odds"] += 1
                 continue
-            if rdate != pcal_day:
+            if act is not None:  # Feature 076: manifest-sourced calibration (leak-free, load-once)
+                pcal = act.two_gamma
+                sdisc = act.stage_discount if stage_discount else None
+            elif rdate != pcal_day:
                 # cutoff = the day itself with a smaller-than-any race_id → strictly before the day
                 pcal = _fit_product_p_calibrator(session, before_date=rdate, target_race_id="")
                 # Feature 049 discount OPT-IN (default OFF — exotic trio MUST gate failed)
@@ -420,7 +595,7 @@ def recommend_backfill(
                          if stage_discount else None)
                 pcal_day = rdate
             _generate_product_set(session, run_id, p_calibrator=pcal, stage_discount=sdisc,
-                                  win_odds_cap=win_odds_cap)
+                                  win_odds_cap=win_odds_cap, calib_digest=calib_digest)
             # a partial run (043-era exotic-only) counts as a top-up, a bare run as generated
             counts["topped_up" if (has_win or has_exotic) else "generated"] += 1
         except Exception as exc:  # noqa: BLE001 — one race must not abort the whole backfill
@@ -433,14 +608,26 @@ def recommend_backfill(
 
 
 def _cmd_recommend_backfill(session: Session, args) -> int:
-    counts = recommend_backfill(session, date_from=args.from_, date_to=args.to,
-                                stage_discount=getattr(args, "stage_discount", False),
-                                win_odds_cap=getattr(args, "win_odds_cap", None))
+    try:
+        mode, path = _validate_calib_args(args)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    try:
+        counts = recommend_backfill(session, date_from=args.from_, date_to=args.to,
+                                    stage_discount=getattr(args, "stage_discount", False),
+                                    win_odds_cap=getattr(args, "win_odds_cap", None),
+                                    calib_mode=mode, manifest_path=path)
+    except (ActivationError, ManifestError) as exc:  # Feature 076: pre-loop fail-closed (FR-022)
+        print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
+        return 1
     print(f"recommend-backfill {args.from_}..{args.to}  races={counts['races']}")
     print(f"  generated={counts['generated']} topped_up={counts['topped_up']} "
           f"skip_exists={counts['skip_exists']} skip_no_run={counts['skip_no_run']} "
-          f"skip_no_odds={counts['skip_no_odds']} error={counts['error']}")
-    return 0
+          f"skip_no_odds={counts['skip_no_odds']} "
+          f"skip_manifest_scope={counts['skip_manifest_scope']} error={counts['error']}")
+    # Feature 076: in manifest mode a genuine per-race error must not read as success (codex P0-2).
+    return 1 if (mode == "manifest-required" and counts["error"] > 0) else 0
 
 
 def _cmd_kelly_calibration_compare(session: Session, args) -> int:
@@ -627,6 +814,7 @@ def main(argv: list[str] | None = None) -> int:
     rs.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
                     help="064: win upper odds cap (e.g. 21); over-cap horses excluded from win "
                          "bets (still in prob denominator). OPT-IN; default None = current")
+    _add_calib_manifest_args(rs)
     rs.add_argument("--database-url", default=None)
 
     rb = sub.add_parser("recommend-backfill",
@@ -637,6 +825,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="049: apply top2/top3 discount to exotic P_model (OPT-IN; default OFF)")
     rb.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
                     help="064: win upper odds cap (e.g. 21); OPT-IN; default None = current")
+    _add_calib_manifest_args(rb)
     rb.add_argument("--database-url", default=None)
 
     kc = sub.add_parser("kelly-calibration-compare",

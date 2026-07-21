@@ -24,7 +24,7 @@ def test_refresh_runs_predict_then_recommend_with_args(monkeypatch):
         calls.append(("predict", date_from, date_to, force))
         return BackfillCounts(generated=3)
 
-    def fake_recommend(session, *, date_from, date_to):
+    def fake_recommend(session, *, date_from, date_to, **kw):
         calls.append(("recommend", date_from, date_to))
         return {"races": 3, "generated": 3, "topped_up": 0, "skip_no_run": 0,
                 "skip_no_odds": 0, "skip_exists": 0, "error": 0}
@@ -49,11 +49,11 @@ def test_refresh_propagates_materialized_to_predict_stage_only(monkeypatch):
     seen = {}
 
     def fake_predict(session, *, date_from, date_to, force=False,
-                     use_materialized=False, materialized_path=None):
+                     use_materialized=False, materialized_path=None, **kw):
         seen["mat"] = (use_materialized, materialized_path)
         return BackfillCounts(generated=0)
 
-    def fake_recommend(session, *, date_from, date_to):
+    def fake_recommend(session, *, date_from, date_to, **kw):
         return {"races": 0, "generated": 0, "topped_up": 0, "skip_no_run": 0,
                 "skip_no_odds": 0, "skip_exists": 0, "error": 0}
 
@@ -74,7 +74,7 @@ def test_predict_crash_does_not_skip_recommend(monkeypatch):
     def boom(session, **kw):
         raise RuntimeError("model artifact missing")
 
-    def fake_recommend(session, *, date_from, date_to):
+    def fake_recommend(session, *, date_from, date_to, **kw):
         ran.append("recommend")
         return {"races": 0, "generated": 0, "topped_up": 0, "skip_no_run": 0,
                 "skip_no_odds": 0, "skip_exists": 0, "error": 0}

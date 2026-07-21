@@ -159,6 +159,21 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     return job
 
 
+def _calib_argv(prefix: str) -> list[str]:
+    """Feature 076 (076-gap): opt-in manifest activation for a per-race ops subprocess via env.
+
+    ``<prefix>_CALIB_MANIFEST`` (absolute) + ``<prefix>_CALIB_MODE=manifest-required`` forward the
+    calib flags to the CLI argv (same as _live_refresh + the api DISPERSION_CALIB_MANIFEST pattern).
+    Default-off, so the REST payload/contract is unchanged and ops stays ML-free — it only forwards
+    argv; the manifest is verified inside the subprocess (fail-closed → rc!=0 → job FAILED). This is
+    the do-not-default-ON waiver until real manifest generation (078)."""
+    manifest = os.environ.get(f"{prefix}_CALIB_MANIFEST") or None
+    mode = os.environ.get(f"{prefix}_CALIB_MODE", "legacy-runtime")
+    if mode == "manifest-required" and manifest:
+        return ["--calib-manifest", manifest, "--calib-mode", "manifest-required"]
+    return []
+
+
 def _serving_predict(race_id: str) -> subprocess.CompletedProcess:
     """Invoke the serving CLI in its OWN env (`uv run --project serving`) — ops must not import the
     model stack (boundary II/VI). The CLI builds as-of (leak-safe) features, runs the single active
@@ -167,6 +182,7 @@ def _serving_predict(race_id: str) -> subprocess.CompletedProcess:
     cmd = [
         "uv", "run", "--project", str(_SERVING_DIR), "python", "-m", "horseracing_serving",
         "predict", "--race-id", race_id, "--database-url", owner_database_url(),
+        *_calib_argv("PREDICT"),  # Feature 076: opt-in manifest activation via env
     ]
     # cwd = serving/ so the model_versions.weights_uri (stored relative, e.g. ../artifacts/...)
     # resolves to <repo>/artifacts exactly as a normal serving run does. Drop VIRTUAL_ENV so uv
@@ -225,6 +241,7 @@ def _betting_recommend(race_id: str) -> subprocess.CompletedProcess:
     cmd = [
         "uv", "run", "--project", str(_BETTING_DIR), "python", "-m", "horseracing_betting",
         "recommend-serve", "--race-id", race_id, "--database-url", owner_database_url(),
+        *_calib_argv("RECOMMEND"),  # Feature 076: opt-in manifest activation via env
     ]
     env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
     return subprocess.run(  # noqa: S603 — fixed argv, race_id is endpoint-validated 12 digits
@@ -292,16 +309,26 @@ _LIVE_DIR = Path(__file__).resolve().parents[3] / "live"
 _LIVE_TIMEOUT_S = 3600  # a ≤35-day range ≈ ≤12 race days × ~45s predict + recommend — ample
 
 
-def _live_refresh(date_from: str, date_to: str) -> subprocess.CompletedProcess:
+def _live_refresh(
+    date_from: str, date_to: str,
+    *, calib_manifest: str | None = None, calib_mode: str = "legacy-runtime",
+) -> subprocess.CompletedProcess:
     """Feature 053: invoke the live CLI in its OWN env (`uv run --project live`) — ops must not
     import the live/serving/betting stack (boundary II/VI, same as _serving_predict). The 050
     `refresh` command is idempotent (predict backfill → recommend backfill, stage-isolated).
-    Monkeypatched in tests."""
+    Monkeypatched in tests.
+
+    Feature 076 (T018): when a manifest is configured (env, see ``run_refresh_range``), forward the
+    calib flags to the SAME live CLI loader so the ops subprocess resolves the SAME manifest_digest
+    as a direct CLI run (SC-011). The manifest itself is verified inside the subprocess (fail-closed
+    → rc!=0 → job FAILED); ops stays ML-free (it only forwards argv)."""
     cmd = [
         "uv", "run", "--project", str(_LIVE_DIR), "python", "-m", "horseracing_live",
         "refresh", "--from", date_from, "--to", date_to,
         "--database-url", owner_database_url(),
     ]
+    if calib_mode == "manifest-required" and calib_manifest:
+        cmd += ["--calib-manifest", calib_manifest, "--calib-mode", "manifest-required"]
     env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
     return subprocess.run(  # noqa: S603 — fixed argv, dates are endpoint-validated ISO dates
         cmd, capture_output=True, text=True, timeout=_LIVE_TIMEOUT_S,
@@ -315,7 +342,16 @@ def run_refresh_range(session: Session, job: IngestionJob, *, fetcher=None) -> I
     is idempotent with per-race/day isolation, 050); non-zero → FAILED with the output tail."""
     scope_value = job.scope_value or ""
     date_from, _, date_to = scope_value.partition("..")
-    proc = _live_refresh(date_from, date_to)
+    # Feature 076 (T018): manifest activation is operator-supplied via env (opt-in, NOT a default —
+    # the do-not-default-ON waiver), mirroring the api dispersion DISPERSION_CALIB_MANIFEST pattern.
+    # The REST payload/contract is unchanged; ops just forwards the flags to the live subprocess.
+    calib_manifest = os.environ.get("REFRESH_CALIB_MANIFEST") or None
+    calib_mode = os.environ.get("REFRESH_CALIB_MODE", "legacy-runtime")
+    if calib_mode == "manifest-required" and calib_manifest:
+        proc = _live_refresh(date_from, date_to,
+                             calib_manifest=calib_manifest, calib_mode=calib_mode)
+    else:  # default: unchanged 2-arg call (backward-compatible)
+        proc = _live_refresh(date_from, date_to)
     stdout = proc.stdout or ""
     tail = ((proc.stderr or "") + stdout).strip()[-500:]
     job.completed_at = _now()

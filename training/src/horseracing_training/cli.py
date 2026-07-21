@@ -659,12 +659,20 @@ def main(argv: list[str] | None = None) -> int:
     # Feature 066 model_delta: fit + write the FROZEN two_gamma p-calibrator artifact (048 machinery
     # reuse) for the read-time calibrated-p vs q delta. Display-only; never a model feature.
     dpc = sub.add_parser("dispersion-pcal",
-                         help="066: fit frozen two_gamma p-calibrator for model_delta")
-    dpc.add_argument("--from", dest="fit_from", type=_parse_date, required=True)
-    dpc.add_argument("--to", dest="fit_to", type=_parse_date, required=True)
-    dpc.add_argument("--version", default="pcal-v1", help="artifact/logic version token")
+                         help="066/076: inspect the manifest two_gamma the API uses "
+                              "(--inspect-manifest); the legacy --from/--to FIT path is DEPRECATED "
+                              "(non-OOS, superseded by manifest activation — 076 T021)")
+    dpc.add_argument("--inspect-manifest", dest="inspect_manifest", default=None,
+                     help="076: absolute path to a 074 manifest — verify it + print the two_gamma "
+                          "γ the api dispersion path will apply (read-only; no fit, no write)")
+    dpc.add_argument("--from", dest="fit_from", type=_parse_date, default=None,
+                     help="DEPRECATED (066 legacy fit): fit-window start")
+    dpc.add_argument("--to", dest="fit_to", type=_parse_date, default=None,
+                     help="DEPRECATED (066 legacy fit): fit-window end")
+    dpc.add_argument("--version", default="pcal-v1",
+                     help="artifact/logic version token (legacy fit)")
     dpc.add_argument("--out", default="artifacts/dispersion_bands/pcal-v1.json",
-                     help="write the p-calibrator artifact JSON here")
+                     help="legacy fit: write the p-calibrator artifact JSON here")
     dpc.add_argument("--database-url", default=None)
 
     # Feature 068: paired candidate↔active evaluation (recipe-refit per fold, no saved booster).
@@ -1152,6 +1160,46 @@ def _dispersion_bands(session: Session, args) -> int:
     return 0
 
 
+def _dispersion_pcal_inspect(session: Session, manifest_path: str) -> int:
+    """Feature 076 (T021): verify a 074 manifest and print the two_gamma the api dispersion applies.
+
+    Read-only: runs the SAME ``load_calibration`` the api uses (bound to the ACTIVE model, temporal
+    check skipped for inspection) and reports γ_lo/γ_hi/pivot + digest + fit_through + scope. Any
+    structural / generation / scope failure prints the typed error and exits non-zero."""
+    from horseracing_db.enums import AdoptionStatus
+    from horseracing_db.models import ModelVersion
+    from horseracing_probability.calib_activation import (
+        ActivationError,
+        Profile,
+        load_calibration,
+    )
+    from horseracing_probability.calib_manifest import ManifestError
+    from sqlalchemy import select
+
+    active = session.scalar(
+        select(ModelVersion.model_version)
+        .where(ModelVersion.adoption_status == AdoptionStatus.ACTIVE)
+    )
+    if active is None:
+        print("error: no ACTIVE model to bind the manifest against", file=sys.stderr)
+        return 2
+    try:
+        act = load_calibration(
+            manifest_path, active_model_version=active, target_date=None,
+            profile=Profile.PRODUCTION, attestation_verifier=None,
+        )
+    except (ActivationError, ManifestError) as exc:
+        print(f"error: manifest not usable: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+    tg = act.two_gamma.params
+    print(f"dispersion-pcal inspect: digest={act.manifest_digest[:12]} "
+          f"fit_through={act.fit_through.isoformat()} active_model={active}")
+    print(f"  two_gamma: gamma_lo={tg['gamma_lo']:.6f} gamma_hi={tg['gamma_hi']:.6f} "
+          f"pivot={tg['pivot']}")
+    print("  the api applies this only to races AFTER fit_through (model_delta), fail-open.")
+    return 0
+
+
 def _dispersion_pcal(session: Session, args) -> int:
     """Feature 066 model_delta: fit + write the FROZEN two_gamma p-calibrator artifact.
 
@@ -1159,7 +1207,22 @@ def _dispersion_pcal(session: Session, args) -> int:
     frozen window that should sit strictly BEFORE the display/serving target (same frozen discipline
     as the band boundary). The calibrator is just a few floats (gamma_lo/hi/pivot); the API loads it
     read-time to show H(calibrated p) − H(q). The calibrated p is display-only — never persisted,
-    never a model feature (II). Under-sampled → identity fallback (delta from raw p)."""
+    never a model feature (II). Under-sampled → identity fallback (delta from raw p).
+
+    KNOWN LEAK (diagnostic disclosure, constitution II — 074 research D7): the fit samples come from
+    ``load_p_samples`` → ``_latest_run_predictions``, i.e. the latest full-history PredictionRun,
+    which SAW each fit race's own outcome in training = NOT out-of-sample. So the gamma params are
+    mildly optimistic. The impact is confined to the display-only ``model_delta`` read-out (no
+    betting/serving/recommendation/feature consequence — the band is a function of q only). The
+    OOF-faithful fix (fit from ``load_p_samples_from_oof`` / read an immutable calibration manifest)
+    is deferred to the probability-pipeline-activation feature, once that manifest infra exists; see
+    specs/074-oof-faithful-calibration/{spec.md:100, research.md D7}."""
+    # Feature 076 (T021): the api dispersion path now reads the immutable manifest directly
+    # (dispersion.load_activation_calibrator), so this command's role is INSPECT/VERIFY. The legacy
+    # fit below is DEPRECATED (its samples are non-OOS — 074 D7) and kept only for back-compat.
+    if getattr(args, "inspect_manifest", None):
+        return _dispersion_pcal_inspect(session, args.inspect_manifest)
+
     from horseracing_eval.dispersion_bands import DispersionPCalibrator
     from horseracing_probability.model_calibration import (
         TWO_GAMMA_PIVOT,
@@ -1167,6 +1230,12 @@ def _dispersion_pcal(session: Session, args) -> int:
         load_p_samples,
     )
 
+    if args.fit_from is None or args.fit_to is None:
+        print("error: legacy fit needs --from/--to; prefer --inspect-manifest (076 T021)",
+              file=sys.stderr)
+        return 2
+    print("WARNING: the dispersion-pcal FIT path is DEPRECATED (non-OOS samples, 074 D7). The api "
+          "reads the manifest directly now; use --inspect-manifest.", file=sys.stderr)
     if args.fit_from > args.fit_to:
         print(f"error: --from {args.fit_from} is after --to {args.fit_to}", file=sys.stderr)
         return 2
@@ -1194,6 +1263,9 @@ def _dispersion_pcal(session: Session, args) -> int:
     if cal.method != "two_gamma":
         print("  NOTE: under-sampled -> identity fallback; model_delta will use raw p.")
     print("  NOTE: display-only calibrator; the calibrated p is never a model feature (II).")
+    print("  NOTE: fit samples are the latest full-history run = NOT out-of-sample (known leak,")
+    print("        074 research D7). Gamma is mildly optimistic; impact confined to model_delta.")
+    print("        OOF-faithful fix deferred to pipeline-activation (immutable calib manifest).")
     return 0
 
 

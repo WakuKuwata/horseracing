@@ -20,6 +20,7 @@ from ..deps import get_session
 from ..dispersion import (
     build_race_dispersion,
     build_race_divergence,
+    load_activation_calibrator,
     load_boundary,
     load_p_calibrator,
 )
@@ -155,10 +156,19 @@ def predictions(
     # a frozen boundary artifact (omitted when absent, F8); raw numbers always shown when q covers
     # the field. q missing/partial → unavailable, NO fallback to model p. model_delta = calibrated-p
     # vs q concentration (frozen two_gamma calibrator, omitted when absent); band stays q-only.
+    # Feature 076 US3: the two-gamma comes from the immutable manifest, generation-bound to the
+    # SELECTED run's model (057) and temporally gated (model_delta shown only for races after the
+    # fit window). Fail-open. Falls back to the legacy derived-JSON calibrator when no manifest is
+    # configured, so existing DISPERSION_PCAL_PATH deployments keep working.
+    _race = get_race(session, race_id)
+    p_cal = load_activation_calibrator(
+        active_model_version=run.model_version,
+        target_date=(_race.race_date if _race is not None else None),
+    ) or load_p_calibrator()
     race_dispersion = build_race_dispersion(
         qmap=qmap, pmap=pmap,
         odds_as_of=odds_as_of, odds_source=odds_source,
-        boundary=load_boundary(), p_calibrator=load_p_calibrator(),
+        boundary=load_boundary(), p_calibrator=p_cal,
     )
     # Feature 066 axis B: neutral p-vs-q divergence summary (suppressed when canonical_consistent
     # is false / q missing). model_version records which selected model's p is compared (057).

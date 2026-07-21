@@ -70,7 +70,12 @@ def load_p_calibrator(path: str | os.PathLike[str] | None = None) -> PCalibrator
     Path resolution: explicit arg → ``DISPERSION_PCAL_PATH`` env → none. Malformed/missing fails
     OPEN to None (model_delta is then omitted) — a missing calibrator is a benign display gap, not
     a correctness hazard (mirrors ``load_boundary``). The calibrator is a few floats (gamma_lo/hi/
-    pivot + version); apply is read-only/pure and never touches odds/q (p⊥q)."""
+    pivot + version); apply is read-only/pure and never touches odds/q (p⊥q).
+
+    Provenance caveat (constitution II, 074 research D7): the artifact this loads is fit on
+    full-history NON-OOS predictions (see ``training dispersion-pcal``), so its gamma is mildly
+    optimistic. That is tolerable here because model_delta is a display-only read-out; the
+    OOF-faithful fix (immutable calibration manifest) is deferred to pipeline-activation."""
     p = path or os.environ.get("DISPERSION_PCAL_PATH")
     if not p:
         return None
@@ -91,6 +96,42 @@ def load_p_calibrator(path: str | os.PathLike[str] | None = None) -> PCalibrator
         )
     except (OSError, ValueError, KeyError, TypeError):
         return None
+
+
+def load_activation_calibrator(
+    *, active_model_version: str, target_date, manifest_path: str | os.PathLike[str] | None = None,
+) -> PCalibrator | None:
+    """Feature 076 (US3): the dispersion two-gamma from the IMMUTABLE 074 manifest, else None.
+
+    Supersedes the derived-JSON ``load_p_calibrator``: the manifest is generation-bound (to the
+    SELECTED run's ``active_model_version`` — 057 model-switching aware, FR-020) and temporally
+    gated (``target_date > fit_through``, FR-021), so ``model_delta`` is shown ONLY for races the
+    manifest may legitimately calibrate — a real improvement over the old path that applied a
+    non-OOS calibrator to every race.
+
+    Path resolution: explicit arg → ``DISPERSION_CALIB_MANIFEST`` env → none. Like ``load_boundary``
+    this fails **OPEN** to None: a missing / invalid / out-of-scope / in-window manifest just omits
+    ``model_delta`` — a display gap, never a broken read (contrast betting/serving, which fail
+    CLOSED). ``attestation_verifier=None`` (D11: api has no ``training`` dependency; name + content-
+    addressed digest binding, strong binding rides with 077)."""
+    from horseracing_probability.calib_activation import (
+        ActivationError,
+        Profile,
+        load_calibration,
+    )
+    from horseracing_probability.calib_manifest import ManifestError
+
+    p = manifest_path or os.environ.get("DISPERSION_CALIB_MANIFEST")
+    if not p or target_date is None:
+        return None  # no manifest, or no race date to gate on → omit model_delta (fail-open)
+    try:
+        act = load_calibration(
+            p, active_model_version=active_model_version, target_date=target_date,
+            profile=Profile.PRODUCTION, attestation_verifier=None,
+        )
+    except (ActivationError, ManifestError, OSError):
+        return None  # fail-open: the display instrument must never break the read API
+    return act.two_gamma
 
 
 def _build_model_delta(

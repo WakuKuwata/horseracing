@@ -63,3 +63,26 @@ docker compose down -v         # volume も削除（DB 初期化）
 - `.env`・シークレットは repo / イメージに含めない（`.dockerignore` で除外）。
 - **deferred**: Kubernetes/Helm、クラウド固有、TLS 証明書の自動化、オートスケール、CI/CD、シークレット
   マネージャ、観測スタック（metrics/tracing/集約ログ）、DB backup 自動化、ライブ serving（未来レース）。
+
+## Feature 076: calibration-manifest activation (opt-in, read-only artifact)
+
+The immutable 074 calibration manifest is an **operator-supplied, read-only artifact**, not part of
+the image. Activation is **opt-in and default-OFF** — nothing changes unless a path explicitly asks
+for a manifest:
+
+- betting `recommend-serve` / `recommend-backfill`: `--calib-manifest <ABS_PATH> --calib-mode manifest-required`
+- serving `predict` / `predict-backfill`: same flags (stage-discount λ only; **WIN is byte-identical**)
+- api dispersion: set `DISPERSION_CALIB_MANIFEST=<ABS_PATH>` (display-only `model_delta`, **fail-open**)
+
+Rules:
+- The path must be **absolute** (relative paths break across the packages' differing cwds).
+- The manifest file is **never written by the app** — mount it read-only; the app only reads + verifies it.
+- betting/serving fail **closed** (a bad/out-of-scope/in-fit-window manifest = error, no silent
+  fallback); api dispersion fails **open** (omits `model_delta`, never breaks the read).
+- **fixture-first (this release)**: the strong `save_model_version`-overwrite binding (attestation
+  recompute) activates only with a REAL manifest whose `attestation_digest` matches the lgbm-063
+  artifacts. Until then every path binds by base-model name + content-addressed digest + scope +
+  temporal window. This is an explicit, time-boxed waiver — **do NOT enable manifest mode as a
+  production default**; the strong-binding-for-all + registry checksum enforcement lands in 077.
+- **deferred (076)**: live `refresh` / ops job argv do not yet thread the calib flags (T018); real
+  manifest generation (stage-λ OOF fit + `build_manifest` wiring) is the blocking follow-up.

@@ -50,6 +50,7 @@ def _manifest(*, evaluation: dict | None = None) -> dict:
                 "top3": 0.8765432109876543,
             },
         },
+        fit_through="2024-12-31",  # Feature 076 v2: required for the loader's temporal check
     )
 
 
@@ -123,3 +124,44 @@ def test_identity_fallback_stage_is_explicitly_representable():
         {"stage": "two_gamma_win", "method": "identity"}
     ]
     verify_manifest(manifest)
+
+
+# --- Feature 076 v2 activation-field validation (T004) ----------------------
+
+def test_v2_manifest_is_schema_version_2():
+    assert _manifest()["schema_version"] == 2
+
+
+def test_invalid_artifact_scope_rejected():
+    manifest = _manifest()
+    manifest["artifact_scope"] = "prod"  # not in {fixture, production}
+    with pytest.raises(ManifestError, match="invalid artifact_scope"):
+        verify_manifest(manifest)
+
+
+def test_non_bool_activation_eligible_rejected():
+    manifest = _manifest()
+    manifest["activation_eligible"] = "yes"
+    with pytest.raises(ManifestError, match="activation_eligible must be a boolean"):
+        verify_manifest(manifest)
+
+
+def test_invalid_fit_through_rejected():
+    manifest = _manifest()
+    manifest["fit_through"] = "not-a-date"
+    with pytest.raises(ManifestError, match="fit_through"):
+        verify_manifest(manifest)
+
+
+def test_stage_lambdas_missing_top3_rejected():
+    manifest = _manifest()
+    del manifest["full_precision_params"]["stage_lambdas"]["top3"]
+    with pytest.raises(ManifestError, match="stage_lambdas"):
+        verify_manifest(manifest)
+
+
+def test_v1_schema_version_rejected():
+    manifest = _manifest()
+    manifest["schema_version"] = 1
+    with pytest.raises(ManifestError, match="unknown schema_version"):
+        verify_manifest(manifest)

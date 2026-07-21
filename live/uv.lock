@@ -344,6 +344,7 @@ source = { editable = "." }
 dependencies = [
     { name = "horseracing-betting" },
     { name = "horseracing-db" },
+    { name = "horseracing-probability" },
     { name = "horseracing-scrape" },
     { name = "horseracing-serving" },
     { name = "psycopg", extra = ["binary"] },
@@ -361,6 +362,7 @@ dev = [
 requires-dist = [
     { name = "horseracing-betting", editable = "../betting" },
     { name = "horseracing-db", editable = "../db" },
+    { name = "horseracing-probability", editable = "../probability" },
     { name = "horseracing-scrape", editable = "../scrape" },
     { name = "horseracing-serving", editable = "../serving" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
@@ -481,6 +483,7 @@ dependencies = [
     { name = "horseracing-db" },
     { name = "horseracing-eval" },
     { name = "horseracing-features" },
+    { name = "horseracing-probability" },
     { name = "lightgbm" },
     { name = "numpy" },
     { name = "pandas" },
@@ -494,6 +497,7 @@ requires-dist = [
     { name = "horseracing-db", editable = "../db" },
     { name = "horseracing-eval", editable = "../eval" },
     { name = "horseracing-features", editable = "../features" },
+    { name = "horseracing-probability", editable = "../probability" },
     { name = "lightgbm", specifier = ">=4.3" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
