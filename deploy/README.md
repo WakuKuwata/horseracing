@@ -99,3 +99,22 @@ ADOPT (top2/top3 ECE 4-6× better, λ2≈0.818/λ3≈0.690). The manifest is `ac
 generalises the strong `save_model_version`-overwrite binding to every caller. Activating this
 manifest is a deliberate operator decision — it REMOVES the (leaky) two-gamma from betting/dispersion
 recommendations and switches serving display top2/top3 to the OOF-faithful λ.
+
+### Activating the serving stage-λ (078 verdict acted on)
+
+Practical-impact measurement on real data settled the priority: the **serving display stage-λ** is
+the valuable, low-risk change (top2/top3 ECE 4-6× better on OOF; reshapes displayed top3 by ~2pp,
+favorites −6pp), while the **betting two-gamma** removal is correct but ~no-op (γ≈1.0, p-shift 0.24pp).
+So activation targets serving display only; betting is left on its (near-identity) runtime path.
+
+The generated manifest ships **two-gamma identity** (REJECT — win/betting unchanged) + **stage λ2≈0.818
+λ3≈0.690** (ADOPT). WIN is byte-invariant either way. To apply it to FORWARD serving (it is temporally
+gated to races AFTER its `fit_through`; existing in-window predictions are never retroactively changed):
+
+- one-off / backfill:  `serving predict[-backfill] --calib-manifest <ABS_PATH> --calib-mode manifest-required`
+- ops per-race predict:  export `PREDICT_CALIB_MANIFEST=<ABS_PATH> PREDICT_CALIB_MODE=manifest-required`
+- live refresh:  export `REFRESH_CALIB_MANIFEST=<ABS_PATH> REFRESH_CALIB_MODE=manifest-required`
+
+Do NOT pass it to `betting recommend` unless you also intend the (cosmetic) two-gamma removal there.
+The activation decision itself is recorded append-only in `artifacts/oof/promotions.jsonl`
+(`training.promotion.record_promotion`). The do-not-default-ON waiver otherwise stands until 077.
