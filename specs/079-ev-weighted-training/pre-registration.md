@@ -12,6 +12,29 @@ successful outcome.** This is a bounded kill-test, not a shipping feature.
 (codex, NO-GO as originally proposed → conditional-GO for exactly this scoped form; internal
 independent review agreed). Origin: dijzpeb「予測精度を上げたのに回収率が下がる…」(#52).
 
+## Amendment A1 — pre-run refinements from the codex implementation review (before any run)
+
+Recorded for transparency; made **before the first run** (no results seen), after a codex review
+of the implementation surfaced under-specified / fail-open guards. These tighten the locked design;
+none relaxes a gate.
+- **Tail guard metric (§4.1):** the tail non-degradation guard is evaluated as **calibration-in-
+  the-large** `(ΣE − ΣO)/N` on each mask (signed; >0 = over-prediction), guarded as
+  `cand ≤ base + 0.02`. This replaces the ambiguous "O/E ratio" wording, which fails open when
+  observed winners = 0. The `E/O` ratio is still reported as a diagnostic. Masks use odds/q only
+  (identical for both arms → baseline-defined). A mask with N=0 in both arms is not evaluable
+  (no tail exposure); an evaluable-but-undefined value fails closed.
+- **Verdict ordering:** a MUST-guard failure returns **REJECT even when underpowered** (a
+  catastrophic tail/NLL failure is decisive regardless of sample size).
+- **Power check:** the 40-day minimum is checked **per arm** (bet race-days), and bootstrap
+  replicates with zero stake in either arm are dropped (`b_used` recorded).
+- **Empty cap-eligible set:** a complete-field race whose whole field is odds≥21 is **neutral
+  (α=1)**, excluded from mean-1 normalisation (matches §2.2).
+- **Diagnostics deferred (non-MUST, "reported" only):** top2/top3 non-inferiority, effective
+  sample size, leave-one-winner-out recovery, threshold-crossing sensitivity, tail day-cluster CI
+  are NOT computed in this artifact-only run (listed in the report's `deferred_diagnostics`). The
+  MUST guards (tail calibration-in-the-large, winner-NLL non-inferiority, α≡1 byte-parity) are
+  fully implemented.
+
 ---
 
 ## 1. Hypothesis & honest prior
