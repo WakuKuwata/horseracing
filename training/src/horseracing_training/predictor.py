@@ -38,6 +38,10 @@ from .dataset import (
     TrainingMatrix,
     build_training_matrix,
 )
+from .ev_weight import CENTER as EV_CENTER
+from .ev_weight import ODDS_CAP as EV_ODDS_CAP
+from .ev_weight import TAU as EV_TAU
+from .ev_weight import assert_race_constant, build_race_weights
 from .hpo import select_params_cv
 from .market_offset import METADATA as MARKET_OFFSET_METADATA
 from .market_offset import offsets_by_race
@@ -76,6 +80,8 @@ class LightGBMPredictor:
         market_offset: bool = False,
         calibration_split_unit: str = LEGACY_CALIBRATION_SPLIT_UNIT,
         restrict_features: tuple[str, ...] | None = None,
+        ev_weight: bool = False,
+        oof_p: dict | None = None,
     ) -> None:
         self.session = session
         self.seed = seed
@@ -118,6 +124,20 @@ class LightGBMPredictor:
             raise ValueError("market_offset requires a softmax objective (cond_logit/pl_topk)")
         self.market_offset = market_offset
         if market_offset:
+            self.is_leaky_reference = True
+
+        # Feature 079: EV-weighted training (retrospective kill-test). When on, model-fit rows
+        # carry a per-race scalar weight from OOF-EV; the model is market-aware, so it is a leaky
+        # reference (never active/default). oof_p is REQUIRED when ev_weight is on (fail-closed).
+        # Default off keeps every existing path byte-identical (weights=None in WinModel).
+        self.ev_weight = ev_weight
+        self.oof_p = oof_p
+        if ev_weight:
+            if oof_p is None:
+                raise ValueError(
+                    "ev_weight=True requires a frozen OOF-p source (oof_p); none provided "
+                    "(fail-closed — no weights without out-of-fold probabilities)"
+                )
             self.is_leaky_reference = True
 
         self._data: TrainingMatrix | None = None
@@ -251,11 +271,43 @@ class LightGBMPredictor:
         calib_offsets = train_offsets[calib_mask] if (
             train_offsets is not None and calib_mask.any()
         ) else None
+        # Feature 079: per-race EV weight on the model-fit rows only (calib rows are held out for
+        # calibration, never reweighted). OOF p is looked up per (race_id, horse_id) from the
+        # frozen bundle; rows without coverage -> NaN -> that race is complete-field-neutral.
+        model_weights = None
+        ev_weight_info: dict | None = None
+        if self.ev_weight:
+            m_rid = model_df["race_id"].to_numpy()
+            m_hid = model_df["horse_id"].to_numpy()
+            m_oof = np.array(
+                [self.oof_p.get((r, h), np.nan) for r, h in zip(m_rid, m_hid, strict=True)],
+                dtype=float,
+            )
+            m_odds = model_df[MKT_ODDS].to_numpy()
+            model_weights = build_race_weights(
+                m_rid, m_oof, m_odds, center=EV_CENTER, tau=EV_TAU, odds_cap=EV_ODDS_CAP
+            )
+            assert_race_constant(m_rid, model_weights)  # codex #1: reject per-horse weights
+            n_races = int(np.unique(m_rid).size)
+            informative = int(np.sum(model_weights != 1.0))  # rows in reweighted races
+            ev_weight_info = {
+                "scheme": "evw-v1",
+                "center": EV_CENTER,
+                "tau": EV_TAU,
+                "odds_cap": EV_ODDS_CAP,
+                "n_model_races": n_races,
+                "oof_coverage_rows": int(np.sum(np.isfinite(m_oof))),
+                "informative_rows": informative,
+                "weight_mean": float(np.mean(model_weights)),
+                "weight_min": float(np.min(model_weights)),
+                "weight_max": float(np.max(model_weights)),
+            }
         self.win_model_ = WinModel(
             seed=self.seed, params=params, objective=self.objective
         ).fit(
             model_X, y_model, categorical_cols=cat_for_model,
             group_ids=model_groups, ranks=model_ranks, offsets=model_offsets,
+            weights=model_weights,
         )
 
         if calib_mask.any():
@@ -302,6 +354,10 @@ class LightGBMPredictor:
             self.fit_info_["market_offset"] = dict(MARKET_OFFSET_METADATA)
             self.fit_info_["market_offset_excluded_races"] = offset_excluded_races
             self.fit_info_["market_offset_excluded_rows"] = offset_excluded_rows
+        if self.ev_weight:
+            # Feature 079 provenance: the model is market-aware via the training weight.
+            self.fit_info_["ev_weight"] = ev_weight_info
+            self.fit_info_["is_leaky_reference"] = True
 
     def _select_params(self, model_df, data: TrainingMatrix, cat_for_model: list[str]) -> dict:
         if not self.hpo:

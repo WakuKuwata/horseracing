@@ -44,6 +44,13 @@ class ModelRecipe:
     seed: int = 42
     drop_features: tuple[str, ...] = ()
     market_offset: bool = False
+    #: Feature 079: EV-weighted training — the model-fit rows carry a per-RACE scalar weight
+    #: (α_r from OOF-EV, see ev_weight.py). This makes the model explicitly MARKET-AWARE (the
+    #: weight reads odds), so it is a retrospective, artifact-only kill-test — never active/default.
+    #: The frozen OOF-p source is supplied to RecipeFactory (fit-scope), not hashed here.
+    #: Default False is OMITTED from recipe_hash (back-compat), so every pre-079 recipe is
+    #: byte-identical; True yields a distinct recipe_hash/model identity.
+    ev_weight: bool = False
     label: str = ""
 
     def __post_init__(self) -> None:
@@ -79,6 +86,9 @@ class ModelRecipe:
         d = self.meta()
         if d.get("calibration_split_unit") == LEGACY_CALIBRATION_SPLIT_UNIT:
             d = {k: v for k, v in d.items() if k != "calibration_split_unit"}
+        # Feature 079: default (off) EV-weighting is omitted so pre-079 recipes hash identically.
+        if d.get("ev_weight") is False:
+            d = {k: v for k, v in d.items() if k != "ev_weight"}
         return stable_hash(d)
 
 
@@ -99,6 +109,12 @@ class RecipeFactory:
     #: model identity) — the restriction is recorded via the legacy attestation the OOF bundle
     #: references.
     restrict_features: tuple[str, ...] | None = None
+    #: Feature 079: frozen OOF win-prob source {(race_id, horse_id) -> p} for EV-weight
+    #: construction, required iff recipe.ev_weight is True (fail-closed in the predictor). Not
+    #: part of recipe_hash (fit-scope; referenced by digest in the evidence artifact). None when
+    #: ev_weight is off. The SAME frozen bundle is used across all folds (strict-past guarantee
+    #: is the bundle's, not the weighted fit's — 079 never iterates weights from itself).
+    oof_p: dict | None = None
     _pred: LightGBMPredictor | None = field(default=None, init=False, repr=False)
 
     @property
@@ -123,6 +139,8 @@ class RecipeFactory:
                 market_offset=self.recipe.market_offset,
                 calibration_split_unit=self.recipe.calibration_split_unit,
                 restrict_features=self.restrict_features,
+                ev_weight=self.recipe.ev_weight,
+                oof_p=self.oof_p,
             )
         self._pred.fit(train_races)
         return self._pred
