@@ -61,18 +61,24 @@ def collect_paired_rows(
             year = day.year
             bpred = base_pred.predict_race(er.context)
             cpred = cand_pred.predict_race(er.context)
+            # codex M9: include EVERY started horse (unpriced -> odds=None) so winner-NLL and the
+            # tail-calibration masks see the complete field; the betting policy filters on odds.
             for h in er.context.started_horses:
-                o = h.result_market.odds
-                if o is None or o <= 0:
-                    continue
-                won = 1 if h.horse_id in winners else 0
                 bp = bpred.get(h.horse_id)
                 cp = cpred.get(h.horse_id)
+                # codex H7: both arms predict the same race — a missing prediction is an anomaly,
+                # not a reason to silently drop the horse from one arm and re-pair the other.
                 if bp is None or cp is None:
-                    continue
+                    raise ValueError(
+                        f"paired collection: horse {h.horse_id} in race {rid} missing from "
+                        f"{'baseline' if bp is None else 'candidate'} predictions (fail-closed)"
+                    )
+                o = h.result_market.odds
+                odds = float(o) if (o is not None and o > 0) else None
+                won = 1 if h.horse_id in winners else 0
                 common = {
-                    "race_id": rid, "year": year, "race_day": str(day),
-                    "odds": float(o), "won": won,
+                    "race_id": rid, "horse_id": h.horse_id, "year": year,
+                    "race_day": str(day), "odds": odds, "won": won,
                 }
                 base_rows.append({**common, "p": float(bp.win)})
                 cand_rows.append({**common, "p": float(cp.win)})
@@ -100,16 +106,35 @@ def run_ev_weight_gate(
     first_valid_year: int = 2008,
     include_jump: bool = False,
     num_threads: int = 1,
-):
-    """Orchestrate the single retrospective run. If ``bundle_payload`` is None the frozen OOF
-    bundle is generated from ``active_dir`` (long); otherwise the supplied payload is reused."""
-    att = attestation_from_model_dir(active_dir, code_sha=code_sha())
+) -> dict:
+    """Orchestrate the single retrospective run. Returns an evidence dict {provenance, report}.
+
+    If ``bundle_payload`` is None the frozen OOF bundle is generated from ``active_dir`` (long);
+    otherwise the supplied payload is REUSED only if it was produced by the SAME attested base
+    model (codex B2, fail-closed) — a bundle from another recipe/window would silently dilute the
+    treatment.
+    """
+    from horseracing_probability.oof_bundle import compute_bundle_digest
+
+    from .ev_weight import CENTER, ODDS_CAP, TAU
+
+    sha = code_sha()
+    att = attestation_from_model_dir(active_dir, code_sha=sha)
     if bundle_payload is None:
         _, bundle_payload = generate_oof_bundle(
             session, active_dir=active_dir, out_root=out_root,
             date_from=date_from, date_to=date_to, first_valid_year=first_valid_year,
             num_threads=num_threads,
         )
+    else:
+        # codex B2: a reused bundle MUST come from the same attested base model.
+        if bundle_payload.get("attestation_digest") != att["attestation_digest"]:
+            raise ValueError(
+                "reused OOF bundle attestation_digest "
+                f"{bundle_payload.get('attestation_digest')!r} != base model "
+                f"{att['attestation_digest']!r} (fail-closed — wrong bundle would dilute the "
+                "treatment)"
+            )
     oof_p = oof_p_from_payload(bundle_payload)
 
     base_factory = factory_from_attestation(session, att)
@@ -123,4 +148,25 @@ def run_ev_weight_gate(
         base_factory, cand_factory, eval_races,
         first_valid_year=first_valid_year, jump_ids=jump,
     )
-    return evaluate_ev_weight_gate(base_rows, cand_rows)
+    report = evaluate_ev_weight_gate(base_rows, cand_rows)
+
+    # codex B3: content-addressed evidence provenance (the model is market-aware / artifact-only).
+    provenance = {
+        "feature": "079-ev-weighted-training",
+        "verdict": report.verdict,
+        "attestation_digest": att["attestation_digest"],
+        "oof_bundle_digest": compute_bundle_digest(bundle_payload),
+        "base_recipe_hash": base_factory.recipe_hash,
+        "candidate_recipe_hash": cand_factory.recipe_hash,
+        "weight_scheme": "evw-v1",
+        "weight_params": {"center": CENTER, "tau": TAU, "odds_cap": ODDS_CAP},
+        "odds": {"source": "race_horses.odds", "temporal_class": "closing"},
+        "probability_stage": "calibrated_win_prob",
+        "date_from": str(date_from) if date_from else None,
+        "date_to": str(date_to) if date_to else None,
+        "first_valid_year": first_valid_year,
+        "include_jump": include_jump,
+        "num_threads": num_threads,
+        "code_sha": sha,
+    }
+    return {"provenance": provenance, "report": dataclasses.asdict(report)}

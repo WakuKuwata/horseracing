@@ -63,7 +63,12 @@ def build_race_weights(
     if not (len(p) == len(o) == n):
         raise ValueError("race_ids, oof_p, odds must be the same length")
 
-    valid = np.isfinite(p) & np.isfinite(o)  # row has both OOF p and odds
+    # a row is valid only with a finite probability in [0,1] AND a finite POSITIVE odds (codex
+    # M10; matches the 060 market seam which rejects non-positive odds). Anything else -> the
+    # whole race becomes neutral (complete-field rule), never a partial-field maximum.
+    valid = (
+        np.isfinite(p) & (p >= 0.0) & (p <= 1.0) & np.isfinite(o) & (o > 0.0)
+    )
     ev = np.where(valid, p * o, np.nan)
     cap_ok = valid & (o < odds_cap)  # cap-eligible rows contribute to the max
 
@@ -71,24 +76,26 @@ def build_race_weights(
     codes, uniq = pd.factorize(race_ids, sort=False)
     n_races = len(uniq)
 
-    # informative race iff EVERY row in it is valid (complete field) -> no partial-field max
+    # complete-field iff EVERY row in the race is valid (no partial-field max)
     rows_per_race = np.bincount(codes, minlength=n_races)
     valid_per_race = np.bincount(codes, weights=valid.astype(float), minlength=n_races)
-    informative = valid_per_race == rows_per_race  # all rows valid
+    complete = valid_per_race == rows_per_race
+    has_cap_eligible = np.bincount(codes, weights=cap_ok.astype(float), minlength=n_races) > 0
 
-    # ev_r = max EV over cap-eligible rows; -inf sentinel where no cap-eligible row
+    # A race is INFORMATIVE (reweighted) only if it is complete-field AND has at least one
+    # cap-eligible (bettable) horse. A complete race whose whole field is capped out has no EV
+    # signal -> NEUTRAL (alpha=1), per pre-registration 079 sec 2.2 (codex B4). Neutral races are
+    # excluded from the mean-1 normalisation so they do not shift the informative scale.
+    informative = complete & has_cap_eligible
+
     ev_for_max = np.where(cap_ok, ev, -np.inf)
     race_max = np.full(n_races, -np.inf)
     np.maximum.at(race_max, codes, ev_for_max)
-    ev_r = np.where(np.isfinite(race_max), race_max, 0.0)  # empty cap-set -> 0.0
+    ev_r = np.where(np.isfinite(race_max), race_max, 0.0)
 
     raw_r = 1.0 + _sigmoid((ev_r - center) / tau)
 
-    # normalise informative races to mean 1; neutral races forced to exactly 1.0
-    if informative.any():
-        mean_raw = float(raw_r[informative].mean())
-    else:
-        mean_raw = 1.0
+    mean_raw = float(raw_r[informative].mean()) if informative.any() else 1.0
     alpha_r = np.where(informative, raw_r / mean_raw, 1.0)
 
     return alpha_r[codes].astype(float)
@@ -105,6 +112,10 @@ def assert_race_constant(race_ids, weights, *, rtol: float = 0.0, atol: float = 
     w = np.asarray(weights, dtype=float)
     if len(race_ids) != len(w):
         raise ValueError("race_ids and weights length mismatch")
+    # codex M11: non-finite weights must fail closed (a NaN/inf spread compares False and would
+    # otherwise slip through the constancy check below).
+    if not np.isfinite(w).all():
+        raise ValueError("weights contain non-finite values (fail-closed)")
     codes, uniq = pd.factorize(race_ids, sort=False)
     n_races = len(uniq)
     wmin = np.full(n_races, np.inf)

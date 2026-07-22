@@ -494,7 +494,6 @@ def _ev_weight_gate_eval(session: Session, args) -> int:
     reuses) the frozen OOF bundle, refits baseline (unweighted) vs candidate (EV-weighted) on
     identical folds, and scores the paired recovery gate. Artifact-only: writes evidence JSON,
     never a model_version row."""
-    import dataclasses
     import json
 
     from .ev_weight_run import run_ev_weight_gate
@@ -503,7 +502,7 @@ def _ev_weight_gate_eval(session: Session, args) -> int:
     if getattr(args, "oof_bundle", None):
         from horseracing_probability.oof_bundle import read_bundle
         bundle_payload = read_bundle(args.oof_bundle)
-    rep = run_ev_weight_gate(
+    evidence = run_ev_weight_gate(
         session,
         active_dir=args.active_dir,
         out_root=args.out_root,
@@ -513,20 +512,25 @@ def _ev_weight_gate_eval(session: Session, args) -> int:
         first_valid_year=args.first_valid_year,
         include_jump=args.include_jump,
     )
-    print(f"ev-weight-gate-eval verdict={rep.verdict} cap={rep.cap} thr={rep.threshold} "
-          f"races={rep.n_races} days={rep.n_days}")
-    print(f"  baseline : n_bets={rep.base.n_bets:7d} recovery={rep.base.recovery:.4f} "
-          f"winner_nll={rep.base.winner_nll:.4f}")
-    print(f"  candidate: n_bets={rep.cand.n_bets:7d} recovery={rep.cand.recovery:.4f} "
-          f"winner_nll={rep.cand.winner_nll:.4f}")
-    ci = f"[{rep.ci_low:.4f}, {rep.ci_high:.4f}]" if rep.ci_low is not None else "undefined"
-    print(f"  Δrecovery={rep.delta:+.4f}  95%CI={ci}  folds_improved="
-          f"{rep.n_folds_improved}/{rep.n_folds}  worst_fold={rep.worst_fold_delta:+.4f}")
-    print(f"  MUST guards: winner_nll_ok={rep.winner_nll_ok}  tail_ok={rep.tail_ok}")
-    print(f"  NOTE: {rep.note}")
+    rep = evidence["report"]
+    base, cand = rep["base"], rep["cand"]
+    print(f"ev-weight-gate-eval verdict={rep['verdict']} cap={rep['cap']} thr={rep['threshold']} "
+          f"races={rep['n_races']} days={rep['n_days']} b_used={rep['b_used']}")
+    print(f"  baseline : n_bets={base['n_bets']:7d} days={base['n_bet_days']:4d} "
+          f"recovery={base['recovery']:.4f} winner_nll={base['winner_nll']:.4f}")
+    print(f"  candidate: n_bets={cand['n_bets']:7d} days={cand['n_bet_days']:4d} "
+          f"recovery={cand['recovery']:.4f} winner_nll={cand['winner_nll']:.4f}")
+    ci = (f"[{rep['ci_low']:.4f}, {rep['ci_high']:.4f}]"
+          if rep["ci_low"] is not None else "undefined")
+    print(f"  Δrecovery={rep['delta']:+.4f}  95%CI={ci}  folds_improved="
+          f"{rep['n_folds_improved']}/{rep['n_folds']}  worst_fold={rep['worst_fold_delta']:+.4f}")
+    print(f"  MUST guards: winner_nll_ok={rep['winner_nll_ok']}  tail_ok={rep['tail_ok']}  "
+          f"selection_jaccard={rep['selection_jaccard']:.3f}")
+    print(f"  deferred diagnostics: {', '.join(rep['deferred_diagnostics'])}")
+    print(f"  NOTE: {rep['note']}")
     if getattr(args, "out_json", None):
         with open(args.out_json, "w") as fh:
-            json.dump(dataclasses.asdict(rep), fh, indent=2, default=str)
+            json.dump(evidence, fh, indent=2, default=str)
         print(f"  evidence artifact -> {args.out_json}")
     return 0
 

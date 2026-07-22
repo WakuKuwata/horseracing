@@ -43,9 +43,10 @@ def test_collect_paired_rows_and_gate(session):
     base_rows, cand_rows = collect_paired_rows(base, cand, races, first_valid_year=2008)
 
     assert len(base_rows) == len(cand_rows) > 0
-    assert {"race_id", "year", "race_day", "p", "odds", "won"} <= set(base_rows[0])
-    # both arms saw the SAME valid races (paired)
-    assert [r["race_id"] for r in base_rows] == [r["race_id"] for r in cand_rows]
+    assert {"race_id", "horse_id", "year", "race_day", "p", "odds", "won"} <= set(base_rows[0])
+    # both arms saw the SAME (race, horse) population (paired)
+    assert ([(r["race_id"], r["horse_id"]) for r in base_rows]
+            == [(r["race_id"], r["horse_id"]) for r in cand_rows])
     # OOS only: 2008 + 2009 valid folds (2007 is the first train-only year)
     assert {r["year"] for r in base_rows} == {2008, 2009}
 

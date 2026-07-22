@@ -143,9 +143,45 @@ def test_all_neutral_when_no_informative_race():
     assert np.array_equal(w, np.ones(2))
 
 
+def test_all_capped_race_is_neutral():
+    # A: complete field but EVERY horse odds>=21 -> no cap-eligible -> NEUTRAL 1.0 (codex B4),
+    # excluded from normalisation. B (high) / C (low) are the informative pair.
+    rid = np.array(["A", "A", "B", "B", "C", "C"])
+    p = np.array([0.30, 0.20, 0.30, 0.10, 0.10, 0.10])
+    o = np.array([25.0, 30.0, 5.0, 3.0, 4.0, 2.0])
+    w = build_race_weights(rid, p, o)
+    assert w[rid == "A"][0] == 1.0 and w[rid == "A"][1] == 1.0
+    assert w[rid == "B"][0] > 1.0 and w[rid == "C"][0] < 1.0
+    assert abs((w[rid == "B"][0] + w[rid == "C"][0]) / 2 - 1.0) < 1e-12
+
+
+def test_nonpositive_odds_makes_race_neutral():
+    # zero/negative odds are invalid -> incomplete field -> neutral (codex M10)
+    rid = np.array(["A", "A", "B", "B"])
+    p = np.array([0.30, 0.10, 0.30, 0.10])
+    o = np.array([5.0, 0.0, 4.0, -1.0])  # A has a 0-odds row; B has a negative-odds row
+    w = build_race_weights(rid, p, o)
+    assert np.array_equal(w, np.ones(4))
+
+
+def test_prob_out_of_range_makes_race_neutral():
+    rid = np.array(["A", "A"])
+    p = np.array([1.5, 0.2])  # p>1 invalid -> incomplete -> neutral
+    o = np.array([5.0, 3.0])
+    w = build_race_weights(rid, p, o)
+    assert np.array_equal(w, np.ones(2))
+
+
 def test_assert_race_constant_rejects_per_horse_weights():
     rid = np.array(["A", "A", "B"])
     with pytest.raises(ValueError, match="not constant within race"):
         assert_race_constant(rid, np.array([1.0, 1.2, 0.8]))  # A rows differ
     # constant per race -> ok
     assert_race_constant(rid, np.array([1.1, 1.1, 0.9]))
+
+
+def test_assert_race_constant_rejects_non_finite():
+    rid = np.array(["A", "A"])
+    for bad in ([np.nan, np.nan], [np.inf, np.inf], [1.0, np.nan]):
+        with pytest.raises(ValueError, match="non-finite"):
+            assert_race_constant(rid, np.array(bad))
