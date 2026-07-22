@@ -29,9 +29,9 @@ description: "Task list for OOF Calibration Manifest Generation (078)"
 
 - [X] T013 OOF-replay parity 検証(`training/tests/integration/test_oof_replay_parity.py` + CLI `verify-manifest-parity`): OOF win vector を production 純 apply(engine two_gamma / serving stage）へ replay → per-horse top2/top3 完全一致・**win byte 不変**・Σ≈2/3・単調性・identity byte parity(D8)。production persisted predictions で「改善」再評価しない。
 - [X] T014 別 promotion record(append-only・`training/`): candidate manifest → promoted の分離記録(どの manifest を production で有効化したか)。DB schema 不変(disk artifact)。
-- [~] T015 実 DB full OOF job(operator・手動): 実 lgbm-063 で `generate_oof_bundle`(数時間)→ `generate-manifest` → THE production manifest。結果(γ/λ・verdict・fit_through・digest)を plan/summary に記録。
-- [ ] T016 実 γ/λ で 076 gate 再走(operator): full-precision parity・digest token・runtime fit 非参照・全 entry path・fail-closed。実 manifest で win byte-parity 再確認。
-- [ ] T017 [P] ruff / 全パッケージ回帰(activation OFF 既定で緑・FR-015 相当=生成は既存 serving/betting/api を変えない)。memory/CLAUDE 整合更新・deploy README の do-not-default-ON waiver を「実 manifest 検証後に解除可」に更新。
+- [X] T015 実 DB full OOF job(operator・手動): 実 lgbm-063 で `generate_oof_bundle`(数時間)→ `generate-manifest` → THE production manifest。結果(γ/λ・verdict・fit_through・digest)を plan/summary に記録。
+- [X] T016 実 γ/λ で 076 gate 再走(operator): full-precision parity・digest token・runtime fit 非参照・全 entry path・fail-closed。実 manifest で win byte-parity 再確認。
+- [X] T017 [P] ruff / 全パッケージ回帰(activation OFF 既定で緑・FR-015 相当=生成は既存 serving/betting/api を変えない)。memory/CLAUDE 整合更新・deploy README の do-not-default-ON waiver を「実 manifest 検証後に解除可」に更新。
 
 **注記**: Phase 1 は自己完結(fixture テスト可)。Phase 2 が manifest v3 で最大。Phase 3 は operator の長時間ジョブ。
 prospective shadow(post-activation confirmatory)は 065 基盤で運用蓄積後=078 スコープ外。
