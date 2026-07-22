@@ -86,3 +86,16 @@ Rules:
   production default**; the strong-binding-for-all + registry checksum enforcement lands in 077.
 - **deferred (076)**: live `refresh` / ops job argv do not yet thread the calib flags (T018); real
   manifest generation (stage-λ OOF fit + `build_manifest` wiring) is the blocking follow-up.
+
+### Feature 078 update: a REAL OOF calibration manifest now exists
+
+`training generate-manifest` (078) produced the first real content-addressed manifest from a
+full-history (2008-2026) OOF bundle. **Decisive verdict**: two-gamma REJECT (lgbm-063 win is already
+near-perfectly calibrated on honest OOF, ECE 3e-4 → two-gamma would make it worse), stage-discount
+ADOPT (top2/top3 ECE 4-6× better, λ2≈0.818/λ3≈0.690). The manifest is `activation_eligible=True`
+(two-gamma identity + fitted stage λ) and passes the loader + replay-parity + temporal checks.
+
+**The do-not-default-ON waiver still stands**: activation stays opt-in and off by default until 077
+generalises the strong `save_model_version`-overwrite binding to every caller. Activating this
+manifest is a deliberate operator decision — it REMOVES the (leaky) two-gamma from betting/dispersion
+recommendations and switches serving display top2/top3 to the OOF-faithful λ.
