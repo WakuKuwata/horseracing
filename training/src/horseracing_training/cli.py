@@ -489,6 +489,48 @@ def _policy_gate_eval(session: Session, args) -> int:
     return 0
 
 
+def _ev_weight_gate_eval(session: Session, args) -> int:
+    """Feature 079: the single pre-registered retrospective EV-weight kill-test. Generates (or
+    reuses) the frozen OOF bundle, refits baseline (unweighted) vs candidate (EV-weighted) on
+    identical folds, and scores the paired recovery gate. Artifact-only: writes evidence JSON,
+    never a model_version row."""
+    import dataclasses
+    import json
+
+    from .ev_weight_run import run_ev_weight_gate
+
+    bundle_payload = None
+    if getattr(args, "oof_bundle", None):
+        from horseracing_probability.oof_bundle import read_bundle
+        bundle_payload = read_bundle(args.oof_bundle)
+    rep = run_ev_weight_gate(
+        session,
+        active_dir=args.active_dir,
+        out_root=args.out_root,
+        bundle_payload=bundle_payload,
+        date_from=args.from_,
+        date_to=args.to,
+        first_valid_year=args.first_valid_year,
+        include_jump=args.include_jump,
+    )
+    print(f"ev-weight-gate-eval verdict={rep.verdict} cap={rep.cap} thr={rep.threshold} "
+          f"races={rep.n_races} days={rep.n_days}")
+    print(f"  baseline : n_bets={rep.base.n_bets:7d} recovery={rep.base.recovery:.4f} "
+          f"winner_nll={rep.base.winner_nll:.4f}")
+    print(f"  candidate: n_bets={rep.cand.n_bets:7d} recovery={rep.cand.recovery:.4f} "
+          f"winner_nll={rep.cand.winner_nll:.4f}")
+    ci = f"[{rep.ci_low:.4f}, {rep.ci_high:.4f}]" if rep.ci_low is not None else "undefined"
+    print(f"  Δrecovery={rep.delta:+.4f}  95%CI={ci}  folds_improved="
+          f"{rep.n_folds_improved}/{rep.n_folds}  worst_fold={rep.worst_fold_delta:+.4f}")
+    print(f"  MUST guards: winner_nll_ok={rep.winner_nll_ok}  tail_ok={rep.tail_ok}")
+    print(f"  NOTE: {rep.note}")
+    if getattr(args, "out_json", None):
+        with open(args.out_json, "w") as fh:
+            json.dump(dataclasses.asdict(rep), fh, indent=2, default=str)
+        print(f"  evidence artifact -> {args.out_json}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="horseracing_training")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -628,6 +670,23 @@ def main(argv: list[str] | None = None) -> int:
                      help="include mis-labelled jump races (default: excluded)")
     pge.add_argument("--seed", type=int, default=42)
     pge.add_argument("--database-url", default=None)
+
+    # Feature 079: the single pre-registered retrospective EV-weight kill-test (artifact-only).
+    ewg = sub.add_parser("ev-weight-gate-eval",
+                         help="079: paired baseline vs EV-weighted candidate recovery gate")
+    ewg.add_argument("--active-dir", required=True,
+                     help="base model dir (legacy attestation) for OOF + recipe-faithful arms")
+    ewg.add_argument("--out-root", required=True,
+                     help="content-addressed OOF-bundle output root")
+    ewg.add_argument("--oof-bundle", default=None,
+                     help="reuse a pre-generated OOF bundle path (skip the long generation step)")
+    ewg.add_argument("--from", dest="from_", type=_parse_date, default=None)
+    ewg.add_argument("--to", type=_parse_date, default=None)
+    ewg.add_argument("--first-valid-year", type=int, default=2008)
+    ewg.add_argument("--include-jump", action="store_true",
+                     help="include mis-labelled jump races (default: excluded)")
+    ewg.add_argument("--out-json", default=None, help="write the evidence report JSON here")
+    ewg.add_argument("--database-url", default=None)
 
     # Feature 057: set human-readable purpose metadata on a model (display-only; NOT adoption).
     # Omitted arg = leave unchanged; empty string = clear to NULL. Never touches adoption_status.
@@ -812,6 +871,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _policy_gate_eval(session, args)
+    if args.command == "ev-weight-gate-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _ev_weight_gate_eval(session, args)
     if args.command == "register-market-model":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:

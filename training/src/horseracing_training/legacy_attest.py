@@ -522,6 +522,10 @@ class AttestedRecipeFactory(RecipeFactory):
                 # current features-018 schema (069 additive parity => byte-faithful). Fail-closed if
                 # any attested column is absent. This makes the order check below pass faithfully.
                 restrict_features=self.ordered_feature_columns,
+                # Feature 079: forward the (inherited) EV-weight config so the candidate arm of the
+                # paired gate is recipe-faithful. Off by default => byte-identical to pre-079.
+                ev_weight=self.recipe.ev_weight,
+                oof_p=self.oof_p,
             )
         self._pred.fit(train_races)
         actual_columns = tuple(self._pred.feature_cols_ or ())
