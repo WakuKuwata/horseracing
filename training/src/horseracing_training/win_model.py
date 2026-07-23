@@ -65,7 +65,18 @@ class WinModel:
         group_ids=None,
         ranks=None,
         offsets=None,
+        weights=None,
     ) -> WinModel:
+        """Fit the win model.
+
+        Feature 079: ``weights`` is an optional row-aligned LightGBM sample-weight vector.
+        ``weights=None`` is BYTE-IDENTICAL to the pre-079 path (Dataset weight defaults to
+        None → the objectives' ``get_weight()`` multiply is a no-op). The EV-weighting
+        experiment passes a weight that is *constant within each race* (a per-race scalar
+        α_r), which keeps the PL loss a valid weighted likelihood L_r'=α_r·L_r; that
+        race-constancy invariant is enforced + tested where the weight is BUILT (leak/
+        validity boundary), not here — this primitive just threads a generic per-row weight.
+        """
         self.feature_cols_ = list(X.columns)
         if offsets is not None and self.objective not in self.SOFTMAX_OBJECTIVES:
             raise ValueError("offsets require a softmax objective (cond_logit/pl_topk)")
@@ -82,7 +93,7 @@ class WinModel:
         self._constant = None
         cat = [c for c in (categorical_cols or []) if c in X.columns]
         if self.objective in self.SOFTMAX_OBJECTIVES:
-            self._fit_softmax(X, y, cat, group_ids, ranks, offsets)
+            self._fit_softmax(X, y, cat, group_ids, ranks, offsets, weights)
         else:
             clf = lgb.LGBMClassifier(
                 random_state=self.seed,
@@ -92,11 +103,12 @@ class WinModel:
                 verbose=-1,
                 **self.params,
             )
-            clf.fit(X, y, categorical_feature=cat or "auto")
+            w = None if weights is None else np.asarray(weights, dtype=float)
+            clf.fit(X, y, sample_weight=w, categorical_feature=cat or "auto")
             self.booster_ = clf
         return self
 
-    def _fit_softmax(self, X, y, cat, group_ids, ranks, offsets=None) -> None:
+    def _fit_softmax(self, X, y, cat, group_ids, ranks, offsets=None, weights=None) -> None:
         if group_ids is None:
             raise ValueError(f"{self.objective} objective requires group_ids (race ids)")
         if self.objective == "pl_topk" and ranks is None:
@@ -108,6 +120,8 @@ class WinModel:
         gsizes = group_sizes_from_race_ids(np.asarray(group_ids)[order])
         # Feature 060: offsets are sorted with the same order so they stay row-aligned
         off_sorted = np.asarray(offsets, dtype=float)[order] if offsets is not None else None
+        # Feature 079: sample weights sorted with the same order (row-aligned to Xs/ys).
+        w_sorted = np.asarray(weights, dtype=float)[order] if weights is not None else None
         if self.objective == "pl_topk":
             obj = pl_topk_objective(gsizes, np.asarray(ranks)[order], offsets=off_sorted)
         else:
@@ -124,7 +138,11 @@ class WinModel:
             verbose=-1,
         )
         dtrain = lgb.Dataset(
-            Xs, label=ys, categorical_feature=cat or "auto", free_raw_data=False
+            Xs,
+            label=ys,
+            weight=w_sorted,
+            categorical_feature=cat or "auto",
+            free_raw_data=False,
         )
         self.booster_ = lgb.train(params, dtrain, num_boost_round=num_round)
 

@@ -113,6 +113,15 @@ def save_model_version(
     decision passed — accuracy-first models never auto-activate (FR-006); promotion to
     default is a separate explicit user decision. Default False keeps the pre-060
     pass->ACTIVE behaviour byte-identical."""
+    # Feature 079 (codex #12): an EV-weighted predictor is a retrospective, artifact-only
+    # kill-test and must NEVER be persisted as a servable model_version (candidate or active) —
+    # 057 lets non-active models be selected, so a registry row is not isolation. (This is
+    # narrower than is_leaky_reference: a 060 market-offset model is a legitimate candidate.)
+    if getattr(predictor, "ev_weight", False):
+        raise ValueError(
+            "refusing to persist an EV-weighted predictor as a model_version "
+            "(079 is artifact-only; a registry row would breach isolation) — fail-closed"
+        )
     info = predictor.fit_info_ or {}
     fcols = info.get("feature_cols", predictor.feature_cols_ or [])
 
