@@ -1,0 +1,293 @@
+{
+  "provenance": {
+    "feature": "079-ev-weighted-training",
+    "verdict": "NO_DECISION",
+    "attestation_digest": "9ff09a8828e3f7ea190e2c123cb39df95425c1f4e119afb71a4c762098fa131e",
+    "oof_bundle_digest": "2694caa3cb1bb495240a87b1926d5e4085a2dd7caadd18025cb3d5252a6f5659",
+    "base_recipe_hash": "f8861dd93cc5371366354ad41de622041db319f46cf5379228f78eda5ef0d7bc",
+    "candidate_recipe_hash": "c1d51ba5e4424324f1b62ec17fe5559bc9ee87371f687e448e47ae0b1c034b67",
+    "weight_scheme": "evw-v1",
+    "weight_params": {
+      "center": 1.0,
+      "tau": 0.1,
+      "odds_cap": 21.0
+    },
+    "odds": {
+      "source": "race_horses.odds",
+      "temporal_class": "closing"
+    },
+    "probability_stage": "calibrated_win_prob",
+    "date_from": null,
+    "date_to": null,
+    "first_valid_year": 2008,
+    "include_jump": false,
+    "num_threads": 1,
+    "code_sha": "1e4aa67c6da4d0afeade5887be33a6ebd595da36"
+  },
+  "report": {
+    "cap": 21.0,
+    "threshold": 1.0,
+    "n_races": 61745,
+    "base": {
+      "name": "baseline",
+      "n_bets": 107211,
+      "n_bet_races": 55853,
+      "n_bet_days": 2004,
+      "recovery": 0.8387842665398122,
+      "hit_rate": 0.09291024241915476,
+      "net_per_bet": -0.1612157334601878,
+      "coverage": 0.904575269252571,
+      "winner_nll": 2.1116198312018613,
+      "winner_races": 61664
+    },
+    "cand": {
+      "name": "candidate",
+      "n_bets": 106876,
+      "n_bet_races": 55711,
+      "n_bet_days": 2004,
+      "recovery": 0.8334237808301183,
+      "hit_rate": 0.09241550956248362,
+      "net_per_bet": -0.16657621916988175,
+      "coverage": 0.9022754878937566,
+      "winner_nll": 2.1123286890528874,
+      "winner_races": 61664
+    },
+    "delta": -0.005360485709693941,
+    "ci_low": -0.013760259168981603,
+    "ci_high": 0.003057513386680648,
+    "b": 10000,
+    "b_used": 10000,
+    "seed": 20260722,
+    "n_days": 2004,
+    "by_fold": [
+      {
+        "year": 2008,
+        "base": 0.8705150976909412,
+        "cand": 0.8705150976909412,
+        "delta": 0.0
+      },
+      {
+        "year": 2009,
+        "base": 0.865178114879835,
+        "cand": 0.84155290102389,
+        "delta": -0.02362521385594496
+      },
+      {
+        "year": 2010,
+        "base": 0.9050881953867026,
+        "cand": 0.8631489650492027,
+        "delta": -0.04193923033749991
+      },
+      {
+        "year": 2011,
+        "base": 0.9705426356589135,
+        "cand": 0.9251788756388407,
+        "delta": -0.04536376002007281
+      },
+      {
+        "year": 2012,
+        "base": 0.8349465020576137,
+        "cand": 0.852976092333059,
+        "delta": 0.018029590275445373
+      },
+      {
+        "year": 2013,
+        "base": 0.8620754129012149,
+        "cand": 0.8692564346997138,
+        "delta": 0.007181021798498888
+      },
+      {
+        "year": 2014,
+        "base": 0.8494119542452064,
+        "cand": 0.8304095453079643,
+        "delta": -0.019002408937242143
+      },
+      {
+        "year": 2015,
+        "base": 0.8086917074941027,
+        "cand": 0.8103429602888085,
+        "delta": 0.0016512527947057931
+      },
+      {
+        "year": 2016,
+        "base": 0.8766864732610973,
+        "cand": 0.877524717514124,
+        "delta": 0.0008382442530266987
+      },
+      {
+        "year": 2017,
+        "base": 0.7938316779926818,
+        "cand": 0.7954781704781706,
+        "delta": 0.0016464924854887597
+      },
+      {
+        "year": 2018,
+        "base": 0.865917738720782,
+        "cand": 0.8631790010936926,
+        "delta": -0.002738737627089427
+      },
+      {
+        "year": 2019,
+        "base": 0.8391418563922936,
+        "cand": 0.8150699300699297,
+        "delta": -0.02407192632236388
+      },
+      {
+        "year": 2020,
+        "base": 0.8500174216027869,
+        "cand": 0.8312532682586712,
+        "delta": -0.01876415334411574
+      },
+      {
+        "year": 2021,
+        "base": 0.7852304964539006,
+        "cand": 0.7838641188959663,
+        "delta": -0.0013663775579343396
+      },
+      {
+        "year": 2022,
+        "base": 0.783570016178321,
+        "cand": 0.799477194880115,
+        "delta": 0.015907178701794034
+      },
+      {
+        "year": 2023,
+        "base": 0.7781557743957025,
+        "cand": 0.7952595529920686,
+        "delta": 0.017103778596366137
+      },
+      {
+        "year": 2024,
+        "base": 0.7484037645322009,
+        "cand": 0.7529565379593354,
+        "delta": 0.004552773427134449
+      },
+      {
+        "year": 2025,
+        "base": 0.7628492647058821,
+        "cand": 0.7776572269216623,
+        "delta": 0.01480796221578018
+      },
+      {
+        "year": 2026,
+        "base": 0.8800197823936701,
+        "cand": 0.8827233761951868,
+        "delta": 0.002703593801516746
+      }
+    ],
+    "n_folds": 19,
+    "n_folds_improved": 10,
+    "worst_fold_delta": -0.04536376002007281,
+    "winner_nll_ok": true,
+    "tail_ok": true,
+    "tail": {
+      "base": {
+        "odds_ge_cap": {
+          "n": 476250,
+          "E": 11156.031640636771,
+          "O": 6130.0,
+          "calib_large": 0.010553347276927603,
+          "oe_ratio": 1.819907282322475
+        },
+        "q_lt_0_05": {
+          "n": 533936,
+          "E": 14512.483484928223,
+          "O": 8773.0,
+          "calib_large": 0.010749384729496088,
+          "oe_ratio": 1.6542213022829388
+        }
+      },
+      "cand": {
+        "odds_ge_cap": {
+          "n": 476250,
+          "E": 11116.055783277992,
+          "O": 6130.0,
+          "calib_large": 0.010469408468825181,
+          "oe_ratio": 1.813385935281891
+        },
+        "q_lt_0_05": {
+          "n": 533936,
+          "E": 14467.206590509364,
+          "O": 8773.0,
+          "calib_large": 0.010664586374601758,
+          "oe_ratio": 1.649060365953421
+        }
+      },
+      "guard": {
+        "odds_ge_cap": {
+          "evaluable": true,
+          "pass": true,
+          "base": 0.010553347276927603,
+          "cand": 0.010469408468825181
+        },
+        "q_lt_0_05": {
+          "evaluable": true,
+          "pass": true,
+          "base": 0.010749384729496088,
+          "cand": 0.010664586374601758
+        }
+      }
+    },
+    "selection_jaccard": 0.7766703458119985,
+    "by_odds_band": [
+      {
+        "band": "<3",
+        "cand_n": 1884,
+        "cand_recovery": 0.8393312101910848
+      },
+      {
+        "band": "3-6",
+        "cand_n": 15660,
+        "cand_recovery": 0.8072860791826321
+      },
+      {
+        "band": "6-11",
+        "cand_n": 31281,
+        "cand_recovery": 0.8263930181260211
+      },
+      {
+        "band": "11-21",
+        "cand_n": 58051,
+        "cand_recovery": 0.8440715922206333
+      }
+    ],
+    "verdict": "NO_DECISION",
+    "reasons": {
+      "delta": -0.005360485709693941,
+      "ci_low": -0.013760259168981603,
+      "ci_high": 0.003057513386680648,
+      "b_used": 10000,
+      "majority_folds": true,
+      "worst_fold_delta": -0.04536376002007281,
+      "winner_nll_ok": true,
+      "tail_ok": true,
+      "tail_detail": {
+        "odds_ge_cap": {
+          "evaluable": true,
+          "pass": true,
+          "base": 0.010553347276927603,
+          "cand": 0.010469408468825181
+        },
+        "q_lt_0_05": {
+          "evaluable": true,
+          "pass": true,
+          "base": 0.010749384729496088,
+          "cand": 0.010664586374601758
+        }
+      },
+      "enough_power": true,
+      "base_nll": 2.1116198312018613,
+      "cand_nll": 2.1123286890528874,
+      "base_bet_days": 2004,
+      "cand_bet_days": 2004
+    },
+    "deferred_diagnostics": [
+      "top2_top3_noninferiority",
+      "effective_sample_size",
+      "leave_one_winner_out",
+      "threshold_crossing_sensitivity",
+      "tail_day_cluster_ci"
+    ],
+    "note": "Closing-odds recovery is optimistic; only the relative paired delta is valid and ADOPT means prospective evaluation, never shipping (079). cap/threshold pre-registered."
+  }
+}

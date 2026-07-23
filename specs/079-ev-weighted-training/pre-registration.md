@@ -228,3 +228,36 @@ leave-one-winner-out recovery, threshold-crossing sensitivity.
 tail-calibration table. On REJECT/NO_DECISION: freeze favourable point estimates as rejected (070
 precedent), preserve code unwired + evidence artifact (062 precedent). On ADOPT: the only next step
 is a prospective decision-time-odds evaluation — **not** promotion.
+
+### DISPOSITION — 2026-07-23 (the single pre-registered run)
+
+**Verdict: `NO_DECISION`** — the EV-weighted candidate is statistically indistinguishable from the
+unweighted baseline; the honest prior (null / no improvement) is confirmed. **Kill-test complete;
+this is a successful null result.** Evidence artifact:
+[artifacts/oof-079/… → specs/079-ev-weighted-training/evidence.json](evidence.json)
+(code SHA `1e4aa67`, base model lgbm-063, run wall-clock ~45 min on the full DB).
+
+- **Population:** 61,745 valid OOS races, ~107k win bets/arm, 2,004 race-days, 19 year-folds
+  (2008–2026). Well-powered (above the 200-bet / 40-day minimums), so NO_DECISION reflects a
+  genuine null effect, not insufficient data.
+- **Primary estimand:** Δrecovery = candidate − baseline = **−0.0054**, 95% day-cluster bootstrap
+  CI **[−0.0138, +0.0031]** (10,000 replicates, all used). CI straddles 0 ⇒ NO_DECISION.
+  Baseline recovery 0.8388 vs candidate 0.8334 (both < 1.0, as expected under closing-oracle bias).
+- **Per-fold:** 10/19 folds improved; effect mixed and small (early folds 2009–2011 negative,
+  later years mixed ±0.02). worst-fold Δ −0.045.
+- **MUST guards — both PASS (no degradation):** winner-NLL non-inferior (base 2.1116 → cand 2.1123,
+  within +0.005); tail calibration-in-the-large NOT worsened and marginally BETTER on both masks
+  (odds≥21: base 0.01055 → cand 0.01047; q<0.05: base 0.01075 → cand 0.01066). **The 047 tail-
+  overconfidence-amplification risk did not materialise.**
+- **Selection:** Jaccard 0.777 — the candidate bets on largely the same horses as the baseline
+  (the reweighting barely moves the decision set), which explains the near-zero recovery effect.
+- **Smoke (2007–2011, discarded for the official verdict):** REJECT (Δ −0.0275, CI below 0). The
+  early-only window showed the candidate clearly worse; the effect washes out over the full window
+  as the base model has more data and the OOF-EV reweighting matters less.
+
+**Action taken (062/070 precedent):** freeze this as a null result; **do NOT register any model
+version** (artifact-only isolation held — `save_model_version` refuses an ev_weight predictor); the
+code stays committed but unwired (`ev_weight` default off = byte-identical). No promotion, no
+prospective follow-up is warranted (a null historical effect does not justify the 065-class
+pre-race-odds pipeline investment). Levers axis unchanged: the market remains unbeaten and
+decision-region reweighting adds no detectable value on top of the current PL top-k model.
