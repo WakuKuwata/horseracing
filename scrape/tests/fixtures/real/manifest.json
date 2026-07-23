@@ -53,6 +53,15 @@
       "fetched_at": "2026-06-28",
       "sha256": "ce10b1399410f246f03945f9cdc5637bd6a37d0d971f6943f81f5fafe245ee5e",
       "trim_note": "raw capture (untrimmed)"
+    },
+    {
+      "page_kind": "results",
+      "file": "results_202602011206.html",
+      "url": "https://race.netkeiba.com/race/result.html?race_id=202602011206",
+      "race_id": "202602011206",
+      "fetched_at": "2026-07-23",
+      "sha256": "bef6ff0eb494e763fd9ab36112af35ce6dba9ecd1d850fe1f66d24e773874299",
+      "trim_note": "raw capture (untrimmed)"
     }
   ]
 }

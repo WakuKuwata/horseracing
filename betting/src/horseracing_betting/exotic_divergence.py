@@ -16,6 +16,7 @@ import math
 from horseracing_db.enums import EntryStatus
 from horseracing_db.models import Race, RaceHorse
 from horseracing_features.builder import build_feature_matrix
+from horseracing_probability.market_odds import DEFAULT_PAYOUT_RATES
 from horseracing_serving.model_loader import load_serving_model
 from horseracing_serving.predictor import predict_race
 from sqlalchemy import select
@@ -24,6 +25,28 @@ from sqlalchemy.orm import Session
 from .exotic_ev import candidate_bets, canonical_field
 from .exotic_market import load_real_exotic_odds
 from .exotic_types import ALL_EXOTIC, DivergenceReport
+
+_DIVERGENCE_RATE_ORDER = ("place", "quinella", "wide", "exacta", "trio", "trifecta")
+
+
+def divergence_logic_version(
+    *,
+    date_from: datetime.date,
+    date_to: datetime.date,
+    payout_rates: dict[str, float] | None,
+) -> str:
+    """Deterministic evaluation-window and takeout-rate fingerprint."""
+    rates = {**DEFAULT_PAYOUT_RATES, **(payout_rates or {})}
+    takeouts = []
+    for bet_type in _DIVERGENCE_RATE_ORDER:
+        value = f"{1.0 - rates[bet_type]:.12f}".rstrip("0").rstrip(".")
+        whole, dot, fraction = value.partition(".")
+        value = f"{whole}.{fraction.ljust(2, '0')}" if dot else f"{whole}.00"
+        takeouts.append(f"{bet_type}:{value}")
+    return (
+        f"exotic-divergence;from={date_from.isoformat()};to={date_to.isoformat()};"
+        f"takeout={','.join(takeouts)}"
+    )
 
 
 def _percentile(values: list[float], q: float) -> float:
