@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import datetime
 import math
 
 from horseracing_db.enums import BetType
 
-from horseracing_betting.exotic_divergence import summarize_divergence
+from horseracing_betting.exotic_divergence import (
+    divergence_logic_version,
+    summarize_divergence,
+)
 
 
 def test_coverage_rate_is_pairs_over_estimated():
     rep = summarize_divergence(BetType.TRIO, n_estimated=10, log_ratios=[0.0, 0.0, 0.0])
     assert rep.n_estimated == 10 and rep.n_pairs == 3
-    assert rep.coverage_rate == 0.3  # partial coverage explicit, not dropped
+    assert rep.coverage_rate == rep.n_pairs / rep.n_estimated
 
 
 def test_log_ratio_stats():
@@ -43,3 +47,46 @@ def test_zero_coverage_is_explicit():
 def test_baseline_labels_double_pseudo():
     rep = summarize_divergence(BetType.PLACE, n_estimated=5, log_ratios=[0.1])
     assert rep.baseline == "estimated(010/011)" and rep.pseudo_baseline is True
+
+
+def test_summary_is_symmetric_and_deterministic():
+    log_ratios = [-1.0, -0.5, 0.25, 0.75]
+    rep = summarize_divergence(BetType.EXACTA, 8, log_ratios)
+    assert rep == summarize_divergence(BetType.EXACTA, 8, list(reversed(log_ratios)))
+
+    reciprocal = summarize_divergence(BetType.EXACTA, 8, [-value for value in log_ratios])
+    assert reciprocal.log_ratio_median == -rep.log_ratio_median
+    assert reciprocal.log_ratio_mae == rep.log_ratio_mae
+    assert reciprocal.log_ratio_p90 == rep.log_ratio_p90
+
+
+def test_divergence_logic_version_is_stable():
+    date_from = datetime.date(2026, 7, 1)
+    date_to = datetime.date(2026, 7, 19)
+    expected = (
+        "exotic-divergence;from=2026-07-01;to=2026-07-19;"
+        "takeout=place:0.20,quinella:0.225,wide:0.225,"
+        "exacta:0.25,trio:0.25,trifecta:0.275"
+    )
+    assert divergence_logic_version(
+        date_from=date_from, date_to=date_to, payout_rates=None
+    ) == expected
+    assert divergence_logic_version(
+        date_from=date_from,
+        date_to=date_to,
+        payout_rates={"trifecta": 0.725, "place": 0.80},
+    ) == expected
+
+    custom_a = divergence_logic_version(
+        date_from=date_from,
+        date_to=date_to,
+        payout_rates={"trifecta": 0.70, "place": 0.81},
+    )
+    custom_b = divergence_logic_version(
+        date_from=date_from,
+        date_to=date_to,
+        payout_rates={"place": 0.81, "trifecta": 0.70},
+    )
+    assert custom_a == custom_b
+    assert "takeout=place:0.19" in custom_a
+    assert custom_a.endswith("trifecta:0.30")

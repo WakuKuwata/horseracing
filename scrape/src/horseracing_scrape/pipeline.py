@@ -289,12 +289,22 @@ def scrape_results(
     def work() -> Counts:
         parts: list[Counts] = []
         for u in urls:
-            scraped = parse_results(fetcher.get(u))
+            html = fetcher.get(u)
+            scraped = parse_results(html)
             race_id = _race_id_of(scraped.key)
             if race_id is None:
                 parts.append(Counts(skipped=1, error_messages=["race_id not constructible"]))
                 continue
             parts.append(backfill_results(session, race_id, scraped))
+            # Piggyback real exotic dividends on the SAME already-fetched html (0 extra request).
+            # SAVEPOINT-isolated: a DB-level upsert failure rolls back only the savepoint, so
+            # already-persisted results and the outer transaction survive to the next race (FR-007).
+            try:
+                exotic = parse_exotic_odds(html)
+                with session.begin_nested():
+                    parts.append(upsert_exotic_odds(session, race_id, exotic))
+            except Exception as exc:  # noqa: BLE001 — exotic failure must not break results
+                parts.append(Counts(error_messages=[f"exotic skip {race_id}: {exc}"]))
         return _aggregate(parts)
 
     return _run_job(session, job_type="results", scope="urls", scope_value=scope_value, work=work)

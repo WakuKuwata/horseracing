@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from .backtest import run_backtest
 from .exotic_backtest import run_exotic_backtest
 from .exotic_divergence import exotic_divergence
+from .exotic_gate import PREREGISTERED_N_MIN, run_exotic_gate
 from .exotic_recommend import (
     DEFAULT_ODDS_CAP,
     DEFAULT_TOP_K,
@@ -35,6 +36,14 @@ from .kelly_types import KellyConfig
 from .recommend import DEFAULT_STAKE, DEFAULT_THRESHOLD, generate_recommendations
 
 _DOUBLE_PSEUDO = "二重疑似(モデル確率 × 推定市場オッズ / PL 外挿)"
+_EXOTIC_GATE_TAKEOUT = {
+    "place": "0.20",
+    "quinella": "0.225",
+    "wide": "0.225",
+    "exacta": "0.25",
+    "trio": "0.25",
+    "trifecta": "0.275",
+}
 
 
 def _parse_date(s: str) -> datetime.date:
@@ -711,6 +720,41 @@ def _cmd_exotic_backtest(session: Session, args) -> int:
     return 0
 
 
+def _cmd_exotic_gate(session: Session, args) -> int:
+    verdicts = run_exotic_gate(
+        session,
+        date_from=args.from_,
+        date_to=args.to,
+        baseline=args.baseline,
+        model_version=args.model_version,
+        b=args.b,
+        ci_seed=args.seed,
+        alpha=args.alpha,
+    )
+    n_min_logic = ",".join(
+        f"{bet_type}:{minimum}"
+        for bet_type, minimum in PREREGISTERED_N_MIN.items()
+    )
+    takeout_logic = ",".join(
+        f"{bet_type}:{takeout}"
+        for bet_type, takeout in _EXOTIC_GATE_TAKEOUT.items()
+    )
+    logic_version = (
+        f"window={args.from_}..{args.to};baseline={args.baseline};seed={args.seed};"
+        f"alpha={args.alpha:g};b={args.b};n_min={n_min_logic};"
+        f"takeout={takeout_logic};series=prospective-primary"
+    )
+    print(f"exotic-gate {args.from_}..{args.to} [lv: {logic_version}]")
+    for bet_type in PREREGISTERED_N_MIN:
+        verdict = verdicts[bet_type]
+        print(
+            f"{bet_type} {verdict.verdict} {verdict.n_bets} {verdict.n_days} "
+            f"{verdict.point_diff} ci=[{verdict.ci_low},{verdict.ci_high}] "
+            f"{verdict.p_adjusted}"
+        )
+    return 0
+
+
 def _cmd_exotic_divergence(session: Session, args) -> int:
     reports = exotic_divergence(
         session, date_from=args.from_, date_to=args.to,
@@ -774,6 +818,20 @@ def main(argv: list[str] | None = None) -> int:
     xb.add_argument("--odds-cap", type=float, default=DEFAULT_ODDS_CAP)
     xb.add_argument("--model-version", default=None)
     xb.add_argument("--database-url", default=None)
+
+    xg = sub.add_parser("exotic-gate", help="real-dividend exotic adoption gate")
+    xg.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    xg.add_argument("--to", type=_parse_date, required=True)
+    xg.add_argument(
+        "--baseline",
+        choices=["lowest_oest", "uniform"],
+        default="lowest_oest",
+    )
+    xg.add_argument("--model-version", default=None)
+    xg.add_argument("--seed", type=int, default=20260723)
+    xg.add_argument("--alpha", type=float, default=0.05)
+    xg.add_argument("--b", type=int, default=2000)
+    xg.add_argument("--database-url", default=None)
 
     def _add_kelly_knobs(sp):
         sp.add_argument("--bankroll", type=float, default=100.0)
@@ -895,6 +953,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_kelly_calibration_compare(session, args)
         if args.command == "exotic-backtest":
             return _cmd_exotic_backtest(session, args)
+        if args.command == "exotic-gate":
+            return _cmd_exotic_gate(session, args)
         if args.command == "exotic-divergence":
             return _cmd_exotic_divergence(session, args)
         if args.command == "stage-discount-backtest-compare":

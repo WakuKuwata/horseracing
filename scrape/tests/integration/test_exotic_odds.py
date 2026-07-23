@@ -1,4 +1,9 @@
-"""T013 (012): exotic odds ingest — idempotent overwrite, coverage, audit, 2007 cutoff (SC-001/002/003)."""
+"""012/080: real exotic dividend ingest — six types, idempotent overwrite, audit, 2007 cutoff.
+
+Feature 080 rewired the parser to the REAL netkeiba result-page markup (Payout_Detail_Table), which
+lists WINNING selections only (not the full odds grid). So coverage_scope is inherently 'partial' for
+result-page dividends (observed winners << full-grid expected count); see research.md D3.
+"""
 
 from __future__ import annotations
 
@@ -11,21 +16,22 @@ from horseracing_db.models import ExoticOdds, Horse, IngestionJob, Race, RaceHor
 from sqlalchemy import func, select
 
 from horseracing_scrape.fetch import FixtureFetcher
-from horseracing_scrape.models import ScrapedExoticOdds, ScrapedExoticRow, ScrapedRaceKey
 from horseracing_scrape.pipeline import scrape_exotic_odds
-from horseracing_scrape.upsert import upsert_exotic_odds
-from tests._synth import RACE_ID, fixture_fetcher
+from tests.conftest import real_fixture
 
 pytestmark = pytest.mark.integration
 
+REAL_RID = "202602011206"
+REAL_FIXTURE = "results_202602011206.html"
+N_STARTED = 16
 
-def _seed_started_field(session, n=3):
-    """RACE_ID (2025 Tokyo) with n started horses numbered 1..n."""
-    session.merge(Race(race_id=RACE_ID, race_number=11, race_date=datetime.date(2025, 6, 1),
-                       venue_code="05"))
+
+def _seed_field(session, race_id=REAL_RID, n=N_STARTED):
+    session.merge(Race(race_id=race_id, race_number=int(race_id[-2:]),
+                       race_date=datetime.date(2026, 7, 19), venue_code=race_id[4:6]))
     for i in range(1, n + 1):
-        session.merge(Horse(horse_id=f"H{i}", horse_name=f"H{i}"))
-        session.add(RaceHorse(race_id=RACE_ID, horse_id=f"H{i}", horse_number=i,
+        session.merge(Horse(horse_id=f"H{race_id}_{i}", horse_name=f"H{i}"))
+        session.add(RaceHorse(race_id=race_id, horse_id=f"H{race_id}_{i}", horse_number=i,
                               entry_status=EntryStatus.STARTED))
     session.commit()
 
@@ -33,63 +39,58 @@ def _seed_started_field(session, n=3):
 def _odds_of(session, bet_type, selection):
     return session.scalar(
         select(ExoticOdds.odds).where(
-            ExoticOdds.race_id == RACE_ID, ExoticOdds.bet_type == bet_type,
-            ExoticOdds.selection == selection,
+            ExoticOdds.race_id == REAL_RID, ExoticOdds.bet_type == bet_type,
+            ExoticOdds.selection == list(selection),
         )
     )
 
 
+def _fetcher(html):
+    return FixtureFetcher({"u": html}), ["u"]
+
+
 def test_ingest_stores_six_types_with_coverage(session):
-    _seed_started_field(session, n=3)
-    fetcher, urls = fixture_fetcher("exotic_odds")
+    _seed_field(session)
+    fetcher, urls = _fetcher(real_fixture(REAL_FIXTURE))
     summary = scrape_exotic_odds(session, urls=urls, fetcher=fetcher)
     assert summary.status == "succeeded"
 
-    rows = session.scalars(select(ExoticOdds).where(ExoticOdds.race_id == RACE_ID)).all()
+    rows = session.scalars(select(ExoticOdds).where(ExoticOdds.race_id == REAL_RID)).all()
     types = {r.bet_type for r in rows}
     assert types == {"place", "quinella", "wide", "trio", "exacta", "trifecta"}
     assert all(r.source == "netkeiba" for r in rows)
 
-    # full grids (observed == expected for n=3) vs partial (exacta/trifecta under-supplied)
-    scope = {r.bet_type: r.coverage_scope for r in rows}
-    assert scope["place"] == "full" and scope["quinella"] == "full"
-    assert scope["wide"] == "full" and scope["trio"] == "full"
-    assert scope["exacta"] == "partial" and scope["trifecta"] == "partial"
+    # real dividends list winners only -> every bet type is 'partial' vs the full-grid expected count
+    assert {r.coverage_scope for r in rows} == {"partial"}
 
-    # canonical selection: trio sorted, exacta order-preserving
-    assert _odds_of(session, "trio", [1, 2, 3]) == Decimal("22.5")
-    assert _odds_of(session, "exacta", [1, 2]) == Decimal("11.0")
-    assert _odds_of(session, "exacta", [2, 1]) == Decimal("18.4")
-    # empty-odds exacta row [3,1] skipped
-    assert _odds_of(session, "exacta", [3, 1]) is None
+    # canonical selection + yen/100 odds (from the real Payout_Detail_Table)
+    assert _odds_of(session, "place", [1]) == Decimal("1.5")
+    assert _odds_of(session, "place", [9]) == Decimal("2.4")
+    assert _odds_of(session, "quinella", [1, 9]) == Decimal("20.0")     # sorted
+    assert _odds_of(session, "exacta", [1, 9]) == Decimal("32.8")       # order-preserving
+    assert _odds_of(session, "trio", [1, 9, 10]) == Decimal("18.9")     # sorted
+    assert _odds_of(session, "trifecta", [1, 9, 10]) == Decimal("109.4")
+    # wide has 3 winning combos
+    assert len([r for r in rows if r.bet_type == "wide"]) == 3
 
 
 def test_ingest_is_idempotent_overwrite(session):
-    _seed_started_field(session, n=3)
-    fetcher, urls = fixture_fetcher("exotic_odds")
-    scrape_exotic_odds(session, urls=urls, fetcher=fetcher)
-    n1 = session.scalar(select(func.count()).select_from(ExoticOdds))
-    fetcher2, urls2 = fixture_fetcher("exotic_odds")
-    scrape_exotic_odds(session, urls=urls2, fetcher=fetcher2)
-    n2 = session.scalar(select(func.count()).select_from(ExoticOdds))
-    assert n1 == n2  # re-ingest overwrites, no duplicate rows
-
-    # explicit overwrite to a new (final dividend) value, still single row
-    key = ScrapedRaceKey(year=2025, track_code="05", kai=2, nichime=3, race_no=11)
-    upsert_exotic_odds(session, RACE_ID, ScrapedExoticOdds(
-        key=key, rows=(ScrapedExoticRow("trio", (1, 2, 3), 99.9),)
-    ))
-    session.commit()
-    session.expire_all()
-    rows = session.scalars(
-        select(ExoticOdds).where(ExoticOdds.race_id == RACE_ID, ExoticOdds.bet_type == "trio")
-    ).all()
-    assert len(rows) == 1 and float(rows[0].odds) == 99.9
+    _seed_field(session)
+    html = real_fixture(REAL_FIXTURE)
+    scrape_exotic_odds(session, urls=["u"], fetcher=FixtureFetcher({"u": html}))
+    n1 = session.scalar(select(func.count()).select_from(ExoticOdds).where(
+        ExoticOdds.race_id == REAL_RID))
+    # re-ingest the same page: single-latest overwrite, no duplicate rows (constitution V)
+    scrape_exotic_odds(session, urls=["u"], fetcher=FixtureFetcher({"u": html}))
+    n2 = session.scalar(select(func.count()).select_from(ExoticOdds).where(
+        ExoticOdds.race_id == REAL_RID))
+    assert n1 == n2 and n1 > 0
+    assert _odds_of(session, "trifecta", [1, 9, 10]) == Decimal("109.4")
 
 
 def test_ingest_audited_as_exotic_odds_job(session):
-    _seed_started_field(session, n=3)
-    fetcher, urls = fixture_fetcher("exotic_odds")
+    _seed_field(session)
+    fetcher, urls = _fetcher(real_fixture(REAL_FIXTURE))
     scrape_exotic_odds(session, urls=urls, fetcher=fetcher)
     job = session.scalars(
         select(IngestionJob).where(IngestionJob.job_type == "exotic_odds")
@@ -99,13 +100,8 @@ def test_ingest_audited_as_exotic_odds_job(session):
 
 
 def test_pre_2007_race_is_skipped_no_rows(session):
-    html = (
-        '<html><body><div class="race" data-year="2006" data-track="05" data-kai="2" '
-        'data-day="3" data-raceno="11">'
-        '<table class="exotic" data-bet-type="trio">'
-        '<tr class="combo" data-horses="1-2-3" data-odds="10.0"></tr></table>'
-        "</div></body></html>"
-    )
+    # same real markup but with a <2007 race_id in the canonical link -> build_race_id rejects it
+    html = real_fixture(REAL_FIXTURE).replace(REAL_RID, "200602011206")
     summary = scrape_exotic_odds(session, urls=["u"], fetcher=FixtureFetcher({"u": html}))
     assert summary.skipped == 1  # <2007 -> race_id not constructible, no fake IDs
     assert session.scalar(select(func.count()).select_from(ExoticOdds)) == 0
