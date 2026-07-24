@@ -1,0 +1,177 @@
+{
+  "contract": "phase0-screening-v1",
+  "can_adopt": false,
+  "spec": "pl_topk:isotonic:0.3",
+  "window": [
+    "2008-01-01",
+    "2026-07-12"
+  ],
+  "seed": 20260724,
+  "bootstrap_b": 2000,
+  "generated_at_note": "screening_only; not an adoption gate",
+  "reports": [
+    {
+      "candidate_id": "tataki_2",
+      "family": "PRE_ENTRY",
+      "k": 1,
+      "n_races": 26006,
+      "coverage": 0.786,
+      "mean_score_U": [
+        -0.008445
+      ],
+      "point_delta_nll": -0.000297,
+      "ci_low": -0.0006330095151902207,
+      "ci_high": 3.8614555129555077e-05,
+      "n_days": 703,
+      "passes_screen": false,
+      "screen_reason": "below loose screen (point -0.00030 vs <= -0.001, ci_high +0.00004 vs <= 0.005)"
+    },
+    {
+      "candidate_id": "prior_gap_log",
+      "family": "PRE_ENTRY",
+      "k": 1,
+      "n_races": 26006,
+      "coverage": 0.8755,
+      "mean_score_U": [
+        -0.046871
+      ],
+      "point_delta_nll": -0.001145,
+      "ci_low": -0.0018343722775728476,
+      "ci_high": -0.0004339534911872433,
+      "n_days": 703,
+      "passes_screen": true,
+      "screen_reason": "PASS loose screen -> Phase 1 candidate"
+    },
+    {
+      "candidate_id": "seasonal_sex",
+      "family": "PRE_ENTRY",
+      "k": 2,
+      "n_races": 26006,
+      "coverage": 0.7449,
+      "mean_score_U": [
+        -0.003921,
+        -0.010808
+      ],
+      "point_delta_nll": -0.0009,
+      "ci_low": -0.0015536070078615953,
+      "ci_high": -0.0002457965508868821,
+      "n_days": 703,
+      "passes_screen": false,
+      "screen_reason": "below loose screen (point -0.00090 vs <= -0.001, ci_high -0.00025 vs <= 0.005)"
+    },
+    {
+      "candidate_id": "current_gap_shape",
+      "family": "PRE_ENTRY",
+      "k": 3,
+      "n_races": 26006,
+      "coverage": 0.8792,
+      "mean_score_U": [
+        0.049045,
+        -0.020787,
+        1.4401
+      ],
+      "point_delta_nll": -0.002881,
+      "ci_low": -0.003934855205460365,
+      "ci_high": -0.0018518570883545372,
+      "n_days": 703,
+      "passes_screen": true,
+      "screen_reason": "PASS loose screen -> Phase 1 candidate"
+    },
+    {
+      "candidate_id": "prev_finish_reversion",
+      "family": "PRE_ENTRY",
+      "k": 2,
+      "n_races": 26006,
+      "coverage": 0.8766,
+      "mean_score_U": [
+        -0.011248,
+        0.003346
+      ],
+      "point_delta_nll": -0.000244,
+      "ci_low": -0.0007532184232865372,
+      "ci_high": 0.00027922078250281585,
+      "n_days": 703,
+      "passes_screen": false,
+      "screen_reason": "below loose screen (point -0.00024 vs <= -0.001, ci_high +0.00028 vs <= 0.005)"
+    },
+    {
+      "candidate_id": "draw_venue",
+      "family": "PRE_ENTRY",
+      "k": 20,
+      "n_races": 26006,
+      "coverage": 0.9638,
+      "mean_score_U": [
+        0.000718,
+        -3e-06,
+        2.4e-05,
+        -0.000252,
+        0.000143,
+        -0.000558,
+        0.000843,
+        0.001862,
+        0.001578,
+        0.000307,
+        0.002459,
+        -0.001342,
+        -0.000613,
+        -0.001546,
+        0.00023,
+        0.000993,
+        0.002287,
+        -0.001406,
+        -6e-05,
+        0.001215
+      ],
+      "point_delta_nll": -3.1e-05,
+      "ci_low": -0.0012033608976951427,
+      "ci_high": 0.001099759170033877,
+      "n_days": 703,
+      "passes_screen": false,
+      "screen_reason": "below loose screen (point -0.00003 vs <= -0.001, ci_high +0.00110 vs <= 0.005)"
+    },
+    {
+      "candidate_id": "body_mass_going",
+      "family": "POST_WEIGHT",
+      "k": 3,
+      "n_races": 26006,
+      "coverage": 0.6855,
+      "mean_score_U": [
+        -0.002924,
+        -0.00242,
+        0.000801
+      ],
+      "point_delta_nll": -0.000191,
+      "ci_low": -0.000525877166350512,
+      "ci_high": 0.00014667975849682878,
+      "n_days": 703,
+      "passes_screen": false,
+      "screen_reason": "below loose screen (point -0.00019 vs <= -0.001, ci_high +0.00015 vs <= 0.005)"
+    },
+    {
+      "candidate_id": "weight_gain",
+      "family": "POST_WEIGHT",
+      "k": 1,
+      "n_races": 26006,
+      "coverage": 0.4455,
+      "mean_score_U": [
+        0.005169
+      ],
+      "point_delta_nll": -0.000337,
+      "ci_low": -0.0007431780957374456,
+      "ci_high": 0.00010514540984298106,
+      "n_days": 703,
+      "passes_screen": false,
+      "screen_reason": "below loose screen (point -0.00034 vs <= -0.001, ci_high +0.00011 vs <= 0.005)"
+    }
+  ],
+  "holm_adjusted_diagnostic": {
+    "tataki_2": 0.41509,
+    "prior_gap_log": 0.00945,
+    "seasonal_sex": 0.04191,
+    "current_gap_shape": 0.0,
+    "prev_finish_reversion": 0.79684,
+    "draw_venue": 0.95792,
+    "body_mass_going": 0.79684,
+    "weight_gain": 0.47768
+  }
+}
