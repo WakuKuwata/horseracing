@@ -49,3 +49,41 @@ produce a larger realized gain. Phase 0 says "rotation shape is the most promisi
 - New pre-registration required (phase0 output must not relax phase1 thresholds).
 - Adoption gate = 073 evaluation-contract v2 (tri-value). Effect-size realism above must be stated
   in that pre-registration.
+
+---
+
+## Append-only correction + de-risk (2026-07-24, post codex Phase-1 review)
+
+### Provenance fixes (codex P0)
+- The report's `window` field is the **training-LOAD range** (2008→); the **evaluation** window is
+  `eval_first_valid_year=2019 … 2026-07-12` (OOF valid races). Both are now recorded in the report
+  JSON (`training_load_window`, `eval_first_valid_year`, `eval_window_note`). No numbers changed.
+- Per-fold prequential γ (`gammas_by_fold`) + `gamma_sign_stable` are now saved per candidate
+  (`per_fold_gamma_sign_stability` was pre-registered as a diagnostic but had been dropped from the
+  JSON). Regenerated deterministically from the cached OOF (`--reuse-cache`, identical ΔNLL/CI).
+
+### De-risk: the rotation residual is MONOTONE, not the folklore hinge shape
+Codex's cheap pre-training de-risk: recover per-fold γ and g(d)=γᵀh(d) for `current_gap_shape`.
+
+- `gap_log` γ is **stable and positive across all 7 folds** (+0.074 … +0.125) — the −0.00288 signal
+  is real, not fold-specific noise.
+- `gap_hinge_short(14d)` and `gap_hinge_long(70d)` γ are ≈0 (±0.005, signs wobble) — the hinges
+  contribute almost nothing.
+- g(d) is **monotonically increasing in gap in every fold** (d=3→+0.04..0.19, d=365→+0.64..0.71).
+
+**Interpretation**: the folklore's non-monotone shape (short-gap penalty + mid-gap sweet spot,
+which held vs the MARKET) does NOT exist in the MODEL residual. The model's residual is a simple
+**monotone under-rating of longer-rest horses**. What carried the probe gain was the monotone
+`log(1+d)` term alone.
+
+### Disposition: STOP (user decision 2026-07-24)
+A stable-but-MONOTONE residual fails codex's "stable AND clearly non-monotone → residual head"
+criterion. As a tree feature it is maximally washout-prone (a monotone transform of the existing
+`days_since_last`); as a residual head it is realizable but is a small monotone calibration offset
+— NO_DECISION-likely under 073 (effect −0.00288 < MDE ~0.004–0.006) and ROI-neutral (accuracy is a
+dead ROI lever, [[lgbm-065-roi-ceiling-confirmed]]). Per codex ("if g_fold(d) is monotone/unstable,
+stop without full training"), Phase 1 is **not entered**. No FEATURE_VERSION bump; no model trained.
+
+The 081 probe (pure `residual_probe.py` + `folklore-probe` CLI + cached OOF) is retained as reusable
+screening infrastructure. A future `monotone_constraint` on `days_since_last`, or a residual-head
+calibration, would each be a NEW hypothesis requiring its own pre-registration.

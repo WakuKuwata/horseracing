@@ -20,13 +20,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-
 from horseracing_eval.bootstrap import race_day_cluster_bootstrap_ci_v1
 from horseracing_eval.dataset import load_eval_races, population_masks
 from horseracing_eval.foldfit import predict_over_folds
 from horseracing_eval.residual_probe import RaceProbe, prequential_delta_nll
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 #: candidate id -> (raw column list, family, optional one-hot cell column).
 #: A cell column expands ``factor × one-hot(cell)`` (the cell is race-constant, so the interaction
@@ -110,6 +109,8 @@ class CandidateReport:
     n_days: int
     passes_screen: bool
     screen_reason: str
+    gammas_by_fold: list[list[float]]      # provenance: per-fold prequential γ (codex P0)
+    gamma_sign_stable: bool                 # all folds agree on the sign of every γ column
 
 
 def _race_probes_for_candidate(df: pd.DataFrame, meta: dict) -> tuple[list, int]:
@@ -165,11 +166,18 @@ def run_probe(df: pd.DataFrame, gate: dict, *, seed: int, b: int) -> list[Candid
                       f"ci_high {ci.ci_high:+.5f} vs <= {prom['ci_upper_le']})")
         else:
             reason = "PASS loose screen -> Phase 1 candidate"
+        gsigns = [
+            {int(np.sign(round(g[j], 9))) for g in res.gammas_by_fold}
+            for j in range(k)
+        ] if res.gammas_by_fold else []
+        sign_stable = all(len(s - {0}) <= 1 for s in gsigns)
         reports.append(CandidateReport(
             candidate_id=cid, family=meta["family"], k=k, n_races=res.n_races,
             coverage=round(res.coverage, 4), mean_score_U=[round(u, 6) for u in res.mean_score_U],
             point_delta_nll=round(point, 6), ci_low=ci.ci_low, ci_high=ci.ci_high,
             n_days=ci.n_days, passes_screen=bool(passes), screen_reason=reason,
+            gammas_by_fold=[[round(v, 6) for v in g] for g in res.gammas_by_fold],
+            gamma_sign_stable=bool(sign_stable),
         ))
     return reports
 
@@ -213,7 +221,12 @@ def run_folklore_probe(
     return {
         "contract": gate.get("evaluation_contract_version"),
         "can_adopt": gate.get("can_adopt", False),
-        "spec": spec, "window": [str(from_date), str(to_date)],
+        "spec": spec,
+        "training_load_window": [str(from_date), str(to_date)],
+        "eval_first_valid_year": first_valid_year,
+        "eval_window_note": f"OOF valid races are {first_valid_year}..{to_date} "
+                            f"(training expands from {from_date}); window[] is the LOAD range",
+        "window": [str(from_date), str(to_date)],
         "seed": seed, "bootstrap_b": b,
         "generated_at_note": "screening_only; not an adoption gate",
         "reports": [asdict(r) for r in reports],
