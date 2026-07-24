@@ -1,0 +1,162 @@
+{
+  "_comment": "081 Phase 0: retrospective development SCREENING contract. Frozen BEFORE any probe is run (constitution III). This contract CANNOT issue an ADOPT — see can_adopt=false. Thresholds are deliberately PERMISSIVE: a loose screen costs Phase 1 effort, never a false adoption. Phase 1 adoption thresholds are NOT set here and MUST NOT be relaxed on the basis of Phase 0 output. Do not edit any non-underscore key after the first probe is run; --confirmatory rejects a hash mismatch.",
+  "evaluation_contract_version": "phase0-screening-v1",
+  "purpose": "screening_only",
+  "can_adopt": false,
+
+  "primary": "delta_winner_nll_probe",
+
+  "probe": {
+    "_comment": "Residual-offset probe (codex): tilt the active OOF race-softmax by exp(gamma . h) and measure the marginal winner-NLL effect. Preserves within-race sum-to-1 (constitution IV) and needs no LightGBM refit.",
+    "form": "p_prime[i,r] = p[i,r]*exp(gamma . h[i,r]) / sum_j p[j,r]*exp(gamma . h[j,r])",
+    "score_statistic": "U[r] = h[winner,r] - sum_i p[i,r]*h[i,r]",
+    "fit": "prequential",
+    "fit_rule": "gamma is fitted on strictly-earlier folds only and applied to the strictly-later fold; a gamma fitted on the evaluation fold is contract failure",
+    "base_model": "lgbm-065",
+    "base_oof": "recipe_faithful_strict_past",
+    "base_oof_requirements": [
+      "booster, target encoders, internal calibrator and every as-of feature strictly precede the target race date",
+      "same-day exclusion",
+      "ordered feature list and drop list re-attested from the DB active at run time"
+    ]
+  },
+
+  "candidates": [
+    {
+      "id": "tataki_2",
+      "expr": "1[(prev_race_date - prev_prev_race_date) > 70 days]",
+      "missing": "NaN when lag2 is absent",
+      "kind": "new_information",
+      "availability_timing": "PRE_ENTRY"
+    },
+    {
+      "id": "prior_gap_log",
+      "expr": "log(1 + (prev_race_date - prev_prev_race_date) in days)",
+      "missing": "NaN when lag2 is absent",
+      "kind": "new_information",
+      "availability_timing": "PRE_ENTRY"
+    },
+    {
+      "id": "seasonal_sex",
+      "expr": "[ 1[sex='牝'] * sin(2*pi*day_of_year/365.24), 1[sex='牝'] * cos(2*pi*day_of_year/365.24) ]",
+      "missing": "NaN when sex is null",
+      "indivisible": true,
+      "kind": "reexpression_interaction",
+      "availability_timing": "PRE_ENTRY"
+    },
+    {
+      "id": "current_gap_shape",
+      "expr": "[ log(1 + days_since_last), max(0, 14 - days_since_last), max(0, days_since_last - 70) ]",
+      "missing": "NaN on debut",
+      "indivisible": true,
+      "kind": "reexpression",
+      "availability_timing": "PRE_ENTRY"
+    },
+    {
+      "id": "prev_finish_reversion",
+      "expr": "[ 1[prev_finish in 2..3], 1[prev_finish in 6..9] ]",
+      "missing": "NaN on debut",
+      "indivisible": true,
+      "kind": "reexpression",
+      "availability_timing": "PRE_ENTRY"
+    },
+    {
+      "id": "draw_venue",
+      "expr": "((horse_number - 1)/(field_size - 1)) interacted with venue_code x track_type",
+      "missing": "NaN when horse_number or field_size is null; field_size<2 excluded",
+      "kind": "reexpression_interaction",
+      "availability_timing": "PRE_ENTRY"
+    },
+    {
+      "id": "body_mass_going",
+      "expr": "1[weight < 440] interacted with {turf-firm, turf-off, dirt}",
+      "missing": "NaN when weight is null",
+      "kind": "reexpression_interaction",
+      "availability_timing": "POST_WEIGHT"
+    },
+    {
+      "id": "weight_gain",
+      "expr": "1[weight_diff >= 11]",
+      "missing": "NaN when weight_diff is null",
+      "kind": "reexpression",
+      "availability_timing": "POST_WEIGHT"
+    }
+  ],
+
+  "timing_separation": {
+    "_comment": "constitution II / codex: PRE_ENTRY and POST_WEIGHT candidates are never pooled into one probe result, because a POST_WEIGHT feature is unusable on the pre-weight serving path. Reported as two separate families.",
+    "families": ["PRE_ENTRY", "POST_WEIGHT"],
+    "pool_across_families": false
+  },
+
+  "boundary_conventions": {
+    "_comment": "Frozen so a failed threshold cannot be re-encoded into a passing one.",
+    "layoff_days": 70,
+    "short_gap_days": 14,
+    "day_of_year_basis": "365.24, leap-safe, continuous across 12/31-01/01",
+    "distance_change": "EXCLUDED from this probe (already neutralised by 033 dist_extension/dist_shortening)",
+    "carried_weight_change": "EXCLUDED from this probe (exact difference column already exists)",
+    "excluded_rationale": "codex: an existing exact-difference column removes the re-expression benefit"
+  },
+
+  "bootstrap": {
+    "b": 2000,
+    "seed": 20260724,
+    "primary": "race_day_cluster_bootstrap_ci_v1",
+    "alpha": 0.05,
+    "sensitivity": ["2d", "week", "meeting"]
+  },
+
+  "eval_window": {
+    "_comment": "Same development-evidence window as 073 (2008-2026 is development evidence, US4). The DORMANT prospective holdout is untouched.",
+    "from": "2019-01-01",
+    "to": "2026-07-12",
+    "min_eval_days": 10
+  },
+
+  "promotion_to_phase1": {
+    "_comment": "DELIBERATELY LOOSE (user decision 2026-07-24). Phase 0 cannot adopt, so a permissive screen only costs Phase 1 effort. Measured race-day cluster SE on this window is ~0.0014-0.0022, so an 80%-power MDE is ~0.0039-0.0062; most feature-scale effects are BELOW it. A strict screen here would reject everything before it could be characterised.",
+    "point_le": -0.001,
+    "ci_upper_le": 0.005,
+    "ci_straddling_zero_is_fatal": false
+  },
+
+  "multiplicity": {
+    "_comment": "No correction is applied to the screen itself (screening_only, can_adopt=false). Holm-adjusted p-values are computed and reported as DIAGNOSTIC so the selection burden stays visible and is carried into Phase 1 pre-registration.",
+    "n_prehypotheses": 8,
+    "correction": "none",
+    "holm_adjusted_reported": true,
+    "family": "per_timing_family"
+  },
+
+  "stopping_rule": {
+    "_comment": "Single pass over the fixed candidate list above. Re-running a candidate with a modified encoding, threshold or window is a NEW pre-registration, not a re-run.",
+    "passes": 1,
+    "re_encoding_allowed": false,
+    "window_extension_allowed": false
+  },
+
+  "diagnostic_only": [
+    "market_side_offset_beta",
+    "subgroup_breakdowns",
+    "top2_top3",
+    "ece",
+    "per_fold_gamma_sign_stability",
+    "coverage_and_missing_rate",
+    "n_races_with_within_race_variation"
+  ],
+
+  "subgroups": {
+    "_comment": "Reported for diagnosis only. This contract registers NO critical subgroup: with 2026 at ~58 race days in the window the 073 critical set is structurally underpowered (measured 2026-07-24), and gating a screen on it would return NO_DECISION for every candidate regardless of signal.",
+    "critical_subgroups": [],
+    "reported": ["2026_only", "nk", "2026_nk", "canonical", "surface", "field_size_band"]
+  },
+
+  "phase1_handoff": {
+    "_comment": "Binding constraint on the NEXT contract, recorded here so it cannot be quietly dropped.",
+    "requires_new_pre_registration": true,
+    "phase0_output_must_not_relax_phase1_thresholds": true,
+    "one_hypothesis_per_spec": true,
+    "adoption_gate": "073 evaluation-contract v2 (tri-value ADOPT/REJECT/NO_DECISION)"
+  }
+}

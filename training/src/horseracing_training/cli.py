@@ -780,6 +780,26 @@ def main(argv: list[str] | None = None) -> int:
     cse.add_argument("--json", dest="json_out", default=None)
     cse.add_argument("--database-url", default=None)
 
+    # Feature 081 Phase 0: folklore residual-offset SCREENING probe (can_adopt=false). Read-only.
+    fp = sub.add_parser("folklore-probe",
+                        help="081 Phase 0: residual-offset screening probe (SCREENING ONLY)")
+    fp.add_argument("--spec", default="pl_topk:isotonic:0.3",
+                    help="active recipe spec (lgbm-065 = pl_topk:isotonic:0.3)")
+    fp.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    fp.add_argument("--to", dest="to", type=_parse_date, required=True)
+    fp.add_argument("--first-valid-year", type=int, default=2019)
+    fp.add_argument("--seed", type=int, default=20260724)
+    fp.add_argument("--bootstrap-b", type=int, default=2000)
+    fp.add_argument("--num-threads", type=int, default=None)
+    fp.add_argument("--gate-config", required=True)
+    fp.add_argument("--confirmatory", action="store_true")
+    fp.add_argument("--gate-config-hash", default=None)
+    fp.add_argument("--cache", default="out/081-oof-cache.parquet")
+    fp.add_argument("--reuse-cache", action="store_true",
+                    help="reuse an existing OOF cache parquet instead of re-running the OOF")
+    fp.add_argument("--json", dest="json_out", default="out/081-probe-report.json")
+    fp.add_argument("--database-url", default=None)
+
     # Feature 069 (SC-005): past-market coverage audit (year × ID source × obs bands). Read-only.
     ca = sub.add_parser("coverage-audit",
                         help="069: F02 past-market coverage by year × ID source (canonical/nk:)")
@@ -859,6 +879,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _calib_split_eval(session, args)
+    if args.command == "folklore-probe":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _folklore_probe(session, args)
     if args.command == "dispersion-bands":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1245,6 +1269,51 @@ def _calib_split_eval(session: Session, args) -> int:
         import dataclasses
         with open(args.json_out, "w") as fh:
             json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _folklore_probe(session: Session, args) -> int:
+    """Feature 081 Phase 0: residual-offset SCREENING probe (can_adopt=false). Read-only."""
+    import json
+    from pathlib import Path
+
+    from .folklore_probe import run_folklore_probe, write_report
+
+    with open(args.gate_config) as fh:
+        gate = json.load(fh)
+    # Version-agnostic freeze check (the 073 assert_confirmatory is pinned to contract v2; this
+    # is the phase0-screening-v1 contract, so verify the frozen hash directly).
+    if getattr(args, "confirmatory", False):
+        from horseracing_eval.decision import gate_config_hash
+        want = getattr(args, "gate_config_hash", None)
+        if not gate:
+            print("error: confirmatory mode requires a gate-config", file=sys.stderr)
+            return 2
+        if want is not None and gate_config_hash(gate) != want:
+            print("error: gate-config hash mismatch (config changed after freeze)",
+                  file=sys.stderr)
+            return 2
+    if gate.get("can_adopt", True):
+        print("error: folklore-probe requires can_adopt=false (screening-only)", file=sys.stderr)
+        return 2
+
+    report = run_folklore_probe(
+        session, spec=args.spec, make_factory=lambda s: _factory_from_spec(session, s),
+        gate=gate, from_date=args.from_, to_date=args.to,
+        first_valid_year=args.first_valid_year, seed=args.seed, b=args.bootstrap_b,
+        num_threads=args.num_threads, cache_path=Path(args.cache), reuse_cache=args.reuse_cache,
+    )
+    print(f"folklore-probe contract={report['contract']} can_adopt={report['can_adopt']} "
+          f"window={report['window']} (SCREENING ONLY)")
+    holm = report["holm_adjusted_diagnostic"]
+    for r in sorted(report["reports"], key=lambda x: x["point_delta_nll"]):
+        print(f"  {r['candidate_id']:22s} [{r['family']:10s}] k={r['k']:2d} "
+              f"ΔNLL={r['point_delta_nll']:+.5f} CI[{r['ci_low']},{r['ci_high']}] "
+              f"cov={r['coverage']:.2f} holm={holm.get(r['candidate_id'])} "
+              f"{'PASS' if r['passes_screen'] else 'screen<'}")
+    if args.json_out:
+        write_report(report, Path(args.json_out))
         print(f"  wrote {args.json_out}")
     return 0
 
