@@ -35,3 +35,7 @@ Thumbs.db
 .idea/
 .vscode/
 .claude/worktrees/
+
+# 081+: probe caches / reports (regenerable, large parquet)
+/out/
+/logs/
