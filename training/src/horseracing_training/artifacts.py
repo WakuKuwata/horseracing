@@ -125,6 +125,20 @@ def save_model_version(
     info = predictor.fit_info_ or {}
     fcols = info.get("feature_cols", predictor.feature_cols_ or [])
 
+    # Feature 073 US2 (FR-010): fail closed if a model_version already exists with a DIFFERENT
+    # calibration split unit (a split change must mint a new model_version, not overwrite one).
+    # This check MUST run before any disk write: raising after the artifact files are replaced
+    # would leave the existing model_version's on-disk booster/calibrator overwritten while the
+    # DB row still carries the old metrics (serving would load new weights under old metadata).
+    existing = session.get(ModelVersion, model_version)
+    if existing is not None:
+        prior_split = ((existing.metrics_summary or {}).get("training") or {}).get(
+            "calibration_split_unit"
+        )
+        assert_split_unit_compatible(
+            prior_split, info.get("calibration_split_unit"), model_version=model_version
+        )
+
     # Resolve to an ABSOLUTE path before deriving the URIs persisted below. weights_uri /
     # calibrator_uri are read back by the serving CLI, which the ops predict job shells out to with
     # cwd=serving/ (ops/runner.py). A bare-relative --artifacts-dir (the CLI default is "artifacts")
@@ -213,17 +227,6 @@ def save_model_version(
     }
     if info.get("market_offset"):  # Feature 060: visible from model_versions alone (V)
         summary["training"]["market_offset"] = dict(info["market_offset"])
-
-    # Feature 073 US2 (FR-010): fail closed if a model_version already exists with a DIFFERENT
-    # calibration split unit (a split change must mint a new model_version, not overwrite one).
-    existing = session.get(ModelVersion, model_version)
-    if existing is not None:
-        prior_split = ((existing.metrics_summary or {}).get("training") or {}).get(
-            "calibration_split_unit"
-        )
-        assert_split_unit_compatible(
-            prior_split, info.get("calibration_split_unit"), model_version=model_version
-        )
 
     status = AdoptionStatus.ACTIVE if (
         decision.adopted and not register_as_candidate

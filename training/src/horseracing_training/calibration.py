@@ -36,6 +36,11 @@ def split_train_by_time(
     (caller falls back to identity calibration).
     """
     race_ids = np.asarray(race_ids)
+    if calib_frac <= 0.0:
+        # explicit no-holdout request (e.g. the C/D full-history booster): every row is
+        # model-fit, calibration falls back to identity. The n_calib=1 fallback below is
+        # only for small-but-positive fractions, never for an intentional zero.
+        return np.ones(len(race_ids), dtype=bool), np.zeros(len(race_ids), dtype=bool)
     # order distinct races by (date, race_id) for determinism
     uniq = sorted({rid: race_dates[rid] for rid in race_ids}.items(), key=lambda kv: (kv[1], kv[0]))
     n_races = len(uniq)
@@ -63,6 +68,9 @@ def split_train_by_day(
     ``calib_mask`` is all-False (caller falls back to identity calibration).
     """
     race_ids = np.asarray(race_ids)
+    if calib_frac <= 0.0:
+        # explicit no-holdout request — see split_train_by_time.
+        return np.ones(len(race_ids), dtype=bool), np.zeros(len(race_ids), dtype=bool)
     days = sorted({race_dates[rid] for rid in race_ids})
     n_days = len(days)
     n_calib_days = int(round(n_days * calib_frac))

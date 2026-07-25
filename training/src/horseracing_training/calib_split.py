@@ -91,9 +91,15 @@ class OofCalibratedPredictor:
             self.session,
             objective=self.recipe.objective,
             calibration="none",  # booster gives race-normalized p; OOF power is applied on top
+            # FULL-history booster: no train-internal calibration holdout is carved off (that is
+            # the whole point of arm C/D). Without this, LightGBMPredictor.fit silently ran its
+            # default 70/30 split and the booster never learned the latest 30% — the bug the
+            # 2026-07 training-logic review found (the 068 C/D verdicts predate this fix).
+            calib_frac=0.0,
             target_encode_cols=self.recipe.target_encode_cols,
             te_smoothing=self.recipe.te_smoothing,
             seed=self.recipe.seed,
+            drop_features=self.recipe.drop_features,
         )
         if self._shared is not None:
             p._data = self._shared
@@ -102,6 +108,9 @@ class OofCalibratedPredictor:
     def fit(self, train_races: list[RaceContext], *, num_threads: int | None = None):
         self._base = self._make_base()
         self._base.fit(train_races)
+        # reset before refit: a reused predictor must not carry a previous fold's γ when this
+        # fold yields no OOF samples (identity calibration is the correct fallback).
+        self.gamma_, self.n_oof_samples_ = 1.0, 0
         samples = self._oof_samples(train_races)
         if samples:
             self.gamma_, self.n_oof_samples_ = fit_power_gamma(samples)
