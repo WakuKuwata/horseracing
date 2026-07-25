@@ -94,6 +94,16 @@ def final_decision(
         "calibration": gate.calibration,
     }
     if gate.adopted:
+        # codex C#3 fail-closed: when the config DECLARES critical subgroups but the caller did
+        # not compute them (subgroups is None, e.g. paired-eval without --subgroups), ADOPT must
+        # not be reachable — that would silently skip the pre-registered guard. A hard main-gate
+        # failure above still REJECTs normally; only the passing path is intercepted.
+        if subgroups is None and critical:
+            return NO_DECISION, {
+                "cause": "critical_subgroups_not_computed", "critical": list(critical),
+                "gate": gate_flags,
+                "hint": "re-run with subgroup computation enabled (--subgroups)",
+            }
         return ADOPT, {"cause": "all_gates_pass", "subgroups": sg_states, "gate": gate_flags}
 
     # Hard degradations => REJECT (candidate worse on primary, or a confident guard breach).

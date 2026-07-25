@@ -59,6 +59,16 @@ def build_oof_cache(
     Rows: one per (race_id, horse_id) started horse in the OOF-predicted valid races, with the OOF
     win prob ``p``, ``is_winner``, ``day``, ``eligible`` and every candidate raw/cell column.
     """
+    # codex C#1 guard: from_date is the TRAINING-history floor and first_valid_year is the eval
+    # start. If they coincide, the first eval fold has an empty outer-train (silently dropped) and
+    # every later fold trains on a truncated history — fail closed instead of producing a
+    # quietly-weaker OOF (the paired-eval CLI had exactly this bug).
+    if from_date is not None and from_date.year >= first_valid_year:
+        raise ValueError(
+            f"from_date {from_date} must strictly precede first_valid_year {first_valid_year}: "
+            "the OOF needs training history BEFORE the first evaluated year "
+            "(use e.g. --from 2008-01-01 with --first-valid-year 2019)"
+        )
     eval_races = load_eval_races(session, start_date=from_date, end_date=to_date)
     factory = make_factory(spec)
     preds, valid = predict_over_folds(

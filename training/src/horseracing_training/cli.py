@@ -1128,13 +1128,19 @@ def _paired_eval(session: Session, args) -> int:
         from horseracing_eval.decision import assert_confirmatory
         assert_confirmatory(gate_cfg, expected_hash=getattr(args, "gate_config_hash", None))
 
-    eval_races = load_eval_races(session, start_date=args.from_, end_date=args.to)
+    # codex C#1 fix: --from is the EVAL-window start, NOT a training-history floor. Load the FULL
+    # history up to --to so each fold's outer-train uses ALL strictly-prior races; derive the eval
+    # start year from --from. Previously start_date=args.from_ bounded BOTH training and eval, which
+    # silently truncated every fold's outer-train to >= --from and dropped the first eval year
+    # (empty train) — e.g. --from 2019 trained the 2020 fold on 2019 only, not 2008-2019.
+    eval_start_year = args.from_.year if args.from_ else args.first_valid_year
+    eval_races = load_eval_races(session, start_date=None, end_date=args.to)
     cand = _factory_from_spec(session, args.candidate)
     act = _factory_from_spec(session, args.active)
     report = paired_eval(
         cand, act, eval_races,
         gate_config=gate_cfg,
-        first_valid_year=args.first_valid_year,
+        first_valid_year=eval_start_year,
         bootstrap_seed=args.seed,
         bootstrap_b=args.bootstrap_b,
         num_threads=args.num_threads,

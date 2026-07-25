@@ -84,10 +84,15 @@ def test_no_decision_when_stat_guard_underpowered_but_point_estimate_better():
     assert r["cause"] == "stat_guard_underpowered"
 
 
-def test_adopt_without_subgroups_when_main_gate_passes():
+def test_no_adopt_without_computed_subgroups_when_critical_declared():
+    """codex C#3 (2026-07-25) fail-closed contract change: the config DECLARES critical subgroups,
+    so an ADOPT with subgroups=None (guard never computed, e.g. paired-eval without --subgroups)
+    would silently skip the pre-registered guard. It now defers to NO_DECISION. The previous
+    expectation (ADOPT) codified the fail-open hole this replaces."""
     gate = _gate(primary=True, stat=True, recent=True, top=True, cal=True, diff=-0.01)
-    d, _ = final_decision(gate, None, n_days=30, cfg=CFG)
-    assert d == ADOPT
+    d, r = final_decision(gate, None, n_days=30, cfg=CFG)
+    assert d == NO_DECISION
+    assert r["cause"] == "critical_subgroups_not_computed"
 
 
 # --- T006: boundaries ---------------------------------------------------------------------

@@ -31,6 +31,12 @@ class ScoringLabel:
 class EvalRace:
     context: RaceContext
     labels: tuple[ScoringLabel, ...]  # finished horses only
+    #: codex C#2: result rows of ANY status (finished/stopped/disqualified) for this race.
+    #: None = unknown (legacy constructors / tests) -> coverage not enforced. When set, a race
+    #: whose started field has horses with NO result row at all (partial ingest) is ineligible
+    #: for winner NLL — absent-from-results is only a legitimate 0-label when the row exists
+    #: with a non-finished status or the race is fully covered.
+    n_result_rows: int | None = None
 
 
 @dataclass(frozen=True)
@@ -71,6 +77,11 @@ def population_masks(er: EvalRace) -> RacePopulation:
     winners = [hid for hid, w in started_win.items() if w == 1]
     n_winners = len(winners)
     eligible = n_winners == 1
+    # codex C#2 fail-closed: a race with FEWER result rows (any status) than started horses is a
+    # partial ingest — some started horses have no outcome at all, so the "absent = 0 label"
+    # convention above is unverifiable. Ineligible for winner NLL (docstring promise made real).
+    if eligible and er.n_result_rows is not None and er.n_result_rows < len(started_ids):
+        eligible = False
     return RacePopulation(
         race_id=er.context.race_id,
         started_horse_ids=started_ids,
@@ -127,12 +138,22 @@ def load_eval_races(
         .where(RaceResult.result_status == ResultStatus.FINISHED)
         .order_by(Race.race_date, Race.race_id, RaceResult.finish_order, RaceResult.horse_id)
     )
+    # codex C#2: result-row coverage per race, ANY status (finished/stopped/disqualified) — used
+    # to make the partial-ingest exclusion real (a started horse with NO result row at all).
+    from sqlalchemy import func
+    cov_stmt = (
+        select(RaceResult.race_id, func.count().label("n"))
+        .join(Race, Race.race_id == RaceResult.race_id)
+        .group_by(RaceResult.race_id)
+    )
     if start_date is not None:
         rh_stmt = rh_stmt.where(Race.race_date >= start_date)
         lbl_stmt = lbl_stmt.where(Race.race_date >= start_date)
+        cov_stmt = cov_stmt.where(Race.race_date >= start_date)
     if end_date is not None:
         rh_stmt = rh_stmt.where(Race.race_date <= end_date)
         lbl_stmt = lbl_stmt.where(Race.race_date <= end_date)
+        cov_stmt = cov_stmt.where(Race.race_date <= end_date)
 
     horses_by_race: dict[str, list] = defaultdict(list)
     for rh in session.execute(rh_stmt):
@@ -150,6 +171,9 @@ def load_eval_races(
         labels_by_race[row.race_id].append(
             ScoringLabel(horse_id=row.horse_id, win=row.win, top2=row.top2, top3=row.top3)
         )
+    coverage_by_race: dict[str, int] = {
+        row.race_id: int(row.n) for row in session.execute(cov_stmt)
+    }
 
     eval_races: list[EvalRace] = []
     for race_id, race_date in race_rows:
@@ -165,6 +189,7 @@ def load_eval_races(
                     race_id=race_id, race_date=race_date, started_horses=tuple(horses)
                 ),
                 labels=tuple(labels),
+                n_result_rows=coverage_by_race.get(race_id, 0),
             )
         )
     return eval_races
