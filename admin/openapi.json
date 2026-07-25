@@ -259,6 +259,29 @@
         "title": "CoverageResponse",
         "type": "object"
       },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "code",
+          "detail"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
       "EstimatedOddsRow": {
         "properties": {
           "as_of": {
@@ -2792,6 +2815,891 @@
         "title": "RunAudit",
         "type": "object"
       },
+      "SaByYearHorse": {
+        "additionalProperties": false,
+        "properties": {
+          "excess_logloss_point": {
+            "title": "Excess Logloss Point",
+            "type": "number"
+          },
+          "n_horses": {
+            "title": "N Horses",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n_horses",
+          "excess_logloss_point"
+        ],
+        "title": "SaByYearHorse",
+        "type": "object"
+      },
+      "SaByYearRace": {
+        "additionalProperties": false,
+        "properties": {
+          "excess_nll_uniform_point": {
+            "title": "Excess Nll Uniform Point",
+            "type": "number"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n_races",
+          "excess_nll_uniform_point"
+        ],
+        "title": "SaByYearRace",
+        "type": "object"
+      },
+      "SaCIBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "ci_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci High"
+          },
+          "ci_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci Low"
+          },
+          "ci_note": {
+            "title": "Ci Note",
+            "type": "string"
+          },
+          "n_days": {
+            "title": "N Days",
+            "type": "integer"
+          },
+          "no_decision": {
+            "title": "No Decision",
+            "type": "boolean"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          }
+        },
+        "required": [
+          "point",
+          "ci_low",
+          "ci_high",
+          "n_days",
+          "no_decision",
+          "ci_note"
+        ],
+        "title": "SaCIBlock",
+        "type": "object"
+      },
+      "SaCalibrationHorse": {
+        "additionalProperties": false,
+        "properties": {
+          "bins": {
+            "items": {
+              "$ref": "#/components/schemas/SaReliabilityBin"
+            },
+            "title": "Bins",
+            "type": "array"
+          },
+          "calibration_in_the_large": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibration In The Large"
+          },
+          "ece": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ece"
+          },
+          "grain_note": {
+            "title": "Grain Note",
+            "type": "string"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "grain_note",
+          "bins",
+          "ece",
+          "calibration_in_the_large",
+          "n"
+        ],
+        "title": "SaCalibrationHorse",
+        "type": "object"
+      },
+      "SaCalibrationRace": {
+        "additionalProperties": false,
+        "properties": {
+          "bins": {
+            "items": {
+              "$ref": "#/components/schemas/SaReliabilityBin"
+            },
+            "title": "Bins",
+            "type": "array"
+          },
+          "calibration_in_the_large": {
+            "title": "Calibration In The Large",
+            "type": "null"
+          },
+          "citl_note": {
+            "title": "Citl Note",
+            "type": "string"
+          },
+          "ece": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ece"
+          },
+          "grain_note": {
+            "title": "Grain Note",
+            "type": "string"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "grain_note",
+          "bins",
+          "ece",
+          "calibration_in_the_large",
+          "citl_note",
+          "n"
+        ],
+        "title": "SaCalibrationRace",
+        "type": "object"
+      },
+      "SaHorseAxis": {
+        "additionalProperties": false,
+        "properties": {
+          "axis_id": {
+            "title": "Axis Id",
+            "type": "string"
+          },
+          "buckets": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SaHorseBucket"
+            },
+            "title": "Buckets",
+            "type": "object"
+          },
+          "definition": {
+            "additionalProperties": true,
+            "title": "Definition",
+            "type": "object"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "grain": {
+            "const": "horse",
+            "title": "Grain",
+            "type": "string"
+          },
+          "mask_definition_hash": {
+            "title": "Mask Definition Hash",
+            "type": "string"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "axis_id",
+          "family",
+          "grain",
+          "origin",
+          "definition",
+          "mask_definition_hash",
+          "buckets"
+        ],
+        "title": "SaHorseAxis",
+        "type": "object"
+      },
+      "SaHorseBucket": {
+        "additionalProperties": false,
+        "properties": {
+          "by_year": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SaByYearHorse"
+            },
+            "title": "By Year",
+            "type": "object"
+          },
+          "calibration": {
+            "$ref": "#/components/schemas/SaCalibrationHorse"
+          },
+          "ece_ci": {
+            "$ref": "#/components/schemas/SaCIBlock"
+          },
+          "excess_logloss_vs_uniform": {
+            "$ref": "#/components/schemas/SaCIBlock"
+          },
+          "grain": {
+            "$ref": "#/components/schemas/SaHorseGrainLabel"
+          },
+          "n_horses": {
+            "title": "N Horses",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "grain",
+          "n_horses",
+          "n_races",
+          "excess_logloss_vs_uniform",
+          "by_year",
+          "calibration",
+          "ece_ci"
+        ],
+        "title": "SaHorseBucket",
+        "type": "object"
+      },
+      "SaHorseGrainLabel": {
+        "additionalProperties": false,
+        "properties": {
+          "excess_logloss": {
+            "const": "horse",
+            "title": "Excess Logloss",
+            "type": "string"
+          },
+          "winner_nll": {
+            "const": "NOT_AVAILABLE_AT_HORSE_GRAIN",
+            "title": "Winner Nll",
+            "type": "string"
+          }
+        },
+        "required": [
+          "excess_logloss",
+          "winner_nll"
+        ],
+        "title": "SaHorseGrainLabel",
+        "type": "object"
+      },
+      "SaInstrumentContract": {
+        "additionalProperties": false,
+        "properties": {
+          "can_adopt": {
+            "const": false,
+            "title": "Can Adopt",
+            "type": "boolean"
+          },
+          "ci_note": {
+            "title": "Ci Note",
+            "type": "string"
+          },
+          "discovery_rule": {
+            "title": "Discovery Rule",
+            "type": "string"
+          },
+          "estimand": {
+            "title": "Estimand",
+            "type": "string"
+          },
+          "kind": {
+            "const": "segment_accuracy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "known_confounds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Known Confounds",
+            "type": "array"
+          },
+          "mask_library_hash": {
+            "title": "Mask Library Hash",
+            "type": "string"
+          },
+          "mask_library_version": {
+            "title": "Mask Library Version",
+            "type": "string"
+          },
+          "metric_contract_version": {
+            "title": "Metric Contract Version",
+            "type": "string"
+          },
+          "secondary": {
+            "const": true,
+            "title": "Secondary",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "secondary",
+          "can_adopt",
+          "estimand",
+          "discovery_rule",
+          "ci_note",
+          "known_confounds",
+          "metric_contract_version",
+          "mask_library_version",
+          "mask_library_hash"
+        ],
+        "title": "SaInstrumentContract",
+        "type": "object"
+      },
+      "SaMarketBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "excess_nll_market": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excess Nll Market"
+          },
+          "market_nll": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Nll"
+          },
+          "n_market_complete_races": {
+            "title": "N Market Complete Races",
+            "type": "integer"
+          },
+          "n_total_races": {
+            "title": "N Total Races",
+            "type": "integer"
+          },
+          "winner_nll_market_subset": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner Nll Market Subset"
+          }
+        },
+        "required": [
+          "n_market_complete_races",
+          "n_total_races"
+        ],
+        "title": "SaMarketBlock",
+        "type": "object"
+      },
+      "SaPopulation": {
+        "additionalProperties": false,
+        "properties": {
+          "exclusions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Exclusions",
+            "type": "object"
+          },
+          "n_scored_horses": {
+            "title": "N Scored Horses",
+            "type": "integer"
+          },
+          "n_scored_races": {
+            "title": "N Scored Races",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n_scored_races",
+          "n_scored_horses",
+          "exclusions"
+        ],
+        "title": "SaPopulation",
+        "type": "object"
+      },
+      "SaProvenance": {
+        "additionalProperties": false,
+        "properties": {
+          "attestation_digest": {
+            "title": "Attestation Digest",
+            "type": "string"
+          },
+          "base_model_version": {
+            "title": "Base Model Version",
+            "type": "string"
+          },
+          "bootstrap_b": {
+            "title": "Bootstrap B",
+            "type": "integer"
+          },
+          "bundle_digest": {
+            "title": "Bundle Digest",
+            "type": "string"
+          },
+          "code_sha": {
+            "title": "Code Sha",
+            "type": "string"
+          },
+          "eval_window": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Eval Window",
+            "type": "array"
+          },
+          "feature_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feature Hash"
+          },
+          "feature_version": {
+            "title": "Feature Version",
+            "type": "string"
+          },
+          "first_valid_year": {
+            "title": "First Valid Year",
+            "type": "integer"
+          },
+          "fold_boundaries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fold Boundaries"
+          },
+          "label_snapshot_hash": {
+            "title": "Label Snapshot Hash",
+            "type": "string"
+          },
+          "mask_library_hash": {
+            "title": "Mask Library Hash",
+            "type": "string"
+          },
+          "mask_library_version": {
+            "title": "Mask Library Version",
+            "type": "string"
+          },
+          "metric_contract_version": {
+            "title": "Metric Contract Version",
+            "type": "string"
+          },
+          "oof_race_set_hash": {
+            "title": "Oof Race Set Hash",
+            "type": "string"
+          },
+          "prediction_checksum": {
+            "title": "Prediction Checksum",
+            "type": "string"
+          },
+          "probability_stage": {
+            "title": "Probability Stage",
+            "type": "string"
+          },
+          "scored_race_set_hash": {
+            "title": "Scored Race Set Hash",
+            "type": "string"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "train_floor": {
+            "title": "Train Floor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_model_version",
+          "feature_version",
+          "feature_hash",
+          "attestation_digest",
+          "bundle_digest",
+          "prediction_checksum",
+          "oof_race_set_hash",
+          "scored_race_set_hash",
+          "label_snapshot_hash",
+          "train_floor",
+          "eval_window",
+          "first_valid_year",
+          "fold_boundaries",
+          "probability_stage",
+          "code_sha",
+          "seed",
+          "bootstrap_b",
+          "metric_contract_version",
+          "mask_library_version",
+          "mask_library_hash"
+        ],
+        "title": "SaProvenance",
+        "type": "object"
+      },
+      "SaRaceAxis": {
+        "additionalProperties": false,
+        "properties": {
+          "axis_id": {
+            "title": "Axis Id",
+            "type": "string"
+          },
+          "buckets": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SaRaceBucket"
+            },
+            "title": "Buckets",
+            "type": "object"
+          },
+          "definition": {
+            "additionalProperties": true,
+            "title": "Definition",
+            "type": "object"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "grain": {
+            "const": "race",
+            "title": "Grain",
+            "type": "string"
+          },
+          "mask_definition_hash": {
+            "title": "Mask Definition Hash",
+            "type": "string"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "axis_id",
+          "family",
+          "grain",
+          "origin",
+          "definition",
+          "mask_definition_hash",
+          "buckets"
+        ],
+        "title": "SaRaceAxis",
+        "type": "object"
+      },
+      "SaRaceBucket": {
+        "additionalProperties": false,
+        "properties": {
+          "by_year": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SaByYearRace"
+            },
+            "title": "By Year",
+            "type": "object"
+          },
+          "calibration": {
+            "$ref": "#/components/schemas/SaCalibrationRace"
+          },
+          "ece_ci": {
+            "$ref": "#/components/schemas/SaCIBlock"
+          },
+          "excess_nll_uniform": {
+            "$ref": "#/components/schemas/SaCIBlock"
+          },
+          "grain": {
+            "$ref": "#/components/schemas/SaRaceGrainLabel"
+          },
+          "market": {
+            "$ref": "#/components/schemas/SaMarketBlock"
+          },
+          "n_horses": {
+            "title": "N Horses",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          },
+          "uniform_nll": {
+            "title": "Uniform Nll",
+            "type": "number"
+          },
+          "winner_nll": {
+            "title": "Winner Nll",
+            "type": "number"
+          }
+        },
+        "required": [
+          "grain",
+          "n_races",
+          "n_horses",
+          "excess_nll_uniform",
+          "winner_nll",
+          "uniform_nll",
+          "market",
+          "by_year",
+          "calibration",
+          "ece_ci"
+        ],
+        "title": "SaRaceBucket",
+        "type": "object"
+      },
+      "SaRaceGrainLabel": {
+        "additionalProperties": false,
+        "properties": {
+          "calibration": {
+            "const": "started_horse_within_selected_races",
+            "title": "Calibration",
+            "type": "string"
+          },
+          "winner_nll": {
+            "const": "race",
+            "title": "Winner Nll",
+            "type": "string"
+          }
+        },
+        "required": [
+          "winner_nll",
+          "calibration"
+        ],
+        "title": "SaRaceGrainLabel",
+        "type": "object"
+      },
+      "SaReliabilityBin": {
+        "additionalProperties": false,
+        "properties": {
+          "hi": {
+            "title": "Hi",
+            "type": "number"
+          },
+          "lo": {
+            "title": "Lo",
+            "type": "number"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "pred_mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pred Mean"
+          },
+          "realized": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized"
+          },
+          "wilson_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wilson High"
+          },
+          "wilson_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wilson Low"
+          }
+        },
+        "required": [
+          "lo",
+          "hi",
+          "n",
+          "pred_mean",
+          "realized",
+          "wilson_low",
+          "wilson_high"
+        ],
+        "title": "SaReliabilityBin",
+        "type": "object"
+      },
+      "SegmentAccuracyPayloadV1": {
+        "additionalProperties": false,
+        "properties": {
+          "axes": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "horse": "#/components/schemas/SaHorseAxis",
+                  "race": "#/components/schemas/SaRaceAxis"
+                },
+                "propertyName": "grain"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SaRaceAxis"
+                },
+                {
+                  "$ref": "#/components/schemas/SaHorseAxis"
+                }
+              ]
+            },
+            "title": "Axes",
+            "type": "array"
+          },
+          "instrument_contract": {
+            "$ref": "#/components/schemas/SaInstrumentContract"
+          },
+          "population": {
+            "$ref": "#/components/schemas/SaPopulation"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/SaProvenance"
+          }
+        },
+        "required": [
+          "instrument_contract",
+          "provenance",
+          "population",
+          "axes"
+        ],
+        "title": "SegmentAccuracyPayloadV1",
+        "type": "object"
+      },
+      "SegmentAccuracyResponse": {
+        "description": "Feature 083: envelope + typed v1 transcription of the newest 082 run.\n\n``diagnostic_run_id`` is the handle the 082 discovery rule requires (a hypothesis found\nhere must carry it into its NEW pre-registration).",
+        "properties": {
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "diagnostic_run_id": {
+            "title": "Diagnostic Run Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "segment_accuracy",
+            "default": "segment_accuracy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "logic_version": {
+            "title": "Logic Version",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/SegmentAccuracyPayloadV1"
+          }
+        },
+        "required": [
+          "diagnostic_run_id",
+          "computed_at",
+          "logic_version",
+          "payload"
+        ],
+        "title": "SegmentAccuracyResponse",
+        "type": "object"
+      },
       "SegmentEdgeResponse": {
         "properties": {
           "computed_at": {
@@ -3241,6 +4149,48 @@
         "summary": "Coverage",
         "tags": [
           "coverage"
+        ]
+      }
+    },
+    "/api/v1/diagnostics/segment-accuracy": {
+      "get": {
+        "description": "Feature 083: newest 082 segment-accuracy run, transcribed through the typed v1 schema.\n\n021 discipline: transcription only — no recompute, no reorder, no augmentation. The\npayload is validated with extra=\"forbid\" (the 075 splat-null countermeasure): a malformed\nor unknown-version persisted run fails CLOSED as a typed 409, never renders as nulls, and\nnever falls back to an older run.",
+        "operationId": "segment_accuracy_api_v1_diagnostics_segment_accuracy_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentAccuracyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Segment Accuracy",
+        "tags": [
+          "diagnostics"
         ]
       }
     },

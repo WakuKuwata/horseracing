@@ -21,6 +21,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/diagnostics/segment-accuracy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Segment Accuracy
+         * @description Feature 083: newest 082 segment-accuracy run, transcribed through the typed v1 schema.
+         *
+         *     021 discipline: transcription only — no recompute, no reorder, no augmentation. The
+         *     payload is validated with extra="forbid" (the 075 splat-null countermeasure): a malformed
+         *     or unknown-version persisted run fails CLOSED as a typed 409, never renders as nulls, and
+         *     never falls back to an older run.
+         */
+        get: operations["segment_accuracy_api_v1_diagnostics_segment_accuracy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/diagnostics/segment-edge": {
         parameters: {
             query?: never;
@@ -423,6 +448,15 @@ export interface components {
              * @default []
              */
             days: components["schemas"]["CoverageDay"][];
+        };
+        /** ErrorBody */
+        ErrorBody: {
+            /** Code */
+            code: string;
+            /** Detail */
+            detail: string;
+            /** Status */
+            status: number;
         };
         /** EstimatedOddsRow */
         EstimatedOddsRow: {
@@ -1189,6 +1223,325 @@ export interface components {
             /** Prediction Run Id */
             prediction_run_id: string;
         };
+        /** SaByYearHorse */
+        SaByYearHorse: {
+            /** Excess Logloss Point */
+            excess_logloss_point: number;
+            /** N Horses */
+            n_horses: number;
+        };
+        /** SaByYearRace */
+        SaByYearRace: {
+            /** Excess Nll Uniform Point */
+            excess_nll_uniform_point: number;
+            /** N Races */
+            n_races: number;
+        };
+        /** SaCIBlock */
+        SaCIBlock: {
+            /** Ci High */
+            ci_high: number | null;
+            /** Ci Low */
+            ci_low: number | null;
+            /** Ci Note */
+            ci_note: string;
+            /** N Days */
+            n_days: number;
+            /** No Decision */
+            no_decision: boolean;
+            /** Point */
+            point: number | null;
+        };
+        /** SaCalibrationHorse */
+        SaCalibrationHorse: {
+            /** Bins */
+            bins: components["schemas"]["SaReliabilityBin"][];
+            /** Calibration In The Large */
+            calibration_in_the_large: number | null;
+            /** Ece */
+            ece: number | null;
+            /** Grain Note */
+            grain_note: string;
+            /** N */
+            n: number;
+        };
+        /** SaCalibrationRace */
+        SaCalibrationRace: {
+            /** Bins */
+            bins: components["schemas"]["SaReliabilityBin"][];
+            /** Calibration In The Large */
+            calibration_in_the_large: null;
+            /** Citl Note */
+            citl_note: string;
+            /** Ece */
+            ece: number | null;
+            /** Grain Note */
+            grain_note: string;
+            /** N */
+            n: number;
+        };
+        /** SaHorseAxis */
+        SaHorseAxis: {
+            /** Axis Id */
+            axis_id: string;
+            /** Buckets */
+            buckets: {
+                [key: string]: components["schemas"]["SaHorseBucket"];
+            };
+            /** Definition */
+            definition: {
+                [key: string]: unknown;
+            };
+            /** Family */
+            family: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            grain: "horse";
+            /** Mask Definition Hash */
+            mask_definition_hash: string;
+            /** Origin */
+            origin: string;
+        };
+        /** SaHorseBucket */
+        SaHorseBucket: {
+            /** By Year */
+            by_year: {
+                [key: string]: components["schemas"]["SaByYearHorse"];
+            };
+            calibration: components["schemas"]["SaCalibrationHorse"];
+            ece_ci: components["schemas"]["SaCIBlock"];
+            excess_logloss_vs_uniform: components["schemas"]["SaCIBlock"];
+            grain: components["schemas"]["SaHorseGrainLabel"];
+            /** N Horses */
+            n_horses: number;
+            /** N Races */
+            n_races: number;
+        };
+        /** SaHorseGrainLabel */
+        SaHorseGrainLabel: {
+            /**
+             * Excess Logloss
+             * @constant
+             */
+            excess_logloss: "horse";
+            /**
+             * Winner Nll
+             * @constant
+             */
+            winner_nll: "NOT_AVAILABLE_AT_HORSE_GRAIN";
+        };
+        /** SaInstrumentContract */
+        SaInstrumentContract: {
+            /**
+             * Can Adopt
+             * @constant
+             */
+            can_adopt: false;
+            /** Ci Note */
+            ci_note: string;
+            /** Discovery Rule */
+            discovery_rule: string;
+            /** Estimand */
+            estimand: string;
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "segment_accuracy";
+            /** Known Confounds */
+            known_confounds: string[];
+            /** Mask Library Hash */
+            mask_library_hash: string;
+            /** Mask Library Version */
+            mask_library_version: string;
+            /** Metric Contract Version */
+            metric_contract_version: string;
+            /**
+             * Secondary
+             * @constant
+             */
+            secondary: true;
+        };
+        /** SaMarketBlock */
+        SaMarketBlock: {
+            /** Excess Nll Market */
+            excess_nll_market?: number | null;
+            /** Market Nll */
+            market_nll?: number | null;
+            /** N Market Complete Races */
+            n_market_complete_races: number;
+            /** N Total Races */
+            n_total_races: number;
+            /** Winner Nll Market Subset */
+            winner_nll_market_subset?: number | null;
+        };
+        /** SaPopulation */
+        SaPopulation: {
+            /** Exclusions */
+            exclusions: {
+                [key: string]: number;
+            };
+            /** N Scored Horses */
+            n_scored_horses: number;
+            /** N Scored Races */
+            n_scored_races: number;
+        };
+        /** SaProvenance */
+        SaProvenance: {
+            /** Attestation Digest */
+            attestation_digest: string;
+            /** Base Model Version */
+            base_model_version: string;
+            /** Bootstrap B */
+            bootstrap_b: number;
+            /** Bundle Digest */
+            bundle_digest: string;
+            /** Code Sha */
+            code_sha: string;
+            /** Eval Window */
+            eval_window: string[];
+            /** Feature Hash */
+            feature_hash: string | null;
+            /** Feature Version */
+            feature_version: string;
+            /** First Valid Year */
+            first_valid_year: number;
+            /** Fold Boundaries */
+            fold_boundaries: number[] | null;
+            /** Label Snapshot Hash */
+            label_snapshot_hash: string;
+            /** Mask Library Hash */
+            mask_library_hash: string;
+            /** Mask Library Version */
+            mask_library_version: string;
+            /** Metric Contract Version */
+            metric_contract_version: string;
+            /** Oof Race Set Hash */
+            oof_race_set_hash: string;
+            /** Prediction Checksum */
+            prediction_checksum: string;
+            /** Probability Stage */
+            probability_stage: string;
+            /** Scored Race Set Hash */
+            scored_race_set_hash: string;
+            /** Seed */
+            seed: number;
+            /** Train Floor */
+            train_floor: string;
+        };
+        /** SaRaceAxis */
+        SaRaceAxis: {
+            /** Axis Id */
+            axis_id: string;
+            /** Buckets */
+            buckets: {
+                [key: string]: components["schemas"]["SaRaceBucket"];
+            };
+            /** Definition */
+            definition: {
+                [key: string]: unknown;
+            };
+            /** Family */
+            family: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            grain: "race";
+            /** Mask Definition Hash */
+            mask_definition_hash: string;
+            /** Origin */
+            origin: string;
+        };
+        /** SaRaceBucket */
+        SaRaceBucket: {
+            /** By Year */
+            by_year: {
+                [key: string]: components["schemas"]["SaByYearRace"];
+            };
+            calibration: components["schemas"]["SaCalibrationRace"];
+            ece_ci: components["schemas"]["SaCIBlock"];
+            excess_nll_uniform: components["schemas"]["SaCIBlock"];
+            grain: components["schemas"]["SaRaceGrainLabel"];
+            market: components["schemas"]["SaMarketBlock"];
+            /** N Horses */
+            n_horses: number;
+            /** N Races */
+            n_races: number;
+            /** Uniform Nll */
+            uniform_nll: number;
+            /** Winner Nll */
+            winner_nll: number;
+        };
+        /** SaRaceGrainLabel */
+        SaRaceGrainLabel: {
+            /**
+             * Calibration
+             * @constant
+             */
+            calibration: "started_horse_within_selected_races";
+            /**
+             * Winner Nll
+             * @constant
+             */
+            winner_nll: "race";
+        };
+        /** SaReliabilityBin */
+        SaReliabilityBin: {
+            /** Hi */
+            hi: number;
+            /** Lo */
+            lo: number;
+            /** N */
+            n: number;
+            /** Pred Mean */
+            pred_mean: number | null;
+            /** Realized */
+            realized: number | null;
+            /** Wilson High */
+            wilson_high: number | null;
+            /** Wilson Low */
+            wilson_low: number | null;
+        };
+        /** SegmentAccuracyPayloadV1 */
+        SegmentAccuracyPayloadV1: {
+            /** Axes */
+            axes: (components["schemas"]["SaRaceAxis"] | components["schemas"]["SaHorseAxis"])[];
+            instrument_contract: components["schemas"]["SaInstrumentContract"];
+            population: components["schemas"]["SaPopulation"];
+            provenance: components["schemas"]["SaProvenance"];
+        };
+        /**
+         * SegmentAccuracyResponse
+         * @description Feature 083: envelope + typed v1 transcription of the newest 082 run.
+         *
+         *     ``diagnostic_run_id`` is the handle the 082 discovery rule requires (a hypothesis found
+         *     here must carry it into its NEW pre-registration).
+         */
+        SegmentAccuracyResponse: {
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /** Diagnostic Run Id */
+            diagnostic_run_id: string;
+            /**
+             * Kind
+             * @default segment_accuracy
+             * @constant
+             */
+            kind: "segment_accuracy";
+            /** Logic Version */
+            logic_version: string;
+            payload: components["schemas"]["SegmentAccuracyPayloadV1"];
+        };
         /** SegmentEdgeResponse */
         SegmentEdgeResponse: {
             /**
@@ -1390,6 +1743,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    segment_accuracy_api_v1_diagnostics_segment_accuracy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentAccuracyResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
         };

@@ -14,6 +14,7 @@ regeneration may drive an official run.
 from __future__ import annotations
 
 import datetime
+import json
 from pathlib import Path
 
 import numpy as np
@@ -42,6 +43,23 @@ class SegmentAccuracyError(RuntimeError):
     """Typed fail-closed error for the accuracy readout."""
 
 
+#: sidecar written next to a generated bundle so a later run can compare RECIPE identity
+#: without re-deriving it from the code_sha-polluted attestation digest.
+_ATTESTATION_SIDECAR = "attestation.json"
+
+
+def recipe_identity(att: dict) -> str:
+    """Content hash of the MODEL RECIPE only — the attestation minus ``code_sha``.
+
+    The full attestation digest covers the repo HEAD, so an unrelated commit invalidates an
+    otherwise-valid bundle (observed 2026-07-25: 7 intervening commits). Recipe identity is what
+    actually determines whether stored OOF predictions are reusable; ``code_sha`` stays recorded
+    in provenance for audit."""
+    payload = {k: v for k, v in att.items()
+               if k not in ("attestation_digest", "code_sha")}
+    return stable_hash(payload)
+
+
 def resolve_active(session: Session) -> tuple[str, Path]:
     """Resolve the SINGLE active model and its artifact directory (fail-closed on 0 or >1)."""
     rows = session.execute(
@@ -66,9 +84,16 @@ def obtain_bundle(
 ) -> tuple[dict, dict]:
     """Return ``(bundle_payload, attestation)`` — verified reuse or fresh regeneration.
 
-    Reuse requires the stored bundle to verify (checksums) AND to carry the CURRENT active's
-    attestation digest; anything else regenerates (codex: never silently drive the instrument
-    with a stale or foreign OOF).
+    Reuse requires the stored bundle to verify (checksums) AND to have been produced by the SAME
+    MODEL RECIPE as the current active; anything else regenerates (codex: never silently drive the
+    instrument with a stale or foreign OOF).
+
+    Recipe identity deliberately EXCLUDES ``code_sha``. The full attestation digest covers the repo
+    HEAD, so any unrelated commit (docs, another package) would invalidate a still-valid bundle —
+    observed 2026-07-25: 7 commits between generation and reuse made a byte-identical-recipe bundle
+    unreusable. The reuse key is the recipe payload minus ``code_sha``; the run's own ``code_sha``
+    is still recorded verbatim in provenance, and the bundle keeps its generating attestation, so
+    a reviewer can always see both.
     """
     att = attestation_from_model_dir(active_dir, code_sha=code_sha())
     factory = general_factory_from_attestation(
@@ -78,18 +103,34 @@ def obtain_bundle(
     if bundle_path is not None:
         payload = oof_bundle.read_bundle(bundle_path)
         oof_bundle.verify_bundle(payload)
-        if payload["attestation_digest"] != att["attestation_digest"]:
+        want = recipe_identity(att)
+        sidecar = Path(bundle_path)
+        sidecar = (sidecar.parent if sidecar.is_file() else sidecar) / _ATTESTATION_SIDECAR
+        if sidecar.exists():
+            got = recipe_identity(json.loads(sidecar.read_text()))
+            detail = f"{got[:12]} != {want[:12]}"
+        else:
+            # no sidecar (e.g. a bundle published by the 074 CLI): fall back to the strict
+            # digest check — fail-closed, but say so explicitly rather than guessing.
+            got = payload["attestation_digest"]
+            want = att["attestation_digest"]
+            detail = (f"{got[:12]} != {want[:12]}; no {_ATTESTATION_SIDECAR} sidecar, so the "
+                      "strict digest (which includes code_sha) was compared")
+        if got != want:
             raise SegmentAccuracyError(
-                "bundle attestation digest does not match the current active's attestation "
-                f"({payload['attestation_digest'][:12]} != {att['attestation_digest'][:12]}); "
+                f"bundle recipe identity does not match the current active ({detail}); "
                 "regenerate instead of reusing a stale/foreign bundle"
             )
         return payload, att
-    _, payload = generate_oof_bundle(
+    path, payload = generate_oof_bundle(
         session, out_root=out_root, date_from=None, date_to=date_to,
         first_valid_year=first_valid_year, num_threads=num_threads,
         attestation=att, factory=factory, attestation_digest=att["attestation_digest"],
     )
+    # publish the recipe sidecar next to the bundle so later runs can reuse it across
+    # unrelated commits (074's bundle format itself is left untouched).
+    bundle_dir = Path(path).parent if Path(path).is_file() else Path(path)
+    (bundle_dir / _ATTESTATION_SIDECAR).write_text(json.dumps(att, indent=2, sort_keys=True))
     return payload, att
 
 
@@ -117,8 +158,23 @@ def assemble_inputs(
     attrs = _load_attrs(session)
     preds = bundle["predictions"]
 
+    # ledger completeness (codex P0#3): load_eval_races silently drops races with ZERO finished
+    # labels BEFORE this function sees them — count them so every window race is either scored
+    # or accounted for (FR-010 Σ reconciliation).
+    from horseracing_db.models import Race, RaceHorse
+    from sqlalchemy import distinct, func
+    from sqlalchemy import select as _select
+    n_window_races = session.execute(
+        _select(func.count(distinct(Race.race_id)))
+        .select_from(Race)
+        .join(RaceHorse, RaceHorse.race_id == Race.race_id)
+        .where(Race.race_date >= eval_from, Race.race_date <= eval_to,
+               RaceHorse.entry_status == "started")
+    ).scalar_one()
+
     inputs: list[RaceInput] = []
-    excl = {"not_in_bundle": 0, "ineligible_winner_count": 0, "partial_ingest": 0,
+    excl = {"no_finished_label": int(n_window_races) - len(races),
+            "not_in_bundle": 0, "ineligible_winner_count": 0, "partial_ingest": 0,
             "prediction_horse_mismatch": 0, "missing_attrs": 0}
     for er in races:
         ctx = er.context

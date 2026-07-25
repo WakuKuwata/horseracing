@@ -7,6 +7,7 @@ import type {
   ImportanceResponse,
   JobListResponse,
   ModelListResponse,
+  SegmentAccuracyResponse,
   SegmentEdgeResponse,
 } from "./types";
 
@@ -74,5 +75,12 @@ export function useSegmentEdge() {
   return useQuery<SegmentEdgeResponse, ErrorInfo>({
     queryKey: ["diagnostics", "segment-edge"],
     queryFn: async () => unwrap(await api.GET("/api/v1/diagnostics/segment-edge")),
+  });
+}
+
+export function useSegmentAccuracy() {
+  return useQuery<SegmentAccuracyResponse, ErrorInfo>({
+    queryKey: ["diagnostics", "segment-accuracy"],
+    queryFn: async () => unwrap(await api.GET("/api/v1/diagnostics/segment-accuracy")),
   });
 }

@@ -9,9 +9,9 @@ recompute time), real rows carry ``updated_at`` (DB latest). selection stays a h
 from __future__ import annotations
 
 import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ErrorBody(BaseModel):
@@ -545,3 +545,199 @@ class SegmentEdgeResponse(BaseModel):
     n_horses: int
     note: str            # 047 standing disclaimer (SECONDARY, pre-registered, not a buy signal)
     rows: list[SegmentEdgeRow] = []
+
+
+# --- Feature 083: typed v1 transcription of the 082 segment-accuracy payload ---------------------
+# codex viewer review (P0#1): a verbatim `payload: dict` + hand-written TS casts would MOVE the
+# 075 splat-null trap into the admin. The 075 root cause was `Model(**dict)` with extra=ignore +
+# defaults — `model_validate` with extra="forbid" and NO silent defaults is the countermeasure,
+# not the trap. Every model below forbids unknown keys; the payload's own contract version is
+# checked BEFORE validation; a malformed persisted run fails closed (typed 409), never nulls.
+
+class SaCIBlock(BaseModel):
+    model_config = {"extra": "forbid"}
+    point: float | None
+    ci_low: float | None
+    ci_high: float | None
+    n_days: int
+    no_decision: bool
+    ci_note: str
+
+
+class SaReliabilityBin(BaseModel):
+    model_config = {"extra": "forbid"}
+    lo: float
+    hi: float
+    n: int
+    pred_mean: float | None
+    realized: float | None
+    wilson_low: float | None
+    wilson_high: float | None
+
+
+class SaCalibrationRace(BaseModel):
+    model_config = {"extra": "forbid"}
+    grain_note: str
+    bins: list[SaReliabilityBin]
+    ece: float | None
+    #: identically 0 at race grain (Σp=Σy per selected race) — producer nulls it + citl_note
+    calibration_in_the_large: None
+    citl_note: str
+    n: int
+
+
+class SaCalibrationHorse(BaseModel):
+    model_config = {"extra": "forbid"}
+    grain_note: str
+    bins: list[SaReliabilityBin]
+    ece: float | None
+    calibration_in_the_large: float | None
+    n: int
+
+
+class SaMarketBlock(BaseModel):
+    model_config = {"extra": "forbid"}
+    n_market_complete_races: int
+    n_total_races: int
+    market_nll: float | None = None
+    winner_nll_market_subset: float | None = None
+    excess_nll_market: float | None = None
+
+
+class SaByYearRace(BaseModel):
+    model_config = {"extra": "forbid"}
+    n_races: int
+    excess_nll_uniform_point: float
+
+
+class SaByYearHorse(BaseModel):
+    model_config = {"extra": "forbid"}
+    n_horses: int
+    excess_logloss_point: float
+
+
+class SaRaceGrainLabel(BaseModel):
+    model_config = {"extra": "forbid"}
+    winner_nll: Literal["race"]
+    calibration: Literal["started_horse_within_selected_races"]
+
+
+class SaHorseGrainLabel(BaseModel):
+    model_config = {"extra": "forbid"}
+    excess_logloss: Literal["horse"]
+    winner_nll: Literal["NOT_AVAILABLE_AT_HORSE_GRAIN"]
+
+
+class SaRaceBucket(BaseModel):
+    model_config = {"extra": "forbid"}
+    grain: SaRaceGrainLabel
+    n_races: int
+    n_horses: int
+    excess_nll_uniform: SaCIBlock
+    winner_nll: float
+    uniform_nll: float
+    market: SaMarketBlock
+    by_year: dict[str, SaByYearRace]
+    calibration: SaCalibrationRace
+    ece_ci: SaCIBlock
+
+
+class SaHorseBucket(BaseModel):
+    model_config = {"extra": "forbid"}
+    grain: SaHorseGrainLabel
+    n_horses: int
+    n_races: int
+    excess_logloss_vs_uniform: SaCIBlock
+    by_year: dict[str, SaByYearHorse]
+    calibration: SaCalibrationHorse
+    ece_ci: SaCIBlock
+
+
+class SaRaceAxis(BaseModel):
+    model_config = {"extra": "forbid"}
+    axis_id: str
+    family: str
+    grain: Literal["race"]
+    origin: str
+    definition: dict          # frozen boundary spec — intentionally schemaless (hash-compared)
+    mask_definition_hash: str
+    buckets: dict[str, SaRaceBucket]
+
+
+class SaHorseAxis(BaseModel):
+    model_config = {"extra": "forbid"}
+    axis_id: str
+    family: str
+    grain: Literal["horse"]
+    origin: str
+    definition: dict
+    mask_definition_hash: str
+    buckets: dict[str, SaHorseBucket]
+
+
+class SaInstrumentContract(BaseModel):
+    model_config = {"extra": "forbid"}
+    kind: Literal["segment_accuracy"]
+    secondary: Literal[True]
+    can_adopt: Literal[False]
+    estimand: str
+    discovery_rule: str
+    ci_note: str
+    known_confounds: list[str]
+    metric_contract_version: str
+    mask_library_version: str
+    mask_library_hash: str
+
+
+class SaProvenance(BaseModel):
+    model_config = {"extra": "forbid"}
+    base_model_version: str
+    feature_version: str
+    feature_hash: str | None
+    attestation_digest: str
+    bundle_digest: str
+    prediction_checksum: str
+    oof_race_set_hash: str
+    scored_race_set_hash: str
+    label_snapshot_hash: str
+    train_floor: str
+    eval_window: list[str]
+    first_valid_year: int
+    fold_boundaries: list[int] | None
+    probability_stage: str
+    code_sha: str
+    seed: int
+    bootstrap_b: int
+    metric_contract_version: str
+    mask_library_version: str
+    mask_library_hash: str
+
+
+class SaPopulation(BaseModel):
+    model_config = {"extra": "forbid"}
+    n_scored_races: int
+    n_scored_horses: int
+    exclusions: dict[str, int]
+
+
+class SegmentAccuracyPayloadV1(BaseModel):
+    model_config = {"extra": "forbid"}
+    instrument_contract: SaInstrumentContract
+    provenance: SaProvenance
+    population: SaPopulation
+    axes: list[Annotated[SaRaceAxis | SaHorseAxis, Field(discriminator="grain")]]
+
+
+class SegmentAccuracyResponse(BaseModel):
+    """Feature 083: envelope + typed v1 transcription of the newest 082 run.
+
+    ``diagnostic_run_id`` is the handle the 082 discovery rule requires (a hypothesis found
+    here must carry it into its NEW pre-registration)."""
+
+    kind: Literal["segment_accuracy"] = "segment_accuracy"
+    diagnostic_run_id: str
+    computed_at: datetime.datetime
+    date_from: datetime.date | None = None
+    date_to: datetime.date | None = None
+    logic_version: str
+    payload: SegmentAccuracyPayloadV1

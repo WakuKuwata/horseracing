@@ -4,25 +4,62 @@
     {
       "name": "api",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-lc", "cd api && DATABASE_URL='postgresql+psycopg://aiuma:aiuma@localhost:15432/horseracing' DISPERSION_BOUNDARY_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/dispbands-v1.json\" DISPERSION_PCAL_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/pcal-v1.json\" uv run uvicorn horseracing_api.app:app --host 127.0.0.1 --port 8000"],
+      "runtimeArgs": [
+        "-lc",
+        "cd api && DATABASE_URL='postgresql+psycopg://aiuma:aiuma@localhost:15432/horseracing' DISPERSION_BOUNDARY_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/dispbands-v1.json\" DISPERSION_PCAL_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/pcal-v1.json\" uv run uvicorn horseracing_api.app:app --host 127.0.0.1 --port 8000"
+      ],
       "port": 8000
     },
     {
       "name": "racefront",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["-C", "front", "dev", "--host", "127.0.0.1", "--port", "5173"],
+      "runtimeArgs": [
+        "-C",
+        "front",
+        "dev",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5173"
+      ],
       "port": 5173
     },
     {
       "name": "racefront-5174",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["-C", "front", "dev", "--port", "5174"],
+      "runtimeArgs": [
+        "-C",
+        "front",
+        "dev",
+        "--port",
+        "5174"
+      ],
       "port": 5174
     },
     {
       "name": "racefront-5175",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["-C", "front", "dev", "--port", "5175"],
+      "runtimeArgs": [
+        "-C",
+        "front",
+        "dev",
+        "--port",
+        "5175"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "-C",
+        "admin",
+        "dev",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5175"
+      ],
       "port": 5175
     }
   ]

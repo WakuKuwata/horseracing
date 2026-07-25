@@ -49,6 +49,8 @@ describe("openapi snapshot", () => {
         "/api/v1/jobs",
         // Feature 054: persisted diagnostics (read-only; consumed by the admin SPA)
         "/api/v1/diagnostics/segment-edge",
+        // Feature 083: 082 segment-accuracy verification instrument (read-only, admin SPA)
+        "/api/v1/diagnostics/segment-accuracy",
         // Feature 029: horse + jockey profile + paged history (read-only)
         "/api/v1/horses/{horse_id}",
         "/api/v1/horses/{horse_id}/history",
