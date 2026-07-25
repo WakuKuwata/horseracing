@@ -43,3 +43,41 @@ def test_no_decision_promotes_to_confirm():
     go, reason = _screen_decision(_Rep(diff=0.0, lo=None, hi=None, no_decision=True), margin=0.0)
     assert go is True
     assert "no_decision" in reason
+
+
+def test_arms_filter_runs_only_requested_candidates(monkeypatch):
+    import datetime
+
+    import horseracing_training.calib_split_eval as mod
+
+    monkeypatch.setattr(mod, "load_eval_races", lambda session, **kw: [])
+    ran = []
+
+    def _fake_paired(cand, ref, races, **kw):
+        ran.append(cand)
+        return _Rep(diff=0.0, lo=None, hi=None, no_decision=True)
+
+    monkeypatch.setattr(mod, "paired_eval", _fake_paired)
+    w = (datetime.date(2008, 1, 1), datetime.date(2024, 12, 31))
+    w2 = (datetime.date(2008, 1, 1), datetime.date(2025, 12, 31))
+    report = mod.run_calib_split_eval(
+        None, make_factory=lambda spec: spec, objective="pl_topk",
+        screen_window=w, confirm_window=w2, arms_filter={"C/D"},
+    )
+    assert [a.name for a in report.arms] == ["A", "C/D"]
+    assert all(spec == "pl_topk:oof_power" for spec in ran)  # B never ran
+
+
+def test_arms_filter_rejects_unknown_names():
+    import datetime
+
+    import pytest
+
+    from horseracing_training.calib_split_eval import run_calib_split_eval
+
+    w = (datetime.date(2008, 1, 1), datetime.date(2024, 12, 31))
+    with pytest.raises(ValueError, match="unknown candidate arm"):
+        run_calib_split_eval(
+            None, make_factory=lambda spec: spec, objective="pl_topk",
+            screen_window=w, confirm_window=w, arms_filter={"Z"},
+        )

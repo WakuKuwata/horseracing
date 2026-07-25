@@ -93,11 +93,21 @@ def run_calib_split_eval(
     seed: int = 20260712,
     bootstrap_b: int = 1000,
     num_threads: int | None = None,
+    arms_filter: set[str] | None = None,
 ) -> CalibSplitReport:
     """Run A/B/C/D screening then confirmation. ``make_factory(spec)`` builds a PredictorFactory
-    (injected so this module stays eval-boundary clean via the CLI)."""
+    (injected so this module stays eval-boundary clean via the CLI).
+
+    ``arms_filter`` restricts which CANDIDATE arms run (the A reference always runs inside each
+    paired eval). Operational only — it never changes any arm's metrics, just skips arms (e.g.
+    re-running only C/D after the 2026-07 full-history fix, where B's inputs are unchanged)."""
     arms = default_arms(objective)
     ref = arms[0]
+    if arms_filter is not None:
+        unknown = arms_filter - {a.name for a in arms[1:]}
+        if unknown:
+            raise ValueError(f"unknown candidate arm(s): {sorted(unknown)}")
+        arms = [ref] + [a for a in arms[1:] if a.name in arms_filter]
     screen_margin = (gate_config or {}).get("screening", {}).get("margin", 0.0)
 
     screen_races = load_eval_races(

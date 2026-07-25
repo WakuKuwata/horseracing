@@ -777,6 +777,8 @@ def main(argv: list[str] | None = None) -> int:
     cse.add_argument("--bootstrap-b", type=int, default=1000)
     cse.add_argument("--num-threads", type=int, default=None)
     cse.add_argument("--gate-config", default=None)
+    cse.add_argument("--arms", default=None,
+                     help="comma-separated candidate arms to run (e.g. 'C/D'); default = all")
     cse.add_argument("--json", dest="json_out", default=None)
     cse.add_argument("--database-url", default=None)
 
@@ -1278,6 +1280,7 @@ def _calib_split_eval(session: Session, args) -> int:
         seed=args.seed,
         bootstrap_b=args.bootstrap_b,
         num_threads=args.num_threads,
+        arms_filter=set(args.arms.split(",")) if args.arms else None,
     )
     print(f"calib-split-eval objective={report.objective} ref={report.reference}")
     print(f"  screen={args.screen_from}..{args.screen_to} "
