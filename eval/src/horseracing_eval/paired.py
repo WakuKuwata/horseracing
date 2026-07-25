@@ -197,10 +197,10 @@ def _horse_logloss(p: float, y: int) -> float:
     return -(math.log(p) if y == 1 else math.log(1.0 - p))
 
 
-def _ci_and_decision(diffs_by_day, uniform_by_day, *, b, seed, margin):
+def _ci_and_decision(diffs_by_day, uniform_by_day, *, b, seed, margin, alpha=0.05):
     """Bootstrap CI + three-way decision + subgroup-internal cand−uniform for one subgroup."""
     from .subgroups import three_way
-    ci = race_day_cluster_bootstrap_ci_v1(diffs_by_day, b=b, seed=seed)
+    ci = race_day_cluster_bootstrap_ci_v1(diffs_by_day, b=b, seed=seed, alpha=alpha)
     d = asdict(ci)
     decision = three_way(d.get("ci_low"), d.get("ci_high"), margin)
     all_u = [u for us in uniform_by_day.values() for u in us]
@@ -213,7 +213,7 @@ def _ci_and_decision(diffs_by_day, uniform_by_day, *, b, seed, margin):
 
 def _compute_subgroups(
     valid_races, cand_preds, act_preds, cand_wp, act_wp, cfg, *,
-    obs_count=None, b=2000, seed=20260712,
+    obs_count=None, b=2000, seed=20260712, alpha=0.05,
 ) -> dict:
     """Race-level (winner NLL) + horse-level (started-all per-horse logloss) subgroup CIs + the
     intersection-union three-way guard (FR-001/002/003, codex C1/C2/C3/C6). ``obs_count`` maps
@@ -265,11 +265,11 @@ def _compute_subgroups(
                 horse_unif.setdefault(lab, {}).setdefault(day, []).append(du)
 
     race_out = {
-        lab: _ci_and_decision(d, race_unif[lab], b=b, seed=seed, margin=m_win)
+        lab: _ci_and_decision(d, race_unif[lab], b=b, seed=seed, margin=m_win, alpha=alpha)
         for lab, d in race_diffs.items()
     }
     horse_out = {
-        lab: _ci_and_decision(d, horse_unif[lab], b=b, seed=seed, margin=m_horse)
+        lab: _ci_and_decision(d, horse_unif[lab], b=b, seed=seed, margin=m_horse, alpha=alpha)
         for lab, d in horse_diffs.items()
     }
     decisions = {lab: v["decision"] for lab, v in {**race_out, **horse_out}.items()}
@@ -327,9 +327,12 @@ def paired_eval(
         day = er.context.race_date.isoformat()
         diffs_by_day.setdefault(day, []).append(_clip_nll(cp) - _clip_nll(ap))
     boot_cfg = cfg.get("bootstrap", {})
+    # The gate-config's alpha was previously read by nobody (only b/seed were passed), so a
+    # config declaring a non-default alpha silently got 0.05 (2026-07 multi-codex review).
+    boot_alpha = float(boot_cfg.get("alpha", 0.05))
     ci = race_day_cluster_bootstrap_ci_v1(
         diffs_by_day, b=boot_cfg.get("b", bootstrap_b),
-        seed=boot_cfg.get("seed", bootstrap_seed),
+        seed=boot_cfg.get("seed", bootstrap_seed), alpha=boot_alpha,
     )
     # Feature 073 US3 (FR-014): diagnostic-only block-width sensitivities (never gate the decision).
     bootstrap_sensitivity: dict = {}
@@ -338,7 +341,7 @@ def paired_eval(
         bootstrap_sensitivity = {
             k: asdict(v) for k, v in race_day_cluster_bootstrap_sensitivity_v2(
                 diffs_by_day, b=boot_cfg.get("b", bootstrap_b),
-                seed=boot_cfg.get("seed", bootstrap_seed),
+                seed=boot_cfg.get("seed", bootstrap_seed), alpha=boot_alpha,
             ).items()
         }
 
@@ -372,7 +375,7 @@ def paired_eval(
         sg = _compute_subgroups(
             valid_races, cand_preds, act_preds, cand_wp, act_wp, cfg,
             obs_count=obs_count, b=boot_cfg.get("b", bootstrap_b),
-            seed=boot_cfg.get("seed", bootstrap_seed),
+            seed=boot_cfg.get("seed", bootstrap_seed), alpha=boot_alpha,
         )
     # Feature 073 US1: one machine-decided tri-value verdict (FR-001/002). n_days from the
     # primary CI drives the eval-window sufficiency check (empty/short window -> NO_DECISION).

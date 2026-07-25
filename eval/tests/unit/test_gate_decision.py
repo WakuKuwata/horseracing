@@ -192,3 +192,41 @@ def test_final_decision_is_pure_and_does_not_mutate_inputs():
     assert sg["subgroup_decisions"] == sg_before["decisions"]
     assert sg["subgroup_guard"] == sg_before["guard"]
 
+
+
+def test_confirmatory_rejects_a_window_that_differs_from_the_frozen_config():
+    """085 design prep: the CLI window must be checked against the frozen eval_window.
+
+    assert_confirmatory has always supported this, but the caller never passed the window, so a
+    confirmatory run could silently score a DIFFERENT period than the one registered.
+    """
+    import pytest
+
+    from horseracing_eval.decision import ConfirmatoryContractError, assert_confirmatory
+
+    cfg = {
+        "evaluation_contract_version": "v2",
+        "eval_window": {"from": "2019-01-01", "to": "2026-07-12"},
+    }
+    # matching window passes
+    assert_confirmatory(
+        cfg, expected_hash=None,
+        eval_window={"from": "2019-01-01", "to": "2026-07-12"},
+    )
+    # a different window fails closed
+    for bad in ({"from": "2020-01-01", "to": "2026-07-12"},
+                {"from": "2019-01-01", "to": "2025-12-31"}):
+        with pytest.raises(ConfirmatoryContractError, match="eval window mismatch"):
+            assert_confirmatory(cfg, expected_hash=None, eval_window=bad)
+
+
+def test_gate_config_alpha_is_actually_used_by_the_bootstrap():
+    """085 design prep: bootstrap.alpha in the gate-config used to be inert (only b/seed were
+    passed), so a config declaring alpha=0.20 silently got a 95% CI."""
+    from horseracing_eval.bootstrap import race_day_cluster_bootstrap_ci_v1
+
+    diffs = {f"2025-01-{d:02d}": [0.01 * ((d % 5) - 2)] * 4 for d in range(1, 29)}
+    wide = race_day_cluster_bootstrap_ci_v1(diffs, b=200, seed=7, alpha=0.05)
+    narrow = race_day_cluster_bootstrap_ci_v1(diffs, b=200, seed=7, alpha=0.20)
+    # a larger alpha must give a strictly tighter interval
+    assert (narrow.ci_high - narrow.ci_low) < (wide.ci_high - wide.ci_low)

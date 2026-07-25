@@ -1152,7 +1152,18 @@ def _paired_eval(session: Session, args) -> int:
     # tampered gate-config BEFORE any eval runs.
     if getattr(args, "confirmatory", False):
         from horseracing_eval.decision import assert_confirmatory
-        assert_confirmatory(gate_cfg, expected_hash=getattr(args, "gate_config_hash", None))
+        # The CLI window must match the frozen gate-config's eval_window. Without passing it,
+        # assert_confirmatory only checked version+hash, so a confirmatory run could silently
+        # score a DIFFERENT window than the one registered (2026-07 multi-codex review).
+        eval_window = (
+            {"from": args.from_.isoformat() if args.from_ else None,
+             "to": args.to.isoformat() if args.to else None}
+            if (args.from_ or args.to) else None
+        )
+        assert_confirmatory(
+            gate_cfg, expected_hash=getattr(args, "gate_config_hash", None),
+            eval_window=eval_window,
+        )
 
     # codex C#1 fix: --from is the EVAL-window start, NOT a training-history floor. Load the FULL
     # history up to --to so each fold's outer-train uses ALL strictly-prior races; derive the eval

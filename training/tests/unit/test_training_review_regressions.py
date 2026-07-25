@@ -138,3 +138,19 @@ def test_single_winners_chunks_large_in_lists():
     assert len(out) == n - 1  # all races except the dead-heat r0
     assert "r0" not in out
     assert out["r1"] == "h1" and out[f"r{n-1}"] == f"h{n-1}"
+
+
+def test_unknown_calibration_method_fails_closed():
+    # Previously ANY unrecognized name fell through to Platt, so 'oof_isotonic' (an arm that is
+    # not routed yet) silently trained a different calibrator and measured the wrong experiment.
+    import numpy as np
+
+    from horseracing_training.calibration import fit_calibrator
+
+    raw = np.linspace(0.01, 0.9, 50)
+    y = (np.arange(50) % 5 == 0).astype(int)
+    for good in ("platt", "isotonic", "none", "identity"):
+        assert fit_calibrator(raw, y, method=good) is not None
+    for bad in ("oof_isotonic", "Isotonic", "power", ""):
+        with pytest.raises(ValueError, match="unknown calibration method"):
+            fit_calibrator(raw, y, method=bad)

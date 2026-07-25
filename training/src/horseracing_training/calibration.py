@@ -23,6 +23,9 @@ DEFAULT_CALIB_FRAC = 0.3
 DEFAULT_CLIP = 1e-6
 _MIN_CALIB_ROWS = 10
 
+#: every calibration method ``fit_calibrator`` accepts. Anything else fails closed (see below).
+CALIBRATION_METHODS: tuple[str, ...] = ("platt", "isotonic", "none", "identity")
+
 
 def split_train_by_time(
     race_ids, race_dates, *, calib_frac: float = DEFAULT_CALIB_FRAC
@@ -149,6 +152,14 @@ def fit_calibrator(
     """Fit a calibrator on (raw score, win label). Degenerate slice -> identity-with-clip."""
     raw = np.asarray(raw, dtype=float)
     y = np.asarray(y)
+    # Fail closed on an unknown method name. Previously ANY unrecognized string fell through to
+    # the Platt branch, so a typo or a not-yet-routed arm name (e.g. "oof_isotonic") silently
+    # trained a DIFFERENT calibrator and the run looked plausible — measuring the wrong
+    # experiment with no error (2026-07 multi-codex review of the 085 design).
+    if method not in CALIBRATION_METHODS:
+        raise ValueError(
+            f"unknown calibration method: {method!r} (expected one of {CALIBRATION_METHODS})"
+        )
     # Feature 039: explicit no-calibration path (cond_logit softmax-only A/B).
     if method in ("none", "identity"):
         return Calibrator(method="identity", clip=clip, identity=True)
