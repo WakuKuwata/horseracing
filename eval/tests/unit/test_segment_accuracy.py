@@ -182,3 +182,47 @@ def test_determinism_same_seed():
     a = _payload(races, seed=7)
     b = _payload(races, seed=7)
     assert a == b
+
+
+class TestCodexP03ProducerFixes:
+    """2026-07-25 codex viewer-review producer fixes."""
+
+    def test_race_grain_citl_is_identity_marked(self):
+        pl = _payload([_uniform_race("r1", "2024-01-06", 2024, 8, 0)])
+        surface = next(a for a in pl["axes"] if a["axis_id"] == "surface")
+        cal = surface["buckets"]["芝"]["calibration"]
+        assert cal["calibration_in_the_large"] is None          # never displayed as "0 = good"
+        assert "structurally 0" in cal["citl_note"]
+
+    def test_market_excess_uses_same_population(self):
+        # one race WITH market, one WITHOUT: the market comparison must use only the
+        # market-complete subset for BOTH sides (winner_nll_market_subset, not the overall wnll)
+        import numpy as np
+        r1 = _uniform_race("r1", "2024-01-06", 2024, 8, 0)
+        r2 = _uniform_race("r2", "2024-01-07", 2024, 8, 0)
+        sharp = np.full(8, 0.5 / 7)
+        sharp[0] = 0.5                                          # non-uniform p in the q-less race
+        r2 = RaceInput(race_id=r2.race_id, day=r2.day, year=r2.year, field_size=8,
+                       winner_idx=0, p=sharp, y=r2.y, q=None,
+                       race_attrs=r2.race_attrs, horse_attrs=r2.horse_attrs)
+        pl = _payload([r1, r2])
+        blk = next(a for a in pl["axes"] if a["axis_id"] == "surface")["buckets"]["芝"]
+        m = blk["market"]
+        assert m["n_market_complete_races"] == 1 and m["n_total_races"] == 2
+        # subset model NLL is r1's (uniform) winner NLL = log(8); overall wnll would differ
+        assert abs(m["winner_nll_market_subset"] - float(np.log(8))) < 1e-6
+        assert abs(m["excess_nll_market"]) < 1e-9                # p == q on the subset
+
+    def test_ece_cluster_ci_present_both_grains(self):
+        races = [_uniform_race(f"r{i}", f"2024-01-{6+i:02d}", 2024, 8, 0) for i in range(4)]
+        pl = _payload(races)
+        race_blk = next(a for a in pl["axes"] if a["axis_id"] == "surface")["buckets"]["芝"]
+        horse_blk = next(a for a in pl["axes"] if a["axis_id"] == "sex")["buckets"]["牡"]
+        for blk in (race_blk, horse_blk):
+            assert "ece_ci" in blk
+            assert "NOT adjusted" in blk["ece_ci"]["ci_note"]
+            assert blk["ece_ci"]["ci_low"] is not None
+
+    def test_surface_definition_includes_jump(self):
+        surface = next(m for m in MASK_LIBRARY_V1 if m.axis_id == "surface")
+        assert "障" in surface.definition["buckets"]

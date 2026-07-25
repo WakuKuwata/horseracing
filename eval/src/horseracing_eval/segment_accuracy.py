@@ -166,7 +166,7 @@ def _p081(axis_id, family, grain, definition):
 
 MASK_LIBRARY_V1: tuple[MaskAxis, ...] = (
     _core("year", "temporal", "race", {"buckets": "eval calendar year"}),
-    _core("surface", "race_core", "race", {"buckets": ["芝", "ダ"], "missing": MISSING}),
+    _core("surface", "race_core", "race", {"buckets": ["芝", "ダ", "障"], "missing": MISSING}),
     _core("dist_band", "race_core", "race",
           {"edges_m": [1401, 1801, 2201], "origin_bins": "020"}),
     _core("race_class", "race_core", "race",
@@ -250,6 +250,50 @@ def _horse_excess_logloss(p: float, y: int, field_size: int) -> float:
     return float(loss - base)
 
 
+def _bin_index(ps: np.ndarray) -> np.ndarray:
+    """Fixed-bin index per observation (sa-v1 equal-width bins; ps in [0,1])."""
+    idx = np.minimum((ps * (len(PROB_BIN_EDGES) - 1)).astype(int), len(PROB_BIN_EDGES) - 2)
+    return idx
+
+
+def _ece_cluster_ci(
+    ps: np.ndarray, ys: np.ndarray, days: np.ndarray, *, seed: int, b: int,
+) -> dict:
+    """Race-day cluster bootstrap CI for the fixed-bin ECE (FR-005; unadjusted, codex P0#3).
+
+    Vectorised via per-day per-bin sufficient statistics (count, Σp, Σy): each replicate
+    resamples days with replacement and recombines — O(b × n_days × n_bins), not O(b × n)."""
+    uniq_days, day_idx = np.unique(days, return_inverse=True)
+    n_days = len(uniq_days)
+    if n_days < 2:
+        return {"point": None, "ci_low": None, "ci_high": None, "n_days": n_days,
+                "no_decision": True,
+                "ci_note": "pointwise 95% CI, NOT adjusted for multiple comparisons"}
+    n_bins = len(PROB_BIN_EDGES) - 1
+    bins = _bin_index(ps)
+    flat = day_idx * n_bins + bins
+    cnt = np.bincount(flat, minlength=n_days * n_bins).reshape(n_days, n_bins)
+    psum = np.bincount(flat, weights=ps, minlength=n_days * n_bins).reshape(n_days, n_bins)
+    ysum = np.bincount(flat, weights=ys, minlength=n_days * n_bins).reshape(n_days, n_bins)
+
+    def _ece(c, p_, y_):
+        tot = c.sum()
+        m = c > 0
+        return float(np.sum(np.abs(p_[m] / c[m] - y_[m] / c[m]) * (c[m] / tot))) if tot else None
+
+    point = _ece(cnt.sum(0), psum.sum(0), ysum.sum(0))
+    rng = np.random.default_rng(seed)
+    boots = np.empty(b)
+    for i in range(b):
+        pick = rng.integers(0, n_days, size=n_days)
+        boots[i] = _ece(cnt[pick].sum(0), psum[pick].sum(0), ysum[pick].sum(0))
+    return {"point": None if point is None else round(point, 6),
+            "ci_low": round(float(np.percentile(boots, 2.5)), 6),
+            "ci_high": round(float(np.percentile(boots, 97.5)), 6),
+            "n_days": n_days, "no_decision": False,
+            "ci_note": "pointwise 95% CI, NOT adjusted for multiple comparisons"}
+
+
 def _reliability(ps: np.ndarray, ys: np.ndarray) -> dict:
     """Fixed equal-width bins (sa-v1): reliability table + ECE + calibration-in-the-large.
     Wilson CIs are AUXILIARY (horse rows within a race are dependent, codex P0#5)."""
@@ -309,24 +353,39 @@ def _race_axis_block(axis: MaskAxis, races: list[RaceInput], *, seed: int, b: in
             exc_by_year.setdefault(r.year, []).append(e)
         wnll = float(np.mean([_race_winner_nll(r) for r in rs]))
         unll = float(np.mean([np.log(r.field_size) for r in rs]))
-        mk = [_race_market_nll(r) for r in rs]
-        mk_ok = [v for v in mk if v is not None]
+        # market comparison on the SAME population: both model and market winner NLL restricted
+        # to the market-complete subset (codex P0#3 — a mixed-population difference is not a
+        # like-for-like comparison).
+        mk_rs = [r for r in rs if r.q is not None]
+        mk_nll = [_race_market_nll(r) for r in mk_rs]
         # two-grain calibration: ALL started horses within the SELECTED races
         ps = np.concatenate([r.p for r in rs])
         ys = np.concatenate([r.y for r in rs])
+        days_h = np.concatenate([np.full(len(r.p), r.day) for r in rs])
+        cal = _reliability(ps, ys)
+        # race-grain calibration-in-the-large is IDENTICALLY 0 (Σp = Σy = 1 per selected race) —
+        # displaying the 0 would misread as "well calibrated" (codex P0#3).
+        cal["calibration_in_the_large"] = None
+        cal["citl_note"] = "structurally 0 at race grain (sum p = sum y = 1 per selected race)"
         out[bucket] = {
             "grain": {"winner_nll": "race", "calibration": "started_horse_within_selected_races"},
             "n_races": len(rs), "n_horses": int(len(ps)),
             "excess_nll_uniform": _ci(exc_by_day, seed=seed, b=b),
             "winner_nll": round(wnll, 6), "uniform_nll": round(unll, 6),
-            "market": ({"n_market_complete_races": len(mk_ok),
-                        "market_nll": round(float(np.mean(mk_ok)), 6),
-                        "excess_nll_market": round(wnll - float(np.mean(mk_ok)), 6)}
-                       if mk_ok else {"n_market_complete_races": 0}),
+            "market": ({"n_market_complete_races": len(mk_rs),
+                        "n_total_races": len(rs),
+                        "market_nll": round(float(np.mean(mk_nll)), 6),
+                        "winner_nll_market_subset": round(
+                            float(np.mean([_race_winner_nll(r) for r in mk_rs])), 6),
+                        "excess_nll_market": round(
+                            float(np.mean([_race_winner_nll(r) for r in mk_rs]))
+                            - float(np.mean(mk_nll)), 6)}
+                       if mk_rs else {"n_market_complete_races": 0, "n_total_races": len(rs)}),
             "by_year": {str(y): {"n_races": len(v),
                                  "excess_nll_uniform_point": round(float(np.mean(v)), 6)}
                         for y, v in sorted(exc_by_year.items())},
-            "calibration": _reliability(ps, ys),
+            "calibration": cal,
+            "ece_ci": _ece_cluster_ci(ps, ys, days_h, seed=seed, b=b),
         }
     return out
 
@@ -338,13 +397,15 @@ def _horse_axis_block(axis: MaskAxis, races: list[RaceInput], *, seed: int, b: i
         for i, h in enumerate(r.horse_attrs):
             bucket = _assign_horse_axis(axis.axis_id, h)
             a = acc.setdefault(bucket, {
-                "exc_by_day": {}, "exc_by_year": {}, "ps": [], "ys": [], "race_ids": set(),
+                "exc_by_day": {}, "exc_by_year": {}, "ps": [], "ys": [], "days": [],
+                "race_ids": set(),
             })
             e = _horse_excess_logloss(float(r.p[i]), int(r.y[i]), r.field_size)
             a["exc_by_day"].setdefault(r.day, []).append(e)
             a["exc_by_year"].setdefault(r.year, []).append(e)
             a["ps"].append(float(r.p[i]))
             a["ys"].append(int(r.y[i]))
+            a["days"].append(r.day)
             a["race_ids"].add(r.race_id)
     out = {}
     for bucket in sorted(acc):
@@ -358,6 +419,7 @@ def _horse_axis_block(axis: MaskAxis, races: list[RaceInput], *, seed: int, b: i
                                  "excess_logloss_point": round(float(np.mean(v)), 6)}
                         for y, v in sorted(a["exc_by_year"].items())},
             "calibration": _reliability(ps, ys),
+            "ece_ci": _ece_cluster_ci(ps, ys, np.asarray(a["days"]), seed=seed, b=b),
         }
     return out
 

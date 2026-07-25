@@ -31,22 +31,27 @@ from .dataset import TrainingMatrix
 from .predictor import LightGBMPredictor, assemble_predictions
 from .recipe import ModelRecipe
 
+#: psycopg3 caps bound parameters at 65,535 per statement; wide-window folds train on 60k+
+#: races, so the winner lookup must chunk its IN list (results are merged, order-independent).
+_IN_CHUNK = 20_000
+
 
 def _single_winners(session: Session, race_ids) -> dict[str, str]:
     """race_id -> winner horse_id, only for races with EXACTLY one finish_order==1 (dead heats
     dropped — a winner-NLL calibration sample needs an unambiguous winner)."""
     ids = list(race_ids)
-    stmt = (
-        select(RaceResult.race_id, RaceResult.horse_id)
-        .where(RaceResult.result_status == ResultStatus.FINISHED)
-        .where(RaceResult.finish_order == 1)
-        .where(RaceResult.race_id.in_(ids))
-    )
     winners: dict[str, str] = {}
     counts: dict[str, int] = {}
-    for rid, hid in session.execute(stmt):
-        counts[rid] = counts.get(rid, 0) + 1
-        winners[rid] = hid
+    for i in range(0, len(ids), _IN_CHUNK):
+        stmt = (
+            select(RaceResult.race_id, RaceResult.horse_id)
+            .where(RaceResult.result_status == ResultStatus.FINISHED)
+            .where(RaceResult.finish_order == 1)
+            .where(RaceResult.race_id.in_(ids[i : i + _IN_CHUNK]))
+        )
+        for rid, hid in session.execute(stmt):
+            counts[rid] = counts.get(rid, 0) + 1
+            winners[rid] = hid
     return {rid: h for rid, h in winners.items() if counts[rid] == 1}
 
 

@@ -108,3 +108,33 @@ def test_split_unit_mismatch_rejects_before_any_disk_write(tmp_path):
     # nothing was written (previously model.txt/calibrator.pkl/preprocessor.pkl/metadata.json
     # had already replaced the existing artifacts by the time the check raised)
     assert not art_dir.exists()
+
+
+def test_single_winners_chunks_large_in_lists():
+    # psycopg3 rejects >65,535 bound params; wide-window folds pass 60k+ race ids, so the
+    # winner lookup must chunk. Verify multiple executes, merged results, dead-heat exclusion.
+    from horseracing_training import calib_split as mod
+
+    class _ChunkSession:
+        def __init__(self, rows):
+            self.rows = rows
+            self.calls = 0
+
+        def execute(self, stmt):
+            self.calls += 1
+            # extract the chunk's ids from the compiled IN clause (the expanding IN
+            # parameter compiles to a single list-valued param)
+            ids: set = set()
+            for v in stmt.compile().params.values():
+                ids.update(v) if isinstance(v, (list, tuple)) else ids.add(v)
+            return [(rid, hid) for rid, hid in self.rows if rid in ids]
+
+    n = mod._IN_CHUNK * 2 + 5  # forces 3 chunks
+    rows = [(f"r{i}", f"h{i}") for i in range(n)]
+    rows.append(("r0", "h_dup"))  # dead heat in r0 -> excluded
+    sess = _ChunkSession(rows)
+    out = mod._single_winners(sess, [f"r{i}" for i in range(n)])
+    assert sess.calls == 3
+    assert len(out) == n - 1  # all races except the dead-heat r0
+    assert "r0" not in out
+    assert out["r1"] == "h1" and out[f"r{n-1}"] == f"h{n-1}"

@@ -17,3 +17,5 @@ export type JobRow = S["JobRow"];
 
 export type SegmentEdgeResponse = S["SegmentEdgeResponse"];
 export type SegmentEdgeRow = S["SegmentEdgeRow"];
+
+export type SegmentAccuracyResponse = S["SegmentAccuracyResponse"];
