@@ -800,6 +800,26 @@ def main(argv: list[str] | None = None) -> int:
     fp.add_argument("--json", dest="json_out", default="out/081-probe-report.json")
     fp.add_argument("--database-url", default=None)
 
+    # Feature 082: segment accuracy readout (verification instrument, SECONDARY). Read-only
+    # except the opt-in --persist append to diagnostic_runs.
+    ar = sub.add_parser("accuracy-readout",
+                        help="082: active-recipe historical OOF accuracy per frozen mask axis")
+    ar.add_argument("--eval-from", dest="eval_from", type=_parse_date, required=True,
+                    help="eval-window start (training always uses the FULL prior history)")
+    ar.add_argument("--to", dest="to", type=_parse_date, required=True)
+    ar.add_argument("--first-valid-year", type=int, default=None,
+                    help="default: eval-from's year")
+    ar.add_argument("--bundle", default=None,
+                    help="existing OOF bundle to reuse (verified; digest must match active)")
+    ar.add_argument("--out-root", default="artifacts/oof")
+    ar.add_argument("--seed", type=int, default=20260725)
+    ar.add_argument("--bootstrap-b", type=int, default=2000)
+    ar.add_argument("--num-threads", type=int, default=1)
+    ar.add_argument("--json", dest="json_out", default="out/082-segment-accuracy.json")
+    ar.add_argument("--persist", action="store_true",
+                    help="append the payload to diagnostic_runs (kind=segment_accuracy)")
+    ar.add_argument("--database-url", default=None)
+
     # Feature 069 (SC-005): past-market coverage audit (year × ID source × obs bands). Read-only.
     ca = sub.add_parser("coverage-audit",
                         help="069: F02 past-market coverage by year × ID source (canonical/nk:)")
@@ -883,6 +903,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _folklore_probe(session, args)
+    if args.command == "accuracy-readout":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _accuracy_readout(session, args)
     if args.command == "dispersion-bands":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1276,6 +1300,49 @@ def _calib_split_eval(session: Session, args) -> int:
         with open(args.json_out, "w") as fh:
             json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
         print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _accuracy_readout(session: Session, args) -> int:
+    """Feature 082: segment accuracy readout (SECONDARY verification instrument)."""
+    import json
+    from pathlib import Path
+
+    from .segment_accuracy_run import run_segment_accuracy
+
+    fvy = args.first_valid_year if args.first_valid_year is not None else args.eval_from.year
+    payload = run_segment_accuracy(
+        session, out_root=Path(args.out_root),
+        bundle_path=Path(args.bundle) if args.bundle else None,
+        eval_from=args.eval_from, eval_to=args.to, first_valid_year=fvy,
+        seed=args.seed, bootstrap_b=args.bootstrap_b, num_threads=args.num_threads,
+    )
+    prov = payload["provenance"]
+    pop = payload["population"]
+    print(f"accuracy-readout model={prov['base_model_version']} "
+          f"window={prov['eval_window']} (SECONDARY — verification instrument)")
+    print(f"  scored: {pop['n_scored_races']} races / {pop['n_scored_horses']} horses; "
+          f"exclusions={pop['exclusions']}")
+    for axis in payload["axes"]:   # frozen library order — deliberately NOT sorted by score
+        n_buckets = len(axis["buckets"])
+        print(f"  axis {axis['axis_id']:18s} [{axis['family']:22s} grain={axis['grain']:5s}] "
+              f"buckets={n_buckets}")
+    if args.json_out:
+        out = Path(args.json_out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with open(out, "w") as fh:
+            json.dump(payload, fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    if args.persist:
+        from horseracing_eval.diagnostics_store import save_segment_accuracy_run
+        lv = (f"segment-accuracy;model={prov['base_model_version']};"
+              f"mask={prov['mask_library_version']};metric={prov['metric_contract_version']};"
+              f"bundle={prov['bundle_digest'][:12]}")
+        run = save_segment_accuracy_run(
+            session, payload, date_from=args.eval_from, date_to=args.to, logic_version=lv,
+        )
+        session.commit()
+        print(f"  persisted diagnostic_run {run.diagnostic_run_id} (kind=segment_accuracy)")
     return 0
 
 

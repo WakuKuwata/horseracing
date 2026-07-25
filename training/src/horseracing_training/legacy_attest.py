@@ -450,7 +450,7 @@ def attestation_from_model_dir(active_dir: Path | str, *, code_sha: str) -> dict
     )
 
 
-def _validated_payload(att: dict) -> dict:
+def _validated_payload(att: dict, *, enforce_legacy: bool = True) -> dict:
     if not isinstance(att, Mapping):
         raise AttestationError("attestation must be a mapping")
     missing = _ATTESTATION_FIELDS - set(att)
@@ -462,7 +462,7 @@ def _validated_payload(att: dict) -> dict:
 
     digest = _nonempty_string(att["attestation_digest"], field_name="attestation_digest")
     payload = {key: copy.deepcopy(att[key]) for key in _PAYLOAD_FIELDS}
-    _validate_payload(payload, enforce_legacy=True)
+    _validate_payload(payload, enforce_legacy=enforce_legacy)
     expected_digest = stable_hash(payload)
     if digest != expected_digest:
         raise AttestationError(
@@ -539,6 +539,41 @@ class AttestedRecipeFactory(RecipeFactory):
 def factory_from_attestation(session: Session, att: dict) -> AttestedRecipeFactory:
     """Build a recipe-faithful factory that retains attested params and feature ordering."""
     payload = _validated_payload(att)
+    return AttestedRecipeFactory(
+        session=session,
+        recipe=_recipe_from_payload(payload),
+        resolved_lgbm_params=copy.deepcopy(dict(payload["resolved_lgbm_params"])),
+        ordered_feature_columns=tuple(payload["ordered_feature_columns"]),
+        num_threads=payload["num_threads"],
+    )
+
+
+def general_factory_from_attestation(
+    session: Session,
+    att: dict,
+    *,
+    expected_model_version: str,
+    expected_feature_version: str,
+) -> AttestedRecipeFactory:
+    """Feature 082: recipe-faithful factory for a NON-legacy attested model (e.g. the current
+    DB-resolved active).
+
+    Same digest + payload validation as the legacy path but WITHOUT the lgbm-063 pin. Not a blank
+    check: the caller states which model version and feature version it expects (resolved from the
+    DB active at run time), and a mismatch fails closed — so a stale attestation for a different
+    artifact can never silently drive an OOF run.
+    """
+    payload = _validated_payload(att, enforce_legacy=False)
+    if payload["base_model_version"] != expected_model_version:
+        raise AttestationError(
+            "attested base_model_version differs from the DB-resolved active: "
+            f"{payload['base_model_version']!r} != {expected_model_version!r}"
+        )
+    if payload["feature_version"] != expected_feature_version:
+        raise AttestationError(
+            "attested feature_version differs from expectation: "
+            f"{payload['feature_version']!r} != {expected_feature_version!r}"
+        )
     return AttestedRecipeFactory(
         session=session,
         recipe=_recipe_from_payload(payload),
