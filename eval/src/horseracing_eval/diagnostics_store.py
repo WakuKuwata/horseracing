@@ -46,3 +46,29 @@ def save_segment_edge_run(
     session.add(run)
     session.flush()
     return run
+
+
+KIND_SEGMENT_ACCURACY = "segment_accuracy"
+
+
+def save_segment_accuracy_run(
+    session: Session,
+    payload: dict,
+    *,
+    date_from: datetime.date | None,
+    date_to: datetime.date | None,
+    logic_version: str,
+) -> DiagnosticRun:
+    """Feature 082: append one segment_accuracy run (payload VERBATIM — 054 discipline: this
+    layer transcribes, never recomputes or augments; never overwrites; caller commits).
+    Kind is deliberately separate from ``segment_edge`` (different estimand, codex)."""
+    run = DiagnosticRun(
+        kind=KIND_SEGMENT_ACCURACY,
+        date_from=date_from,
+        date_to=date_to,
+        logic_version=logic_version,
+        payload=payload,
+    )
+    session.add(run)
+    session.flush()
+    return run
