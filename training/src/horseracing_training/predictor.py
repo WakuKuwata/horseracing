@@ -384,9 +384,20 @@ class LightGBMPredictor:
         return dict(self.params) if self.params is not None else dict(DEFAULT_PARAMS)
 
     # --- predict -------------------------------------------------------------
-    def predict_race(self, race: RaceContext) -> dict[str, Prediction]:
-        if self.win_model_ is None or self.calibrator_ is None:
-            raise RuntimeError("predict_race called before fit")
+    def raw_win_probs(self, race: RaceContext) -> tuple[list[str], np.ndarray]:
+        """UNCALIBRATED win scores for one race + the started ids they align to.
+
+        This is the exact vector the calibrator consumes at fit time (``fit`` calls
+        ``win_model_.predict`` on the calib holdout) and at serving time
+        (``serving.predictor``: ``raw_predict`` -> ``calibrator.transform``). For a softmax
+        objective it is the per-race softmax (Σ=1); for binary it is the sigmoid.
+
+        Feature 085 (arm E) fits its OOF calibrator on THIS vector, so the calibrator sees the
+        same score space in training, evaluation and serving. Callers that want the final
+        prediction must keep using ``predict_race`` (calibrate -> clip -> renormalize -> Harville).
+        """
+        if self.win_model_ is None:
+            raise RuntimeError("raw_win_probs called before fit")
         data = self._ensure_data()
         started_ids = [h.horse_id for h in race.started_horses]
 
@@ -419,6 +430,17 @@ class LightGBMPredictor:
                 )
             offsets = offs
         raw = self.win_model_.predict(X, group_ids=group_ids, offsets=offsets)
+        return started_ids, np.asarray(raw, dtype=float)
+
+    def predict_race(self, race: RaceContext) -> dict[str, Prediction]:
+        """INV-T1: raw win -> calibrate -> clip -> race-normalize -> Harville.
+
+        The raw stage is ``raw_win_probs`` (single implementation, no duplicated feature/offset
+        assembly); the tail is unchanged, so predictions stay byte-identical.
+        """
+        if self.win_model_ is None or self.calibrator_ is None:
+            raise RuntimeError("predict_race called before fit")
+        started_ids, raw = self.raw_win_probs(race)
         cal = self.calibrator_.transform(raw)
         return assemble_predictions(started_ids, cal, eps=self.ece_clip)
 

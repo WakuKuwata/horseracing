@@ -16,7 +16,7 @@ import pytest
 
 from horseracing_training.adoption import AdoptionDecision, AdoptionGate
 from horseracing_training.artifacts import save_model_version
-from horseracing_training.calib_split import OofCalibratedPredictor
+from horseracing_training.calib_split import InsufficientOofSample, OofCalibratedPredictor
 from horseracing_training.calibration import split_train_by_day, split_train_by_time
 from horseracing_training.predictor import LightGBMPredictor
 from horseracing_training.recipe import ModelRecipe
@@ -50,7 +50,7 @@ def test_zero_calib_frac_holds_out_nothing():
 def test_gamma_resets_when_refit_yields_no_samples(monkeypatch):
     # A factory-reused predictor must not carry a previous fold's γ into a fold whose OOF
     # sample set is empty — identity (γ=1) is the correct fallback.
-    pred = OofCalibratedPredictor(None, ModelRecipe())
+    pred = OofCalibratedPredictor(None, ModelRecipe(), require_sufficient=False)
 
     class _DummyBase:
         def fit(self, races):
@@ -62,6 +62,24 @@ def test_gamma_resets_when_refit_yields_no_samples(monkeypatch):
     pred.fit([])
     assert pred.gamma_ == 1.0
     assert pred.n_oof_samples_ == 0
+    assert pred.oof_info_["sufficient"] is False
+    assert pred.oof_info_["reason"] == "no_oof_samples"
+
+
+def test_empty_oof_fold_fails_closed_by_default(monkeypatch):
+    """085 §3.3: the DEFAULT is fail-closed — a fold that fits no calibrator must not be scored
+    as an OOF arm with a silent identity calibrator. (If re-running C/D ever raises here, that
+    reveals a fold which previously fell back silently — information, not a regression.)"""
+    pred = OofCalibratedPredictor(None, ModelRecipe())  # require_sufficient defaults True
+
+    class _DummyBase:
+        def fit(self, races):
+            return self
+
+    monkeypatch.setattr(pred, "_make_base", lambda: _DummyBase())
+    monkeypatch.setattr(pred, "_oof_samples", lambda races: [])
+    with pytest.raises(InsufficientOofSample, match="no samples"):
+        pred.fit([])
 
 
 class _FakeRow:

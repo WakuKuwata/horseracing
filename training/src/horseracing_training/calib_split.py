@@ -27,6 +27,7 @@ from horseracing_probability.model_calibration import _apply_gamma, fit_power_ga
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .calibration import DEFAULT_CLIP, Calibrator, fit_calibrator
 from .dataset import TrainingMatrix
 from .predictor import LightGBMPredictor, assemble_predictions
 from .recipe import ModelRecipe
@@ -34,6 +35,51 @@ from .recipe import ModelRecipe
 #: psycopg3 caps bound parameters at 65,535 per statement; wide-window folds train on 60k+
 #: races, so the winner lookup must chunk its IN list (results are merged, order-independent).
 _IN_CHUNK = 20_000
+
+#: Feature 085 (arm E) pre-registered sufficiency floors for the OOF isotonic sample, fixed
+#: BEFORE any OOS run (constitution III). A fold below ANY floor does not get an isotonic
+#: calibrator: it falls back to identity and records why, and a strict (confirmatory) run
+#: refuses outright rather than silently scoring "full-history booster + identity" as arm E.
+MIN_OOF_RACES = 200
+MIN_OOF_ROWS = 2_000
+MIN_OOF_POSITIVES = 200
+MIN_OOF_DISTINCT_SCORES = 2
+
+
+class InsufficientOofSample(RuntimeError):
+    """arm E could not fit its OOF calibrator and strict mode forbids the identity fallback."""
+
+
+def _started_all_outcomes(session: Session, race_ids) -> dict[str, tuple[int, set[str]]]:
+    """race_id -> (n_result_rows, {horse_id of every FINISHED 1st place}).
+
+    Feature 085 (arm E) label source. Deliberately NOT ``_single_winners``:
+
+    - **dead heats are kept**, with every finished 1st-place horse labelled 1 (a per-horse
+      isotonic sample has no reason to drop the race, unlike a winner-NLL sample which needs an
+      unambiguous winner);
+    - ``n_result_rows`` counts result rows of ANY status, so the caller can apply the evaluator's
+      fail-closed partial-ingest rule (``eval.dataset.population_masks``: fewer result rows than
+      started horses means some started horse has no outcome at all, so "absent = 0" is
+      unverifiable and the race must be excluded rather than labelled all-zero).
+    """
+    ids = list(race_ids)
+    counts: dict[str, int] = {}
+    winners: dict[str, set[str]] = {}
+    for i in range(0, len(ids), _IN_CHUNK):
+        chunk = ids[i : i + _IN_CHUNK]
+        stmt = (
+            select(
+                RaceResult.race_id, RaceResult.horse_id,
+                RaceResult.result_status, RaceResult.finish_order,
+            )
+            .where(RaceResult.race_id.in_(chunk))
+        )
+        for rid, hid, status, order in session.execute(stmt):
+            counts[rid] = counts.get(rid, 0) + 1
+            if status == ResultStatus.FINISHED and order == 1:
+                winners.setdefault(rid, set()).add(hid)
+    return {rid: (n, winners.get(rid, set())) for rid, n in counts.items()}
 
 
 def _single_winners(session: Session, race_ids) -> dict[str, str]:
@@ -70,8 +116,15 @@ def day_block_partition(days: list, n_oof: int):
             yield earlier, block
 
 
+#: calibrator families this predictor can fit on strict-past OOF predictions.
+#: ``power`` = 068 arm C/D (single γ, race-normalized, Σ=1 preserving).
+#: ``isotonic`` = 085 arm E (non-parametric per-horse map on the raw race-softmax, Σ=1 restored
+#: by ``assemble_predictions`` — exactly A's deployed semantics).
+OOF_METHODS: tuple[str, ...] = ("power", "isotonic")
+
+
 class OofCalibratedPredictor:
-    """Full-history booster + strict-past OOF power calibrator (C/D)."""
+    """Full-history booster + strict-past OOF calibrator (068 arm C/D, 085 arm E)."""
 
     is_leaky_reference = False
 
@@ -82,14 +135,36 @@ class OofCalibratedPredictor:
         *,
         shared_data: TrainingMatrix | None = None,
         n_oof_blocks: int = 3,
+        method: str = "power",
+        require_sufficient: bool = True,
     ) -> None:
+        if method not in OOF_METHODS:
+            raise ValueError(f"unknown OOF calibrator method: {method!r} (expected {OOF_METHODS})")
         self.session = session
         self.recipe = recipe
         self._shared = shared_data
         self.n_oof = n_oof_blocks
+        self.method = method
+        # Feature 085 (§3.3): in a pre-registered run an insufficient fold must NOT be scored as
+        # arm E with an identity calibrator. False = fall back to identity and record the reason
+        # (used by tests and by exploratory runs).
+        self.require_sufficient = require_sufficient
         self._base: LightGBMPredictor | None = None
+        self._reset_calibration_state()
+
+    def _reset_calibration_state(self) -> None:
+        """Clear every learned/provenance field. Called at the start of each fit: the factory
+        reuses one predictor across outer folds, so a previous fold's calibrator must never
+        survive into a fold that fits nothing."""
         self.gamma_ = 1.0
+        self.calibrator_: Calibrator | None = None
         self.n_oof_samples_ = 0
+        self.oof_info_: dict = {
+            "method": self.method, "sufficient": False, "reason": "not_fitted",
+            "n_oof_races": 0, "n_oof_rows": 0, "n_positives": 0,
+            "n_distinct_scores": 0, "n_dead_heat_races": 0, "n_incomplete_races": 0,
+            "score_min": None, "score_max": None,
+        }
 
     def _make_base(self) -> LightGBMPredictor:
         p = LightGBMPredictor(
@@ -111,15 +186,124 @@ class OofCalibratedPredictor:
         return p
 
     def fit(self, train_races: list[RaceContext], *, num_threads: int | None = None):
+        # reset before refit: a reused predictor must not carry a previous fold's calibrator
+        # when this fold yields no OOF samples (identity is the correct fallback).
+        self._reset_calibration_state()
         self._base = self._make_base()
         self._base.fit(train_races)
-        # reset before refit: a reused predictor must not carry a previous fold's γ when this
-        # fold yields no OOF samples (identity calibration is the correct fallback).
-        self.gamma_, self.n_oof_samples_ = 1.0, 0
-        samples = self._oof_samples(train_races)
-        if samples:
-            self.gamma_, self.n_oof_samples_ = fit_power_gamma(samples)
+        if self.method == "isotonic":
+            self._fit_oof_isotonic(train_races)
+        else:
+            samples = self._oof_samples(train_races)
+            if samples:
+                self.gamma_, self.n_oof_samples_ = fit_power_gamma(samples)
+                self.oof_info_.update(
+                    sufficient=True, reason="ok", n_oof_races=self.n_oof_samples_
+                )
+            else:
+                self.oof_info_.update(reason="no_oof_samples")
+                if self.require_sufficient:
+                    raise InsufficientOofSample(
+                        "OOF power calibration produced no samples (fail-closed; pass "
+                        "require_sufficient=False to allow the identity fallback)"
+                    )
         return self
+
+    # --- arm E: strict-past OOF isotonic -------------------------------------
+    def _fit_oof_isotonic(self, train_races: list[RaceContext]) -> None:
+        """Feature 085 arm E: fit ONE isotonic map per outer fold on strict-past OOF rows.
+
+        Rows are ``(raw race-softmax score, started-all win label)`` per started horse, produced
+        by inner boosters trained only on strictly-earlier race-days (§3.1/§3.2). Insufficient
+        folds fall back to identity with a machine-readable reason (§3.3).
+        """
+        scores, labels, info = self._oof_isotonic_rows(train_races)
+        self.oof_info_.update(info)
+        distinct = int(np.unique(scores).size) if len(scores) else 0
+        self.oof_info_["n_distinct_scores"] = distinct
+        if len(scores):
+            self.oof_info_["score_min"] = float(np.min(scores))
+            self.oof_info_["score_max"] = float(np.max(scores))
+        n_pos = int(np.sum(labels == 1)) if len(labels) else 0
+        self.oof_info_["n_positives"] = n_pos
+
+        reason = None
+        if info["n_oof_races"] < MIN_OOF_RACES:
+            reason = f"too_few_oof_races({info['n_oof_races']}<{MIN_OOF_RACES})"
+        elif len(scores) < MIN_OOF_ROWS:
+            reason = f"too_few_oof_rows({len(scores)}<{MIN_OOF_ROWS})"
+        elif n_pos < MIN_OOF_POSITIVES:
+            reason = f"too_few_positives({n_pos}<{MIN_OOF_POSITIVES})"
+        elif distinct < MIN_OOF_DISTINCT_SCORES:
+            reason = f"too_few_distinct_scores({distinct}<{MIN_OOF_DISTINCT_SCORES})"
+        elif int(np.unique(labels).size) < 2:
+            reason = "single_class_labels"
+        if reason is not None:
+            self.oof_info_.update(sufficient=False, reason=reason)
+            if self.require_sufficient:
+                raise InsufficientOofSample(
+                    f"OOF isotonic sample insufficient: {reason} (fail-closed; pass "
+                    "require_sufficient=False to allow the identity fallback)"
+                )
+            return
+
+        # same wrapper/settings A uses, so the fitted object is servable as-is (085 §5)
+        self.calibrator_ = fit_calibrator(
+            scores, labels, method="isotonic", clip=DEFAULT_CLIP
+        )
+        self.n_oof_samples_ = len(scores)
+        self.oof_info_.update(
+            sufficient=True, reason="ok", n_oof_rows=len(scores),
+            calibrator_degenerate=self.calibrator_.identity,
+        )
+
+    def _oof_isotonic_rows(self, train_races: list[RaceContext]):
+        """(scores, labels, info) over every eligible OOF race of this outer fold."""
+        races = sorted(train_races, key=lambda r: (r.race_date, r.race_id))
+        days = sorted({r.race_date for r in races})
+        info = {
+            "n_oof_races": 0, "n_oof_rows": 0, "n_dead_heat_races": 0, "n_incomplete_races": 0,
+        }
+        if len(days) < self.n_oof * 2:
+            return np.empty(0), np.empty(0), info
+        outcomes = _started_all_outcomes(self.session, [r.race_id for r in races])
+        scores: list[float] = []
+        labels: list[int] = []
+        for earlier_days, block_days in day_block_partition(days, self.n_oof):
+            eset, bset = set(earlier_days), set(block_days)
+            earlier = [r for r in races if r.race_date in eset]
+            block = [r for r in races if r.race_date in bset]
+            if not earlier or not block:
+                continue
+            pred = self._make_base()
+            pred.fit(earlier)
+            for ctx in block:
+                got = outcomes.get(ctx.race_id)
+                if got is None:
+                    info["n_incomplete_races"] += 1  # no result rows at all
+                    continue
+                n_result_rows, winners = got
+                started = [h.horse_id for h in ctx.started_horses]
+                if not started or n_result_rows < len(started):
+                    # partial ingest: "absent result = 0" is unverifiable (eval fail-closed rule)
+                    info["n_incomplete_races"] += 1
+                    continue
+                if not winners:
+                    info["n_incomplete_races"] += 1  # no finished 1st place -> no positive
+                    continue
+                if len(winners) > 1:
+                    info["n_dead_heat_races"] += 1  # kept: every 1st-place horse is a positive
+                ids, raw = pred.raw_win_probs(ctx)  # UNCALIBRATED race-softmax (§3.1)
+                if list(ids) != started or not np.isfinite(raw).all():
+                    raise RuntimeError(
+                        f"arm E: prediction/started mismatch or non-finite score for {ctx.race_id}"
+                    )
+                info["n_oof_races"] += 1
+                for hid, s in zip(ids, raw, strict=True):
+                    scores.append(float(s))
+                    labels.append(1 if hid in winners else 0)
+        info["n_oof_rows"] = len(scores)
+        return np.asarray(scores, dtype=float), np.asarray(labels, dtype=int), info
 
     def _oof_samples(self, train_races: list[RaceContext]):
         """Expanding strict-past OOF by race-day (each block predicted by strictly-earlier days)."""
@@ -149,6 +333,15 @@ class OofCalibratedPredictor:
 
     def predict_race(self, race: RaceContext) -> dict:
         assert self._base is not None
+        if self.method == "isotonic":
+            # arm E: isotonic on the RAW race-softmax (the vector serving's calibrator receives),
+            # then clip + race-renormalize + Harville via assemble_predictions = A's semantics.
+            started_ids, raw = self._base.raw_win_probs(race)
+            win_scores = (
+                np.asarray(self.calibrator_.transform(raw), dtype=float)
+                if self.calibrator_ is not None else np.asarray(raw, dtype=float)
+            )
+            return assemble_predictions(started_ids, win_scores)
         base = self._base.predict_race(race)
         p = {hid: v.win for hid, v in base.items()}
         pcal = _apply_gamma(p, self.gamma_)  # race-normalized power, Σ=1 preserved (IV)
@@ -159,17 +352,27 @@ class OofCalibratedPredictor:
 
 @dataclass
 class CalibSplitFactory:
-    """eval PredictorFactory for the C/D OOF-power arm (recipe-refit per outer fold)."""
+    """eval PredictorFactory for the OOF-calibrated arms (recipe-refit per outer fold).
+
+    ``method="power"`` = 068 arm C/D; ``method="isotonic"`` = 085 arm E. The method enters
+    ``recipe_meta`` (hence ``recipe_hash``), so the two arms are distinct model identities and a
+    report can never be mistaken for the other arm.
+    """
 
     session: Session
     recipe: ModelRecipe
     n_oof_blocks: int = 3
+    method: str = "power"
+    require_sufficient: bool = True
     _pred: OofCalibratedPredictor | None = field(default=None, init=False, repr=False)
     _shared: TrainingMatrix | None = field(default=None, init=False, repr=False)
 
     @property
     def recipe_meta(self) -> dict:
-        return {**self.recipe.meta(), "arm": "oof_power", "n_oof_blocks": self.n_oof_blocks}
+        return {
+            **self.recipe.meta(), "arm": f"oof_{self.method}",
+            "n_oof_blocks": self.n_oof_blocks,
+        }
 
     @property
     def recipe_hash(self) -> str:
@@ -185,6 +388,7 @@ class CalibSplitFactory:
             self._pred = OofCalibratedPredictor(
                 self.session, self.recipe,
                 shared_data=self._shared, n_oof_blocks=self.n_oof_blocks,
+                method=self.method, require_sufficient=self.require_sufficient,
             )
         self._pred.fit(train_races)
         return self._pred

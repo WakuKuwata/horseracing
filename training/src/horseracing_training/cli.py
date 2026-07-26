@@ -1015,14 +1015,23 @@ def _recipe_from_spec(spec: str):
 def _factory_from_spec(session, spec: str):
     """Build the right PredictorFactory for a recipe spec.
 
-    ``objective:oof_power`` → C/D arm (full-history booster + strict-past OOF power calibrator);
-    anything else → A/B arm (train-internal calibration holdout via RecipeFactory)."""
+    ``objective:oof_power`` → 068 C/D arm (full-history booster + strict-past OOF power γ);
+    ``objective:oof_isotonic`` → 085 arm E (same booster, strict-past OOF isotonic);
+    anything else → A/B arm (train-internal calibration holdout via RecipeFactory).
+
+    The OOF names must be routed EXPLICITLY: they are not ``fit_calibrator`` methods, so an
+    unrouted name would fall through to the holdout factory and silently measure a different
+    arm (found by the 085 design review; ``fit_calibrator`` now also rejects unknown names)."""
     parts = spec.split(":")
-    if len(parts) > 1 and parts[1] == "oof_power":
+    oof_method = {"oof_power": "power", "oof_isotonic": "isotonic"}.get(
+        parts[1] if len(parts) > 1 else ""
+    )
+    if oof_method is not None:
         from .calib_split import CalibSplitFactory
         from .recipe import ModelRecipe
         return CalibSplitFactory(
-            session, ModelRecipe(objective=parts[0], calibration="none", label=spec)
+            session, ModelRecipe(objective=parts[0], calibration="none", label=spec),
+            method=oof_method,
         )
     from .recipe import RecipeFactory
     return RecipeFactory(session, _recipe_from_spec(spec))
