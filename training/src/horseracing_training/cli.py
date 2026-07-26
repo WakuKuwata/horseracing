@@ -738,6 +738,90 @@ def main(argv: list[str] | None = None) -> int:
                      help="legacy fit: write the p-calibrator artifact JSON here")
     dpc.add_argument("--database-url", default=None)
 
+    # Feature 084: fit/publish and secondary OOS diagnosis stay separate so diagnosis
+    # cannot re-cut the frozen bands.
+    cb = sub.add_parser("chaos-bands",
+                        help="084: fit top-3 chaos bands or run secondary OOS diagnostics")
+    cb_sub = cb.add_subparsers(dest="chaos_bands_command", required=True)
+    cb_fit = cb_sub.add_parser("fit",
+                               help="fit market-q lambdas and P(S>=20) quintiles")
+    cb_fit.add_argument("--fit-from", dest="fit_from", type=_parse_date, required=True)
+    cb_fit.add_argument("--fit-to", dest="fit_to", type=_parse_date, required=True)
+    cb_fit.add_argument("--valid-from", dest="valid_from", type=_parse_date, required=True)
+    cb_fit.add_argument("--out-dir", default="artifacts/chaos_bands")
+    cb_fit.add_argument("--database-url", default=None)
+    cb_diagnose = cb_sub.add_parser(
+        "diagnose",
+        help="SECONDARY OOS report; never an adoption gate and never re-cuts edges",
+    )
+    cb_diagnose.add_argument(
+        "--from",
+        dest="diagnose_from",
+        type=_parse_date,
+        required=True,
+    )
+    cb_diagnose.add_argument(
+        "--to",
+        dest="diagnose_to",
+        type=_parse_date,
+        required=True,
+    )
+    cb_diagnose.add_argument(
+        "--artifact",
+        required=True,
+        help="approved artifact digest or JSON path",
+    )
+    cb_diagnose.add_argument(
+        "--bootstrap-b",
+        type=int,
+        default=2000,
+        help="race-day clustered bootstrap replicates (fixed seed)",
+    )
+    cb_diagnose.add_argument(
+        "--export-fixture",
+        default=None,
+        help="write the SC-008 frozen fixture to this .parquet path plus .sha256",
+    )
+    cb_diagnose.add_argument(
+        "--persist",
+        action="store_true",
+        help="append the completed report verbatim to diagnostic_runs",
+    )
+    cb_diagnose.add_argument("--database-url", default=None)
+    cb_coverage = cb_sub.add_parser(
+        "coverage",
+        help="US6 capture/post-time coverage and selection-bias report",
+    )
+    cb_coverage.add_argument(
+        "--from",
+        dest="coverage_from",
+        type=_parse_date,
+        required=True,
+    )
+    cb_coverage.add_argument(
+        "--to",
+        dest="coverage_to",
+        type=_parse_date,
+        required=True,
+    )
+    cb_coverage.add_argument("--database-url", default=None)
+    cb_prospective = cb_sub.add_parser(
+        "prospective-report",
+        help="US5 preregistered confirmation report",
+    )
+    cb_prospective.add_argument(
+        "--artifact",
+        required=True,
+        help="approved artifact digest or JSON path",
+    )
+    cb_prospective.add_argument(
+        "--bootstrap-b",
+        type=int,
+        default=2000,
+        help="race-day clustered bootstrap replicates (fixed seed)",
+    )
+    cb_prospective.add_argument("--database-url", default=None)
+
     # Feature 068: paired candidate↔active evaluation (recipe-refit per fold, no saved booster).
     pe = sub.add_parser("paired-eval",
                         help="068: paired candidate vs active winner-NLL eval + adoption gate")
@@ -917,6 +1001,16 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _dispersion_pcal(session, args)
+    if args.command == "chaos-bands":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            if args.chaos_bands_command == "fit":
+                return _chaos_bands_fit(session, args)
+            if args.chaos_bands_command == "diagnose":
+                return _chaos_bands_diagnose(session, args)
+            if args.chaos_bands_command == "coverage":
+                return _chaos_bands_coverage(session, args)
+            return _chaos_bands_prospective_report(session, args)
     if args.command == "market-gate-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1451,6 +1545,444 @@ def _dispersion_bands(session: Session, args) -> int:
             print(f"  {r.band:<14} {r.n:>6} {r.n_void:>5} {fl:>9} {ci:>15}"
                   f" {hp:>11} {sep:>4}")
         print("  'sep=NO' = adjacent bands not separated by CI — disclosed, not merged (047)")
+    return 0
+
+
+def _chaos_bands_fit(session: Session, args) -> int:
+    """Feature 084: fit and content-address publish the frozen chaos artifact."""
+    from .chaos_bands import ChaosArtifactError, fit_artifact
+
+    try:
+        published = fit_artifact(
+            session,
+            fit_from=args.fit_from,
+            fit_to=args.fit_to,
+            valid_from=args.valid_from,
+            out_dir=args.out_dir,
+            code_sha=_git_sha(),
+        )
+    except ChaosArtifactError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    payload = published.payload
+    print(
+        f"chaos-bands fit: {payload['n_races_fit']} races "
+        f"[{payload['fit_from']}..{payload['fit_to']}]"
+    )
+    print(f"  lambda2={payload['lambda2']:.6f} lambda3={payload['lambda3']:.6f}")
+    print(f"  quintile_edges={payload['quintile_edges']}")
+    print("  excluded races by reason:")
+    for reason in (
+        "no_started_horses",
+        "field_too_small",
+        "invalid_popularity_ranks",
+        "partial_market_odds",
+    ):
+        print(f"    {reason}={published.excluded_race_counts.get(reason, 0)}")
+    print(f"  numeric_stability={payload['numeric_stability_report']['status']}")
+    print(f"  artifact_digest={published.artifact_digest}")
+    print(f"  published={published.path}")
+    print("  承認 manifest にこの digest を追記してください。")
+    return 0
+
+
+def _load_chaos_diagnostic_artifact(artifact_ref: str, target_date: datetime.date):
+    import json
+    from pathlib import Path
+
+    from horseracing_probability.chaos_artifact import load_chaos_artifact
+
+    reference_path = Path(artifact_ref)
+    repository_root = Path(__file__).resolve().parents[3]
+    if reference_path.is_absolute() or reference_path.is_file():
+        artifact_path = reference_path
+    elif reference_path.suffix == ".json":
+        artifact_path = repository_root / reference_path
+    else:
+        artifact_path = (
+            repository_root / "artifacts" / "chaos_bands" / f"{artifact_ref}.json"
+        )
+    manifest_path = repository_root / "config" / "chaos_bands_approved.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    approved = {
+        str(item["digest"]) if isinstance(item, dict) else str(item)
+        for item in manifest.get("approved", [])
+    }
+    return load_chaos_artifact(
+        artifact_path,
+        approved_digests=approved,
+        target_date=target_date,
+    )
+
+
+def _format_optional(value, digits: int = 4) -> str:
+    return "-" if value is None else f"{float(value):.{digits}f}"
+
+
+def _print_chaos_diagnosis(report: dict) -> None:
+    print("chaos-bands diagnose: SECONDARY — not an adoption gate")
+    print("  2024+ is discovery data")
+    print("  PRIMARY: reliability, Brier, log score; AUC is AUXILIARY ONLY")
+    print(
+        f"  window=[{report['window']['from']}..{report['window']['to']}] "
+        f"n={report['population']['analyzed_races']}"
+    )
+    print(
+        "  pointwise 95% CIs: multiple comparisons not adjusted; "
+        f"race-day clusters, seed={report['bootstrap']['seed']}"
+    )
+    print("\nBands (field-size means are shown to disclose N drift):")
+    for band_row in report["band_summary"]:
+        print(
+            f"  {band_row['band']:<10} n={band_row['n']:>5} "
+            f"mean_N={_format_optional(band_row['mean_field_size'], 2):>5} "
+            f"median_S={_format_optional(band_row['median_s'], 1):>4}"
+        )
+        for event_key in ("s_ge_20", "himo_are", "total_collapse", "s_ge_30"):
+            event = band_row["events"][event_key]
+            if event["n"] == 0:
+                print(f"    {event_key:<16} NO_DECISION (empty band)")
+                continue
+            calibration_ci = event["reliability"]["predicted_minus_realized_ci"]
+            brier_ci = event["brier"]["cluster_ci"]
+            log_ci = event["log_score"]["cluster_ci"]
+            print(
+                f"    {event_key:<16} predicted={event['predicted_rate']:.4f} "
+                f"realized={event['realized_rate']:.4f} "
+                f"calΔCI=[{_format_optional(calibration_ci['ci_low'])},"
+                f"{_format_optional(calibration_ci['ci_high'])}] "
+            )
+            print(
+                f"      Brier={event['brier']['point']:.4f} "
+                f"CI=[{_format_optional(brier_ci['ci_low'])},"
+                f"{_format_optional(brier_ci['ci_high'])}] "
+                f"log={event['log_score']['point']:.4f} "
+                f"CI=[{_format_optional(log_ci['ci_low'])},"
+                f"{_format_optional(log_ci['ci_high'])}] "
+                f"AUC(aux)={_format_optional(event['auc']['point'])} "
+                f"{event['decision_status']}"
+            )
+    field_size_means = report["band_field_size_means"]
+    calm_mean = field_size_means.get("t3_calm")
+    wild_mean = field_size_means.get("t3_wild")
+    print(
+        "  disclosed field-size mean drift "
+        f"t3_calm→t3_wild: {_format_optional(calm_mean, 2)}"
+        f"→{_format_optional(wild_mean, 2)}"
+    )
+
+    print("\nOverall proper scores and fair baselines:")
+    for event_key, chaos in report["overall"]["events"].items():
+        baseline = report["baselines"]["events"][event_key]
+        n_only = baseline["n_only"]
+        g_h_n = baseline["g_h_n"]
+        calibration_ci = chaos["reliability"]["predicted_minus_realized_ci"]
+        print(
+            f"  {event_key}: chaos Brier={chaos['brier']['point']:.4f} "
+            f"log={chaos['log_score']['point']:.4f} "
+            f"AUC(aux)={_format_optional(chaos['auc']['point'])} "
+            f"{chaos['decision_status']}"
+        )
+        print(
+            f"    reliability ECE={chaos['reliability']['ece']:.4f} "
+            f"predicted-realized={chaos['reliability']['calibration_in_the_large']:+.4f} "
+            f"CI=[{_format_optional(calibration_ci['ci_low'])},"
+            f"{_format_optional(calibration_ci['ci_high'])}]"
+        )
+        print(
+            f"    N-only     Brier={n_only['brier']['point']:.4f} "
+            f"log={n_only['log_score']['point']:.4f} "
+            f"AUC(aux)={_format_optional(n_only['auc']['point'])}"
+        )
+        print(
+            f"    g(H,N)     Brier={g_h_n['brier']['point']:.4f} "
+            f"log={g_h_n['log_score']['point']:.4f} "
+            f"AUC(aux)={_format_optional(g_h_n['auc']['point'])}"
+        )
+
+    print("\nWithin-field-size buckets (AUC auxiliary; paired proper-score CIs are primary):")
+    for bucket in report["within_field_size_buckets"]:
+        print(f"  N={bucket['bucket']:<5} n={bucket['n']}")
+        for event_key in ("s_ge_20", "himo_are", "total_collapse"):
+            event = bucket["events"][event_key]
+            scores = event["proper_scores"]
+            auxiliary = event["auxiliary_auc_scores"]
+            delta = event["paired_deltas"]["chaos_minus_g_h_n"]
+            brier_ci = delta["brier_delta"]
+            log_ci = delta["log_score_delta"]
+            print(
+                f"    {event_key:<16} chaos/g(H,N) Brier="
+                f"{scores['chaos_probability']['brier']:.4f}/"
+                f"{scores['g_h_n']['brier']:.4f} "
+                f"ΔCI=[{_format_optional(brier_ci['ci_low'])},"
+                f"{_format_optional(brier_ci['ci_high'])}]"
+            )
+            print(
+                f"      chaos/g(H,N) log={scores['chaos_probability']['log_score']:.4f}/"
+                f"{scores['g_h_n']['log_score']:.4f} "
+                f"ΔCI=[{_format_optional(log_ci['ci_low'])},"
+                f"{_format_optional(log_ci['ci_high'])}] "
+                f"AUC(aux) chaos/g(H,N)/H/E[S]="
+                f"{_format_optional(scores['chaos_probability']['auc_auxiliary'])}/"
+                f"{_format_optional(scores['g_h_n']['auc_auxiliary'])}/"
+                f"{_format_optional(auxiliary['normalized_entropy_h'])}/"
+                f"{_format_optional(auxiliary['expected_s'])}"
+            )
+
+    fixture = report.get("fixture_export")
+    if fixture is not None:
+        print(
+            f"\n  fixture={fixture['path']} n={fixture['n_races']} "
+            f"sha256={fixture['sha256']}"
+        )
+
+
+def _chaos_bands_diagnose(session: Session, args) -> int:
+    from horseracing_probability.chaos_artifact import ChaosArtifactError as LoadArtifactError
+
+    from .chaos_bands import (
+        ChaosArtifactError,
+        diagnose,
+    )
+
+    try:
+        artifact = _load_chaos_diagnostic_artifact(
+            args.artifact,
+            args.diagnose_from,
+        )
+        report = diagnose(
+            session,
+            diagnose_from=args.diagnose_from,
+            diagnose_to=args.diagnose_to,
+            artifact=artifact,
+            bootstrap_b=args.bootstrap_b,
+            export_fixture=args.export_fixture,
+        )
+    except (AssertionError, ChaosArtifactError, LoadArtifactError, OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    _print_chaos_diagnosis(report)
+    if args.persist:
+        from horseracing_eval.diagnostics_store import save_chaos_bands_run
+
+        run = save_chaos_bands_run(
+            session,
+            report,
+            date_from=args.diagnose_from,
+            date_to=args.diagnose_to,
+            logic_version=artifact.version,
+        )
+        session.commit()
+        print(f"\n  persisted diagnostic_run_id={run.diagnostic_run_id}")
+    return 0
+
+
+def _format_percent(value) -> str:
+    return "-" if value is None else f"{100.0 * float(value):.1f}%"
+
+
+def _print_chaos_coverage(report: dict) -> None:
+    population = report["population"]
+    capture = report["capture_rate"]
+    post_time = report["post_time_coverage"]
+    print(
+        "chaos-bands coverage: "
+        f"[{report['window']['from']}..{report['window']['to']}]"
+    )
+    print(
+        f"  captured={capture['numerator']}/{capture['denominator']} "
+        f"({_format_percent(capture['rate'])}) "
+        f"race_days={population['race_days']}"
+    )
+    print("  capture_strength (denominator=captured races):")
+    for strength, count in report["capture_strength"]["counts"].items():
+        rate = report["capture_strength"]["rates"][strength]
+        print(f"    {strength}={count} ({_format_percent(rate)})")
+    freshness = report["seconds_to_post"]
+    print(
+        "  seconds_to_post: "
+        f"n={freshness['n_numeric']} missing={freshness['n_missing']} "
+        f"p10={_format_optional(freshness['p10'], 0)} "
+        f"median={_format_optional(freshness['median'], 0)} "
+        f"p90={_format_optional(freshness['p90'], 0)}"
+    )
+    print(
+        f"  post_time coverage={post_time['numerator']}/{post_time['denominator']} "
+        f"({_format_percent(post_time['rate'])})"
+    )
+    for year, row in post_time["by_year"].items():
+        print(
+            f"    {year}: {row['numerator']}/{row['denominator']} "
+            f"({_format_percent(row['rate'])})"
+        )
+    print(f"  CAP-10: {post_time['interpretation']}")
+
+    not_captured = report["not_captured_characteristics"]
+    print("  races NOT captured (selection-bias audit):")
+    print(
+        f"    n={not_captured['n_races']} "
+        f"days={not_captured['n_race_days']} "
+        f"mean_N={_format_optional(not_captured['mean_field_size'], 2)} "
+        f"post_time_known={_format_percent(not_captured['post_time_known_rate'])}"
+    )
+    for label, key in (
+        ("field_size", "field_size_buckets"),
+        ("venue", "venues"),
+        ("track", "track_types"),
+        ("grade", "grades"),
+        ("class", "race_classes"),
+    ):
+        print(f"    {label}={not_captured[key]['counts']}")
+
+
+def _chaos_bands_coverage(session: Session, args) -> int:
+    from .chaos_bands import coverage_report
+
+    try:
+        report = coverage_report(
+            session,
+            report_from=args.coverage_from,
+            report_to=args.coverage_to,
+        )
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    _print_chaos_coverage(report)
+    return 0
+
+
+def _print_prospective_event(event_key: str, event: dict) -> None:
+    if event["n"] == 0:
+        print(f"    {event_key:<16} n=0 NO_DECISION")
+        return
+    reliability = event["reliability"]
+    calibration_ci = reliability["predicted_minus_realized_ci"]
+    brier_ci = event["brier"]["cluster_ci"]
+    log_ci = event["log_score"]["cluster_ci"]
+    print(
+        f"    {event_key:<16} n={event['n']} positives={event['positives']} "
+        f"predicted={event['predicted_rate']:.4f} "
+        f"realized={event['realized_rate']:.4f}"
+    )
+    print(
+        f"      reliability ECE={reliability['ece']:.4f} "
+        f"calΔCI=[{_format_optional(calibration_ci['ci_low'])},"
+        f"{_format_optional(calibration_ci['ci_high'])}]"
+    )
+    print(
+        f"      Brier={event['brier']['point']:.4f} "
+        f"CI=[{_format_optional(brier_ci['ci_low'])},"
+        f"{_format_optional(brier_ci['ci_high'])}] "
+        f"log={event['log_score']['point']:.4f} "
+        f"CI=[{_format_optional(log_ci['ci_low'])},"
+        f"{_format_optional(log_ci['ci_high'])}] "
+        f"AUC(aux only)={_format_optional(event['auc']['point'])}"
+    )
+
+
+def _print_chaos_prospective(report: dict) -> None:
+    promotion = report["promotion"]
+    cohort = report["cohort"]
+    print(
+        f"chaos-bands prospective-report: {promotion['decision']} "
+        f"[{report['window']['valid_from']}..{report['window']['through']}]"
+    )
+    print(
+        "  PRIMARY metrics: reliability / Brier / log score; "
+        "AUC is AUXILIARY ONLY and never decides"
+    )
+    print(
+        f"  cohort: loaded={cohort['loaded_readouts']} "
+        f"analyzed={cohort['analyzed_races']} "
+        f"race_days={cohort['race_days']} "
+        "capture_strength=confirmatory only"
+    )
+    print(f"  exclusions={cohort['exclusions']}")
+    print(
+        "  analysis unit: one row per race at the primary horizon; "
+        "selecting a latest row is forbidden"
+    )
+    print("  outcomes use frozen snapshot popularity; live race_horses is never used")
+
+    print("\n  Overall:")
+    for event_key in ("s_ge_20", "himo_are", "total_collapse", "s_ge_30"):
+        _print_prospective_event(
+            event_key,
+            report["overall"]["events"][event_key],
+        )
+    print(f"\n  By field size: {[row['bucket'] for row in report['by_field_size']]}")
+    print(
+        "  By capture horizon: "
+        f"{[row['horizon'] for row in report['by_capture_horizon']]}"
+    )
+
+    print("\n  Promotion gate:")
+    print(
+        f"    controller=p_s_ge_20 positives={promotion['observed_positives']}/"
+        f"{promotion['minimum_positives']} race_days="
+        f"{promotion['observed_race_days']}/{promotion['minimum_race_days']} "
+        f"final_date={promotion['final_decision_date']}"
+    )
+    print("    himo_are=secondary; total_collapse=NOT ELIGIBLE; s_ge_30=diagnostic only")
+    print(f"    reasons={promotion['decision_reasons']}")
+    print(f"    {promotion['panel_action']}: {promotion['panel_action_ja']}")
+    print(f"    {report['lambda_limit_note']}")
+
+    estimates = report["required_sample_estimates"]
+    print("\n  Required-sample estimate:")
+    print(
+        "    s_ge_20: "
+        f"{estimates['s_ge_20']['cluster_adjusted_races']} races, "
+        f"{estimates['s_ge_20']['years'][0]}-"
+        f"{estimates['s_ge_20']['years'][1]} years"
+    )
+    print(
+        "    s_ge_30 (diagnostic only): "
+        f"{estimates['s_ge_30']['cluster_adjusted_races']} races, "
+        f"{estimates['s_ge_30']['years'][0]}-"
+        f"{estimates['s_ge_30']['years'][1]} years"
+    )
+
+    coverage = report["capture_coverage"]
+    capture = coverage["capture_rate"]
+    post_time = coverage["post_time_coverage"]
+    excluded = report["excluded_race_characteristics"]
+    print("\n  Capture coverage and excluded-race characteristics (always reported):")
+    print(
+        f"    captured={capture['numerator']}/{capture['denominator']} "
+        f"({_format_percent(capture['rate'])}) "
+        f"post_time={_format_percent(post_time['rate'])}"
+    )
+    print(
+        f"    not_captured n={excluded['n_races']} "
+        f"mean_N={_format_optional(excluded.get('mean_field_size'), 2)} "
+        f"post_time_known={_format_percent(excluded.get('post_time_known_rate'))}"
+    )
+
+
+def _chaos_bands_prospective_report(session: Session, args) -> int:
+    from horseracing_probability.chaos_artifact import ChaosArtifactError as LoadArtifactError
+
+    from .chaos_bands import ChaosArtifactError, prospective_report
+
+    report_date = datetime.date.today()
+    try:
+        artifact = _load_chaos_diagnostic_artifact(
+            args.artifact,
+            report_date,
+        )
+        report = prospective_report(
+            session,
+            artifact=artifact,
+            as_of=report_date,
+            bootstrap_b=args.bootstrap_b,
+        )
+    except (ChaosArtifactError, LoadArtifactError, OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    _print_chaos_prospective(report)
     return 0
 
 

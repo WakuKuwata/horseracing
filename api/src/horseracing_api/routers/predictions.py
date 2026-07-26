@@ -16,6 +16,7 @@ from horseracing_db.selection import canonical_selection
 from horseracing_probability.engine import joint_probabilities
 from sqlalchemy.orm import Session
 
+from ..chaos import build_race_chaos
 from ..deps import get_session
 from ..dispersion import (
     build_race_dispersion,
@@ -90,10 +91,19 @@ def predictions(
 ):
     if not _RACE_ID.match(race_id):
         return _err(422, "invalid_race_id", "race_id must be 12 digits")
-    if get_race(session, race_id) is None:
+    race = get_race(session, race_id)
+    if race is None:
         return _err(404, "race_not_found", f"race {race_id} not found")
     if bet_type is not None and bet_type not in _EXOTIC:
         return _err(422, "invalid_bet_type", f"bet_type must be one of {sorted(_EXOTIC)}")
+
+    # Feature 084 is market-only and therefore independent of model-run availability. Build it
+    # before run selection so the typed-empty response cannot accidentally erase the readout.
+    race_chaos = build_race_chaos(
+        session,
+        race_id=race_id,
+        target_date=race.race_date,
+    )
 
     # Feature 057: optional model_version selects that model's run (else active). No silent
     # fallback: a specified model with no run for this race is a typed 404, not the active model's.
@@ -104,7 +114,12 @@ def predictions(
                 404, "prediction_unavailable",
                 f"model {model_version} has no prediction for race {race_id}",
             )
-        return PredictionResponse(race_id=race_id, run=None, horses=[])  # typed-empty (no runs)
+        return PredictionResponse(
+            race_id=race_id,
+            run=None,
+            horses=[],
+            race_chaos=race_chaos,
+        )  # typed-empty (no runs)
 
     # Feature 021 US1: market vote-share q on the SAME canonical field as model p (R1). p_numbers is
     # the 009 canonical population; q is computed/renormalized on it. p≠q kept separate; q null when
@@ -185,6 +200,7 @@ def predictions(
         available_models=available,
         race_dispersion=race_dispersion,
         race_divergence=race_divergence,
+        race_chaos=race_chaos,
     )
 
     if bet_type is None:

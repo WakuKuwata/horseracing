@@ -180,6 +180,116 @@
         "title": "CalibrationResponse",
         "type": "object"
       },
+      "ChaosEvent": {
+        "additionalProperties": false,
+        "description": "One preregistered top-3-composition event under both market provenances.",
+        "properties": {
+          "adjusted_mass": {
+            "title": "Adjusted Mass",
+            "type": "number"
+          },
+          "is_structural_zero": {
+            "title": "Is Structural Zero",
+            "type": "boolean"
+          },
+          "key": {
+            "enum": [
+              "s_ge_20",
+              "himo_are",
+              "total_collapse"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label_ja": {
+            "title": "Label Ja",
+            "type": "string"
+          },
+          "lambda_sensitive": {
+            "title": "Lambda Sensitive",
+            "type": "boolean"
+          },
+          "raw_mass": {
+            "title": "Raw Mass",
+            "type": "number"
+          },
+          "structural_zero_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Structural Zero Reason"
+          }
+        },
+        "required": [
+          "key",
+          "label_ja",
+          "adjusted_mass",
+          "raw_mass",
+          "is_structural_zero",
+          "structural_zero_reason",
+          "lambda_sensitive"
+        ],
+        "title": "ChaosEvent",
+        "type": "object"
+      },
+      "ChaosSnapshotProvenance": {
+        "additionalProperties": false,
+        "description": "The immutable market observation that produced one Feature 084 readout.",
+        "properties": {
+          "capture_strength": {
+            "enum": [
+              "confirmatory",
+              "weak",
+              "unknown"
+            ],
+            "title": "Capture Strength",
+            "type": "string"
+          },
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "content_digest": {
+            "title": "Content Digest",
+            "type": "string"
+          },
+          "seconds_to_post": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds To Post"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "captured_at",
+          "source",
+          "seconds_to_post",
+          "capture_strength",
+          "content_digest",
+          "snapshot_id"
+        ],
+        "title": "ChaosSnapshotProvenance",
+        "type": "object"
+      },
       "CoverageDay": {
         "description": "One race day's product coverage. n_predicted_active uses the ACTIVE model only (044\nidempotency semantics); 0 when no model is active.",
         "properties": {
@@ -2008,6 +2118,31 @@
             ],
             "title": "Odds Source"
           },
+          "race_chaos": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "available": "#/components/schemas/RaceChaosAvailable",
+                    "unavailable": "#/components/schemas/RaceChaosUnavailable"
+                  },
+                  "propertyName": "status"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/RaceChaosAvailable"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RaceChaosUnavailable"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Chaos"
+          },
           "race_dispersion": {
             "anyOf": [
               {
@@ -2047,6 +2182,191 @@
           "race_id"
         ],
         "title": "PredictionResponse",
+        "type": "object"
+      },
+      "RaceChaosAvailable": {
+        "additionalProperties": false,
+        "description": "Feature 084 market-derived readout with required, non-null numeric values.",
+        "properties": {
+          "artifact_digest": {
+            "title": "Artifact Digest",
+            "type": "string"
+          },
+          "artifact_version": {
+            "title": "Artifact Version",
+            "type": "string"
+          },
+          "band": {
+            "enum": [
+              "t3_calm",
+              "t3_mild",
+              "t3_mid",
+              "t3_rough",
+              "t3_wild"
+            ],
+            "title": "Band",
+            "type": "string"
+          },
+          "band_axis": {
+            "const": "p_s_ge_20",
+            "title": "Band Axis",
+            "type": "string"
+          },
+          "calibration_basis": {
+            "title": "Calibration Basis",
+            "type": "string"
+          },
+          "calibration_status": {
+            "enum": [
+              "provisional",
+              "confirmed"
+            ],
+            "title": "Calibration Status",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ChaosEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "expected_top3_popularity_sum": {
+            "title": "Expected Top3 Popularity Sum",
+            "type": "number"
+          },
+          "feasible_support": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Feasible Support",
+            "type": "array"
+          },
+          "feasible_support_ja": {
+            "title": "Feasible Support Ja",
+            "type": "string"
+          },
+          "field_size": {
+            "title": "Field Size",
+            "type": "integer"
+          },
+          "is_market_derived": {
+            "const": true,
+            "title": "Is Market Derived",
+            "type": "boolean"
+          },
+          "is_pseudo": {
+            "const": true,
+            "title": "Is Pseudo",
+            "type": "boolean"
+          },
+          "persisted_artifact_digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persisted Artifact Digest"
+          },
+          "readout_source": {
+            "enum": [
+              "persisted",
+              "recomputed"
+            ],
+            "title": "Readout Source",
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/ChaosSnapshotProvenance"
+          },
+          "status": {
+            "const": "available",
+            "title": "Status",
+            "type": "string"
+          },
+          "unavailable_reason": {
+            "title": "Unavailable Reason",
+            "type": "null"
+          },
+          "within_field_size_percentile": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Within Field Size Percentile"
+          }
+        },
+        "required": [
+          "status",
+          "band",
+          "band_axis",
+          "field_size",
+          "feasible_support",
+          "feasible_support_ja",
+          "events",
+          "expected_top3_popularity_sum",
+          "within_field_size_percentile",
+          "calibration_status",
+          "calibration_basis",
+          "is_market_derived",
+          "is_pseudo",
+          "snapshot",
+          "artifact_version",
+          "artifact_digest",
+          "readout_source",
+          "persisted_artifact_digest"
+        ],
+        "title": "RaceChaosAvailable",
+        "type": "object"
+      },
+      "RaceChaosUnavailable": {
+        "additionalProperties": false,
+        "description": "Typed fail-closed state; it never makes the predictions request fail.",
+        "properties": {
+          "band_axis": {
+            "const": "p_s_ge_20",
+            "title": "Band Axis",
+            "type": "string"
+          },
+          "status": {
+            "const": "unavailable",
+            "title": "Status",
+            "type": "string"
+          },
+          "unavailable_reason": {
+            "enum": [
+              "no_snapshot",
+              "partial_market_odds",
+              "invalid_popularity_ranks",
+              "field_too_small",
+              "artifact_unavailable",
+              "out_of_validity_window",
+              "invariant_violation"
+            ],
+            "title": "Unavailable Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "unavailable_reason",
+          "band_axis"
+        ],
+        "title": "RaceChaosUnavailable",
         "type": "object"
       },
       "RaceDetail": {

@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import argparse
 import datetime
+from collections import Counter
 
 from horseracing_betting.kelly_types import KellyConfig
+from horseracing_db.models import Race
 from horseracing_db.session import create_db_engine
 from sqlalchemy.orm import Session
 
+from .chaos_capture import (
+    NetkeibaOddsFetcher,
+    capture_chaos,
+    load_current_chaos_artifact,
+)
 from .orchestrate import collect_prospective, list_pending, live_serve, refresh_range
 
 
@@ -111,6 +118,80 @@ def _cmd_list_pending(session: Session, args) -> int:
     return 0
 
 
+def _cmd_capture_chaos(session: Session, args) -> int:
+    """Feature 084: freeze fresh market observations with per-race isolation."""
+    from horseracing_probability.chaos_artifact import ChaosArtifactError
+    from horseracing_scrape.cli import _make_fetcher
+
+    if args.min_seconds_to_post < 0:
+        print("ERROR: --min-seconds-to-post must be non-negative")
+        return 2
+
+    race_ids = (
+        [args.race_id]
+        if args.race_id is not None
+        else list_pending(session, date=args.date)
+    )
+    raw_fetcher = _make_fetcher(1.0, None)
+    fetcher = NetkeibaOddsFetcher(raw_fetcher)
+    status_counts: Counter[str] = Counter()
+    reason_counts: Counter[str] = Counter()
+    strength_counts: Counter[str] = Counter()
+
+    for race_id in race_ids:
+        try:
+            race = session.get(Race, race_id)
+            if race is None:
+                status_counts["rejected"] += 1
+                reason_counts["race_not_found"] += 1
+                session.rollback()
+                continue
+            target_date = race.race_date
+            if target_date is None:
+                status_counts["rejected"] += 1
+                reason_counts["race_date_unknown"] += 1
+                session.rollback()
+                continue
+            artifact = load_current_chaos_artifact(target_date)
+            report = capture_chaos(
+                session,
+                race_id=race_id,
+                fetcher=fetcher,
+                artifact=artifact,
+                min_seconds_to_post=args.min_seconds_to_post,
+            )
+            status_counts[report.status] += 1
+            if report.captured:
+                strength_counts[str(report.capture_strength)] += 1
+                session.commit()
+            else:
+                reason_counts[report.reason] += 1
+                session.rollback()
+        except ChaosArtifactError as exc:
+            session.rollback()
+            status_counts["rejected"] += 1
+            reason_counts[exc.unavailable_reason] += 1
+        except Exception as exc:  # noqa: BLE001 — one bad race must not abort the date
+            session.rollback()
+            status_counts["rejected"] += 1
+            reason_counts[f"error:{type(exc).__name__}"] += 1
+
+    print(
+        f"capture-chaos races={len(race_ids)} captured={status_counts['captured']} "
+        f"skipped={status_counts['skipped']} rejected={status_counts['rejected']}"
+    )
+    rejected_text = " ".join(
+        f"{reason}={count}" for reason, count in sorted(reason_counts.items())
+    ) or "none"
+    strength_text = " ".join(
+        f"{strength}={strength_counts[strength]}"
+        for strength in ("confirmatory", "weak", "unknown")
+    )
+    print(f"  rejected by reason: {rejected_text}")
+    print(f"  capture_strength: {strength_text}")
+    return 0
+
+
 def _cmd_refresh(session: Session, args) -> int:
     """Feature 050: one-command product update — predict backfill THEN recommend backfill."""
     from horseracing_betting.cli import _validate_calib_args
@@ -195,6 +276,21 @@ def main(argv: list[str] | None = None) -> int:
     _acm(cp)  # Feature 076: manifest two-gamma for prospective recommendations
     cp.add_argument("--database-url", default=None)
 
+    cc = sub.add_parser(
+        "capture-chaos",
+        help="084: freeze fresh pre-race odds and the top-3 chaos readout",
+    )
+    target = cc.add_mutually_exclusive_group(required=True)
+    target.add_argument("--race-id", default=None)
+    target.add_argument("--date", type=_parse_date, default=None)
+    cc.add_argument(
+        "--min-seconds-to-post",
+        type=int,
+        default=0,
+        help="skip a race when fewer than this many seconds remain (default: 0)",
+    )
+    cc.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
@@ -206,6 +302,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_refresh(session, args)
         if args.command == "collect-prospective":
             return _cmd_collect_prospective(session, args)
+        if args.command == "capture-chaos":
+            return _cmd_capture_chaos(session, args)
     return 1
 
 

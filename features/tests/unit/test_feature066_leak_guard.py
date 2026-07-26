@@ -35,4 +35,4 @@ def test_dispersion_axes_not_in_materialized_columns():
 
 def test_066_adds_no_schema_change():
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0011_"), versions[-1]
+    assert versions[-1].startswith("0012_"), versions[-1]

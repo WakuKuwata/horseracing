@@ -3,21 +3,17 @@ import { formatPct, formatNum, PLACEHOLDER } from "../lib/format";
 import {
   BAND_LABEL,
   BAND_ORDER,
-  BAND_CAPTION,
   UNAVAILABLE_LABEL,
   DIRECTION_LABEL,
 } from "../lib/dispersionLabels";
 import { PseudoValue } from "./PseudoValue";
 
 /**
- * Feature 066 axis A: race-level "how open is this race" (荒れ度) readout, VISUALISED.
+ * Feature 066 axis A: market support concentration detail.
  *
- * A DECISION-SUPPORT instrument, NOT a new edge and NOT a buy signal. Summarises the MARKET
- * vote-share q (pseudo) over the canonical field: a 5-step gauge (堅い↔波乱含み, neutral single-hue
- * ramp — NO red/green P&L colour) with the current band marked, plus the raw numbers behind it
- * (本命勝率 / 上位3頭シェア / 集中度). The band comes from a frozen boundary (results never consulted);
- * when no boundary is loaded the gauge is omitted but the raw numbers still show (F8). q missing →
- * honest unavailable state, NEVER a fallback to model p.
+ * Feature 084 demotes this entropy-based instrument to a collapsed disclosure so it cannot be
+ * mistaken for the primary top-three outcome readout. Its frozen firm..open API vocabulary remains
+ * unchanged, but outcome-claiming band captions are intentionally absent.
  *
  * Display discipline (021/040/049): no profit/danger/value wording, no sorting. The whole q-derived
  * body is wrapped in ONE <PseudoValue kind="market_q"> so the pseudo badge is mandatory (015).
@@ -34,14 +30,17 @@ export function RaceDispersionPanel({
 
   if (!dispersion.available) {
     return (
-      <section className="dispersion" data-testid="race-dispersion" data-available="false">
-        <h3 className="dispersion__title">荒れ度<span className="dispersion__sub">市場から見た決着集中度</span></h3>
+      <details className="dispersion" data-testid="race-dispersion" data-available="false">
+        <summary className="dispersion__title">
+          市場の支持集中度
+          <span className="dispersion__sub">単勝支持の5段階スケール</span>
+        </summary>
         <p className="dispersion__empty" data-testid="dispersion-unavailable">
           {dispersion.unavailable_reason
             ? UNAVAILABLE_LABEL[dispersion.unavailable_reason]
-            : "荒れ度は表示できません。"}
+            : "市場の支持集中度は表示できません。"}
         </p>
-      </section>
+      </details>
     );
   }
 
@@ -50,20 +49,22 @@ export function RaceDispersionPanel({
   const bandLabel = band ? BAND_LABEL[band] : null;
 
   return (
-    <section className="dispersion" data-testid="race-dispersion" data-available="true">
-      <h3 className="dispersion__title">荒れ度<span className="dispersion__sub">市場から見た決着集中度</span></h3>
+    <details className="dispersion" data-testid="race-dispersion" data-available="true">
+      <summary className="dispersion__title">
+        市場の支持集中度
+        <span className="dispersion__sub">単勝支持の5段階スケール</span>
+      </summary>
       <PseudoValue kind="market_q">
         <div className="dispersion__body">
           <div className="dispersion__band" data-testid="dispersion-band">
             <span className="dispersion__band-name" data-lvl={level}>
               {bandLabel ?? "区分なし"}
             </span>
-            {band && <span className="dispersion__band-cap">{BAND_CAPTION[band]}</span>}
           </div>
 
           {band ? (
             <div className="dispersion__gauge" role="img"
-                 aria-label={`5段中${level + 1}段目 ${bandLabel}`}>
+                 aria-label={`市場の支持集中度：5段中${level + 1}段目 ${bandLabel}`}>
               <div className="dispersion__segs">
                 {BAND_ORDER.map((b, i) => (
                   <span key={b} className={`dispersion__seg${i === level ? " is-active" : ""}`}
@@ -123,6 +124,6 @@ export function RaceDispersionPanel({
         （オッズ種別 <code>{dispersion.odds_source ?? PLACEHOLDER}</code>
         {dispersion.odds_source === "final" && "＝発走前でない可能性あり"}）
       </p>
-    </section>
+    </details>
   );
 }
