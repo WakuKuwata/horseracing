@@ -1,9 +1,10 @@
 {
-  "_note": "Feature 084 (ART-2): approved chaos-band artifact digests. This file IS committed; the {digest}.json payloads are not (artifacts/ is gitignored). The loader accepts an artifact only if its recomputed digest appears here.",
+  "_note": "Feature 084 (ART-2): approved chaos-band artifact digests. This file IS committed; the {digest}.json payloads are not (artifacts/ is gitignored by /artifacts, a guard kept after a past incident). The loader accepts an artifact only if its recomputed digest appears here with status=active.",
   "approved": [
     {
-      "digest": "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782",
+      "digest": "e782c255adde487e200c5814a61962ffc8c87709811b4b9511c223f1c33b8d8f",
       "version": "chaosbands-v1",
+      "status": "active",
       "band_axis": "p_s_ge_20",
       "fit_from": "2020-01-01",
       "fit_to": "2023-12-31",
@@ -13,8 +14,16 @@
       "lambda2": 0.8303689257547258,
       "lambda3": 0.7111058148742723,
       "calibration_status": "provisional",
+      "approved_at": "2026-07-27",
+      "approved_note": "事前登録に calibration_tolerance(±0.02・表示粒度とバンド幅から決定)と multiplicity_policy(単一主要評価項目・補正不要)を追加。λ と五分位境界は f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782 と完全に同一で、差分は事前登録ブロックのみ。前向き検証(US5)を通るまで provisional。昇格は新 version の発行でのみ行う(ART-6)。"
+    },
+    {
+      "digest": "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782",
+      "version": "chaosbands-v1",
+      "status": "superseded",
+      "superseded_by": "e782c255adde487e200c5814a61962ffc8c87709811b4b9511c223f1c33b8d8f",
       "approved_at": "2026-07-26",
-      "approved_note": "初回 fit。前向き検証(US5)を通るまで calibration_status=provisional。昇格は新 version の発行でのみ行う(ART-6)。"
+      "approved_note": "初回 fit。calibration_tolerance と multiplicity_policy が未登録で、prospective-report が『昇格判定不能』を自己申告した。create-only(ART-1)なので書き換えず、後続 digest に差し替えて superseded とする。監査痕跡として残す。"
     }
   ]
 }

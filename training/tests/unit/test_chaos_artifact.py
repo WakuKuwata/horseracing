@@ -314,3 +314,51 @@ def test_cli_prints_exclusions_and_manifest_instruction(monkeypatch, capsys, tmp
     assert "partial_market_odds=3" in output
     assert "artifact_digest=" in output
     assert "承認 manifest にこの digest を追記してください" in output
+
+
+def test_preregistration_includes_calibration_tolerance_and_multiplicity_policy(
+    monkeypatch, tmp_path
+) -> None:
+    """chaosbands-v1 shipped WITHOUT these two, so promotion could never occur — the
+    prospective report itself reported them as missing on the real artifact. Pin them
+    against the payload `fit_artifact` actually produces (a hand-built fixture would not
+    have caught the original gap)."""
+
+    from horseracing_training.chaos_bands import _calibration_tolerance
+
+    races = _fit_races()
+    monkeypatch.setattr(chaos_bands, "load_fit_races", lambda *_args, **_kwargs: races)
+    monkeypatch.setattr(
+        chaos_bands,
+        "fit_chaos_lambda",
+        lambda *_args, **_kwargs: StageDiscount(
+            lambda2=0.8312,
+            lambda3=0.7101,
+            n_races_l2=len(races),
+            n_races_l3=len(races),
+        ),
+    )
+    published = fit_artifact(
+        object(),
+        fit_from=datetime.date(2020, 1, 1),
+        fit_to=datetime.date(2023, 12, 31),
+        valid_from=datetime.date(2024, 1, 1),
+        out_dir=tmp_path,
+        code_sha="test-sha",
+        min_races=5,
+    )
+    prereg = published.payload["preregistration"]
+
+    tolerance, raw = _calibration_tolerance(prereg)
+    assert tolerance == pytest.approx(0.02)
+    assert raw == {"absolute_calibration_error_max": 0.02}
+    assert (
+        prereg["calibration_tolerance"]["basis"]
+        == "integer_display_granularity_and_band_width"
+    )
+
+    policy = prereg["multiplicity_policy"]
+    assert policy["primary"] == "s_ge_20"
+    assert policy["adjustment"] == "none_required_single_inferential_test"
+    # promotion_rule and multiplicity_policy must agree on which endpoint is inferential
+    assert prereg["promotion_rule"]["controlling_event"] == policy["primary"]

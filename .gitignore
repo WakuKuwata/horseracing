@@ -39,3 +39,6 @@ Thumbs.db
 # 081+: probe caches / reports (regenerable, large parquet)
 /out/
 /logs/
+
+# Claude Code のセッション/メモリ (repo 内に誤生成されることがある)
+.claude/projects/

@@ -878,6 +878,36 @@ def fit_artifact(
             "minimum_positives": 100,
             "minimum_race_days": 60,
             "final_decision_date": final_decision_date.isoformat(),
+            # Equivalence margin for promotion: the race-day-clustered CI of
+            # (predicted - realized) must lie entirely inside +/- this value.
+            #
+            # 0.02 is chosen on DISPLAY and BAND-WIDTH grounds, not to make any observed
+            # figure pass:
+            #   - the panel shows integer percentages (FE-10), so an error below ~0.5pp is
+            #     invisible to the reader;
+            #   - the band edges sit at 1.96 / 6.59 / 11.18 / 17.03 %, i.e. a smallest
+            #     inter-edge gap of 4.6pp, so a 2pp calibration error can displace a race by
+            #     at most about half a band and the band ordering stays meaningful.
+            # Disclosure: the closing-odds discovery cohort measured predicted-realized
+            # +0.0036 with CI [-0.0024, +0.0091], which would pass this margin. That cohort is
+            # NOT the confirmation cohort (which uses frozen pre-race snapshots), and the
+            # margin was not reverse-engineered from it.
+            "calibration_tolerance": {
+                "s_ge_20": {"absolute_calibration_error_max": 0.02},
+                "basis": "integer_display_granularity_and_band_width",
+            },
+            # Only ONE endpoint is inferential, so there is nothing to correct for: promotion
+            # is controlled solely by s_ge_20. himo_are is secondary/descriptive,
+            # total_collapse is not eligible (lambda cannot move it), s_ge_30 is diagnostic
+            # only. Every non-primary figure is reported with an explicit
+            # "multiple comparisons not adjusted" label and can neither promote nor block.
+            "multiplicity_policy": {
+                "family": "single_prespecified_primary_endpoint",
+                "primary": "s_ge_20",
+                "alpha": 0.05,
+                "adjustment": "none_required_single_inferential_test",
+                "secondary_and_diagnostic": "descriptive_only_labelled_unadjusted",
+            },
         },
         "numeric_stability_report": numeric_stability_report,
         "operational_lambda_envelope": envelope,
