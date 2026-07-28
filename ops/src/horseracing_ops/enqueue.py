@@ -9,6 +9,7 @@ enqueues for the same race cannot both INSERT.
 from __future__ import annotations
 
 import datetime
+from typing import Literal
 
 from horseracing_db.enums import JobStatus, Source
 from horseracing_db.models import IngestionJob, Race
@@ -29,6 +30,8 @@ from .config import CONFIG
 DEFAULT_FRESH_SECONDS = CONFIG.fresh_seconds
 
 _ACTIVE = (JobStatus.QUEUED, JobStatus.RUNNING)
+PredictOrigin = Literal["manual_ui", "auto_after_refresh"]
+RefreshOrigin = Literal["manual_ui", "daily_bulk"]
 
 
 def _now() -> datetime.datetime:
@@ -49,11 +52,14 @@ def enqueue_race(
     session: Session,
     race_id: str,
     *,
+    origin: RefreshOrigin,
     force: bool = False,
     fresh_seconds: int = DEFAULT_FRESH_SECONDS,
     trace_id: str | None = None,
 ) -> tuple[IngestionJob, bool]:
     """Return (job, reused). Caller commits (releasing the advisory lock)."""
+    if origin not in {"manual_ui", "daily_bulk"}:
+        raise ValueError(f"unsupported refresh origin: {origin!r}")
     _lock_race(session, race_id)
 
     active = session.scalars(
@@ -62,11 +68,27 @@ def enqueue_race(
         .where(IngestionJob.scope_value == race_id)
         .where(IngestionJob.status.in_(_ACTIVE))
         .order_by(IngestionJob.created_at.desc())
+        .with_for_update()
     ).first()
+    manual_running = (
+        active is not None
+        and origin == "manual_ui"
+        and active.status == JobStatus.RUNNING
+    )
     if active is not None:
-        return active, True
+        if origin != "manual_ui":
+            return active, True
+        if active.status == JobStatus.QUEUED:
+            active.summary = {
+                **(active.summary or {}),
+                "refresh_origin": "manual_ui",
+            }
+            session.flush()
+            return active, True
+        # A user click cannot inherit a RUNNING bulk job: it may already have
+        # launched predict_auto capture. Enqueue a fresh manual job instead.
 
-    if not force:
+    if not force and not manual_running:
         cutoff = _now() - datetime.timedelta(seconds=fresh_seconds)
         fresh = session.scalars(
             select(IngestionJob)
@@ -78,27 +100,44 @@ def enqueue_race(
             .order_by(IngestionJob.completed_at.desc())
         ).first()
         if fresh is not None:
+            enqueue_predict(
+                session,
+                race_id,
+                origin=(
+                    "manual_ui"
+                    if origin == "manual_ui"
+                    else "auto_after_refresh"
+                ),
+            )
             return fresh, True
 
     job = IngestionJob(
         source=Source.NETKEIBA, job_type=JOB_TYPE_RACE, scope="race", scope_value=race_id,
         status=JobStatus.QUEUED, trace_id=trace_id,
+        summary={"refresh_origin": origin},
     )
     session.add(job)
     session.flush()
     return job, False
 
 
-def enqueue_predict(session: Session, race_id: str) -> tuple[IngestionJob, bool]:
+def enqueue_predict(
+    session: Session,
+    race_id: str,
+    *,
+    origin: PredictOrigin,
+) -> tuple[IngestionJob, bool]:
     """Feature 028: enqueue a predict job (in-flight-only dedup). (job, reused); caller commits.
 
-    Reuse only an ACTIVE (queued/running) predict job for the same race — so a double-click can't
-    create two. A completed job is NOT reused (an explicit click means "(re)generate now", e.g.
-    after the model or entries changed). The advisory lock key is `predict:{race_id}` (distinct from
+    Automatic callers reuse an ACTIVE job. A manual click promotes a QUEUED automatic job, but
+    never rides a RUNNING job because capture may already have launched with the automatic origin.
+    A completed job is not reused. The advisory lock key is `predict:{race_id}` (distinct from
     refresh's `refresh:race:{race_id}`), so predict and refresh never block each other.
     model_version is not in the dedup key (ingestion_jobs has no payload column) — it is recorded in
     prediction_runs for audit instead.
     """
+    if origin not in {"manual_ui", "auto_after_refresh"}:
+        raise ValueError(f"unsupported predict origin: {origin!r}")
     session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
                     {"k": f"predict:{race_id}"})
     active = session.scalars(
@@ -107,13 +146,29 @@ def enqueue_predict(session: Session, race_id: str) -> tuple[IngestionJob, bool]
         .where(IngestionJob.scope_value == race_id)
         .where(IngestionJob.status.in_(_ACTIVE))
         .order_by(IngestionJob.created_at.desc())
+        .with_for_update()
     ).first()
     if active is not None:
-        return active, True
+        if origin != "manual_ui":
+            return active, True
+        if active.status == JobStatus.QUEUED:
+            active.summary = {
+                **(active.summary or {}),
+                "predict_origin": "manual_ui",
+            }
+            session.flush()
+            return active, True
+        # A running automatic job has already read its origin. The accepted
+        # cost of preserving selection provenance is a duplicate prediction.
 
     job = IngestionJob(
         source=Source.NETKEIBA, job_type=JOB_TYPE_PREDICT, scope="race", scope_value=race_id,
-        status=JobStatus.QUEUED, summary={"kind": "predict", "source": "manual"},
+        status=JobStatus.QUEUED,
+        summary={
+            "kind": "predict",
+            "source": "manual",
+            "predict_origin": origin,
+        },
     )
     session.add(job)
     session.flush()
@@ -205,7 +260,14 @@ def enqueue_day(
     children: list[tuple[IngestionJob, bool]] = []
     for rid in race_ids:
         children.append(
-            enqueue_race(session, rid, force=force, fresh_seconds=fresh_seconds, trace_id=trace_id)
+            enqueue_race(
+                session,
+                rid,
+                origin="daily_bulk",
+                force=force,
+                fresh_seconds=fresh_seconds,
+                trace_id=trace_id,
+            )
         )
     return parent, children
 

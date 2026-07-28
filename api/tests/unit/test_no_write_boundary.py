@@ -13,7 +13,12 @@ from pathlib import Path
 
 SRC = Path(__file__).resolve().parents[2] / "src" / "horseracing_api"
 
-_FORBIDDEN_IMPORTS = ("horseracing_betting", "horseracing_training", "horseracing_ingest")
+_FORBIDDEN_IMPORTS = (
+    "horseracing_betting",
+    "horseracing_training",
+    "horseracing_ingest",
+    "horseracing_live",
+)
 _WRITE_METHODS = {
     "commit", "flush", "add", "add_all", "delete", "merge",
     "bulk_save_objects", "bulk_insert_mappings", "bulk_update_mappings",
@@ -54,8 +59,18 @@ def test_no_write_dml_in_sql_strings():
                 assert not any(tok in low for tok in _WRITE_DML), f"{f.name}: write DML literal"
 
 
-def test_import_graph_excludes_betting_and_training():
+def test_import_graph_excludes_write_packages():
     # importing the app must not pull a write package into the process
     import horseracing_api.app  # noqa: F401
-    assert "horseracing_betting" not in sys.modules
-    assert "horseracing_training" not in sys.modules
+    for package in _FORBIDDEN_IMPORTS:
+        assert package not in sys.modules
+
+
+def test_all_versioned_api_paths_are_get_only():
+    from horseracing_api.app import app
+
+    for route in app.routes:
+        path = getattr(route, "path", "")
+        if not path.startswith("/api/v1"):
+            continue
+        assert route.methods == {"GET"}, f"{path}: unexpected methods {route.methods}"

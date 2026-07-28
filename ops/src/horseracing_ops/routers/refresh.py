@@ -47,7 +47,7 @@ def refresh_race(race_id: str, body: RefreshRequest | None = None,
     if not race_exists(session, race_id):
         return _err(404, "race_not_found", f"race {race_id} not found")
     force = bool(body.force) if body else False
-    job, reused = enqueue_race(session, race_id, force=force)
+    job, reused = enqueue_race(session, race_id, origin="manual_ui", force=force)
     return _accepted(job, reused)
 
 

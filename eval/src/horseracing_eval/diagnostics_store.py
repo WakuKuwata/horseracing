@@ -72,3 +72,31 @@ def save_segment_accuracy_run(
     session.add(run)
     session.flush()
     return run
+
+
+KIND_CHAOS_BANDS = "chaos_bands"
+
+
+def save_chaos_bands_run(
+    session: Session,
+    payload: dict,
+    *,
+    date_from: datetime.date | None,
+    date_to: datetime.date | None,
+    logic_version: str,
+) -> DiagnosticRun:
+    """Feature 084: append one chaos_bands run (payload VERBATIM).
+
+    This store is deliberately metric-blind: diagnostics are computed by the
+    training command, and this layer only transcribes that completed report.
+    """
+    run = DiagnosticRun(
+        kind=KIND_CHAOS_BANDS,
+        date_from=date_from,
+        date_to=date_to,
+        logic_version=logic_version,
+        payload=payload,
+    )
+    session.add(run)
+    session.flush()
+    return run

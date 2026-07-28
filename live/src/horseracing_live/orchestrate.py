@@ -147,24 +147,43 @@ def collect_prospective(
             if post_time is not None and capture_at >= post_time:
                 _skip(rid, "skip_post_time", "post_time")
                 continue
-            # advisory lock on (race, policy) — check-then-insert is otherwise race-prone
-            session.execute(text("SELECT pg_advisory_lock(hashtext(:k))"),
-                            {"k": f"prospective:{rid}:{win_odds_cap}"})
-            run_id = _resolve_active_run(session, rid)
-            if run_id is None:
-                _skip(rid, "skip_no_run", "no_run")
-                continue
-            if _has_win_group(session, run_id, win_odds_cap, prospective=True, race_id=rid):
-                _skip(rid, "skip_exists", "exists")
-                continue
-            generate_recommendations(
-                session, prediction_run_id=run_id, win_odds_cap=win_odds_cap,
-                prospective=True, odds_asof=capture_at, p_calibrator=prospective_pcal,
-            )
-            gen += 1
-            weak += int(is_weak)
-            per_race.append({"race_id": rid, "status": "generated", "weak_pretime": is_weak,
-                             "odds_asof": capture_at.isoformat()})
+            # advisory lock on (race, policy) — check-then-insert is otherwise race-prone.
+            # SESSION-level (not xact) because generate_recommendations commits mid-flow
+            # (betting/recommend.py), which would release an xact lock between the groups.
+            # But a session lock lives on the CONNECTION, not the Session: commit returns that
+            # connection to the pool STILL HOLDING it, so a later call that draws a different
+            # pooled connection blocks on an idle one, forever. Release it explicitly per race.
+            # Hold the lock on a DEDICATED connection. A session-level advisory lock belongs to
+            # the CONNECTION, and generate_recommendations commits mid-flow, which returns the
+            # session's connection to the pool -- so locking and unlocking through `session`
+            # can land on two different connections: the unlock frees nothing and the original
+            # connection sits idle in the pool holding the lock forever.
+            lock_key = f"prospective:{rid}:{win_odds_cap}"
+            lock_conn = session.get_bind().connect()
+            lock_conn.execute(text("SELECT pg_advisory_lock(hashtext(:k))"), {"k": lock_key})
+            lock_conn.commit()
+            try:
+                run_id = _resolve_active_run(session, rid)
+                if run_id is None:
+                    _skip(rid, "skip_no_run", "no_run")
+                    continue
+                if _has_win_group(session, run_id, win_odds_cap, prospective=True, race_id=rid):
+                    _skip(rid, "skip_exists", "exists")
+                    continue
+                generate_recommendations(
+                    session, prediction_run_id=run_id, win_odds_cap=win_odds_cap,
+                    prospective=True, odds_asof=capture_at, p_calibrator=prospective_pcal,
+                )
+                gen += 1
+                weak += int(is_weak)
+                per_race.append({"race_id": rid, "status": "generated", "weak_pretime": is_weak,
+                                 "odds_asof": capture_at.isoformat()})
+            finally:
+                lock_conn.execute(
+                    text("SELECT pg_advisory_unlock(hashtext(:k))"), {"k": lock_key}
+                )
+                lock_conn.commit()
+                lock_conn.close()
         except Exception as exc:  # noqa: BLE001 — one race must not abort the whole collection
             session.rollback()
             _skip(rid, "errors", f"error:{type(exc).__name__}")

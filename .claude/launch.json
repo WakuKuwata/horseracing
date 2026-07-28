@@ -6,7 +6,7 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-lc",
-        "cd api && DATABASE_URL='postgresql+psycopg://aiuma:aiuma@localhost:15432/horseracing' DISPERSION_BOUNDARY_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/dispbands-v1.json\" DISPERSION_PCAL_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/pcal-v1.json\" uv run uvicorn horseracing_api.app:app --host 127.0.0.1 --port 8000"
+        "cd api && DATABASE_URL='postgresql+psycopg://aiuma:aiuma@localhost:15432/horseracing' DISPERSION_BOUNDARY_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/dispbands-v1.json\" DISPERSION_PCAL_PATH=\"$(cd .. && pwd)/artifacts/dispersion_bands/pcal-v1.json\" CHAOS_BANDS_ARTIFACT_PATH=\"$(cd .. && pwd)/artifacts/chaos_bands/20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680.json\" CHAOS_BANDS_APPROVED_MANIFEST=\"$(cd .. && pwd)/config/chaos_bands_approved.json\" uv run uvicorn horseracing_api.app:app --host 127.0.0.1 --port 8000"
       ],
       "port": 8000
     },

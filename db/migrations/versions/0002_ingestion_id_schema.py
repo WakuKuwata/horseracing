@@ -30,25 +30,44 @@ _TABLES = ("id_mappings", "ingestion_jobs")
 
 def _timestamps() -> list[sa.Column]:
     return [
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
     ]
 
 
 def upgrade() -> None:
     op.create_table(
         "id_mappings",
-        sa.Column("id_mapping_id", sa.Uuid(), primary_key=True, server_default=sa.text("gen_random_uuid()")),
+        sa.Column(
+            "id_mapping_id",
+            sa.Uuid(),
+            primary_key=True,
+            server_default=sa.text("gen_random_uuid()"),
+        ),
         sa.Column("entity_type", sa.Text(), nullable=False),
         sa.Column("source", sa.Text(), nullable=False),
         sa.Column("source_id", sa.Text(), nullable=False),
         sa.Column("canonical_id", sa.Text()),
-        sa.Column("mapping_status", sa.Text(), nullable=False, server_default=MappingStatus.UNMAPPED),
+        sa.Column(
+            "mapping_status", sa.Text(), nullable=False, server_default=MappingStatus.UNMAPPED
+        ),
         sa.Column("conflict_group_id", sa.Uuid()),
         sa.Column("resolved_at", sa.DateTime(timezone=True)),
         sa.Column("resolution_note", sa.Text()),
         *_timestamps(),
-        sa.UniqueConstraint("entity_type", "source", "source_id", name="uq_id_mappings_entity_source_sourceid"),
+        sa.UniqueConstraint(
+            "entity_type", "source", "source_id", name="uq_id_mappings_entity_source_sourceid"
+        ),
         sa.CheckConstraint(ID_ENTITY_TYPE, name="ck_id_mappings_entity_type"),
         sa.CheckConstraint(ID_SOURCE, name="ck_id_mappings_source"),
         sa.CheckConstraint(MAPPING_STATUS, name="ck_id_mappings_status"),
@@ -56,7 +75,12 @@ def upgrade() -> None:
 
     op.create_table(
         "ingestion_jobs",
-        sa.Column("ingestion_job_id", sa.Uuid(), primary_key=True, server_default=sa.text("gen_random_uuid()")),
+        sa.Column(
+            "ingestion_job_id",
+            sa.Uuid(),
+            primary_key=True,
+            server_default=sa.text("gen_random_uuid()"),
+        ),
         sa.Column("source", sa.Text()),
         sa.Column("job_type", sa.Text()),
         sa.Column("scope", sa.Text()),

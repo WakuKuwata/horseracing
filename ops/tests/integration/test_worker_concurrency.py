@@ -23,7 +23,7 @@ def test_concurrent_drain_no_double_processing(session, engine, fixture_fetcher)
     for rid in OTHERS:
         seed_race(session, race_id=rid)
     for rid in [RID_OK, *OTHERS]:
-        enqueue_race(session, rid)
+        enqueue_race(session, rid, origin="daily_bulk")
     session.commit()
 
     factory = sessionmaker(bind=engine, expire_on_commit=False)

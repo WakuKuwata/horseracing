@@ -17,7 +17,7 @@ RID = "202406050911"
 
 def test_refresh_job_audit_fields(session, fixture_fetcher):
     seed_race(session, race_id=RID)
-    job, _ = enqueue_race(session, RID)
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
     drain(session, fetcher=fixture_fetcher)
     session.refresh(job)

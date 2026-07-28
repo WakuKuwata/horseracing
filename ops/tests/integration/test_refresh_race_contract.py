@@ -38,7 +38,7 @@ def test_terminal_job_status_readable(client, session, fixture_fetcher):
     # schema must accept it — a Literal mismatch here 500'd the poll exactly at the terminal
     # transition, so the front never saw 完了 and stayed on 更新中… forever.
     seed_race(session, race_id=RID)
-    job, _ = enqueue_race(session, RID)
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
     drain(session, fetcher=fixture_fetcher)
 

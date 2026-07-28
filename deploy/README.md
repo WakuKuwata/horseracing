@@ -118,3 +118,41 @@ gated to races AFTER its `fit_through`; existing in-window predictions are never
 Do NOT pass it to `betting recommend` unless you also intend the (cosmetic) two-gamma removal there.
 The activation decision itself is recorded append-only in `artifacts/oof/promotions.jsonl`
 (`training.promotion.record_promotion`). The do-not-default-ON waiver otherwise stands until 077.
+
+## Feature 084: top-3 chaos readout artifact and capture
+
+The API reads one immutable, content-addressed chaos-band payload and its committed approval
+manifest:
+
+- `CHAOS_BANDS_ARTIFACT_PATH=<ABS_PATH>`: the approved
+  `artifacts/chaos_bands/{digest}.json` payload. Payloads under `artifacts/` are gitignored, so the
+  operator must provision and mount this file read-only.
+- `CHAOS_BANDS_APPROVED_MANIFEST=<ABS_PATH>`: the committed
+  `config/chaos_bands_approved.json` manifest. Mount the repository copy read-only; do not place the
+  manifest under `artifacts/`.
+
+The read path is fail-closed. A missing or malformed payload, digest mismatch, unapproved digest,
+unsafe artifact, race outside the artifact validity window, **or an artifact that carries no
+pre-registered `preregistration.primary_horizon`** makes `race_chaos` unavailable; the API must
+not silently use default lambdas, band edges, or an unbounded capture window.
+
+Feature 086 makes the horizon mandatory: an artifact without it is rejected outright rather than
+falling back to `0..infinity`, which would have counted an observation frozen at any time as
+confirmatory. Provision an artifact issued by `chaos-bands add-horizon`, and point
+`CHAOS_BANDS_ARTIFACT_PATH` at the digest whose manifest entry has `status: "active"` — note the
+manifest lists the active entry FIRST, so "the last entry" is the wrong rule.
+
+Capture remains a manual operator step. On a race day, aim for T-30 minutes and retain a safety
+floor with `--min-seconds-to-post` (600 seconds shown here):
+
+```sh
+uv run --project live live capture-chaos \
+  --date YYYY-MM-DD \
+  --min-seconds-to-post 600
+```
+
+Review the command's captured/skipped counts, rejection reasons, capture-strength split, and
+coverage report after each run. `capture_strength=confirmatory` requires a known `post_time` as
+well as the fresh-fetch and result-pending checks. Measured `post_time` coverage is 0% for 2024,
+22.9% for 2025, and 100% for 2026, so older captures are expected to be weak rather than
+confirmatory.

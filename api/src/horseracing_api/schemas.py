@@ -248,6 +248,87 @@ class RaceDivergence(BaseModel):
     model_version: str | None = None  # 057: which selected model's p is being compared
 
 
+class ChaosSnapshotProvenance(BaseModel):
+    """The immutable market observation that produced one Feature 084 readout."""
+
+    model_config = {"extra": "forbid"}
+
+    captured_at: datetime.datetime
+    source: str
+    seconds_to_post: int | None
+    capture_strength: Literal["confirmatory", "weak", "unknown"]
+    content_digest: str
+    snapshot_id: str
+
+
+class ChaosEvent(BaseModel):
+    """One preregistered top-3-composition event under both market provenances."""
+
+    model_config = {"extra": "forbid"}
+
+    key: Literal["s_ge_20", "himo_are", "total_collapse"]
+    label_ja: str
+    adjusted_mass: float
+    raw_mass: float
+    is_structural_zero: bool
+    structural_zero_reason: str | None
+    lambda_sensitive: bool
+
+
+class RaceChaosUnavailable(BaseModel):
+    """Typed fail-closed state; it never makes the predictions request fail."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["unavailable"]
+    unavailable_reason: Literal[
+        "no_snapshot",
+        "partial_market_odds",
+        "invalid_popularity_ranks",
+        "field_too_small",
+        "field_changed_after_capture",
+        "artifact_unavailable",
+        "out_of_validity_window",
+        "invariant_violation",
+    ]
+    band_axis: Literal["p_s_ge_20"]
+
+
+class RaceChaosAvailable(BaseModel):
+    """Feature 084 market-derived readout with required, non-null numeric values."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["available"]
+    unavailable_reason: None = None
+    band: Literal["t3_calm", "t3_mild", "t3_mid", "t3_rough", "t3_wild"]
+    band_axis: Literal["p_s_ge_20"]
+    field_size: int
+    feasible_support: tuple[int, int]
+    feasible_support_ja: str
+    events: list[ChaosEvent]
+    expected_top3_popularity_sum: float
+    within_field_size_percentile: float | None
+    calibration_status: Literal["provisional", "confirmed"]
+    calibration_basis: str
+    is_market_derived: Literal[True]
+    is_pseudo: Literal[True]
+    snapshot: ChaosSnapshotProvenance
+    artifact_version: str
+    artifact_digest: str
+    # FR-020a: a recomputation can never masquerade as the persisted display record. When the
+    # source is recomputed, clients can compare this digest with artifact_digest (or see None when
+    # the snapshot unexpectedly has no persisted readout).
+    readout_source: Literal["persisted", "recomputed"]
+    persisted_artifact_digest: str | None
+
+
+RaceChaos = Annotated[
+    RaceChaosAvailable | RaceChaosUnavailable,
+    Field(discriminator="status"),
+]
+
+
 class JointEntry(BaseModel):
     selection: list[int]
     prob: float
@@ -288,6 +369,9 @@ class PredictionResponse(BaseModel):
     race_dispersion: RaceDispersion | None = None
     # Feature 066 axis B: race-level model-vs-market divergence summary (favourite/longshot info).
     race_divergence: RaceDivergence | None = None
+    # Feature 084: market-only top-3 chaos readout. It is built before prediction-run selection,
+    # so typed-empty prediction responses still carry an available/unavailable tagged state.
+    race_chaos: RaceChaos | None = None
 
 
 # --- odds (real vs estimated kept in SEPARATE fields) -----------------------
@@ -497,6 +581,18 @@ class CoverageResponse(BaseModel):
     days: list[CoverageDay] = []
 
 
+class JobCaptureRow(BaseModel):
+    """Typed projection of the operational capture record in ``summary.capture``."""
+
+    state: Literal["started", "launched", "done"]
+    outcome: Literal["captured", "skipped", "rejected", "failed", "unknown"]
+    reason: str | None = None
+    capture_strength: str | None = None
+    confirmation_eligible: bool | None = None
+    seconds_to_post: int | None = None
+    chaos_snapshot_id: str | None = None
+
+
 class JobRow(BaseModel):
     """One ingestion_jobs row (audit trail; read-only transcription)."""
 
@@ -515,6 +611,8 @@ class JobRow(BaseModel):
     skipped_rows: int | None = None
     error_count: int | None = None
     created_at: datetime.datetime
+    summary: dict | None = None
+    capture: JobCaptureRow | None = None
 
 
 class JobListResponse(BaseModel):

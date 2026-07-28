@@ -16,9 +16,9 @@ RID = "202406050911"
 
 def test_active_job_is_reused(session):
     seed_race(session, race_id=RID)
-    job1, reused1 = enqueue_race(session, RID)
+    job1, reused1 = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
-    job2, reused2 = enqueue_race(session, RID)
+    job2, reused2 = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
 
     assert reused1 is False and reused2 is True
@@ -34,16 +34,42 @@ def test_active_job_is_reused(session):
 def test_force_reuses_active_but_not_fresh(session):
     seed_race(session, race_id=RID)
     # mark a recently-succeeded job; without force it would be reused, with force a new one is made
-    job, _ = enqueue_race(session, RID)
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
     job.status = "succeeded"
     import datetime
     job.completed_at = datetime.datetime.now(datetime.UTC)
     session.commit()
 
-    _, reused_no_force = enqueue_race(session, RID)
+    _, reused_no_force = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
     assert reused_no_force is True  # fresh success reused
 
-    _, reused_force = enqueue_race(session, RID, force=True)
+    _, reused_force = enqueue_race(session, RID, origin="manual_ui", force=True)
     session.commit()
     assert reused_force is False  # force ignores freshness -> new job
+
+
+def test_manual_refresh_promotes_queued_daily_job(session):
+    seed_race(session, race_id=RID)
+    daily, _ = enqueue_race(session, RID, origin="daily_bulk")
+
+    manual, reused = enqueue_race(session, RID, origin="manual_ui")
+    session.commit()
+
+    assert reused is True
+    assert manual.ingestion_job_id == daily.ingestion_job_id
+    assert manual.summary["refresh_origin"] == "manual_ui"
+
+
+def test_manual_refresh_does_not_reuse_running_daily_job(session):
+    seed_race(session, race_id=RID)
+    daily, _ = enqueue_race(session, RID, origin="daily_bulk")
+    daily.status = "running"
+    session.commit()
+
+    manual, reused = enqueue_race(session, RID, origin="manual_ui")
+    session.commit()
+
+    assert reused is False
+    assert manual.ingestion_job_id != daily.ingestion_job_id
+    assert manual.summary["refresh_origin"] == "manual_ui"

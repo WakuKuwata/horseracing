@@ -7,6 +7,7 @@ non-zero -> failed (no worker retry)."""
 
 from __future__ import annotations
 
+import json
 import subprocess
 
 import pytest
@@ -26,13 +27,38 @@ def _proc(returncode: int, stdout: str = "", stderr: str = "") -> subprocess.Com
     return subprocess.CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr=stderr)
 
 
+@pytest.fixture(autouse=True)
+def _capture_before_predict(monkeypatch):
+    def capture(race_id, *, trigger, on_launched=None):
+        assert trigger == "predict_manual"
+        if on_launched is not None:
+            on_launched()
+        return _proc(
+            0,
+            json.dumps(
+                {
+                    "race_id": race_id,
+                    "outcome": "skipped",
+                    "reason": "already_captured",
+                    "capture_strength": None,
+                    "confirmation_eligible": None,
+                    "seconds_to_post": None,
+                    "chaos_snapshot_id": None,
+                    "elapsed_s": 0.01,
+                }
+            ),
+        )
+
+    monkeypatch.setattr(runner_mod, "_live_capture_chaos", capture)
+
+
 def test_predict_succeeded_chains_auto_recommend(session, monkeypatch, client):
     seed_race(session, race_id=RID)
     out = f"model_version=lgbm-026 logic_version=x\n  race={RID} run=42 horses=3\ntotal races persisted: 1"
     monkeypatch.setattr(runner_mod, "_serving_predict", lambda rid: _proc(0, out))
     monkeypatch.setattr(runner_mod, "_betting_recommend",
                         lambda rid: _proc(0, "OK: run=42 win=4 exotic=29"))
-    job, reused = enqueue_predict(session, RID)
+    job, reused = enqueue_predict(session, RID, origin="manual_ui")
     session.commit()
     assert reused is False
     # predict + the follow-up recommend it enqueues (043 deferred: auto-generate on predict)
@@ -56,7 +82,7 @@ def test_predict_reuses_inflight_recommend_no_duplicate(session, monkeypatch):
     seed_race(session, race_id=RID)
     out = f"race={RID} run=42 horses=3\ntotal races persisted: 1"
     monkeypatch.setattr(runner_mod, "_serving_predict", lambda rid: _proc(0, out))
-    predict_job, _ = enqueue_predict(session, RID)
+    predict_job, _ = enqueue_predict(session, RID, origin="manual_ui")
     session.commit()
     manual, _ = enqueue_recommend(session, RID)  # user clicks 買い目生成 while predict is queued
     session.commit()
@@ -82,7 +108,7 @@ def test_predict_does_not_reuse_running_recommend(session, monkeypatch):
     inflight.status = "running"  # simulate: claimed by another worker thread mid-generation
     session.commit()
 
-    predict_job, _ = enqueue_predict(session, RID)
+    predict_job, _ = enqueue_predict(session, RID, origin="manual_ui")
     session.commit()
     drain(session)  # claims predict (running recommend is not claimable) + the new follow-up
     session.refresh(predict_job)
@@ -95,7 +121,7 @@ def test_predict_skipped_when_no_started_horses(session, monkeypatch):
     seed_race(session, race_id=RID)
     monkeypatch.setattr(runner_mod, "_serving_predict",
                         lambda rid: _proc(0, "no races inferred (no started horses / out of scope)"))
-    job, _ = enqueue_predict(session, RID)
+    job, _ = enqueue_predict(session, RID, origin="manual_ui")
     session.commit()
     drain(session)
     session.refresh(job)
@@ -111,7 +137,7 @@ def test_predict_failed_on_serving_error_no_retry(session, monkeypatch):
         runner_mod, "_serving_predict",
         lambda rid: _proc(2, stderr="predict: error: multiple active models (lgbm-026, lgbm-027)"),
     )
-    job, _ = enqueue_predict(session, RID)
+    job, _ = enqueue_predict(session, RID, origin="manual_ui")
     session.commit()
     drain(session)
     session.refresh(job)

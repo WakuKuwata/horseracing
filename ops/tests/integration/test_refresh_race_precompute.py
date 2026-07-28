@@ -34,7 +34,7 @@ def _queued_predicts(session, race_id):
 def test_refresh_enqueues_predict_when_no_active_run(session, fixture_fetcher):
     seed_race(session, race_id=RID)
     _seed_active_model(session)
-    job, _ = enqueue_race(session, RID)
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
 
     drain(session, fetcher=fixture_fetcher, max_jobs=1)  # run ONLY the refresh_race
@@ -44,6 +44,23 @@ def test_refresh_enqueues_predict_when_no_active_run(session, fixture_fetcher):
     assert "predict_job_id" in job.summary  # follow-up recorded
     predicts = _queued_predicts(session, RID)
     assert len(predicts) == 1 and predicts[0].status == "queued"
+    assert predicts[0].summary["predict_origin"] == "manual_ui"
+    assert job.summary["refresh_origin"] == "manual_ui"
+
+
+def test_daily_bulk_refresh_enqueues_automatic_predict_origin(session, fixture_fetcher):
+    seed_race(session, race_id=RID)
+    _seed_active_model(session)
+    job, _ = enqueue_race(session, RID, origin="daily_bulk")
+    session.commit()
+
+    drain(session, fetcher=fixture_fetcher, max_jobs=1)
+
+    session.refresh(job)
+    predicts = _queued_predicts(session, RID)
+    assert len(predicts) == 1
+    assert predicts[0].summary["predict_origin"] == "auto_after_refresh"
+    assert job.summary["refresh_origin"] == "daily_bulk"
 
 
 def test_refresh_skips_predict_when_active_run_exists(session, fixture_fetcher):
@@ -52,7 +69,7 @@ def test_refresh_skips_predict_when_active_run_exists(session, fixture_fetcher):
     session.add(  # already predicted by active model
         PredictionRun(race_id=RID, model_version=mv, logic_version="lv-test")
     )
-    job, _ = enqueue_race(session, RID)
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
 
     drain(session, fetcher=fixture_fetcher, max_jobs=1)
@@ -66,7 +83,7 @@ def test_refresh_skips_predict_when_active_run_exists(session, fixture_fetcher):
 def test_refresh_skips_predict_when_no_active_model(session, fixture_fetcher):
     # no active model seeded -> nothing meaningful to precompute; don't spawn a doomed predict.
     seed_race(session, race_id=RID)
-    job, _ = enqueue_race(session, RID)
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
 
     drain(session, fetcher=fixture_fetcher, max_jobs=1)

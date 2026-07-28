@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Callable
 
 import pytest
 from alembic import command
@@ -14,6 +15,43 @@ from testcontainers.postgres import PostgresContainer
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DB_DIR = REPO_ROOT / "db"
+
+
+class SpyChaosFetcher:
+    """Fresh-odds test double whose call count proves whether a fetch occurred."""
+
+    source = "fixture-adapter"
+
+    def __init__(
+        self,
+        payload: str,
+        *,
+        on_get: Callable[[], None] | None = None,
+    ) -> None:
+        self.payload = payload
+        self.on_get = on_get
+        self.calls = 0
+
+    def get(self, _url: str, *, use_cache: bool = True) -> str:
+        assert use_cache is False
+        self.calls += 1
+        if self.on_get is not None:
+            self.on_get()
+        return self.payload
+
+
+@pytest.fixture
+def spy_fetcher():
+    """Build an independently counted fetcher for each eligibility attempt."""
+
+    def make(
+        payload: str,
+        *,
+        on_get: Callable[[], None] | None = None,
+    ) -> SpyChaosFetcher:
+        return SpyChaosFetcher(payload, on_get=on_get)
+
+    return make
 
 
 @pytest.fixture(scope="session")

@@ -408,6 +408,53 @@ export interface components {
             valid_years: number[];
         };
         /**
+         * ChaosEvent
+         * @description One preregistered top-3-composition event under both market provenances.
+         */
+        ChaosEvent: {
+            /** Adjusted Mass */
+            adjusted_mass: number;
+            /** Is Structural Zero */
+            is_structural_zero: boolean;
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "s_ge_20" | "himo_are" | "total_collapse";
+            /** Label Ja */
+            label_ja: string;
+            /** Lambda Sensitive */
+            lambda_sensitive: boolean;
+            /** Raw Mass */
+            raw_mass: number;
+            /** Structural Zero Reason */
+            structural_zero_reason: string | null;
+        };
+        /**
+         * ChaosSnapshotProvenance
+         * @description The immutable market observation that produced one Feature 084 readout.
+         */
+        ChaosSnapshotProvenance: {
+            /**
+             * Capture Strength
+             * @enum {string}
+             */
+            capture_strength: "confirmatory" | "weak" | "unknown";
+            /**
+             * Captured At
+             * Format: date-time
+             */
+            captured_at: string;
+            /** Content Digest */
+            content_digest: string;
+            /** Seconds To Post */
+            seconds_to_post: number | null;
+            /** Snapshot Id */
+            snapshot_id: string;
+            /** Source */
+            source: string;
+        };
+        /**
          * CoverageDay
          * @description One race day's product coverage. n_predicted_active uses the ACTIVE model only (044
          *     idempotency semantics); 0 when no model is active.
@@ -721,6 +768,32 @@ export interface components {
             /** Gain */
             gain: number;
         };
+        /**
+         * JobCaptureRow
+         * @description Typed projection of the operational capture record in ``summary.capture``.
+         */
+        JobCaptureRow: {
+            /** Capture Strength */
+            capture_strength?: string | null;
+            /** Chaos Snapshot Id */
+            chaos_snapshot_id?: string | null;
+            /** Confirmation Eligible */
+            confirmation_eligible?: boolean | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "captured" | "skipped" | "rejected" | "failed" | "unknown";
+            /** Reason */
+            reason?: string | null;
+            /** Seconds To Post */
+            seconds_to_post?: number | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "started" | "launched" | "done";
+        };
         /** JobListResponse */
         JobListResponse: {
             /**
@@ -734,6 +807,7 @@ export interface components {
          * @description One ingestion_jobs row (audit trail; read-only transcription).
          */
         JobRow: {
+            capture?: components["schemas"]["JobCaptureRow"] | null;
             /** Completed At */
             completed_at?: string | null;
             /**
@@ -765,6 +839,10 @@ export interface components {
             started_at?: string | null;
             /** Status */
             status: string;
+            /** Summary */
+            summary?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
         };
@@ -981,11 +1059,101 @@ export interface components {
             odds_as_of?: string | null;
             /** Odds Source */
             odds_source?: ("final" | "prerace") | null;
+            /** Race Chaos */
+            race_chaos?: (components["schemas"]["RaceChaosAvailable"] | components["schemas"]["RaceChaosUnavailable"]) | null;
             race_dispersion?: components["schemas"]["RaceDispersion"] | null;
             race_divergence?: components["schemas"]["RaceDivergence"] | null;
             /** Race Id */
             race_id: string;
             run?: components["schemas"]["RunAudit"] | null;
+        };
+        /**
+         * RaceChaosAvailable
+         * @description Feature 084 market-derived readout with required, non-null numeric values.
+         */
+        RaceChaosAvailable: {
+            /** Artifact Digest */
+            artifact_digest: string;
+            /** Artifact Version */
+            artifact_version: string;
+            /**
+             * Band
+             * @enum {string}
+             */
+            band: "t3_calm" | "t3_mild" | "t3_mid" | "t3_rough" | "t3_wild";
+            /**
+             * Band Axis
+             * @constant
+             */
+            band_axis: "p_s_ge_20";
+            /** Calibration Basis */
+            calibration_basis: string;
+            /**
+             * Calibration Status
+             * @enum {string}
+             */
+            calibration_status: "provisional" | "confirmed";
+            /** Events */
+            events: components["schemas"]["ChaosEvent"][];
+            /** Expected Top3 Popularity Sum */
+            expected_top3_popularity_sum: number;
+            /** Feasible Support */
+            feasible_support: [
+                number,
+                number
+            ];
+            /** Feasible Support Ja */
+            feasible_support_ja: string;
+            /** Field Size */
+            field_size: number;
+            /**
+             * Is Market Derived
+             * @constant
+             */
+            is_market_derived: true;
+            /**
+             * Is Pseudo
+             * @constant
+             */
+            is_pseudo: true;
+            /** Persisted Artifact Digest */
+            persisted_artifact_digest: string | null;
+            /**
+             * Readout Source
+             * @enum {string}
+             */
+            readout_source: "persisted" | "recomputed";
+            snapshot: components["schemas"]["ChaosSnapshotProvenance"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "available";
+            /** Unavailable Reason */
+            unavailable_reason?: null;
+            /** Within Field Size Percentile */
+            within_field_size_percentile: number | null;
+        };
+        /**
+         * RaceChaosUnavailable
+         * @description Typed fail-closed state; it never makes the predictions request fail.
+         */
+        RaceChaosUnavailable: {
+            /**
+             * Band Axis
+             * @constant
+             */
+            band_axis: "p_s_ge_20";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "unavailable";
+            /**
+             * Unavailable Reason
+             * @enum {string}
+             */
+            unavailable_reason: "no_snapshot" | "partial_market_odds" | "invalid_popularity_ranks" | "field_too_small" | "field_changed_after_capture" | "artifact_unavailable" | "out_of_validity_window" | "invariant_violation";
         };
         /** RaceDetail */
         RaceDetail: {

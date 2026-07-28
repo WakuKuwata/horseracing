@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { useJobs } from "../api/queries";
 import { QueryStateView } from "../components/StateView";
+import { capturePresentation } from "../lib/captureLabels";
 import { formatDateTime, formatInt, textOr } from "../lib/format";
 
 const STATUSES = ["", "queued", "running", "succeeded", "partial", "skipped", "failed"];
@@ -53,6 +54,7 @@ export function JobsPage() {
                 <th>種別</th>
                 <th>対象</th>
                 <th>状態</th>
+                <th>荒れ度捕捉</th>
                 <th className="num">retry</th>
                 <th className="num">処理/スキップ/エラー行</th>
                 <th>開始</th>
@@ -60,24 +62,40 @@ export function JobsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.items.map((j) => (
-                <tr key={j.ingestion_job_id} data-status={j.status}>
-                  <td>{textOr(j.job_type)}</td>
-                  <td>{textOr(j.scope_value)}</td>
-                  <td>
-                    <span className={`badge badge--job-${j.status}`}>{j.status}</span>
-                    {j.error_message ? (
-                      <div className="job-error">{j.error_message}</div>
-                    ) : null}
-                  </td>
-                  <td className="num">{formatInt(j.retry_count)}</td>
-                  <td className="num">
-                    {formatInt(j.processed_rows)}/{formatInt(j.skipped_rows)}/{formatInt(j.error_count)}
-                  </td>
-                  <td>{formatDateTime(j.started_at)}</td>
-                  <td>{formatDateTime(j.completed_at)}</td>
-                </tr>
-              ))}
+              {data.items.map((j) => {
+                const capture = j.capture
+                  ? capturePresentation(j.capture, j.started_at)
+                  : null;
+                return (
+                  <tr key={j.ingestion_job_id} data-status={j.status}>
+                    <td>{textOr(j.job_type)}</td>
+                    <td>{textOr(j.scope_value)}</td>
+                    <td>
+                      <span className={`badge badge--job-${j.status}`}>{j.status}</span>
+                      {j.error_message ? (
+                        <div className="job-error">{j.error_message}</div>
+                      ) : null}
+                    </td>
+                    <td>
+                      {capture ? (
+                        <span
+                          className={`badge badge--capture-${capture.tone}`}
+                          data-testid={`capture-${j.ingestion_job_id}`}
+                          data-capture-tone={capture.tone}
+                        >
+                          {capture.label}
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="num">{formatInt(j.retry_count)}</td>
+                    <td className="num">
+                      {formatInt(j.processed_rows)}/{formatInt(j.skipped_rows)}/{formatInt(j.error_count)}
+                    </td>
+                    <td>{formatDateTime(j.started_at)}</td>
+                    <td>{formatDateTime(j.completed_at)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

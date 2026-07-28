@@ -8,13 +8,23 @@ empty list, never an error. limit defaults to 50, capped at 200.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
 from ..queries import list_jobs
-from ..schemas import JobListResponse, JobRow
+from ..schemas import JobCaptureRow, JobListResponse, JobRow
 
 router = APIRouter()
+
+
+def _capture_from_summary(summary: dict | None) -> JobCaptureRow | None:
+    if not isinstance(summary, dict) or "capture" not in summary:
+        return None
+    try:
+        return JobCaptureRow.model_validate(summary["capture"])
+    except ValidationError:
+        return None
 
 
 @router.get("/jobs", response_model=JobListResponse, tags=["jobs"])
@@ -25,16 +35,27 @@ def jobs(
     session: Session = Depends(get_session),
 ):
     rows = list_jobs(session, status=status, job_type=job_type, limit=limit)
-    return JobListResponse(items=[
-        JobRow(
-            ingestion_job_id=str(j.ingestion_job_id),
-            source=j.source, job_type=j.job_type,
-            scope=j.scope, scope_value=j.scope_value,
-            status=j.status, trace_id=j.trace_id, retry_count=j.retry_count,
-            started_at=j.started_at, completed_at=j.completed_at,
-            error_message=j.error_message,
-            processed_rows=j.processed_rows, skipped_rows=j.skipped_rows,
-            error_count=j.error_count, created_at=j.created_at,
-        )
-        for j in rows
-    ])
+    return JobListResponse(
+        items=[
+            JobRow(
+                ingestion_job_id=str(j.ingestion_job_id),
+                source=j.source,
+                job_type=j.job_type,
+                scope=j.scope,
+                scope_value=j.scope_value,
+                status=j.status,
+                trace_id=j.trace_id,
+                retry_count=j.retry_count,
+                started_at=j.started_at,
+                completed_at=j.completed_at,
+                error_message=j.error_message,
+                processed_rows=j.processed_rows,
+                skipped_rows=j.skipped_rows,
+                error_count=j.error_count,
+                created_at=j.created_at,
+                summary=j.summary,
+                capture=_capture_from_summary(j.summary),
+            )
+            for j in rows
+        ]
+    )

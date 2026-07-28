@@ -30,7 +30,7 @@ def test_day_batch_discovers_then_partial_then_rerun_failed(session, fixture_fet
     assert counts.get("failed") == 1      # RID_NO_FIXTURE (entries fetch fails)
 
     # failed-only re-run: enqueue just the failed race -> a brand-new queued child job
-    job, reused = enqueue_race(session, RID_NO_FIXTURE)
+    job, reused = enqueue_race(session, RID_NO_FIXTURE, origin="daily_bulk")
     session.commit()
     assert reused is False and job.status == "queued"
 
