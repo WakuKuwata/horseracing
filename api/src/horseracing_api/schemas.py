@@ -286,6 +286,7 @@ class RaceChaosUnavailable(BaseModel):
         "partial_market_odds",
         "invalid_popularity_ranks",
         "field_too_small",
+        "field_changed_after_capture",
         "artifact_unavailable",
         "out_of_validity_window",
         "invariant_violation",
@@ -580,6 +581,18 @@ class CoverageResponse(BaseModel):
     days: list[CoverageDay] = []
 
 
+class JobCaptureRow(BaseModel):
+    """Typed projection of the operational capture record in ``summary.capture``."""
+
+    state: Literal["started", "launched", "done"]
+    outcome: Literal["captured", "skipped", "rejected", "failed", "unknown"]
+    reason: str | None = None
+    capture_strength: str | None = None
+    confirmation_eligible: bool | None = None
+    seconds_to_post: int | None = None
+    chaos_snapshot_id: str | None = None
+
+
 class JobRow(BaseModel):
     """One ingestion_jobs row (audit trail; read-only transcription)."""
 
@@ -598,6 +611,8 @@ class JobRow(BaseModel):
     skipped_rows: int | None = None
     error_count: int | None = None
     created_at: datetime.datetime
+    summary: dict | None = None
+    capture: JobCaptureRow | None = None
 
 
 class JobListResponse(BaseModel):

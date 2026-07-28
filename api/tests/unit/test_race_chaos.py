@@ -25,7 +25,7 @@ from horseracing_api.routers import predictions as predictions_router
 from horseracing_api.schemas import RaceChaos, RaceChaosAvailable
 
 _REPO = Path(__file__).resolve().parents[3]
-_DIGEST = "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782"
+_DIGEST = "20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680"
 _ARTIFACT_PATH = _REPO / "artifacts" / "chaos_bands" / f"{_DIGEST}.json"
 _TARGET_DATE = datetime.date(2026, 7, 26)
 
@@ -63,6 +63,8 @@ def _snapshot(
         race_id="202607260101",
         captured_at=captured_at or datetime.datetime(2026, 7, 26, 4, 0, tzinfo=datetime.UTC),
         source="netkeiba",
+        capture_trigger="legacy_unknown",
+        capture_policy_version="capture_policy_v0",
         seconds_to_post=1800,
         capture_strength="confirmatory",
         field=frozen,
@@ -247,6 +249,26 @@ def test_latest_snapshot_query_filters_active_and_orders_newest_first() -> None:
     assert "LIMIT 1" in sql
 
 
+def test_snapshot_for_race_is_status_independent_and_limited() -> None:
+    snapshot = _snapshot(status="void")
+    scalar_result = MagicMock()
+    scalar_result.first.return_value = snapshot
+    session = MagicMock()
+    session.scalars.return_value = scalar_result
+
+    assert chaos._snapshot_for_race(session, snapshot.race_id) is snapshot
+    statement = session.scalars.call_args.args[0]
+    sql = str(
+        statement.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    )
+    assert "chaos_snapshots.status =" not in sql
+    assert "chaos_snapshots.captured_at DESC" in sql
+    assert "LIMIT 1" in sql
+
+
 def test_snapshot_validation_allows_popularity_gaps_from_scratches() -> None:
     field = _field()
     for index, row in enumerate(field):
@@ -261,7 +283,12 @@ def test_matching_digest_returns_exact_persisted_values(monkeypatch) -> None:
     artifact = _artifact()
     snapshot = _snapshot()
     readout = _readout(snapshot)
-    monkeypatch.setattr(chaos, "_latest_active_snapshot", lambda session, race_id: snapshot)
+    monkeypatch.setattr(chaos, "_snapshot_for_race", lambda session, race_id: snapshot)
+    monkeypatch.setattr(
+        chaos,
+        "_started_field_for_race",
+        lambda session, race_id: snapshot.field,
+    )
     monkeypatch.setattr(chaos, "_load_configured_artifact", lambda *args, **kwargs: artifact)
     monkeypatch.setattr(chaos, "_matching_readout", lambda *args, **kwargs: readout)
 
@@ -318,7 +345,12 @@ def test_mismatched_digest_recomputes_and_exposes_persisted_digest(monkeypatch) 
         structural_zero={},
         triple_mass_sum=1.0,
     )
-    monkeypatch.setattr(chaos, "_latest_active_snapshot", lambda session, race_id: snapshot)
+    monkeypatch.setattr(chaos, "_snapshot_for_race", lambda session, race_id: snapshot)
+    monkeypatch.setattr(
+        chaos,
+        "_started_field_for_race",
+        lambda session, race_id: snapshot.field,
+    )
     monkeypatch.setattr(chaos, "_load_configured_artifact", lambda *args, **kwargs: artifact)
     monkeypatch.setattr(chaos, "_matching_readout", lambda *args, **kwargs: None)
     monkeypatch.setattr(chaos, "_latest_readout", lambda *args, **kwargs: old)

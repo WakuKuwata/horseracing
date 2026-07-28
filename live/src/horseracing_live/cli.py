@@ -4,14 +4,20 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import json
+import math
+import time
 from collections import Counter
 
 from horseracing_betting.kelly_types import KellyConfig
 from horseracing_db.models import Race
 from horseracing_db.session import create_db_engine
+from horseracing_probability.chaos_artifact import ChaosArtifactError
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .chaos_capture import (
+    ChaosCaptureReport,
     NetkeibaOddsFetcher,
     capture_chaos,
     load_current_chaos_artifact,
@@ -79,6 +85,70 @@ def _parse_date(s: str) -> datetime.date:
     return datetime.date.fromisoformat(s)
 
 
+def _now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.UTC)
+
+
+_ELIGIBLE_SKIP_REASONS = frozenset(
+    {
+        "already_captured",
+        "outside_primary_horizon",
+        "result_settled",
+        "post_time_unknown",
+        "post_time_elapsed",
+        "min_seconds_to_post",
+        "concurrent_capture",
+        "no_started_horses",
+        "field_too_small",
+    }
+)
+
+
+def _capture_json(report: ChaosCaptureReport, *, elapsed_s: float) -> str:
+    return json.dumps(
+        {
+            "race_id": report.race_id,
+            "outcome": report.status,
+            "reason": report.reason,
+            "capture_strength": report.capture_strength,
+            "confirmation_eligible": report.confirmation_eligible,
+            "seconds_to_post": report.seconds_to_post,
+            "chaos_snapshot_id": (
+                None
+                if report.chaos_snapshot_id is None
+                else str(report.chaos_snapshot_id)
+            ),
+            "elapsed_s": elapsed_s,
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
+def _daily_horizon_refused(
+    session: Session,
+    target_date: datetime.date,
+    *,
+    command_started_at: datetime.datetime,
+) -> bool:
+    """Judge the date once, using its latest known post time and the current horizon."""
+
+    latest_post_time = session.scalar(
+        select(func.max(Race.post_time)).where(Race.race_date == target_date)
+    )
+    if latest_post_time is None:
+        return False
+    try:
+        artifact = load_current_chaos_artifact(target_date)
+    except ChaosArtifactError:
+        # Preserve capture's fail-closed, per-race artifact_unavailable result.
+        return False
+    upper_s = int(
+        artifact.preregistration["primary_horizon"]["maximum_seconds_to_post"]
+    )
+    return (latest_post_time - command_started_at).total_seconds() > upper_s
+
+
 def _cmd_live_serve(session: Session, args) -> int:
     from horseracing_probability.calib_activation import ActivationError
     from horseracing_probability.calib_manifest import ManifestError
@@ -120,11 +190,36 @@ def _cmd_list_pending(session: Session, args) -> int:
 
 def _cmd_capture_chaos(session: Session, args) -> int:
     """Feature 084: freeze fresh market observations with per-race isolation."""
-    from horseracing_probability.chaos_artifact import ChaosArtifactError
-    from horseracing_scrape.cli import _make_fetcher
+    from .chaos_politeness import deadline_for, make_capture_fetcher
 
+    command_started_at = _now()
     if args.min_seconds_to_post < 0:
         print("ERROR: --min-seconds-to-post must be non-negative")
+        return 2
+
+    capture_trigger = getattr(args, "trigger", None) or (
+        "explicit_command" if args.race_id is not None else "daily_operational"
+    )
+    deadline_s = getattr(args, "capture_deadline_seconds", None)
+    if deadline_s is None:
+        deadline_s = deadline_for(capture_trigger)
+    if not math.isfinite(deadline_s) or deadline_s <= 0:
+        print("ERROR: --capture-deadline-seconds must be positive")
+        return 2
+
+    if (
+        args.date is not None
+        and not getattr(args, "allow_outside_horizon", False)
+        and _daily_horizon_refused(
+            session,
+            args.date,
+            command_started_at=command_started_at,
+        )
+    ):
+        print(
+            "ERROR: latest post_time is beyond the primary horizon; "
+            "use --allow-outside-horizon to run intentionally"
+        )
         return 2
 
     race_ids = (
@@ -132,53 +227,75 @@ def _cmd_capture_chaos(session: Session, args) -> int:
         if args.race_id is not None
         else list_pending(session, date=args.date)
     )
-    raw_fetcher = _make_fetcher(1.0, None)
+    raw_fetcher = make_capture_fetcher(database_url=getattr(args, "database_url", None))
     fetcher = NetkeibaOddsFetcher(raw_fetcher)
     status_counts: Counter[str] = Counter()
     reason_counts: Counter[str] = Counter()
     strength_counts: Counter[str] = Counter()
+    skipped_eligible = 0
+    skipped_unfetchable = 0
+    json_report: ChaosCaptureReport | None = None
+    json_elapsed_s = 0.0
 
-    for race_id in race_ids:
-        try:
-            race = session.get(Race, race_id)
-            if race is None:
-                status_counts["rejected"] += 1
-                reason_counts["race_not_found"] += 1
+    try:
+        for race_id in race_ids:
+            started = time.monotonic()
+            deadline = started + float(deadline_s)
+            set_deadline = getattr(raw_fetcher, "set_deadline", None)
+            if set_deadline is not None:
+                set_deadline(deadline)
+            try:
+                report = capture_chaos(
+                    session,
+                    race_id=race_id,
+                    fetcher=fetcher,
+                    artifact=None,
+                    capture_trigger=capture_trigger,
+                    capture_policy_version="capture_policy_v1",
+                    deadline=deadline,
+                    min_seconds_to_post=args.min_seconds_to_post,
+                )
+                if report.changed:
+                    session.commit()
+                else:
+                    session.rollback()
+            except Exception as exc:  # noqa: BLE001 — one bad race must not abort the date
                 session.rollback()
-                continue
-            target_date = race.race_date
-            if target_date is None:
-                status_counts["rejected"] += 1
-                reason_counts["race_date_unknown"] += 1
-                session.rollback()
-                continue
-            artifact = load_current_chaos_artifact(target_date)
-            report = capture_chaos(
-                session,
-                race_id=race_id,
-                fetcher=fetcher,
-                artifact=artifact,
-                min_seconds_to_post=args.min_seconds_to_post,
-            )
+                report = ChaosCaptureReport(
+                    race_id,
+                    "failed",
+                    f"error:{type(exc).__name__}",
+                )
+
+            elapsed_s = time.monotonic() - started
             status_counts[report.status] += 1
             if report.captured:
                 strength_counts[str(report.capture_strength)] += 1
-                session.commit()
             else:
                 reason_counts[report.reason] += 1
-                session.rollback()
-        except ChaosArtifactError as exc:
-            session.rollback()
-            status_counts["rejected"] += 1
-            reason_counts[exc.unavailable_reason] += 1
-        except Exception as exc:  # noqa: BLE001 — one bad race must not abort the date
-            session.rollback()
-            status_counts["rejected"] += 1
-            reason_counts[f"error:{type(exc).__name__}"] += 1
+            if report.status == "skipped":
+                if report.reason in _ELIGIBLE_SKIP_REASONS:
+                    skipped_eligible += 1
+                else:
+                    skipped_unfetchable += 1
+            if args.race_id is not None:
+                json_report = report
+                json_elapsed_s = elapsed_s
+    finally:
+        close = getattr(raw_fetcher, "close", None)
+        if close is not None:
+            close()
+
+    if getattr(args, "json", False):
+        assert json_report is not None
+        print(_capture_json(json_report, elapsed_s=json_elapsed_s))
+        return 0
 
     print(
         f"capture-chaos races={len(race_ids)} captured={status_counts['captured']} "
-        f"skipped={status_counts['skipped']} rejected={status_counts['rejected']}"
+        f"skipped_eligible={skipped_eligible} "
+        f"skipped_unfetchable={skipped_unfetchable} "
+        f"rejected={status_counts['rejected']} failed={status_counts['failed']}"
     )
     rejected_text = " ".join(
         f"{reason}={count}" for reason, count in sorted(reason_counts.items())
@@ -289,9 +406,27 @@ def main(argv: list[str] | None = None) -> int:
         default=0,
         help="skip a race when fewer than this many seconds remain (default: 0)",
     )
+    cc.add_argument(
+        "--trigger",
+        choices=(
+            "daily_operational",
+            "predict_manual",
+            "predict_auto",
+            "explicit_command",
+        ),
+        default=None,
+    )
+    cc.add_argument("--json", action="store_true")
+    cc.add_argument("--capture-deadline-seconds", type=float, default=None)
+    cc.add_argument("--allow-outside-horizon", action="store_true")
     cc.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)
+    if args.command == "capture-chaos":
+        if args.json and args.date is not None:
+            parser.error("--json is only valid with --race-id")
+        if args.allow_outside_horizon and args.race_id is not None:
+            parser.error("--allow-outside-horizon is only valid with --date")
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
         if args.command == "live-serve":

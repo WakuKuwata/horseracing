@@ -27,7 +27,8 @@ const UNAVAILABLE_LABEL: Record<
   no_snapshot: "発走前の市場スナップショットがないため表示できません。",
   partial_market_odds: "一部の出走馬に市場オッズがないため表示できません。",
   invalid_popularity_ranks: "人気順を確定できないため表示できません。",
-  field_too_small: "出走頭数が3頭未満のため表示できません。",
+  field_too_small: "出走頭数が4頭未満のため表示できません。",
+  field_changed_after_capture: "捕捉後に出走構成が変わったため表示できません。",
   artifact_unavailable: "表示基準を読み込めないため表示できません。",
   out_of_validity_window: "表示基準の対象期間外のため表示できません。",
   invariant_violation: "確率の整合性を確認できないため表示できません。",
@@ -39,10 +40,13 @@ function eventValue(event: ChaosEvent | undefined, value: "adjusted_mass" | "raw
   return formatPct(event[value], 0);
 }
 
-function capturedTime(value: string): string {
+function capturedDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return PLACEHOLDER;
   return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -50,15 +54,24 @@ function capturedTime(value: string): string {
   }).format(date);
 }
 
+function timingFromPost(seconds: number): string {
+  const absoluteMinutes = Math.round(Math.abs(seconds) / 60);
+  const timing =
+    absoluteMinutes >= 60
+      ? `${Math.floor(absoluteMinutes / 60)}時間${
+          absoluteMinutes % 60 ? `${absoluteMinutes % 60}分` : ""
+        }`
+      : `${absoluteMinutes}分`;
+  return `発走${timing}${seconds >= 0 ? "前" : "後"}`;
+}
+
 function freshness(chaos: AvailableChaos): string {
   const seconds = chaos.snapshot.seconds_to_post;
   const timing =
     seconds === null
       ? "発走時刻との差不明"
-      : seconds >= 0
-        ? `発走${Math.round(seconds / 60)}分前`
-        : `発走${Math.round(Math.abs(seconds) / 60)}分後`;
-  return `${timing}・${capturedTime(chaos.snapshot.captured_at)} 取得`;
+      : timingFromPost(seconds);
+  return `${timing}・${capturedDateTime(chaos.snapshot.captured_at)} 取得`;
 }
 
 function captureStrengthNote(strength: AvailableChaos["snapshot"]["capture_strength"]) {

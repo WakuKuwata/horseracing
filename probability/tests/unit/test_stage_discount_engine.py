@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from horseracing_eval.stage_discount import StageDiscount, discounted_topk
 
-from horseracing_probability.consistency import check_joint_consistency
+from horseracing_probability.consistency import JointConsistencyError, check_joint_consistency
 from horseracing_probability.engine import joint_probabilities
 
 _CASES = [
@@ -75,7 +75,7 @@ def test_consistency_checker_rejects_wrong_lambda():
     win = {"A": 0.5, "B": 0.3, "C": 0.2}
     jp = joint_probabilities(win, stage_discount=StageDiscount(lambda2=0.4, lambda3=0.4))
     # verifying against the WRONG λ (identity) must fail the marginal check
-    with pytest.raises(Exception):
+    with pytest.raises(JointConsistencyError):
         check_joint_consistency(jp, stage_discount=None)
 
 

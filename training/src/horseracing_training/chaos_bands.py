@@ -8,6 +8,7 @@ probability package owns artifact loading; this module owns only fit/publish.
 from __future__ import annotations
 
 import bisect
+import copy
 import datetime
 import hashlib
 import json
@@ -30,9 +31,20 @@ from horseracing_eval.dispersion_bands import fit_quintile_edges, normalized_ent
 from horseracing_eval.harness import reliability_bins
 from horseracing_eval.metrics import auc_label, brier_label, log_loss_label
 from horseracing_eval.stage_discount import DEFAULT_MIN_RACES, StageDiscount
+from horseracing_probability.chaos_artifact import (
+    compute_chaos_artifact_digest,
+    upgrade_legacy_artifact_horizon,
+)
 from horseracing_probability.chaos_distribution import (
     ChaosInvariantError,
     chaos_readout,
+)
+from horseracing_probability.chaos_eligibility import (
+    capture_horizon_bucket,
+    capture_horizon_buckets,
+    confirmation_eligible,
+    primary_horizon,
+    within_primary_horizon,
 )
 from horseracing_probability.chaos_events import CHAOS_EVENTS_V1, EventDefinition
 from horseracing_probability.market_odds import market_implied_win_probs
@@ -57,18 +69,33 @@ _FIELD_SIZE_BUCKETS = (
     ("16-18", 16, 18),
     ("19+", 19, None),
 )
+_CAPTURE_TRIGGERS = (
+    "daily_operational",
+    "predict_manual",
+    "predict_auto",
+    "explicit_command",
+    "legacy_unknown",
+)
+_SELECTION_BIASED_BY_TRIGGER = {
+    "daily_operational": False,
+    "predict_manual": True,
+    "predict_auto": False,
+    "explicit_command": True,
+    "legacy_unknown": None,
+}
+_PROSPECTIVE_SELECTION_BIAS_NOTE = (
+    "予測実行由来の観測は利用者が選んだレースに偏る。"
+    "日次の中立な捕捉が主たる観測源であり、予測実行由来のみで"
+    "観測群が構成された場合は選択バイアスを除去できない。"
+)
 _SCORE_CLIP = 1e-15
+_MEASURED_COVERAGE_WINDOW = (600, 86_400)
+_MEASURED_COVERAGE = 0.956
 _POST_TIME_HISTORICAL_REFERENCE = {
     "2024": 0.0,
     "2025": 0.229,
     "2026": 1.0,
 }
-_CAPTURE_HORIZON_BUCKETS = (
-    ("0-9m", 0, 599),
-    ("10-29m", 600, 1799),
-    ("30-59m", 1800, 3599),
-    ("60m+", 3600, None),
-)
 _REQUIRED_SAMPLE_ESTIMATES = {
     "s_ge_20": {
         "role": "controls_promotion",
@@ -189,6 +216,30 @@ class PublishedChaosArtifact:
 
 
 @dataclass(frozen=True)
+class ArtifactKeyDiff:
+    """One deterministic key-level comparison between legacy and upgraded payloads."""
+
+    path: str
+    status: str
+    before: Any = None
+    after: Any = None
+
+
+@dataclass(frozen=True)
+class HorizonUpgradeResult:
+    """Create-only horizon publication plus its audited full-payload diff."""
+
+    payload: dict[str, Any]
+    source_path: Path
+    path: Path
+    key_diff: tuple[ArtifactKeyDiff, ...]
+
+    @property
+    def artifact_digest(self) -> str:
+        return str(self.payload["artifact_digest"])
+
+
+@dataclass(frozen=True)
 class ChaosDiagnosticRow:
     """One outcome-eligible closing-history race in the secondary OOS report."""
 
@@ -231,6 +282,7 @@ class FrozenChaosHorse:
     """One horse exactly as stored in ``chaos_snapshots.field``."""
 
     horse_id: str
+    horse_number: int
     popularity: int
     odds: float
 
@@ -244,9 +296,12 @@ class ProspectiveChaosRace:
     readout_id: str
     snapshot_id: str
     snapshot_status: str
+    snapshot_void_reason: str | None
     capture_strength: str
+    capture_trigger: str
     seconds_to_post: int | None
     frozen_field: tuple[FrozenChaosHorse, ...]
+    current_started_field: frozenset[tuple[str, int]]
     field_size: int
     p_s_ge_20: float
     p_himo_are: float
@@ -254,6 +309,18 @@ class ProspectiveChaosRace:
     first: tuple[str, ...]
     second: tuple[str, ...]
     third: tuple[str, ...]
+
+    @property
+    def status(self) -> str:
+        """Expose the snapshot status expected by the shared eligibility helper."""
+
+        return self.snapshot_status
+
+    @property
+    def field(self) -> tuple[FrozenChaosHorse, ...]:
+        """Expose frozen identities expected by the shared eligibility helper."""
+
+        return self.frozen_field
 
 
 @dataclass(frozen=True)
@@ -762,6 +829,135 @@ def publish_artifact(
     )
 
 
+def artifact_key_diff(
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+) -> tuple[ArtifactKeyDiff, ...]:
+    """Return every JSON leaf key, treating a wholly added subtree as one key."""
+
+    entries: list[ArtifactKeyDiff] = []
+
+    def visit(
+        old: Mapping[str, Any],
+        new: Mapping[str, Any],
+        *,
+        prefix: str,
+    ) -> None:
+        for key in sorted(set(old) | set(new)):
+            path = f"{prefix}.{key}" if prefix else key
+            if key not in old:
+                entries.append(
+                    ArtifactKeyDiff(path=path, status="added", after=new[key])
+                )
+                continue
+            if key not in new:
+                entries.append(
+                    ArtifactKeyDiff(path=path, status="removed", before=old[key])
+                )
+                continue
+            old_value = old[key]
+            new_value = new[key]
+            if isinstance(old_value, Mapping) and isinstance(new_value, Mapping):
+                visit(old_value, new_value, prefix=path)
+                continue
+            status = "unchanged" if old_value == new_value else "changed"
+            entries.append(
+                ArtifactKeyDiff(
+                    path=path,
+                    status=status,
+                    before=old_value,
+                    after=new_value,
+                )
+            )
+
+    visit(before, after, prefix="")
+    return tuple(entries)
+
+
+def add_horizon_artifact(
+    *,
+    source_path: str | Path,
+    expected_digest: str,
+    minimum_seconds_to_post: int,
+    maximum_seconds_to_post: int,
+    basis: str,
+    measured_coverage: float | None = None,
+    out_dir: str | Path,
+) -> HorizonUpgradeResult:
+    """Create a horizon-bearing artifact without modifying or raw-reading its source."""
+
+    if not isinstance(basis, str) or not basis.strip():
+        raise ChaosArtifactError("primary horizon basis must be a non-empty string")
+
+    window = (minimum_seconds_to_post, maximum_seconds_to_post)
+    if measured_coverage is not None:
+        if (
+            isinstance(measured_coverage, bool)
+            or not math.isfinite(measured_coverage)
+            or measured_coverage < 0.0
+            or measured_coverage > 1.0
+        ):
+            raise ChaosArtifactError(
+                "primary horizon measured coverage must be finite and within [0, 1]"
+            )
+        if window != _MEASURED_COVERAGE_WINDOW:
+            raise ChaosArtifactError(
+                "measured coverage is only established for the [600, 86400] window"
+            )
+        if measured_coverage != _MEASURED_COVERAGE:
+            raise ChaosArtifactError(
+                "the established [600, 86400] measured coverage is exactly 0.956"
+            )
+
+    source = Path(source_path)
+    upgraded, bootstrap_digest = upgrade_legacy_artifact_horizon(
+        source,
+        expected_digest=expected_digest,
+        minimum_seconds_to_post=minimum_seconds_to_post,
+        maximum_seconds_to_post=maximum_seconds_to_post,
+    )
+    if upgraded.get("artifact_digest") != bootstrap_digest:
+        raise ArtifactDigestError(
+            "legacy horizon upgrader returned inconsistent payload and digest"
+        )
+
+    # The sanctioned upgrader returns a deep-copied source with only these two
+    # bootstrap changes. Reversing them reconstructs the validated source for
+    # the audit diff without introducing a second raw artifact reader.
+    source_payload = copy.deepcopy(upgraded)
+    source_payload["preregistration"].pop("primary_horizon")
+    source_payload["artifact_digest"] = expected_digest
+
+    horizon = upgraded["preregistration"]["primary_horizon"]
+    horizon["basis"] = basis
+    if window == _MEASURED_COVERAGE_WINDOW:
+        horizon["measured_coverage_of_pre_race_predict_clicks"] = _MEASURED_COVERAGE
+
+    upgraded_digest = compute_chaos_artifact_digest(upgraded)
+    upgraded["artifact_digest"] = upgraded_digest
+    key_diff = artifact_key_diff(source_payload, upgraded)
+    changed_paths = tuple(
+        entry.path for entry in key_diff if entry.status != "unchanged"
+    )
+    expected_changes = (
+        "artifact_digest",
+        "preregistration.primary_horizon",
+    )
+    if changed_paths != expected_changes:
+        raise ChaosArtifactError(
+            "horizon upgrade changed unexpected artifact keys: "
+            f"expected {expected_changes!r}, got {changed_paths!r}"
+        )
+
+    published = publish_artifact(upgraded, out_dir=out_dir)
+    return HorizonUpgradeResult(
+        payload=published.payload,
+        source_path=source,
+        path=published.path,
+        key_diff=key_diff,
+    )
+
+
 def fit_artifact(
     session,
     *,
@@ -773,8 +969,23 @@ def fit_artifact(
     min_races: int = DEFAULT_MIN_RACES,
     final_decision_date: datetime.date = DEFAULT_FINAL_DECISION_DATE,
     operational_lambda_envelope: Mapping[str, Mapping[str, float]] | None = None,
+    primary_horizon: Mapping[str, object] | None = None,
 ) -> PublishedChaosArtifact:
-    """Fit market lambdas and P(S>=20) quintiles, then publish one artifact."""
+    """Fit market lambdas and P(S>=20) quintiles, then publish one artifact.
+
+    ``primary_horizon`` is REQUIRED even though it is keyword-optional in the signature: the
+    loader rejects an artifact without it (FR-005/FR-006), so a freshly fitted artifact that
+    omitted it would be unreadable from birth. ``add-horizon`` is a single-purpose bootstrap for
+    the two known legacy digests, NOT the general path for new fits.
+    """
+
+    if primary_horizon is None:
+        raise ArtifactFitError(
+            "primary_horizon is required: an artifact fitted without a pre-registered capture "
+            "window is rejected by the fail-closed loader. Pass e.g. "
+            '{"minimum_seconds_to_post": 600, "maximum_seconds_to_post": 86400, '
+            '"basis": "<why these bounds>"}.'
+        )
 
     if fit_from > fit_to:
         raise InvalidValidityWindowError(
@@ -865,6 +1076,7 @@ def fit_artifact(
         "fit_input_hash": _stable_hash(fit_inputs),
         "preregistration": {
             "events": [_event_payload(event) for event in CHAOS_EVENTS_V1],
+            "primary_horizon": dict(primary_horizon),
             "rank_basis": "frozen_explicit_popularity",
             "tie_break_rule": "none; duplicate popularity is excluded; gaps are allowed",
             "exclusion_rules": ELIGIBILITY_PREDICATE,
@@ -1656,10 +1868,14 @@ def _parse_frozen_field(value: Any) -> tuple[FrozenChaosHorse, ...]:
             popularity = item["popularity"]
             odds = item["odds"]
             horse_id = item["horse_id"]
+            horse_number = item["horse_number"]
             if (
                 isinstance(popularity, bool)
                 or not isinstance(popularity, int)
                 or popularity <= 0
+                or isinstance(horse_number, bool)
+                or not isinstance(horse_number, int)
+                or horse_number <= 0
                 or isinstance(odds, bool)
                 or not math.isfinite(float(odds))
                 or float(odds) <= 0.0
@@ -1670,6 +1886,7 @@ def _parse_frozen_field(value: Any) -> tuple[FrozenChaosHorse, ...]:
             parsed.append(
                 FrozenChaosHorse(
                     horse_id=horse_id,
+                    horse_number=horse_number,
                     popularity=popularity,
                     odds=float(odds),
                 )
@@ -1687,8 +1904,14 @@ def load_prospective_rows(
 ) -> list[ProspectiveChaosRace]:
     """Load readouts with frozen fields and finishers; live popularity is never joined."""
 
-    from horseracing_db.enums import ResultStatus
-    from horseracing_db.models import ChaosReadout, ChaosSnapshot, Race, RaceResult
+    from horseracing_db.enums import EntryStatus, ResultStatus
+    from horseracing_db.models import (
+        ChaosReadout,
+        ChaosSnapshot,
+        Race,
+        RaceHorse,
+        RaceResult,
+    )
     from sqlalchemy import select
 
     readout_rows = session.execute(
@@ -1700,7 +1923,9 @@ def load_prospective_rows(
             ChaosReadout.p_total_collapse,
             ChaosSnapshot.race_id,
             ChaosSnapshot.status,
+            ChaosSnapshot.void_reason,
             ChaosSnapshot.capture_strength,
+            ChaosSnapshot.capture_trigger,
             ChaosSnapshot.seconds_to_post,
             ChaosSnapshot.field,
             ChaosSnapshot.n,
@@ -1720,7 +1945,22 @@ def load_prospective_rows(
     finishers: dict[str, dict[int, list[str]]] = defaultdict(
         lambda: defaultdict(list)
     )
+    current_started: dict[str, set[tuple[str, int]]] = defaultdict(set)
     if race_ids:
+        started_rows = session.execute(
+            select(RaceHorse.race_id, RaceHorse.horse_id, RaceHorse.horse_number)
+            .where(RaceHorse.race_id.in_(race_ids))
+            .where(RaceHorse.entry_status == EntryStatus.STARTED)
+            .order_by(RaceHorse.race_id, RaceHorse.horse_id)
+        )
+        for row in started_rows:
+            if row.horse_number is not None:
+                current_started[str(row.race_id)].add(
+                    (
+                        str(row.horse_id),
+                        int(row.horse_number),
+                    )
+                )
         result_rows = session.execute(
             select(RaceResult.race_id, RaceResult.horse_id, RaceResult.finish_order)
             .where(RaceResult.race_id.in_(race_ids))
@@ -1747,13 +1987,20 @@ def load_prospective_rows(
                 readout_id=str(row.chaos_readout_id),
                 snapshot_id=str(row.chaos_snapshot_id),
                 snapshot_status=str(row.status),
+                snapshot_void_reason=(
+                    str(row.void_reason) if row.void_reason is not None else None
+                ),
                 capture_strength=str(row.capture_strength),
+                capture_trigger=str(row.capture_trigger),
                 seconds_to_post=(
                     int(row.seconds_to_post)
                     if row.seconds_to_post is not None
                     else None
                 ),
                 frozen_field=_parse_frozen_field(row.field),
+                current_started_field=frozenset(
+                    current_started.get(str(row.race_id), ())
+                ),
                 field_size=int(row.n),
                 p_s_ge_20=float(row.p_s_ge_20),
                 p_himo_are=float(row.p_himo_are),
@@ -1794,58 +2041,87 @@ def _frozen_outcome(
     return (ra + rb + rc, outcomes), None
 
 
-def _capture_horizon(seconds_to_post: int) -> str:
-    for name, lower, upper in _CAPTURE_HORIZON_BUCKETS:
-        if seconds_to_post >= lower and (
-            upper is None or seconds_to_post <= upper
-        ):
-            return name
-    raise ValueError("confirmatory seconds_to_post must be non-negative")
-
-
-def _primary_horizon(
-    preregistration: Mapping[str, Any],
-) -> dict[str, Any]:
-    raw = preregistration.get("primary_horizon")
-    if not isinstance(raw, Mapping):
-        return {
-            "mode": "sole_active_confirmatory_snapshot_per_race",
-            "minimum_seconds_to_post": 0,
-            "maximum_seconds_to_post": None,
-            "artifact_field_present": False,
-        }
-    lower = raw.get(
-        "minimum_seconds_to_post",
-        raw.get("min_seconds_to_post", 0),
+def _frozen_started_field(
+    row: ProspectiveChaosRace,
+) -> frozenset[tuple[str, int]]:
+    return frozenset(
+        (horse.horse_id, horse.horse_number) for horse in row.frozen_field
     )
-    upper = raw.get(
-        "maximum_seconds_to_post",
-        raw.get("max_seconds_to_post"),
+
+
+def _field_changed_after_capture(row: ProspectiveChaosRace) -> bool:
+    return (
+        row.snapshot_void_reason == "field_changed"
+        or _frozen_started_field(row) != row.current_started_field
     )
-    try:
-        minimum = int(lower)
-        maximum = None if upper is None else int(upper)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("artifact primary_horizon bounds must be integers") from exc
-    if minimum < 0 or (maximum is not None and maximum < minimum):
-        raise ValueError("artifact primary_horizon bounds are invalid")
-    return {
-        "mode": "artifact_seconds_to_post_window",
-        "minimum_seconds_to_post": minimum,
-        "maximum_seconds_to_post": maximum,
-        "artifact_field_present": True,
-    }
 
 
-def _within_primary_horizon(
-    seconds_to_post: int,
-    horizon: Mapping[str, Any],
+def _report_confirmation_eligible(
+    row: ProspectiveChaosRace,
+    *,
+    artifact,
 ) -> bool:
-    minimum = int(horizon["minimum_seconds_to_post"])
-    maximum = horizon["maximum_seconds_to_post"]
-    return seconds_to_post >= minimum and (
-        maximum is None or seconds_to_post <= int(maximum)
+    """Derive eligibility from this report's artifact, never a stored flag."""
+
+    if row.capture_trigger == "legacy_unknown":
+        return False
+    return confirmation_eligible(
+        row,
+        artifact,
+        row.current_started_field,
     )
+
+
+def _prospective_capture_source_report(
+    rows: Sequence[ProspectiveChaosRace],
+    *,
+    artifact,
+) -> tuple[list[dict[str, Any]], float | None, dict[str, Any]]:
+    counts = Counter(row.capture_trigger for row in rows)
+    eligible = Counter(
+        row.capture_trigger
+        for row in rows
+        if _report_confirmation_eligible(row, artifact=artifact)
+    )
+    breakdown = [
+        {
+            "trigger": trigger,
+            "n": counts[trigger],
+            "confirmation_eligible": eligible[trigger],
+            "selection_biased": _SELECTION_BIASED_BY_TRIGGER[trigger],
+        }
+        for trigger in _CAPTURE_TRIGGERS
+    ]
+
+    known_denominator = sum(counts[trigger] for trigger in _CAPTURE_TRIGGERS[:-1])
+    user_selected = counts["predict_manual"] + counts["explicit_command"]
+    user_selected_share = (
+        user_selected / known_denominator if known_denominator else None
+    )
+
+    non_legacy_counts = {
+        trigger: counts[trigger] for trigger in _CAPTURE_TRIGGERS[:-1]
+    }
+    maximum_observed = max(non_legacy_counts.values(), default=0)
+    observed_primary_source = (
+        min(
+            trigger
+            for trigger, count in non_legacy_counts.items()
+            if count == maximum_observed
+        )
+        if maximum_observed
+        else None
+    )
+    neutral = counts["daily_operational"] + counts["predict_auto"]
+    selection_bias = {
+        "policy_primary_source": "daily_operational",
+        "observed_primary_source": observed_primary_source,
+        "primary_source_claim_violated": user_selected > neutral,
+        "user_selected_role": "supplementary",
+        "removable": False,
+        "note": _PROSPECTIVE_SELECTION_BIAS_NOTE,
+    }
+    return breakdown, user_selected_share, selection_bias
 
 
 def _s_ge_30_probability(
@@ -1882,8 +2158,7 @@ def _prospective_analysis_rows(
     valid_from = artifact.valid_from
     if isinstance(valid_from, str):
         valid_from = datetime.date.fromisoformat(valid_from)
-    preregistration = artifact.preregistration
-    horizon = _primary_horizon(preregistration)
+    horizon = primary_horizon(artifact)
     by_race: dict[str, list[ProspectiveChaosRace]] = defaultdict(list)
     for row in rows:
         by_race[row.race_id].append(row)
@@ -1905,6 +2180,9 @@ def _prospective_analysis_rows(
         if row.race_date > as_of:
             exclusions["after_report_date"] += 1
             continue
+        if _field_changed_after_capture(row):
+            exclusions["field_changed_after_capture"] += 1
+            continue
         if row.snapshot_status != "active":
             exclusions["snapshot_not_active"] += 1
             continue
@@ -1917,7 +2195,7 @@ def _prospective_analysis_rows(
         if row.seconds_to_post < 0:
             exclusions["captured_at_or_after_post"] += 1
             continue
-        if not _within_primary_horizon(row.seconds_to_post, horizon):
+        if not within_primary_horizon(row.seconds_to_post, horizon):
             exclusions["outside_primary_horizon"] += 1
             continue
         frozen_outcome, outcome_reason = _frozen_outcome(row)
@@ -1938,7 +2216,11 @@ def _prospective_analysis_rows(
                 race_id=row.race_id,
                 day=row.race_date.isoformat(),
                 field_size=row.field_size,
-                capture_horizon=_capture_horizon(row.seconds_to_post),
+                capture_horizon=capture_horizon_bucket(
+                    row.seconds_to_post,
+                    minimum_seconds_to_post=horizon["minimum_seconds_to_post"],
+                    maximum_seconds_to_post=horizon["maximum_seconds_to_post"],
+                ),
                 probabilities=probabilities,
                 outcomes=outcomes,
                 s=s,
@@ -2178,6 +2460,11 @@ def prospective_report(
         artifact_digest=artifact.artifact_digest,
         through_date=report_date,
     )
+    (
+        capture_trigger_reports,
+        user_selected_share,
+        prospective_selection_bias,
+    ) = _prospective_capture_source_report(rows, artifact=artifact)
     analyzed, exclusions, primary_horizon = _prospective_analysis_rows(
         rows,
         artifact=artifact,
@@ -2207,7 +2494,10 @@ def prospective_report(
                 }
             )
     horizon_reports = []
-    for horizon_name, _lower, _upper in _CAPTURE_HORIZON_BUCKETS:
+    for horizon_name, _lower, _upper in capture_horizon_buckets(
+        primary_horizon["minimum_seconds_to_post"],
+        primary_horizon["maximum_seconds_to_post"],
+    ):
         horizon_rows = [
             row for row in analyzed if row.capture_horizon == horizon_name
         ]
@@ -2283,6 +2573,9 @@ def prospective_report(
         "overall": overall,
         "by_field_size": field_size_reports,
         "by_capture_horizon": horizon_reports,
+        "by_capture_trigger": capture_trigger_reports,
+        "user_selected_share": user_selected_share,
+        "prospective_selection_bias": prospective_selection_bias,
         "promotion": promotion,
         "event_roles": {
             "s_ge_20": "controls_promotion",
@@ -2572,6 +2865,7 @@ def diagnose(
 
 __all__ = [
     "ARTIFACT_VERSION",
+    "ArtifactKeyDiff",
     "ArtifactAlreadyExistsError",
     "ArtifactDigestError",
     "ArtifactFitError",
@@ -2586,6 +2880,7 @@ __all__ = [
     "DIAGNOSTIC_CI_NOTE",
     "ELIGIBILITY_PREDICATE",
     "FrozenChaosHorse",
+    "HorizonUpgradeResult",
     "InvalidValidityWindowError",
     "NumericStabilityError",
     "OPERATIONAL_LAMBDA_ENVELOPE",
@@ -2595,6 +2890,8 @@ __all__ = [
     "ProspectiveAnalysisRow",
     "ProspectiveChaosRace",
     "PublishedChaosArtifact",
+    "add_horizon_artifact",
+    "artifact_key_diff",
     "build_field_size_reference_quantiles",
     "compute_artifact_digest",
     "coverage_report",

@@ -18,11 +18,14 @@ from horseracing_training import cli as training_cli
 from horseracing_training.chaos_bands import (
     ArtifactAlreadyExistsError,
     ArtifactDigestError,
+    ArtifactKeyDiff,
     ChaosFitHorse,
     ChaosFitRace,
+    HorizonUpgradeResult,
     InvalidValidityWindowError,
     NumericStabilityError,
     OperationalLambdaError,
+    add_horizon_artifact,
     build_field_size_reference_quantiles,
     compute_artifact_digest,
     eligibility_exclusion_reason,
@@ -35,11 +38,23 @@ from horseracing_training.chaos_bands import (
 def _publishable_payload() -> dict:
     return {
         "version": "chaosbands-v1",
+        "label_definition": "top3_popularity_composition_proxy_v1",
         "lambda2": 0.8312,
         "lambda3": 0.7101,
+        "lambda_fit_objective": {
+            "lambda2": "conditional_nll_stage2",
+            "lambda3": "conditional_nll_stage3",
+        },
+        "band_axis": "p_s_ge_20",
         "quintile_edges": [0.02, 0.06, 0.11, 0.17],
+        "edges_basis": "closing_history",
+        "s_threshold_basis": "fit_window_p90",
+        "fit_from": "2020-01-01",
+        "fit_to": "2023-12-31",
+        "as_of": "2023-12-31",
         "fit_through": "2023-12-31",
         "valid_from": "2024-01-01",
+        "n_races_fit": 13747,
         "operational_lambda_envelope": {
             "lambda2": {"min": 0.1, "max": 1.0},
             "lambda3": {"min": 0.1, "max": 1.0},
@@ -57,6 +72,14 @@ def _publishable_payload() -> dict:
         },
         "race_set_hash": "race-set",
         "fit_input_hash": "fit-input",
+        "eligibility_predicate": {
+            "complete_odds": True,
+            "unique_popularity": True,
+            "minimum_field_size": 4,
+        },
+        "field_size_reference_quantiles": {
+            "18": [0.05, 0.10, 0.15, 0.20],
+        },
         "code_sha": "abc123",
         "calibration_status": "provisional",
     }
@@ -120,6 +143,158 @@ def test_publish_rejects_a_stale_supplied_digest(tmp_path) -> None:
         publish_artifact(payload, out_dir=tmp_path)
 
     assert list(tmp_path.iterdir()) == []
+
+
+def test_add_horizon_is_create_only_and_changes_exactly_two_keys(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    legacy = _publishable_payload()
+    legacy["artifact_digest"] = compute_artifact_digest(legacy)
+    legacy_before = deepcopy(legacy)
+    source_path = tmp_path / f"{legacy['artifact_digest']}.json"
+    source_bytes = json.dumps(legacy, sort_keys=True).encode()
+    source_path.write_bytes(source_bytes)
+    manifest_path = tmp_path / "approved.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "approved": [
+                    {
+                        "digest": legacy["artifact_digest"],
+                        "status": "superseded",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CHAOS_BANDS_APPROVED_MANIFEST", str(manifest_path))
+    result = add_horizon_artifact(
+        source_path=source_path,
+        expected_digest=legacy["artifact_digest"],
+        minimum_seconds_to_post=600,
+        maximum_seconds_to_post=86400,
+        basis="schedule_jitter_floor_and_next_day_market_ceiling",
+        out_dir=tmp_path,
+    )
+
+    assert source_path.read_bytes() == source_bytes
+    assert legacy == legacy_before
+    assert result.path != source_path
+    assert result.path.name == f"{result.artifact_digest}.json"
+    assert result.payload["version"] == "chaosbands-v1"
+    assert result.payload["preregistration"]["primary_horizon"] == {
+        "minimum_seconds_to_post": 600,
+        "maximum_seconds_to_post": 86400,
+        "basis": "schedule_jitter_floor_and_next_day_market_ceiling",
+        "measured_coverage_of_pre_race_predict_clicks": 0.956,
+    }
+    assert result.artifact_digest == compute_artifact_digest(result.payload)
+    assert result.artifact_digest != legacy["artifact_digest"]
+    assert [
+        entry.path for entry in result.key_diff if entry.status != "unchanged"
+    ] == [
+        "artifact_digest",
+        "preregistration.primary_horizon",
+    ]
+
+    unchanged_new = deepcopy(result.payload)
+    unchanged_new["preregistration"].pop("primary_horizon")
+    unchanged_new["artifact_digest"] = legacy["artifact_digest"]
+    assert unchanged_new == legacy
+    assert json.loads(result.path.read_bytes()) == result.payload
+    loaded = load_chaos_artifact(
+        result.path,
+        approved_digests={result.artifact_digest},
+        target_date=datetime.date(2026, 1, 1),
+    )
+    assert loaded.artifact_digest == result.artifact_digest
+    assert loaded.version == "chaosbands-v1"
+
+    with pytest.raises(ArtifactAlreadyExistsError):
+        add_horizon_artifact(
+            source_path=source_path,
+            expected_digest=legacy["artifact_digest"],
+            minimum_seconds_to_post=600,
+            maximum_seconds_to_post=86400,
+            basis="schedule_jitter_floor_and_next_day_market_ceiling",
+            out_dir=tmp_path,
+        )
+
+
+def test_add_horizon_omits_unmeasured_coverage_for_other_windows(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    legacy = _publishable_payload()
+    legacy["artifact_digest"] = compute_artifact_digest(legacy)
+
+    def _upgrade(
+        _path,
+        *,
+        expected_digest,
+        minimum_seconds_to_post,
+        maximum_seconds_to_post,
+    ):
+        assert expected_digest == legacy["artifact_digest"]
+        upgraded = deepcopy(legacy)
+        upgraded["preregistration"]["primary_horizon"] = {
+            "minimum_seconds_to_post": minimum_seconds_to_post,
+            "maximum_seconds_to_post": maximum_seconds_to_post,
+        }
+        digest = compute_artifact_digest(upgraded)
+        upgraded["artifact_digest"] = digest
+        return upgraded, digest
+
+    monkeypatch.setattr(chaos_bands, "upgrade_legacy_artifact_horizon", _upgrade)
+    result = add_horizon_artifact(
+        source_path=tmp_path / "source.json",
+        expected_digest=legacy["artifact_digest"],
+        minimum_seconds_to_post=1800,
+        maximum_seconds_to_post=20000,
+        basis="alternate_window",
+        out_dir=tmp_path,
+    )
+
+    assert result.payload["preregistration"]["primary_horizon"] == {
+        "minimum_seconds_to_post": 1800,
+        "maximum_seconds_to_post": 20000,
+        "basis": "alternate_window",
+    }
+
+
+@pytest.mark.parametrize(
+    ("minimum", "maximum", "coverage"),
+    [
+        (1800, 20000, 0.956),
+        (600, 86400, 0.955),
+        (600, 86400, float("nan")),
+    ],
+)
+def test_add_horizon_rejects_false_measured_coverage_claims(
+    monkeypatch,
+    tmp_path,
+    minimum,
+    maximum,
+    coverage,
+) -> None:
+    monkeypatch.setattr(
+        chaos_bands,
+        "upgrade_legacy_artifact_horizon",
+        lambda *_args, **_kwargs: pytest.fail("invalid metadata must fail before reading"),
+    )
+
+    with pytest.raises(chaos_bands.ChaosArtifactError):
+        add_horizon_artifact(
+            source_path=tmp_path / "source.json",
+            expected_digest="a" * 64,
+            minimum_seconds_to_post=minimum,
+            maximum_seconds_to_post=maximum,
+            basis="test",
+            measured_coverage=coverage,
+            out_dir=tmp_path,
+        )
 
 
 @pytest.mark.parametrize("valid_from", ["2023-12-31", "2023-12-30"])
@@ -203,6 +378,11 @@ def test_fit_artifact_uses_p_s_ge_20_for_edges(monkeypatch, tmp_path) -> None:
         out_dir=tmp_path,
         code_sha="test-sha",
         min_races=5,
+        primary_horizon={
+            "minimum_seconds_to_post": 600,
+            "maximum_seconds_to_post": 86400,
+            "basis": "test",
+        },
     )
     payload = published.payload
     discount = StageDiscount(lambda2=payload["lambda2"], lambda3=payload["lambda3"])
@@ -273,15 +453,131 @@ def test_cli_registers_chaos_bands_fit_group(monkeypatch, tmp_path) -> None:
             "2024-01-01",
             "--out-dir",
             str(tmp_path),
+            "--primary-horizon-min-seconds-to-post",
+            "600",
+            "--primary-horizon-max-seconds-to-post",
+            "86400",
+            "--primary-horizon-basis",
+            "test",
         ]
     )
 
     assert result == 0
     assert captured["chaos_bands_command"] == "fit"
+    # The window is mandatory at fit time (FR-005/FR-006): an artifact fitted without one is
+    # rejected by the loader, so it would be unreadable from birth.
+    assert captured["primary_horizon_min_seconds_to_post"] == 600
+    assert captured["primary_horizon_max_seconds_to_post"] == 86400
     assert captured["fit_from"] == datetime.date(2020, 1, 1)
     assert captured["fit_to"] == datetime.date(2023, 12, 31)
     assert captured["valid_from"] == datetime.date(2024, 1, 1)
     assert captured["out_dir"] == str(tmp_path)
+
+
+def test_cli_registers_add_horizon_without_opening_a_database(monkeypatch) -> None:
+    captured = {}
+
+    def _fake_add_horizon(args):
+        captured.update(vars(args))
+        return 0
+
+    monkeypatch.setattr(training_cli, "_chaos_bands_add_horizon", _fake_add_horizon)
+    monkeypatch.setattr(
+        training_cli,
+        "create_db_engine",
+        lambda _url: pytest.fail("add-horizon must not open a database"),
+    )
+    result = training_cli.main(
+        [
+            "chaos-bands",
+            "add-horizon",
+            "--artifact",
+            "a" * 64,
+            "--primary-horizon-min-seconds-to-post",
+            "600",
+            "--primary-horizon-max-seconds-to-post",
+            "86400",
+            "--primary-horizon-basis",
+            "schedule_jitter_floor_and_next_day_market_ceiling",
+            "--primary-horizon-measured-coverage",
+            "0.956",
+        ]
+    )
+
+    assert result == 0
+    assert captured == {
+        "command": "chaos-bands",
+        "chaos_bands_command": "add-horizon",
+        "artifact": "a" * 64,
+        "primary_horizon_min_seconds_to_post": 600,
+        "primary_horizon_max_seconds_to_post": 86400,
+        "primary_horizon_basis": (
+            "schedule_jitter_floor_and_next_day_market_ceiling"
+        ),
+        "primary_horizon_measured_coverage": 0.956,
+    }
+
+
+def test_add_horizon_cli_prints_full_two_point_diff(
+    monkeypatch,
+    capsys,
+    tmp_path,
+) -> None:
+    result = HorizonUpgradeResult(
+        payload={"artifact_digest": "b" * 64},
+        source_path=tmp_path / f"{'a' * 64}.json",
+        path=tmp_path / f"{'b' * 64}.json",
+        key_diff=(
+            ArtifactKeyDiff(
+                path="artifact_digest",
+                status="changed",
+                before="a" * 64,
+                after="b" * 64,
+            ),
+            ArtifactKeyDiff(
+                path="lambda2",
+                status="unchanged",
+                before=0.8312,
+                after=0.8312,
+            ),
+            ArtifactKeyDiff(
+                path="preregistration.primary_horizon",
+                status="added",
+                after={
+                    "minimum_seconds_to_post": 600,
+                    "maximum_seconds_to_post": 86400,
+                    "basis": "test",
+                    "measured_coverage_of_pre_race_predict_clicks": 0.956,
+                },
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        chaos_bands,
+        "add_horizon_artifact",
+        lambda **_kwargs: result,
+    )
+    args = SimpleNamespace(
+        artifact="a" * 64,
+        primary_horizon_min_seconds_to_post=600,
+        primary_horizon_max_seconds_to_post=86400,
+        primary_horizon_basis="test",
+        primary_horizon_measured_coverage=None,
+    )
+
+    assert training_cli._chaos_bands_add_horizon(args) == 0
+    output = capsys.readouterr().out
+    assert "chaos-bands add-horizon: CREATE-ONLY" in output
+    assert "CHANGED   artifact_digest" in output
+    assert "UNCHANGED lambda2 = 0.8312" in output
+    assert "ADDED     preregistration.primary_horizon" in output
+    assert "differences=2" in output
+    assert (
+        "only_differences="
+        "artifact_digest,preregistration.primary_horizon"
+    ) in output
+    assert "source_modified=false" in output
+    assert "approval_manifest_modified=false" in output
 
 
 def test_cli_prints_exclusions_and_manifest_instruction(monkeypatch, capsys, tmp_path) -> None:
@@ -307,6 +603,9 @@ def test_cli_prints_exclusions_and_manifest_instruction(monkeypatch, capsys, tmp
         fit_to=datetime.date(2023, 12, 31),
         valid_from=datetime.date(2024, 1, 1),
         out_dir=str(tmp_path),
+        primary_horizon_min_seconds_to_post=600,
+        primary_horizon_max_seconds_to_post=86400,
+        primary_horizon_basis="test",
     )
 
     assert training_cli._chaos_bands_fit(object(), args) == 0
@@ -346,6 +645,11 @@ def test_preregistration_includes_calibration_tolerance_and_multiplicity_policy(
         out_dir=tmp_path,
         code_sha="test-sha",
         min_races=5,
+        primary_horizon={
+            "minimum_seconds_to_post": 600,
+            "maximum_seconds_to_post": 86400,
+            "basis": "test",
+        },
     )
     prereg = published.payload["preregistration"]
 

@@ -61,6 +61,9 @@ tr[data-hole="true"] { background: #fff4e5; }  /* coverage hole — needs backfi
 .badge--job-failed { background: #fdecea; color: #b3261e; }
 .badge--job-running, .badge--job-queued { background: #e8f0fe; color: #1a56db; }
 .badge--job-partial, .badge--job-skipped { background: #eee; color: var(--muted); }
+.badge--capture-neutral { background: #e8f0fe; color: #1a56db; }
+.badge--capture-muted { background: #eee; color: var(--muted); }
+.badge--capture-attention { background: #fff4e5; color: #9a4d00; }
 .job-error { font-size: 0.75rem; color: #b3261e; max-width: 28rem; overflow-wrap: anywhere; }
 
 /* Feature 053: range refresh action */

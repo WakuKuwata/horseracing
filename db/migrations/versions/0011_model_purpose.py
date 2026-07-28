@@ -4,9 +4,9 @@ Revision ID: 0011_model_purpose
 Revises: 0010_raw_column_features
 Create Date: 2026-07-06
 
-Feature 057 (model switching) lets multiple purpose-labelled models coexist and be selected on the
-race-detail prediction view. To tell models apart by intent (not just the technical ``model_version``
-ID), add two nullable, human-readable columns:
+Feature 057 (model switching) lets multiple purpose-labelled models coexist and be selected on
+the race-detail prediction view. To tell models apart by intent (not just the technical
+``model_version`` ID), add two nullable, human-readable columns:
 
 - ``display_name`` — a short human name (e.g. "意思決定支援モデル"). Distinct from ``label_schema``
   (which is the label *scheme* 'win_top2_top3'), hence the name choice to avoid collision.

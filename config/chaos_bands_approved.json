@@ -2,7 +2,7 @@
   "_note": "Feature 084 (ART-2): approved chaos-band artifact digests. This file IS committed; the {digest}.json payloads are not (artifacts/ is gitignored by /artifacts, a guard kept after a past incident). The loader accepts an artifact only if its recomputed digest appears here with status=active.",
   "approved": [
     {
-      "digest": "e782c255adde487e200c5814a61962ffc8c87709811b4b9511c223f1c33b8d8f",
+      "digest": "20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680",
       "version": "chaosbands-v1",
       "status": "active",
       "band_axis": "p_s_ge_20",
@@ -14,8 +14,25 @@
       "lambda2": 0.8303689257547258,
       "lambda3": 0.7111058148742723,
       "calibration_status": "provisional",
+      "approved_at": "2026-07-28",
+      "approved_note": "086: 主 horizon [600s, 86400s] を事前登録。λ2/λ3・五分位境界・fit ハッシュは e782c255… と完全同一(差分は primary_horizon の追加と digest 再計算のちょうど 2 点)。荒れ度の値もバンドも不変。"
+    },
+    {
+      "digest": "e782c255adde487e200c5814a61962ffc8c87709811b4b9511c223f1c33b8d8f",
+      "version": "chaosbands-v1",
+      "status": "superseded",
+      "band_axis": "p_s_ge_20",
+      "fit_from": "2020-01-01",
+      "fit_to": "2023-12-31",
+      "fit_through": "2023-12-31",
+      "valid_from": "2024-01-01",
+      "n_races_fit": 13788,
+      "lambda2": 0.8303689257547258,
+      "lambda3": 0.7111058148742723,
+      "calibration_status": "provisional",
       "approved_at": "2026-07-27",
-      "approved_note": "事前登録に calibration_tolerance(±0.02・表示粒度とバンド幅から決定)と multiplicity_policy(単一主要評価項目・補正不要)を追加。λ と五分位境界は f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782 と完全に同一で、差分は事前登録ブロックのみ。前向き検証(US5)を通るまで provisional。昇格は新 version の発行でのみ行う(ART-6)。"
+      "approved_note": "事前登録に calibration_tolerance(±0.02・表示粒度とバンド幅から決定)と multiplicity_policy(単一主要評価項目・補正不要)を追加。λ と五分位境界は f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782 と完全に同一で、差分は事前登録ブロックのみ。前向き検証(US5)を通るまで provisional。昇格は新 version の発行でのみ行う(ART-6)。",
+      "superseded_by": "20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680"
     },
     {
       "digest": "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782",

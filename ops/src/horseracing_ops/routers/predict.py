@@ -37,7 +37,7 @@ def predict_race(race_id: str, session: Session = Depends(get_session)):
         return _err(422, "invalid_race_id", "race_id must be 12 digits")
     if not race_exists(session, race_id):
         return _err(404, "race_not_found", f"race {race_id} not found")
-    job, reused = enqueue_predict(session, race_id)
+    job, reused = enqueue_predict(session, race_id, origin="manual_ui")
     return JobAccepted(
         job_id=job.ingestion_job_id, status=job.status, reused=reused,
         scope_value=job.scope_value, poll_url=f"{API_PREFIX}/jobs/{job.ingestion_job_id}",

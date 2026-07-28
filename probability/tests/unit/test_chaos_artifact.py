@@ -63,6 +63,10 @@ def _payload() -> dict:
             "events": ["s_ge_20", "himo_are", "total_collapse", "s_ge_30"],
             "min_positives": 100,
             "min_race_days": 60,
+            "primary_horizon": {
+                "minimum_seconds_to_post": 600,
+                "maximum_seconds_to_post": 86_400,
+            },
         },
         "numeric_stability_report": {
             "status": "green",

@@ -169,10 +169,57 @@ describe("RaceChaosPanel", () => {
     );
 
     expect(screen.getByTestId("chaos-freshness")).toHaveTextContent(
-      "発走30分前・13:00 取得",
+      "発走30分前・2026/07/26 13:00 取得",
     );
     expect(screen.getByTestId("chaos-capture-strength")).toHaveTextContent(
       "確認用の捕捉ではありません",
+    );
+  });
+
+  it("shows hours for a 24-hour horizon and includes the capture date", () => {
+    render(
+      <RaceChaosPanel
+        chaos={{
+          ...AVAILABLE,
+          snapshot: {
+            ...AVAILABLE.snapshot,
+            seconds_to_post: 86_400,
+            captured_at: "2026-07-25T00:00:00Z",
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("chaos-freshness")).toHaveTextContent(
+      "発走24時間前・2026/07/25 09:00 取得",
+    );
+  });
+
+  it("explains a post-capture field change and the four-horse minimum correctly", () => {
+    const { rerender } = render(
+      <RaceChaosPanel
+        chaos={{
+          status: "unavailable",
+          band_axis: "p_s_ge_20",
+          unavailable_reason: "field_changed_after_capture",
+        }}
+      />,
+    );
+    expect(screen.getByTestId("chaos-unavailable")).toHaveTextContent(
+      "捕捉後に出走構成が変わったため表示できません。",
+    );
+
+    rerender(
+      <RaceChaosPanel
+        chaos={{
+          status: "unavailable",
+          band_axis: "p_s_ge_20",
+          unavailable_reason: "field_too_small",
+        }}
+      />,
+    );
+    expect(screen.getByTestId("chaos-unavailable")).toHaveTextContent(
+      "出走頭数が4頭未満のため表示できません。",
     );
   });
 

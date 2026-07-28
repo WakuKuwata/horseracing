@@ -750,6 +750,45 @@ def main(argv: list[str] | None = None) -> int:
     cb_fit.add_argument("--valid-from", dest="valid_from", type=_parse_date, required=True)
     cb_fit.add_argument("--out-dir", default="artifacts/chaos_bands")
     cb_fit.add_argument("--database-url", default=None)
+    # The window is REQUIRED at fit time: the loader rejects an artifact without one, so a fit
+    # that omitted it would produce an artifact that is unreadable from birth. The long names
+    # keep it distinct from capture's operational floor `--min-seconds-to-post` (FR-004a).
+    cb_fit.add_argument(
+        "--primary-horizon-min-seconds-to-post", type=int, required=True
+    )
+    cb_fit.add_argument(
+        "--primary-horizon-max-seconds-to-post", type=int, required=True
+    )
+    cb_fit.add_argument("--primary-horizon-basis", required=True)
+    cb_add_horizon = cb_sub.add_parser(
+        "add-horizon",
+        help="create a new approved-legacy artifact with a preregistered horizon",
+    )
+    cb_add_horizon.add_argument(
+        "--artifact",
+        required=True,
+        help="approved legacy artifact digest",
+    )
+    cb_add_horizon.add_argument(
+        "--primary-horizon-min-seconds-to-post",
+        type=int,
+        required=True,
+    )
+    cb_add_horizon.add_argument(
+        "--primary-horizon-max-seconds-to-post",
+        type=int,
+        required=True,
+    )
+    cb_add_horizon.add_argument(
+        "--primary-horizon-basis",
+        required=True,
+    )
+    cb_add_horizon.add_argument(
+        "--primary-horizon-measured-coverage",
+        type=float,
+        default=None,
+        help="optional audit assertion; only 0.956 for [600, 86400] is established",
+    )
     cb_diagnose = cb_sub.add_parser(
         "diagnose",
         help="SECONDARY OOS report; never an adoption gate and never re-cuts edges",
@@ -1002,6 +1041,8 @@ def main(argv: list[str] | None = None) -> int:
         with Session(engine) as session:
             return _dispersion_pcal(session, args)
     if args.command == "chaos-bands":
+        if args.chaos_bands_command == "add-horizon":
+            return _chaos_bands_add_horizon(args)
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             if args.chaos_bands_command == "fit":
@@ -1560,6 +1601,11 @@ def _chaos_bands_fit(session: Session, args) -> int:
             valid_from=args.valid_from,
             out_dir=args.out_dir,
             code_sha=_git_sha(),
+            primary_horizon={
+                "minimum_seconds_to_post": args.primary_horizon_min_seconds_to_post,
+                "maximum_seconds_to_post": args.primary_horizon_max_seconds_to_post,
+                "basis": args.primary_horizon_basis,
+            },
         )
     except ChaosArtifactError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -1587,11 +1633,96 @@ def _chaos_bands_fit(session: Session, args) -> int:
     return 0
 
 
-def _load_chaos_diagnostic_artifact(artifact_ref: str, target_date: datetime.date):
+def _chaos_bands_add_horizon(args) -> int:
+    """Feature 086: create-only bootstrap of one approved legacy artifact."""
+
     import json
     from pathlib import Path
 
-    from horseracing_probability.chaos_artifact import load_chaos_artifact
+    from horseracing_probability.chaos_artifact import (
+        ChaosArtifactError as LoadArtifactError,
+    )
+
+    from .chaos_bands import ChaosArtifactError, add_horizon_artifact
+
+    repository_root = Path(__file__).resolve().parents[3]
+    artifacts_dir = repository_root / "artifacts" / "chaos_bands"
+    source_path = artifacts_dir / f"{args.artifact}.json"
+    try:
+        result = add_horizon_artifact(
+            source_path=source_path,
+            expected_digest=args.artifact,
+            minimum_seconds_to_post=args.primary_horizon_min_seconds_to_post,
+            maximum_seconds_to_post=args.primary_horizon_max_seconds_to_post,
+            basis=args.primary_horizon_basis,
+            measured_coverage=args.primary_horizon_measured_coverage,
+            out_dir=artifacts_dir,
+        )
+    except (ChaosArtifactError, LoadArtifactError, OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    print("chaos-bands add-horizon: CREATE-ONLY")
+    print(f"  source={result.source_path}")
+    print(f"  published={result.path}")
+    print("  full key-level diff:")
+    for entry in result.key_diff:
+        if entry.status == "added":
+            rendered = json.dumps(
+                entry.after,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            print(f"    ADDED     {entry.path} = {rendered}")
+        elif entry.status == "removed":
+            rendered = json.dumps(
+                entry.before,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            print(f"    REMOVED   {entry.path} = {rendered}")
+        elif entry.status == "changed":
+            before = json.dumps(
+                entry.before,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            after = json.dumps(
+                entry.after,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            print(f"    CHANGED   {entry.path}: {before} -> {after}")
+        else:
+            rendered = json.dumps(
+                entry.after,
+                sort_keys=True,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            print(f"    UNCHANGED {entry.path} = {rendered}")
+    print("  differences=2")
+    print(
+        "  only_differences="
+        "artifact_digest,preregistration.primary_horizon"
+    )
+    print(f"  artifact_digest={result.artifact_digest}")
+    print("  source_modified=false")
+    print("  approval_manifest_modified=false")
+    return 0
+
+
+def _load_chaos_diagnostic_artifact(artifact_ref: str, target_date: datetime.date):
+    from pathlib import Path
+
+    from horseracing_probability.chaos_artifact import (
+        approved_digests_from_manifest,
+        load_chaos_artifact,
+    )
 
     reference_path = Path(artifact_ref)
     repository_root = Path(__file__).resolve().parents[3]
@@ -1604,11 +1735,10 @@ def _load_chaos_diagnostic_artifact(artifact_ref: str, target_date: datetime.dat
             repository_root / "artifacts" / "chaos_bands" / f"{artifact_ref}.json"
         )
     manifest_path = repository_root / "config" / "chaos_bands_approved.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    approved = {
-        str(item["digest"]) if isinstance(item, dict) else str(item)
-        for item in manifest.get("approved", [])
-    }
+    # Use the shared reader rather than a fourth inline parser: with three separate parsers one
+    # of them eventually fails to learn a rule the others know. This path loads an EXPLICIT
+    # digest, so it needs the status-irrelevant permission set, not the active resolver.
+    approved = approved_digests_from_manifest(manifest_path)
     return load_chaos_artifact(
         artifact_path,
         approved_digests=approved,
@@ -1917,6 +2047,33 @@ def _print_chaos_prospective(report: dict) -> None:
         "  By capture horizon: "
         f"{[row['horizon'] for row in report['by_capture_horizon']]}"
     )
+
+    # FR-011 / FR-012: the trigger breakdown and the selection-bias disclosure are MUST-print.
+    # They live in the payload, but the operator reads THIS output -- omitting them here would
+    # leave the honest-limits statement invisible to the only person who acts on it.
+    print("\n  By capture trigger (all five always shown, including n=0):")
+    for row in report["by_capture_trigger"]:
+        print(
+            f"    {row['trigger']:<18} n={row['n']:<5} "
+            f"confirmation_eligible={row['confirmation_eligible']:<5} "
+            f"selection_biased={row['selection_biased']}"
+        )
+    share = report["user_selected_share"]
+    print(
+        "    user_selected_share="
+        + ("null (no observation outside legacy_unknown)" if share is None else f"{share:.3f}")
+    )
+    bias = report["prospective_selection_bias"]
+    print(
+        f"    policy_primary_source={bias['policy_primary_source']} "
+        f"observed_primary_source={bias['observed_primary_source']} "
+        f"claim_violated={bias['primary_source_claim_violated']}"
+    )
+    print(
+        f"    user_selected_role={bias['user_selected_role']} "
+        f"removable={bias['removable']}"
+    )
+    print(f"    note={bias['note']}")
 
     print("\n  Promotion gate:")
     print(

@@ -20,7 +20,8 @@ from pathlib import Path
 from threading import RLock
 from typing import Any, Literal
 
-from horseracing_db.models import ChaosReadout, ChaosSnapshot
+from horseracing_db.enums import EntryStatus
+from horseracing_db.models import ChaosReadout, ChaosSnapshot, RaceHorse
 from horseracing_eval.stage_discount import StageDiscount
 from horseracing_probability.chaos_artifact import (
     ChaosArtifactApprovalError,
@@ -29,12 +30,14 @@ from horseracing_probability.chaos_artifact import (
     ChaosArtifactUnavailableError,
     ChaosBandsArtifact,
     load_chaos_artifact,
+    resolve_current_digest,
 )
 from horseracing_probability.chaos_distribution import (
     ChaosDistribution,
     ChaosInvariantError,
     chaos_readout,
 )
+from horseracing_probability.chaos_eligibility import display_eligible
 from horseracing_probability.chaos_events import CHAOS_EVENTS_V1
 from horseracing_probability.market_odds import MarketOddsError, market_implied_win_probs
 from sqlalchemy import select
@@ -55,6 +58,7 @@ UnavailableReason = Literal[
     "partial_market_odds",
     "invalid_popularity_ranks",
     "field_too_small",
+    "field_changed_after_capture",
     "artifact_unavailable",
     "out_of_validity_window",
     "invariant_violation",
@@ -117,6 +121,30 @@ def _latest_active_snapshot(session: Session, race_id: str) -> ChaosSnapshot | N
         )
         .limit(1)
     ).first()
+
+
+def _snapshot_for_race(session: Session, race_id: str) -> ChaosSnapshot | None:
+    """Return the one frozen observation regardless of its active/void display status."""
+
+    return session.scalars(
+        select(ChaosSnapshot)
+        .where(ChaosSnapshot.race_id == race_id)
+        .order_by(
+            ChaosSnapshot.captured_at.desc(),
+            ChaosSnapshot.chaos_snapshot_id.desc(),
+        )
+        .limit(1)
+    ).first()
+
+
+def _started_field_for_race(session: Session, race_id: str) -> Sequence[Any]:
+    """Read the current started-entry identities without consulting mutable odds."""
+
+    return session.execute(
+        select(RaceHorse.horse_id, RaceHorse.horse_number)
+        .where(RaceHorse.race_id == race_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    ).all()
 
 
 def _matching_readout(
@@ -194,7 +222,10 @@ def _load_configured_artifact(
         approved_digests=approved,
         target_date=target_date,
     )
-    if artifact.artifact_digest != approved[-1]:
+    # "approved" (listed in the manifest) and "current" (status=active) are DIFFERENT concepts.
+    # 084 compared against approved[-1], and since the manifest lists active first and
+    # superseded last, that read the SUPERSEDED artifact. Resolve on status instead.
+    if artifact.artifact_digest != resolve_current_digest(configured_manifest):
         raise ChaosArtifactApprovalError(
             "configured chaos artifact is approved but is not the manifest's current digest"
         )
@@ -444,9 +475,20 @@ def build_race_chaos(
 ) -> RaceChaosAvailable | RaceChaosUnavailable:
     """Build one tagged response without writing or consulting current race-horse odds."""
 
-    snapshot = _latest_active_snapshot(session, race_id)
+    snapshot = _snapshot_for_race(session, race_id)
     if snapshot is None:
         return _unavailable("no_snapshot")
+    if snapshot.status == "void":
+        if snapshot.void_reason == "field_changed":
+            return _unavailable("field_changed_after_capture")
+        return _unavailable("no_snapshot")
+
+    started_now = _started_field_for_race(session, race_id)
+    try:
+        if not display_eligible(snapshot, started_now):
+            return _unavailable("field_changed_after_capture")
+    except (KeyError, TypeError, ValueError):
+        return _unavailable("field_changed_after_capture")
 
     frozen, invalid_reason = _validate_snapshot_field(snapshot)
     if frozen is None:

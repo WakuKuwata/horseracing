@@ -21,6 +21,12 @@ def _artifact(
     multiplicity_policy: str | None = None,
 ) -> SimpleNamespace:
     preregistration = {
+        "primary_horizon": {
+            "minimum_seconds_to_post": 600,
+            "maximum_seconds_to_post": 86400,
+            "basis": "test_window",
+            "measured_coverage_of_pre_race_predict_clicks": 0.956,
+        },
         "minimum_positives": 100,
         "minimum_race_days": 60,
         "final_decision_date": "2027-12-31",
@@ -54,6 +60,7 @@ def _field() -> tuple[FrozenChaosHorse, ...]:
     return tuple(
         FrozenChaosHorse(
             horse_id=f"h{rank:02d}",
+            horse_number=rank,
             popularity=rank,
             odds=1.5 + rank,
         )
@@ -67,7 +74,10 @@ def _race(
     *,
     capture_strength: str = "confirmatory",
     snapshot_status: str = "active",
+    snapshot_void_reason: str | None = None,
+    capture_trigger: str = "daily_operational",
     seconds_to_post: int | None = 1800,
+    current_started_field: frozenset[tuple[str, int]] | None = None,
     p_s_ge_20: float = 0.25,
     p_himo_are: float = 0.2,
     p_total_collapse: float = 0.05,
@@ -76,15 +86,25 @@ def _race(
     third: tuple[str, ...] = ("h18",),
     readout_suffix: str = "a",
 ) -> ProspectiveChaosRace:
+    field = _field()
     return ProspectiveChaosRace(
         race_id=race_id,
         race_date=race_date,
         readout_id=f"readout-{race_id}-{readout_suffix}",
         snapshot_id=f"snapshot-{race_id}-{readout_suffix}",
         snapshot_status=snapshot_status,
+        snapshot_void_reason=snapshot_void_reason,
         capture_strength=capture_strength,
+        capture_trigger=capture_trigger,
         seconds_to_post=seconds_to_post,
-        frozen_field=_field(),
+        frozen_field=field,
+        current_started_field=(
+            current_started_field
+            if current_started_field is not None
+            else frozenset(
+                (horse.horse_id, horse.horse_number) for horse in field
+            )
+        ),
         field_size=18,
         p_s_ge_20=p_s_ge_20,
         p_himo_are=p_himo_are,
@@ -124,11 +144,13 @@ def test_outcomes_use_frozen_snapshot_ranks_never_current_race_horses(
     _install_rows(monkeypatch, [frozen])
 
     # A live/current popularity mapping would turn the same finishers into S=6,
-    # not the frozen S=36.  The prospective loader is forbidden from even
-    # importing RaceHorse, which makes a live-state implementation fail this test.
+    # not the frozen S=36. The loader may read RaceHorse identity/status for
+    # FR-002b, but it must never read current popularity for outcome labels.
     current_popularity = {"h01": 1, "h17": 2, "h18": 3}
     assert sum(current_popularity[horse_id] for horse_id in ("h01", "h17", "h18")) == 6
-    assert "RaceHorse" not in inspect.getsource(chaos_bands.load_prospective_rows)
+    assert "RaceHorse.popularity" not in inspect.getsource(
+        chaos_bands.load_prospective_rows
+    )
 
     class _NoLiveQueries:
         def execute(self, *_args, **_kwargs):
@@ -181,6 +203,46 @@ def test_confirmation_cohort_filters_strength_validity_and_duplicate_races(
     }
     assert report["analysis_unit"]["one_row_per_race"] is True
     assert report["analysis_unit"]["latest_row_selection_forbidden"] is True
+
+
+def test_primary_horizon_is_strict_and_capture_buckets_follow_both_bounds(
+    monkeypatch,
+) -> None:
+    seconds = (599, 600, 1799, 1800, 3600, 10800, 21600, 43200, 86400, 86401)
+    rows = [
+        _race(
+            f"2024{index:08d}",
+            datetime.date(2024, 1, 1) + datetime.timedelta(days=index),
+            seconds_to_post=value,
+        )
+        for index, value in enumerate(seconds)
+    ]
+    _install_rows(monkeypatch, rows)
+
+    report = prospective_report(
+        object(),
+        artifact=_artifact(),
+        as_of=datetime.date(2024, 12, 31),
+        bootstrap_b=5,
+    )
+
+    assert report["analysis_unit"]["primary_horizon"] == {
+        "mode": "artifact_seconds_to_post_window",
+        "minimum_seconds_to_post": 600,
+        "maximum_seconds_to_post": 86400,
+    }
+    assert report["cohort"]["analyzed_races"] == 8
+    assert report["cohort"]["exclusions"]["outside_primary_horizon"] == 2
+    assert [
+        row["horizon"] for row in report["by_capture_horizon"]
+    ] == [
+        "10-30m",
+        "30-60m",
+        "1-3h",
+        "3-6h",
+        "6-12h",
+        "12h+",
+    ]
 
 
 def test_empty_confirmation_cohort_is_no_decision_with_sample_estimates(

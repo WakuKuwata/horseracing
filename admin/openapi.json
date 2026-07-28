@@ -1283,6 +1283,92 @@
         "title": "ImportanceValue",
         "type": "object"
       },
+      "JobCaptureRow": {
+        "description": "Typed projection of the operational capture record in ``summary.capture``.",
+        "properties": {
+          "capture_strength": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capture Strength"
+          },
+          "chaos_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chaos Snapshot Id"
+          },
+          "confirmation_eligible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Eligible"
+          },
+          "outcome": {
+            "enum": [
+              "captured",
+              "skipped",
+              "rejected",
+              "failed",
+              "unknown"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "seconds_to_post": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds To Post"
+          },
+          "state": {
+            "enum": [
+              "started",
+              "launched",
+              "done"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "outcome"
+        ],
+        "title": "JobCaptureRow",
+        "type": "object"
+      },
       "JobListResponse": {
         "properties": {
           "items": {
@@ -1300,6 +1386,16 @@
       "JobRow": {
         "description": "One ingestion_jobs row (audit trail; read-only transcription).",
         "properties": {
+          "capture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobCaptureRow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "completed_at": {
             "anyOf": [
               {
@@ -1428,6 +1524,18 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
           },
           "trace_id": {
             "anyOf": [
@@ -2353,6 +2461,7 @@
               "partial_market_odds",
               "invalid_popularity_ranks",
               "field_too_small",
+              "field_changed_after_capture",
               "artifact_unavailable",
               "out_of_validity_window",
               "invariant_violation"

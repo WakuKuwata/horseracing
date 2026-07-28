@@ -12,7 +12,7 @@ from pathlib import Path
 from horseracing_training.cli import main as training_main
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_ARTIFACT_DIGEST = "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782"
+_ARTIFACT_DIGEST = "20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680"
 _DEFAULT_ARTIFACT = (
     _REPO_ROOT / "artifacts" / "chaos_bands" / f"{_ARTIFACT_DIGEST}.json"
 )

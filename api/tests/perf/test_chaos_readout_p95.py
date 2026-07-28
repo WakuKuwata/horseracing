@@ -30,7 +30,7 @@ pytestmark = pytest.mark.integration
 
 _REPO = Path(__file__).resolve().parents[3]
 _DB_DIR = _REPO / "db"
-_DIGEST = "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782"
+_DIGEST = "20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680"
 _ARTIFACT = _REPO / "artifacts" / "chaos_bands" / f"{_DIGEST}.json"
 _MANIFEST = _REPO / "config" / "chaos_bands_approved.json"
 _RACE_ID = "202607260901"
@@ -112,6 +112,8 @@ def _seed_full_path_race(session) -> None:
             race_id=_RACE_ID,
             captured_at=captured_at,
             source="netkeiba",
+            capture_trigger="legacy_unknown",
+            capture_policy_version="capture_policy_v0",
             seconds_to_post=1800,
             capture_strength="confirmatory",
             field=[

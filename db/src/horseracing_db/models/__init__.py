@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .chaos import ChaosReadout, ChaosSnapshot
+from .chaos import ChaosReadout, ChaosSnapshot, FetchThrottleState
 from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from .ingestion import IdMapping, IngestionJob
 from .market import ExoticOdds, RaceLaps
@@ -18,6 +18,7 @@ from .prediction import (
 __all__ = [
     "ChaosReadout",
     "ChaosSnapshot",
+    "FetchThrottleState",
     "DiagnosticRun",
     "Race",
     "Horse",

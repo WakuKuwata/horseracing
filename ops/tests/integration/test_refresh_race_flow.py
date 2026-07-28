@@ -17,7 +17,7 @@ RID = "202406050911"
 
 def test_full_refresh_ingests_entries_results_odds(session, fixture_fetcher):
     seed_race(session, race_id=RID)
-    job, reused = enqueue_race(session, RID)
+    job, reused = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
     assert reused is False
 
@@ -40,7 +40,7 @@ def test_results_insert_only_protects_jravan(session, fixture_fetcher):
     seed_race(session, race_id=RID)
     mark_finished(session, race_id=RID)  # seeds a seedH result row
 
-    job, _ = enqueue_race(session, RID)
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
     session.commit()
     drain(session, fetcher=fixture_fetcher)
 

@@ -132,8 +132,15 @@ manifest:
   manifest under `artifacts/`.
 
 The read path is fail-closed. A missing or malformed payload, digest mismatch, unapproved digest,
-unsafe artifact, or race outside the artifact validity window makes `race_chaos` unavailable; the
-API must not silently use default lambdas or band edges.
+unsafe artifact, race outside the artifact validity window, **or an artifact that carries no
+pre-registered `preregistration.primary_horizon`** makes `race_chaos` unavailable; the API must
+not silently use default lambdas, band edges, or an unbounded capture window.
+
+Feature 086 makes the horizon mandatory: an artifact without it is rejected outright rather than
+falling back to `0..infinity`, which would have counted an observation frozen at any time as
+confirmatory. Provision an artifact issued by `chaos-bands add-horizon`, and point
+`CHAOS_BANDS_ARTIFACT_PATH` at the digest whose manifest entry has `status: "active"` — note the
+manifest lists the active entry FIRST, so "the last entry" is the wrong rule.
 
 Capture remains a manual operator step. On a race day, aim for T-30 minutes and retain a safety
 floor with `--min-seconds-to-post` (600 seconds shown here):

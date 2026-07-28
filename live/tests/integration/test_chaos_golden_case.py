@@ -97,6 +97,9 @@ def test_semantic_golden_case_uses_frozen_popularity_after_live_rows_mutate(sess
         race_id=_RACE_ID,
         fetcher=StubFetcher(),
         artifact=artifact,
+        capture_trigger="explicit_command",
+        capture_policy_version="capture_policy_v1",
+        deadline=float("inf"),
         clock=lambda: _CAPTURED_AT,
     )
     assert capture.captured

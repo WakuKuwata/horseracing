@@ -111,18 +111,21 @@ def test_fresh_fetch_is_no_cache_and_source_comes_from_adapter():
     assert capture.seconds_to_post == 1800
 
 
-def test_post_time_unknown_is_expected_weak_capture():
-    capture = acquire_fresh_capture(
-        object(),
-        race_id=_RACE_ID,
-        entries=_entries(),
-        post_time=None,
-        fetcher=StubFetcher(_payload()),
-        clock=lambda: _CAPTURED_AT,
-        pending_check=_pending_sequence(True, True),
-    )
-    assert capture.capture_strength == "weak"
-    assert capture.seconds_to_post is None
+def test_post_time_unknown_is_skipped_without_fetch():
+    fetcher = StubFetcher(_payload())
+    with pytest.raises(ChaosCaptureRejected) as caught:
+        acquire_fresh_capture(
+            object(),
+            race_id=_RACE_ID,
+            entries=_entries(),
+            post_time=None,
+            fetcher=fetcher,
+            clock=lambda: _CAPTURED_AT,
+            pending_check=_pending_sequence(True),
+        )
+    assert caught.value.status == "skipped"
+    assert caught.value.reason == "post_time_unknown"
+    assert fetcher.calls == []
 
 
 def test_settled_before_fetch_never_calls_fetcher():
@@ -153,8 +156,29 @@ def test_settled_during_fetch_is_caught_by_the_second_pending_check():
             clock=lambda: _CAPTURED_AT,
             pending_check=_pending_sequence(True, False),
         )
-    assert caught.value.reason == "result_settled"
+    assert caught.value.status == "skipped"
+    assert caught.value.reason == "result_settled_during_fetch"
     assert fetcher.calls[0][1] is False
+
+
+def test_capture_deadline_is_checked_after_fetch_before_parsing():
+    fetcher = StubFetcher("not-json")
+    with pytest.raises(ChaosCaptureRejected) as caught:
+        acquire_fresh_capture(
+            object(),
+            race_id=_RACE_ID,
+            entries=_entries(),
+            post_time=_POST_TIME,
+            fetcher=fetcher,
+            clock=lambda: _CAPTURED_AT,
+            pending_check=_pending_sequence(True),
+            deadline=10.0,
+            monotonic_clock=lambda: 10.0,
+        )
+
+    assert caught.value.status == "skipped"
+    assert caught.value.reason == "deadline_exceeded"
+    assert len(fetcher.calls) == 1
 
 
 @pytest.mark.parametrize(
@@ -166,18 +190,20 @@ def test_settled_during_fetch_is_caught_by_the_second_pending_check():
     ],
 )
 def test_post_time_gates(post_time, minimum, reason):
+    fetcher = StubFetcher(_payload())
     with pytest.raises(ChaosCaptureRejected) as caught:
         acquire_fresh_capture(
             object(),
             race_id=_RACE_ID,
             entries=_entries(),
             post_time=post_time,
-            fetcher=StubFetcher(_payload()),
+            fetcher=fetcher,
             clock=lambda: _CAPTURED_AT,
-            pending_check=_pending_sequence(True, True),
+            pending_check=_pending_sequence(True),
             min_seconds_to_post=minimum,
         )
     assert caught.value.reason == reason
+    assert fetcher.calls == []
 
 
 def test_fetcher_without_source_is_rejected_not_caller_overridden():
@@ -211,6 +237,12 @@ def test_every_eligibility_rejection_reason(entries, payload, reason):
     with pytest.raises(ChaosCaptureRejected) as caught:
         build_frozen_field(entries, scraped)
     assert caught.value.reason == reason
+    # Feature 086 intentionally reclassifies routine small fields from the
+    # Feature 084 rejected bucket into a normal eligibility skip (SC-010 exception).
+    expected_status = (
+        "skipped" if reason in {"no_started_horses", "field_too_small"} else "rejected"
+    )
+    assert caught.value.status == expected_status
 
 
 def test_popularity_gaps_are_allowed_and_never_reranked():
@@ -247,19 +279,22 @@ def test_capture_cli_isolates_one_bad_race(monkeypatch, capsys):
         )
 
     monkeypatch.setattr(cli, "list_pending", lambda _session, *, date: list(race_ids))
-    monkeypatch.setattr(cli, "load_current_chaos_artifact", lambda _date: object())
     monkeypatch.setattr(cli, "capture_chaos", capture)
-    monkeypatch.setattr("horseracing_scrape.cli._make_fetcher", lambda *_args: object())
+    monkeypatch.setattr(
+        "horseracing_live.chaos_politeness.make_capture_fetcher",
+        lambda **_kwargs: object(),
+    )
     session = StubSession()
     args = SimpleNamespace(
         race_id=None,
         date=_CAPTURED_AT.date(),
         min_seconds_to_post=0,
+        allow_outside_horizon=True,
     )
 
     assert cli._cmd_capture_chaos(session, args) == 0
     output = capsys.readouterr().out
     assert "captured=1" in output
-    assert "rejected=1" in output
+    assert "failed=1" in output
     assert "error:RuntimeError=1" in output
     assert session.commits == 1

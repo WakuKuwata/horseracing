@@ -9,8 +9,17 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
-from horseracing_db.models import ChaosReadout, ChaosSnapshot, Race
+from horseracing_db.enums import EntryStatus
+from horseracing_db.models import (
+    ChaosReadout,
+    ChaosSnapshot,
+    Horse,
+    Race,
+    RaceHorse,
+)
+from horseracing_probability.chaos_artifact import ChaosArtifactPrimaryHorizonError
 from horseracing_probability.chaos_distribution import ChaosInvariantError
+from sqlalchemy import select
 
 from horseracing_api import chaos
 from tests._synth import seed_model, seed_race
@@ -18,8 +27,12 @@ from tests._synth import seed_model, seed_race
 pytestmark = pytest.mark.integration
 
 _REPO = Path(__file__).resolve().parents[3]
-_DIGEST = "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782"
+_DIGEST = "20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680"
 _ARTIFACT = _REPO / "artifacts" / "chaos_bands" / f"{_DIGEST}.json"
+_WINDOWLESS_DIGEST = "f190e65cb9bb2d59d27982c8721f8f8e65e6c31e5b53d65d367b7ca569b72782"
+_WINDOWLESS_ARTIFACT = (
+    _REPO / "artifacts" / "chaos_bands" / f"{_WINDOWLESS_DIGEST}.json"
+)
 _MANIFEST = _REPO / "config" / "chaos_bands_approved.json"
 _RACE = "202607260101"
 
@@ -68,6 +81,7 @@ def _seed_snapshot(
     race_id: str = _RACE,
     field: list[dict] | None = None,
     status: str = "active",
+    void_reason: str | None = None,
     captured_at: datetime.datetime | None = None,
     content_digest: str = "c" * 64,
 ) -> ChaosSnapshot:
@@ -78,16 +92,35 @@ def _seed_snapshot(
         captured_at=captured_at
         or datetime.datetime(2026, 7, 26, 4, 0, tzinfo=datetime.UTC),
         source="netkeiba",
+        capture_trigger="legacy_unknown",
+        capture_policy_version="capture_policy_v0",
         seconds_to_post=1800,
         capture_strength="confirmatory",
         field=frozen,
         n=len(frozen),
         content_digest=content_digest,
         status=status,
-        void_reason=("recaptured" if status == "void" else None),
+        void_reason=(void_reason or "recaptured") if status == "void" else None,
         created_at=datetime.datetime(2026, 7, 26, 4, 0, tzinfo=datetime.UTC),
     )
     session.add(snapshot)
+    current_field_exists = session.scalars(
+        select(RaceHorse).where(RaceHorse.race_id == race_id).limit(1)
+    ).first()
+    if current_field_exists is None:
+        for row in frozen:
+            horse_id = str(row["horse_id"])
+            session.merge(Horse(horse_id=horse_id, horse_name=horse_id))
+        session.flush()
+        for row in frozen:
+            session.add(
+                RaceHorse(
+                    race_id=race_id,
+                    horse_id=str(row["horse_id"]),
+                    horse_number=int(row["horse_number"]),
+                    entry_status=EntryStatus.STARTED,
+                )
+            )
     session.commit()
     return snapshot
 
@@ -131,14 +164,11 @@ def test_no_prediction_run_still_returns_available_chaos_from_latest_active(
         captured_at=datetime.datetime(2026, 7, 26, 4, 0, tzinfo=datetime.UTC),
     )
     _seed_readout(session, active, p_s_ge_20="0.123")
-    # A newer void row must never replace the active display default (SNAP-6).
-    void = _seed_snapshot(
-        session,
-        status="void",
-        captured_at=datetime.datetime(2026, 7, 26, 4, 5, tzinfo=datetime.UTC),
-        content_digest="v" * 64,
-    )
-    _seed_readout(session, void, p_s_ge_20="0.999")
+    # SNAP-6 originally seeded a SECOND, newer void row to prove it could not displace the
+    # active one. Feature 086 makes that scenario structurally impossible: migration 0013 adds
+    # an unconditional UNIQUE(race_id), so a race has exactly one odds-bearing row for life.
+    # The surviving half of the intent -- a voided row must never be displayed -- moves to the
+    # read-time eligibility predicate (FR-002b), asserted by T047a in phase 5.
 
     response = client.get(f"/api/v1/races/{_RACE}/predictions")
 
@@ -162,6 +192,60 @@ def test_no_prediction_run_still_returns_available_chaos_from_latest_active(
     assert events["total_collapse"]["adjusted_mass"] == 0.034
     assert all(event["adjusted_mass"] is not None for event in readout["events"])
     assert all(event["raw_mass"] is not None for event in readout["events"])
+
+
+def test_field_change_suppresses_active_and_field_changed_void_snapshot(
+    client,
+    session,
+) -> None:
+    _seed_race_without_run(session)
+    snapshot = _seed_snapshot(session)
+    _seed_readout(session, snapshot)
+    scratched = session.get(RaceHorse, (_RACE, "F10"))
+    assert scratched is not None
+    scratched.entry_status = EntryStatus.CANCELLED
+    session.commit()
+
+    response = client.get(f"/api/v1/races/{_RACE}/predictions")
+
+    assert response.status_code == 200
+    assert response.json()["race_chaos"] == {
+        "status": "unavailable",
+        "unavailable_reason": "field_changed_after_capture",
+        "band_axis": "p_s_ge_20",
+    }
+    session.refresh(snapshot)
+    assert snapshot.status == "active"
+
+    snapshot.status = "void"
+    snapshot.void_reason = "field_changed"
+    session.commit()
+
+    response = client.get(f"/api/v1/races/{_RACE}/predictions")
+
+    assert response.status_code == 200
+    assert response.json()["race_chaos"]["unavailable_reason"] == (
+        "field_changed_after_capture"
+    )
+
+
+@pytest.mark.parametrize("void_reason", ["recaptured", "late_scratch"])
+def test_legacy_void_snapshot_remains_no_snapshot(
+    client,
+    session,
+    void_reason: str,
+) -> None:
+    _seed_race_without_run(session)
+    _seed_snapshot(session, status="void", void_reason=void_reason)
+
+    response = client.get(f"/api/v1/races/{_RACE}/predictions")
+
+    assert response.status_code == 200
+    assert response.json()["race_chaos"] == {
+        "status": "unavailable",
+        "unavailable_reason": "no_snapshot",
+        "band_axis": "p_s_ge_20",
+    }
 
 
 @pytest.mark.parametrize(
@@ -223,6 +307,48 @@ def test_unavailable_reasons_remain_http_200(
     }
 
 
+def test_windowless_artifact_is_http_200_unavailable_without_default_lambdas(
+    client,
+    session,
+    monkeypatch,
+) -> None:
+    _seed_race_without_run(session)
+    _seed_snapshot(session, content_digest="windowless".ljust(64, "0"))
+    monkeypatch.setenv(chaos.CHAOS_ARTIFACT_PATH_ENV, str(_WINDOWLESS_ARTIFACT))
+    chaos.clear_chaos_cache()
+
+    typed_errors: list[ChaosArtifactPrimaryHorizonError] = []
+    load_artifact = chaos.load_chaos_artifact
+
+    def record_typed_error(*args, **kwargs):
+        try:
+            return load_artifact(*args, **kwargs)
+        except ChaosArtifactPrimaryHorizonError as exc:
+            typed_errors.append(exc)
+            raise
+
+    readout_calls = 0
+
+    def unexpected_readout(*args, **kwargs):
+        nonlocal readout_calls
+        readout_calls += 1
+        raise AssertionError("API must not compute with fallback/default lambdas")
+
+    monkeypatch.setattr(chaos, "load_chaos_artifact", record_typed_error)
+    monkeypatch.setattr(chaos, "chaos_readout", unexpected_readout)
+
+    response = client.get(f"/api/v1/races/{_RACE}/predictions")
+
+    assert response.status_code == 200
+    assert response.json()["race_chaos"] == {
+        "status": "unavailable",
+        "unavailable_reason": "artifact_unavailable",
+        "band_axis": "p_s_ge_20",
+    }
+    assert len(typed_errors) == 1
+    assert readout_calls == 0
+
+
 def test_artifact_mismatch_recomputes_and_reports_recorded_digest(
     client,
     session,
@@ -264,7 +390,18 @@ def test_066_race_dispersion_is_byte_identical_when_chaos_appears(
     )
 
     before = client.get(f"/api/v1/races/{_RACE}/predictions").json()
-    snapshot = _seed_snapshot(session)
+    snapshot = _seed_snapshot(
+        session,
+        field=[
+            {
+                "horse_id": f"H{number}",
+                "horse_number": number,
+                "popularity": number,
+                "odds": odds,
+            }
+            for number, odds in ((1, 2.0), (2, 3.5), (3, 6.0), (4, 9.0))
+        ],
+    )
     _seed_readout(session, snapshot)
     after = client.get(f"/api/v1/races/{_RACE}/predictions").json()
 

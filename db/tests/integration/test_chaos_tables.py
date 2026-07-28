@@ -14,7 +14,7 @@ from horseracing_db.models import ChaosReadout, ChaosSnapshot, Race
 
 pytestmark = pytest.mark.integration
 
-_CHAOS_TABLES = {"chaos_snapshots", "chaos_readouts"}
+_CHAOS_TABLES = {"chaos_snapshots", "chaos_readouts", "fetch_throttle_state"}
 _SNAPSHOT_COLUMNS = {
     "chaos_snapshot_id",
     "race_id",
@@ -27,6 +27,8 @@ _SNAPSHOT_COLUMNS = {
     "content_digest",
     "status",
     "void_reason",
+    "capture_trigger",
+    "capture_policy_version",
     "created_at",
 }
 _READOUT_COLUMNS = {
@@ -77,6 +79,8 @@ def _add_race_and_snapshot(session, *, status: str = "active") -> ChaosSnapshot:
         n=1,
         content_digest="digest-1",
         status=status,
+        capture_trigger="predict_manual",
+        capture_policy_version="capture_policy_v1",
     )
     session.add(snapshot)
     session.flush()
@@ -123,6 +127,8 @@ def test_one_active_snapshot_per_race_is_enforced(session):
             n=1,
             content_digest="digest-2",
             status="active",
+            capture_trigger="predict_manual",
+            capture_policy_version="capture_policy_v1",
         )
     )
 

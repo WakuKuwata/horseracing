@@ -11,6 +11,7 @@ import datetime
 import hashlib
 import json
 import math
+import time
 from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
@@ -21,24 +22,29 @@ from horseracing_db.enums import EntryStatus
 from horseracing_db.models import ChaosReadout, ChaosSnapshot, Race, RaceHorse
 from horseracing_eval.stage_discount import StageDiscount
 from horseracing_probability.chaos_artifact import (
+    ChaosArtifactError,
     ChaosArtifactUnavailableError,
     ChaosBandsArtifact,
     load_chaos_artifact,
+    resolve_current_digest,
 )
 from horseracing_probability.chaos_distribution import chaos_readout
+from horseracing_probability.chaos_eligibility import within_primary_horizon
 from horseracing_probability.chaos_events import CHAOS_EVENTS_V1
 from horseracing_probability.market_odds import market_implied_win_probs
-from horseracing_scrape.fetch import PoliteFetcher
-from horseracing_scrape.models import ScrapedOdds
-from horseracing_scrape.odds_adapter import fetch_win_odds
-from sqlalchemy import select, text
+from horseracing_scrape.fetch import FetchError, FetchRefused, PoliteFetcher, RobotsDisallowed
+from horseracing_scrape.models import ParseError, ScrapedOdds
+from horseracing_scrape.parse.odds import parse_odds
+from horseracing_scrape.urls import win_odds_url
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from . import guards
 
 CaptureStrength = Literal["confirmatory", "weak", "unknown"]
-CaptureStatus = Literal["captured", "skipped", "rejected"]
+CaptureStatus = Literal["captured", "skipped", "rejected", "failed"]
 PendingCheck = Callable[[Session, str], tuple[bool, str] | bool]
+ArtifactLoader = Callable[[datetime.date], ChaosBandsArtifact]
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_APPROVED_MANIFEST = _REPO_ROOT / "config" / "chaos_bands_approved.json"
@@ -116,10 +122,18 @@ class ChaosCaptureReport:
     chaos_snapshot_id: object | None = None
     content_digest: str | None = None
     seconds_to_post: int | None = None
+    confirmation_eligible: bool | None = None
+    voided: bool = False
 
     @property
     def captured(self) -> bool:
         return self.status == "captured"
+
+    @property
+    def changed(self) -> bool:
+        """Whether the caller must commit this report's database mutation."""
+
+        return self.captured or self.voided
 
 
 class ChaosCaptureRejected(ValueError):
@@ -185,6 +199,17 @@ def _content_digest(field: Sequence[dict]) -> str:
     return hashlib.sha256(_canonical_field_bytes(field)).hexdigest()
 
 
+def _ensure_deadline(deadline: float, monotonic_clock: Callable[[], float]) -> None:
+    """Reject at a stage boundary when the capture-wide monotonic deadline is exhausted."""
+
+    if monotonic_clock() >= deadline:
+        raise ChaosCaptureRejected(
+            "deadline_exceeded",
+            "capture-wide monotonic deadline was exhausted",
+            status="skipped",
+        )
+
+
 def build_frozen_field(
     entries: Sequence[FrozenEntry],
     scraped: ScrapedOdds,
@@ -192,11 +217,16 @@ def build_frozen_field(
     """Bind fresh odds to started entries and apply the fit-identical eligibility predicate."""
 
     if not entries:
-        raise ChaosCaptureRejected("no_started_horses", "canonical field has no started horses")
+        raise ChaosCaptureRejected(
+            "no_started_horses",
+            "canonical field has no started horses",
+            status="skipped",
+        )
     if len(entries) < 4:
         raise ChaosCaptureRejected(
             "field_too_small",
             f"canonical field has {len(entries)} horses; at least four are required",
+            status="skipped",
         )
 
     by_number = {}
@@ -259,19 +289,68 @@ def acquire_fresh_capture(
     clock: Callable[[], datetime.datetime] = _now,
     pending_check: PendingCheck = guards.is_result_pending,
     min_seconds_to_post: int = 0,
+    pending_before: bool | None = None,
+    prechecked_at: datetime.datetime | None = None,
+    post_time_after: Callable[[], datetime.datetime | None] | None = None,
+    entries_after: Callable[[], Sequence[FrozenEntry]] | None = None,
+    deadline: float | None = None,
+    monotonic_clock: Callable[[], float] = time.monotonic,
 ) -> FreshChaosCapture:
-    """Fetch one no-cache observation with pending checks on both sides of the fetch."""
+    """Fetch once after preflight and perform every volatile post-fetch recheck.
+
+    ``capture_chaos`` supplies the prechecked state after taking the advisory
+    lock.  Direct callers may omit it and receive the same no-fetch preflight.
+    """
 
     if min_seconds_to_post < 0:
         raise ValueError("min_seconds_to_post must be non-negative")
 
-    pending_before, detail = _pending_ok(pending_check, session, race_id)
-    if not pending_before:
-        raise ChaosCaptureRejected("result_settled", f"before fetch: {detail}")
+    if pending_before is None:
+        pending_before, detail = _pending_ok(pending_check, session, race_id)
+        if not pending_before:
+            raise ChaosCaptureRejected(
+                "result_settled",
+                f"before fetch: {detail}",
+                status="skipped",
+            )
+    if prechecked_at is None:
+        prechecked_at = clock()
+        if prechecked_at.tzinfo is None or prechecked_at.utcoffset() is None:
+            raise ChaosCaptureRejected(
+                "invalid_capture_time",
+                "capture clock must return a timezone-aware datetime",
+            )
+        if post_time is None:
+            raise ChaosCaptureRejected(
+                "post_time_unknown",
+                "race post_time is required for capture",
+                status="skipped",
+            )
+        if post_time.tzinfo is None or post_time.utcoffset() is None:
+            raise ChaosCaptureRejected(
+                "invalid_post_time",
+                "race post_time must be timezone-aware when present",
+            )
+        if prechecked_at >= post_time:
+            raise ChaosCaptureRejected(
+                "post_time_elapsed",
+                "capture preflight ran at or after post_time",
+                status="skipped",
+            )
+        pre_seconds_to_post = int((post_time - prechecked_at).total_seconds())
+        if pre_seconds_to_post < min_seconds_to_post:
+            raise ChaosCaptureRejected(
+                "min_seconds_to_post",
+                f"only {pre_seconds_to_post}s remain; minimum is {min_seconds_to_post}s",
+                status="skipped",
+            )
 
-    # fetch_win_odds is the existing volatile-data adapter and always calls
-    # fetcher.get(..., use_cache=False).  No race_horses odds/popularity value is read here.
-    scraped = fetch_win_odds(fetcher, race_id)
+    # Keep fetching and parsing as two explicit stages so FR-018 can check the
+    # same capture-wide deadline immediately before parsing.
+    payload = fetcher.get(win_odds_url(race_id), use_cache=False)
+    if deadline is not None:
+        _ensure_deadline(deadline, monotonic_clock)
+    scraped = parse_odds(payload, race_id)
     captured_at = clock()
     if captured_at.tzinfo is None or captured_at.utcoffset() is None:
         raise ChaosCaptureRejected(
@@ -280,7 +359,48 @@ def acquire_fresh_capture(
 
     pending_after, detail = _pending_ok(pending_check, session, race_id)
     if not pending_after:
-        raise ChaosCaptureRejected("result_settled", f"during fetch: {detail}")
+        raise ChaosCaptureRejected(
+            "result_settled_during_fetch",
+            f"during fetch: {detail}",
+            status="skipped",
+        )
+
+    refreshed_post_time = post_time_after() if post_time_after is not None else post_time
+    if refreshed_post_time is None:
+        raise ChaosCaptureRejected(
+            "post_time_elapsed_during_fetch",
+            "post_time became unknown during fetch",
+            status="skipped",
+        )
+    if (
+        refreshed_post_time.tzinfo is None
+        or refreshed_post_time.utcoffset() is None
+    ):
+        raise ChaosCaptureRejected(
+            "invalid_post_time",
+            "race post_time must be timezone-aware when present",
+        )
+    if captured_at >= refreshed_post_time:
+        raise ChaosCaptureRejected(
+            "post_time_elapsed_during_fetch",
+            "fresh payload completed at or after post_time",
+            status="skipped",
+        )
+    seconds_to_post = int((refreshed_post_time - captured_at).total_seconds())
+    if seconds_to_post < min_seconds_to_post:
+        raise ChaosCaptureRejected(
+            "min_seconds_to_post_during_fetch",
+            f"only {seconds_to_post}s remain; minimum is {min_seconds_to_post}s",
+            status="skipped",
+        )
+
+    refreshed_entries = entries_after() if entries_after is not None else entries
+    if _started_entry_set(refreshed_entries) != _started_entry_set(entries):
+        raise ChaosCaptureRejected(
+            "field_changed_during_fetch",
+            "started field changed while fresh odds were being fetched",
+            status="skipped",
+        )
 
     source = getattr(fetcher, "source", None)
     if not isinstance(source, str) or not source.strip():
@@ -288,30 +408,12 @@ def acquire_fresh_capture(
             "source_unavailable", "fresh fetch adapter did not provide a non-empty source"
         )
 
-    seconds_to_post: int | None = None
-    if post_time is not None:
-        if post_time.tzinfo is None or post_time.utcoffset() is None:
-            raise ChaosCaptureRejected(
-                "invalid_post_time", "race post_time must be timezone-aware when present"
-            )
-        if captured_at >= post_time:
-            raise ChaosCaptureRejected(
-                "post_time_elapsed", "fresh payload completed at or after post_time"
-            )
-        seconds_to_post = int((post_time - captured_at).total_seconds())
-        if seconds_to_post < min_seconds_to_post:
-            raise ChaosCaptureRejected(
-                "min_seconds_to_post",
-                f"only {seconds_to_post}s remain; minimum is {min_seconds_to_post}s",
-                status="skipped",
-            )
-
     field = build_frozen_field(entries, scraped)
     strength = decide_capture_strength(
         fresh_fetch=True,
         pending_before=pending_before,
         pending_after=pending_after,
-        post_time=post_time,
+        post_time=refreshed_post_time,
         captured_at=captured_at,
     )
     return FreshChaosCapture(
@@ -372,14 +474,57 @@ def _started_entries(session: Session, race_id: str) -> list[FrozenEntry]:
     ]
 
 
-def _void_reason(old: ChaosSnapshot, new_field: Sequence[dict]) -> str:
-    old_entries = {(str(row["horse_id"]), int(row["horse_number"])) for row in old.field}
-    new_entries = {(str(row["horse_id"]), int(row["horse_number"])) for row in new_field}
-    return "late_scratch" if old_entries != new_entries else "recaptured"
+def _frozen_entry_set(field: Sequence[dict]) -> set[tuple[str, int]]:
+    return {(str(row["horse_id"]), int(row["horse_number"])) for row in field}
 
 
-class _ResultSettledBeforeReadout(RuntimeError):
-    pass
+def _started_entry_set(entries: Sequence[FrozenEntry]) -> set[tuple[str, int]]:
+    return {(entry.horse_id, entry.horse_number) for entry in entries}
+
+
+def _void_if_field_changed(
+    snapshot: ChaosSnapshot,
+    entries: Sequence[FrozenEntry],
+) -> bool:
+    """Invalidate an active observation only when its frozen field no longer matches."""
+
+    if snapshot.status != "active":
+        return False
+    if _frozen_entry_set(snapshot.field) == _started_entry_set(entries):
+        return False
+    snapshot.status = "void"
+    snapshot.void_reason = "field_changed"
+    return True
+
+
+def _capture_entries_complete(session: Session, race_id: str) -> bool:
+    """Distinguish a missing entry table from a complete all-non-started field.
+
+    The shared live-serving guard treats both as incomplete.  Capture needs the
+    latter to reach the canonical ``no_started_horses`` field-size gate.
+    """
+
+    complete, _detail = guards.entries_complete(session, race_id)
+    if complete:
+        return True
+    started_count = session.scalar(
+        select(func.count())
+        .select_from(RaceHorse)
+        .where(RaceHorse.race_id == race_id)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    )
+    if started_count:
+        return False
+    total_count = session.scalar(
+        select(func.count()).select_from(RaceHorse).where(RaceHorse.race_id == race_id)
+    )
+    return bool(total_count)
+
+
+def _post_time_from_db(session: Session, race_id: str) -> datetime.datetime | None:
+    """Read the current post time without reusing the identity-map Race object."""
+
+    return session.scalar(select(Race.post_time).where(Race.race_id == race_id))
 
 
 def _decimal(value: float) -> Decimal:
@@ -391,13 +536,22 @@ def capture_chaos(
     *,
     race_id: str,
     fetcher: ChaosOddsFetcher,
-    artifact: ChaosBandsArtifact,
+    artifact: ChaosBandsArtifact | None,
+    capture_trigger: str,
+    capture_policy_version: str,
+    deadline: float,
     min_seconds_to_post: int = 0,
     clock: Callable[[], datetime.datetime] = _now,
+    monotonic_clock: Callable[[], float] = time.monotonic,
     pending_check: PendingCheck = guards.is_result_pending,
+    artifact_loader: ArtifactLoader | None = None,
 ) -> ChaosCaptureReport:
-    """Capture and persist one race, returning typed skips instead of partial writes."""
+    """Capture and persist one race in the canonical no-fetch-first order."""
 
+    if min_seconds_to_post < 0:
+        raise ValueError("min_seconds_to_post must be non-negative")
+
+    # 1. Race identity and required metadata.
     valid, detail = guards.valid_race_id(race_id)
     if not valid:
         return ChaosCaptureReport(race_id, "rejected", "invalid_race_id")
@@ -407,11 +561,111 @@ def capture_chaos(
     if race.race_date is None:
         return ChaosCaptureReport(race_id, "rejected", "race_date_unknown")
 
-    complete, detail = guards.entries_complete(session, race_id)
-    if not complete:
+    # 2. Entry-table completeness.  An all-cancelled table is complete but has
+    # an empty started field, which is classified at step 8b.
+    if not _capture_entries_complete(session, race_id):
         return ChaosCaptureReport(race_id, "rejected", "entries_incomplete")
     entries = _started_entries(session, race_id)
 
+    # 3. Result must still be pending.
+    pending_before, _detail = _pending_ok(pending_check, session, race_id)
+    if not pending_before:
+        return ChaosCaptureReport(race_id, "skipped", "result_settled")
+
+    # 4. A known, valid post time is mandatory; weak captures are forbidden.
+    post_time = race.post_time
+    if post_time is None:
+        return ChaosCaptureReport(race_id, "skipped", "post_time_unknown")
+    if post_time.tzinfo is None or post_time.utcoffset() is None:
+        return ChaosCaptureReport(race_id, "rejected", "invalid_post_time")
+
+    prechecked_at = clock()
+    if prechecked_at.tzinfo is None or prechecked_at.utcoffset() is None:
+        return ChaosCaptureReport(race_id, "rejected", "invalid_capture_time")
+
+    # 5. The race has not started.
+    if prechecked_at >= post_time:
+        return ChaosCaptureReport(race_id, "skipped", "post_time_elapsed")
+
+    # 6. Operational floor.
+    pre_seconds_to_post = int((post_time - prechecked_at).total_seconds())
+    if pre_seconds_to_post < min_seconds_to_post:
+        return ChaosCaptureReport(race_id, "skipped", "min_seconds_to_post")
+
+    # 6b. Resolve the verified artifact only after cheaper timing gates.
+    resolved_artifact = artifact
+    if resolved_artifact is None:
+        loader = artifact_loader or load_current_chaos_artifact
+        try:
+            resolved_artifact = loader(race.race_date)
+        except ChaosArtifactError:
+            return ChaosCaptureReport(race_id, "rejected", "artifact_unavailable")
+
+    # 7. Only automatic follow-up predictions spend no display-only slot.
+    if capture_trigger == "predict_auto" and not within_primary_horizon(
+        pre_seconds_to_post,
+        resolved_artifact.preregistration["primary_horizon"],
+    ):
+        return ChaosCaptureReport(race_id, "skipped", "outside_primary_horizon")
+
+    # 8. Existence alone prevents another fetch.  Field comparison is used
+    # only to monotonically invalidate the existing row.
+    existing = session.scalar(
+        select(ChaosSnapshot).where(ChaosSnapshot.race_id == race_id).limit(1)
+    )
+    if existing is not None:
+        voided = _void_if_field_changed(existing, entries)
+        if voided:
+            session.flush()
+        return ChaosCaptureReport(
+            race_id,
+            "skipped",
+            "already_captured",
+            voided=voided,
+        )
+
+    # 8b. Routine field-size exclusions must not be counted as failures.
+    if not entries:
+        return ChaosCaptureReport(race_id, "skipped", "no_started_horses")
+    if len(entries) < 4:
+        return ChaosCaptureReport(race_id, "skipped", "field_too_small")
+
+    # 9. Never queue behind another capture of the same race.
+    lock_acquired = bool(
+        session.scalar(
+            text("SELECT pg_try_advisory_xact_lock(hashtext(:key))"),
+            {"key": f"chaos-capture:{race_id}"},
+        )
+    )
+    if not lock_acquired:
+        return ChaosCaptureReport(race_id, "skipped", "concurrent_capture")
+
+    # Close the existence-check/try-lock race: another transaction may have
+    # committed after step 8 but before this transaction obtained the lock.
+    existing = session.scalar(
+        select(ChaosSnapshot).where(ChaosSnapshot.race_id == race_id).limit(1)
+    )
+    if existing is not None:
+        current_entries = _started_entries(session, race_id)
+        voided = _void_if_field_changed(existing, current_entries)
+        if voided:
+            session.flush()
+        return ChaosCaptureReport(
+            race_id,
+            "skipped",
+            "already_captured",
+            voided=voided,
+        )
+
+    # 10b. The fetcher's pre-request hook performs the reservation/cooldown
+    # checks. Guard the exact same deadline immediately before entering it.
+    try:
+        _ensure_deadline(deadline, monotonic_clock)
+    except ChaosCaptureRejected as exc:
+        return ChaosCaptureReport(race_id, exc.status, exc.reason)
+
+    # 11-15. Fetch once, then re-check result, post time, operational floor,
+    # and the started field with distinct during-fetch reasons.
     try:
         fresh = acquire_fresh_capture(
             session,
@@ -422,76 +676,80 @@ def capture_chaos(
             clock=clock,
             pending_check=pending_check,
             min_seconds_to_post=min_seconds_to_post,
+            pending_before=pending_before,
+            prechecked_at=prechecked_at,
+            post_time_after=lambda: _post_time_from_db(session, race_id),
+            entries_after=lambda: _started_entries(session, race_id),
+            deadline=deadline,
+            monotonic_clock=monotonic_clock,
         )
-        derived = derive_chaos_readout(fresh.field, artifact)
+        _ensure_deadline(deadline, monotonic_clock)
+        derived = derive_chaos_readout(fresh.field, resolved_artifact)
+    except RobotsDisallowed:
+        return ChaosCaptureReport(race_id, "skipped", "robots_disallowed")
+    except FetchRefused as exc:
+        reason = getattr(exc, "reason", "source_cooldown")
+        if reason not in {"source_cooldown", "throttle_backlog", "deadline_exceeded"}:
+            reason = "source_cooldown"
+        return ChaosCaptureReport(race_id, "skipped", reason)
+    except (FetchError, ParseError):
+        return ChaosCaptureReport(race_id, "failed", "fetch_failed")
     except ChaosCaptureRejected as exc:
         return ChaosCaptureReport(race_id, exc.status, exc.reason)
 
-    snapshot: ChaosSnapshot | None = None
+    # 15b. Parsing/derivation is inside the same budget. Do not begin the save
+    # after that budget is exhausted.
     try:
-        # A transaction-scoped advisory lock serializes first capture as well as recapture; the
-        # partial unique index remains the final database invariant.
-        with session.begin_nested():
-            session.execute(
-                text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
-                {"key": f"chaos-capture:{race_id}"},
-            )
-            old = session.scalar(
-                select(ChaosSnapshot)
-                .where(ChaosSnapshot.race_id == race_id)
-                .where(ChaosSnapshot.status == "active")
-                .with_for_update()
-            )
-            if old is not None:
-                old.status = "void"
-                old.void_reason = _void_reason(old, fresh.field)
-                # Make the partial-unique slot available before the replacement INSERT.
-                # Both statements are still inside the same savepoint/outer transaction.
-                session.flush()
+        _ensure_deadline(deadline, monotonic_clock)
+    except ChaosCaptureRejected as exc:
+        return ChaosCaptureReport(race_id, exc.status, exc.reason)
 
-            snapshot = ChaosSnapshot(
-                race_id=race_id,
-                captured_at=fresh.captured_at,
-                source=fresh.source,
-                seconds_to_post=fresh.seconds_to_post,
-                capture_strength=fresh.capture_strength,
-                field=fresh.field,
-                n=len(fresh.field),
-                content_digest=fresh.content_digest,
-                status="active",
+    # 16. Freeze and save the snapshot/readout atomically.
+    snapshot: ChaosSnapshot | None = None
+    with session.begin_nested():
+        snapshot = ChaosSnapshot(
+            race_id=race_id,
+            captured_at=fresh.captured_at,
+            source=fresh.source,
+            capture_trigger=capture_trigger,
+            capture_policy_version=capture_policy_version,
+            seconds_to_post=fresh.seconds_to_post,
+            capture_strength=fresh.capture_strength,
+            field=fresh.field,
+            n=len(fresh.field),
+            content_digest=fresh.content_digest,
+            status="active",
+        )
+        session.add(snapshot)
+        session.flush()
+        session.add(
+            ChaosReadout(
+                chaos_snapshot_id=snapshot.chaos_snapshot_id,
+                artifact_version=derived.artifact_version,
+                artifact_digest=derived.artifact_digest,
+                band=derived.band,
+                band_axis=derived.band_axis,
+                p_s_ge_20=_decimal(derived.p_s_ge_20),
+                p_himo_are=_decimal(derived.p_himo_are),
+                p_total_collapse=_decimal(derived.p_total_collapse),
+                raw_p_s_ge_20=_decimal(derived.raw_p_s_ge_20),
+                raw_p_himo_are=_decimal(derived.raw_p_himo_are),
+                raw_p_total_collapse=_decimal(derived.raw_p_total_collapse),
+                expected_s=_decimal(derived.expected_s),
+                structural_zeros=derived.structural_zeros,
+                computed_at=fresh.captured_at,
             )
-            session.add(snapshot)
-            session.flush()
-
-            # CAP-8: this is deliberately after the snapshot INSERT and immediately before the
-            # readout INSERT.  Raising rolls the savepoint back, including an old-row void.
-            pending_now, _detail = _pending_ok(pending_check, session, race_id)
-            if not pending_now:
-                raise _ResultSettledBeforeReadout
-
-            session.add(
-                ChaosReadout(
-                    chaos_snapshot_id=snapshot.chaos_snapshot_id,
-                    artifact_version=derived.artifact_version,
-                    artifact_digest=derived.artifact_digest,
-                    band=derived.band,
-                    band_axis=derived.band_axis,
-                    p_s_ge_20=_decimal(derived.p_s_ge_20),
-                    p_himo_are=_decimal(derived.p_himo_are),
-                    p_total_collapse=_decimal(derived.p_total_collapse),
-                    raw_p_s_ge_20=_decimal(derived.raw_p_s_ge_20),
-                    raw_p_himo_are=_decimal(derived.raw_p_himo_are),
-                    raw_p_total_collapse=_decimal(derived.raw_p_total_collapse),
-                    expected_s=_decimal(derived.expected_s),
-                    structural_zeros=derived.structural_zeros,
-                    computed_at=fresh.captured_at,
-                )
-            )
-            session.flush()
-    except _ResultSettledBeforeReadout:
-        return ChaosCaptureReport(race_id, "rejected", "result_settled")
+        )
+        session.flush()
 
     assert snapshot is not None
+    confirmation_eligible = (
+        fresh.capture_strength == "confirmatory"
+        and within_primary_horizon(
+            fresh.seconds_to_post,
+            resolved_artifact.preregistration["primary_horizon"],
+        )
+    )
     return ChaosCaptureReport(
         race_id=race_id,
         status="captured",
@@ -500,6 +758,7 @@ def capture_chaos(
         chaos_snapshot_id=snapshot.chaos_snapshot_id,
         content_digest=fresh.content_digest,
         seconds_to_post=fresh.seconds_to_post,
+        confirmation_eligible=confirmation_eligible,
     )
 
 
@@ -529,7 +788,7 @@ def load_current_chaos_artifact(
     artifact_dir: str | Path = DEFAULT_ARTIFACT_DIR,
     approved_digests: Collection[str] | None = None,
 ) -> ChaosBandsArtifact:
-    """Load the current (last pinned) artifact through the shared fail-closed loader."""
+    """Load the current (status=active) artifact through the shared fail-closed loader."""
 
     approved = (
         tuple(approved_digests)
@@ -538,7 +797,10 @@ def load_current_chaos_artifact(
     )
     if not approved:
         raise ChaosArtifactUnavailableError("approved_digests must not be empty")
-    current_digest = approved[-1]
+    # "approved" (listed) and "current" (status=active) are DIFFERENT concepts. 084 used
+    # approved[-1]; the manifest lists active first and superseded last, so that read the
+    # SUPERSEDED artifact. Resolve on status.
+    current_digest = resolve_current_digest(manifest_path)
     return load_chaos_artifact(
         Path(artifact_dir) / f"{current_digest}.json",
         approved_digests=approved,

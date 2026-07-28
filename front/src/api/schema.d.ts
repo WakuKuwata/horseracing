@@ -768,6 +768,32 @@ export interface components {
             /** Gain */
             gain: number;
         };
+        /**
+         * JobCaptureRow
+         * @description Typed projection of the operational capture record in ``summary.capture``.
+         */
+        JobCaptureRow: {
+            /** Capture Strength */
+            capture_strength?: string | null;
+            /** Chaos Snapshot Id */
+            chaos_snapshot_id?: string | null;
+            /** Confirmation Eligible */
+            confirmation_eligible?: boolean | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "captured" | "skipped" | "rejected" | "failed" | "unknown";
+            /** Reason */
+            reason?: string | null;
+            /** Seconds To Post */
+            seconds_to_post?: number | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "started" | "launched" | "done";
+        };
         /** JobListResponse */
         JobListResponse: {
             /**
@@ -781,6 +807,7 @@ export interface components {
          * @description One ingestion_jobs row (audit trail; read-only transcription).
          */
         JobRow: {
+            capture?: components["schemas"]["JobCaptureRow"] | null;
             /** Completed At */
             completed_at?: string | null;
             /**
@@ -812,6 +839,10 @@ export interface components {
             started_at?: string | null;
             /** Status */
             status: string;
+            /** Summary */
+            summary?: {
+                [key: string]: unknown;
+            } | null;
             /** Trace Id */
             trace_id?: string | null;
         };
@@ -1122,7 +1153,7 @@ export interface components {
              * Unavailable Reason
              * @enum {string}
              */
-            unavailable_reason: "no_snapshot" | "partial_market_odds" | "invalid_popularity_ranks" | "field_too_small" | "artifact_unavailable" | "out_of_validity_window" | "invariant_violation";
+            unavailable_reason: "no_snapshot" | "partial_market_odds" | "invalid_popularity_ranks" | "field_too_small" | "field_changed_after_capture" | "artifact_unavailable" | "out_of_validity_window" | "invariant_violation";
         };
         /** RaceDetail */
         RaceDetail: {

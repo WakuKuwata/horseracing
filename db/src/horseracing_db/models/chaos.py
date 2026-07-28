@@ -1,8 +1,9 @@
-"""Top-3 chaos snapshot and readout ORM models (Feature 084).
+"""Top-3 chaos snapshot, readout, and fetch-throttle ORM models (Features 084/086).
 
 These tables preserve the pre-race market observation and the derived values used for display.
-They intentionally define only ``created_at`` rather than using ``TimestampMixin`` because the
-normative append-only schema has no ``updated_at`` column.
+Snapshot/readout models intentionally avoid ``TimestampMixin`` because their normative audit
+schemas do not have the mixin's pair of timestamps. Fetch throttle rows are mutable operational
+state rather than append-only audit records.
 """
 
 from __future__ import annotations
@@ -11,7 +12,17 @@ import datetime
 import uuid
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text, Uuid, text
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +33,9 @@ class ChaosSnapshot(Base):
     """Frozen pre-race market observation used by a chaos readout."""
 
     __tablename__ = "chaos_snapshots"
+    __table_args__ = (
+        UniqueConstraint("race_id", name="uq_chaos_snapshots_race_id"),
+    )
 
     chaos_snapshot_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, primary_key=True, server_default=text("gen_random_uuid()")
@@ -40,6 +54,8 @@ class ChaosSnapshot(Base):
     content_digest: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     void_reason: Mapped[str | None] = mapped_column(Text)
+    capture_trigger: Mapped[str] = mapped_column(Text, nullable=False)
+    capture_policy_version: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
@@ -72,4 +88,22 @@ class ChaosReadout(Base):
     structural_zeros: Mapped[dict] = mapped_column(JSONB, nullable=False)
     computed_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+
+
+class FetchThrottleState(Base):
+    """Mutable per-origin reservation and cooldown state for polite fetching."""
+
+    __tablename__ = "fetch_throttle_state"
+
+    domain: Mapped[str] = mapped_column(Text, primary_key=True)
+    next_allowed_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    blocked_until: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    block_reason: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
     )

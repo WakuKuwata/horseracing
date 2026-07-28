@@ -10,12 +10,18 @@ from __future__ import annotations
 import hashlib
 import re
 import time
+from collections.abc import Callable
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
 
 _META_CHARSET_RE = re.compile(rb"""charset=["']?\s*([\w-]+)""", re.IGNORECASE)
+_MAX_RETRY_AFTER_S = 6 * 60 * 60
+
+PreRequest = Callable[[str], None]
 
 
 def _resolve_text(resp) -> str:
@@ -45,6 +51,24 @@ class FetchError(RuntimeError):
     pass
 
 
+class FetchRefused(FetchError):
+    """The source refused or rate-limited a request; callers must not retry it."""
+
+    def __init__(
+        self,
+        status_code: int,
+        url: str | None = None,
+        *,
+        retry_after_s: float | None = None,
+    ):
+        self.status_code = status_code
+        self.url = url
+        self.retry_after_s = retry_after_s
+        target = f" for {url}" if url is not None else ""
+        retry = f" (retry after {retry_after_s:g}s)" if retry_after_s is not None else ""
+        super().__init__(f"HTTP {status_code} refused{target}{retry}")
+
+
 class RobotsDisallowed(FetchError):
     pass
 
@@ -71,6 +95,38 @@ def _domain(url: str) -> str:
     return f"{parts.scheme}://{parts.netloc}"
 
 
+def _retry_after_s(resp) -> float | None:
+    headers = getattr(resp, "headers", None)
+    if headers is None:
+        return None
+    raw = headers.get("Retry-After")
+    if raw is None:
+        return None
+
+    try:
+        seconds = float(raw)
+    except (TypeError, ValueError):
+        try:
+            retry_at = parsedate_to_datetime(str(raw))
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=UTC)
+            seconds = (retry_at - datetime.now(UTC)).total_seconds()
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+    if seconds < 0:
+        return None
+    return min(seconds, _MAX_RETRY_AFTER_S)
+
+
+def _refused(resp, url: str) -> FetchRefused:
+    return FetchRefused(
+        resp.status_code,
+        url,
+        retry_after_s=_retry_after_s(resp),
+    )
+
+
 class HttpFetcher:
     """Production fetcher. ``client`` must expose ``get(url) -> response`` with ``status_code``
     and ``text`` (httpx.Client by default). ``sleep``/``clock`` are injectable for tests."""
@@ -86,6 +142,7 @@ class HttpFetcher:
         sleep=time.sleep,
         clock=time.monotonic,
         respect_robots: bool = True,
+        pre_request: PreRequest | None = None,
     ):
         self.user_agent = user_agent
         self.min_interval_s = min_interval_s
@@ -95,6 +152,7 @@ class HttpFetcher:
         self._sleep = sleep
         self._clock = clock
         self._respect_robots = respect_robots
+        self._pre_request = pre_request
         self._last_fetch: dict[str, float] = {}
         self._robots: dict[str, RobotFileParser | None] = {}
 
@@ -120,11 +178,17 @@ class HttpFetcher:
         if domain not in self._robots:
             rp: RobotFileParser | None = RobotFileParser()
             try:
-                resp = self._client.get(f"{domain}/robots.txt")
+                robots_url = f"{domain}/robots.txt"
+                self._before_request(robots_url)
+                resp = self._client.get(robots_url)
                 if resp.status_code == 200:
                     rp.parse(resp.text.splitlines())
+                elif resp.status_code == 429:
+                    raise _refused(resp, robots_url)
                 else:
                     rp = None  # no robots -> allow
+            except FetchRefused:
+                raise
             except Exception:
                 rp = None
             self._robots[domain] = rp
@@ -142,15 +206,24 @@ class HttpFetcher:
         self._last_fetch[domain] = self._clock()
 
     # --- fetch + backoff ----------------------------------------------------
+    def _before_request(self, url: str) -> None:
+        if self._pre_request is not None:
+            self._pre_request(url)
+
     def _fetch_with_backoff(self, url: str) -> str:
         delay = 1.0
         last_err: Exception | None = None
         for attempt in range(self.max_retries):
             try:
+                self._before_request(url)
                 resp = self._client.get(url)
                 if resp.status_code == 200:
                     return _resolve_text(resp)
+                if resp.status_code in {403, 429}:
+                    raise _refused(resp, url)
                 last_err = FetchError(f"HTTP {resp.status_code} for {url}")
+            except FetchRefused:
+                raise
             except Exception as exc:  # noqa: BLE001
                 last_err = exc
             if attempt < self.max_retries - 1:

@@ -9,6 +9,7 @@ any parameters.
 
 from __future__ import annotations
 
+import copy
 import datetime
 import enum
 import json
@@ -22,6 +23,11 @@ from typing import Any, Literal
 from horseracing_eval.hashing import stable_hash
 
 UnavailableReason = Literal["artifact_unavailable", "out_of_validity_window"]
+
+CHAOS_APPROVED_MANIFEST_ENV = "CHAOS_BANDS_APPROVED_MANIFEST"
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_APPROVED_MANIFEST = _REPO_ROOT / "config" / "chaos_bands_approved.json"
+_SHORT_HORIZON_ALIASES = frozenset({"min_seconds_to_post", "max_seconds_to_post"})
 
 _REQUIRED_KEYS = frozenset(
     {
@@ -63,6 +69,8 @@ class ChaosArtifactFailure(enum.StrEnum):
     DIGEST_NOT_APPROVED = "digest_not_approved"
     INVALID_QUINTILE_EDGES = "invalid_quintile_edges"
     OPERATIONAL_GATE_FAILED = "operational_gate_failed"
+    INVALID_PRIMARY_HORIZON = "invalid_primary_horizon"
+    INVALID_APPROVAL_MANIFEST = "invalid_approval_manifest"
     INVALID_ARTIFACT_WINDOW = "invalid_artifact_window"
     OUT_OF_VALIDITY_WINDOW = "out_of_validity_window"
 
@@ -93,9 +101,15 @@ class ChaosArtifactParseError(ChaosArtifactUnavailableError):
 
 
 class ChaosArtifactSchemaError(ChaosArtifactUnavailableError):
-    """Step 2: one or more required top-level keys are absent."""
+    """Step 2: required artifact schema is absent or malformed."""
 
     failure = ChaosArtifactFailure.MISSING_REQUIRED_KEYS
+
+
+class ChaosArtifactPrimaryHorizonError(ChaosArtifactSchemaError):
+    """Step 2: the required confirmation horizon is absent or unsafe."""
+
+    failure = ChaosArtifactFailure.INVALID_PRIMARY_HORIZON
 
 
 class ChaosArtifactDigestError(ChaosArtifactUnavailableError):
@@ -108,6 +122,12 @@ class ChaosArtifactApprovalError(ChaosArtifactUnavailableError):
     """Step 4: the verified digest is not pinned by the caller's manifest."""
 
     failure = ChaosArtifactFailure.DIGEST_NOT_APPROVED
+
+
+class ChaosArtifactManifestError(ChaosArtifactUnavailableError):
+    """The committed approval manifest is malformed or has no unique current entry."""
+
+    failure = ChaosArtifactFailure.INVALID_APPROVAL_MANIFEST
 
 
 class ChaosArtifactEdgesError(ChaosArtifactUnavailableError):
@@ -178,6 +198,88 @@ def compute_chaos_artifact_digest(payload: Mapping[str, Any]) -> str:
     return stable_hash(covered_payload)
 
 
+def approved_digests_from_manifest(
+    manifest_path: str | os.PathLike[str] | None = None,
+) -> tuple[str, ...]:
+    """Return the status-irrelevant permission set from the approval manifest.
+
+    This is intentionally separate from :func:`resolve_current_digest`.
+    Superseded entries remain approved inputs for legacy upgrades and explicit
+    historical reports even though they are not the artifact used "now".
+    """
+
+    return tuple(entry["digest"] for entry in _approval_manifest_entries(manifest_path))
+
+
+def resolve_current_digest(
+    manifest_path: str | os.PathLike[str] | None = None,
+) -> str:
+    """Return the unique ``status="active"`` digest from the manifest.
+
+    Current selection is intentionally separate from the status-irrelevant
+    permission set returned by :func:`approved_digests_from_manifest`.
+    """
+
+    active = [
+        entry["digest"]
+        for entry in _approval_manifest_entries(manifest_path)
+        if entry.get("status") == "active"
+    ]
+    if len(active) != 1:
+        raise ChaosArtifactManifestError(
+            f"approval manifest must contain exactly one active digest, found {len(active)}"
+        )
+    return active[0]
+
+
+def upgrade_legacy_artifact_horizon(
+    path: str | os.PathLike[str],
+    *,
+    expected_digest: str,
+    minimum_seconds_to_post: int,
+    maximum_seconds_to_post: int,
+) -> tuple[dict[str, Any], str]:
+    """Add a horizon to one approved window-less artifact and recompute its digest.
+
+    This is the sole bootstrap exception to the mandatory-horizon loader.  It
+    validates the legacy artifact's digest, manifest permission (regardless of
+    status), edges, lambdas, stability, and fit/validity separation before
+    returning a new in-memory payload.  It is not a general raw reader.
+    """
+
+    _validate_digest_string(expected_digest, error_type=ChaosArtifactApprovalError)
+    approved_digests = approved_digests_from_manifest()
+    if expected_digest not in approved_digests:
+        raise ChaosArtifactApprovalError(
+            f"legacy artifact digest {expected_digest!r} is not listed in the approval manifest"
+        )
+
+    payload = _read_json(Path(path))
+    preregistration = _validate_required_payload_schema(payload)
+    if "primary_horizon" in preregistration:
+        raise ChaosArtifactPrimaryHorizonError(
+            "upgrade requires a legacy artifact without primary_horizon"
+        )
+    _verify_artifact_contents(payload, approved_digests=approved_digests)
+    if payload["artifact_digest"] != expected_digest:
+        raise ChaosArtifactDigestError(
+            "legacy artifact digest does not match expected_digest: "
+            f"expected {expected_digest!r}, got {payload['artifact_digest']!r}"
+        )
+
+    horizon = {
+        "minimum_seconds_to_post": minimum_seconds_to_post,
+        "maximum_seconds_to_post": maximum_seconds_to_post,
+    }
+    _validate_primary_horizon(horizon)
+
+    upgraded = copy.deepcopy(payload)
+    upgraded["preregistration"]["primary_horizon"] = horizon
+    upgraded_digest = compute_chaos_artifact_digest(upgraded)
+    upgraded["artifact_digest"] = upgraded_digest
+    return upgraded, upgraded_digest
+
+
 def load_chaos_artifact(
     path: str | os.PathLike[str],
     *,
@@ -191,17 +293,72 @@ def load_chaos_artifact(
     ``out_of_validity_window``.
     """
 
+    artifact = _verify_artifact_payload(
+        Path(path),
+        approved_digests=approved_digests,
+    )
+    fit_through = artifact.fit_through
+    valid_from = artifact.valid_from
+
+    # (8) Displayable iff BOTH conditions hold.  In particular, dates after the
+    # fit window are accepted; they are not the rejection condition.
+    if (
+        not isinstance(target_date, datetime.date)
+        or isinstance(target_date, datetime.datetime)
+        or target_date <= fit_through
+        or target_date < valid_from
+    ):
+        target = (
+            target_date.isoformat()
+            if isinstance(target_date, (datetime.date, datetime.datetime))
+            else repr(target_date)
+        )
+        raise ChaosArtifactOutOfValidityWindowError(
+            f"target_date {target} is outside the artifact validity window "
+            f"(fit_through={fit_through.isoformat()}, "
+            f"valid_from={valid_from.isoformat()})"
+        )
+
+    return artifact
+
+
+def _verify_artifact_payload(
+    path: Path,
+    *,
+    approved_digests: Collection[str],
+) -> ChaosBandsArtifact:
+    """Read one artifact and run mandatory-horizon content checks 1--7."""
+
     # (1) Read once, then verify and apply that same in-memory object (no TOCTOU
     # re-read).  ``parse_constant`` rejects the non-standard NaN/Infinity values
     # accepted by Python's JSON decoder by default.
-    payload = _read_json(Path(path))
+    payload = _read_json(path)
 
-    # (2) Required payload fields.
+    # (2) Required payload fields, including the Feature 086 nested horizon.
+    preregistration = _validate_required_payload_schema(payload)
+    if "primary_horizon" not in preregistration:
+        raise ChaosArtifactPrimaryHorizonError(
+            "preregistration.primary_horizon is required"
+        )
+    _validate_primary_horizon(preregistration["primary_horizon"])
+    return _verify_artifact_contents(payload, approved_digests=approved_digests)
+
+
+def _validate_required_payload_schema(payload: dict[str, Any]) -> dict[str, Any]:
     missing = sorted(_REQUIRED_KEYS - payload.keys())
     if missing:
         raise ChaosArtifactSchemaError(
             f"partial chaos artifact: missing field(s): {', '.join(missing)}"
         )
+    return _mapping_field(payload, "preregistration")
+
+
+def _verify_artifact_contents(
+    payload: dict[str, Any],
+    *,
+    approved_digests: Collection[str],
+) -> ChaosBandsArtifact:
+    """Verify one already-read payload without weakening any content gate."""
 
     # (3) Content-addressed digest.  The digest field itself is the sole
     # self-reference and therefore the sole excluded top-level key.
@@ -267,25 +424,6 @@ def load_chaos_artifact(
             f"{fit_through.isoformat()}"
         )
 
-    # (8) Displayable iff BOTH conditions hold.  In particular, dates after the
-    # fit window are accepted; they are not the rejection condition.
-    if (
-        not isinstance(target_date, datetime.date)
-        or isinstance(target_date, datetime.datetime)
-        or target_date <= fit_through
-        or target_date < valid_from
-    ):
-        target = (
-            target_date.isoformat()
-            if isinstance(target_date, (datetime.date, datetime.datetime))
-            else repr(target_date)
-        )
-        raise ChaosArtifactOutOfValidityWindowError(
-            f"target_date {target} is outside the artifact validity window "
-            f"(fit_through={fit_through.isoformat()}, "
-            f"valid_from={valid_from.isoformat()})"
-        )
-
     return _build_artifact(
         payload,
         lambda2=lambda2,
@@ -294,6 +432,98 @@ def load_chaos_artifact(
         fit_through=fit_through,
         valid_from=valid_from,
     )
+
+
+def _validate_primary_horizon(value: Any) -> tuple[int, int]:
+    if not isinstance(value, Mapping):
+        raise ChaosArtifactPrimaryHorizonError(
+            "preregistration.primary_horizon must be a mapping"
+        )
+    aliases = sorted(_SHORT_HORIZON_ALIASES.intersection(value))
+    if aliases:
+        raise ChaosArtifactPrimaryHorizonError(
+            "short primary_horizon aliases are forbidden: " + ", ".join(aliases)
+        )
+
+    minimum = value.get("minimum_seconds_to_post")
+    if isinstance(minimum, bool) or not isinstance(minimum, int) or minimum < 0:
+        raise ChaosArtifactPrimaryHorizonError(
+            "primary_horizon.minimum_seconds_to_post must be a non-negative integer"
+        )
+
+    maximum = value.get("maximum_seconds_to_post")
+    if isinstance(maximum, bool) or not isinstance(maximum, int):
+        raise ChaosArtifactPrimaryHorizonError(
+            "primary_horizon.maximum_seconds_to_post must be an integer"
+        )
+    if maximum <= minimum:
+        raise ChaosArtifactPrimaryHorizonError(
+            "primary_horizon.maximum_seconds_to_post must be greater than "
+            "minimum_seconds_to_post"
+        )
+    return minimum, maximum
+
+
+def _approval_manifest_entries(
+    manifest_path: str | os.PathLike[str] | None = None,
+) -> tuple[dict[str, Any], ...]:
+    path = Path(
+        manifest_path
+        if manifest_path is not None
+        else os.environ.get(CHAOS_APPROVED_MANIFEST_ENV, DEFAULT_APPROVED_MANIFEST)
+    )
+
+    def reject_non_finite(value: str) -> None:
+        raise ValueError(f"non-finite JSON number {value}")
+
+    try:
+        loaded = json.loads(
+            path.read_text(encoding="utf-8"),
+            parse_constant=reject_non_finite,
+        )
+    except (OSError, TypeError, ValueError) as exc:
+        raise ChaosArtifactManifestError(
+            f"cannot read chaos approval manifest {path}: {exc}"
+        ) from exc
+    if not isinstance(loaded, Mapping):
+        raise ChaosArtifactManifestError("chaos approval manifest root must be a mapping")
+    approved = loaded.get("approved")
+    if (
+        isinstance(approved, (str, bytes))
+        or not isinstance(approved, Sequence)
+    ):
+        raise ChaosArtifactManifestError(
+            "chaos approval manifest approved must be a sequence"
+        )
+
+    entries: list[dict[str, Any]] = []
+    for index, entry in enumerate(approved):
+        if not isinstance(entry, Mapping):
+            raise ChaosArtifactManifestError(
+                f"chaos approval manifest approved[{index}] must be a mapping"
+            )
+        digest = entry.get("digest")
+        _validate_digest_string(
+            digest,
+            error_type=ChaosArtifactManifestError,
+            name=f"approved[{index}].digest",
+        )
+        entries.append(dict(entry))
+    return tuple(entries)
+
+
+def _validate_digest_string(
+    value: Any,
+    *,
+    error_type: type[ChaosArtifactUnavailableError],
+    name: str = "expected_digest",
+) -> None:
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise error_type(f"{name} must be a 64-character lowercase SHA-256 digest")
 
 
 def _read_json(path: Path) -> dict[str, Any]:
