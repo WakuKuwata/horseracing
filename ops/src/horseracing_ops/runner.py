@@ -31,6 +31,7 @@ from horseracing_scrape.fetch import HttpFetcher
 from horseracing_scrape.pipeline import (
     discover_races,
     scrape_entries,
+    scrape_exotic_quotes,
     scrape_odds,
     scrape_results,
 )
@@ -38,6 +39,7 @@ from horseracing_scrape.urls import entries_url, result_url, win_odds_url
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .config import CONFIG
 from .deps import owner_database_url
 from .enqueue import enqueue_predict, enqueue_race, enqueue_recommend
 
@@ -137,6 +139,21 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
                              scope_value=race_id)
     odds = scrape_odds(session, urls=[win_odds_url(race_id)], fetcher=fetcher, scope_value=race_id)
     summaries = [entries, results, odds]
+
+    # PRE-RACE exotic price grid, only while the race is still pending. These prices are the only
+    # thing that can drive combination selection — `exotic_odds` holds the dividend, which exists
+    # solely for the combination that came in and is knowable only after the race. They also cannot
+    # be recovered later, so a race that runs uncaptured is lost permanently.
+    #
+    # Gated on result-pending for two reasons: a settled race's grid is worth nothing for selection
+    # (we already have its dividends), and skipping them is what keeps the added volume tolerable
+    # on a bulk day full of finished races. Each bet type is one more request per race, so the list
+    # is configuration (OPS_EXOTIC_QUOTE_BET_TYPES; empty disables).
+    bet_types = list(CONFIG.exotic_quote_bet_types)
+    if bet_types and is_result_pending(session, race_id):
+        quotes = scrape_exotic_quotes(session, race_ids=[race_id], bet_types=bet_types,
+                                      fetcher=fetcher, scope_value=race_id)
+        summaries.append(quotes)
 
     written = sum(s.written for s in summaries)
     errors = sum(s.errors for s in summaries)

@@ -19,6 +19,13 @@ def _int(name: str, default: int) -> int:
         return default
 
 
+def _csv(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return tuple(x.strip() for x in raw.split(",") if x.strip())
+
+
 def _float(name: str, default: float) -> float:
     raw = os.getenv(name)
     try:
@@ -34,6 +41,13 @@ class OpsConfig:
     stale_running_seconds: int = _int("OPS_STALE_RUNNING_SECONDS", 900)
     poll_seconds: float = _float("OPS_POLL_SECONDS", 2.0)
     fetch_min_interval: float = _float("OPS_FETCH_MIN_INTERVAL", 1.0)
+    #: Exotic bet types whose PRE-RACE price grid the daily refresh captures. Each one costs an
+    #: extra request per race, so this is the volume dial: empty disables the capture entirely.
+    #: These prices cannot be recovered later — a race not captured before it runs is lost for
+    #: good, since `exotic_odds` only ever holds the dividend of the combination that came in.
+    exotic_quote_bet_types: tuple[str, ...] = _csv(
+        "OPS_EXOTIC_QUOTE_BET_TYPES", ("quinella", "wide", "trio")
+    )
 
 
 CONFIG = OpsConfig()
