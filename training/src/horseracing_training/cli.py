@@ -945,6 +945,16 @@ def main(argv: list[str] | None = None) -> int:
                     help="append the payload to diagnostic_runs (kind=segment_accuracy)")
     ar.add_argument("--database-url", default=None)
 
+    # Pool information: does the EXOTIC pool know anything the WIN pool does not? Separates
+    # "our PL derivation is lossy" from "combination bettors hold information" — only the second
+    # leaves a route to profit.
+    pi = sub.add_parser("pool-information",
+                        help="delta-R2 of the exotic pool's own marginal over the win pool")
+    pi.add_argument("--seed", type=int, default=20260730)
+    pi.add_argument("--bootstrap-b", type=int, default=2000)
+    pi.add_argument("--json", dest="json_out", default="out/pool-information.json")
+    pi.add_argument("--database-url", default=None)
+
     # Real-price exotic edge: buy the combinations the exotic pool prices below what the WIN pool
     # implies. Needs exotic_quotes (the pool's own price grid) — the one measurement that was
     # impossible while only synthesised prices existed.
@@ -1082,6 +1092,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _folklore_probe(session, args)
+    if args.command == "pool-information":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _pool_information(session, args)
     if args.command == "exotic-price-edge":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1527,6 +1541,37 @@ def _calib_split_eval(session: Session, args) -> int:
         import dataclasses
         with open(args.json_out, "w") as fh:
             json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _pool_information(session: Session, args) -> int:
+    """Exotic pool vs win pool as winner predictors (evidence instrument, can_adopt=false)."""
+    import json
+    from pathlib import Path
+
+    from .pool_information_run import run
+
+    payload = run(session, seed=args.seed, bootstrap_b=args.bootstrap_b)
+    pr, r = payload["provenance"], payload["result"]
+    print(f"pool-information  races={pr['n_races']}  days={pr['n_days']}  blocks={pr['n_blocks']}")
+    print(f"  exclusions: {payload['exclusions']}")
+    print(f"  R2  exotic marginal = {r['r2']['model']:.5f}")
+    print(f"  R2  win pool        = {r['r2']['market_raw']:.5f}")
+    print(f"  R2  win recalibrated= {r['r2']['market_calibrated']:.5f}")
+    print(f"  R2  blended         = {r['r2']['combined']:.5f}")
+    lit, cond = r["ci_literal"], r["ci_model_given_market"]
+    print(f"  dR2 literal            = {r['delta_r2_literal']:+.6f} "
+          f"[{lit['ci_low']:+.6f}, {lit['ci_high']:+.6f}]")
+    print(f"  dR2 exotic|win (PRI)   = {r['delta_r2_model_given_market']:+.6f} "
+          f"[{cond['ci_low']:+.6f}, {cond['ci_high']:+.6f}]   verdict={r['verdict']}")
+    print("  blend weight per block (alpha = weight on the EXOTIC signal):")
+    for f in r["fits"][-6:]:
+        print(f"    {f['block']}  n_fit={f['n_fit_races']:5}  alpha={f['alpha']:+.4f}  "
+              f"beta={f['beta']:+.4f}  converged={f['converged']}")
+    if args.json_out:
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=2, ensure_ascii=False))
         print(f"  wrote {args.json_out}")
     return 0
 
