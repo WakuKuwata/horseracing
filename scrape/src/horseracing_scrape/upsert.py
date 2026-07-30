@@ -20,6 +20,7 @@ from decimal import Decimal
 from horseracing_db.enums import BetType, CoverageScope, EntryStatus, ResultStatus
 from horseracing_db.models import (
     ExoticOdds,
+    ExoticQuote,
     Horse,
     Jockey,
     Race,
@@ -37,6 +38,7 @@ from .idmap import resolve_entity
 from .models import (
     ScrapedEntry,
     ScrapedExoticOdds,
+    ScrapedExoticQuotes,
     ScrapedHorseProfile,
     ScrapedLaps,
     ScrapedOdds,
@@ -67,6 +69,15 @@ class Counts:
     skipped: int = 0
     errors: int = 0
     error_messages: list[str] = field(default_factory=list)
+
+    def merge(self, other: Counts) -> Counts:
+        """Fold another Counts in place (same accumulation as pipeline._aggregate)."""
+        self.processed += other.processed
+        self.written += other.written
+        self.skipped += other.skipped
+        self.errors += other.errors
+        self.error_messages.extend(other.error_messages)
+        return self
 
 
 def _insert_ignore(session: Session, model, values: dict, pk: tuple[str, ...]) -> None:
@@ -173,6 +184,70 @@ def update_odds(session: Session, race_id: str, scraped: ScrapedOdds) -> Counts:
             c.written += res.rowcount
         elif has_results:  # existing odds protected (or no matching horse)
             c.skipped += 1
+
+    c.merge(update_place_quote(session, race_id, scraped))
+    return c
+
+
+def update_place_quote(session: Session, race_id: str, scraped: ScrapedOdds) -> Counts:
+    """Store the 複勝 (place) market QUOTE range from the same payload (Phase 0-2, 0 extra request).
+
+    Deliberately NOT written to `exotic_odds`: that table holds real DIVIDENDS keyed by
+    (race_id, bet_type, selection), so writing quotes there would overwrite settled place dividends
+    with pre-race prices (and a range does not fit its single `odds` column). Quote and dividend are
+    different facts; constitution V forbids a HISTORY of each, not keeping them apart.
+
+    Cross-sectional fail-closed: the quote is written only when EVERY started horse has a valid
+    range. A partially-priced field would silently break any cross-pool comparison (which needs the
+    whole field at one instant), so a gap skips the race entirely rather than storing a half field.
+
+    Monotone in source time: a payload whose `official_at` predates the stored one is refused, so a
+    replayed/stale response can never walk the latest value backwards. Unlike win odds there is no
+    fill-if-null protection — place quotes have no JRA-VAN value to protect (netkeiba is the sole
+    source), and the latest quote is always the better one.
+    """
+    c = Counts()
+    quotes = {r.horse_number: r for r in scraped.place_rows
+              if r.odds_low is not None and r.odds_high is not None}
+    if not quotes:
+        return c  # group "2" absent/unusable — leave any existing quote untouched
+
+    started = set(session.scalars(
+        select(RaceHorse.horse_number).where(
+            RaceHorse.race_id == race_id,
+            RaceHorse.entry_status == EntryStatus.STARTED,
+            RaceHorse.horse_number.is_not(None),
+        )
+    ))
+    if not started or not started.issubset(quotes):
+        c.skipped += len(started or quotes)
+        return c
+
+    official_at = scraped.official_at
+    prior = session.scalar(select(Race.place_odds_official_at).where(Race.race_id == race_id))
+    if official_at is not None and prior is not None and official_at < prior:
+        c.skipped += len(started)
+        return c
+
+    for number in sorted(started):
+        q = quotes[number]
+        c.processed += 1
+        res = session.execute(
+            update(RaceHorse)
+            .where(RaceHorse.race_id == race_id, RaceHorse.horse_number == number)
+            .values(
+                place_odds_low=Decimal(str(q.odds_low)),
+                place_odds_high=Decimal(str(q.odds_high)),
+                place_popularity=q.popularity,
+            )
+        )
+        c.written += res.rowcount
+    session.execute(
+        update(Race).where(Race.race_id == race_id).values(
+            place_odds_official_at=official_at,
+            place_odds_observed_at=datetime.datetime.now(datetime.UTC),
+        )
+    )
     return c
 
 
@@ -387,6 +462,50 @@ def upsert_laps(session: Session, race_id: str, scraped: ScrapedLaps) -> Counts:
     ).on_conflict_do_update(
         index_elements=["race_id"],
         set_={"lap_times": laps, "pace_first_3f": first, "pace_last_3f": last},
+    )
+    session.execute(stmt)
+    c.written += 1
+    return c
+
+
+# --- exotic quotes (pre-race price grid) ------------------------------------
+def upsert_exotic_quotes(session: Session, scraped: ScrapedExoticQuotes) -> Counts:
+    """Store one race's PRE-RACE grid for one exotic bet type (single latest value, 憲法 V).
+
+    Deliberately NOT `exotic_odds`: that table is the final DIVIDEND and only ever covers the
+    combination that came in. A quote and a dividend are different facts, and the earlier place
+    work already established that keeping them apart is what constitution V actually requires.
+
+    Monotone in source time: a payload whose `official_at` predates the stored one is refused, so
+    a replayed or stale response cannot walk the latest grid backwards.
+    """
+    c = Counts()
+    if not scraped.quotes:
+        c.skipped += 1
+        return c
+    prior = session.scalar(
+        select(ExoticQuote.official_at).where(
+            ExoticQuote.race_id == scraped.race_id, ExoticQuote.bet_type == scraped.bet_type
+        )
+    )
+    if scraped.official_at is not None and prior is not None and scraped.official_at < prior:
+        c.skipped += 1
+        return c
+
+    payload = {
+        "-".join(str(n) for n in combo): [lo, hi, pop]
+        for combo, (lo, hi, pop) in sorted(scraped.quotes.items())
+    }
+    c.processed += len(payload)
+    stmt = insert(ExoticQuote).values(
+        race_id=scraped.race_id, bet_type=scraped.bet_type, quotes=payload,
+        n_combinations=len(payload), official_at=scraped.official_at,
+        observed_at=datetime.datetime.now(datetime.UTC), source="netkeiba",
+    ).on_conflict_do_update(
+        constraint="uq_exotic_quotes_race_bettype",
+        set_={"quotes": payload, "n_combinations": len(payload),
+              "official_at": scraped.official_at,
+              "observed_at": datetime.datetime.now(datetime.UTC)},
     )
     session.execute(stmt)
     c.written += 1

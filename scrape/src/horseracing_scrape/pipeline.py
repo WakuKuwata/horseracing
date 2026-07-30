@@ -24,6 +24,7 @@ from .odds_adapter import fetch_win_odds
 from .parse._profile import parse_horse_pedigree, parse_horse_profile
 from .parse.entries import parse_entries
 from .parse.exotic_odds import parse_exotic_odds
+from .parse.exotic_quotes import parse_exotic_quotes
 from .parse.laps import parse_laps
 from .parse.race_list import parse_race_list
 from .parse.results import parse_results
@@ -34,9 +35,16 @@ from .upsert import (
     update_odds,
     upsert_entries,
     upsert_exotic_odds,
+    upsert_exotic_quotes,
     upsert_laps,
 )
-from .urls import horse_pedigree_url, horse_profile_url, race_db_url, race_list_url
+from .urls import (
+    exotic_quotes_url,
+    horse_pedigree_url,
+    horse_profile_url,
+    race_db_url,
+    race_list_url,
+)
 from .venues import build_race_id
 
 
@@ -281,6 +289,37 @@ def complete_profiles(
 
     return _run_job(session, job_type="horse_profile", scope="surrogate_horses",
                     scope_value=str(limit) if limit is not None else None, work=work)
+
+
+def scrape_exotic_quotes(
+    session: Session, *, race_ids: list[str], bet_types: list[str], fetcher: PoliteFetcher,
+    scope_value: str | None = None,
+) -> JobSummary:
+    """Ingest the PRE-RACE exotic price grid — one request PER BET TYPE per race.
+
+    This is the only source of the exotic pools' own prices (`exotic_odds` holds dividends, which
+    exist only for the combination that came in and therefore cannot drive selection). The cost is
+    real: enabling n bet types multiplies a race's fetch count by n, so the caller chooses which
+    types are worth it rather than the pipeline assuming all of them.
+
+    Volatile like win odds -> fetched no-cache (constitution V single-latest). One bad (race, type)
+    is isolated so the rest of the pass still lands.
+    """
+    def work() -> Counts:
+        parts: list[Counts] = []
+        for race_id in race_ids:
+            for bet_type in bet_types:
+                try:
+                    payload = fetcher.get(exotic_quotes_url(race_id, bet_type), use_cache=False)
+                    scraped = parse_exotic_quotes(payload, race_id, bet_type)
+                    parts.append(upsert_exotic_quotes(session, scraped))
+                except Exception as exc:  # noqa: BLE001 — one type must not abort the pass
+                    parts.append(Counts(errors=1,
+                                        error_messages=[f"{race_id}/{bet_type}: {exc}"]))
+        return _aggregate(parts)
+
+    return _run_job(session, job_type="exotic_quotes", scope="races",
+                    scope_value=scope_value, work=work)
 
 
 def scrape_results(

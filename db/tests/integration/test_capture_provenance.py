@@ -22,6 +22,8 @@ pytestmark = pytest.mark.integration
 
 DB_DIR = Path(__file__).resolve().parents[2]
 _REVISION_0012 = "0012_chaos_readout"
+#: created at 0013 or later — all of them disappear when we downgrade to 0012.
+_TABLES_ADDED_AFTER_0012 = {"fetch_throttle_state", "exotic_quotes"}
 _QUARANTINE_TABLE = "chaos_snapshots_quarantine"
 _READOUT_QUARANTINE_TABLE = "chaos_readouts_quarantine"
 _SNAPSHOT_COLUMNS_0012 = {
@@ -265,7 +267,9 @@ def test_0013_upgrade_downgrade_upgrade_preserves_existing_tables(
     try:
         command.downgrade(alembic_cfg, _REVISION_0012)
         tables_at_0012 = set(inspect(engine).get_table_names())
-        assert tables_at_0012 == tables_at_head - {"fetch_throttle_state"}
+        # Tables created by 0013 AND by everything after it: downgrading to 0012 drops them all,
+        # so listing only 0013's would break the moment a later migration adds a table.
+        assert tables_at_0012 == tables_at_head - _TABLES_ADDED_AFTER_0012
         assert {
             column["name"] for column in inspect(engine).get_columns("chaos_snapshots")
         } == _SNAPSHOT_COLUMNS_0012

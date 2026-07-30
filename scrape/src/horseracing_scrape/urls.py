@@ -52,6 +52,27 @@ def win_odds_url(race_id: str) -> str:
     return f"{_ODDS_API}?race_id={_check(race_id)}&type=1&action=update"
 
 
+#: netkeiba odds-API ``type`` -> our bet_type. 1 is 単勝+複勝 (handled by win_odds_url) and 3 is
+#: 枠連, which the schema deliberately does not model.
+EXOTIC_ODDS_TYPES: dict[str, int] = {
+    "place": 2, "quinella": 4, "wide": 5, "exacta": 6, "trio": 7, "trifecta": 8,
+}
+
+
+def exotic_quotes_url(race_id: str, bet_type: str) -> str:
+    """PRE-RACE price grid for one exotic bet type — losing combinations included.
+
+    One request per bet type per race, so enabling a type multiplies daily fetch volume. This is
+    the only source of the exotic pools' own prices; `exotic_odds` only ever holds the dividend of
+    the combination that came in, which cannot drive selection.
+    """
+    try:
+        t = EXOTIC_ODDS_TYPES[bet_type]
+    except KeyError as exc:
+        raise ValueError(f"no netkeiba odds type for bet_type {bet_type!r}") from exc
+    return f"{_ODDS_API}?race_id={_check(race_id)}&type={t}&action=update"
+
+
 def race_list_url(date: str | datetime.date) -> str:
     """開催日のレース一覧 (server-rendered Ajax fragment).
 

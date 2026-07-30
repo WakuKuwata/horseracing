@@ -67,9 +67,44 @@ class ScrapedOddsRow:
 
 
 @dataclass(frozen=True)
+class ScrapedPlaceQuoteRow:
+    """複勝 (place) market quote — netkeiba publishes a RANGE [low, high], never a point.
+
+    Both ends are carried: the width is itself market information, and the arithmetic midpoint is
+    not neutral in probability space (odds invert). A half-present range is invalid and is dropped
+    to (None, None) by the parser, so a partial range never reaches the DB.
+    """
+
+    horse_number: int
+    odds_low: float | None
+    odds_high: float | None
+    popularity: int | None
+
+
+@dataclass(frozen=True)
 class ScrapedOdds:
     key: ScrapedRaceKey
     rows: tuple[ScrapedOddsRow, ...]
+    #: 複勝 quotes from the SAME payload (data.odds["2"]) — 0 extra requests. Empty when absent.
+    place_rows: tuple[ScrapedPlaceQuoteRow, ...] = ()
+    #: data.official_datetime — the time the SOURCE declares this quote effective (JST in the
+    #: payload, stored tz-aware). Provenance of the single latest value, not an odds history.
+    official_at: datetime.datetime | None = None
+
+
+@dataclass(frozen=True)
+class ScrapedExoticQuotes:
+    """One race's PRE-RACE price grid for a single exotic bet type.
+
+    ``quotes`` maps the canonical selection (int tuple; ordered types keep finishing order) to
+    ``(odds_low, odds_high | None, popularity | None)``. Only ワイド publishes a real range; the
+    point-priced types carry None as the high end rather than duplicating the low value.
+    """
+
+    race_id: str
+    bet_type: str
+    quotes: dict[tuple[int, ...], tuple[float, float | None, int | None]]
+    official_at: datetime.datetime | None
 
 
 @dataclass(frozen=True)

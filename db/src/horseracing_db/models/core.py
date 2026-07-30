@@ -28,6 +28,7 @@ from ..base import Base
 from ..constraints import (
     ENTRY_STATUS,
     FINISH_ORDER_WHEN_FINISHED,
+    PLACE_ODDS_RANGE,
     RACE_ID_FORMAT,
     RACE_NUMBER_RANGE,
     RESULT_STATUS,
@@ -59,6 +60,15 @@ class Race(TimestampMixin, Base):
     post_time: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
     #: Feature 056: 1着賞金 (万円) — race-constant, pre-published race condition (not a result)
     prize_money: Mapped[int | None] = mapped_column(Integer)
+    #: Phase 0-2: provenance of the LATEST place quote (race_horses.place_odds_*). These are the
+    #: single latest observation's timestamps, NOT an odds history (constitution V): source-declared
+    #: effective time and our observation time, overwritten in place with the quote itself.
+    place_odds_official_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    place_odds_observed_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
 
 class Horse(TimestampMixin, Base):
@@ -101,6 +111,7 @@ class RaceHorse(TimestampMixin, Base):
     __tablename__ = "race_horses"
     __table_args__ = (
         CheckConstraint(ENTRY_STATUS, name="ck_race_horses_entry_status"),
+        CheckConstraint(PLACE_ODDS_RANGE, name="ck_race_horses_place_odds_range"),
     )
 
     race_id: Mapped[str] = mapped_column(ForeignKey("races.race_id"), primary_key=True)
@@ -115,6 +126,14 @@ class RaceHorse(TimestampMixin, Base):
     weight_diff: Mapped[int | None] = mapped_column(Integer)
     odds: Mapped[Decimal | None] = mapped_column(Numeric)
     popularity: Mapped[int | None] = mapped_column(Integer)
+    #: Phase 0-2: 複勝 (place) market quote — netkeiba publishes a RANGE, not a point. Both ends are
+    #: stored (the width itself is information, and the arithmetic midpoint is not neutral in
+    #: probability space since odds invert). Single latest value, same discipline as `odds`.
+    #: This is a MARKET QUOTE, never a dividend — real place dividends live in `exotic_odds`.
+    place_odds_low: Mapped[Decimal | None] = mapped_column(Numeric)
+    place_odds_high: Mapped[Decimal | None] = mapped_column(Numeric)
+    #: 複勝人気 (distinct from `popularity`, which is 単勝人気).
+    place_popularity: Mapped[int | None] = mapped_column(Integer)
     running_style: Mapped[str | None] = mapped_column(Text)
     jockey_weight: Mapped[Decimal | None] = mapped_column(Numeric)
     entry_status: Mapped[str] = mapped_column(
