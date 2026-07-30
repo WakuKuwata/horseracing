@@ -945,6 +945,50 @@ def main(argv: list[str] | None = None) -> int:
                     help="append the payload to diagnostic_runs (kind=segment_accuracy)")
     ar.add_argument("--database-url", default=None)
 
+    # Exotic combination portfolio: the structure the documented JRA profits actually used
+    # (multi-ticket, odds-inverse staking, 馬連/馬単/三連複). Evidence instrument.
+    ep = sub.add_parser("exotic-portfolio-eval",
+                        help="combination portfolios settled at REAL exotic dividends")
+    ep.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    ep.add_argument("--to", dest="to", type=_parse_date, required=True)
+    ep.add_argument("--bundle", default=None,
+                    help="OOF bundle: adds the SECONDARY model-p selection arm on the same "
+                         "(bundle-covered) races, so market vs model is paired")
+    ep.add_argument("--seed", type=int, default=20260729)
+    ep.add_argument("--bootstrap-b", type=int, default=2000)
+    ep.add_argument("--json", dest="json_out", default="out/exotic-portfolio.json")
+    ep.add_argument("--database-url", default=None)
+
+    # Cross-pool (win -> place): is the PLACE pool mispriced relative to the WIN pool?
+    # Evidence instrument (can_adopt=false); rank profile is the λ-invariant primary readout.
+    cp = sub.add_parser("cross-pool-eval",
+                        help="place vs win pool: win-selected policy at real dividends")
+    cp.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    cp.add_argument("--to", dest="to", type=_parse_date, required=True)
+    cp.add_argument("--lambda2", type=float, default=None,
+                    help="Harville stage discount for 2nd place (084 market-q fit: 0.8312)")
+    cp.add_argument("--lambda3", type=float, default=None,
+                    help="Harville stage discount for 3rd place (084 market-q fit: 0.7101)")
+    cp.add_argument("--seed", type=int, default=20260729)
+    cp.add_argument("--bootstrap-b", type=int, default=2000)
+    cp.add_argument("--json", dest="json_out", default="out/cross-pool-place.json")
+    cp.add_argument("--database-url", default=None)
+
+    # ΔR² (Benter 1994): does the model add information the MARKET lacks? Evidence instrument
+    # (can_adopt=false) — winner NLL stays the adoption gate; ΔR² says whether a change can move
+    # ROI at all. Read-only.
+    dr = sub.add_parser("delta-r2-eval",
+                        help="Benter pseudo-R² increment over the market (evidence instrument)")
+    dr.add_argument("--bundle", required=True, help="OOF prediction bundle (074/078)")
+    dr.add_argument("--from", dest="from_", type=_parse_date, required=True)
+    dr.add_argument("--to", dest="to", type=_parse_date, required=True)
+    dr.add_argument("--seed", type=int, default=20260729)
+    dr.add_argument("--bootstrap-b", type=int, default=2000)
+    dr.add_argument("--delta-min", type=float, default=0.0,
+                    help="materiality threshold; 0.0 keeps this evidence-only")
+    dr.add_argument("--json", dest="json_out", default="out/delta-r2.json")
+    dr.add_argument("--database-url", default=None)
+
     # Feature 069 (SC-005): past-market coverage audit (year × ID source × obs bands). Read-only.
     ca = sub.add_parser("coverage-audit",
                         help="069: F02 past-market coverage by year × ID source (canonical/nk:)")
@@ -1028,6 +1072,18 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _folklore_probe(session, args)
+    if args.command == "exotic-portfolio-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _exotic_portfolio_eval(session, args)
+    if args.command == "cross-pool-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _cross_pool_eval(session, args)
+    if args.command == "delta-r2-eval":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _delta_r2_eval(session, args)
     if args.command == "accuracy-readout":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1457,6 +1513,129 @@ def _calib_split_eval(session: Session, args) -> int:
         import dataclasses
         with open(args.json_out, "w") as fh:
             json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _exotic_portfolio_eval(session: Session, args) -> int:
+    """Combination-portfolio backtest (evidence instrument, can_adopt=false)."""
+    import json
+    from pathlib import Path
+
+    from .exotic_portfolio_run import run_exotic_portfolio
+
+    payload = run_exotic_portfolio(
+        session, date_from=args.from_, date_to=args.to, seed=args.seed,
+        bootstrap_b=args.bootstrap_b,
+        bundle_path=Path(args.bundle) if args.bundle else None,
+    )
+    r = payload["result"]
+    print(f"exotic portfolio  pre-reg: {r['preregistration']}")
+    print(f"  races: {payload['provenance']['n_races_by_source_bet_type']}")
+    print(f"  exclusions: {payload['exclusions']}")
+    print("  src     bet_type    K  staking        n_bets  hits    ROI     95% CI"
+          "               maxhit%  LOHO   verdict")
+    for c in r["cells"]:
+        if c["n_bets"] == 0:
+            continue
+        lo = "  n/a " if c["ci_low"] is None else f"{c['ci_low']:.4f}"
+        hi = "  n/a " if c["ci_high"] is None else f"{c['ci_high']:.4f}"
+        mark = " *" if c["verdict"] == "profitable" else "  "
+        print(f"  {c['source']:<7} {c['bet_type']:<10} {c['k']:>2} "
+              f"{c['staking']:<14} {c['n_bets']:>6} "
+              f"{c['n_hits']:>5} {c['roi']:7.4f} [{lo}, {hi}] "
+              f"{c['max_single_hit_share'] * 100:6.1f}% {c['leave_one_hit_out_roi']:6.4f} "
+              f"{c['verdict']}{mark}"
+              + (f"  ({c['demoted_reason']})" if c["demoted_reason"] else ""))
+    print(f"  reference returns (1-takeout): {r['reference_returns']}")
+    print(f"  HOLM SURVIVORS (primary family): {r['holm_survivors'] or 'none'}")
+    print(f"  exploratory (not corrected): {r['exploratory']}")
+    if args.json_out:
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _cross_pool_eval(session: Session, args) -> int:
+    """Cross-pool place diagnostic (evidence instrument, can_adopt=false)."""
+    import json
+    from pathlib import Path
+
+    from .cross_pool_run import run_cross_pool
+
+    payload = run_cross_pool(
+        session, date_from=args.from_, date_to=args.to, seed=args.seed,
+        bootstrap_b=args.bootstrap_b, lambda2=args.lambda2, lambda3=args.lambda3,
+    )
+    r = payload["result"]
+    print(f"cross-pool(place)  races={r['n_races']}  days={r['n_days']}  "
+          f"no-structure reference = {r['reference_return']:.2f}")
+    print(f"  exclusions: {payload['exclusions']}")
+    print("  rank profile (LAMBDA-INVARIANT primary):")
+    print("    rank      n   hit%    meanQ   ROI      95% CI")
+    for row in r["rank_profile"]:
+        lo = "  n/a" if row["ci_low"] is None else f"{row['ci_low']:.4f}"
+        hi = "  n/a" if row["ci_high"] is None else f"{row['ci_high']:.4f}"
+        print(f"    {row['rank']:>4} {row['n_bets']:>6} {row['hit_rate'] * 100:5.1f}% "
+              f"{row['mean_q']:7.4f} {row['roi']:7.4f}  [{lo}, {hi}]")
+    for pol in r["primary_policies"]:
+        if pol["name"] == "all_started":
+            print(f"  blind all-started ROI = {pol['roi']:.4f} "
+                  f"[{pol['ci_low']:.4f}, {pol['ci_high']:.4f}]  n={pol['n_bets']}")
+    print("  secondary (lambda-DEPENDENT threshold policies):")
+    for pol in r["secondary_threshold_policies"]:
+        if pol["n_bets"]:
+            print(f"    {pol['name']:<22} n={pol['n_bets']:>6} ROI={pol['roi']:.4f} "
+                  f"[{pol['ci_low']:.4f}, {pol['ci_high']:.4f}]")
+    pw = r.get("paired_win_vs_place")
+    if pw:
+        print(f"  PAIRED win vs place (pre-reg: {pw['preregistration']}):")
+        print("    rank      n  win_hit% place_hit%  ROI_win  ROI_place   dROI     95% CI"
+              "            verdict")
+        for row in pw["by_rank"]:
+            print(f"    {row['rank']:>4} {row['n_bets']:>6} {row['win_hit_rate'] * 100:8.1f}% "
+                  f"{row['place_hit_rate'] * 100:9.1f}% {row['roi_win']:8.4f} "
+                  f"{row['roi_place']:10.4f} {row['delta_roi']:+8.4f} "
+                  f"[{row['ci_low']:+.4f}, {row['ci_high']:+.4f}]  {row['verdict']}")
+        print(f"    dead-heat wins: {pw['n_dead_heat_win_races']} races  |  {pw['multiplicity']}")
+    if args.json_out:
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _delta_r2_eval(session: Session, args) -> int:
+    """ΔR² (Benter 1994): pseudo-R² increment of p over the market. Evidence, never a gate."""
+    import json
+    from pathlib import Path
+
+    from .delta_r2_run import run_delta_r2
+
+    payload = run_delta_r2(
+        session, bundle_path=Path(args.bundle), eval_from=args.from_, eval_to=args.to,
+        seed=args.seed, bootstrap_b=args.bootstrap_b, delta_min=args.delta_min,
+    )
+    r = payload["result"]
+    print(f"delta-r2  races={r['n_races']}  days={r['n_days']}  "
+          f"blocks_scored={r['n_blocks_scored']}  mean log N={r['mean_log_field']:.5f}")
+    print(f"  R2  model={r['r2']['model']:.5f}  market_raw={r['r2']['market_raw']:.5f}  "
+          f"market_cal={r['r2']['market_calibrated']:.5f}  combined={r['r2']['combined']:.5f}")
+    lit, cond = r["ci_literal"], r["ci_model_given_market"]
+    print(f"  dR2 literal            = {r['delta_r2_literal']:+.6f}  "
+          f"95% CI [{lit['ci_low']:+.6f}, {lit['ci_high']:+.6f}]")
+    print(f"  dR2 model|market (PRI) = {r['delta_r2_model_given_market']:+.6f}  "
+          f"95% CI [{cond['ci_low']:+.6f}, {cond['ci_high']:+.6f}]")
+    print(f"  verdict={r['verdict']}   (Benter reference: fundamental "
+          f"{r['reference']['benter_fundamental']}, tipster {r['reference']['benter_tipster']})")
+    for f in r["fits"]:
+        print(f"    fit {f['block']}: n={f['n_fit_races']} through={f['fit_through_day']} "
+              f"alpha={f['alpha']:.5f} beta={f['beta']:.5f} gamma={f['gamma']:.5f} "
+              f"converged={f['converged']}")
+    if args.json_out:
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=2, ensure_ascii=False))
         print(f"  wrote {args.json_out}")
     return 0
 

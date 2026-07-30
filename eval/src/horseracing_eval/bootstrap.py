@@ -114,3 +114,67 @@ def race_day_cluster_bootstrap_sensitivity_v2(
             _rebucket_week(diffs_by_day), b=b, seed=seed, alpha=alpha
         )
     return out
+
+
+@dataclass(frozen=True)
+class RatioBootstrapCI:
+    """CI of a RATIO statistic ``Σnum / Σden`` (e.g. ΔR² = Σ(ℓ_ref−ℓ_cand) / Σ log N)."""
+
+    point: float
+    ci_low: float | None
+    ci_high: float | None
+    b: int
+    seed: int
+    block: str
+    n_days: int
+    no_decision: bool
+    #: the replicate ratios themselves — kept so a caller can form a one-sided bootstrap p-value
+    #: (e.g. P(ROI <= 1)) without re-running the resampling with a second, drifting seed.
+    replicates: tuple[float, ...] = ()
+
+
+def race_day_cluster_ratio_bootstrap_ci_v1(
+    num_by_day: dict,
+    den_by_day: dict,
+    *,
+    b: int = 2000,
+    seed: int = 20260712,
+    alpha: float = 0.05,
+) -> RatioBootstrapCI:
+    """95% percentile CI of ``Σnum / Σden`` via race-day cluster bootstrap.
+
+    ΔR² is a RATIO, not a mean, so each replicate must recompute BOTH sums from the resampled
+    days. Holding the denominator fixed at its original value (or averaging per-race ratios)
+    understates the variance, because field sizes co-vary with the days that get resampled.
+
+    ``num_by_day``/``den_by_day`` map the same race-day keys to per-race numerator/denominator
+    contributions; the two must align race-for-race within each day. Determinism and the
+    NO_DECISION rule (< 2 days) match ``race_day_cluster_bootstrap_ci_v1``.
+    """
+    days = sorted(num_by_day.keys())
+    if sorted(den_by_day.keys()) != days:
+        raise ValueError("numerator and denominator must cover the same race-days")
+    nums = [np.asarray(num_by_day[d], dtype=float) for d in days]
+    dens = [np.asarray(den_by_day[d], dtype=float) for d in days]
+    for d, (n, x) in zip(days, zip(nums, dens, strict=True), strict=True):
+        if n.shape != x.shape:
+            raise ValueError(f"day {d}: numerator/denominator race counts differ")
+    n_days = len(days)
+    tot_n = float(sum(float(a.sum()) for a in nums))
+    tot_d = float(sum(float(a.sum()) for a in dens))
+    point = tot_n / tot_d if tot_d > 0 else float("nan")
+
+    if n_days < 2:
+        return RatioBootstrapCI(point, None, None, b, seed, "race_day", n_days, no_decision=True)
+
+    rng = np.random.default_rng(seed)
+    boots = np.empty(b, dtype=float)
+    for i in range(b):
+        pick = rng.integers(0, n_days, size=n_days)
+        sn = sum(float(nums[j].sum()) for j in pick)
+        sd = sum(float(dens[j].sum()) for j in pick)
+        boots[i] = sn / sd if sd > 0 else np.nan
+    ci_low = float(np.percentile(boots, 100.0 * alpha / 2.0))
+    ci_high = float(np.percentile(boots, 100.0 * (1.0 - alpha / 2.0)))
+    return RatioBootstrapCI(point, ci_low, ci_high, b, seed, "race_day", n_days,
+                            no_decision=False, replicates=tuple(float(x) for x in boots))
