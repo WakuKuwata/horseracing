@@ -18,7 +18,7 @@ from horseracing_probability.market_odds import DEFAULT_PAYOUT_RATES
 from sqlalchemy.orm import Session
 
 from .exotic_ev import canonical_field
-from .exotic_market import load_real_exotic_odds
+from .exotic_market import load_selectable_exotic_odds
 from .exotic_recommend import _blended_bets, _load_field_inputs
 from .exotic_types import ALL_EXOTIC
 from .kelly_allocation import allocate_kelly
@@ -74,7 +74,7 @@ def generate_kelly_recommendations(
 
         from horseracing_probability.model_calibration import apply_p_calibrator
         field = dataclasses.replace(field, p_norm=apply_p_calibrator(field.p_norm, p_calibrator))
-    real_odds = load_real_exotic_odds(session, race_id) if use_real_odds else {}
+    real_odds = load_selectable_exotic_odds(session, race_id) if use_real_odds else {}
     blended = _blended_bets(
         field, real_odds, threshold=threshold, top_k=top_k, bet_types=bet_types,
         payout_rates=rates, odds_cap=odds_cap, calibrator=calibrator,

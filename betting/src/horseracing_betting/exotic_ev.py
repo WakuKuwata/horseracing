@@ -15,7 +15,10 @@ from collections.abc import Iterable
 
 from horseracing_db.enums import BetType
 from horseracing_probability.engine import joint_probabilities
-from horseracing_probability.market_odds import estimate_market_odds
+from horseracing_probability.market_odds import (
+    default_market_stage_discount,
+    estimate_market_odds,
+)
 
 from .exotic_selection import selection_key, to_selection
 from .exotic_types import ALL_EXOTIC, CanonicalField, ExcludedHorse, ExoticBet
@@ -84,6 +87,7 @@ def candidate_bets(
     odds_cap: float = 10000.0,
     calibrator=None,
     stage_discount=None,
+    market_stage_discount="default",
 ) -> dict[str, list[ExoticBet]]:
     """All scoreable candidates per bet type (no threshold/top-K) on the SHARED canonical field.
 
@@ -91,16 +95,24 @@ def candidate_bets(
     the EV strategy and the ROI baselines so they compare on one population/selection/odds path.
     ``calibrator`` (Feature 013, opt-in) FL-bias-corrects the market q before O_est; None = raw q.
     ``stage_discount`` (Feature 049, opt-in) applies the top2/top3 Benter discount to P_model.
+    ``market_stage_discount`` does the same for the MARKET side O_est and is ON by default (the
+    two are different fits: p-side 0.852/0.707 vs q-side 0.8312/0.7101 — never swap them).
     """
+    if market_stage_discount == "default":
+        market_stage_discount = default_market_stage_discount()
     if not field.p_norm:
         return {}
 
     joint = joint_probabilities(
         field.p_norm, field_size=field.field_size, stage_discount=stage_discount,
     )
+    # O_est carries the 084 market-q stage discount by default. Plain Harville prices every
+    # combination too generously (measured at 0.76 / 0.70 / 0.82 of the real 馬連 / ワイド / 三連複
+    # price over 51 races of real grids), which inflates EV on exactly the combinations a bet
+    # search would chase. `market_stage_discount=None` restores the legacy λ=1 arithmetic.
     est = estimate_market_odds(
         field.odds_norm, field_size=field.field_size, payout_rates=payout_rates,
-        odds_cap=odds_cap, calibrator=calibrator,
+        odds_cap=odds_cap, calibrator=calibrator, stage_discount=market_stage_discount,
     )
     pmaps = {
         BetType.PLACE: joint.place, BetType.QUINELLA: joint.quinella, BetType.EXACTA: joint.exacta,

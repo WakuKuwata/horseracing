@@ -17,7 +17,11 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from horseracing_db.enums import BetType
 from horseracing_db.selection import canonical_selection
-from horseracing_probability.market_odds import MarketOddsError, estimate_market_odds
+from horseracing_probability.market_odds import (
+    MarketOddsError,
+    default_market_stage_discount,
+    estimate_market_odds,
+)
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
@@ -65,7 +69,10 @@ def odds(
     canon = canonical_win_odds(session, race_id)
     if len(canon) >= 2:
         try:
-            eo = estimate_market_odds(canon, field_size=len(canon))
+            # 084 market-q stage discount: plain Harville prices combinations far too
+            # generously (0.70-0.82 of the real grid over 51 measured races).
+            eo = estimate_market_odds(canon, field_size=len(canon),
+                                      stage_discount=default_market_stage_discount())
             # win estimated (per-horse, small) — selection is a single horse number
             for n, o in (eo.win or {}).items():
                 estimated.append(EstimatedOddsRow(bet_type="win", selection=[int(n)],

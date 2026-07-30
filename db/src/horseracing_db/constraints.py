@@ -34,6 +34,13 @@ RESULT_STATUS = _in_list("result_status", ResultStatus.ALL)
 # INV-2: finished rows must carry a finish_order.
 FINISH_ORDER_WHEN_FINISHED = "result_status <> 'finished' OR finish_order IS NOT NULL"
 
+# race_horses place quote (Phase 0-2): netkeiba publishes 複勝 as a RANGE [low, high]. Either both
+# ends are present and ordered, or neither is — a half-stored range is never a valid market quote.
+PLACE_ODDS_RANGE = (
+    "(place_odds_low IS NULL AND place_odds_high IS NULL) OR "
+    "(place_odds_low > 0 AND place_odds_high > 0 AND place_odds_low <= place_odds_high)"
+)
+
 # id_mappings
 MAPPING_STATUS = _in_list("mapping_status", MappingStatus.ALL)
 ID_ENTITY_TYPE = _in_list("entity_type", EntityType.ALL)

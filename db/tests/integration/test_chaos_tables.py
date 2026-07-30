@@ -87,11 +87,17 @@ def _add_race_and_snapshot(session, *, status: str = "active") -> ChaosSnapshot:
     return snapshot
 
 
+#: created at 0013 or later.
+_TABLES_ADDED_AFTER_0012 = {"fetch_throttle_state", "exotic_quotes"}
+
+
 def test_0012_upgrade_downgrade_upgrade_preserves_existing_tables(
     alembic_cfg, engine, _migrated
 ):
     tables_at_head = set(inspect(engine).get_table_names())
-    existing_tables = tables_at_head - _CHAOS_TABLES
+    # 0012's own tables plus everything later migrations added — downgrading to 0011 drops them
+    # all, so this must not be pinned to _CHAOS_TABLES alone.
+    existing_tables = tables_at_head - _CHAOS_TABLES - _TABLES_ADDED_AFTER_0012
     assert _CHAOS_TABLES.issubset(tables_at_head)
 
     try:
@@ -101,7 +107,8 @@ def test_0012_upgrade_downgrade_upgrade_preserves_existing_tables(
 
         command.upgrade(alembic_cfg, "head")
         tables_after_upgrade = set(inspect(engine).get_table_names())
-        assert tables_after_upgrade - _CHAOS_TABLES == existing_tables
+        assert (tables_after_upgrade - _CHAOS_TABLES
+                - _TABLES_ADDED_AFTER_0012) == existing_tables
         assert _CHAOS_TABLES.issubset(tables_after_upgrade)
     finally:
         command.upgrade(alembic_cfg, "head")

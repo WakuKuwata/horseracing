@@ -26,6 +26,7 @@ from .pipeline import (
     discover_races,
     scrape_entries,
     scrape_exotic_odds,
+    scrape_exotic_quotes,
     scrape_laps,
     scrape_odds,
     scrape_results,
@@ -120,6 +121,18 @@ def main(argv: list[str] | None = None) -> int:
     cp.add_argument("--database-url", default=None)
 
     # ⑤ sectional lap backfill (034): by explicit race_id(s) or a date range of races missing laps
+    eq = sub.add_parser(
+        "scrape-exotic-quotes",
+        help="PRE-RACE exotic price grid (one request PER BET TYPE per race)")
+    eq.add_argument("--race-id", action="append", dest="race_ids", required=True,
+                    help="repeatable")
+    eq.add_argument("--bet-type", action="append", dest="bet_types",
+                    default=None,
+                    help="repeatable; default quinella,wide,trio "
+                         "(trifecta is a 4,896-combination grid at 18 runners)")
+    eq.add_argument("--min-interval", type=float, default=1.0)
+    eq.add_argument("--database-url", default=None)
+
     sl = sub.add_parser("scrape-laps",
                         help="ingest race-level sectional laps (034) from db.netkeiba race pages")
     sl.add_argument("--race-id", action="append", default=None,
@@ -195,6 +208,21 @@ def main(argv: list[str] | None = None) -> int:
             print(f"errors({len(rep.errors)}): {rep.errors[:5]}")
         print(f"# repair-splits dry_run={rep.dry_run}")
         return 0 if not rep.errors else 1
+
+    if args.command == "scrape-exotic-quotes":
+        fetcher = _make_fetcher(args.min_interval, None)  # volatile: never cached
+        bet_types = args.bet_types or ["quinella", "wide", "trio"]
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            summary = scrape_exotic_quotes(
+                session, race_ids=args.race_ids, bet_types=bet_types, fetcher=fetcher,
+                scope_value=f"{len(args.race_ids)} races x {','.join(bet_types)}",
+            )
+        print(
+            f"{summary.job_type}: status={summary.status} processed={summary.processed} "
+            f"written={summary.written} skipped={summary.skipped} errors={summary.errors}"
+        )
+        return 0
 
     if args.command == "scrape-laps":
         fetcher = _make_fetcher(args.min_interval, args.cache_dir)

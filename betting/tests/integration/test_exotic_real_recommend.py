@@ -12,7 +12,12 @@ from sqlalchemy import select
 
 from horseracing_betting.exotic_backtest import run_exotic_backtest
 from horseracing_betting.exotic_recommend import generate_exotic_recommendations
-from tests._synth import make_active_model, make_prediction_run, seed_learnable
+from tests._synth import (
+    make_active_model,
+    make_prediction_run,
+    make_result_pending,
+    seed_learnable,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -21,6 +26,7 @@ _RACE = "200801010101"
 
 def _setup(session, tmp_path):
     seed_learnable(session, years=(2007, 2008), races_per_year=10, field_size=8)
+    make_result_pending(session, _RACE)  # recommendations are made BEFORE the race
     mv = make_active_model(session, tmp_path)
     return make_prediction_run(session, race_id=_RACE, model_version=mv), mv
 

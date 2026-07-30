@@ -18,7 +18,10 @@ from .calibration_eval import (  # noqa: E402
 from .exotic_backtest import run_exotic_backtest  # noqa: E402
 from .exotic_divergence import exotic_divergence  # noqa: E402
 from .exotic_ev import candidate_bets, canonical_field, exotic_ev_bets  # noqa: E402
-from .exotic_market import load_real_exotic_odds  # noqa: E402
+from .exotic_market import (  # noqa: E402
+    load_real_exotic_odds,
+    load_selectable_exotic_odds,
+)
 from .exotic_recommend import generate_exotic_recommendations  # noqa: E402
 from .kelly_backtest import run_bankroll_backtest  # noqa: E402
 from .kelly_recommend import generate_kelly_recommendations  # noqa: E402
@@ -32,6 +35,7 @@ __all__ = [
     "generate_exotic_recommendations",
     "run_exotic_backtest",
     "load_real_exotic_odds",
+    "load_selectable_exotic_odds",
     "exotic_divergence",
     "generate_kelly_recommendations",
     "run_bankroll_backtest",

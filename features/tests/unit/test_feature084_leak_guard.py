@@ -46,4 +46,4 @@ def test_chaos_axes_not_in_model_recipe():
 def test_084_schema_contract():
     assert FEATURE_VERSION == "features-018"
     versions = sorted(p.name for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py"))
-    assert versions[-1].startswith("0013_"), versions[-1]
+    assert versions[-1].startswith("0015_"), versions[-1]

@@ -12,10 +12,21 @@ model feature (leak boundary, constitution II).
 
 from __future__ import annotations
 
+import datetime
 import uuid
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, ForeignKey, Numeric, Text, UniqueConstraint, Uuid, text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -72,3 +83,37 @@ class RaceLaps(TimestampMixin, Base):
     source: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text(f"'{Source.NETKEIBA}'")
     )
+
+
+class ExoticQuote(TimestampMixin, Base):
+    """Pre-race price grid for one (race, exotic bet type) — the LOSING combinations included.
+
+    Distinct from :class:`ExoticOdds`, which holds the final DIVIDEND and therefore only ever
+    covers the combination that came in. A dividend cannot drive selection (it is knowable only
+    after the race); this grid can, which is what makes a Dr.Z-style "which combination is
+    mispriced" question askable at all.
+
+    The whole grid lives in one JSONB column rather than one row per combination: an 18-horse
+    trifecta grid alone is 4,896 combinations, and every consumer reads a race's grid as a unit.
+    """
+
+    __tablename__ = "exotic_quotes"
+    __table_args__ = (
+        UniqueConstraint("race_id", "bet_type", name="uq_exotic_quotes_race_bettype"),
+        CheckConstraint(EXOTIC_BET_TYPE, name="ck_exotic_quotes_bet_type"),
+        CheckConstraint("n_combinations > 0", name="ck_exotic_quotes_n_combinations"),
+    )
+
+    exotic_quote_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    race_id: Mapped[str] = mapped_column(ForeignKey("races.race_id"), nullable=False)
+    bet_type: Mapped[str] = mapped_column(Text, nullable=False)
+    #: {canonical selection key -> [odds_low, odds_high|null, popularity|null]}. Only ワイド has a
+    #: real high end; point-priced types keep null there so "is this a range?" stays answerable.
+    quotes: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    n_combinations: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: source-declared effective time of THIS observation (provenance of the single latest value)
+    official_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
+    observed_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'netkeiba'"))
