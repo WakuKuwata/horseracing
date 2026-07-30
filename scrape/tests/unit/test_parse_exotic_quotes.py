@@ -108,3 +108,14 @@ def test_not_json_fails_closed():
 def test_unknown_bet_type_is_a_programming_error():
     with pytest.raises(ValueError, match="no netkeiba odds type"):
         parse_exotic_quotes(_payload("4", {"0102": ["5.0", "0.0", "1"]}), RID, "win")
+
+
+def test_unsold_pool_is_a_parse_error_not_a_silent_empty():
+    """Two days before a race the odds API answers status="NG" / "history odds empty" for the
+    combination pools while type=1 already carries win and place prices — the pools simply are not
+    on sale yet. That must raise, so the pipeline can classify it as 'not yet' rather than write an
+    empty grid; the pipeline turns this specific error into a SKIP, not a failure."""
+    payload = json.dumps({"status": "NG", "reason": "history odds empty",
+                          "data": {"official_datetime": None, "odds": {}}})
+    with pytest.raises(ParseError, match="missing data.odds"):
+        parse_exotic_quotes(payload, RID, "quinella")

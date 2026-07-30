@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from . import SCRAPE_PARSER_VERSION, SURROGATE_PREFIX
 from .fetch import PoliteFetcher
-from .models import ScrapedRaceList
+from .models import ParseError, ScrapedRaceList
 from .odds_adapter import fetch_win_odds
 from .parse._profile import parse_horse_pedigree, parse_horse_profile
 from .parse.entries import parse_entries
@@ -313,6 +313,16 @@ def scrape_exotic_quotes(
                     payload = fetcher.get(exotic_quotes_url(race_id, bet_type), use_cache=False)
                     scraped = parse_exotic_quotes(payload, race_id, bet_type)
                     parts.append(upsert_exotic_quotes(session, scraped))
+                except ParseError as exc:
+                    # Not yet on sale. JRA opens combination pools well after the win pool: two
+                    # days out the odds API answers status="NG" / "history odds empty" for
+                    # type=4..8 while type=1 already carries win and place prices. That is the
+                    # normal state for most of a race's life, so counting it as an error would
+                    # leave every daily job PARTIAL and bury the failures that matter — which is
+                    # exactly how the 080 piggyback stayed silently dead for five days.
+                    parts.append(Counts(skipped=1,
+                                        error_messages=[f"{race_id}/{bet_type}: not on sale yet "
+                                                        f"({exc})"]))
                 except Exception as exc:  # noqa: BLE001 — one type must not abort the pass
                     parts.append(Counts(errors=1,
                                         error_messages=[f"{race_id}/{bet_type}: {exc}"]))

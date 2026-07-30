@@ -133,6 +133,12 @@ def main(argv: list[str] | None = None) -> int:
     eq.add_argument("--min-interval", type=float, default=1.0)
     eq.add_argument("--database-url", default=None)
 
+    qc = sub.add_parser(
+        "exotic-quote-coverage",
+        help="how many races that RAN have a captured pre-race price grid (silent-stop guard)")
+    qc.add_argument("--days", type=int, default=30)
+    qc.add_argument("--database-url", default=None)
+
     sl = sub.add_parser("scrape-laps",
                         help="ingest race-level sectional laps (034) from db.netkeiba race pages")
     sl.add_argument("--race-id", action="append", default=None,
@@ -222,6 +228,36 @@ def main(argv: list[str] | None = None) -> int:
             f"{summary.job_type}: status={summary.status} processed={summary.processed} "
             f"written={summary.written} skipped={summary.skipped} errors={summary.errors}"
         )
+        return 0
+
+    if args.command == "exotic-quote-coverage":
+        # These grids cannot be recovered: a race that runs uncaptured is gone. The failure mode is
+        # silent (a stale worker, a pool that never opened, a renamed field), so the only defence
+        # is looking at the coverage number regularly.
+        from sqlalchemy import text as _t
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            rows = session.execute(_t("""
+                SELECT r.race_date,
+                       count(*) AS races,
+                       count(*) FILTER (WHERE EXISTS (
+                           SELECT 1 FROM exotic_quotes q WHERE q.race_id = r.race_id)) AS captured
+                FROM races r
+                WHERE r.race_date >= current_date - :d
+                  AND EXISTS (SELECT 1 FROM race_results x WHERE x.race_id = r.race_id)
+                GROUP BY r.race_date ORDER BY r.race_date DESC
+            """), {"d": args.days}).all()
+        if not rows:
+            print("no completed races in the window")
+            return 0
+        print(f"{'date':<12}{'races':>7}{'captured':>10}{'coverage':>10}")
+        tot = cap = 0
+        for day, races, captured in rows:
+            tot += races
+            cap += captured
+            flag = "" if captured else "   <- NOTHING CAPTURED"
+            print(f"{str(day):<12}{races:>7}{captured:>10}{captured / races:>9.0%}{flag}")
+        print(f"{'total':<12}{tot:>7}{cap:>10}{(cap / tot if tot else 0):>9.0%}")
         return 0
 
     if args.command == "scrape-laps":

@@ -945,6 +945,16 @@ def main(argv: list[str] | None = None) -> int:
                     help="append the payload to diagnostic_runs (kind=segment_accuracy)")
     ar.add_argument("--database-url", default=None)
 
+    # Real-price exotic edge: buy the combinations the exotic pool prices below what the WIN pool
+    # implies. Needs exotic_quotes (the pool's own price grid) — the one measurement that was
+    # impossible while only synthesised prices existed.
+    pe = sub.add_parser("exotic-price-edge",
+                        help="EV = P_market x O_real on captured exotic price grids")
+    pe.add_argument("--seed", type=int, default=20260730)
+    pe.add_argument("--bootstrap-b", type=int, default=2000)
+    pe.add_argument("--json", dest="json_out", default="out/exotic-price-edge.json")
+    pe.add_argument("--database-url", default=None)
+
     # Exotic combination portfolio: the structure the documented JRA profits actually used
     # (multi-ticket, odds-inverse staking, 馬連/馬単/三連複). Evidence instrument.
     ep = sub.add_parser("exotic-portfolio-eval",
@@ -1072,6 +1082,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _folklore_probe(session, args)
+    if args.command == "exotic-price-edge":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _exotic_price_edge(session, args)
     if args.command == "exotic-portfolio-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1513,6 +1527,42 @@ def _calib_split_eval(session: Session, args) -> int:
         import dataclasses
         with open(args.json_out, "w") as fh:
             json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _exotic_price_edge(session: Session, args) -> int:
+    """Real-price exotic edge (evidence instrument, can_adopt=false)."""
+    import json
+    from pathlib import Path
+
+    from .exotic_price_edge_run import run
+
+    payload = run(session, seed=args.seed, bootstrap_b=args.bootstrap_b)
+    r = payload["result"]
+    print(f"exotic price edge  pre-reg: {r['preregistration']}")
+    print(f"  races: {payload['provenance']['n_races_by_bet_type']}")
+    print(f"  exclusions: {payload['exclusions']}")
+    print("  券種       EV閾値   n_bets  hits   ROI      95% CI            maxhit%  LOHO   判定")
+    for c in r["cells"]:
+        if not c["n_bets"]:
+            continue
+        lo = "  n/a " if c["ci_low"] is None else f"{c['ci_low']:.4f}"
+        hi = "  n/a " if c["ci_high"] is None else f"{c['ci_high']:.4f}"
+        star = " *" if c["verdict"] == "profitable" else "  "
+        print(f"  {c['bet_type']:<10} {c['threshold']:5.2f} {c['n_bets']:>7} {c['n_hits']:>5} "
+              f"{c['roi']:7.4f} [{lo}, {hi}] {c['max_single_hit_share'] * 100:6.1f}% "
+              f"{c['leave_one_hit_out_roi']:6.4f} {c['verdict']}{star}"
+              + (f"  ({c['demoted_reason']})" if c["demoted_reason"] else ""))
+    print(f"  参照値(1-控除率): {r['reference_returns']}")
+    print(f"  HOLM 生存: {r['holm_survivors'] or 'なし'}   ({r['multiplicity']})")
+    print("  帯別内訳(交絡3の確認用):")
+    for c in r["cells"]:
+        if c["n_bets"] and c["verdict"] != "unprofitable":
+            print(f"    {c['bet_type']:<10} T={c['threshold']:<5} {c['band_mix']}")
+    if args.json_out:
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=2, ensure_ascii=False))
         print(f"  wrote {args.json_out}")
     return 0
 
