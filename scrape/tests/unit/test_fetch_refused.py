@@ -150,3 +150,22 @@ def test_other_non_200_responses_still_retry_within_budget():
     assert fetcher.get(_MAIN_URL, use_cache=False) == "payload"
     assert client.calls == [_MAIN_URL, _MAIN_URL, _MAIN_URL]
     assert sleeps == [1.0, 2.0]
+
+
+def test_bare_400_is_a_refusal_not_an_ordinary_error():
+    """netkeiba answers a sustained-load block with HTTP 400 and an EMPTY body — on the odds API
+    and on plain HTML pages alike, including URLs that served fine moments earlier. Classifying
+    that as an ordinary error means the retry/backoff and the caller's stop-the-pass logic never
+    engage, so a block turns into hundreds more refused requests."""
+    from horseracing_scrape.fetch import REFUSAL_STATUSES
+    assert 400 in REFUSAL_STATUSES
+    assert {403, 429}.issubset(REFUSAL_STATUSES)
+
+
+def test_bare_400_is_raised_and_not_retried():
+    client = _Client({_MAIN_URL: _Resp(400, ""), _ROBOTS_URL: _Resp(200, "")})
+    with pytest.raises(FetchRefused) as e:
+        _fetcher(client, respect_robots=False).get(_MAIN_URL, use_cache=False)
+    assert e.value.status_code == 400
+    main_calls = [u for u in client.calls if u == _MAIN_URL]
+    assert len(main_calls) == 1, f"a refusal must not be retried, got {len(main_calls)} attempts"

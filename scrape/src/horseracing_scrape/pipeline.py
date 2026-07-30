@@ -18,7 +18,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from . import SCRAPE_PARSER_VERSION, SURROGATE_PREFIX
-from .fetch import PoliteFetcher
+from .fetch import FetchRefused, PoliteFetcher
 from .models import ParseError, ScrapedRaceList
 from .odds_adapter import fetch_win_odds
 from .parse._profile import parse_horse_pedigree, parse_horse_profile
@@ -313,6 +313,14 @@ def scrape_exotic_quotes(
                     payload = fetcher.get(exotic_quotes_url(race_id, bet_type), use_cache=False)
                     scraped = parse_exotic_quotes(payload, race_id, bet_type)
                     parts.append(upsert_exotic_quotes(session, scraped))
+                except FetchRefused as exc:
+                    # The source is refusing us. Continuing would issue one more refused request
+                    # per remaining (race, bet type) — the exact behaviour that turned a block into
+                    # ~250 further requests before anyone noticed. Stop the pass and let the job
+                    # record how far it got.
+                    parts.append(Counts(errors=1, error_messages=[
+                        f"{race_id}/{bet_type}: {exc} — aborting the pass (source is refusing)"]))
+                    return _aggregate(parts)
                 except ParseError as exc:
                     # Not yet on sale. JRA opens combination pools well after the win pool: two
                     # days out the odds API answers status="NG" / "history odds empty" for

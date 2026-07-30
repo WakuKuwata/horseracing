@@ -119,6 +119,14 @@ def _retry_after_s(resp) -> float | None:
     return min(seconds, _MAX_RETRY_AFTER_S)
 
 
+#: Statuses that mean "stop", not "try again". 403/429 are the documented ones, but netkeiba also
+#: answers a sustained-load block with a bare 400 and an EMPTY body — including on plain HTML pages
+#: that had just served fine. Treating that as an ordinary error made a bulk pass grind through its
+#: whole list one request at a time while every single one was being refused; the retry/backoff and
+#: cooldown that exist for exactly this situation never engaged.
+REFUSAL_STATUSES: frozenset[int] = frozenset({400, 403, 429})
+
+
 def _refused(resp, url: str) -> FetchRefused:
     return FetchRefused(
         resp.status_code,
@@ -219,7 +227,7 @@ class HttpFetcher:
                 resp = self._client.get(url)
                 if resp.status_code == 200:
                     return _resolve_text(resp)
-                if resp.status_code in {403, 429}:
+                if resp.status_code in REFUSAL_STATUSES:
                     raise _refused(resp, url)
                 last_err = FetchError(f"HTTP {resp.status_code} for {url}")
             except FetchRefused:
