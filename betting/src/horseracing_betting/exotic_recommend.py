@@ -13,13 +13,17 @@ from decimal import Decimal
 
 from horseracing_db.enums import EntryStatus
 from horseracing_db.models import PredictionRun, RaceHorse, RacePrediction, Recommendation
-from horseracing_probability.market_odds import DEFAULT_PAYOUT_RATES
+from horseracing_probability.market_odds import (
+    DEFAULT_PAYOUT_RATES,
+    MARKET_STAGE_LAMBDA2,
+    MARKET_STAGE_LAMBDA3,
+)
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import BETTING_LOGIC_VERSION
 from .exotic_ev import _EPS, _k_for, candidate_bets, canonical_field
-from .exotic_market import load_real_exotic_odds
+from .exotic_market import load_selectable_exotic_odds
 from .exotic_selection import selection_key
 from .exotic_types import ALL_EXOTIC, ExoticBet
 
@@ -70,6 +74,7 @@ def default_exotic_logic_version(
         f"exotic_ev=P_model(009;p)*odds[real_exotic>est_O_est(010;q)];"
         f"thr={threshold};topk={top_k};stake={stake};"
         f"takeout[{rates}];qsrc=market_win_odds;cap={odds_cap};"
+        f"mktsd=l2:{MARKET_STAGE_LAMBDA2},l3:{MARKET_STAGE_LAMBDA3};"
         f"pop=canonical(valid_p&valid_odds;renorm);v={BETTING_LOGIC_VERSION}"
     )
 
@@ -132,7 +137,7 @@ def generate_exotic_recommendations(
         race_id, predictions, odds, scratched=scratched, number_to_id=number_to_id
     )
     # real exotic odds preferred per selection; estimated O_est (011) as row-level fallback.
-    real_odds = load_real_exotic_odds(session, race_id) if use_real_odds else {}
+    real_odds = load_selectable_exotic_odds(session, race_id) if use_real_odds else {}
     blended = _blended_bets(
         field, real_odds, threshold=threshold, top_k=top_k, bet_types=bet_types,
         payout_rates=rates, odds_cap=odds_cap, calibrator=calibrator,

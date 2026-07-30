@@ -59,6 +59,48 @@ def _odds_from_prob(p: float, payout_rate: float, cap: float) -> float | None:
     return min(payout_rate / p, cap)      # cap the DERIVED odds, never the probability
 
 
+#: Stage discount for MARKET-derived combination prices, fitted DIRECTLY against real exotic
+#: price grids (1,001 races / 593,740 combinations of 馬連・ワイド・三連複 from netkeiba's odds API,
+#: 2026-07-29; fitted on 667 races, reported on 334 held out).
+#:
+#: Plain Harville (λ=1) overstates how often a favourite fills the minor placings, and that error
+#: compounds into every derived combination price — increasingly so toward the long shots. Held-out
+#: median of real / estimated price, by real-odds band:
+#:
+#:   λ=1        馬連 1.10 → 0.49   ワイド 1.02 → 0.19   三連複 1.31 → 0.76   (~10x → 1000x+)
+#:   THESE λ    馬連 0.93 → 0.85   ワイド 0.90 → 0.70   三連複 0.92 → 1.24
+#:
+#: overall medians 0.73/0.63/0.73 → 0.98/0.94/1.11 and log-error 0.64/0.86/0.82 → 0.45/0.43/0.64.
+#:
+#: NOT the same quantity as two other λ pairs in this repo, and they must never be substituted for
+#: each other: 049's 0.852/0.707 was fitted on MODEL p for the displayed top2/top3 probabilities,
+#: and 084's 0.8312/0.7101 was fitted on market q against the top-3 popularity composition (that
+#: one lives in the chaos artifact JSON, not here). 084's pair was the previous default and is
+#: still a good estimate — this fit only moved the band profile from a 0.98→0.70 tilt to
+#: 0.93→0.85 — but it was fitted for a different target, and the exotic grids are the direct
+#: evidence for exotic prices.
+#:
+#: Known residual: every bet type still under-prices the 1000x+ band (0.70–0.85), and 三連複 runs
+#: ~10% long overall. A single λ pair cannot fix both ends — pushing λ lower flattens the long
+#: shots by tilting the favourites the other way (measured: λ=0.65 gives 馬連 0.71 → 1.11). λ is
+#: per-PLACING-STAGE and shared across bet types by construction, so it cannot be split per bet
+#: type without breaking the engine's identities (wide{i,j} = Σ_k trio{i,j,k}, and quinella = both
+#: exacta orderings).
+MARKET_STAGE_LAMBDA2 = 0.75
+MARKET_STAGE_LAMBDA3 = 0.70
+
+
+def default_market_stage_discount():
+    """The stage discount for market-derived combination prices (see the constants above).
+
+    ``StageDiscount`` lives in ``horseracing_eval`` (049 put the derivation there because the fit
+    needs the evaluation harness), and ``probability`` must not hard-depend on it — the dependency
+    runs probability -> eval, not back. Callers that already import eval can pass their own.
+    """
+    from horseracing_eval.stage_discount import StageDiscount  # lazy: keep the dep one-way
+    return StageDiscount(lambda2=MARKET_STAGE_LAMBDA2, lambda3=MARKET_STAGE_LAMBDA3)
+
+
 def estimate_market_odds(
     win_odds: dict[str, float],
     *,
@@ -66,10 +108,20 @@ def estimate_market_odds(
     payout_rates: dict[str, float] | None = None,
     odds_cap: float = DEFAULT_ODDS_CAP,
     calibrator=None,
+    stage_discount=None,
 ) -> EstimatedOdds:
     """Estimated exotic odds from WIN odds. With ``calibrator`` (Feature 013), the market vote
     share q is FL-bias-corrected to q' before the 009 engine; without it, raw q (backward
-    compatible). q'/q are market-derived, never the model p (p≠q)."""
+    compatible). q'/q are market-derived, never the model p (p≠q).
+
+    ``stage_discount`` (Feature 049) applies the Benter p^λ weights to the 2nd/3rd placing stages.
+    Plain Harville (the default, λ=1) systematically overstates how often a favourite fills the
+    minor placings, which inflates every derived combination price: measured against the real
+    exotic grids the λ=1 estimate sits at ~0.75 (quinella) / ~0.67 (wide) of the market's own
+    price, and the gap widens monotonically toward the long shots. 049 already fitted λ for the
+    displayed top2/top3 probabilities and cut their calibration error ~5x; this parameter is what
+    lets the same correction reach the estimated odds. None keeps the legacy path byte-identical.
+    """
     rates = {**DEFAULT_PAYOUT_RATES, **(payout_rates or {})}
     if calibrator is not None:
         from .fl_bias import apply_calibrator  # lazy: avoid import cycle
@@ -78,7 +130,8 @@ def estimate_market_odds(
         field_size = field_size if field_size is not None else cp.field_size
     else:
         q = market_implied_win_probs(win_odds)     # raw market vote share (NOT model p)
-    jp = joint_probabilities(q, field_size=field_size)  # Feature 009 engine on q (or q')
+    # Feature 009 engine on q (or q'); stage_discount=None reproduces the legacy arithmetic exactly
+    jp = joint_probabilities(q, field_size=field_size, stage_discount=stage_discount)
 
     def conv(d, rate_key):
         if d is None:

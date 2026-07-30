@@ -15,7 +15,12 @@ from horseracing_betting.exotic_ev import candidate_bets, canonical_field
 from horseracing_betting.exotic_recommend import _load_field_inputs
 from horseracing_betting.kelly_recommend import generate_kelly_recommendations
 from horseracing_betting.kelly_types import KellyConfig
-from tests._synth import make_active_model, make_prediction_run, seed_learnable
+from tests._synth import (
+    make_active_model,
+    make_prediction_run,
+    make_result_pending,
+    seed_learnable,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -30,6 +35,7 @@ _RATES = {bt: 1.0 for bt in
 
 def _setup(session, tmp_path):
     seed_learnable(session, years=(2007, 2008), races_per_year=10, field_size=8)
+    make_result_pending(session, _RACE)  # recommendations are made BEFORE the race
     mv = make_active_model(session, tmp_path)
     run_id = make_prediction_run(session, race_id=_RACE, model_version=mv)
     # inject real odds EQUAL to the estimated O_est (no-takeout) so both paths price identically.

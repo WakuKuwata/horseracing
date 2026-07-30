@@ -83,3 +83,16 @@ def make_active_model(session: Session, artifacts_root, *, model_version="bet-te
 def make_prediction_run(session: Session, *, race_id: str, model_version: str):
     """Run serving to persist a prediction_run + race_predictions; return its id."""
     return run_serving(session, race_id=race_id, model_version=model_version)[0].prediction_run_id
+
+
+def make_result_pending(session: Session, race_id: str) -> None:
+    """Drop the synthetic result rows of ONE race so it looks like an upcoming race.
+
+    `seed_learnable` gives every race a finish_order because the model needs something to learn
+    from. But recommendations are generated BEFORE a race runs, and settled `exotic_odds` rows are
+    final dividends of the winning combination — selection must not see them
+    (`load_selectable_exotic_odds`). Tests that exercise the real-odds selection path therefore
+    make their target race result-pending first, matching production.
+    """
+    session.query(RaceResult).filter(RaceResult.race_id == race_id).delete()
+    session.commit()

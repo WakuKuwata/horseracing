@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from horseracing_db.enums import BetType
 from horseracing_probability.engine import joint_probabilities
-from horseracing_probability.market_odds import estimate_market_odds
+from horseracing_probability.market_odds import (
+    default_market_stage_discount,
+    estimate_market_odds,
+)
 
 from horseracing_betting.exotic_ev import canonical_field, exotic_ev_bets
 from horseracing_betting.exotic_selection import selection_key
@@ -21,7 +24,11 @@ def _field():
 def test_ev_equals_pmodel_times_oest():
     field = _field()
     joint = joint_probabilities(field.p_norm, field_size=field.field_size)
-    est = estimate_market_odds(field.odds_norm, field_size=field.field_size)
+    # O_est now carries the 084 market-q stage discount by default, so the reference has to use
+    # the same price model — the invariant under test is 'o_est == estimate_market_odds on the
+    # SAME inputs', not 'o_est == plain Harville'.
+    est = estimate_market_odds(field.odds_norm, field_size=field.field_size,
+                               stage_discount=default_market_stage_discount())
     bets = exotic_ev_bets(field, threshold=0.0, top_k=50, bet_types=(BetType.EXACTA,))
     for b in bets:
         key = (b.selection[0], b.selection[1])

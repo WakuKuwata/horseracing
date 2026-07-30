@@ -10,9 +10,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
 from ..deps import get_session
 from ..queries import latest_diagnostic_run
