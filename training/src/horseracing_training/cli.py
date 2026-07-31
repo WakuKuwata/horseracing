@@ -945,6 +945,23 @@ def main(argv: list[str] | None = None) -> int:
                     help="append the payload to diagnostic_runs (kind=segment_accuracy)")
     ar.add_argument("--database-url", default=None)
 
+    # Pre-registered derivation-layer calibration diagnostic.  Local DB reads only; the runner has
+    # no fetch/scrape fallback.  Defaults are the frozen rev2 window.
+    jc = sub.add_parser(
+        "joint-calibration",
+        help="joint PL/Harville calibration from closing WIN q (SECONDARY)",
+    )
+    jc.add_argument("--from", dest="from_", type=_parse_date,
+                    default=datetime.date(2019, 1, 1),
+                    help="frozen window start; only 2019-01-01 is accepted")
+    jc.add_argument("--to", dest="to", type=_parse_date,
+                    default=datetime.date(2026, 7, 12),
+                    help="frozen window end; only 2026-07-12 is accepted")
+    jc.add_argument("--seed", type=int, default=20260731)
+    jc.add_argument("--bootstrap-b", type=int, default=2000)
+    jc.add_argument("--json", dest="json_out", default="out/joint-calibration.json")
+    jc.add_argument("--database-url", default=None)
+
     # Bet the WIN pool on the EXOTIC pool's opinion — HZR's arrow reversed. Uses only data already
     # held; no fetching.
     cw = sub.add_parser("cross-pool-win",
@@ -1101,6 +1118,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _folklore_probe(session, args)
+    if args.command == "joint-calibration":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _joint_calibration(session, args)
     if args.command == "cross-pool-win":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1555,6 +1576,49 @@ def _calib_split_eval(session: Session, args) -> int:
         with open(args.json_out, "w") as fh:
             json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
         print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _joint_calibration(session: Session, args) -> int:
+    """Frozen PL/Harville joint-calibration diagnostic (SECONDARY, can_adopt=false)."""
+    import json
+    from pathlib import Path
+
+    from .joint_calibration_run import run
+
+    payload = run(
+        session,
+        date_from=args.from_,
+        date_to=args.to,
+        seed=args.seed,
+        bootstrap_b=args.bootstrap_b,
+    )
+    provenance = payload["provenance"]
+    print(
+        f"joint-calibration  races={provenance['n_races']}  "
+        f"days={provenance['n_days']}  us2={provenance['us2_scope']}  "
+        f"us2_scoreable={provenance['n_us2_scoreable_races']}"
+    )
+    print(f"  window: {provenance['frozen_window']}")
+    print(f"  exclusions: {payload['exclusions']}")
+    for section in (
+        "stage_losses",
+        "bet_type_nll",
+        "selected_subset",
+        "wide_inclusion",
+        "field_size_mismatch_note",
+    ):
+        if section in payload:
+            print(
+                f"  {section}: "
+                f"{json.dumps(payload[section], ensure_ascii=False, default=str)}"
+            )
+    print("  reliability: recorded in JSON (cell-micro and race-normalized readouts)")
+    if args.json_out:
+        path = Path(args.json_out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+        print(f"  wrote {path}")
     return 0
 
 
