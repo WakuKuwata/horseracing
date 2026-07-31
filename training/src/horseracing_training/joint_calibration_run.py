@@ -241,8 +241,6 @@ def _iso(value: datetime.datetime | None) -> str | None:
 
 def _resolve_us2_membership(
     quotes: dict[str, dict[str, _Quote]],
-    *,
-    legacy_joinable_race_ids: set[str],
 ) -> _Us2Membership:
     """Recover the original 1,001-race acquisition cohort and its 667/334 split.
 
@@ -259,9 +257,14 @@ def _resolve_us2_membership(
     cohort_pairs = acquired[:ORIGINAL_US2_COHORT_SIZE]
     cohort = tuple(sorted(race_id for _, race_id in cohort_pairs))
     cohort_set = set(cohort)
+    # Cohort IDENTITY only. Whether a cohort race is scoreable in the frozen window is a separate
+    # question and must not weigh here: the cohort spans race dates up to 2026-07-26 while the
+    # window ends 2026-07-12, so requiring every member to be in-window made the proof structurally
+    # impossible and refused a cohort that created_at separates perfectly. Circularity turns on
+    # "which races did the lambda fit see", not on "can all of them be scored".
     complete = len(cohort) == ORIGINAL_US2_COHORT_SIZE and all(
         set(quotes[race_id]) == set(GRID_BET_TYPES) for race_id in cohort
-    ) and set(cohort).issubset(legacy_joinable_race_ids)
+    )
 
     if len(acquired) == ORIGINAL_US2_COHORT_SIZE:
         strict_boundary = True
@@ -395,18 +398,7 @@ def _build(
             created_at=created_at,
         )
 
-    legacy_joinable = {
-        race_id
-        for race_id, race_entries in entries.items()
-        if any(
-            entry.status == EntryStatus.STARTED and entry.odds is not None
-            for entry in race_entries
-        )
-    }
-    membership = _resolve_us2_membership(
-        quotes,
-        legacy_joinable_race_ids=legacy_joinable,
-    )
+    membership = _resolve_us2_membership(quotes)
     selected_us2 = set(membership.selected_race_ids)
     exclusions = dict.fromkeys(EXCLUSION_REASONS, 0)
     races: list[JointCalibRace] = []
