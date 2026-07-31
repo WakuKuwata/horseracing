@@ -1,6 +1,6 @@
 # Feature 085: Arm E — full-history booster + strict-past OOF isotonic
 
-**状態**: Draft(設計のみ・未実装・未事前登録)
+**状態**: **実行済み(2026-07-31)= ADOPT・ただし昇格しない**(§11)。実装は commit `850cadf`
 **作成**: 2026-07-25
 **系譜**: 068 US2(A/B/C-D)の後継。068 の登録簿は改変しない(新しい日付付き登録)
 **設計レビュー**: codex 3並列(統計/実装/製品化)— `docs/plan/codex-085-review.md` に採否記録
@@ -235,3 +235,64 @@ inner OOF の `max(train_date) < target_date`(同日複数レース含む)/ 通�
 - `paired-eval --confirmatory` が `--from/--to` を `assert_confirmatory` に渡していない
   → 窓の照合が効いていない([cli.py:1153](training/src/horseracing_training/cli.py:1153))
 - gate-config の `bootstrap.alpha` が不活性(`paired_eval` は b と seed しか渡さない)
+
+---
+
+## 11. 判定(2026-07-31 実行・append-only)
+
+artifact: `out/085-armE-verdict.json`(n_races 26,050 / n_eligible 26,006 / 813 race-days /
+contract v2 / gate_hash `c3b33affec01` / race_id_set_hash `931d6699…`)
+
+### 11.1 結果 = **ADOPT**(全ゲート PASS)
+
+```
+winner NLL diff = -0.012838   CI [-0.014835, -0.010920]   (uniform baseline 2.5956)
+primary=True  stat_guard=True  recent=True  top_ni=True  calibration=True
+```
+
+**2×2 の 3 セルの対比(これが本 feature の結論)**:
+
+| arm | booster | 校正器 | winner NLL diff | ECE(active→cand) | 判定 |
+|---|---|---|---|---|---|
+| B | 90/10 | isotonic holdout | −0.003813 [−0.00813, +0.00054] | 0.001895→0.002182 | NO_DECISION |
+| C/D | full-history | OOF power(単一 γ) | −0.011879 [−0.01406, −0.00969] | 0.000803→**0.003010** | **REJECT**(calib) |
+| **E** | **full-history** | **OOF isotonic** | **−0.012838 [−0.01484, −0.01092]** | 0.000785→**0.001043** | **ADOPT** |
+
+**読み**: booster に直近 6 年を学習させるゲイン(−0.012〜−0.013)は校正器の族に依存しない実在の
+効果。C/D が落ちたのは校正器側だけであり、単一 γ の power をノンパラメトリックな OOF isotonic に
+差し替えると **ECE の劣化幅が +0.00221 → +0.00026(8.5 分の 1)** に縮み、非劣化幅 0.001 の内側に
+収まる。順位ゲインは失われないどころか僅かに増える(−0.01188 → −0.01284)。
+§6 で最大の懸念とした「OOF→final のスコア分布転移ずれで isotonic の step が壊れる」は**非発現**。
+
+### 11.2 頑健性
+
+- **ブロック幅感度**(診断・ゲートに AND しない): 2d/3d/4d/week のいずれでも CI 上限 ≤ −0.01083
+- **critical subgroup 全 PASS**: `2026_only` [−0.01776, −0.00377] / `nk` [−0.00247, −0.00066] /
+  `2026_nk` [−0.00231, −0.00029]。`canonical` [−0.00123, −0.00090] も PASS
+- **多重性(§4.1 の感度分析)**: family = B / C-D / E の 3 比較。bootstrap replicate が artifact に
+  永続化されていないため厳密な Holm 調整 CI は再計算不能。**正規近似**(implied SE 0.000999・
+  α=0.05/3 → z=2.394)で **[−0.01523, −0.01045]**、ゼロを十分に外れる。
+  *この 1 行は近似であって bootstrap 由来ではない* — 厳密値が要るなら replicate 永続化が先
+
+### 11.3 **昇格しない**(§4 の停止規則をそのまま適用)
+
+この窓は **development evidence** であり、E は C/D の結果を見た後に着想された arm である
+(§4.1)。**PASS は「有望」止まりで昇格根拠ではない。** 次段は §7 の精度限定 prospective
+holdout(2026-07-13 以降の未使用レース)で CI 上限 <0 を確認すること。
+
+**現時点の未使用データ = 4 開催日 / 144 レース(2026-07-18〜07-26、結果は全件確定)。**
+§7 の外挿では −0.012 の効果に必要なのは約 27 開催日 ≒ 3 か月。**現状はその約 15%** であり、
+**いま prospective 判定を出すことはできない**。日次 ingest の蓄積待ちで、着手可能になるのは
+おおむね 2026-10 以降。
+
+### 11.4 この判定で閉じたこと / 開いたこと
+
+**閉じた**: 「booster のデータ配分 × 校正器の族」の 2×2。4 セットすべてに判定がつき、
+勝ちセルが 1 つ特定された。C/D の REJECT は「全期間 booster が駄目」ではなく
+「power 校正が駄目」だったと確定した(旧 C/D verdict は書き換えず、この注記で supersede)。
+
+**開いた**: 昇格経路(§5)。arm E は現状**評価用ラッパーであって出荷可能なモデルではない**
+(`OofCalibratedPredictor` は pickle 不可)。prospective が通った後に §5 の標準 artifact 形状
+(full-history booster の `model.txt` + OOF fit した isotonic を既存 `Calibrator` に入れたもの +
+preprocessor + `calibration_protocol="strict_past_oof_isotonic_v1"` 等の provenance)で
+新しい model_version を **candidate 固定**で採番し、loaded-serving byte parity を証明する。
