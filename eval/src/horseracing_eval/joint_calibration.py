@@ -555,11 +555,13 @@ def _grid_hash(races: Sequence[JointCalibRace]) -> tuple[list[str], str | None]:
         race_ids.append(race.race_id)
         for bet_type in sorted(race.grid):
             for key, odds in sorted(race.grid[bet_type].items()):
-                if not isinstance(odds, (int, float)) or (
-                    not math.isfinite(odds) or odds <= 0.0 or odds == 999.9
-                ):
+                # 999.9 is the WIN-odds sentinel and must NOT be applied here: exotic prices are
+                # a different scale entirely (observed max 99,999.9), so a combination quoted at
+                # exactly 999.9 is an ordinary long shot — 27 of them exist in the real grids.
+                # Rejecting it aborted the whole pre-registered run on one trio price.
+                if not isinstance(odds, (int, float)) or not math.isfinite(odds) or odds <= 0.0:
                     raise JointCalibrationError(
-                        f"race {race.race_id}: grid odds must be finite and positive"
+                        f"race {race.race_id}: grid odds must be finite and positive, got {odds!r}"
                     )
                 rows.append([race.race_id, race.day, bet_type, list(key), float(odds)])
     if not rows:
@@ -831,11 +833,13 @@ def _selected_subset_block(
                     probability = selector[bet_type].get(key)
                     if probability is None:
                         continue
-                    if not isinstance(odds, (int, float)) or (
-                        not math.isfinite(odds) or odds <= 0.0 or odds == 999.9
-                    ):
+                    # Same rule as _grid_hash: 999.9 is the WIN sentinel, never an exotic one.
+                    # Excluding it here would additionally bias the selected subset by silently
+                    # dropping long shots — exactly the cells this endpoint exists to measure.
+                    if not isinstance(odds, (int, float)) or not math.isfinite(odds) or odds <= 0.0:
                         raise JointCalibrationError(
-                            f"race {race.race_id}: grid odds must be finite and positive"
+                            f"race {race.race_id}: grid odds must be finite and positive, "
+                            f"got {odds!r}"
                         )
                     if probability * odds >= threshold:
                         selected.append(key)

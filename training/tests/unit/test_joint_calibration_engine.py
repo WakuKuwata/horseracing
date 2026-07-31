@@ -11,6 +11,7 @@ the predictor-agnostic input rejection remains covered in eval's unit suite.
 
 from __future__ import annotations
 
+import itertools
 import math
 from itertools import combinations
 from numbers import Real
@@ -23,6 +24,7 @@ from horseracing_eval.joint_calibration import (
     MARKET_LAMBDA3,
     WIDE_MIN_FIELD,
     JointCalibRace,
+    JointCalibrationError,
     bet_type_distributions,
     evaluate,
     realized_keys,
@@ -462,3 +464,33 @@ def test_loader_rejects_race_when_any_win_odds_are_invalid(bad_odds):
     assert not all(_valid_win_odds(odds) for odds in started_field_odds)
     assert _valid_win_odds(1.0)
     assert _valid_win_odds(math.nextafter(999.9, 0.0))
+
+
+# --- exotic price scale (regression) ------------------------------------------------------------
+
+def test_999_9_is_a_legitimate_exotic_price_not_a_sentinel():
+    """999.9 is the WIN-odds sentinel. Exotic prices run to 99,999.9 in the real grids, so a
+    combination quoted at exactly 999.9 is an ordinary long shot — 27 exist in the captured data.
+    Applying the win-side rule here aborted a whole pre-registered run on one trio price."""
+    numbers = tuple(range(1, 9))
+    grid = {
+        "quinella": {k: 999.9 for k in itertools.combinations(numbers, 2)},
+        "wide": {k: 999.9 for k in itertools.combinations(numbers, 2)},
+        "trio": {k: 999.9 for k in itertools.combinations(numbers, 3)},
+    }
+    race = JointCalibRace(
+        race_id="r", day="2026-01-01", numbers=numbers,
+        q=tuple([1.0 / 8] * 8), top3=(1, 2, 3), grid=grid,
+    )
+    payload = evaluate([race], arms=("uniform",), b=10, seed=1,
+                       joint_fn=joint_probabilities)
+    # the grid survived: it reached the selected-subset endpoint instead of aborting the run
+    assert payload["provenance"]["real_grid"]
+    assert payload["selected_subset"]
+
+    bad = dict(grid, trio={k: 0.0 for k in grid["trio"]})
+    with pytest.raises(JointCalibrationError, match="finite and positive"):
+        evaluate(
+            [JointCalibRace("r2", "2026-01-01", numbers, tuple([1.0 / 8] * 8), (1, 2, 3), bad)],
+            arms=("uniform",), b=10, seed=1, joint_fn=joint_probabilities,
+        )
