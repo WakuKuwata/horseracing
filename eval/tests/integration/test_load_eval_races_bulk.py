@@ -7,8 +7,8 @@ import datetime
 import pytest
 from horseracing_db.enums import EntryStatus
 from horseracing_db.labels import derive_labels
-from horseracing_db.models import Race, RaceHorse
-from sqlalchemy import select
+from horseracing_db.models import Race, RaceHorse, RaceResult
+from sqlalchemy import func, select
 
 from horseracing_eval.dataset import EvalRace, ScoringLabel, load_eval_races
 from horseracing_eval.predictor import HorseEntry, RaceContext, ResultMarket
@@ -18,7 +18,12 @@ pytestmark = pytest.mark.integration
 
 
 def _load_eval_races_old(session, start_date=None, end_date=None) -> list[EvalRace]:
-    """Verbatim copy of the pre-bulk per-race loader — the equivalence oracle."""
+    """Per-race oracle for the bulk loader.
+
+    Originally a verbatim copy of the pre-bulk loader. ``n_result_rows`` was added afterwards (the
+    partial-ingest exclusion), and it is counted here per race in the obvious N+1 way — so the
+    equivalence claim stays total rather than carving out an exception for the newest field.
+    """
     stmt = select(Race).order_by(Race.race_date, Race.race_id)
     if start_date is not None:
         stmt = stmt.where(Race.race_date >= start_date)
@@ -50,8 +55,13 @@ def _load_eval_races_old(session, start_date=None, end_date=None) -> list[EvalRa
         )
         if not labels:
             continue
+        n_result_rows = session.scalar(
+            select(func.count()).select_from(RaceResult)
+            .where(RaceResult.race_id == race.race_id)
+        )
         out.append(EvalRace(
-            context=RaceContext(race.race_id, race.race_date, horses), labels=labels))
+            context=RaceContext(race.race_id, race.race_date, horses), labels=labels,
+            n_result_rows=int(n_result_rows or 0)))
     return out
 
 

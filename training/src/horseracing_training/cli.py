@@ -945,6 +945,15 @@ def main(argv: list[str] | None = None) -> int:
                     help="append the payload to diagnostic_runs (kind=segment_accuracy)")
     ar.add_argument("--database-url", default=None)
 
+    # Bet the WIN pool on the EXOTIC pool's opinion — HZR's arrow reversed. Uses only data already
+    # held; no fetching.
+    cw = sub.add_parser("cross-pool-win",
+                        help="back horses the exotic pool rates above the win pool")
+    cw.add_argument("--seed", type=int, default=20260731)
+    cw.add_argument("--bootstrap-b", type=int, default=2000)
+    cw.add_argument("--json", dest="json_out", default="out/cross-pool-win.json")
+    cw.add_argument("--database-url", default=None)
+
     # Pool information: does the EXOTIC pool know anything the WIN pool does not? Separates
     # "our PL derivation is lossy" from "combination bettors hold information" — only the second
     # leaves a route to profit.
@@ -1092,6 +1101,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _folklore_probe(session, args)
+    if args.command == "cross-pool-win":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _cross_pool_win(session, args)
     if args.command == "pool-information":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1541,6 +1554,44 @@ def _calib_split_eval(session: Session, args) -> int:
         import dataclasses
         with open(args.json_out, "w") as fh:
             json.dump(dataclasses.asdict(report), fh, indent=2, default=str)
+        print(f"  wrote {args.json_out}")
+    return 0
+
+
+def _cross_pool_win(session: Session, args) -> int:
+    """Back what the exotic pool likes, in the win pool (evidence instrument, can_adopt=false)."""
+    import json
+    from pathlib import Path
+
+    from .cross_pool_win_run import run
+
+    payload = run(session, seed=args.seed, bootstrap_b=args.bootstrap_b)
+    pr, r = payload["provenance"], payload["result"]
+    print(f"cross-pool-win  races={pr['n_races']}  days={pr['n_days']}  "
+          f"pre-reg: {r['preregistration']}")
+    print(f"  exclusions: {payload['exclusions']}")
+    b = r["blind_all_started"]
+    print(f"  全馬無差別(参照): ROI={b['roi']:.4f} [{b['ci_low']:.4f}, {b['ci_high']:.4f}]  "
+          f"n={b['n_bets']}   1-控除率={r['reference_return']}")
+    print("  方向             R      n_bets  hits  平均odds   ROI      95% CI            "
+          "maxhit%  LOHO   判定")
+    for c in r["cells"]:
+        if not c["n_bets"]:
+            continue
+        lo = "  n/a " if c["ci_low"] is None else f"{c['ci_low']:.4f}"
+        hi = "  n/a " if c["ci_high"] is None else f"{c['ci_high']:.4f}"
+        star = " *" if c["verdict"] == "profitable" else "  "
+        label = "exotic>win" if c["direction"] == "exotic_over_win" else "win>exotic(対照)"
+        print(f"  {label:<16} {c['threshold']:<5} {c['n_bets']:>6} {c['n_hits']:>5} "
+              f"{c['mean_selected_odds']:8.1f} {c['roi']:7.4f} [{lo}, {hi}] "
+              f"{c['max_single_hit_share'] * 100:6.1f}% {c['leave_one_hit_out_roi']:6.4f} "
+              f"{c['verdict']}{star}"
+              + (f"  ({c['demoted_reason']})" if c["demoted_reason"] else ""))
+    print(f"  HOLM 生存(順方向のみ): {r['holm_survivors'] or 'なし'}")
+    print(f"  {r['control_note']}")
+    if args.json_out:
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=2, ensure_ascii=False))
         print(f"  wrote {args.json_out}")
     return 0
 
