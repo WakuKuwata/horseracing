@@ -494,3 +494,55 @@ def test_999_9_is_a_legitimate_exotic_price_not_a_sentinel():
             [JointCalibRace("r2", "2026-01-01", numbers, tuple([1.0 / 8] * 8), (1, 2, 3), bad)],
             arms=("uniform",), b=10, seed=1, joint_fn=joint_probabilities,
         )
+
+
+# --- prereg §10: the pool's own devig as a third predictor ----------------------------------------
+
+def test_pool_devig_mass_matches_the_engine_contract():
+    """Categorical pools devig to mass one; WIDE devigs to three. Normalising wide to one would
+    make the pool look three times overconfident against every predictor it is compared with."""
+    from horseracing_eval.joint_calibration import pool_devig_distributions
+
+    numbers = tuple(range(1, 9))
+    grid = {
+        "quinella": {k: 50.0 for k in itertools.combinations(numbers, 2)},
+        "wide": {k: 20.0 for k in itertools.combinations(numbers, 2)},
+        "trio": {k: 300.0 for k in itertools.combinations(numbers, 3)},
+    }
+    got = pool_devig_distributions(
+        JointCalibRace("r", "2026-01-01", numbers, tuple([1.0 / 8] * 8), (1, 2, 3), grid)
+    )
+    assert sum(got["quinella"].values()) == pytest.approx(1.0, abs=1e-12)
+    assert sum(got["trio"].values()) == pytest.approx(1.0, abs=1e-12)
+    assert sum(got["wide"].values()) == pytest.approx(3.0, abs=1e-12)
+
+
+def test_us2_comparison_scores_every_predictor_on_one_common_mask():
+    """A grid can omit the realized combination after a scratch. If each predictor were scored on
+    the races IT happens to cover, a coverage difference would read as a skill difference."""
+    numbers = tuple(range(1, 9))
+    full = {
+        "quinella": {k: 50.0 for k in itertools.combinations(numbers, 2)},
+        "wide": {k: 20.0 for k in itertools.combinations(numbers, 2)},
+        "trio": {k: 300.0 for k in itertools.combinations(numbers, 3)},
+    }
+    thin = {bt: dict(q) for bt, q in full.items()}
+    del thin["quinella"][(1, 2)]          # the realized quinella is unpriced in this race
+
+    races = [
+        JointCalibRace("a", "2026-01-01", numbers, tuple([1.0 / 8] * 8), (1, 2, 3), full),
+        JointCalibRace("b", "2026-01-02", numbers, tuple([1.0 / 8] * 8), (1, 2, 3), thin),
+    ]
+    block = evaluate(races, arms=ARMS, b=20, seed=3,
+                     joint_fn=joint_probabilities)["us2_predictor_comparison"]
+
+    assert block["available"] is True
+    assert block["coverage"]["quinella"]["n_scored"] == 1
+    assert block["coverage"]["quinella"]["n_dropped_realized_not_priced"] == 1
+    assert block["coverage"]["trio"]["n_scored"] == 2
+    scored = {(c["predictor"], c["bet_type"]): c["n_races"] for c in block["cells"]}
+    assert {n for (_, bt), n in scored.items() if bt == "quinella"} == {1}
+    assert {n for (_, bt), n in scored.items() if bt == "trio"} == {2}
+    assert "pool_devig" in {p for p, _ in scored}
+    # wide has three winners, so it must never acquire a categorical NLL
+    assert not [c for c in block["cells"] if c["bet_type"] == "wide"]

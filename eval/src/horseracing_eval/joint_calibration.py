@@ -954,6 +954,162 @@ def _wide_inclusion_block(
     }
 
 
+
+#: Pre-registration §10's third predictor: the combination pool's OWN implied probability, taken
+#: straight from its real price grid. It is deliberately NOT in ARMS — ARMS is the frozen
+#: four-arm contract and tests pin it exactly — so this lives in its own comparison block.
+POOL_ARM = "pool_devig"
+
+#: Only these have BOTH a real grid and a unique realized combination, so only these get an NLL.
+GRID_NLL_BET_TYPES: tuple[str, ...] = ("quinella", "trio")
+
+
+def pool_devig_distributions(
+    race: JointCalibRace,
+) -> dict[str, dict[tuple[int, ...], float]]:
+    """Devig the exotic pool's own grid into the probabilities that pool implies.
+
+    Mass follows the same contract as the engine: one for the categorical pools (exactly one
+    winning combination) and THREE for wide (three winning pairs). Normalising wide to one would
+    make it look three times overconfident against every other predictor.
+
+    Scratched rows were dropped upstream, so a grid can be a strict subset of the combination
+    space. Renormalising the survivors inflates them; callers must read the coverage this returns
+    alongside the scores rather than assuming the grid is complete.
+    """
+    if not race.grid:
+        raise JointCalibrationError(f"race {race.race_id}: no grid to devig")
+    out: dict[str, dict[tuple[int, ...], float]] = {}
+    for bet_type, quotes in race.grid.items():
+        inverse = {key: 1.0 / odds for key, odds in quotes.items() if odds > 0.0}
+        total = math.fsum(inverse.values())
+        if total <= 0.0:
+            raise JointCalibrationError(f"race {race.race_id}: {bet_type} grid devigs to zero")
+        mass = 3.0 if bet_type == "wide" else 1.0
+        out[bet_type] = {key: value * mass / total for key, value in inverse.items()}
+    return out
+
+
+def _grid_coverage(race: JointCalibRace, bet_type: str) -> tuple[int, int]:
+    """(priced combinations, combinations the started field can form)."""
+    arity = 3 if bet_type == "trio" else 2
+    return len(race.grid[bet_type]), math.comb(len(race.numbers), arity)
+
+
+def _us2_predictor_block(
+    races: Sequence[JointCalibRace], *, joint_fn: JointFn | None, b: int, seed: int,
+) -> dict[str, Any]:
+    """Pre-registration §10: is the pool a better predictor than our derivation, and WHERE.
+
+    Every predictor is scored on ONE common mask per bet type — the grid races whose realized
+    combination the grid actually prices. Comparing predictors over different race sets would
+    turn a coverage difference into an apparent skill difference.
+    """
+    grid_races = [race for race in races if race.grid]
+    if not grid_races:
+        return {"available": False, "reason": "no race carries a real price grid"}
+
+    cells: list[dict[str, Any]] = []
+    bins: list[dict[str, Any]] = []
+    coverage: dict[str, dict[str, float]] = {}
+    pool = [pool_devig_distributions(race) for race in grid_races]
+    engine = {
+        arm: [bet_type_distributions(race, arm=arm, joint_fn=joint_fn) for race in grid_races]
+        for arm in ARMS
+    }
+
+    for bet_type in GRID_NLL_BET_TYPES:
+        key_of = [realized_keys(bet_type, race.top3)[0] for race in grid_races]
+        mask = [key in race.grid.get(bet_type, {}) for race, key in zip(grid_races, key_of,
+                                                                       strict=True)]
+        priced = sum(_grid_coverage(race, bet_type)[0] for race in grid_races)
+        formable = sum(_grid_coverage(race, bet_type)[1] for race in grid_races)
+        coverage[bet_type] = {
+            "n_grid_races": len(grid_races),
+            "n_scored": sum(mask),
+            "n_dropped_realized_not_priced": len(mask) - sum(mask),
+            "priced_combination_share": (priced / formable) if formable else float("nan"),
+        }
+        if not any(mask):
+            continue
+        for name in (*ARMS, POOL_ARM):
+            source = pool if name == POOL_ARM else engine[name]
+            values: list[float] = []
+            for race, distributions, key, keep in zip(
+                grid_races, source, key_of, mask, strict=True
+            ):
+                if not keep:
+                    values.append(0.0)
+                    continue
+                probability = distributions.get(bet_type, {}).get(key, 0.0)
+                if probability <= 0.0 or not math.isfinite(probability):
+                    raise JointCalibrationError(
+                        f"race {race.race_id}: {name}/{bet_type} realized probability is invalid"
+                    )
+                # Same excess-over-uniform scale as the main NLL block, using the DENOMINATOR OF
+                # THE PREDICTOR'S OWN support so a sparser grid is not rewarded for being sparse.
+                values.append(
+                    -math.log(probability) - math.log(len(distributions[bet_type]))
+                )
+            estimate = _mean_with_denominator(grid_races, values, mask, b=b, seed=seed)
+            cells.append({
+                "predictor": name,
+                "bet_type": bet_type,
+                "n_races": sum(mask),
+                "excess_over_uniform": estimate.to_dict(),
+            })
+
+    # Where does the pool win — head or tail? Bin by the ENGINE's probability so both predictors
+    # are read on the same partition of cells (binning each by its own value would compare
+    # different populations).
+    for bet_type in _BET_TYPES_RELIABILITY:
+        if bet_type == "exacta" or bet_type == "trifecta":
+            continue
+        # _bin_index clamps to len(BIN_EDGES) - 1, so that is the last valid index.
+        for index in range(len(BIN_EDGES)):
+            lower, upper, inclusive = _bin_bounds(index)
+            n_cells = n_pos = 0
+            engine_sum = pool_sum = 0.0
+            for race, engine_d, pool_d in zip(
+                grid_races, engine["market_current"], pool, strict=True
+            ):
+                winners = set(realized_keys(bet_type, race.top3))
+                for key, probability in engine_d.get(bet_type, {}).items():
+                    if _bin_index(probability) != index:
+                        continue
+                    quoted = pool_d.get(bet_type, {}).get(key)
+                    if quoted is None:
+                        continue
+                    n_cells += 1
+                    n_pos += int(key in winners)
+                    engine_sum += probability
+                    pool_sum += quoted
+            if not n_cells:
+                continue
+            bins.append({
+                "bet_type": bet_type,
+                "lower": lower,
+                "upper": upper,
+                "upper_inclusive": inclusive,
+                "n_cells": n_cells,
+                "n_positive": n_pos,
+                "engine_predicted_mean": engine_sum / n_cells,
+                "pool_predicted_mean": pool_sum / n_cells,
+                "realized_rate": n_pos / n_cells,
+            })
+
+    return {
+        "available": True,
+        "predictor": "devig(low quote) of the combination pool's own grid",
+        "not_market_truth": "a market PROXY: reciprocal-and-normalise is not a coherence proof, "
+                            "and the grids are settled-race closing prices",
+        "common_mask": "per bet type, the grid races whose realized combination the grid prices",
+        "wide_excluded_from_nll": "wide has three winning pairs, so it has no categorical NLL",
+        "coverage": coverage,
+        "cells": cells,
+        "bins": bins,
+    }
+
 def evaluate(
     races: Sequence[JointCalibRace],
     *,
@@ -1052,6 +1208,9 @@ def evaluate(
         ),
         "wide_inclusion": _wide_inclusion_block(
             races, arms, distributions, b=b, seed=seed
+        ),
+        "us2_predictor_comparison": _us2_predictor_block(
+            races, joint_fn=joint_fn, b=b, seed=seed
         ),
         "field_size_mismatch_note": {
             "affected_field_sizes": "5-7",
