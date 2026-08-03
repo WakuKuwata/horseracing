@@ -82,10 +82,17 @@ def _parity_check(servable, *, artifacts_dir: str, model_version: str) -> tuple[
     with (art / "calibrator.pkl").open("rb") as fh:
         calibrator = pickle.load(fh)  # noqa: S301 — our own artifact, written moments ago
 
-    cols = servable.feature_cols_ or []
+    # Compare the BOOSTERS directly (raw tree sum). WinModel.predict applies the objective's
+    # post-processing and needs race groups; the artifact question is narrower — did the trees
+    # survive serialisation — so both sides are scored with raw_score=True on the same matrix.
+    # A plain ndarray, NOT a DataFrame: these boosters carry categorical features and LightGBM
+    # rejects a frame whose categorical_feature set does not match training ("train and valid
+    # dataset categorical_feature do not match"). The ndarray path skips that check, which is
+    # right here — the probe asks whether the TREES round-tripped, not whether a frame binds.
     rng = np.random.default_rng(85)
-    x = rng.normal(size=(256, len(cols)))
-    a = np.asarray(servable.win_model_.raw_predict(x), dtype=float)
+    x = rng.normal(size=(256, booster.num_feature()))
+    fitted = servable.win_model_.booster_
+    a = np.asarray(fitted.predict(x, raw_score=True), dtype=float)
     b = np.asarray(booster.predict(x, raw_score=True), dtype=float)
     booster_diff = float(np.max(np.abs(a - b)))
 
