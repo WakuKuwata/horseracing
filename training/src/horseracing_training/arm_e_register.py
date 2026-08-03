@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from horseracing_db.models import ModelVersion
 from horseracing_eval.dataset import load_eval_races
 from horseracing_features.registry import FEATURE_VERSION
 from sqlalchemy.orm import Session
@@ -56,36 +57,45 @@ class ArmEReport:
         return vars(self) | {}
 
 
-def _parity_check(servable, *, session, model_version) -> tuple[int, float]:
-    """Reload the saved artifacts through SERVING and require an EXACT match.
+def _parity_check(servable, *, artifacts_dir: str, model_version: str) -> tuple[int, float]:
+    """Reload the WRITTEN artifacts and require an exact match against the in-memory model.
 
-    Two probes, because two things are serialised and either can drift:
-      * the BOOSTER, scored on a fixed synthetic feature matrix
-      * the CALIBRATOR, applied to a fixed probe vector spanning the unit interval
+    Reads the files with lightgbm/pickle directly rather than through
+    ``horseracing_serving.model_loader``. That is not a shortcut — ``serving`` DECLARES
+    ``horseracing-training``, so importing serving from here is a reverse dependency. A lazy
+    import does not avoid it; it only defers ModuleNotFoundError to runtime, which is exactly how
+    this was first discovered. (The same shape was found in eval->probability earlier and fixed by
+    injection; here the dependency simply must not exist.)
 
-    This deliberately does not re-run the feature pipeline. The pipeline is shared and already
-    covered; what is new and unproven here is that a grafted OOF isotonic and a full-history
-    booster survive the write/read round trip unchanged.
+    Scope, stated honestly: this proves SERIALISATION FIDELITY — the grafted OOF isotonic and the
+    full-history booster survive the write/read round trip byte-for-byte. It does NOT prove that
+    the serving loader accepts the model_version; the feature-hash / feature-version gates live in
+    serving and have broken serving before. That check belongs in a layer that may import serving.
     """
-    from horseracing_serving.model_loader import load_serving_model  # noqa: PLC0415
+    import pickle  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
 
-    loaded = load_serving_model(session, model_version)
-    if list(loaded.feature_cols) != list(servable.feature_cols_ or []):
-        raise ArmERegisterError("reloaded feature_cols differ from the fitted model")
+    import lightgbm as lgb  # noqa: PLC0415
 
+    art = Path(artifacts_dir) / "model_versions" / model_version
+    booster = lgb.Booster(model_file=str(art / "model.txt"))
+    with (art / "calibrator.pkl").open("rb") as fh:
+        calibrator = pickle.load(fh)  # noqa: S301 — our own artifact, written moments ago
+
+    cols = servable.feature_cols_ or []
     rng = np.random.default_rng(85)
-    x = rng.normal(size=(256, len(loaded.feature_cols)))
-    a = servable.win_model_.raw_predict(x)
-    b = loaded.booster.predict(x, raw_score=True)
-    booster_diff = float(np.max(np.abs(np.asarray(a) - np.asarray(b))))
+    x = rng.normal(size=(256, len(cols)))
+    a = np.asarray(servable.win_model_.raw_predict(x), dtype=float)
+    b = np.asarray(booster.predict(x, raw_score=True), dtype=float)
+    booster_diff = float(np.max(np.abs(a - b)))
 
     probe = np.linspace(1e-6, 1.0 - 1e-6, 1001)
     ca = np.asarray(servable.calibrator_.transform(probe), dtype=float)
-    cb = np.asarray(loaded.calibrator.transform(probe), dtype=float)
+    cb = np.asarray(calibrator.transform(probe), dtype=float)
     calib_diff = float(np.max(np.abs(ca - cb)))
 
     worst = max(booster_diff, calib_diff)
-    if worst != 0.0:
+    if worst != PARITY_TOLERANCE:
         raise ArmERegisterError(
             f"round-trip parity failed (booster {booster_diff!r}, calibrator {calib_diff!r}); "
             "both must be exactly 0"
@@ -143,7 +153,19 @@ def run(
         register_as_candidate=True,
     )
 
-    checked, worst = _parity_check(servable, session=session, model_version=model_version)
+    # save_model_version commits. A parity failure after that would leave a CANDIDATE row that
+    # 057 can serve and that nothing verified — the precise state this check exists to prevent —
+    # so the row is removed before the error escapes.
+    try:
+        checked, worst = _parity_check(
+            servable, artifacts_dir=artifacts_dir, model_version=model_version
+        )
+    except Exception:
+        row = session.get(ModelVersion, model_version)
+        if row is not None:
+            session.delete(row)
+            session.commit()
+        raise
     return ArmEReport(
         model_version=model_version,
         n_races=len(contexts),
