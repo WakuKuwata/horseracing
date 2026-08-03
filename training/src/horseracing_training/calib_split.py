@@ -16,6 +16,8 @@ across the full-history booster and every inner OOF booster (the build dominates
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -44,6 +46,10 @@ MIN_OOF_RACES = 200
 MIN_OOF_ROWS = 2_000
 MIN_OOF_POSITIVES = 200
 MIN_OOF_DISTINCT_SCORES = 2
+
+
+class ArmNotServable(RuntimeError):
+    """arm E cannot be shipped as-is; refuse rather than register a misdescribed model."""
 
 
 class InsufficientOofSample(RuntimeError):
@@ -330,6 +336,72 @@ class OofCalibratedPredictor:
                 if w in p and len(p) >= 2:
                     samples.append((p, w))
         return samples
+
+    def to_servable(self) -> LightGBMPredictor:
+        """Return the inner booster with the OOF isotonic grafted on — the shippable object (§5).
+
+        No new artifact format is needed. ``_base`` is an ordinary LightGBMPredictor and the
+        isotonic was fitted on the RAW race-softmax, which is exactly the vector serving hands to
+        ``calibrator.transform`` (serving/predictor.py: raw_predict -> calibrator.transform). Had
+        the fit been on ``predict_race`` output (clipped + renormalised, as arm C/D does) this
+        graft would be silently wrong, which is why §3.1 froze the score space.
+
+        ``fit_info_`` is REWRITTEN to tell the truth. ``_make_base`` builds the booster with
+        ``calibration="none"`` (correct — the booster carries no calibrator), so shipping it
+        unchanged would record "this model has no calibration" while a fitted isotonic sits in
+        calibrator.pkl next to it. Nothing in serving reads that field, but the registry and any
+        human auditor do.
+        """
+        if self.method != "isotonic":
+            raise ArmNotServable(f"only arm E (isotonic) is servable, not method={self.method!r}")
+        if self._base is None or self.calibrator_ is None:
+            raise ArmNotServable("fit() must run before to_servable()")
+        # Fail closed on the identity fallback. An insufficient OOF sample leaves an identity
+        # calibrator; shipping THAT under the name strict_past_oof_isotonic_v1 would register an
+        # uncalibrated model as a calibrated one.
+        if not self.oof_info_.get("sufficient"):
+            raise ArmNotServable(
+                "refusing to ship arm E with an unfitted calibrator: "
+                f"oof reason={self.oof_info_.get('reason')!r} (fail-closed)"
+            )
+        if self.calibrator_.identity:
+            raise ArmNotServable("refusing to ship a degenerate (identity) OOF isotonic")
+
+        base = self._base
+        base.calibrator_ = self.calibrator_
+        info = dict(base.fit_info_ or {})
+        info["calibration"] = "isotonic_strict_past_oof"
+        # arm E has NO contiguous calibration holdout, so the window/split vocabulary does not
+        # apply. Writing a value here would make it look like a 70/30 split model.
+        info["calibration_split_unit"] = None
+        info["calib_from"] = None
+        info["calib_through"] = None
+        info["n_calib_rows"] = int(self.n_oof_samples_)
+        info["calibration_protocol"] = {
+            "protocol": "strict_past_oof_isotonic_v1",
+            "booster_calib_frac": 0.0,
+            "n_oof_blocks": self.n_oof,
+            "n_oof_rows": self.oof_info_.get("n_oof_rows"),
+            "n_oof_races": self.oof_info_.get("n_oof_races"),
+            "n_positives": self.oof_info_.get("n_positives"),
+            "n_distinct_scores": self.oof_info_.get("n_distinct_scores"),
+            "oof_pred_from": self.oof_info_.get("oof_pred_from"),
+            "oof_pred_through": self.oof_info_.get("oof_pred_through"),
+            "score_space": "raw_race_softmax",
+            "threshold_checksum": self._threshold_checksum(),
+            "n_calib_rows_note": (
+                "counts the OOF rows the isotonic was fitted on; the booster held out NOTHING "
+                "(booster_calib_frac=0.0), so this is not a holdout size"
+            ),
+        }
+        base.fit_info_ = info
+        return base
+
+    def _threshold_checksum(self) -> str:
+        """Stable digest of the fitted isotonic so a swapped calibrator is detectable."""
+        params = self.calibrator_.params_dict() if self.calibrator_ else None
+        payload = json.dumps(params, sort_keys=True, separators=(",", ":"), default=str)
+        return hashlib.sha256(payload.encode()).hexdigest()
 
     def predict_race(self, race: RaceContext) -> dict:
         assert self._base is not None

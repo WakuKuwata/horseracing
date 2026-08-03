@@ -33,15 +33,24 @@ _LEGACY_SPLIT_UNIT = "race_count_v1"  # Feature 073: pre-073 rows had no explici
 
 
 def assert_split_unit_compatible(
-    prior_split: str | None, new_split: str | None, *, model_version: str
+    prior_split: str | None,
+    new_split: str | None,
+    *,
+    model_version: str,
+    prior_protocol: str | None = None,
+    new_protocol: str | None = None,
 ) -> None:
     """Feature 073 US2 (FR-010): fail closed on a split change under the same model_version.
 
     ``None`` (pre-073 rows / unset) is treated as the legacy race-count split. First save or an
     unchanged split is a no-op; a differing split raises (a split change must mint a NEW
     model_version, else the parity oracle would be silently overwritten)."""
-    prior = prior_split or _LEGACY_SPLIT_UNIT
-    new = new_split or _LEGACY_SPLIT_UNIT
+    # Feature 085: a protocol-calibrated model (arm E) legitimately has split_unit=None. Without
+    # this, None collapses to the legacy default and an OOF-calibrated model could overwrite a
+    # 70/30 holdout model under the same model_version without the guard firing — the exact
+    # silent-overwrite this check exists to stop.
+    prior = prior_protocol or prior_split or _LEGACY_SPLIT_UNIT
+    new = new_protocol or new_split or _LEGACY_SPLIT_UNIT
     if prior != new:
         raise ValueError(
             f"refusing to overwrite model_version {model_version!r}: stored "
@@ -135,8 +144,14 @@ def save_model_version(
         prior_split = ((existing.metrics_summary or {}).get("training") or {}).get(
             "calibration_split_unit"
         )
+        prior_protocol = (
+            ((existing.metrics_summary or {}).get("training") or {})
+            .get("calibration_protocol", {}) or {}
+        ).get("protocol")
         assert_split_unit_compatible(
-            prior_split, info.get("calibration_split_unit"), model_version=model_version
+            prior_split, info.get("calibration_split_unit"), model_version=model_version,
+            prior_protocol=prior_protocol,
+            new_protocol=(info.get("calibration_protocol") or {}).get("protocol"),
         )
 
     # Resolve to an ABSOLUTE path before deriving the URIs persisted below. weights_uri /
@@ -191,6 +206,12 @@ def save_model_version(
     if info.get("market_offset"):
         metadata["market_offset"] = dict(info["market_offset"])
         metadata["market_offset_excluded_races"] = info.get("market_offset_excluded_races")
+    # Feature 085 (arm E): a model whose calibrator was fitted on strict-past OOF rows has no
+    # contiguous calibration window, so calib_from/through/split_unit are legitimately null. This
+    # block is what distinguishes "no calibration" from "calibrated by a protocol the window
+    # vocabulary cannot describe". Key absent for ordinary models (their metadata is unchanged).
+    if info.get("calibration_protocol"):
+        metadata["calibration_protocol"] = dict(info["calibration_protocol"])
     meta_path.write_text(json.dumps(metadata, indent=2, sort_keys=True, default=str))
 
     # 2. metrics_summary (eval shape + training meta) -> DB
@@ -227,6 +248,8 @@ def save_model_version(
     }
     if info.get("market_offset"):  # Feature 060: visible from model_versions alone (V)
         summary["training"]["market_offset"] = dict(info["market_offset"])
+    if info.get("calibration_protocol"):  # Feature 085: same, for the arm E protocol
+        summary["training"]["calibration_protocol"] = dict(info["calibration_protocol"])
 
     status = AdoptionStatus.ACTIVE if (
         decision.adopted and not register_as_candidate

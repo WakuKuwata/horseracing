@@ -282,3 +282,70 @@ def test_cli_routes_both_oof_specs_and_falls_back_for_holdout_arms():
     assert isinstance(iso, CalibSplitFactory) and iso.method == "isotonic"
     assert isinstance(holdout, RecipeFactory)
     assert power.recipe_hash != iso.recipe_hash
+
+
+# --- 085 §5: shipping path -----------------------------------------------------------------------
+
+def test_to_servable_refuses_an_unfitted_calibrator():
+    """An insufficient OOF sample leaves an identity calibrator. Shipping THAT under the name
+    strict_past_oof_isotonic_v1 would register an uncalibrated model as a calibrated one."""
+    from horseracing_training.calib_split import ArmNotServable, OofCalibratedPredictor
+
+    p = OofCalibratedPredictor.__new__(OofCalibratedPredictor)
+    p.method = "isotonic"
+    p._base = object()
+    p.calibrator_ = object()
+    p.oof_info_ = {"sufficient": False, "reason": "too_few_oof_races(3<50)"}
+    with pytest.raises(ArmNotServable, match="unfitted calibrator"):
+        p.to_servable()
+
+
+def test_to_servable_rewrites_the_calibration_record_truthfully():
+    """_make_base builds the booster with calibration="none" (correct — it carries no calibrator).
+    Shipping that unchanged would record "no calibration" beside a fitted isotonic in
+    calibrator.pkl. Nothing in serving reads the field, but the registry and auditors do."""
+    from horseracing_training.calib_split import OofCalibratedPredictor
+
+    class _Cal:
+        identity = False
+
+        def params_dict(self):
+            return {"thresholds": [0.1, 0.5], "values": [0.2, 0.7]}
+
+    class _Base:
+        fit_info_ = {"calibration": "none", "calibration_split_unit": "race_count_v1",
+                     "calib_from": "2020-01-01", "calib_through": "2026-07-12", "n_calib_rows": 0}
+        calibrator_ = None
+
+    p = OofCalibratedPredictor.__new__(OofCalibratedPredictor)
+    p.method, p._base, p.calibrator_ = "isotonic", _Base(), _Cal()
+    p.n_oof, p.n_oof_samples_ = 8, 12345
+    p.oof_info_ = {"sufficient": True, "n_oof_rows": 12345, "n_oof_races": 900,
+                   "n_positives": 900, "n_distinct_scores": 5000}
+
+    out = p.to_servable()
+    info = out.fit_info_
+    assert info["calibration"] == "isotonic_strict_past_oof"
+    assert info["calibration_split_unit"] is None
+    assert info["calib_from"] is None and info["calib_through"] is None
+    assert info["n_calib_rows"] == 12345
+    proto = info["calibration_protocol"]
+    assert proto["protocol"] == "strict_past_oof_isotonic_v1"
+    assert proto["booster_calib_frac"] == 0.0
+    assert proto["score_space"] == "raw_race_softmax"
+    assert len(proto["threshold_checksum"]) == 64
+    assert out.calibrator_ is p.calibrator_
+
+
+def test_split_unit_guard_blocks_overwriting_a_holdout_model_with_a_protocol_model():
+    """arm E has split_unit=None, which the guard maps to the legacy default. Without the protocol
+    being considered, an OOF-calibrated model could silently overwrite a 70/30 holdout model under
+    the same model_version — the exact substitution the guard exists to stop."""
+    from horseracing_training.artifacts import assert_split_unit_compatible
+
+    assert_split_unit_compatible("race_count_v1", "race_count_v1", model_version="m")  # no-op
+    with pytest.raises(ValueError, match="must use a new"):
+        assert_split_unit_compatible(
+            "race_count_v1", None, model_version="m",
+            new_protocol="strict_past_oof_isotonic_v1",
+        )

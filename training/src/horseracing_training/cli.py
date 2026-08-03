@@ -905,6 +905,19 @@ def main(argv: list[str] | None = None) -> int:
     cse.add_argument("--json", dest="json_out", default=None)
     cse.add_argument("--database-url", default=None)
 
+    # Feature 085 §9-4: build arm E in the standard artifact shape and register it as CANDIDATE.
+    # Registration is NOT promotion — §7's prospective holdout gates that.
+    ae = sub.add_parser("register-arm-e",
+                        help="085: train arm E full-history and register it as a CANDIDATE")
+    ae.add_argument("--model-version", required=True)
+    ae.add_argument("--artifacts-dir", required=True,
+                    help="MUST be absolute; a bare relative path breaks ops predict (cwd=serving)")
+    ae.add_argument("--n-oof-blocks", type=int, default=8)
+    ae.add_argument("--seed", type=int, default=42)
+    ae.add_argument("--num-threads", type=int, default=None)
+    ae.add_argument("--json", dest="json_out", default=None)
+    ae.add_argument("--database-url", default=None)
+
     # Feature 081 Phase 0: folklore residual-offset SCREENING probe (can_adopt=false). Read-only.
     fp = sub.add_parser("folklore-probe",
                         help="081 Phase 0: residual-offset screening probe (SCREENING ONLY)")
@@ -1122,6 +1135,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _joint_calibration(session, args)
+    if args.command == "register-arm-e":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _register_arm_e(session, args)
     if args.command == "cross-pool-win":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1619,6 +1636,38 @@ def _joint_calibration(session: Session, args) -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
         print(f"  wrote {path}")
+    return 0
+
+
+def _register_arm_e(session: Session, args) -> int:
+    """085 §9-4. Registration is not promotion; the row is pinned CANDIDATE."""
+    import json
+    from pathlib import Path
+
+    from .arm_e_register import run
+
+    art = Path(args.artifacts_dir)
+    if not art.is_absolute():
+        raise SystemExit(
+            f"--artifacts-dir must be absolute (got {args.artifacts_dir!r}); a bare relative path "
+            "is stored in weights_uri and fails to resolve from the ops predict cwd"
+        )
+    payload = run(
+        session, model_version=args.model_version, artifacts_dir=str(art),
+        n_oof_blocks=args.n_oof_blocks, seed=args.seed, num_threads=args.num_threads,
+    )
+    print(f"register-arm-e {payload['model_version']}  races={payload['n_races']}  "
+          f"oof_rows={payload['n_oof_rows']}")
+    print("  protocol=strict_past_oof_isotonic_v1  "
+          f"thresholds={payload['threshold_checksum'][:16]}")
+    print(f"  round-trip parity: {payload['parity_probes']} probes, "
+          f"max|diff|={payload['parity_max_abs_diff']}")
+    print(f"  artifacts: {payload['artifacts_dir']}")
+    print("  registered as CANDIDATE — promotion needs the 085 §7 prospective holdout")
+    if args.json_out:
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+        print(f"  wrote {args.json_out}")
     return 0
 
 
