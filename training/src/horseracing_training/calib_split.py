@@ -267,8 +267,12 @@ class OofCalibratedPredictor:
         """(scores, labels, info) over every eligible OOF race of this outer fold."""
         races = sorted(train_races, key=lambda r: (r.race_date, r.race_id))
         days = sorted({r.race_date for r in races})
-        info = {
+        # oof_pred_from/through record the race-day span the OOF PREDICTIONS actually cover —
+        # the blocks, never the earlier days used to fit them. Without it the shipped provenance
+        # cannot answer "which races produced the calibration sample", which 085 §5 requires.
+        info: dict = {
             "n_oof_races": 0, "n_oof_rows": 0, "n_dead_heat_races": 0, "n_incomplete_races": 0,
+            "oof_pred_from": None, "oof_pred_through": None,
         }
         if len(days) < self.n_oof * 2:
             return np.empty(0), np.empty(0), info
@@ -305,6 +309,11 @@ class OofCalibratedPredictor:
                         f"arm E: prediction/started mismatch or non-finite score for {ctx.race_id}"
                     )
                 info["n_oof_races"] += 1
+                day = ctx.race_date.isoformat()
+                if info["oof_pred_from"] is None or day < info["oof_pred_from"]:
+                    info["oof_pred_from"] = day
+                if info["oof_pred_through"] is None or day > info["oof_pred_through"]:
+                    info["oof_pred_through"] = day
                 for hid, s in zip(ids, raw, strict=True):
                     scores.append(float(s))
                     labels.append(1 if hid in winners else 0)

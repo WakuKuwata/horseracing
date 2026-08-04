@@ -349,3 +349,30 @@ def test_split_unit_guard_blocks_overwriting_a_holdout_model_with_a_protocol_mod
             "race_count_v1", None, model_version="m",
             new_protocol="strict_past_oof_isotonic_v1",
         )
+
+
+def test_oof_span_covers_the_predicted_blocks_not_the_fitting_days():
+    """085 §5 wants "which races produced the calibration sample" answerable from the shipped
+    provenance. The span must be the PREDICTED blocks; recording the fitting days instead would
+    claim the sample reaches back further than it does."""
+    import datetime as _dt
+
+    from horseracing_training.calib_split import OofCalibratedPredictor
+
+    info = {"n_oof_races": 0, "oof_pred_from": None, "oof_pred_through": None}
+
+    def _seen(day: str) -> None:
+        if info["oof_pred_from"] is None or day < info["oof_pred_from"]:
+            info["oof_pred_from"] = day
+        if info["oof_pred_through"] is None or day > info["oof_pred_through"]:
+            info["oof_pred_through"] = day
+
+    # blocks arrive out of order; the span must still be min/max, not first/last
+    for d in ("2021-06-01", "2020-01-05", "2026-07-12", "2023-03-03"):
+        _seen(d)
+    assert info["oof_pred_from"] == "2020-01-05"
+    assert info["oof_pred_through"] == "2026-07-12"
+    assert _dt.date.fromisoformat(info["oof_pred_from"]) < _dt.date.fromisoformat(
+        info["oof_pred_through"]
+    )
+    assert hasattr(OofCalibratedPredictor, "to_servable")
