@@ -296,3 +296,63 @@ holdout(2026-07-13 以降の未使用レース)で CI 上限 <0 を確認する�
 (full-history booster の `model.txt` + OOF fit した isotonic を既存 `Calibrator` に入れたもの +
 preprocessor + `calibration_protocol="strict_past_oof_isotonic_v1"` 等の provenance)で
 新しい model_version を **candidate 固定**で採番し、loaded-serving byte parity を証明する。
+
+---
+
+## 12. 出荷経路の実装(2026-08-03・append-only)
+
+§9 手順 4 を実施。`training register-arm-e` で **lgbm-085-armE** を **CANDIDATE 固定**で登録。
+active は `lgbm-064-f02acc` のまま不変。実装 `training/arm_e_register.py` + `to_servable()`。
+
+```
+races=67,707  oof_rows=831,604  oof_races=59,133  positives=59,210
+protocol=strict_past_oof_isotonic_v1  thresholds=45fa1e9495acadce…
+round-trip parity: 1,001 probes, max|diff| = 0.0
+model_fit_through 2020-08-30 → 2026-08-02   n_model_rows 674,262 → 955,134 (+42%)
+```
+
+### 12.1 設計 — 新しい artifact 形式は不要
+
+`OofCalibratedPredictor` は内部に素の `LightGBMPredictor` を持ち、OOF isotonic は
+**raw race-softmax の上で** fit されている = serving が `calibrator.transform` に渡すのと
+同じベクトル。接ぎ木して既存 `save_model_version` に渡せる。**§3.1 がスコア空間を凍結して
+いたからこそ成立**した(C/D のように `predict_race` 経由で fit していたら静かに壊れていた)。
+
+出荷は**フル履歴の新規 fit**であって評価 fold の booster ではない。
+
+### 12.2 パリティが証明する範囲(**限界の明示**)
+
+証明したのは**直列化の忠実性**(fit → 接ぎ木 → 直列化 → 復元がバイト一致)。
+
+- **「評価したモデルと同一」は証明していない。** 評価は fold ごとの再学習なので、
+  出荷する最終 fit と同一のオブジェクトは存在しない
+- **「serving のローダが受理する」も証明していない。** feature-hash / feature-version の
+  ゲート(INV-S4)は serving 側にあり、`training` から serving は import できない
+  (serving が `horseracing-training` を宣言する側)。**057 で candidate も配信可能なので
+  これは実質的な要件**であり、`live`(serving を import してよい層)側の別作業として残る
+
+### 12.3 既知の記録の穴(**この行に残っている**)
+
+**`oof_pred_from` / `oof_pred_through` が null。** `_oof_isotonic_rows` の info が
+両キーを初期化していなかった。commit `e433e3c` で修正済みだが、**既存行には反映されない**。
+
+**再登録しない判断(2026-08-03・ユーザー決定)**: モデルの中身は同一(seed 固定・同一データ・
+同一手順)で、欠けているのは記録 1 項目のみ。数時間の再学習を払う価値が薄く、**本当に
+provenance が要るのは昇格時**で、そのとき必ず作り直す機会がある(§7 の prospective 判定は
+約 2.5 か月後で、その間にデータが増えるのでどのみち再ビルドになる)。
+
+→ **この candidate 行は「測定用の暫定」と位置づける。昇格前の再ビルドで解消すること。**
+
+### 12.4 実装中に出た欠陥(記録)
+
+1. **依存の逆流** — `training` から `horseracing_serving` を import していた。遅延 import は
+   逆依存を避けず失敗を実行時まで遅らせるだけ(同日 `eval→probability` で同型を是正した直後に
+   再発させた)
+2. **未検証のまま登録** — `save_model_version` は内部でコミットするので、パリティ失敗時に
+   検証を通っていない candidate 行が残っていた。→ 失敗時は行を削除してから送出。実地で作動確認
+3. **メタデータの嘘** — `_make_base` は `calibration="none"` なので、そのまま出荷すると
+   `calibrator.pkl` に isotonic があるのに「校正なし」と記録される。`to_servable()` で是正
+4. **identity フォールバックの出荷** — OOF 不足時に identity のまま protocol 名で登録されうる
+   → `sufficient` と非 identity を保存時に必須化
+5. **split-unit ガードの取りこぼし** — `None` が legacy 既定に潰れ、arm E が 70/30 モデルを
+   同一 model_version で上書きしてもガードが鳴らなかった → protocol を比較に含めて是正
