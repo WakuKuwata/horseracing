@@ -9,6 +9,7 @@ from horseracing_features.corner_trajectory_features import build_corner_traject
 from horseracing_features.extra_features import build_extra_features
 from horseracing_features.history import build_history_features
 from horseracing_features.past_market_features import build_past_market_features
+from horseracing_features.pm_core_strength import build_pm_core_strength_features
 from horseracing_features.speed_figure_features import build_speed_figure_features
 from tests._frames import make_frames
 from tests._projection import assert_projected_equals_full
@@ -20,6 +21,7 @@ _PER_HORSE_BLOCKS = [
     pytest.param(build_extra_features, id="extra"),
     pytest.param(build_history_features, id="history"),
     pytest.param(build_past_market_features, id="past_market"),
+    pytest.param(build_pm_core_strength_features, id="pm_core_strength"),
     pytest.param(build_speed_figure_features, id="speed_figure"),
     pytest.param(build_corner_trajectory_features, id="corner"),
 ]

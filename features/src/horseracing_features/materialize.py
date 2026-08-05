@@ -278,7 +278,9 @@ def build_asof_features(
     # did not, so source_fingerprint MUST include odds (a fresh materialize is required).
     # Independent leaf (see _OPTIONAL_LEAF_BLOCKS): serving may skip it when the model omits F02.
     if "pm_core_strength" not in skip_blocks:
-        pmcs = build_pm_core_strength_features(frames)
+        pmcs = build_pm_core_strength_features(  # 072: per-horse (race-level support full)
+            frames, target_race_ids=target_race_ids
+        )
         out = out.merge(pmcs, on=_KEYS, how="left")
     # Feature 070 (F03/F04/F05 past-market bundle) was rejected at the staged gate — NOT wired in
     # (bump reverted). pm_rank_robust/pm_expectation_residual/pm_conditioned.py kept as the

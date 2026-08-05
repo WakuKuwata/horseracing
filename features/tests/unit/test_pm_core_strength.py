@@ -119,3 +119,69 @@ def test_trend_and_sd_need_two_obs():
     assert np.isnan(row["asof_pm_support_trend"])
     assert np.isnan(row["asof_pm_support_sd5"])
     assert math.isfinite(row["asof_pm_support_last"])
+
+
+# --- Feature 072-style projection parity (interactive-latency fix) ------------------------------
+
+def _projection_specs():
+    """Odds-rich pool: complete-field past races, one VOIDED incomplete-field race, a debut horse,
+    and a same-day pair — every edge the projection must keep byte-identical."""
+    specs = [
+        _race("P1", "2020-01-05", {"a": 1.5, "b": 6.0, "c": 3.0}),
+        _race("P2", "2020-02-05", {"a": 2.0, "b": 4.0, "d": 8.0}),
+        # incomplete field: c has no odds -> the WHOLE race's s is voided (complete-field rule)
+        {"race_id": "P3", "race_date": "2020-03-05", "horses": [
+            {"horse_id": "a", "odds": 2.5, "finish_order": 1},
+            {"horse_id": "c", "odds": None, "finish_order": 2},
+        ]},
+        _race("P4", "2020-04-05", {"a": 3.0, "b": 3.0, "c": 3.0, "d": 3.0}),
+        _race("P5", "2020-05-05", {"b": 1.8, "d": 5.5}),
+    ]
+    # same-day pair: horse 'a' runs twice on 2020-06-01 (same-day obs must be excluded from both)
+    specs.append(_race("SA", "2020-06-01", {"a": 2.2, "b": 2.2}))
+    specs.append(_race("SB", "2020-06-01", {"a": 4.0, "d": 1.4}))
+    # target race: history horses + a debut horse + a CANCELLED entry (must stay a target row —
+    # the full build emits all entry rows; dropping non-started early would break parity)
+    specs.append({"race_id": "RT", "race_date": "2020-07-01", "horses": [
+        {"horse_id": "a", "odds": 2.0, "finish_order": 1},
+        {"horse_id": "b", "odds": 5.0, "finish_order": 2},
+        {"horse_id": "new", "odds": 10.0, "finish_order": 3},
+        {"horse_id": "d", "odds": None, "entry_status": "cancelled", "result_status": None},
+    ]})
+    return specs
+
+
+def test_projection_byte_identical_with_odds():
+    from tests._projection import assert_projected_equals_full
+    frames = make_frames(_projection_specs())
+    assert_projected_equals_full(build_pm_core_strength_features, frames, ["RT"])
+
+
+def test_projection_same_day_multi_race():
+    from tests._projection import assert_projected_equals_full
+    frames = make_frames(_projection_specs())
+    assert_projected_equals_full(build_pm_core_strength_features, frames, ["SA", "SB"])
+
+
+def test_projection_target_none_unchanged():
+    from pandas.testing import assert_frame_equal
+    frames = make_frames(_projection_specs())
+    assert_frame_equal(
+        build_pm_core_strength_features(frames),
+        build_pm_core_strength_features(frames, target_race_ids=None),
+        check_exact=True, check_dtype=True,
+    )
+
+
+def test_projection_all_debut_field_empty_support():
+    """Projected all-debut target (no support rows after horse filtering) hits the empty branch —
+    still byte-identical to the full build's rows."""
+    from tests._projection import assert_projected_equals_full
+    specs = [
+        _race("P1", "2020-01-05", {"a": 1.5, "b": 6.0}),  # history for OTHER horses only
+        _race("RT", "2020-07-01", {"n1": 2.0, "n2": 5.0}),  # both debut
+    ]
+    frames = make_frames(specs)
+    proj = assert_projected_equals_full(build_pm_core_strength_features, frames, ["RT"])
+    assert set(proj["race_id"]) == {"RT"}
+    assert (proj["asof_pm_has_obs"] == 0.0).all()

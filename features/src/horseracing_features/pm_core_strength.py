@@ -155,8 +155,17 @@ def _asof_reductions(src: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
-def build_pm_core_strength_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id) F02 as-of features. All aggregate race_date < R (strictly-before)."""
+def build_pm_core_strength_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) F02 as-of features. All aggregate race_date < R (strictly-before).
+
+    Feature 072 projection (past_market_features same shape): the race-level primitive
+    (``_race_support`` — complete-field check + the ``q`` denominator need every started horse of
+    each PAST race) stays computed over the FULL frame; only the per-horse reduction SOURCE and the
+    target rows are restricted to the target races' horses — byte-identical on those rows
+    (INV-P1). The per-horse expanding/rolling reductions depend only on that horse's own past
+    support rows, so per-horse-key filtering cannot change them."""
     races = frames.races[["race_id", "race_date"]].copy()
     races["race_date"] = pd.to_datetime(races["race_date"])
     has_odds = "odds" in frames.race_horses.columns
@@ -170,7 +179,17 @@ def build_pm_core_strength_features(frames: Frames) -> pd.DataFrame:
     started["field_size"] = started.groupby("race_id")["horse_id"].transform("size")
 
     targets = runs[["race_id", "horse_id", "race_date"]].copy()
-    support = _race_support(started)  # complete-field s per past started horse
+    if target_race_ids is not None:  # Feature 072: restrict output + per-horse source
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        horses = frozenset(targets["horse_id"])
+        # The race-level primitive is per-race-local (complete-field check + q denominator read
+        # only that race's rows), so restricting it to the races a TARGET horse started in leaves
+        # every surviving row bit-identical — proven by the projection parity gates.
+        hit_races = frozenset(started.loc[started["horse_id"].isin(horses), "race_id"])
+        started = started[started["race_id"].isin(hit_races)]
+    support = _race_support(started)  # complete-field s per past started horse (race-level)
+    if target_race_ids is not None:
+        support = support[support["horse_id"].isin(horses)]
     if support.empty:
         out = targets[["race_id", "horse_id"]].copy()
         for c in PM_CORE_STRENGTH_COLUMNS:
