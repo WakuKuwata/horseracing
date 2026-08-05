@@ -38,6 +38,9 @@ def _float(name: str, default: float) -> float:
 class OpsConfig:
     fresh_seconds: int = _int("OPS_FRESH_SECONDS", 600)
     worker_concurrency: int = _int("OPS_WORKER_CONCURRENCY", 2)
+    #: Threads for the CPU lane (predict/recommend subprocesses — no netkeiba traffic, so this is
+    #: bounded by memory, not politeness: a predict subprocess peaks ~3.4GB RSS, so 3 ≈ 10GB).
+    cpu_concurrency: int = _int("OPS_CPU_CONCURRENCY", 3)
     stale_running_seconds: int = _int("OPS_STALE_RUNNING_SECONDS", 900)
     poll_seconds: float = _float("OPS_POLL_SECONDS", 2.0)
     fetch_min_interval: float = _float("OPS_FETCH_MIN_INTERVAL", 1.0)

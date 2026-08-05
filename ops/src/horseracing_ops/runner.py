@@ -505,7 +505,7 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
         # after the enqueue — its session.flush() would otherwise write the dict early and a later
         # in-place mutation is invisible to JSONB change tracking (no MutableDict).
         followup, _ = enqueue_recommend(session, race_id, source="auto_after_predict",
-                                        reuse_running=False)
+                                        reuse_running=False, predict_origin=predict_origin)
         job.summary = {
             "kind": "predict",
             "source": "manual",
@@ -546,6 +546,12 @@ def run_recommend(session: Session, job: IngestionJob, *, fetcher=None) -> Inges
     race_id = job.scope_value or ""
     # preserve the enqueue-time audit label ("manual" button / "auto_after_predict" follow-up)
     source = (job.summary or {}).get("source", "manual")
+    # lane audit: keep the enqueue-time predict_origin through the terminal summary replacement
+    # (the CPU-lane rank read it while QUEUED; losing it on completion would blind the audit)
+    audit = {}
+    predict_origin = (job.summary or {}).get("predict_origin")
+    if predict_origin is not None:
+        audit["predict_origin"] = predict_origin
     proc = _betting_recommend(race_id)
     stdout = proc.stdout or ""
     tail = ((proc.stderr or "") + stdout).strip()[-500:]
@@ -553,14 +559,14 @@ def run_recommend(session: Session, job: IngestionJob, *, fetcher=None) -> Inges
     if proc.returncode != 0:
         job.status = JobStatus.FAILED
         job.error_message = tail
-        job.summary = {"kind": "recommend", "source": source, "error": tail}
+        job.summary = {"kind": "recommend", "source": source, "error": tail, **audit}
     elif "SKIPPED:" in stdout:
         job.status = JobStatus.SKIPPED
         reason = stdout.split("SKIPPED:", 1)[1].strip()[:200]
-        job.summary = {"kind": "recommend", "source": source, "reason": reason}
+        job.summary = {"kind": "recommend", "source": source, "reason": reason, **audit}
     else:
         job.status = JobStatus.SUCCEEDED
-        job.summary = {"kind": "recommend", "source": source, "output": tail}
+        job.summary = {"kind": "recommend", "source": source, "output": tail, **audit}
     session.add(job)
     session.commit()
     return job

@@ -176,7 +176,8 @@ def enqueue_predict(
 
 
 def enqueue_recommend(
-    session: Session, race_id: str, *, source: str = "manual", reuse_running: bool = True
+    session: Session, race_id: str, *, source: str = "manual", reuse_running: bool = True,
+    predict_origin: str | None = None,
 ) -> tuple[IngestionJob, bool]:
     """Feature 043: enqueue a recommend job (in-flight-only dedup). (job, reused); caller commits.
 
@@ -194,6 +195,12 @@ def enqueue_recommend(
     the PRE-predict run, so reusing it as "the fresh run's buy-ups" would silently target the wrong
     run — reuse only QUEUED jobs (they resolve their run when claimed, i.e. after this predict).
     Concurrent double-generation is prevented by the betting-side per-run advisory lock.
+
+    ``predict_origin`` (lane scheduling, codex review): the follow-up of a MANUAL predict records
+    the origin so the CPU lane can rank it interactive (the user's clicked unit completes without
+    a second wait) while auto_after_refresh follow-ups stay FIFO with the batch. A manual click on
+    a QUEUED job promotes its source to "manual" (enqueue_predict same shape); a RUNNING job is
+    never promoted (its rank was already read at claim time).
     """
     session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
                     {"k": f"recommend:{race_id}"})
@@ -204,13 +211,20 @@ def enqueue_recommend(
         .where(IngestionJob.scope_value == race_id)
         .where(IngestionJob.status.in_(reusable))
         .order_by(IngestionJob.created_at.desc())
+        .with_for_update()
     ).first()
     if active is not None:
+        if source == "manual" and active.status == JobStatus.QUEUED:
+            active.summary = {**(active.summary or {}), "source": "manual"}
+            session.flush()
         return active, True
 
+    summary: dict = {"kind": "recommend", "source": source}
+    if predict_origin is not None:
+        summary["predict_origin"] = predict_origin
     job = IngestionJob(
         source=Source.NETKEIBA, job_type=JOB_TYPE_RECOMMEND, scope="race", scope_value=race_id,
-        status=JobStatus.QUEUED, summary={"kind": "recommend", "source": source},
+        status=JobStatus.QUEUED, summary=summary,
     )
     session.add(job)
     session.flush()
