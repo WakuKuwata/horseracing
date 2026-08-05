@@ -273,18 +273,82 @@ def _winner(session: Session, race_id: str) -> tuple[str | None, bool]:
 
 
 def load_p_samples(session: Session, *, date_from, date_to):
-    """[(race_id, race_date, p_dict, winner|None, is_dead_heat)] ordered by (race_date, race_id)."""
-    rows = session.execute(
+    """[(race_id, race_date, p_dict, winner|None, is_dead_heat)] ordered by (race_date, race_id).
+
+    Bulk-loaded (4 set-based queries, no per-race N+1) — value-identical to the per-race
+    ``_latest_run_predictions``/``_winner`` path (differential test), just far faster on the
+    full-history fit window used by ``_fit_product_p_calibrator`` (perf: ~2 round-trips per race
+    → 4 total; the fit itself is order-insensitive because ``_norm``/``_normalize_clip`` sorts
+    horse ids). ``computed_at DESC + prediction_run_id DESC`` ties the "latest run"
+    deterministically (load_topk_samples same shape)."""
+    from collections import defaultdict
+
+    races = session.execute(
         select(Race.race_id, Race.race_date)
         .where(Race.race_date >= date_from)
         .where(Race.race_date <= date_to)
         .order_by(Race.race_date, Race.race_id)
     ).all()
+    if not races:
+        return []
+
+    # latest prediction_run per race (DISTINCT ON), scoped to the same date window
+    latest = (
+        select(
+            PredictionRun.race_id.label("race_id"),
+            PredictionRun.prediction_run_id.label("run_id"),
+        )
+        .join(Race, Race.race_id == PredictionRun.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .distinct(PredictionRun.race_id)
+        .order_by(
+            PredictionRun.race_id,
+            PredictionRun.computed_at.desc(),
+            PredictionRun.prediction_run_id.desc(),
+        )
+        .subquery()
+    )
+
+    started_by_race: dict[str, set[str]] = defaultdict(set)
+    for rid, hid in session.execute(
+        select(RaceHorse.race_id, RaceHorse.horse_id)
+        .join(Race, Race.race_id == RaceHorse.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    ).all():
+        started_by_race[rid].add(hid)
+
+    # predictions of each race's latest run, kept only for STARTED horses with a non-null prob
+    preds_by_race: dict[str, dict[str, float]] = defaultdict(dict)
+    for rid, hid, wp in session.execute(
+        select(latest.c.race_id, RacePrediction.horse_id, RacePrediction.win_prob).join(
+            RacePrediction, RacePrediction.prediction_run_id == latest.c.run_id
+        )
+    ).all():
+        if wp is not None and hid in started_by_race.get(rid, ()):
+            preds_by_race[rid][hid] = float(wp)
+
+    # unique FINISHED winner per race; multiple firsts = dead heat (winner None + flag)
+    winners_by_race: dict[str, list[str]] = defaultdict(list)
+    for rid, hid in session.execute(
+        select(RaceResult.race_id, RaceResult.horse_id)
+        .join(Race, Race.race_id == RaceResult.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .where(RaceResult.result_status == ResultStatus.FINISHED)
+        .where(RaceResult.finish_order == 1)
+    ).all():
+        winners_by_race[rid].append(hid)
+
     out = []
-    for race_id, race_date in rows:
-        p = _latest_run_predictions(session, race_id)
-        winner, dead_heat = _winner(session, race_id)
-        out.append((race_id, race_date, p, winner, dead_heat))
+    for race_id, race_date in races:
+        ws = winners_by_race.get(race_id, [])
+        winner = ws[0] if len(ws) == 1 else None
+        out.append(
+            (race_id, race_date, dict(preds_by_race.get(race_id, {})), winner, len(ws) > 1)
+        )
     return out
 
 
