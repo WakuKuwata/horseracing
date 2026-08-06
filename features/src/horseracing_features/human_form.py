@@ -45,10 +45,22 @@ def _win_rate_before(runs: pd.DataFrame, key: str, out_col: str) -> pd.DataFrame
     return daily[[key, "race_date", out_col]]
 
 
-def build_human_form_features(frames: Frames) -> pd.DataFrame:
-    """Per (race_id, horse_id) jockey/trainer as-of win rate (target-row + same-day excluded)."""
+def build_human_form_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
+    """Per (race_id, horse_id) jockey/trainer as-of win rate (target-row + same-day excluded).
+
+    Feature 072 (cross-entity, owner_breeder same shape): restrict the source to rows whose jockey
+    OR trainer is a target entity — keeps each entity's whole history (incl. same-day), so the
+    daily cumsum−current-day rate is byte-identical on the target rows (INV-P1). Rows pulled in
+    via the OTHER key form extra groups that never merge into the targets (harmless)."""
     runs = _runs(frames)
     targets = runs[["race_id", "horse_id", "race_date", "jockey_id", "trainer_id"]].copy()
+    if target_race_ids is not None:
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        tjky = frozenset(targets["jockey_id"].dropna())
+        ttrn = frozenset(targets["trainer_id"].dropna())
+        runs = runs[runs["jockey_id"].isin(tjky) | runs["trainer_id"].isin(ttrn)]
 
     jock = _win_rate_before(runs, "jockey_id", "jockey_win_rate")
     trn = _win_rate_before(runs, "trainer_id", "trainer_win_rate")

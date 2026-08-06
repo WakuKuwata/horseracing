@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import pytest
 
+from horseracing_features.condition_change_features import build_condition_change_features
 from horseracing_features.corner_trajectory_features import build_corner_trajectory_features
 from horseracing_features.extra_features import build_extra_features
 from horseracing_features.history import build_history_features
+from horseracing_features.human_form import build_human_form_features
 from horseracing_features.past_market_features import build_past_market_features
 from horseracing_features.pm_core_strength import build_pm_core_strength_features
+from horseracing_features.race_level_features import build_race_level_features
 from horseracing_features.speed_figure_features import build_speed_figure_features
 from tests._frames import make_frames
 from tests._projection import assert_projected_equals_full
@@ -24,6 +27,8 @@ _PER_HORSE_BLOCKS = [
     pytest.param(build_pm_core_strength_features, id="pm_core_strength"),
     pytest.param(build_speed_figure_features, id="speed_figure"),
     pytest.param(build_corner_trajectory_features, id="corner"),
+    pytest.param(build_race_level_features, id="race_level"),
+    pytest.param(build_condition_change_features, id="condition_change"),
 ]
 
 
@@ -43,7 +48,9 @@ def test_per_horse_block_target_none_unchanged():
     from pandas.testing import assert_frame_equal
     frames = _history_frames()
     for fn in (build_extra_features, build_history_features, build_past_market_features,
-               build_speed_figure_features, build_corner_trajectory_features):
+               build_speed_figure_features, build_corner_trajectory_features,
+               build_race_level_features, build_condition_change_features,
+               build_human_form_features):
         assert_frame_equal(fn(frames), fn(frames, target_race_ids=None),
                            check_exact=True, check_dtype=True)
 
@@ -161,3 +168,136 @@ def _lowcost_frames():
 def test_lowcost_projection_byte_identical():
     from horseracing_features.lowcost_features import build_lowcost_features
     assert_projected_equals_full(build_lowcost_features, _lowcost_frames(), ["RT"])
+
+
+# --- remaining blocks (interactive-latency round 2): human_form / race_level / condition_change --
+
+def test_human_form_projection_byte_identical():
+    from horseracing_features.human_form import build_human_form_features
+    assert_projected_equals_full(build_human_form_features, _lowcost_frames(), ["RT"])
+
+
+def _prize_condchg_frames():
+    """Varying prize/distance/surface/going so race_level + condition_change are non-trivial:
+    horse 'a' moves 1600芝良 → 1800ダ稍 → 2000芝重 …; RT is a stretch-out on dirt."""
+    specs = []
+    surfaces = ["芝", "ダ", "芝", "ダ", "芝", "ダ"]
+    goings = ["良", "稍", "重", "良", "不", "稍"]
+    for i in range(6):
+        specs.append({
+            "race_id": f"C{i}", "race_date": f"2020-0{i + 1}-05",
+            "distance": 1400 + 200 * (i % 3), "track_type": surfaces[i], "going": goings[i],
+            "prize_money": 500 + 100 * i,
+            "horses": [
+                {"horse_id": "a", "finish_order": (i % 3) + 1, "last_3f": 34.0 + i * 0.1},
+                {"horse_id": "b", "finish_order": ((i + 1) % 3) + 1, "last_3f": 35.0},
+            ],
+        })
+    specs.append({
+        "race_id": "RT", "race_date": "2021-06-01",
+        "distance": 2200, "track_type": "ダ", "going": "稍", "prize_money": 1000,
+        "horses": [
+            {"horse_id": "a", "finish_order": 1, "last_3f": 34.5},
+            {"horse_id": "new", "finish_order": 2, "last_3f": 35.5},  # debut: prev NaN
+        ],
+    })
+    # same-day pair (horse 'a' twice on one day: 同日除外 must hold under projection)
+    specs.append({"race_id": "SA", "race_date": "2021-06-01", "distance": 1200,
+                  "track_type": "芝", "going": "良", "prize_money": 800,
+                  "horses": [{"horse_id": "a", "finish_order": 1}]})
+    return make_frames(specs)
+
+
+def test_race_level_projection_byte_identical():
+    from horseracing_features.race_level_features import build_race_level_features
+    assert_projected_equals_full(build_race_level_features, _prize_condchg_frames(), ["RT"])
+    assert_projected_equals_full(build_race_level_features, _prize_condchg_frames(), ["RT", "SA"])
+
+
+def test_condition_change_projection_byte_identical():
+    from horseracing_features.condition_change_features import build_condition_change_features
+    assert_projected_equals_full(build_condition_change_features, _prize_condchg_frames(), ["RT"])
+    assert_projected_equals_full(
+        build_condition_change_features, _prize_condchg_frames(), ["RT", "SA"]
+    )
+
+
+def test_condition_change_projection_with_projected_pace_input():
+    """materialize passes the PROJECTED pace block — parity must hold with that input too."""
+    from pandas.testing import assert_frame_equal
+
+    from horseracing_features.condition_change_features import build_condition_change_features
+    from horseracing_features.pace_features import build_pace_features
+
+    frames = _prize_condchg_frames()
+    full = build_condition_change_features(frames, pace=build_pace_features(frames))
+    proj = build_condition_change_features(
+        frames, pace=build_pace_features(frames, target_race_ids=frozenset(["RT"])),
+        target_race_ids=frozenset(["RT"]),
+    )
+    keys = ["race_id", "horse_id"]
+    full_t = (full[full["race_id"] == "RT"].sort_values(keys, kind="stable")
+              .reset_index(drop=True))
+    proj = proj.sort_values(keys, kind="stable").reset_index(drop=True)
+    assert_frame_equal(full_t, proj[full_t.columns], check_exact=True, check_dtype=True)
+
+
+# --- codex round-2 edges: NaN entity keys / missing prize / cancelled / empty-target schema -----
+
+def test_human_form_nan_entity_keys():
+    """jockey-only NaN / trainer-only NaN / both NaN target rows must stay byte-identical
+    (groupby dropna drops NaN keys on the right side in BOTH builds — codex)."""
+    specs = []
+    for i in range(4):
+        specs.append({"race_id": f"H{i}", "race_date": f"2020-0{i + 1}-05",
+                      "horses": [
+                          {"horse_id": "a", "jockey_id": "J1", "trainer_id": "T1",
+                           "finish_order": (i % 2) + 1},
+                          {"horse_id": "b", "jockey_id": "J2", "trainer_id": "T2",
+                           "finish_order": ((i + 1) % 2) + 1}]})
+    specs.append({"race_id": "RT", "race_date": "2021-06-01",
+                  "horses": [
+                      {"horse_id": "a", "jockey_id": None, "trainer_id": "T1",
+                       "finish_order": 1},
+                      {"horse_id": "b", "jockey_id": "J2", "trainer_id": None,
+                       "finish_order": 2},
+                      {"horse_id": "z", "jockey_id": None, "trainer_id": None,
+                       "finish_order": 3}]})
+    # same entity (J1) also rides in ANOTHER same-day race -> 同日除外 must hold when only RT
+    # is the target (the same-day mount must still be excluded from J1's before-rate)
+    specs.append({"race_id": "SD", "race_date": "2021-06-01",
+                  "horses": [{"horse_id": "c", "jockey_id": "J1", "trainer_id": "T2",
+                              "finish_order": 1}]})
+    from horseracing_features.human_form import build_human_form_features
+    assert_projected_equals_full(build_human_form_features, make_frames(specs), ["RT"])
+
+
+def test_race_level_missing_prize_and_cancelled():
+    """Past races with NO prize + a cancelled entry in the target race: both must be
+    byte-identical under projection (missing prize rows drop from the source in both builds)."""
+    specs = [
+        {"race_id": "P0", "race_date": "2020-01-05", "prize_money": 500,
+         "horses": [{"horse_id": "a", "finish_order": 1}]},
+        {"race_id": "P1", "race_date": "2020-02-05", "prize_money": None,  # prize missing
+         "horses": [{"horse_id": "a", "finish_order": 2}]},
+        {"race_id": "P2", "race_date": "2020-03-05", "prize_money": 800,
+         "horses": [{"horse_id": "a", "finish_order": 1},
+                    {"horse_id": "b", "finish_order": 2}]},
+        {"race_id": "RT", "race_date": "2021-06-01", "prize_money": 1000,
+         "horses": [{"horse_id": "a", "finish_order": 1},
+                    {"horse_id": "b", "entry_status": "cancelled", "result_status": None}]},
+    ]
+    from horseracing_features.race_level_features import build_race_level_features
+    proj = assert_projected_equals_full(build_race_level_features, make_frames(specs), ["RT"])
+    assert set(proj["horse_id"]) == {"a", "b"}  # cancelled entry keeps its target row
+
+
+def test_new_blocks_empty_target_schema():
+    """Empty target set -> zero rows but full column schema + dtypes preserved."""
+    frames = _lowcost_frames()
+    for fn in (build_human_form_features, build_race_level_features,
+               build_condition_change_features):
+        full = fn(frames)
+        empty = fn(frames, target_race_ids=frozenset())
+        assert len(empty) == 0
+        assert list(empty.columns) == list(full.columns)

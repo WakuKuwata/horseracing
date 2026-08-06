@@ -46,14 +46,22 @@ def _mid_improvement(pos: list[float] | None) -> float:
     return max(pos[j] - pos[j + 1] for j in range(len(pos) - 1))
 
 
-def _traj_runs(frames: Frames) -> pd.DataFrame:
-    """Per-(race, horse) run pool with raw trajectory scores (valid on finished starters)."""
+def _traj_runs(frames: Frames, *, race_pool: frozenset[str] | None = None) -> pd.DataFrame:
+    """Per-(race, horse) run pool with raw trajectory scores (valid on finished starters).
+
+    ``race_pool`` (072 deep projection) restricts the pool to WHOLE races — every row of a kept
+    race survives, so the per-race ``field_size`` primitive and the per-row trajectory scores are
+    bit-identical on the kept rows (per-race locality; parity gates prove it). This is where the
+    block's cost lives: the ``corner_orders`` Python maps run per row."""
     races = frames.races[["race_id", "race_date"]].copy()
     races["race_date"] = pd.to_datetime(races["race_date"])
     rh = frames.race_horses[["race_id", "horse_id", "entry_status"]].copy()
     rr = frames.race_results[
         ["race_id", "horse_id", "finish_order", "result_status", "corner_orders"]
     ]
+    if race_pool is not None:
+        rh = rh[rh["race_id"].isin(race_pool)]
+        rr = rr[rr["race_id"].isin(race_pool)]
     runs = rh.merge(races, on="race_id", how="left").merge(
         rr, on=["race_id", "horse_id"], how="left"
     )
@@ -88,9 +96,16 @@ def build_corner_trajectory_features(
     excluded); the cumulative state attached to a past run already includes that run, so the
     backward as-of merge yields exactly the strictly-before aggregate for the target row.
 
-    Feature 072: the ``field_size`` primitive in ``_traj_runs`` stays over the FULL frame; only the
-    per-horse cumulative source and the target rows are restricted (INV-P1)."""
-    runs = _traj_runs(frames)
+    Feature 072 (deep projection): the run pool is restricted to the WHOLE races the target
+    horses appeared in — per-race locality keeps ``field_size`` and every per-row trajectory
+    score bit-identical (INV-P1) while skipping the per-row corner_orders maps for the rest of
+    the pool. Then the per-horse cumulative source and the target rows are restricted as before."""
+    race_pool: frozenset[str] | None = None
+    if target_race_ids is not None:
+        rh0 = frames.race_horses[["race_id", "horse_id"]]
+        thorses = frozenset(rh0.loc[rh0["race_id"].isin(target_race_ids), "horse_id"])
+        race_pool = frozenset(rh0.loc[rh0["horse_id"].isin(thorses), "race_id"])
+    runs = _traj_runs(frames, race_pool=race_pool)
     targets_all = runs[["race_id", "horse_id", "race_date"]].copy()
     if target_race_ids is not None:
         targets_all = targets_all[targets_all["race_id"].isin(target_race_ids)]

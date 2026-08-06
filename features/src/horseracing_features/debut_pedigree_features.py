@@ -39,13 +39,26 @@ DEBUT_PEDIGREE_COLUMNS = [
 ]
 
 
-def _sire_debut_win_rate(frames: Frames, *, min_starts: int) -> pd.DataFrame:
+def _sire_debut_win_rate(
+    frames: Frames, *, min_starts: int, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
     """Per (race_id, horse_id) sire's OTHER-offspring debut win rate, as-of (strictly-before),
-    self-excluded, same-day excluded. NaN when the sire is unknown or other-debuts < min_starts."""
+    self-excluded, same-day excluded. NaN when the sire is unknown or other-debuts < min_starts.
+
+    Feature 072 (deep projection): restricted to the target sires' WHOLE offspring pool — a
+    horse's sire is horse-constant, so filtering by sire keeps every kept horse's full history:
+    debut detection (first started appearance) and the per-sire cumulative are bit-identical
+    (parity gates). Target rows with an unknown sire drop out of this sub-computation and
+    left-merge to NaN in the caller — same value the full build produces for them."""
     runs = _ped_runs(frames)  # race_date, sire_name (normalized), is_win, is_finished
     rh = frames.race_horses[["race_id", "horse_id", "entry_status"]]
     runs = runs.merge(rh, on=_KEYS, how="left")
     runs["is_started"] = (runs["entry_status"] == EntryStatus.STARTED).astype(int)
+    if target_race_ids is not None:
+        tsires = frozenset(
+            runs.loc[runs["race_id"].isin(target_race_ids), "sire_name"].dropna()
+        )
+        runs = runs[runs["sire_name"].isin(tsires)]
 
     # each horse's DEBUT run = its first STARTED appearance (stable by date then race_id)
     started = runs[runs["is_started"] == 1].sort_values(
@@ -63,8 +76,10 @@ def _sire_debut_win_rate(frames: Frames, *, min_starts: int) -> pd.DataFrame:
     daily["cc"] = g["c"].cumsum()
 
     # strictly-before cumulative at each target row (allow_exact_matches=False = same-day excluded)
-    targets = runs[["race_id", "horse_id", "race_date", "sire_name"]].sort_values(
-        "race_date", kind="stable")
+    trows = runs[["race_id", "horse_id", "race_date", "sire_name"]]
+    if target_race_ids is not None:  # only the target rows are ever consumed by the caller
+        trows = trows[trows["race_id"].isin(target_race_ids)]
+    targets = trows.sort_values("race_date", kind="stable")
     sire_cum = daily[["sire_name", "race_date", "cw", "cc"]].sort_values("race_date", kind="stable")
     m = pd.merge_asof(
         targets, sire_cum, on="race_date", by="sire_name",
@@ -99,14 +114,14 @@ def build_debut_pedigree_features(
 
     Feature 072: gates read the (already-projected) history/pedigree of the target field; the base
     row set is restricted to the target races. ``sire_debut_win_rate`` (other-offspring, self- and
-    same-day excluded) stays computed over the full frame — only target rows are kept.
-    Byte-identical on the target rows (INV-P1)."""
+    same-day excluded) is restricted to the target sires' whole offspring pool (deep projection —
+    see its docstring). Byte-identical on the target rows (INV-P1)."""
     if history is None:
         history = build_history_features(frames, target_race_ids=target_race_ids)
     if pedigree is None:
         pedigree = build_pedigree_features(frames, target_race_ids=target_race_ids)
 
-    sdw = _sire_debut_win_rate(frames, min_starts=min_starts)
+    sdw = _sire_debut_win_rate(frames, min_starts=min_starts, target_race_ids=target_race_ids)
     h = history[[*_KEYS, "is_debut", "is_low_history"]]
     p = pedigree[[*_KEYS, "sire_win_rate", "sire_dist_band_win_rate"]]
     base = frames.race_horses[_KEYS].drop_duplicates()

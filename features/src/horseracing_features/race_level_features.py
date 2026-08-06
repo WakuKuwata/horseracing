@@ -22,9 +22,14 @@ from .loader import Frames
 RACE_LEVEL_ASOF_COLUMNS = ["asof_prize_avg"]
 
 
-def build_race_level_features(frames: Frames) -> pd.DataFrame:
+def build_race_level_features(
+    frames: Frames, *, target_race_ids: frozenset[str] | None = None
+) -> pd.DataFrame:
     """Per (race_id, horse_id): asof_prize_avg over past started races (float64, NaN-propagating).
-    """
+
+    Feature 072 projection (past_market_features same shape): the per-horse expanding mean depends
+    only on that horse's own past started rows, so restricting the SOURCE and the target rows to
+    the target races' horses is byte-identical on those rows (INV-P1, parity gates)."""
     races_cols = ["race_id", "race_date"]
     has_prize = "prize_money" in frames.races.columns
     if has_prize:
@@ -43,9 +48,11 @@ def build_race_level_features(frames: Frames) -> pd.DataFrame:
         ["race_id", "horse_id", "race_date"]
     ]
 
-    src = runs[runs["prize_log"].notna()].sort_values(
-        ["horse_id", "race_date"], kind="stable"
-    ).copy()
+    src = runs[runs["prize_log"].notna()]
+    if target_race_ids is not None:  # Feature 072: restrict output + per-horse source
+        targets = targets[targets["race_id"].isin(target_race_ids)]
+        src = src[src["horse_id"].isin(frozenset(targets["horse_id"]))]
+    src = src.sort_values(["horse_id", "race_date"], kind="stable").copy()
     g = src.groupby("horse_id", sort=False)
     src["asof_prize_avg"] = (
         g["prize_log"].expanding().mean().reset_index(level=0, drop=True)

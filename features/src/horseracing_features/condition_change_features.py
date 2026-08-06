@@ -81,16 +81,27 @@ def _prev_started(runs: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_condition_change_features(
-    frames: Frames, *, pace: pd.DataFrame | None = None
+    frames: Frames, *, pace: pd.DataFrame | None = None,
+    target_race_ids: frozenset[str] | None = None,
 ) -> pd.DataFrame:
     """Per (race_id, horse_id) Feature-033 condition-change × ability columns. base as-of vs the
-    prior started race; ability from 023's as-of output (pass `pace` to avoid recomputation)."""
+    prior started race; ability from 023's as-of output (pass `pace` to avoid recomputation).
+
+    Feature 072 projection (per-horse): the prev-started lookup (merge_asof by horse_id) depends
+    only on that horse's own past started rows, so restricting the source and target rows to the
+    target races' horses is byte-identical on those rows (INV-P1). The caller passes a `pace`
+    frame with at least the target rows (materialize passes the equally-projected pace block)."""
     if pace is None:
-        pace = build_pace_features(frames)
+        pace = build_pace_features(frames, target_race_ids=target_race_ids)
     runs = _runs(frames)
     base = runs[_KEYS].copy()
-    tr = _prev_started(
-        runs, runs[["race_id", "horse_id", "race_date", "distance", "surface", "going_ord"]])
+    tr_targets = runs[["race_id", "horse_id", "race_date", "distance", "surface", "going_ord"]]
+    prev_src = runs
+    if target_race_ids is not None:  # Feature 072: restrict output + per-horse source
+        base = base[base["race_id"].isin(target_race_ids)].copy()
+        tr_targets = tr_targets[tr_targets["race_id"].isin(target_race_ids)]
+        prev_src = runs[runs["horse_id"].isin(frozenset(tr_targets["horse_id"]))]
+    tr = _prev_started(prev_src, tr_targets)
 
     tr["dist_change"] = tr["distance"] - tr["prev_distance"]            # prev missing → NaN
     tr["going_change"] = tr["going_ord"] - tr["prev_going_ord"]        # either NaN → NaN

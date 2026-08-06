@@ -230,7 +230,9 @@ def build_asof_features(
         frames, low_history_max=low_history_max, target_race_ids=target_race_ids
     )
     extra = build_extra_features(frames, target_race_ids=target_race_ids)  # 072: per-horse
-    human = build_human_form_features(frames)
+    human = build_human_form_features(  # 072: cross-entity (jockey/trainer key)
+        frames, target_race_ids=target_race_ids
+    )
     pace = build_pace_features(frames, target_race_ids=target_race_ids)  # Feature 072: per-horse
     pedigree = build_pedigree_features(  # Feature 026 / 072: cross-entity (sire/damsire key)
         frames, target_race_ids=target_race_ids
@@ -240,14 +242,18 @@ def build_asof_features(
     debutped = build_debut_pedigree_features(  # Feature 032 / 072 (consumes projected history/ped)
         frames, history=history, pedigree=pedigree, target_race_ids=target_race_ids
     )
-    condchg = build_condition_change_features(frames, pace=pace)  # Feature 033 (condition×ability)
+    condchg = build_condition_change_features(  # Feature 033 / 072: per-horse (pace projected too)
+        frames, pace=pace, target_race_ids=target_race_ids
+    )
     cornertraj = build_corner_trajectory_features(  # Feature 041 / 072: per-horse (field_size full)
         frames, target_race_ids=target_race_ids
     )
     ownerbrd = build_owner_breeder_features(  # Feature 056 / 072: cross-entity (owner/breeder key)
         frames, target_race_ids=target_race_ids
     )
-    racelevel = build_race_level_features(frames)    # Feature 056 (prize class, as-of half)
+    racelevel = build_race_level_features(  # Feature 056 / 072: per-horse
+        frames, target_race_ids=target_race_ids
+    )
     out = (
         history.merge(extra, on=_KEYS, how="left")
         .merge(human, on=_KEYS, how="left")
