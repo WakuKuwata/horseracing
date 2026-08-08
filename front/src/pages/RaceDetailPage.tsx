@@ -183,7 +183,12 @@ export function RaceDetailPage() {
         ))}
       </div>
 
-      {tab === "recs" && <RecommendationPanel raceId={raceId} />}
+      {/* Feature 087 (codex C1): horse names/frames come from the RACE DETAIL response
+          (RaceDetail.horses: HorseEntry[]) — the prediction response's horses are
+          HorsePrediction[] and carry neither horse_name nor frame. */}
+      {tab === "recs" && (
+        <RecommendationPanel raceId={raceId} entries={raceQuery.data?.horses} />
+      )}
       {tab === "odds" && <OddsPanel raceId={raceId} />}
       {tab === "model" && (
         <>

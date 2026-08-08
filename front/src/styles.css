@@ -826,3 +826,55 @@ th.colgroup {
 .dispersion__note code { font-size: 0.66rem; background: var(--border); padding: 1px 5px; border-radius: 4px; }
 .dispersion__hint { font-size: 0.72rem; color: var(--muted); margin: 0 0 0.7rem; }
 .dispersion__empty { font-size: 0.78rem; color: var(--muted); margin: 0; }
+
+/* --- Feature 087: betting slip (金額主役カード) ------------------------------------------- */
+.betslip { display: flex; flex-direction: column; gap: 0.6rem; }
+.betslip__budget { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.betslip__budget label { font-size: 0.78rem; color: var(--muted); }
+.betslip__budget input { width: 8rem; }
+.betslip__budget-hint { font-size: 0.72rem; color: var(--muted); margin: 0; }
+.betslip__summary { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+.betslip__summary-total { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.betslip__summary-note { font-size: 0.75rem; color: var(--muted); }
+.betslip__group-title { font-size: 0.8rem; color: var(--muted); margin: 0.4rem 0 0.2rem; }
+.betslip__cards { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.betslip-card { border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.8rem; }
+.betslip-card__row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+.betslip-card__bettype { font-size: 0.78rem; font-weight: 600; min-width: 3.2rem; }
+.betslip-card__chips { display: inline-flex; align-items: center; gap: 3px; }
+.betslip-card__names { font-size: 0.78rem; color: var(--text); flex: 1; min-width: 6rem; }
+.betslip-card__amount { font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-left: auto; }
+.betslip-card__amount--skip, .betslip-card__amount--ref { font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+.betslip-card__evidence { margin-top: 0.35rem; }
+.betslip-card__evidence summary { font-size: 0.72rem; color: var(--muted); cursor: pointer; }
+.betslip-card__evidence-body { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
+
+/* strength: neutral gray meter — the LABEL is the content, the bar is decoration (aria-hidden) */
+.strength { display: inline-flex; align-items: center; gap: 6px; min-width: 6.4rem; }
+.strength__label { font-size: 0.72rem; color: var(--muted); width: 2.4rem; }
+.strength__bar { flex: 1; height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; }
+.strength__bar i { display: block; height: 100%; background: var(--muted); border-radius: 999px; }
+
+/* JRA frame colors (fixed 1..8 mapping; neutral for unknown). Text colors chosen for contrast. */
+.frame-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 6px;
+  font-size: 0.82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.frame-chip--none { background: var(--border); color: var(--text); }
+.frame-chip--1 { background: #f5f5f5; color: #222; border: 1px solid #999; }
+.frame-chip--2 { background: #222222; color: #fff; }
+.frame-chip--3 { background: #d34040; color: #fff; }
+.frame-chip--4 { background: #2f6fc4; color: #fff; }
+.frame-chip--5 { background: #e6c832; color: #4a3c00; }
+.frame-chip--6 { background: #3a9a55; color: #fff; }
+.frame-chip--7 { background: #e08a3c; color: #fff; }
+.frame-chip--8 { background: #e389b0; color: #40202e; }
+.betslip-card__chip-sep { color: var(--muted); font-size: 0.75rem; }
+
+.betslip__skip-card { border: 1px dashed var(--border); border-radius: 8px; padding: 0.55rem 0.8rem; }
+.betslip__skip-title { font-size: 0.82rem; font-weight: 600; margin: 0; }
+.betslip__skip-note { font-size: 0.72rem; color: var(--muted); margin: 0.15rem 0 0; }
+.betslip__over-budget { font-size: 0.75rem; color: var(--muted); margin: 0; }
+.view-toggle { margin: 0.3rem 0; }

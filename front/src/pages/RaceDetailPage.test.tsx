@@ -1,9 +1,15 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { server } from "../tests/server";
-import { happyHandlers, http, HttpResponse } from "../tests/fixtures";
+import {
+  happyHandlers,
+  http,
+  HttpResponse,
+  raceDetail,
+  recommendationResponse,
+} from "../tests/fixtures";
 import { renderWithProviders } from "../tests/utils";
 import { RaceDetailPage } from "./RaceDetailPage";
 
@@ -43,5 +49,39 @@ describe("RaceDetailPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("prediction_unavailable");
     expect(screen.getByText("prediction fetch failed")).toBeInTheDocument();
     expect(await screen.findByText("h1")).toBeInTheDocument();
+  });
+
+  // Feature 087 (T013A, codex C1): the betting-slip horse names/frames come from the RACE
+  // DETAIL response — the prediction response has no horse_name/frame at all, so a slip that
+  // renders names proves the wiring uses raceQuery, not predQuery.
+  it("feeds the betting slip from the race-detail entries (names + frame colors)", async () => {
+    server.use(
+      http.get("*/api/v1/races/:id", () =>
+        HttpResponse.json({
+          ...raceDetail,
+          horses: [
+            { horse_id: "h1", horse_number: 1, entry_status: "active", horse_name: "サンプルホース", frame: 3 },
+            { horse_id: "h2", horse_number: 2, entry_status: "active", horse_name: null, frame: null },
+          ],
+        }),
+      ),
+      http.get("*/api/v1/races/:id/recommendations", () =>
+        HttpResponse.json({
+          ...recommendationResponse,
+          items: [
+            { ...recommendationResponse.items[1], recommendation_id: "rec-w1", settled: false,
+              hit: undefined, counterfactual_snapshot_gross_return: undefined,
+              counterfactual_snapshot_net_return: undefined },
+          ],
+        }),
+      ),
+      // overrides FIRST — MSW resolves handlers first-match-wins
+      ...happyHandlers,
+    );
+    renderDetail(); // the 買い目推奨 tab is the default tab
+
+    const card = await screen.findByTestId("bet-slip-card-rec-w1");
+    expect(within(card).getByText("サンプルホース")).toBeInTheDocument();
+    expect(card.querySelector(".frame-chip--3")).toHaveTextContent("1");
   });
 });
