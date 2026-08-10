@@ -148,6 +148,8 @@ class ExplanationItem(BaseModel):
     feature: str
     value: float | str | None = None
     contribution: float
+    # Feature 089: raw contribution minus its all-started-horses race mean (v2; null for v1).
+    contribution_centered: float | None = None
 
 
 class Explanation(BaseModel):
@@ -163,6 +165,12 @@ class Explanation(BaseModel):
     base_value: float
     score: float
     other_contribution: float
+    # Feature 089: raw score relative to the all-started-horses race mean (v2; null for v1).
+    score_centered: float | None = None
+    # Feature 089: centered contribution outside the stored top-K (v2; null for v1).
+    other_contribution_centered: float | None = None
+    # Feature 089: all-started prediction-batch size used for centering (v2; null for v1).
+    centering_population_size: int | None = None
     items: list[ExplanationItem]
 
 

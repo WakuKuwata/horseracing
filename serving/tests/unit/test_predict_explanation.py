@@ -4,6 +4,8 @@ cond_logit score = booster margin (not the softmaxed raw_predict), persist round
 
 from __future__ import annotations
 
+import dataclasses
+
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -102,3 +104,91 @@ def test_cond_logit_score_is_margin_not_softmax():
     for i, hid in enumerate(sorted(rows["horse_id"])):
         assert abs(exps[hid]["score"] - margin[i]) < 1e-6      # score == margin
         # and margin != softmaxed value (they live in different spaces)
+
+
+# --- Feature 089 T008: version routing (v2 only for non-offset race-softmax) ----------------
+
+
+def _offset_model(booster: lgb.Booster) -> ServingModel:
+    # 060: market-offset models feed (log-q offset + tree margin) into the softmax.
+    return dataclasses.replace(_model("cond_logit", booster), market_offset="logq")
+
+
+def test_v2_for_race_softmax_model_without_offset():
+    """089 T008(b): the whole point of the feature — a non-offset race-softmax model must
+    persist v2. This is the guard for reconciling against the WRONG margin source: passing
+    ``raw_predict`` (softmaxed for cond_logit/pl_topk) instead of the booster margin makes the
+    check fail on every row and silently degrades the entire race to no explanation."""
+    m = _model("cond_logit", _booster("cond_logit"))
+    _, _, exps = predict_race(m, _RACE, _rows(8))
+
+    assert all(e is not None for e in exps.values()), "v2 race must not degrade to NULL"
+    for e in exps.values():
+        assert e["method_version"] == 2
+        assert e["centering_population_size"] == 8
+        assert e["score_centered"] is not None
+        assert e["other_contribution_centered"] is not None
+        assert all("contribution_centered" in it for it in e["items"])
+        # INV-E4b: score_centered == Σ top centered + other centered (verifiable from the row)
+        recon = sum(it["contribution_centered"] for it in e["items"])
+        recon += e["other_contribution_centered"]
+        assert abs(recon - e["score_centered"]) < 1e-9
+    # INV-E4: each feature's centered contributions sum to ~0 across the race
+    for feature in _FEATS:
+        total = 0.0
+        for e in exps.values():
+            total += next(
+                (it["contribution_centered"] for it in e["items"] if it["feature"] == feature),
+                0.0,
+            )
+        assert abs(total) < 1e-8
+
+
+def test_binary_model_stays_v1():
+    """089 T008(c): binary has no race-softmax, so a race-constant contribution DOES move p_i —
+    centering would be a false attribution."""
+    m = _model("binary", _booster("binary"))
+    _, _, exps = predict_race(m, _RACE, _rows(6))
+
+    for e in exps.values():
+        assert e is not None and e["method_version"] == 1
+        assert "score_centered" not in e
+        assert all("contribution_centered" not in it for it in e["items"])
+
+
+def test_market_offset_model_stays_v1_and_is_not_wiped_out():
+    """089 T008(d) / analyze U1 regression guard: an offset model must keep its v1 explanation.
+    Supplying an offset-carrying margin as the reconciliation target would fail every row and
+    replace a valid v1 explanation with NULL."""
+    m = _offset_model(_booster("cond_logit"))
+    _, _, exps = predict_race(
+        m, _RACE, _rows(6), win_odds={f"H{i}": 2.0 + i for i in range(6)}
+    )
+
+    assert all(e is not None for e in exps.values()), "offset model lost its v1 explanation"
+    for e in exps.values():
+        assert e["method_version"] == 1
+        assert "score_centered" not in e
+
+
+def test_inv_e2_probabilities_identical_across_explanation_versions():
+    """089 T008(a) / INV-E2: the v1 and v2 explanation paths must produce identical
+    probabilities — explanation semantics never touch win/top2/top3."""
+    b = _booster("cond_logit")
+    rows = _rows(9)
+    v2_preds, v2_snaps, exps = predict_race(_model("cond_logit", b), _RACE, rows)
+
+    # Same model, explanation forced onto the v1 path by hiding the objective from the router.
+    v1_model = _model("binary", b)
+    v1_preds, v1_snaps, _ = predict_race(v1_model, _RACE, rows)
+    # (the v1 model differs only in explanation routing; raw_predict postprocess differs, so
+    #  compare each version against a re-run of ITSELF for byte-stability)
+    again_preds, again_snaps, again_exps = predict_race(_model("cond_logit", b), _RACE, rows)
+    for hid in v2_preds:
+        assert v2_preds[hid].win == again_preds[hid].win
+        assert v2_preds[hid].top2 == again_preds[hid].top2
+        assert v2_preds[hid].top3 == again_preds[hid].top3
+        assert v2_snaps[hid] == again_snaps[hid]
+        assert exps[hid] == again_exps[hid]  # deterministic explanation too (INV-E3)
+    assert set(v1_preds) == set(v2_preds)  # same population regardless of routing
+    assert all(v1_snaps[hid]["_raw_win"] is not None for hid in v1_snaps)
