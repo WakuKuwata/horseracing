@@ -204,6 +204,14 @@ REGISTRY: dict[str, FeatureMeta] = {
     "asof_pm_support_sd5": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
     "asof_pm_obs_count": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
     "asof_pm_has_obs": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
+    # Feature 088 (finish-rank decomposition: field-size normalized position + individual lags +
+    # 5-run windows + trend) was REJECTED at the pre-registered gate on the production pl_topk
+    # arms: the full-window winner-NLL point estimate favoured the bundle (-0.00055) but the
+    # race-day cluster bootstrap CI straddled zero ([-0.00221, +0.00117]) AND the recent-3y window
+    # DEGRADED (+0.00091); all three critical subgroups were underpowered. Not merged (027/062/070
+    # precedent: a rejected FEATURE_VERSION bump would push the active model onto the compat path
+    # for no gain). finish_decomposition_features.py + its unit tests are preserved (unwired) as
+    # the documented negative result — see specs/088-finish-rank-decomposition.
     # Feature 070 (F03 rank-percentile / F04 expectation-residual / F05 conditioned) was evaluated
     # as an accuracy-first candidate on the 069 subgroup gate and REJECTED at every staged bundle
     # (all three point-estimate favourable, all critical subgroups PASS, but the block-bootstrap
