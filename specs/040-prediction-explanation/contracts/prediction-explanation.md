@@ -2,6 +2,15 @@
 
 契約先行（憲法 VI）。API 変更は openapi.json 再生成 + front 型再生成 + drift-check で固定する。
 
+> **版の適用範囲（089 で追記）**: 本契約は **v1（`method_version = 1`）の正本**である。
+> `method_version = 2`（レース内センタリング済み寄与）については
+> `specs/089-explanation-race-centering/contracts/explanation-v2.md` を正とする。
+> v2 は本契約の INV-E1〜E4 を継承しつつ、top-K 選定基準（センタリング済み寄与の絶対値・
+> レース内で値が全馬同値の特徴を候補から除外）と保存フィールド（items[].`contribution_centered`、
+> `score_centered`、`other_contribution_centered`、`centering_population_size`）を追加する。
+> v2 の対象は race-softmax かつ market-offset なしのモデルに限られ、binary / market-offset
+> モデルは本 v1 契約のまま保存される。既存の v1 保存行は書き換えない（append-only）。
+
 ## 1. explanation JSONB（race_predictions.explanation、書込 = serving のみ）
 
 ```json

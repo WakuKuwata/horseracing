@@ -547,6 +547,8 @@ export interface components {
         Explanation: {
             /** Base Value */
             base_value: number;
+            /** Centering Population Size */
+            centering_population_size?: number | null;
             /** Items */
             items: components["schemas"]["ExplanationItem"][];
             /** K */
@@ -557,13 +559,19 @@ export interface components {
             method_version: number;
             /** Other Contribution */
             other_contribution: number;
+            /** Other Contribution Centered */
+            other_contribution_centered?: number | null;
             /** Score */
             score: number;
+            /** Score Centered */
+            score_centered?: number | null;
         };
         /** ExplanationItem */
         ExplanationItem: {
             /** Contribution */
             contribution: number;
+            /** Contribution Centered */
+            contribution_centered?: number | null;
             /** Feature */
             feature: string;
             /** Value */

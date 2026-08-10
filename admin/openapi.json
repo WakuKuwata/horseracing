@@ -455,6 +455,17 @@
             "title": "Base Value",
             "type": "number"
           },
+          "centering_population_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Centering Population Size"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/ExplanationItem"
@@ -478,9 +489,31 @@
             "title": "Other Contribution",
             "type": "number"
           },
+          "other_contribution_centered": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Other Contribution Centered"
+          },
           "score": {
             "title": "Score",
             "type": "number"
+          },
+          "score_centered": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score Centered"
           }
         },
         "required": [
@@ -500,6 +533,17 @@
           "contribution": {
             "title": "Contribution",
             "type": "number"
+          },
+          "contribution_centered": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Centered"
           },
           "feature": {
             "title": "Feature",
