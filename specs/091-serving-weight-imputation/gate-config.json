@@ -1,0 +1,127 @@
+{
+  "_comment": "091: pre-registered adoption gate (frozen BEFORE OOS, constitution III). PRIMARY is the SERVING regime (weight columns masked at predict time on BOTH arms) because that is the condition under which predictions are actually made; full-info is a non-inferiority guard. Values that must be frozen are written as REAL keys — '_'-prefixed keys are excluded from the canonical hash (069 warning, re-confirmed in 088).",
+  "evaluation_contract_version": "v2",
+  "min_effect_delta": 0.002,
+  "weight_mask": {
+    "_comment": "Race-atomic masking. Row-level masking is forbidden: the missingness arises per time regime (when the prediction was run), not per horse. Applied to model-fit rows AND the isotonic calibration holdout with the SAME seed so the calibrator's domain matches runtime.",
+    "rate": 0.5,
+    "seed": 20260810,
+    "unit": "race",
+    "columns": [
+      "weight",
+      "weight_diff",
+      "carried_weight_ratio"
+    ],
+    "apply_to_calibration_holdout": true,
+    "eval_serving_rate": 1.0,
+    "apply_to_both_arms": true,
+    "eval_full_info_spec": null
+  },
+  "full_info_guard": {
+    "_comment": "The feature deliberately trades a little full-info accuracy for serving accuracy. The replay measured the total value of same-day weight at 0.0187; up to ~1/6 of that is accepted as the price. Exceeding it signals the mask rate broke the same-day-weight path.",
+    "metric": "winner_nll",
+    "noninferior_width": 0.003
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "_comment": "069 three-way intersection-union. 069's coverage bands are NOT included: they are defined by F02 market observation counts and are unrelated to this feature (088 caught the same class of error).",
+    "critical_subgroups": [
+      "2026_only",
+      "nk",
+      "2026_nk"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "three_way",
+    "race_level_subgroups": [
+      "2026_only",
+      "2026_field_has_nk"
+    ],
+    "horse_level_subgroups": [
+      "canonical",
+      "nk",
+      "2026_nk"
+    ],
+    "absolute_benchmark": "candidate_minus_uniform",
+    "no_decision_min_days": 10
+  },
+  "eval_window": {
+    "_comment": "'to' is fixed at freeze time to the latest settled race date available then; it must match the --to passed to the confirmatory run or assert_confirmatory fails closed.",
+    "from": "2021-01-01",
+    "to": "2026-07-12",
+    "to_is_provisional": true
+  },
+  "bootstrap": {
+    "b": 2000,
+    "seed": 20260810,
+    "block": "race_day",
+    "scheme": "moving_block",
+    "alpha": 0.05
+  },
+  "determinism": {
+    "tolerance": 1e-09,
+    "num_threads": 1
+  },
+  "serving": {
+    "_comment": "features-019 is a burned number (070 revert, no model was ever trained on it). The pinned hash is lgbm-064-f02acc's OWN trained feature_hash, read from its artifact metadata.",
+    "feature_version": "features-020",
+    "compat_pins": {
+      "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"
+    },
+    "byte_parity_target": "model_input_137_cols_shared_with_features_018"
+  },
+  "diagnostics_not_gating": {
+    "_comment": "Reported alongside the verdict but NEVER used to change it. A winning diagnostic arm requires a NEW pre-registration (III, 068 C2).",
+    "uncalibrated_winner_nll": true,
+    "mask_rate_arms": [
+      0.0,
+      1.0
+    ],
+    "bootstrap_block_widths": [
+      2,
+      3,
+      4,
+      "week"
+    ],
+    "coverage_audit_axes": [
+      "year",
+      "race_prev_weight_coverage",
+      "staleness_band",
+      "true_debut_vs_broken_history",
+      "id_namespace"
+    ]
+  },
+  "verdict": {
+    "_comment": "Single source of truth. Individual numbers must not be re-read post hoc to argue a different outcome.",
+    "formula": "serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard",
+    "paths": {
+      "primary": "serving_regime.gate.adopted",
+      "full_info": "full_info_guard",
+      "subgroup": "serving_regime.subgroups.subgroup_guard",
+      "materialized": "verdict.adopt"
+    },
+    "no_decision": "only when the evaluation cannot be run; never because a number is borderline"
+  },
+  "primary_metric": "winner_nll",
+  "primary_regime": "serving",
+  "artifact_isolation": {
+    "_comment": "Every evaluation artifact stamps these. The verdict loader accepts full_walk_forward only and fails closed on eligible_for_verdict=false. Acceptance runs are outcome-blind (wiring only) because their folds sit inside the confirmatory window.",
+    "verdict_kind": "full_walk_forward",
+    "kinds": [
+      "full_walk_forward",
+      "acceptance",
+      "diagnostic"
+    ],
+    "eligible_kinds": [
+      "full_walk_forward"
+    ]
+  }
+}

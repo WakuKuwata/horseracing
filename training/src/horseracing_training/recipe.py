@@ -51,6 +51,14 @@ class ModelRecipe:
     #: Default False is OMITTED from recipe_hash (back-compat), so every pre-079 recipe is
     #: byte-identical; True yields a distinct recipe_hash/model identity.
     ev_weight: bool = False
+    #: Feature 091: race-atomic masking of the same-day weight columns during the fit (and the
+    #: calibration holdout, D4). This is the MECHANISM, not a tweak — without it `prev_weight` is
+    #: shadowed by the near-identical `weight` column and the model never learns the serving path.
+    #: `None` (default) is OMITTED from recipe_hash, so every pre-091 recipe hashes identically.
+    #: NOTE `weight_mask_rate=0.0` is NOT the same as `None`: 0.0 records "masking was deliberately
+    #: switched off for this experiment", None records "this recipe predates the mechanism".
+    weight_mask_rate: float | None = None
+    weight_mask_seed: int | None = None
     label: str = ""
 
     def __post_init__(self) -> None:
@@ -60,6 +68,14 @@ class ModelRecipe:
                 "068 recipes must set market_offset=False (reading the target race's own "
                 "odds is a leak, FR-019)"
             )
+        # Feature 091: rate and seed travel together — a rate without a seed is not reproducible.
+        if (self.weight_mask_rate is None) != (self.weight_mask_seed is None):
+            raise ValueError(
+                "weight_mask_rate and weight_mask_seed must both be set or both be None "
+                f"(got rate={self.weight_mask_rate!r}, seed={self.weight_mask_seed!r})"
+            )
+        if self.weight_mask_rate is not None and not 0.0 <= self.weight_mask_rate <= 1.0:
+            raise ValueError(f"weight_mask_rate must be in [0, 1] (got {self.weight_mask_rate!r})")
         # Feature 073 FR-009/FR-002: fail closed on an unknown split unit.
         if self.calibration_split_unit not in CALIBRATION_SPLIT_UNITS:
             raise ValueError(
@@ -89,7 +105,20 @@ class ModelRecipe:
         # Feature 079: default (off) EV-weighting is omitted so pre-079 recipes hash identically.
         if d.get("ev_weight") is False:
             d = {k: v for k, v in d.items() if k != "ev_weight"}
+        # Feature 091: an ABSENT weight mask (None) is omitted so pre-091 recipes hash identically.
+        # An EXPLICIT rate — including 0.0 — stays in the hash: "masking deliberately off" is a
+        # different model identity from "recipe predates masking" (provenance, not just value).
+        if d.get("weight_mask_rate") is None:
+            d = {k: v for k, v in d.items() if k not in ("weight_mask_rate", "weight_mask_seed")}
         return stable_hash(d)
+
+    def weight_mask_spec(self):
+        """The features-layer MaskSpec for this recipe, or None when masking is not configured."""
+        if self.weight_mask_rate is None:
+            return None
+        from horseracing_features.weight_mask import MaskSpec
+
+        return MaskSpec(rate=self.weight_mask_rate, seed=self.weight_mask_seed, unit="race")
 
 
 @dataclass

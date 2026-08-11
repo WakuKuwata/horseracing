@@ -10,6 +10,7 @@ Session-independent: the caller supplies the as-of feature rows.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -39,6 +40,55 @@ def _jsonable(v):
     return str(v)
 
 
+#: Feature 091: same-day columns dropped together when a race is only partially weighed.
+#: Kept in sync with features.weight_mask.WEIGHT_MASK_COLUMNS via a test, not by import, so the
+#: serving path does not gain a features dependency it does not otherwise need.
+SAME_DAY_WEIGHT_COLUMNS = ("weight", "weight_diff", "carried_weight_ratio")
+
+#: Column whose presence in a model's inputs means it has a fallback for a missing same-day weight.
+PREV_WEIGHT_COLUMN = "prev_weight"
+
+
+@dataclass(frozen=True)
+class WeightAvailability:
+    """Outcome of the race-level availability normalisation (FR-035 observability)."""
+
+    rows: pd.DataFrame
+    applicable: bool   # the model carries prev_weight, so the rule can fire at all
+    normalised: bool   # the rule actually fired for this race
+    n_started: int
+    n_weighed: int
+
+
+def normalise_weight_availability(
+    rows: pd.DataFrame, *, feature_cols: list[str]
+) -> WeightAvailability:
+    """Binarise same-day weight availability across a race (FR-034).
+
+    ``rows`` is one race's started horses. Returns the (possibly modified) frame plus the counts
+    needed to report how often full-info is being given up. A no-op for models without
+    ``prev_weight`` (FR-034a) — those keep whatever weights they were given.
+    """
+    n_started = len(rows)
+    if "weight" not in rows.columns:
+        # No same-day weight column at all: availability is uniformly "absent" by construction,
+        # so there is nothing to collapse (and nothing to report as given up).
+        return WeightAvailability(rows, PREV_WEIGHT_COLUMN in feature_cols, False, n_started, 0)
+    weighed = pd.to_numeric(rows["weight"], errors="coerce").notna()
+    n_weighed = int(weighed.sum()) if n_started else 0
+
+    if PREV_WEIGHT_COLUMN not in feature_cols:
+        return WeightAvailability(rows, False, False, n_started, n_weighed)
+    if n_weighed == n_started or n_weighed == 0:
+        # already uniform: either full-info or fully unweighed. Nothing to collapse.
+        return WeightAvailability(rows, True, False, n_started, n_weighed)
+
+    out = rows.copy()
+    present = [c for c in SAME_DAY_WEIGHT_COLUMNS if c in out.columns]
+    out[present] = np.nan
+    return WeightAvailability(out, True, True, n_started, n_weighed)
+
+
 def predict_race(
     model: ServingModel, race_id: str, feature_rows: pd.DataFrame, *,
     stage_discount=None, win_odds: dict[str, float | None] | None = None,
@@ -54,6 +104,17 @@ def predict_race(
     # deterministic, stable horse order (float ops in Harville are order-sensitive)
     started_ids = sorted(rows.index.tolist())
     rows = rows.reindex(started_ids)
+
+    # Feature 091 (FR-034/034a/034b): race-level availability normalisation. Training masks the
+    # same-day weight columns RACE-ATOMICALLY, so a race where only some horses have been weighed
+    # is out-of-distribution for the model — and because the objective is a within-race softmax,
+    # one horse's input moves EVERY horse's probability. Collapse availability to the same binary
+    # the model was trained on: if any started horse is unweighed, drop the same-day weight for the
+    # whole race. Only for models that actually carry `prev_weight`; taking today's weight away
+    # from a model with no fallback is an uncompensated loss (SC-004). Same rule on live and
+    # backfill, since settled data still has ~0.3% missing weights.
+    weight_normalised = normalise_weight_availability(rows, feature_cols=model.feature_cols)
+    rows = weight_normalised.rows
 
     # Match training's dtype coercion (build_feature_matrix leaves raw object/Decimal columns,
     # but the booster was trained on category + numeric like build_training_matrix produces).

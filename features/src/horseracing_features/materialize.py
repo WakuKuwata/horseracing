@@ -49,6 +49,7 @@ from .registry import FEATURE_VERSION, materialized_columns
 from .relative_ability_features import build_relative_ability_features
 from .schema import DEFAULT_LOW_HISTORY_MAX
 from .speed_figure_features import build_speed_figure_features  # Feature 061
+from .weight_history_features import build_weight_history_features
 
 _KEYS = ["race_id", "horse_id"]
 
@@ -254,6 +255,9 @@ def build_asof_features(
     racelevel = build_race_level_features(  # Feature 056 / 072: per-horse
         frames, target_race_ids=target_race_ids
     )
+    weighthist = build_weight_history_features(  # Feature 091 / 072: per-horse (strictly-before)
+        frames, target_race_ids=target_race_ids
+    )
     out = (
         history.merge(extra, on=_KEYS, how="left")
         .merge(human, on=_KEYS, how="left")
@@ -266,6 +270,10 @@ def build_asof_features(
         .merge(cornertraj, on=_KEYS, how="left")
         .merge(ownerbrd, on=_KEYS, how="left")
         .merge(racelevel, on=_KEYS, how="left")
+        # Feature 091: prev_weight — additive left-merge over a disjoint column name, so every
+        # pre-091 column stays byte-identical (INV-W7). Reads only race_horses.weight /
+        # entry_status / races.race_date, all already loaded => source_fingerprint unchanged.
+        .merge(weighthist, on=_KEYS, how="left")
     )
     # Feature 059: within-race relative ability — depends on the ASSEMBLED as-of ability columns
     # (win_rate / rel_time_avg / ...), so it runs AFTER the merges over the full `out` frame.

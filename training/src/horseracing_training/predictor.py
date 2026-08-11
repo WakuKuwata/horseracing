@@ -63,6 +63,8 @@ class LightGBMPredictor:
         self,
         session: Session,
         *,
+        fit_weight_mask=None,
+        predict_weight_mask=None,
         seed: int = 42,
         calibration: str = "platt",
         ece_clip: float = DEFAULT_CLIP,
@@ -140,6 +142,15 @@ class LightGBMPredictor:
                 )
             self.is_leaky_reference = True
 
+        # Feature 091: race-atomic masking of the same-day weight columns.
+        #   fit_weight_mask     -> applied to the fit rows AND the calibration holdout (D4)
+        #   predict_weight_mask -> applied to the rows fed to raw_win_probs / predict_race
+        # Both default to None = the function is not called at all => byte-identical (INV-W5).
+        # They are INDEPENDENT: training uses a mixture (m=0.5) while a serving-regime evaluation
+        # predicts with rate=1.0. The cached matrix is never mutated; the transform is applied to
+        # each use site's row subset.
+        self.fit_weight_mask = fit_weight_mask
+        self.predict_weight_mask = predict_weight_mask
         self._data: TrainingMatrix | None = None
         self.win_model_: WinModel | None = None
         self.calibrator_: Calibrator | None = None
@@ -197,6 +208,14 @@ class LightGBMPredictor:
         train_df = df[df["race_id"].isin(train_ids)].reset_index(drop=True)
         if train_df.empty:
             raise ValueError("no training rows for the given train_races")
+
+        # Feature 091: race-atomic weight mask over the WHOLE fit population, so the model-fit
+        # rows and the calibration holdout carved out of it below see the SAME masked races
+        # (D4: the calibrator's domain must match the runtime score distribution).
+        if self.fit_weight_mask is not None:
+            from horseracing_features.weight_mask import apply_weight_mask
+
+            train_df = apply_weight_mask(train_df, spec=self.fit_weight_mask)
 
         # Feature 060: races where ANY row lacks a valid win odds are dropped ENTIRELY
         # (fail-closed, INV-M4 — no fabricated market info, no partial devig). Counts are
@@ -401,8 +420,18 @@ class LightGBMPredictor:
         data = self._ensure_data()
         started_ids = [h.horse_id for h in race.started_horses]
 
+        frame = data.frame
+        # Feature 091: predict-scope weight mask. Applied to THIS race's rows only, leaving the
+        # cached matrix untouched (so an unmasked call later still sees the original values).
+        # rate=1.0 reproduces the serving regime (weight unpublished); None is byte-identical.
+        if self.predict_weight_mask is not None:
+            from horseracing_features.weight_mask import apply_weight_mask
+
+            race_rows = frame[frame["race_id"] == race.race_id]
+            frame = apply_weight_mask(race_rows, spec=self.predict_weight_mask)
+
         rows = (
-            data.frame[data.frame["race_id"] == race.race_id]
+            frame[frame["race_id"] == race.race_id]
             .set_index("horse_id")
             .reindex(started_ids)  # exact coverage + started order; missing -> NaN features
         )

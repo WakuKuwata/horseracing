@@ -141,11 +141,18 @@ def test_feature_version_servability():
 
     # 058's compat story is checked against ITS version (features-016 pinned 014/015) explicitly.
     pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-016"]["features-015"]
-    assert FEATURE_VERSION == "features-018"  # 070 rejected+reverted; 069 F02
+    assert FEATURE_VERSION == "features-020"  # 091 prev_weight (019 burned by 070)
     # Feature 069: lgbm-063 (features-017) is servable under 018 via the additive compat pin.
     _pin017 = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-018"]["features-017"]
     assert is_feature_version_servable("features-017", _pin017, "features-018")
     assert not is_feature_version_servable("features-017", "deadbeef", "features-018")
+    # Feature 091: lgbm-064 (features-018) must stay servable under features-020, and only with
+    # its OWN trained hash — a wrong hash still fails closed.
+    _pin018 = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-020"]["features-018"]
+    assert is_feature_version_servable("features-018", _pin018, "features-020")
+    assert not is_feature_version_servable("features-018", "deadbeef", "features-020")
+    # compat is NOT transitive: 017 does not ride through 018 into 020.
+    assert not is_feature_version_servable("features-017", _pin017, "features-020")
     assert is_feature_version_servable("features-015", pinned, "features-016")       # compat: pinned
     assert not is_feature_version_servable("features-015", "deadbeef", "features-016")  # WRONG hash
     assert not is_feature_version_servable("features-015", None, "features-016")     # hash required

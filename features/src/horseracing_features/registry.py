@@ -110,9 +110,14 @@ REGISTRY: dict[str, FeatureMeta] = {
     "damsire_avg_finish": FeatureMeta("pedigree", _T.PRE_ENTRY, _M.NULL),
     # --- Feature 030: handicap (斤量, static + 1 as-of change) ---
     "carried_weight": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.NULL),
-    "carried_weight_ratio": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.NULL),
+    "carried_weight_ratio": FeatureMeta("race_horses", _T.POST_WEIGHT, _M.NULL),
     "carried_weight_rel": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.NULL),
     "carried_weight_change": FeatureMeta("history", _T.PRE_ENTRY, _M.NULL),
+    # --- Feature 091: last KNOWN body weight (strictly-before proxy for the same-day weight) ---
+    # PRE_ENTRY because it is a past, already-settled measurement — unlike `weight` (POST_WEIGHT),
+    # which is not published until ~50 min before post. Its freshness and availability are already
+    # supplied byte-identically by `days_since_last` / `has_past_race`, so no extra column (D1).
+    "prev_weight": FeatureMeta("race_horses", _T.PRE_ENTRY, _M.NULL),
     # --- Feature 030: season (static, from race_date) ---
     "race_month": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
     "race_season": FeatureMeta("races", _T.PRE_ENTRY, _M.NULL),
@@ -259,6 +264,8 @@ FEATURE_GROUPS: dict[str, str] = {
     "carried_weight_ratio": "handicap",
     "carried_weight_rel": "handicap",
     "carried_weight_change": "handicap",
+    # Feature 091: previous observed body weight
+    "prev_weight": "weight_history",
     # Feature 030: season
     "race_month": "season",
     "race_season": "season",
@@ -365,7 +372,7 @@ FEATURE_GROUPS: dict[str, str] = {
 #: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
 #: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
 #: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
-FEATURE_VERSION = "features-018"
+FEATURE_VERSION = "features-020"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -404,6 +411,15 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
     # lgbm-063 (features-017) servable under features-018 via the compat path.
     "features-018": {
         "features-017": "300b28a9312a3fb6e171b1dfd38cc88413ccbae2a0cfa9936ed278b5d14b66ac",
+    },
+    # Feature 091: prev_weight is PURELY ADDITIVE on top of features-018 (additive left-merge over
+    # a disjoint column name), so all 137 features-018 columns stay byte-identical - measured on
+    # the real DB against a captured baseline (INV-W7, test_features020_parity). The pinned hash is
+    # lgbm-064-f02acc's OWN trained feature_hash, read from its artifact metadata. Keeps lgbm-064
+    # (features-018) servable under features-020 via the compat path.
+    # features-019 is a BURNED number (070 revert); it is deliberately absent.
+    "features-020": {
+        "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f",
     },
     # Feature 070's features-019 compat entry was REMOVED with the reverted bump (all bundles
     # rejected at the staged gate). No model was ever trained on features-019.
