@@ -85,9 +85,18 @@ class _Predictor:
         self._spec = spec
         self.applied.append(spec)
 
+    def _p(self):
+        return self.base - (self.penalty if self._spec is not None else 0.0)
+
     def predict_race(self, ctx):
-        p = self.base - (self.penalty if self._spec is not None else 0.0)
+        p = self._p()
         return {"A": Prediction(p, p, p), "B": Prediction(1 - p, 1 - p, 1 - p)}
+
+    def raw_win_probs(self, ctx):
+        """Pre-calibration scores. Deliberately a different shape from the calibrated ones so a
+        sign disagreement between the two views is expressible."""
+        p = self._p()
+        return ["A", "B"], [p * 0.9, 1 - p * 0.9]
 
 
 class _NoRegimePredictor:
@@ -111,9 +120,10 @@ class _Factory:
 
 def test_multi_regime_fits_once_and_predicts_under_each_regime():
     p = _Predictor(base=0.60, serving_penalty=0.10)
-    preds, valid = predict_over_folds_multi(
+    preds, valid, raw = predict_over_folds_multi(
         _Factory(p), _races(), regimes={SERVING: object(), FULL_INFO: None}, first_valid_year=2024
     )
+    assert raw == {SERVING: {}, FULL_INFO: {}}  # not collected unless asked
     assert set(preds) == {SERVING, FULL_INFO}
     assert preds[SERVING] and preds[FULL_INFO]
     # the serving regime really changed the inputs, and the predictor was left reset afterwards
@@ -171,6 +181,39 @@ def test_kill_test_one_sided_application_is_detected():
     assert rep.serving_regime["mask_races_candidate"] == rep.serving_regime["mask_races_active"]
     # ...and the active arm's serving score is identical to its full-info score, which IS visible:
     assert rep.serving_regime["active"]["winner_nll"] == rep.full_info_regime["active"]["winner_nll"]
+
+
+def test_uncalibrated_diagnostic_is_reported_per_regime():
+    """Mandatory diagnostic: it must be possible to see whether the calibrator drove the result."""
+    cand = _Predictor(base=0.62, serving_penalty=0.02)
+    act = _Predictor(base=0.60, serving_penalty=0.10)
+    rep = evaluate_regimes(
+        _Factory(cand), _Factory(act), _races(),
+        serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+    )
+    for regime in (SERVING, FULL_INFO):
+        assert rep.uncalibrated[regime]["available"]
+        assert rep.uncalibrated[regime]["n_races"] > 0
+    # it is a diagnostic: the verdict must not consult it
+    assert "uncalibrated" not in rep.verdict
+
+
+def test_missing_raw_scores_fail_closed_rather_than_dropping_the_diagnostic():
+    """A silently absent diagnostic is worse than an error: the reversal check would just vanish."""
+
+    class _NoRaw(_Predictor):
+        raw_win_probs = None
+
+        def __getattribute__(self, name):
+            if name == "raw_win_probs":
+                raise AttributeError(name)
+            return object.__getattribute__(self, name)
+
+    with pytest.raises(RegimeUnsupported, match="raw_win_probs"):
+        predict_over_folds_multi(
+            _Factory(_NoRaw(0.6, 0.0)), _races(),
+            regimes={SERVING: object()}, first_valid_year=2024, collect_raw=True,
+        )
 
 
 def test_verdict_is_a_single_materialised_boolean():

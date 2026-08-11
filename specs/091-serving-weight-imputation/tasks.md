@@ -86,9 +86,9 @@
 - [X] T020 [US1] `training/src/horseracing_training/predictor.py` の `fit()` に fit-scope mask を、`raw_win_probs()` に predict-scope mask を通す。**キャッシュ行列(`_ensure_data`)は無改変**とし、各利用箇所の行部分集合に純変換として適用する。両 spec は独立に指定できること
 - [X] T021 [US1] `training/src/horseracing_training/predictor.py` で校正 holdout にも model-fit と**同一 spec・同一 seed**の mask を適用する(research D4)。model-fit 行と校正行で mask されたレース集合が一致することを assertion で担保
 - [X] T022 [US1] `training/src/horseracing_training/artifacts.py` の metadata に mask spec(rate / seed / unit / columns)とその hash を記録。mask 無しなら `null`
-- [ ] T023 [US1] `training/tests/unit/test_weight_mask_wiring.py` を新規作成。**変換後の行列を検査する**(呼び出し回数を数えない): estimator 入力と校正 holdout 入力を捕捉し、同一 spec/seed で選ばれたレースの 3 列が最終行列で NaN になっていること、artifact metadata の spec hash が一致すること
-- [ ] T024 [US1] `training/tests/unit/test_weight_mask_wiring.py` に **`spec=None` のバイト同一性**を追加: 旧 artifact の読み込み・列順・active 予測が変わらないこと。既存 training テストが無改修で緑であること
-- [ ] T025 [US1] `training/tests/unit/test_weight_mask_wiring.py` に **assertion の kill-test** を追加: training 配線 / 校正 holdout 配線 を 1 箇所ずつ無効化し、上記 assertion が**必ず落ちる**ことを確認(assertion が実際に何かを守っていることの証明・codex #3)
+- [X] T023 [US1] `training/tests/unit/test_weight_mask_wiring.py` を新規作成。**変換後の行列を検査する**(呼び出し回数を数えない): estimator 入力と校正 holdout 入力を捕捉し、同一 spec/seed で選ばれたレースの 3 列が最終行列で NaN になっていること、artifact metadata の spec hash が一致すること
+- [X] T024 [US1] `training/tests/unit/test_weight_mask_wiring.py` に **`spec=None` のバイト同一性**を追加: 旧 artifact の読み込み・列順・active 予測が変わらないこと。既存 training テストが無改修で緑であること
+- [X] T025 [US1] `training/tests/unit/test_weight_mask_wiring.py` に **assertion の kill-test** を追加: training 配線 / 校正 holdout 配線 を 1 箇所ずつ無効化し、上記 assertion が**必ず落ちる**ことを確認(assertion が実際に何かを守っていることの証明・codex #3)
 
 - [X] T026 [US1] `serving/src/horseracing_serving/predictor.py` に**レース単位の可用性正規化**を実装(FR-034): started 馬に一頭でも当日体重が未公表の馬がいれば、そのレースの**全馬**について `weight` / `weight_diff` / `carried_weight_ratio` を欠損として扱う。**発動はモデルが `prev_weight` を入力に持つ場合に限る(FR-034a)** — 代替値を持たない現行モデルから当日体重を取り上げるのは補償のない劣化で SC-004 にも反するため、`prev_weight` を持たないモデルでは完全な no-op にする。**ライブと backfill の両方に同一条件で効かせる(FR-034b)**(確定済レースにも 0.3〜0.4% の体重欠損が残るので backfill でも混在は起きる)。確率 mask ではなく**可用性の二値化**である(research D12・[contracts/weight-mask.md](./contracts/weight-mask.md) §5a)
 - [X] T027 [US1] `serving/tests/unit/test_weight_availability_normalization.py` を新規作成し(**T026 が返す発動情報をその場で検査する。永続化は T067 の役割**)、 **INV-W11 / INV-W12** を検証。全馬計測済み → full-info のまま / 一頭でも未計量 → 全馬欠損 / **`prev_weight` を持たないモデルでは発動しない**(混在レースでも現行モデルの入力が 1 ビットも変わらない=SC-004 の全入力条件版)/ 取消馬の未計量は判定に影響しない / ライブと backfill の両経路で同一挙動 / 発動回数と (計測済み頭数 / 出走頭数) が観測できる(FR-035)
@@ -110,7 +110,7 @@
 - [X] T028 [US2] `eval/src/horseracing_eval/foldfit.py` の `predict_over_folds` に predict-scope mask spec を通す(既定 `None` で現行と挙動同一)
 - [X] T029 [US2] `eval/src/horseracing_eval/paired.py` に regime 別評価を追加。`serving_regime`(両アームに serving spec)と `full_info_regime`(両アームに `spec=None`)を別々に算出し `PairedReport` に**純追加**する。既存フィールドは不変。**subgroup は regime ごとに算出する**(トップレベルの `subgroups` だけだと verdict 式が既定=full-info を読んでしまい一意に評価できない)。`eval` は spec を**中身を見ない不透明な値として受け取り転送するだけ**にし、構築は training / CLI が行う(`eval` は `horseracing-features` に依存していない=020 の predictor-agnostic 境界を壊さない)
 - [X] T030 [US2] `eval/src/horseracing_eval/paired.py` に `full_info_guard` と、`serving_regime.gate.adopted` への**最小効果 δ**(点推定 < −δ)を追加。**両方の閾値は gate-config から読む**(既存コードが `cfg.get("top_noninferior")` 等を読むのと同じ方式)。定数をハードコードすると凍結 hash による事前登録が拘束力を失い、「テストは緑だが要件を満たさない」形になる(FR-025)。**config の値を変えるとゲート判定が変わる**単体テストを同時に追加する。verdict の正本は `serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard` を評価した**単一真偽値 `verdict.adopt`**([contracts/adoption-gate.md](./contracts/adoption-gate.md))
-- [ ] T031 [US2] `eval/src/horseracing_eval/paired.py` に**校正前(race-softmax 直後)winner NLL** を診断として追加(校正器由来の反転を識別する)
+- [X] T031 [US2] `eval/src/horseracing_eval/paired.py` に**校正前(race-softmax 直後)winner NLL** を診断として追加(校正器由来の反転を識別する)
 - [X] T032 [US2] `eval/tests/unit/test_paired_regime.py` を新規作成。**serving では両アームの mask レース集合と hash が完全一致**、**full-info では両アームとも無変換**であることを検証する。不一致なら fail-closed(片側だけ適用されると数値は出るが比較の意味が消える)
 - [X] T033 [US2] `eval/tests/unit/test_paired_regime.py` に、両アームの**レース集合・順序・winner ラベルの一致**検証を追加(既存の model-blind race set 契約 C8 の regime 版)
 - [X] T034 [US2] `eval/tests/unit/test_paired_gate_boundary.py` を新規作成。**境界値テスト**: δ=0.002 のちょうど上下、差分の符号、full-info 非劣化幅 0.003 のちょうど上下。PRIMARY が `regime=serving` かつ両アーム適用証跡が一致しなければ fail すること、GUARD が `full_info` 固定であること
@@ -196,7 +196,7 @@
 >
 > **配線 smoke が実データの事実を 1 件掘り当てた**: 学習母集団(started かつ確定済 956,099 行)で当日体重が欠損するのは **1 行だけ**で、spec に書いていた「学習側 0.3%」は取消行を含む `race_horses` 全体の数字だった。started 行の欠損 452 行のうち **451 行は未確定レース側**にある。つまりモデルは学習中に「体重なし」をただの一度も見ない。mask 前 0 行 → mask 後 429,399 行という実測が、「mask は機構の本体」を数字で裏づけた。spec を訂正済み。
 >
-> **T031(校正前 winner NLL 診断)は未実装**。regime 別スコアは calibrated のみで、raw スコアの収集には `raw_win_probs` を fold ごとに別途走らせる必要がある。本評価(T048)の前に入れる。
+> **T031 実装済み**(セッション 3): `predict_over_folds_multi(collect_raw=True)` が `raw_win_probs` を fold ごとに収集し、regime 別に校正前 winner NLL と CI を出す。raw が取れない predictor には fail-closed(診断が黙って消えるのを防ぐ)。verdict には参加しない。
 >
 > 残: T015 / T023-T025 / T031 / T037(補助) / T040(済) / T044 / T047(実行中) / T048 以降。
 

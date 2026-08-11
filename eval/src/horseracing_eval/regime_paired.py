@@ -63,11 +63,68 @@ class RegimeReport:
     full_info_regime: dict
     full_info_guard: bool
     verdict: dict
+    #: DIAGNOSTIC ONLY (never gates): winner NLL on the pre-calibration race-softmax. Separates
+    #: "the feature helped" from "the calibrator reshuffled things" (codex).
+    uncalibrated: dict = field(default_factory=dict)
     gate_config: dict = field(default_factory=dict)
     notes: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+
+
+def _uncalibrated_diagnostic(valid_races, cand_raw, act_raw, boot) -> dict:
+    """Winner NLL on the pre-calibration scores, per regime. Diagnostic — never gates.
+
+    The isotonic map is fitted on one score distribution; masking shifts that distribution. If the
+    calibrated and uncalibrated comparisons disagree in SIGN, the calibrator is doing the work and
+    the adoption claim needs re-reading.
+    """
+    out: dict = {}
+    for regime in (SERVING, FULL_INFO):
+        by_day: dict[str, list[float]] = {}
+        cand_nll: list[float] = []
+        act_nll: list[float] = []
+        for er in valid_races:
+            rid = er.context.race_id
+            winners = [sl.horse_id for sl in er.labels if int(getattr(sl, "win", 0)) == 1]
+            if len(winners) != 1:
+                continue
+            w = winners[0]
+            c = (cand_raw.get(regime) or {}).get(rid, {}).get(w)
+            a = (act_raw.get(regime) or {}).get(rid, {}).get(w)
+            if c is None or a is None:
+                continue
+            cn, an = _clip_nll(c), _clip_nll(a)
+            cand_nll.append(cn)
+            act_nll.append(an)
+            by_day.setdefault(er.context.race_date.isoformat(), []).append(cn - an)
+        if not cand_nll:
+            out[regime] = {"available": False}
+            continue
+        ci = race_day_cluster_bootstrap_ci_v1(
+            by_day, b=boot.get("b", 2000), seed=boot.get("seed", 20260810),
+            alpha=float(boot.get("alpha", 0.05)),
+        )
+        out[regime] = {
+            "available": True,
+            "candidate_winner_nll": sum(cand_nll) / len(cand_nll),
+            "active_winner_nll": sum(act_nll) / len(act_nll),
+            "diff": ci.point,
+            "ci_low": ci.ci_low,
+            "ci_high": ci.ci_high,
+            "n_races": len(cand_nll),
+        }
+    srv, fi = out.get(SERVING, {}), out.get(FULL_INFO, {})
+    if srv.get("available"):
+        out["note"] = (
+            "DIAGNOSTIC ONLY. Compare the sign with serving_regime.diff: agreement means the "
+            "feature moved the model; disagreement means the calibrator did."
+        )
+        out["sign_matches_calibrated"] = None  # filled by the caller-facing report consumer
+    _ = fi
+    return out
 
 
 def _paired_diff(valid_races, cand_preds, act_preds) -> tuple[dict, int]:
@@ -121,11 +178,11 @@ def evaluate_regimes(
         kwargs["first_valid_year"] = first_valid_year
     regimes = {SERVING: serving_spec, FULL_INFO: None}
 
-    cand_by_regime, cand_valid = predict_over_folds_multi(
-        candidate, eval_races, regimes=regimes, **kwargs
+    cand_by_regime, cand_valid, cand_raw = predict_over_folds_multi(
+        candidate, eval_races, regimes=regimes, collect_raw=True, **kwargs
     )
-    act_by_regime, act_valid = predict_over_folds_multi(
-        active, eval_races, regimes=regimes, **kwargs
+    act_by_regime, act_valid, act_raw = predict_over_folds_multi(
+        active, eval_races, regimes=regimes, collect_raw=True, **kwargs
     )
 
     cand_ids = {er.context.race_id for er in cand_valid}
@@ -164,6 +221,8 @@ def evaluate_regimes(
             mask_races_active=_count_masked(act_preds, spec),
         )
 
+    uncalibrated = _uncalibrated_diagnostic(cand_valid, cand_raw, act_raw, boot)
+
     srv = scored[SERVING]
     # INV: the regime must have reached BOTH arms. A one-sided application still produces numbers,
     # so nothing else in the pipeline would notice.
@@ -196,6 +255,7 @@ def evaluate_regimes(
             "subgroup_guard": None,  # supplied by the subgroup pass; None => not yet decidable
         },
         gate_config=gate_config,
+        uncalibrated=uncalibrated,
         notes={
             "regimes": [SERVING, FULL_INFO],
             "both_arms_masked": True,

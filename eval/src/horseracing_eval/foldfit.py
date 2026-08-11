@@ -72,7 +72,8 @@ def predict_over_folds_multi(
     regimes: dict[str, object],
     first_valid_year: int = FIRST_VALID_YEAR,
     num_threads: int | None = None,
-) -> tuple[dict[str, dict[str, dict[str, Prediction]]], list[EvalRace]]:
+    collect_raw: bool = False,
+) -> tuple[dict[str, dict[str, dict[str, Prediction]]], list[EvalRace], dict]:
     """Feature 091: ONE fit per fold, predicted under SEVERAL input regimes.
 
     ``regimes`` maps a name to an OPAQUE predict-regime value (``None`` = the predictor's default).
@@ -82,10 +83,17 @@ def predict_over_folds_multi(
     Refitting per regime would multiply the cost of an already multi-hour walk-forward for no
     reason: the fit is identical, only the inputs at predict time differ.
 
-    Returns ``({regime_name: {race_id: {horse_id: Prediction}}}, valid_races_in_order)``.
+    ``collect_raw`` also captures the UNCALIBRATED per-race scores (``raw_win_probs``: the
+    race-softmax, before isotonic). Feature 091 needs them as a mandatory diagnostic: if the
+    candidate improves on raw scores but loses after calibration, the calibrator — not the
+    feature — produced the result, and that is a different finding.
+
+    Returns ``({regime: {race_id: {horse_id: Prediction}}}, valid_races, {regime: {race_id:
+    {horse_id: float}}})``. The third element is empty unless ``collect_raw``.
     """
     non_default = [n for n, spec in regimes.items() if spec is not None]
     preds: dict[str, dict[str, dict[str, Prediction]]] = {name: {} for name in regimes}
+    raw: dict[str, dict[str, dict[str, float]]] = {name: {} for name in regimes}
     valid_races: list[EvalRace] = []
     for fold in expanding_folds(eval_races, first_valid_year):
         predictor = factory.fit([er.context for er in fold.train], num_threads=num_threads)
@@ -102,6 +110,14 @@ def predict_over_folds_multi(
                 predictor.set_predict_weight_mask(spec)
             for er in fold.valid:
                 preds[name][er.context.race_id] = predictor.predict_race(er.context)
+                if collect_raw and hasattr(predictor, "raw_win_probs"):
+                    ids, scores = predictor.raw_win_probs(er.context)
+                    raw[name][er.context.race_id] = dict(zip(ids, map(float, scores), strict=True))
         if hasattr(predictor, "set_predict_weight_mask"):
             predictor.set_predict_weight_mask(None)  # leave the predictor as we found it
-    return preds, valid_races
+    if collect_raw and non_default and not any(raw[n] for n in regimes):
+        raise RegimeUnsupported(
+            "collect_raw was requested but the predictor exposes no raw_win_probs; the "
+            "calibration-reversal diagnostic would be silently absent (fail-closed)"
+        )
+    return preds, valid_races, raw
