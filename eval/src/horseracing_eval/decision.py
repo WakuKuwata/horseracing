@@ -24,6 +24,9 @@ NO_DECISION = "NO_DECISION"
 
 EVALUATION_CONTRACT_VERSION = "v2"
 
+#: Feature 091: the only artifact kind a verdict may be read from.
+VERDICT_ARTIFACT_KIND = "full_walk_forward"
+
 
 class ConfirmatoryContractError(RuntimeError):
     """Confirmatory-mode fail-closed: unknown/missing config, window mismatch, or hash mismatch."""
@@ -128,6 +131,27 @@ def assert_verdict_immutable(prior_contract_version: str | None) -> None:
             f"refusing to overwrite an existing verdict (contract_version="
             f"{prior_contract_version!r}); v2 recompute is reference-only (FR-015)."
         )
+
+
+class VerdictSourceError(RuntimeError):
+    """Raised when a verdict is read from an artifact that is not verdict-eligible (Feature 091)."""
+
+
+def assert_verdict_eligible(report: dict) -> None:
+    """Feature 091 (FR-026, codex #4): only a full walk-forward may decide adoption.
+
+    Acceptance runs and diagnostic arms are computed over folds that sit INSIDE the confirmatory
+    window. Reading an effect off them and acting on it is a selection leak, so the loader refuses
+    them structurally rather than relying on the operator remembering which file is which.
+    """
+    kind = report.get("artifact_kind")
+    if kind != VERDICT_ARTIFACT_KIND:
+        raise VerdictSourceError(
+            f"artifact_kind={kind!r} cannot decide a verdict (only {VERDICT_ARTIFACT_KIND!r} can). "
+            "Acceptance and diagnostic runs share folds with the confirmatory window."
+        )
+    if not report.get("eligible_for_verdict", False):
+        raise VerdictSourceError("artifact is marked eligible_for_verdict=false")
 
 
 def assert_confirmatory(

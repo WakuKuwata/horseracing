@@ -28,6 +28,34 @@ def _parse_date(s: str) -> datetime.date:
     return datetime.date.fromisoformat(s)
 
 
+def _require_subgroups(args) -> bool:
+    """Feature 091: confirmatory runs MUST compute subgroups when the gate declares them.
+
+    `--subgroups` is opt-in, but `decision.assert_confirmatory` fails closed when the gate-config
+    declares critical_subgroups and none were computed. Left to the operator, that surfaces as a
+    NO_DECISION after a multi-hour walk-forward. Turn it on implicitly instead.
+    """
+    if getattr(args, "subgroups", False):
+        return True
+    if not getattr(args, "confirmatory", False):
+        return False
+    cfg_path = getattr(args, "gate_config", None)
+    if not cfg_path:
+        return False
+    import json as _json
+    from pathlib import Path
+
+    try:
+        cfg = _json.loads(Path(cfg_path).read_text())
+    except Exception:
+        return False
+    declared = (cfg.get("subgroup_guard") or {}).get("critical_subgroups")
+    if declared:
+        print("[091] --confirmatory with declared critical_subgroups -> enabling --subgroups")
+        return True
+    return False
+
+
 def _git_sha() -> str | None:
     try:
         out = subprocess.run(
@@ -62,8 +90,18 @@ def train_evaluate(
     materialized_path: str | None = None,
     drop_features: tuple[str, ...] = (),
     register_as_candidate: bool = False,
+    weight_mask_rate: float | None = None,
+    weight_mask_seed: int | None = None,
 ) -> dict:
     eval_races = _load_eval_races(session)
+
+    # Feature 091: race-atomic masking of the same-day weight columns during the fit AND the
+    # calibration holdout. None keeps every pre-091 run byte-identical.
+    fit_mask = None
+    if weight_mask_rate is not None:
+        from horseracing_features.weight_mask import MaskSpec
+
+        fit_mask = MaskSpec(rate=weight_mask_rate, seed=weight_mask_seed, unit="race")
 
     def _make() -> LightGBMPredictor:
         return LightGBMPredictor(
@@ -71,6 +109,7 @@ def train_evaluate(
             hpo=hpo, target_encode_cols=target_encode_cols, te_smoothing=te_smoothing,
             objective=objective, drop_features=drop_features,
             use_materialized=use_materialized, materialized_path=materialized_path,
+            fit_weight_mask=fit_mask,
         )
 
     predictor = _make()
@@ -542,6 +581,12 @@ def main(argv: list[str] | None = None) -> int:
     te = sub.add_parser("train-evaluate", help="walk-forward train + calibrate + adopt + save")
     te.add_argument("--first-valid-year", type=int, default=2008)
     te.add_argument("--calibration", choices=["platt", "isotonic", "none"], default="platt")
+    te.add_argument("--weight-mask-rate", type=float, default=None,
+                    help="091: fraction of races whose same-day weight columns are masked during "
+                         "the fit and the calibration holdout (race-atomic). Omit = no masking")
+    te.add_argument("--weight-mask-seed", type=int, default=None,
+                    help="091: deterministic seed for the mask selection "
+                         "(required together with --weight-mask-rate)")
     te.add_argument("--objective", choices=["binary", "cond_logit", "pl_topk"],
                     default="binary",
                     help="039/042: win objective (binary | cond_logit | pl_topk=PL top-3)")
@@ -882,6 +927,16 @@ def main(argv: list[str] | None = None) -> int:
                          "mismatches --gate-config-hash (confirmatory-mode contract)")
     pe.add_argument("--gate-config-hash", default=None,
                     help="073: expected canonical gate-config hash for --confirmatory")
+    # Feature 091: which input regime(s) to score under. The PRIMARY measurement is `serving`
+    # (same-day weight masked on BOTH arms) because that is the condition predictions are made in;
+    # `full_info` is the non-inferiority guard. `both` produces the regime report + verdict.
+    pe.add_argument("--weight-regime", choices=("serving", "full_info", "both"), default=None,
+                    help="091: evaluate under the serving regime (weight masked on both arms), "
+                         "full-info, or both (both => regime report with a materialised verdict)")
+    pe.add_argument("--acceptance-recent-folds", type=int, default=None,
+                    help="091: outcome-blind wiring acceptance over the most recent N folds. "
+                         "Stamps artifact_kind=acceptance / eligible_for_verdict=false — its folds "
+                         "are inside the confirmatory window, so its NUMBERS must never gate")
     pe.add_argument("--compute-sensitivity", action="store_true",
                     help="073: also compute diagnostic block-width bootstrap sensitivities")
     pe.add_argument("--json", dest="json_out", default=None, help="write PairedReport JSON here")
@@ -1218,6 +1273,12 @@ def main(argv: list[str] | None = None) -> int:
         drop_groups = tuple(g for g in getattr(args, "te_drop_groups", "").split(",") if g)
         drop_cols = _expand_group_drops(drop_groups) if drop_groups else ()
         with Session(engine) as session:
+            if (getattr(args, "weight_mask_rate", None) is None) != (
+                getattr(args, "weight_mask_seed", None) is None
+            ):
+                print("--weight-mask-rate and --weight-mask-seed must be given together "
+                      "(a rate without a seed is not reproducible)", file=sys.stderr)
+                return 1
             summary = train_evaluate(
                 session,
                 first_valid_year=args.first_valid_year,
@@ -1235,6 +1296,8 @@ def main(argv: list[str] | None = None) -> int:
                 materialized_path=args.materialized_path if args.use_materialized else None,
                 drop_features=drop_cols,
                 register_as_candidate=getattr(args, "register_candidate", False),
+                weight_mask_rate=getattr(args, "weight_mask_rate", None),
+                weight_mask_seed=getattr(args, "weight_mask_seed", None),
             )
         _print_summary(summary)
         return 0
@@ -1462,7 +1525,7 @@ def _paired_eval(session: Session, args) -> int:
         num_threads=args.num_threads,
         snapshot={"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
                   "candidate_spec": args.candidate, "active_spec": args.active},
-        subgroups=getattr(args, "subgroups", False),
+        subgroups=_require_subgroups(args),
         compute_sensitivity=getattr(args, "compute_sensitivity", False),
     )
     g = report.gate

@@ -59,3 +59,49 @@ def predict_over_folds(
             preds[er.context.race_id] = predictor.predict_race(er.context)
             valid_races.append(er)
     return preds, valid_races
+
+
+class RegimeUnsupported(RuntimeError):
+    """Raised when a non-default predict regime is asked of a predictor that cannot honour it."""
+
+
+def predict_over_folds_multi(
+    factory: PredictorFactory,
+    eval_races: list[EvalRace],
+    *,
+    regimes: dict[str, object],
+    first_valid_year: int = FIRST_VALID_YEAR,
+    num_threads: int | None = None,
+) -> tuple[dict[str, dict[str, dict[str, Prediction]]], list[EvalRace]]:
+    """Feature 091: ONE fit per fold, predicted under SEVERAL input regimes.
+
+    ``regimes`` maps a name to an OPAQUE predict-regime value (``None`` = the predictor's default).
+    ``eval`` never inspects it — the value is built by training/CLI and handed to the predictor via
+    ``set_predict_weight_mask``, so this package keeps no dependency on ``features`` (020).
+
+    Refitting per regime would multiply the cost of an already multi-hour walk-forward for no
+    reason: the fit is identical, only the inputs at predict time differ.
+
+    Returns ``({regime_name: {race_id: {horse_id: Prediction}}}, valid_races_in_order)``.
+    """
+    non_default = [n for n, spec in regimes.items() if spec is not None]
+    preds: dict[str, dict[str, dict[str, Prediction]]] = {name: {} for name in regimes}
+    valid_races: list[EvalRace] = []
+    for fold in expanding_folds(eval_races, first_valid_year):
+        predictor = factory.fit([er.context for er in fold.train], num_threads=num_threads)
+        if non_default and not hasattr(predictor, "set_predict_weight_mask"):
+            raise RegimeUnsupported(
+                f"predictor {type(predictor).__name__} cannot switch predict regime, but "
+                f"{non_default} were requested (fail-closed: a silently ignored regime would make "
+                "the whole comparison meaningless while still producing numbers)"
+            )
+        for er in fold.valid:
+            valid_races.append(er)
+        for name, spec in regimes.items():
+            if hasattr(predictor, "set_predict_weight_mask"):
+                predictor.set_predict_weight_mask(spec)
+            for er in fold.valid:
+                preds[name][er.context.race_id] = predictor.predict_race(er.context)
+        if hasattr(predictor, "set_predict_weight_mask"):
+            predictor.set_predict_weight_mask(None)  # leave the predictor as we found it
+    return preds, valid_races

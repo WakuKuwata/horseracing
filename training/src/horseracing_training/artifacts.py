@@ -184,6 +184,9 @@ def save_model_version(
         "params": info.get("params"),
         "calibration": info.get("calibration"),
         "calibration_split_unit": info.get("calibration_split_unit"),  # Feature 073 US2 (FR-009)
+        # Feature 091: the race-atomic weight mask used for THIS fit (None when the mechanism was
+        # not used). Recorded so a served model states which input regime it was trained for.
+        "weight_mask": info.get("weight_mask"),
         "calibrator_params": predictor.calibrator_.params_dict() if predictor.calibrator_ else None,
         "fold_boundaries": list(eval_result.valid_years),
         "feature_version": feature_version,

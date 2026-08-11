@@ -55,6 +55,12 @@ from .target_encoding import (
 from .win_model import WinModel
 
 
+def _weight_mask_columns() -> tuple[str, ...]:
+    from horseracing_features.weight_mask import WEIGHT_MASK_COLUMNS
+
+    return WEIGHT_MASK_COLUMNS
+
+
 class LightGBMPredictor:
     #: never references result-time odds/popularity (FR-004)
     is_leaky_reference = False
@@ -351,6 +357,18 @@ class LightGBMPredictor:
             "calib_frac": self.calib_frac,
             # Feature 073 (US2, FR-009): the explicit calibration split unit used for this fit.
             "calibration_split_unit": self.calibration_split_unit,
+            # Feature 091: the race-atomic weight mask applied to the fit rows AND the calibration
+            # holdout. None = the mechanism was not used (byte-identical to pre-091 fits).
+            "weight_mask": (
+                {
+                    "rate": self.fit_weight_mask.rate,
+                    "seed": self.fit_weight_mask.seed,
+                    "unit": self.fit_weight_mask.unit,
+                    "columns": list(_weight_mask_columns()),
+                }
+                if self.fit_weight_mask is not None
+                else None
+            ),
             "hpo": self.hpo,
             "target_encode_cols": list(self.te_cols_),
             "te_smoothing": self.te_smoothing if self.te_cols_ else None,
@@ -401,6 +419,14 @@ class LightGBMPredictor:
         from .win_model import DEFAULT_PARAMS
 
         return dict(self.params) if self.params is not None else dict(DEFAULT_PARAMS)
+
+    def set_predict_weight_mask(self, spec) -> None:
+        """Feature 091: eval-side hook to switch the PREDICT regime without a refit.
+
+        ``eval`` must not import ``features`` (020 predictor-agnostic boundary), so it treats the
+        spec as an opaque value and hands it over through this method. One fit, many regimes.
+        """
+        self.predict_weight_mask = spec
 
     # --- predict -------------------------------------------------------------
     def raw_win_probs(self, race: RaceContext) -> tuple[list[str], np.ndarray]:

@@ -1,0 +1,5 @@
+c3594766334d837fafa203eb910065ec8cbf977e98514f386028119821b106d5
+# canonical gate-config hash frozen 2026-08-09
+# eval_window = 2021-01-01..2026-08-09
+# min_effect_delta=0.002 full_info_noninferior_width=0.003
+# weight_mask rate=0.5 seed=20260810

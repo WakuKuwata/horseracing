@@ -1,0 +1,90 @@
+{
+  "feature_version": "features-020",
+  "recipe_hash": "26f4b209e39d66022470aea03b35740ffeab16e3d528f0b1e41a340a722b9c87",
+  "prev_weight_in_model_inputs_exactly_once": {
+    "pass": true,
+    "detail": {
+      "n_model_inputs": 138
+    }
+  },
+  "mask_columns_are_model_inputs": {
+    "pass": true,
+    "detail": {
+      "columns": [
+        "weight",
+        "weight_diff",
+        "carried_weight_ratio"
+      ]
+    }
+  },
+  "d1_substitute_columns_present": {
+    "pass": true,
+    "detail": null
+  },
+  "prev_weight_in_training_matrix": {
+    "pass": true,
+    "detail": null
+  },
+  "masked_rows_with_missing_weight_but_present_prev_weight": {
+    "pass": true,
+    "detail": {
+      "n_rows": 429399,
+      "n_rows_before_masking": 0
+    }
+  },
+  "mask_selected_a_plausible_fraction_of_races": {
+    "pass": true,
+    "detail": {
+      "masked_races": 33883,
+      "all_races": 67780,
+      "rate": 0.5
+    }
+  },
+  "masked_races_have_nan_weight": {
+    "pass": true,
+    "detail": null
+  },
+  "masked_races_have_nan_weight_diff": {
+    "pass": true,
+    "detail": null
+  },
+  "masked_races_have_nan_carried_weight_ratio": {
+    "pass": true,
+    "detail": null
+  },
+  "masked_races_keep_prev_weight": {
+    "pass": true,
+    "detail": null
+  },
+  "carried_weight_ratio_not_resurrected": {
+    "pass": true,
+    "detail": {
+      "had_values_before_mask": 478312
+    }
+  },
+  "no_race_is_partially_masked": {
+    "pass": true,
+    "detail": {
+      "mixed_races": 0
+    }
+  },
+  "recipe_hash_differs_from_unmasked": {
+    "pass": true,
+    "detail": null
+  },
+  "mask_spec_hash_recorded": {
+    "pass": true,
+    "detail": {
+      "spec": "MaskSpec(rate=0.5, seed=20260810, unit='race')"
+    }
+  },
+  "diagnostics": {
+    "prev_weight_coverage": 0.8973160729171351,
+    "corr_weight_vs_prev_weight": 0.974344365380966,
+    "median_abs_kg_diff": 4.0,
+    "raw_rows_with_missing_weight": 1,
+    "note": "high correlation is expected and is exactly why masking is required: without it the tree splits on `weight` and never learns to use the proxy. Note the raw training population has ~0 rows with a missing same-day weight - the fallback pattern exists ONLY because the mask creates it."
+  },
+  "failures": [],
+  "pass": true
+}

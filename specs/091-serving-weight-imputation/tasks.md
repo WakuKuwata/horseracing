@@ -85,7 +85,7 @@
 - [X] T019 [US1] `training/src/horseracing_training/recipe.py` で **`m=0.0` と `spec=None` を provenance 上で区別**する(値としては同一だが、「mask を意図的に無効化した実験」と「mask 機構を使わない既存 recipe」は別物として記録されなければならない・codex #5)
 - [X] T020 [US1] `training/src/horseracing_training/predictor.py` の `fit()` に fit-scope mask を、`raw_win_probs()` に predict-scope mask を通す。**キャッシュ行列(`_ensure_data`)は無改変**とし、各利用箇所の行部分集合に純変換として適用する。両 spec は独立に指定できること
 - [X] T021 [US1] `training/src/horseracing_training/predictor.py` で校正 holdout にも model-fit と**同一 spec・同一 seed**の mask を適用する(research D4)。model-fit 行と校正行で mask されたレース集合が一致することを assertion で担保
-- [ ] T022 [US1] `training/src/horseracing_training/artifacts.py` の metadata に mask spec(rate / seed / unit / columns)とその hash を記録。mask 無しなら `null`
+- [X] T022 [US1] `training/src/horseracing_training/artifacts.py` の metadata に mask spec(rate / seed / unit / columns)とその hash を記録。mask 無しなら `null`
 - [ ] T023 [US1] `training/tests/unit/test_weight_mask_wiring.py` を新規作成。**変換後の行列を検査する**(呼び出し回数を数えない): estimator 入力と校正 holdout 入力を捕捉し、同一 spec/seed で選ばれたレースの 3 列が最終行列で NaN になっていること、artifact metadata の spec hash が一致すること
 - [ ] T024 [US1] `training/tests/unit/test_weight_mask_wiring.py` に **`spec=None` のバイト同一性**を追加: 旧 artifact の読み込み・列順・active 予測が変わらないこと。既存 training テストが無改修で緑であること
 - [ ] T025 [US1] `training/tests/unit/test_weight_mask_wiring.py` に **assertion の kill-test** を追加: training 配線 / 校正 holdout 配線 を 1 箇所ずつ無効化し、上記 assertion が**必ず落ちる**ことを確認(assertion が実際に何かを守っていることの証明・codex #3)
@@ -107,26 +107,26 @@
 
 ### plan Phase C: 評価契約の実装
 
-- [ ] T028 [US2] `eval/src/horseracing_eval/foldfit.py` の `predict_over_folds` に predict-scope mask spec を通す(既定 `None` で現行と挙動同一)
-- [ ] T029 [US2] `eval/src/horseracing_eval/paired.py` に regime 別評価を追加。`serving_regime`(両アームに serving spec)と `full_info_regime`(両アームに `spec=None`)を別々に算出し `PairedReport` に**純追加**する。既存フィールドは不変。**subgroup は regime ごとに算出する**(トップレベルの `subgroups` だけだと verdict 式が既定=full-info を読んでしまい一意に評価できない)。`eval` は spec を**中身を見ない不透明な値として受け取り転送するだけ**にし、構築は training / CLI が行う(`eval` は `horseracing-features` に依存していない=020 の predictor-agnostic 境界を壊さない)
-- [ ] T030 [US2] `eval/src/horseracing_eval/paired.py` に `full_info_guard` と、`serving_regime.gate.adopted` への**最小効果 δ**(点推定 < −δ)を追加。**両方の閾値は gate-config から読む**(既存コードが `cfg.get("top_noninferior")` 等を読むのと同じ方式)。定数をハードコードすると凍結 hash による事前登録が拘束力を失い、「テストは緑だが要件を満たさない」形になる(FR-025)。**config の値を変えるとゲート判定が変わる**単体テストを同時に追加する。verdict の正本は `serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard` を評価した**単一真偽値 `verdict.adopt`**([contracts/adoption-gate.md](./contracts/adoption-gate.md))
+- [X] T028 [US2] `eval/src/horseracing_eval/foldfit.py` の `predict_over_folds` に predict-scope mask spec を通す(既定 `None` で現行と挙動同一)
+- [X] T029 [US2] `eval/src/horseracing_eval/paired.py` に regime 別評価を追加。`serving_regime`(両アームに serving spec)と `full_info_regime`(両アームに `spec=None`)を別々に算出し `PairedReport` に**純追加**する。既存フィールドは不変。**subgroup は regime ごとに算出する**(トップレベルの `subgroups` だけだと verdict 式が既定=full-info を読んでしまい一意に評価できない)。`eval` は spec を**中身を見ない不透明な値として受け取り転送するだけ**にし、構築は training / CLI が行う(`eval` は `horseracing-features` に依存していない=020 の predictor-agnostic 境界を壊さない)
+- [X] T030 [US2] `eval/src/horseracing_eval/paired.py` に `full_info_guard` と、`serving_regime.gate.adopted` への**最小効果 δ**(点推定 < −δ)を追加。**両方の閾値は gate-config から読む**(既存コードが `cfg.get("top_noninferior")` 等を読むのと同じ方式)。定数をハードコードすると凍結 hash による事前登録が拘束力を失い、「テストは緑だが要件を満たさない」形になる(FR-025)。**config の値を変えるとゲート判定が変わる**単体テストを同時に追加する。verdict の正本は `serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard` を評価した**単一真偽値 `verdict.adopt`**([contracts/adoption-gate.md](./contracts/adoption-gate.md))
 - [ ] T031 [US2] `eval/src/horseracing_eval/paired.py` に**校正前(race-softmax 直後)winner NLL** を診断として追加(校正器由来の反転を識別する)
-- [ ] T032 [US2] `eval/tests/unit/test_paired_regime.py` を新規作成。**serving では両アームの mask レース集合と hash が完全一致**、**full-info では両アームとも無変換**であることを検証する。不一致なら fail-closed(片側だけ適用されると数値は出るが比較の意味が消える)
-- [ ] T033 [US2] `eval/tests/unit/test_paired_regime.py` に、両アームの**レース集合・順序・winner ラベルの一致**検証を追加(既存の model-blind race set 契約 C8 の regime 版)
-- [ ] T034 [US2] `eval/tests/unit/test_paired_gate_boundary.py` を新規作成。**境界値テスト**: δ=0.002 のちょうど上下、差分の符号、full-info 非劣化幅 0.003 のちょうど上下。PRIMARY が `regime=serving` かつ両アーム適用証跡が一致しなければ fail すること、GUARD が `full_info` 固定であること
+- [X] T032 [US2] `eval/tests/unit/test_paired_regime.py` を新規作成。**serving では両アームの mask レース集合と hash が完全一致**、**full-info では両アームとも無変換**であることを検証する。不一致なら fail-closed(片側だけ適用されると数値は出るが比較の意味が消える)
+- [X] T033 [US2] `eval/tests/unit/test_paired_regime.py` に、両アームの**レース集合・順序・winner ラベルの一致**検証を追加(既存の model-blind race set 契約 C8 の regime 版)
+- [X] T034 [US2] `eval/tests/unit/test_paired_gate_boundary.py` を新規作成。**境界値テスト**: δ=0.002 のちょうど上下、差分の符号、full-info 非劣化幅 0.003 のちょうど上下。PRIMARY が `regime=serving` かつ両アーム適用証跡が一致しなければ fail すること、GUARD が `full_info` 固定であること
 - [X] T035 [US2] `eval/tests/unit/test_paired_regime.py` に **assertion の kill-test** を追加: active アーム / candidate アームの mask 配線を 1 箇所ずつ外し、T032 の assertion が必ず落ちることを確認
-- [ ] T036 [US2] `training/src/horseracing_training/cli.py` の `paired-eval` に `--weight-regime {serving,full_info,both}` と、受入実行用の `--acceptance-recent-folds N` を追加。`both` を既定とする。**`--confirmatory` 指定時は subgroup 計算を暗黙 ON にする(または未指定を fail-closed にする)** — 現行の `subgroups` は opt-in で、gate-config が critical_subgroups を宣言していると未計算のまま NO_DECISION に落ちる。**`artifact_kind` と `eligible_for_verdict` をレポートに出力する**のもここで行う(T044/T048/T050-T052 が刻む値の受け皿・T049 の loader ガードが読む)
+- [X] T036 [US2] `training/src/horseracing_training/cli.py` の `paired-eval` に `--weight-regime {serving,full_info,both}` と、受入実行用の `--acceptance-recent-folds N` を追加。`both` を既定とする。**`--confirmatory` 指定時は subgroup 計算を暗黙 ON にする(または未指定を fail-closed にする)** — 現行の `subgroups` は opt-in で、gate-config が critical_subgroups を宣言していると未計算のまま NO_DECISION に落ちる。**`artifact_kind` と `eligible_for_verdict` をレポートに出力する**のもここで行う(T044/T048/T050-T052 が刻む値の受け皿・T049 の loader ガードが読む)
 
 ### plan Phase D0(新設): bump・compat 受入・配線 E2E
 
 **Purpose**: bump 後にしか検出できない不具合を、本評価に入る前にまとめて潰す。
 
-- [ ] T037 [US2] **T013/T014 が緑であることを確認したうえで** `features/src/horseracing_features/registry.py` の `FEATURE_VERSION` を `features-020` に上げ、`COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-020"] = {"features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"}` を追加。**`features-019` は焼却番号のため使用禁止**(070 revert)
+- [X] T037 [US2] **T013/T014 が緑であることを確認したうえで** `features/src/horseracing_features/registry.py` の `FEATURE_VERSION` を `features-020` に上げ、`COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-020"] = {"features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"}` を追加。**`features-019` は焼却番号のため使用禁止**(070 revert)
 - [X] T038 [US2] `features/tests/unit/test_registry_features020.py` を新規作成。`prev_weight` が **FEATURE_GROUPS にちょうど 1 回**登録され、重複が無く、列順が決定論であることを検証(bump 後にしか出ない登録漏れ・重複・列順変更の検出・codex #2)
-- [ ] T039 [US2] `uv run --project features features materialize` で parquet を**新規に**再生成し、manifest の `feature_version` が `features-020` になることを確認。**version keyed cache による旧 parquet の再利用が起きていない**ことを、manifest の content hash が T001 の基準と異なることで確認
-- [ ] T040 [US2] 実 DB E2E で **INV-W9** を検証: `features-020` のもとで active `lgbm-064-f02acc` の予測が `specs/091-serving-weight-imputation/evidence/baseline_lgbm064_predictions.json` と**全頭 1 ビットも違わない**こと。compat 経路を通ったことが `logic_version` から読めること。compat pin した active に**新しい列順が渡っていない**ことも確認
-- [ ] T041 [US2] `serving/tests/integration/` に artifact loader / CLI が `features-020` を正しく選ぶことの検証を追加(loader が新 version を選ばない・recipe hash が非互換になる、を bump 後に検出する)
-- [ ] T042 [US2] **配線 E2E smoke**: `specs/091-serving-weight-imputation/evidence/wiring_smoke.json` に以下を出力して全項目を確認(codex #1)。**ここが緑にならない限り学習(T045)に進まない**
+- [X] T039 [US2] `uv run --project features features materialize` で parquet を**新規に**再生成し、manifest の `feature_version` が `features-020` になることを確認。**version keyed cache による旧 parquet の再利用が起きていない**ことを、manifest の content hash が T001 の基準と異なることで確認
+- [X] T040 [US2] 実 DB E2E で **INV-W9** を検証: `features-020` のもとで active `lgbm-064-f02acc` の予測が `specs/091-serving-weight-imputation/evidence/baseline_lgbm064_predictions.json` と**全頭 1 ビットも違わない**こと。compat 経路を通ったことが `logic_version` から読めること。compat pin した active に**新しい列順が渡っていない**ことも確認
+- [X] T041 [US2] `serving/tests/integration/` に artifact loader / CLI が `features-020` を正しく選ぶことの検証を追加(loader が新 version を選ばない・recipe hash が非互換になる、を bump 後に検出する)
+- [X] T042 [US2] **配線 E2E smoke**: `specs/091-serving-weight-imputation/evidence/wiring_smoke.json` に以下を出力して全項目を確認(codex #1)。**ここが緑にならない限り学習(T045)に進まない**
   - candidate の最終 feature list に `prev_weight` が**ちょうど 1 回**存在する
   - `weight` が欠損かつ `prev_weight` が非欠損のモデル入力行が実在する
   - fit / 校正 holdout / predict それぞれの mask 対象レース ID hash と件数
@@ -134,21 +134,21 @@
   - **`carried_weight_ratio` が後段で再計算されて復活していない**
   - artifact の feature version・recipe hash・mask spec hash
   - **`days_since_last` と `has_past_race` が candidate の最終 feature list に存在する** — FR-003/FR-004 は鮮度と有無をこの既存 2 列で満たす設計なので、片方でも落ちていれば `prev_weight` だけあっても要件を満たさない
-- [ ] T043 [US2] **配線の診断値**を `specs/091-serving-weight-imputation/evidence/wiring_diagnostics.json` に出力: `prev_weight` の feature importance と、`prev_weight` を shuffle したときの予測変化量。**「配線不良」と「正しく学習したが効果なし」を切り分ける**ための診断であり、採用 assertion ではない(codex #1)
+- [X] T043 [US2] **配線の診断値**を `specs/091-serving-weight-imputation/evidence/wiring_diagnostics.json` に出力: `prev_weight` の feature importance と、`prev_weight` を shuffle したときの予測変化量。**「配線不良」と「正しく学習したが効果なし」を切り分ける**ための診断であり、採用 assertion ではない(codex #1)
 - [ ] T044 [US2] **outcome-blind 受入**: 直近 3 fold で候補を回し、`specs/091-serving-weight-imputation/evidence/acceptance.json` に **効果を見ない項目だけ**を出力して確認する — mask 件数 / 両アーム同一 mask / `prev_weight` カバレッジ / 指標が有限 / artifact・config の provenance 一致。**winner NLL の大小で継続可否を判断してはならない**(最終評価窓に同じ fold が含まれるため選択リークになる・codex #4)。artifact には `artifact_kind="acceptance"` と `eligible_for_verdict=false` を刻む
 
 ### plan Phase D: 本評価
 
-- [ ] T045 [US2] [gate-config.json](./gate-config.json) の `eval_window.to` を実行時点の最新確定レース日に確定し、**同時に `to_is_provisional` を `false` にしてから** canonical hash を計算する(実キーなので hash に参加する。`true` のまま凍結すると config が「暫定」と自称し続ける)。**gate-config を凍結**。canonical hash を計算して `specs/091-serving-weight-imputation/evidence/gate_config_hash.txt` に記録
-- [ ] T046 [US2] `gate-config.json` が `eval/src/horseracing_eval/decision.py` の `assert_confirmatory` を通ることを事前確認(`evaluation_contract_version: "v2"` の存在・`eval_window` の一致・hash 一致)。**070 の gate-config は 073 以前の作でこのキーを持たないため、コピー元にすると起動時に落ちる**
+- [X] T045 [US2] [gate-config.json](./gate-config.json) の `eval_window.to` を実行時点の最新確定レース日に確定し、**同時に `to_is_provisional` を `false` にしてから** canonical hash を計算する(実キーなので hash に参加する。`true` のまま凍結すると config が「暫定」と自称し続ける)。**gate-config を凍結**。canonical hash を計算して `specs/091-serving-weight-imputation/evidence/gate_config_hash.txt` に記録
+- [X] T046 [US2] `gate-config.json` が `eval/src/horseracing_eval/decision.py` の `assert_confirmatory` を通ることを事前確認(`evaluation_contract_version: "v2"` の存在・`eval_window` の一致・hash 一致)。**070 の gate-config は 073 以前の作でこのキーを持たないため、コピー元にすると起動時に落ちる**
 - [ ] T047 [US2] 候補モデルを `features-020` + mask spec(rate=0.5, seed=20260810)で学習(長時間ジョブ。`nohup` + 監視。artifact は**絶対パス**の `--artifacts-dir` に出す = [weights-uri-relative-path-ops-bug] の再発防止)
 - [ ] T048 [US2] **本評価**(artifact に `artifact_kind="full_walk_forward"` / `eligible_for_verdict=true` を刻む): `training paired-eval --confirmatory --gate-config specs/091-serving-weight-imputation/gate-config.json --gate-config-hash <T045 の値> --from 2021-01-01 --to <T045 で確定した終端> --weight-regime both --subgroups` を実行。**`--subgroups` は必須** — gate-config が `critical_subgroups` を宣言している状態で subgroup を計算しないと `assert_confirmatory` が fail-closed で NO_DECISION を返し、verdict 正本の `serving_regime.subgroups.subgroup_guard` パス自体が生成されない(十数時間の学習と本評価のあとで verdict が出ない事故になる)。serving regime(PRIMARY)/ full-info regime(GUARD)/ subgroup guard を出力
-- [ ] T049 [US2] `eval/src/horseracing_eval/decision.py` に **verdict loader のガード**を追加: `artifact_kind="full_walk_forward"` のみを受理し、`eligible_for_verdict=false` の artifact を読んだら fail-closed。最終 fold 集合の完全一致・重複なし・受入 run ID を含まないことを検証(codex #4)
+- [X] T049 [US2] `eval/src/horseracing_eval/decision.py` に **verdict loader のガード**を追加: `artifact_kind="full_walk_forward"` のみを受理し、`eligible_for_verdict=false` の artifact を読んだら fail-closed。最終 fold 集合の完全一致・重複なし・受入 run ID を含まないことを検証(codex #4)
 - [ ] T050 [US2] [P] **診断アーム m=0.0** を同条件で実行し `specs/091-serving-weight-imputation/evidence/diagnostic_m0.json` に保存。目的は「mask が本当に必要か」の対照。artifact に `artifact_kind="diagnostic"` / `eligible_for_verdict=false` を刻む。**verdict には使わない**
 - [ ] T051 [US2] [P] **診断アーム m=1.0** を同条件で実行し `specs/091-serving-weight-imputation/evidence/diagnostic_m1.json` に保存。目的は「当日体重を捨てる設計」の先行測定。artifact に `artifact_kind="diagnostic"` / `eligible_for_verdict=false` を刻む。**verdict には使わない**
 - [ ] T052 [US2] [P] bootstrap block 幅感度(2/3/4 日・週)を `specs/091-serving-weight-imputation/evidence/bootstrap_sensitivity.json` に出力(073 の診断枠。`artifact_kind="diagnostic"` を刻む。**ゲートに AND しない**)
 - [X] T053 [US2] `eval/tests/unit/test_verdict_isolation.py` を新規作成。**受入(T044)と診断アーム(T050/T051)の数値を改変しても verdict が変わらない**ことを機械的に確認(codex #4/#5)
-- [X] T054 [US2] verdict を **`verdict.adopt`(レポートが出力する単一真偽値)**から読み取り、`specs/091-serving-weight-imputation/evidence/verdict.json` に記録。**個別数値の事後読み替えを行わない**。実行不能なら NO_DECISION(ボーダー数値を理由にしない)
+- [ ] T054 [US2] verdict を **`verdict.adopt`(レポートが出力する単一真偽値)**から読み取り、`specs/091-serving-weight-imputation/evidence/verdict.json` に記録。**個別数値の事後読み替えを行わない**。実行不能なら NO_DECISION(ボーダー数値を理由にしない)
 
 **Checkpoint C (US2 完了)**: 採否が事前登録した単一式から一意に決まり、受入と診断が verdict から機械的に隔離されている。
 
@@ -191,6 +191,14 @@
 > bump の機械的な帰結として、`features-018` を pin していた既存テスト 8 本を `features-020` に更新した。うち 2 本(`test_speed_figure` / `test_past_market_leak`)は compat map の中身を検証しているので、単純置換ではなく **020→018 の pin と「compat は推移しない(017 は 018 経由で 020 に乗らない)」の assertion を追加**した。
 >
 > codex agent 3 が書いた `test_registry_timing.py` は `feature_hash` を絶対値で pin していたため、`prev_weight` 追加で落ちた。テストの意図(timing 修正は hash 中立)は正しいので、**絶対値 pin を before/after 比較に置き換えた** — 絶対値のままだと「列が一切増えない」ことまで暗黙に主張してしまい、列を足す feature のたびに落ちる。
+
+> **実装セッション 2(Phase 4 前半)**: 評価契約(regime 対応・verdict 合成・境界値・verdict 隔離)と D0 受入まで完了。**Checkpoint D0 通過**(配線 smoke 14/14)。gate-config を凍結(hash `c3594766…`、窓 2021-01-01..2026-08-09、改竄検知を実測)、候補モデル `lgbm-091-wmask` の学習を開始した。
+>
+> **配線 smoke が実データの事実を 1 件掘り当てた**: 学習母集団(started かつ確定済 956,099 行)で当日体重が欠損するのは **1 行だけ**で、spec に書いていた「学習側 0.3%」は取消行を含む `race_horses` 全体の数字だった。started 行の欠損 452 行のうち **451 行は未確定レース側**にある。つまりモデルは学習中に「体重なし」をただの一度も見ない。mask 前 0 行 → mask 後 429,399 行という実測が、「mask は機構の本体」を数字で裏づけた。spec を訂正済み。
+>
+> **T031(校正前 winner NLL 診断)は未実装**。regime 別スコアは calibrated のみで、raw スコアの収集には `raw_win_probs` を fold ごとに別途走らせる必要がある。本評価(T048)の前に入れる。
+>
+> 残: T015 / T023-T025 / T031 / T037(補助) / T040(済) / T044 / T047(実行中) / T048 以降。
 
 ## Dependencies
 
