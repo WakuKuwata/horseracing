@@ -301,3 +301,57 @@ def test_new_blocks_empty_target_schema():
         empty = fn(frames, target_race_ids=frozenset())
         assert len(empty) == 0
         assert list(empty.columns) == list(full.columns)
+
+
+# --- Feature 090 (nick cross): REJECTED at the pre-registered gate, kept UNWIRED as the
+# documented negative result. These call build_nick_cross_features directly, so they stay green
+# even though the block is no longer merged into build_asof_features.
+
+
+def _nick_frames():
+    """Cross-entity history: two sires x two damsires, plus an unlined damsire (the population
+    whose partial line coverage makes the L1 parent restriction matter)."""
+    specs = []
+    for i in range(10):
+        specs.append({"race_id": f"N{i}", "race_date": f"2020-{(i % 9) + 1:02d}-05",
+                      "horses": [{"horse_id": f"h{i}a", "sire_name": "S1",
+                                  "damsire_name": "D1", "damsire_line": "L1",
+                                  "finish_order": (i % 3) + 1},
+                                 {"horse_id": f"h{i}b", "sire_name": "S1",
+                                  "damsire_name": "D2", "damsire_line": None,
+                                  "finish_order": ((i + 1) % 3) + 1},
+                                 {"horse_id": f"h{i}c", "sire_name": "S2",
+                                  "damsire_name": "D1", "damsire_line": "L1",
+                                  "finish_order": ((i + 2) % 3) + 1}]})
+    specs.append({"race_id": "RT", "race_date": "2021-06-01",
+                  "horses": [{"horse_id": "h0a", "sire_name": "S1", "damsire_name": "D1",
+                              "damsire_line": "L1", "finish_order": 1},
+                             {"horse_id": "zz", "sire_name": "S9", "damsire_name": "D9",
+                              "damsire_line": None, "finish_order": 2}]})
+    return make_frames(specs)
+
+
+def _nick_same_day_frames():
+    specs = [{"race_id": f"N{i}", "race_date": f"2020-0{i + 1}-05",
+              "horses": [{"horse_id": f"h{i}", "sire_name": "S1", "damsire_name": "D1",
+                          "damsire_line": "L1", "finish_order": (i % 2) + 1}]}
+             for i in range(6)]
+    for rid in ("RA", "RB"):
+        specs.append({"race_id": rid, "race_date": "2021-03-03",
+                      "horses": [{"horse_id": "a", "sire_name": "S1", "damsire_name": "D1",
+                                  "damsire_line": "L1", "finish_order": 1},
+                                 {"horse_id": "b", "sire_name": "S1", "damsire_name": "D2",
+                                  "damsire_line": "L1", "finish_order": 2}]})
+    return make_frames(specs)
+
+
+def test_nick_cross_projection_byte_identical():
+    """Covers the global p_overall primitive: projecting must NOT restrict it, or the expected
+    rate (and therefore every residual) drifts away from the full build."""
+    from horseracing_features.nick_cross_features import build_nick_cross_features
+    assert_projected_equals_full(build_nick_cross_features, _nick_frames(), ["RT"])
+
+
+def test_nick_cross_same_day_multi_race():
+    from horseracing_features.nick_cross_features import build_nick_cross_features
+    assert_projected_equals_full(build_nick_cross_features, _nick_same_day_frames(), ["RA", "RB"])
