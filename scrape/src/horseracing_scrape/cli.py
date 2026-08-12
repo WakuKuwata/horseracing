@@ -54,11 +54,19 @@ _CAPTURE = {
 }
 
 
-def _make_fetcher(min_interval: float, cache_dir: str | None) -> HttpFetcher:
+def _make_fetcher(
+    min_interval: float, cache_dir: str | None, archive_dir: str | None = None
+) -> HttpFetcher:
     import httpx
 
+    # --archive-dir wins over --cache-dir (which defaults to a path on several subcommands):
+    # the two are mutually exclusive by construction, and an archive is only meaningful when
+    # every page is actually fetched rather than replayed from a cache.
+    if archive_dir:
+        cache_dir = None
     return HttpFetcher(
         user_agent=_USER_AGENT, min_interval_s=min_interval, cache_dir=cache_dir,
+        archive_dir=archive_dir,
         client=httpx.Client(headers={"User-Agent": _USER_AGENT}, timeout=20.0),
     )
 
@@ -97,7 +105,12 @@ def main(argv: list[str] | None = None) -> int:
     for name in _COMMANDS:
         p = sub.add_parser(name, help=f"{name} from netkeiba page URL(s)")
         p.add_argument("--url", action="append", required=True, help="netkeiba page URL (repeat)")
-        p.add_argument("--cache-dir", default=".scrape_cache")
+        p.add_argument("--cache-dir", default=None,
+        help="read-through cache (opt-in). A page fetched while a race was still pending "
+             "would be replayed forever, so this stays OFF for anything not yet settled")
+        p.add_argument("--archive-dir", default=None,
+            help="gzip a copy of every fetched page here "
+                 "(write-only archive, not a cache; disables --cache-dir)")
         p.add_argument("--min-interval", type=float, default=1.0)
         p.add_argument("--database-url", default=None)
         if name == "scrape-entries":
@@ -116,7 +129,12 @@ def main(argv: list[str] | None = None) -> int:
     cp.add_argument("--horse-id", action="append", default=None,
                     help="netkeiba horse id to complete (repeat); default = surrogate horses")
     cp.add_argument("--limit", type=int, default=None, help="max horses to fetch this run")
-    cp.add_argument("--cache-dir", default=".scrape_cache")
+    cp.add_argument("--cache-dir", default=None,
+        help="read-through cache (opt-in). A page fetched while a race was still pending "
+             "would be replayed forever, so this stays OFF for anything not yet settled")
+    cp.add_argument("--archive-dir", default=None,
+        help="gzip a copy of every fetched page here "
+                 "(write-only archive, not a cache; disables --cache-dir)")
     cp.add_argument("--min-interval", type=float, default=1.0)
     cp.add_argument("--database-url", default=None)
 
@@ -146,7 +164,12 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--from", dest="from_", default=None, help="race_date >= (YYYY-MM-DD)")
     sl.add_argument("--to", dest="to", default=None, help="race_date <= (YYYY-MM-DD)")
     sl.add_argument("--limit", type=int, default=None, help="max races this run")
-    sl.add_argument("--cache-dir", default=".scrape_cache")
+    sl.add_argument("--cache-dir", default=None,
+        help="read-through cache (opt-in). A page fetched while a race was still pending "
+             "would be replayed forever, so this stays OFF for anything not yet settled")
+    sl.add_argument("--archive-dir", default=None,
+        help="gzip a copy of every fetched page here "
+                 "(write-only archive, not a cache; disables --cache-dir)")
     sl.add_argument("--min-interval", type=float, default=1.0)
     sl.add_argument("--database-url", default=None)
 
@@ -261,7 +284,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "scrape-laps":
-        fetcher = _make_fetcher(args.min_interval, args.cache_dir)
+        fetcher = _make_fetcher(
+            args.min_interval, args.cache_dir, getattr(args, 'archive_dir', None)
+        )
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             race_ids = args.race_id
@@ -290,7 +315,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if summary.status != "failed" else 1
 
     if args.command == "complete-profiles":
-        fetcher = _make_fetcher(args.min_interval, args.cache_dir)
+        fetcher = _make_fetcher(
+            args.min_interval, args.cache_dir, getattr(args, 'archive_dir', None)
+        )
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             summary = complete_profiles(
@@ -303,7 +330,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if summary.status != "failed" else 1
 
     fn = _COMMANDS[args.command]
-    fetcher = _make_fetcher(args.min_interval, args.cache_dir)
+    fetcher = _make_fetcher(
+            args.min_interval, args.cache_dir, getattr(args, 'archive_dir', None)
+        )
     engine = create_db_engine(args.database_url)
     kwargs = {"urls": args.url, "fetcher": fetcher, "scope_value": args.url[0]}
     if args.command == "scrape-entries":

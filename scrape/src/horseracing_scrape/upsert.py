@@ -84,9 +84,25 @@ def _insert_ignore(session: Session, model, values: dict, pk: tuple[str, ...]) -
     session.execute(insert(model).values(**values).on_conflict_do_nothing(index_elements=list(pk)))
 
 
-def _upsert(session: Session, model, values: dict, pk: tuple[str, ...]) -> None:
+def _upsert(
+    session: Session, model, values: dict, pk: tuple[str, ...],
+    fill_if_null: tuple[str, ...] = (),
+) -> None:
+    """Upsert ``values``, overwriting on conflict.
+
+    Columns named in ``fill_if_null`` are instead COALESCEd: they populate a NULL but never
+    replace a value that is already there. Use it for fields netkeiba supplies opportunistically
+    (a page that stops showing one must not blank a good JRA-VAN value on the next re-scrape).
+    """
     stmt = insert(model).values(**values)
-    update_cols = {c: getattr(stmt.excluded, c) for c in values if c not in pk}
+    update_cols = {}
+    for c in values:
+        if c in pk:
+            continue
+        if c in fill_if_null:
+            update_cols[c] = func.coalesce(getattr(model, c), getattr(stmt.excluded, c))
+        else:
+            update_cols[c] = getattr(stmt.excluded, c)
     stmt = stmt.on_conflict_do_update(index_elements=list(pk), set_=update_cols)
     session.execute(stmt)
 
@@ -111,7 +127,8 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
         "going": scraped.race.going, "weather": scraped.race.weather,
         "race_class": scraped.race.race_class, "race_name": scraped.race.race_name,
         "grade": scraped.race.grade, "post_time": scraped.race.post_time,
-    }, ("race_id",))
+        "prize_money": scraped.race.prize_money,
+    }, ("race_id",), fill_if_null=("prize_money",))
 
     # Feature 067: entries carry the horse/jockey/trainer NAME (and horse AGE), so identity
     # evidence is available here — resolve_entity can promote to canonical instead of minting a new

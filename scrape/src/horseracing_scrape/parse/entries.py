@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import datetime
 import re
+import unicodedata
 from zoneinfo import ZoneInfo
 
 from ..models import ParseError, ScrapedEntry, ScrapedEntryHorse, ScrapedRace
@@ -37,6 +38,11 @@ _BODYWEIGHT_RE = re.compile(r"(\d{3})")
 _WEIGHT_DIFF_RE = re.compile(r"\(([-+]?\d+)\)")  # "484 (0)" / "520(+4)" / "498(-6)"
 _POST_TIME_RE = re.compile(r"(\d{1,2}):(\d{2})\s*発走")  # "15:40発走"
 _GRADE_ICON_RE = re.compile(r"Icon_GradeType(\d+)")
+#: "本賞金:580,230,150,87,58万円" — the comma-separated 1着..5着 prizes in 万円. Scoped to
+#: ``.RaceData02`` (this race's own meta block), which carries exactly one occurrence.
+_PRIZE_RE = re.compile(r"本賞金\s*[:：]\s*([\d,]+)\s*万円")
+#: A 1着 prize above this (万円) means we misread the string, not that JRA got generous.
+_MAX_PRIZE_MAN = 100_000
 _JST = ZoneInfo("Asia/Tokyo")
 #: netkeiba grade-icon suffix -> JRA grade label (only the central G1–G3 are mapped; other
 #: suffixes = listed/重賞/特別/障害等 are left None — `race_class` already carries the class).
@@ -47,6 +53,31 @@ _CLASS_TOKENS = ("新馬", "未勝利", "３勝", "3勝", "２勝", "2勝", "１
 
 def _text(el) -> str:
     return " ".join(el.get_text(" ", strip=True).split()) if el else ""
+
+
+def _prize_money(rd02: str) -> int | None:
+    """1着 本賞金 in 万円 from the RaceData02 text, or None when it cannot be read safely.
+
+    Never raises: the prize is optional race metadata and a page that omits or reformats it must
+    still ingest its entries. The comma in "580,230,150,87,58" separates the 1着..5着 prizes, but
+    a thousands separator would look identical, so we sanity-check that the values descend — a
+    real prize schedule never pays a lower place more. If they do not, we read the string wrong
+    and return None rather than write a confidently wrong number into a top-gain feature.
+    """
+    # NFKC folds full-width digits/comma/colon (１，：) onto ASCII so one grammar covers both.
+    m = _PRIZE_RE.search(unicodedata.normalize("NFKC", rd02 or ""))
+    if not m:
+        return None
+    parts = [p for p in m.group(1).split(",") if p != ""]
+    if not parts or not all(p.isdigit() for p in parts):
+        return None
+    values = [int(p) for p in parts]
+    if any(a < b for a, b in zip(values, values[1:], strict=False)):
+        return None  # not descending -> the commas are not place separators
+    first = values[0]
+    if first <= 0 or first > _MAX_PRIZE_MAN:
+        return None
+    return first
 
 
 def _race_meta(soup, key) -> ScrapedRace:
@@ -94,6 +125,7 @@ def _race_meta(soup, key) -> ScrapedRace:
         key=key, race_date=race_date, distance=distance, track_type=track_type,
         going=going, weather=weather, race_class=race_class,
         race_name=race_name, grade=grade, post_time=post_time,
+        prize_money=_prize_money(rd02),
     )
 
 

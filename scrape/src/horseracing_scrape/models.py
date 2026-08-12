@@ -31,6 +31,9 @@ class ScrapedRace:
     race_name: str | None = None
     grade: str | None = None                       # G1/G2/G3 (None if not graded)
     post_time: datetime.datetime | None = None      # 発走時刻 (JST-aware)
+    #: 本賞金 1着分, in 万円 — the same unit and meaning as races.prize_money from JRA-VAN
+    #: (e.g. 2024 未勝利 = 550). None when the page does not show it.
+    prize_money: int | None = None
 
 
 @dataclass(frozen=True)
