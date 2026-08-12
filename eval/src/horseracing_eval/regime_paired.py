@@ -24,7 +24,14 @@ from typing import Any
 from .bootstrap import race_day_cluster_bootstrap_ci_v1
 from .foldfit import predict_over_folds_multi
 from .hashing import race_set_hash
-from .paired import DEFAULT_BAND_EDGES, PairedContractError, _clip_nll, _score_arm, _winner_probs
+from .paired import (
+    DEFAULT_BAND_EDGES,
+    PairedContractError,
+    _clip_nll,
+    _compute_subgroups,
+    _score_arm,
+    _winner_probs,
+)
 
 SERVING = "serving"
 FULL_INFO = "full_info"
@@ -66,6 +73,8 @@ class RegimeReport:
     #: DIAGNOSTIC ONLY (never gates): winner NLL on the pre-calibration race-softmax. Separates
     #: "the feature helped" from "the calibrator reshuffled things" (codex).
     uncalibrated: dict = field(default_factory=dict)
+    #: 069 subgroup CIs + intersection-union guard, computed under the SERVING regime.
+    subgroups: dict = field(default_factory=dict)
     gate_config: dict = field(default_factory=dict)
     notes: dict = field(default_factory=dict)
 
@@ -232,19 +241,96 @@ def evaluate_regimes(
             f"{srv.mask_races_active} active races — the comparison is not paired (fail-closed)"
         )
 
-    primary = (srv.diff < -delta) and (srv.ci_high is not None and srv.ci_high < 0.0)
+    # ...but equal COUNTS only prove the regime was OFFERED to both arms. A predictor that accepts
+    # the spec and ignores it keeps its counts and still reports a full-info comparison labelled
+    # "serving". The observable consequence is that the arm's serving scores are bit-identical to
+    # its full-info scores, so check that instead of trusting the handshake.
+    fi = scored[FULL_INFO]
+    inert = [
+        name
+        for name, s_arm, f_arm in (
+            ("candidate", srv.candidate, fi.candidate),
+            ("active", srv.active, fi.active),
+        )
+        if s_arm["winner_nll"] == f_arm["winner_nll"]
+    ]
+    if inert:
+        raise PairedContractError(
+            f"serving regime had NO effect on {inert}: winner NLL is bit-identical to full-info. "
+            "Either the predictor swallowed set_predict_weight_mask, or that arm reads none of "
+            f"{list(gate_config.get('weight_mask', {}).get('columns', []))}. Both make the "
+            "'serving regime' label false, so this fails closed rather than reporting a number."
+        )
+
+    # --- the full pre-registered gate, not just the headline effect ---------------------------
+    # `serving_regime.gate.adopted` in the contract is the 068 gate AND the 091 minimum effect.
+    # Evaluating only the effect would let through a candidate that wins on winner NLL while
+    # degrading top2/top3 or calibration.
+    top = gate_config.get("top_noninferior", {}) or {}
+    cal = gate_config.get("calibration", {}) or {}
+    c_s, a_s = srv.candidate, srv.active
+
+    def _ece(scores):
+        return (scores.get("ece_equal_width_like") or {}).get("ece")
+
+    sub_gates = {
+        "effect_beats_delta": bool(srv.diff < -delta),
+        "ci_upper_below_zero": bool(srv.ci_high is not None and srv.ci_high < 0.0),
+        "top2_noninferior": bool(
+            (c_s["top2_logloss"] - a_s["top2_logloss"]) <= float(top.get("top2", 0.0005))
+        ),
+        "top3_noninferior": bool(
+            (c_s["top3_logloss"] - a_s["top3_logloss"]) <= float(top.get("top3", 0.0005))
+        ),
+        "calibration_noninferior": bool(
+            (_ece(c_s) - _ece(a_s)) <= float(cal.get("noninferior_width", 0.001))
+        ),
+        "calibration_not_emergency": bool(
+            _ece(c_s) < float(cal.get("emergency_abs_ece", 0.05))
+        ),
+    }
+    primary = all(sub_gates.values())
     full_info_guard = scored[FULL_INFO].diff <= ni_width
-    adopt = bool(primary and full_info_guard)
+
+    # --- subgroup guard, computed UNDER THE SERVING REGIME (the verdict path is regime-qualified)
+    sg_cfg = gate_config.get("subgroup_guard") or {}
+    subgroups: dict | None = None
+    if sg_cfg.get("critical_subgroups"):
+        srv_cand, srv_act = cand_by_regime[SERVING], act_by_regime[SERVING]
+        subgroups = _compute_subgroups(
+            cand_valid, srv_cand, srv_act,
+            _winner_probs(cand_valid, srv_cand, arm=""),
+            _winner_probs(cand_valid, srv_act, arm=""),
+            gate_config,
+            b=boot.get("b", 2000), seed=boot.get("seed", 20260810),
+            alpha=float(boot.get("alpha", 0.05)),
+        )
+    sg_guard = (subgroups or {}).get("subgroup_guard")
+
+    # FAIL CLOSED: the contract is a three-term AND. A term that was never computed makes the
+    # verdict undecidable, NOT true. Reporting ADOPT off two of three terms is exactly the shape
+    # of failure this feature's gate exists to prevent.
+    if sg_cfg.get("critical_subgroups") and sg_guard is None:
+        status, adopt = "NO_DECISION", False
+    else:
+        adopt = bool(primary and full_info_guard and (sg_guard is not False))
+        status = "ADOPT" if adopt else "REJECT"
 
     return RegimeReport(
         artifact_kind=artifact_kind,
         eligible_for_verdict=(artifact_kind == VERDICT_KIND),
         race_set_hash=rs_hash,
-        serving_regime=scored[SERVING].to_dict(),
+        serving_regime={**scored[SERVING].to_dict(),
+                        # the contract quotes `serving_regime.gate.adopted`; make that path
+                        # resolve instead of leaving the reader to find sub_gates elsewhere.
+                        "gate": {"adopted": primary, "sub_gates": sub_gates},
+                        "subgroups": subgroups or {}},
         full_info_regime=scored[FULL_INFO].to_dict(),
         full_info_guard=full_info_guard,
         verdict={
             "adopt": adopt,
+            "status": status,
+            "sub_gates": sub_gates,
             "formula": (
                 "serving_regime.gate.adopted AND full_info_guard "
                 "AND serving_regime.subgroups.subgroup_guard"
@@ -252,8 +338,9 @@ def evaluate_regimes(
             "primary": primary,
             "min_effect_delta": delta,
             "noninferior_width": ni_width,
-            "subgroup_guard": None,  # supplied by the subgroup pass; None => not yet decidable
+            "subgroup_guard": sg_guard,
         },
+        subgroups=subgroups or {},
         gate_config=gate_config,
         uncalibrated=uncalibrated,
         notes={

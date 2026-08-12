@@ -162,25 +162,52 @@ def test_serving_spec_none_is_refused():
         )
 
 
-def test_kill_test_one_sided_application_is_detected():
-    """Break the wiring on the ACTIVE arm only; the contract check must fire (codex #3)."""
+def test_kill_test_a_swallowed_regime_fails_closed():
+    """Break the wiring on the ACTIVE arm only: it accepts the spec and ignores it.
+
+    Equal mask COUNTS cannot catch this — both arms were offered the regime, so the handshake
+    looks fine and a full-info comparison would be reported under the label "serving". What IS
+    observable is that the arm's serving scores come out bit-identical to its full-info scores,
+    and that is what the contract check must key on."""
 
     class _OneSided(_Predictor):
-        def set_predict_weight_mask(self, spec):  # swallows the regime
+        def set_predict_weight_mask(self, spec):  # accepts, then ignores
             self.applied.append(spec)
 
     cand = _Predictor(base=0.62, serving_penalty=0.02)
     act = _OneSided(base=0.60, serving_penalty=0.10)
+    with pytest.raises(PairedContractError, match="NO effect"):
+        evaluate_regimes(
+            _Factory(cand), _Factory(act), _races(),
+            serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+        )
+
+
+def test_kill_test_a_swallowed_regime_on_the_candidate_also_fails_closed():
+    """Same guard must hold on the arm whose result we would like to be good."""
+
+    class _OneSided(_Predictor):
+        def set_predict_weight_mask(self, spec):
+            self.applied.append(spec)
+
+    with pytest.raises(PairedContractError, match="NO effect"):
+        evaluate_regimes(
+            _Factory(_OneSided(0.62, 0.02)), _Factory(_Predictor(0.60, 0.10)), _races(),
+            serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+        )
+
+
+def test_verdict_paths_quoted_in_the_contract_resolve():
+    """The formula names serving_regime.gate.adopted and serving_regime.subgroups.subgroup_guard;
+    a reader must be able to follow those paths in the emitted JSON."""
     rep = evaluate_regimes(
-        _Factory(cand), _Factory(act), _races(),
+        _Factory(_Predictor(0.62, 0.02)), _Factory(_Predictor(0.60, 0.10)), _races(),
         serving_spec=object(), gate_config=GATE, first_valid_year=2024,
     )
-    # counts still match (both arms were *offered* the regime), so the number-level guard cannot
-    # see it — this is precisely why the predictor-side hook must be honoured, and why the
-    # wiring smoke (T042) inspects the transformed matrix rather than call counts.
-    assert rep.serving_regime["mask_races_candidate"] == rep.serving_regime["mask_races_active"]
-    # ...and the active arm's serving score is identical to its full-info score, which IS visible:
-    assert rep.serving_regime["active"]["winner_nll"] == rep.full_info_regime["active"]["winner_nll"]
+    d = rep.to_dict()
+    assert isinstance(d["serving_regime"]["gate"]["adopted"], bool)
+    assert "sub_gates" in d["serving_regime"]["gate"]
+    assert "subgroups" in d["serving_regime"]
 
 
 def test_uncalibrated_diagnostic_is_reported_per_regime():
@@ -237,3 +264,40 @@ def test_acceptance_and_diagnostic_artifacts_are_not_verdict_eligible():
             serving_spec=object(), gate_config=GATE, first_valid_year=2024, artifact_kind=kind,
         )
         assert rep.artifact_kind == kind and not rep.eligible_for_verdict
+
+
+GATE_WITH_SUBGROUPS = dict(
+    GATE, subgroup_guard={"critical_subgroups": ["2026_only"], "decision": "three_way"}
+)
+
+
+def test_declared_subgroups_but_none_computed_is_NO_DECISION_not_adopt():
+    """The contract is a three-term AND. A term that was never computed makes the verdict
+    undecidable — reporting ADOPT off two of three terms is the exact failure this gate exists
+    to prevent, and a favourable effect size makes it MORE tempting, not less."""
+    cand = _Predictor(base=0.62, serving_penalty=0.02)
+    act = _Predictor(base=0.60, serving_penalty=0.10)
+    rep = evaluate_regimes(
+        _Factory(cand), _Factory(act), _races(),
+        serving_spec=object(), gate_config=GATE_WITH_SUBGROUPS, first_valid_year=2024,
+    )
+    if rep.verdict["subgroup_guard"] is None:
+        assert rep.verdict["status"] == "NO_DECISION"
+        assert rep.verdict["adopt"] is False
+
+
+def test_sub_gates_are_all_reported_so_a_partial_pass_is_visible():
+    """Every term of `serving_regime.gate.adopted` must be inspectable, not just the headline."""
+    cand = _Predictor(base=0.62, serving_penalty=0.02)
+    act = _Predictor(base=0.60, serving_penalty=0.10)
+    rep = evaluate_regimes(
+        _Factory(cand), _Factory(act), _races(),
+        serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+    )
+    sg = rep.verdict["sub_gates"]
+    assert set(sg) == {
+        "effect_beats_delta", "ci_upper_below_zero", "top2_noninferior",
+        "top3_noninferior", "calibration_noninferior", "calibration_not_emergency",
+    }
+    # primary is the AND of all of them, never a subset
+    assert rep.verdict["primary"] == all(sg.values())

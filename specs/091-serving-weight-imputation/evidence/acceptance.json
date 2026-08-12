@@ -1,0 +1,325 @@
+{
+  "artifact_kind": "acceptance",
+  "eligible_for_verdict": false,
+  "race_set_hash": "38224f6fb6db592e8d9feced3cf443a69996140d6f16ba5c9b8cf5119ffd6cbd",
+  "serving_regime": {
+    "regime": "serving",
+    "candidate": {
+      "winner_nll": 2.050208026888808,
+      "winner_excluded": 14,
+      "started_all": {
+        "log_loss": 0.2152349954331079,
+        "brier": 0.05998086538873261
+      },
+      "ece_equal_width_like": {
+        "ece": 0.002822004111673948,
+        "n_bins": 10,
+        "bin_counts": [
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12444,
+          12444,
+          12443,
+          12441
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.0006417941728651087,
+        "[0.05,0.15)": 0.0023161602947603666,
+        "[0.15,0.30)": 0.01154291348292269,
+        "[0.30,1.00]": 0.002336829697015985
+      },
+      "top2_logloss": 0.3366573577187761,
+      "top3_logloss": 0.42557650343909814
+    },
+    "active": {
+      "winner_nll": 2.062061998447545,
+      "winner_excluded": 14,
+      "started_all": {
+        "log_loss": 0.2161778875865128,
+        "brier": 0.06012324622892799
+      },
+      "ece_equal_width_like": {
+        "ece": 0.002692948705767885,
+        "n_bins": 10,
+        "bin_counts": [
+          12443,
+          12443,
+          12444,
+          12443,
+          12443,
+          12446,
+          12443,
+          12444,
+          12443,
+          12438
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.0007752073712783102,
+        "[0.05,0.15)": 0.001701035571526413,
+        "[0.15,0.30)": 0.010505636982331201,
+        "[0.30,1.00]": 0.002354762884054673
+      },
+      "top2_logloss": 0.33795241678190285,
+      "top3_logloss": 0.4266349204743121
+    },
+    "diff": -0.011853971558737079,
+    "ci_low": -0.015116320108768134,
+    "ci_high": -0.008628040613265825,
+    "n_races": 9048,
+    "n_days": 281,
+    "mask_races_candidate": 9062,
+    "mask_races_active": 9062
+  },
+  "full_info_regime": {
+    "regime": "full_info",
+    "candidate": {
+      "winner_nll": 2.047719497910937,
+      "winner_excluded": 14,
+      "started_all": {
+        "log_loss": 0.2150382035380473,
+        "brier": 0.05995062290873708
+      },
+      "ece_equal_width_like": {
+        "ece": 0.0026377228343085818,
+        "n_bins": 10,
+        "bin_counts": [
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.0007014535873900128,
+        "[0.05,0.15)": 0.0022288155188927433,
+        "[0.15,0.30)": 0.012559187860824633,
+        "[0.30,1.00]": 0.006262681280911675
+      },
+      "top2_logloss": 0.3365119419885807,
+      "top3_logloss": 0.42549610600354515
+    },
+    "active": {
+      "winner_nll": 2.0479784234511325,
+      "winner_excluded": 14,
+      "started_all": {
+        "log_loss": 0.21505277872124956,
+        "brier": 0.05994833090548679
+      },
+      "ece_equal_width_like": {
+        "ece": 0.002801785951389863,
+        "n_bins": 10,
+        "bin_counts": [
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443,
+          12443
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.0008126995152889019,
+        "[0.05,0.15)": 0.0017212464204188066,
+        "[0.15,0.30)": 0.011508157010333003,
+        "[0.30,1.00]": 0.006022632367604419
+      },
+      "top2_logloss": 0.33652363698074894,
+      "top3_logloss": 0.4254040027220767
+    },
+    "diff": -0.0002589255401950967,
+    "ci_low": -0.0026970322230958185,
+    "ci_high": 0.002112977889228609,
+    "n_races": 9048,
+    "n_days": 281,
+    "mask_races_candidate": 0,
+    "mask_races_active": 0
+  },
+  "full_info_guard": true,
+  "verdict": {
+    "adopt": true,
+    "formula": "serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard",
+    "primary": true,
+    "min_effect_delta": 0.002,
+    "noninferior_width": 0.003,
+    "subgroup_guard": null
+  },
+  "uncalibrated": {
+    "serving": {
+      "available": true,
+      "candidate_winner_nll": 2.0556358969700423,
+      "active_winner_nll": 2.067165603645677,
+      "diff": -0.011529706675634752,
+      "ci_low": -0.01440151671150146,
+      "ci_high": -0.008757895232368404,
+      "n_races": 9049
+    },
+    "full_info": {
+      "available": true,
+      "candidate_winner_nll": 2.0532328483445537,
+      "active_winner_nll": 2.0538965294234997,
+      "diff": -0.00066368107894608,
+      "ci_low": -0.002406211261906768,
+      "ci_high": 0.0011313938059751877,
+      "n_races": 9049
+    },
+    "note": "DIAGNOSTIC ONLY. Compare the sign with serving_regime.diff: agreement means the feature moved the model; disagreement means the calibrator did.",
+    "sign_matches_calibrated": null
+  },
+  "gate_config": {
+    "_comment": "091: pre-registered adoption gate (frozen BEFORE OOS, constitution III). PRIMARY is the SERVING regime (weight columns masked at predict time on BOTH arms) because that is the condition under which predictions are actually made; full-info is a non-inferiority guard. Values that must be frozen are written as REAL keys — '_'-prefixed keys are excluded from the canonical hash (069 warning, re-confirmed in 088).",
+    "evaluation_contract_version": "v2",
+    "min_effect_delta": 0.002,
+    "weight_mask": {
+      "_comment": "Race-atomic masking. Row-level masking is forbidden: the missingness arises per time regime (when the prediction was run), not per horse. Applied to model-fit rows AND the isotonic calibration holdout with the SAME seed so the calibrator's domain matches runtime.",
+      "rate": 0.5,
+      "seed": 20260810,
+      "unit": "race",
+      "columns": [
+        "weight",
+        "weight_diff",
+        "carried_weight_ratio"
+      ],
+      "apply_to_calibration_holdout": true,
+      "eval_serving_rate": 1.0,
+      "apply_to_both_arms": true,
+      "eval_full_info_spec": null
+    },
+    "full_info_guard": {
+      "_comment": "The feature deliberately trades a little full-info accuracy for serving accuracy. The replay measured the total value of same-day weight at 0.0187; up to ~1/6 of that is accepted as the price. Exceeding it signals the mask rate broke the same-day-weight path.",
+      "metric": "winner_nll",
+      "noninferior_width": 0.003
+    },
+    "top_noninferior": {
+      "top2": 0.0005,
+      "top3": 0.0005
+    },
+    "calibration": {
+      "metric": "mean_ece",
+      "noninferior_width": 0.001,
+      "emergency_abs_ece": 0.05
+    },
+    "subgroup_guard": {
+      "_comment": "069 three-way intersection-union. 069's coverage bands are NOT included: they are defined by F02 market observation counts and are unrelated to this feature (088 caught the same class of error).",
+      "critical_subgroups": [
+        "2026_only",
+        "nk",
+        "2026_nk"
+      ],
+      "non_inferior_margin_winner_nll": 0.005,
+      "non_inferior_margin_horse_logloss": 0.001,
+      "decision": "three_way",
+      "race_level_subgroups": [
+        "2026_only",
+        "2026_field_has_nk"
+      ],
+      "horse_level_subgroups": [
+        "canonical",
+        "nk",
+        "2026_nk"
+      ],
+      "absolute_benchmark": "candidate_minus_uniform",
+      "no_decision_min_days": 10
+    },
+    "eval_window": {
+      "_comment": "'to' is fixed at freeze time to the latest settled race date available then; it must match the --to passed to the confirmatory run or assert_confirmatory fails closed.",
+      "from": "2021-01-01",
+      "to": "2026-08-09",
+      "to_is_provisional": false
+    },
+    "bootstrap": {
+      "b": 2000,
+      "seed": 20260810,
+      "block": "race_day",
+      "scheme": "moving_block",
+      "alpha": 0.05
+    },
+    "determinism": {
+      "tolerance": 1e-09,
+      "num_threads": 1
+    },
+    "serving": {
+      "_comment": "features-019 is a burned number (070 revert, no model was ever trained on it). The pinned hash is lgbm-064-f02acc's OWN trained feature_hash, read from its artifact metadata.",
+      "feature_version": "features-020",
+      "compat_pins": {
+        "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"
+      },
+      "byte_parity_target": "model_input_137_cols_shared_with_features_018"
+    },
+    "diagnostics_not_gating": {
+      "_comment": "Reported alongside the verdict but NEVER used to change it. A winning diagnostic arm requires a NEW pre-registration (III, 068 C2).",
+      "uncalibrated_winner_nll": true,
+      "mask_rate_arms": [
+        0.0,
+        1.0
+      ],
+      "bootstrap_block_widths": [
+        2,
+        3,
+        4,
+        "week"
+      ],
+      "coverage_audit_axes": [
+        "year",
+        "race_prev_weight_coverage",
+        "staleness_band",
+        "true_debut_vs_broken_history",
+        "id_namespace"
+      ]
+    },
+    "verdict": {
+      "_comment": "Single source of truth. Individual numbers must not be re-read post hoc to argue a different outcome.",
+      "formula": "serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard",
+      "paths": {
+        "primary": "serving_regime.gate.adopted",
+        "full_info": "full_info_guard",
+        "subgroup": "serving_regime.subgroups.subgroup_guard",
+        "materialized": "verdict.adopt"
+      },
+      "no_decision": "only when the evaluation cannot be run; never because a number is borderline"
+    },
+    "primary_metric": "winner_nll",
+    "primary_regime": "serving",
+    "artifact_isolation": {
+      "_comment": "Every evaluation artifact stamps these. The verdict loader accepts full_walk_forward only and fails closed on eligible_for_verdict=false. Acceptance runs are outcome-blind (wiring only) because their folds sit inside the confirmatory window.",
+      "verdict_kind": "full_walk_forward",
+      "kinds": [
+        "full_walk_forward",
+        "acceptance",
+        "diagnostic"
+      ],
+      "eligible_kinds": [
+        "full_walk_forward"
+      ]
+    }
+  },
+  "notes": {
+    "regimes": [
+      "serving",
+      "full_info"
+    ],
+    "both_arms_masked": true,
+    "n_valid_races": 9062
+  },
+  "snapshot": {
+    "git_sha": "d554adc297f0dfb9f0ad92d8d19fd5790e0b7a16",
+    "feature_version": "features-020",
+    "candidate_spec": "pl_topk:isotonic:0.3:wmask=0.5/20260810",
+    "active_spec": "pl_topk:isotonic:0.3:drop=weight_history"
+  }
+}

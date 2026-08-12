@@ -1508,30 +1508,68 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
     if getattr(args, "acceptance_recent_folds", None):
         kind = "acceptance"  # outcome-blind wiring check; its folds are inside the confirm window
 
+    # The frozen config declares a determinism contract. It was being ignored: LightGBM sums
+    # partial gradients per thread, so a multi-threaded run is only reproducible to ~1e-4, while
+    # the config promises 1e-9. Three runs of this evaluation drifted by 8.5e-5 — immaterial to a
+    # -0.0106 effect, but it made the recorded "deterministic" claim false. Honour the declaration
+    # instead of quietly running wider than it.
+    det = gate_cfg.get("determinism") or {}
+    num_threads = args.num_threads
+    if det.get("num_threads") is not None and num_threads is None:
+        num_threads = int(det["num_threads"])
+        print(f"[091] honouring frozen determinism.num_threads={num_threads} "
+              f"(tolerance {det.get('tolerance')})")
+
     report = evaluate_regimes(
         cand, act, eval_races,
         serving_spec=serving_spec,
         gate_config=gate_cfg,
         first_valid_year=eval_start_year,
-        num_threads=args.num_threads,
+        num_threads=num_threads,
         artifact_kind=kind,
     )
     d = report.to_dict()
     d["snapshot"] = {"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
-                     "candidate_spec": args.candidate, "active_spec": args.active}
+                     "candidate_spec": args.candidate, "active_spec": args.active,
+                     # record what was ACTUALLY used, so a reader can tell whether the run met
+                     # the frozen determinism contract or ran wider than it
+                     "num_threads": num_threads,
+                     "determinism_declared": det or None}
     srv, fi = d["serving_regime"], d["full_info_regime"]
     print(f"paired-eval[regime] candidate={args.candidate} active={args.active} "
           f"kind={d['artifact_kind']} races={d['notes']['n_valid_races']}")
-    print(f"  serving  diff={srv['diff']:+.6f} CI=[{srv['ci_low']:+.6f},{srv['ci_high']:+.6f}] "
-          f"n={srv['n_races']} masked={srv['mask_races_candidate']}")
-    print(f"  full_info diff={fi['diff']:+.6f} CI=[{fi['ci_low']:+.6f},{fi['ci_high']:+.6f}] "
-          f"guard={d['full_info_guard']}")
-    for regime, u in (d.get("uncalibrated") or {}).items():
-        if isinstance(u, dict) and u.get("available"):
-            print(f"  uncalibrated[{regime}] diff={u['diff']:+.6f} "
-                  f"CI=[{u['ci_low']:+.6f},{u['ci_high']:+.6f}]  (DIAGNOSTIC)")
-    v = d["verdict"]
-    print(f"  verdict.adopt={v['adopt']} (primary={v['primary']} delta={v['min_effect_delta']})")
+
+    if d["artifact_kind"] == "acceptance":
+        # OUTCOME-BLIND. The acceptance folds sit inside the confirmatory window, so seeing the
+        # effect here and deciding to continue on it IS the selection leak this run exists to
+        # avoid. Printing it would make the discipline theatre, so the effect is withheld — only
+        # the wiring facts are shown. The numbers are still written to --out for the record.
+        print("  [outcome-blind acceptance: effect sizes withheld by design]")
+        print(f"  wiring: races_scored={srv['n_races']} "
+              f"masked_candidate={srv['mask_races_candidate']} "
+              f"masked_active={srv['mask_races_active']} "
+              f"full_info_unmasked={fi['mask_races_candidate'] == 0}")
+        finite = all(
+            v is not None and v == v
+            for v in (srv["diff"], srv["ci_low"], srv["ci_high"], fi["diff"])
+        )
+        print(f"  wiring: metrics_finite={finite} "
+              f"uncalibrated_available="
+              f"{bool((d.get('uncalibrated') or {}).get('serving', {}).get('available'))}")
+        print(f"  wiring: race_set_hash={d['race_set_hash'][:16]} "
+              f"eligible_for_verdict={d['eligible_for_verdict']}")
+    else:
+        print(f"  serving  diff={srv['diff']:+.6f} CI=[{srv['ci_low']:+.6f},{srv['ci_high']:+.6f}] "
+              f"n={srv['n_races']} masked={srv['mask_races_candidate']}")
+        print(f"  full_info diff={fi['diff']:+.6f} CI=[{fi['ci_low']:+.6f},{fi['ci_high']:+.6f}] "
+              f"guard={d['full_info_guard']}")
+        for regime, u in (d.get("uncalibrated") or {}).items():
+            if isinstance(u, dict) and u.get("available"):
+                print(f"  uncalibrated[{regime}] diff={u['diff']:+.6f} "
+                      f"CI=[{u['ci_low']:+.6f},{u['ci_high']:+.6f}]  (DIAGNOSTIC)")
+        v = d["verdict"]
+        print(f"  verdict.adopt={v['adopt']} "
+              f"(primary={v['primary']} delta={v['min_effect_delta']})")
     if getattr(args, "out", None):
         with open(args.out, "w") as fh:
             json.dump(d, fh, ensure_ascii=False, indent=2, default=float)
