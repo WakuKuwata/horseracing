@@ -19,6 +19,7 @@ from typing import Literal, Protocol
 import httpx
 from horseracing_db.models import FetchThrottleState
 from horseracing_db.session import create_db_engine
+from horseracing_scrape import robots_cache
 from horseracing_scrape.fetch import FetchRefused, HttpFetcher, _domain
 from sqlalchemy import Engine, func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -468,6 +469,9 @@ def make_capture_fetcher(
         user_agent=_CAPTURE_USER_AGENT,
         min_interval_s=min_interval_s,
         cache_dir=None,
+        # Capture is the caller the robots cache exists for: robots+odds is two requests and
+        # cannot fit a 10-second deadline at 60-second spacing. A fresh entry makes it one.
+        robots_cache_store=robots_cache.shared_cache(),
         max_retries=1,
         client=client,
         sleep=sleep,

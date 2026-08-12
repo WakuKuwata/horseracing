@@ -27,6 +27,7 @@ from pathlib import Path
 import httpx
 from horseracing_db.enums import JobStatus
 from horseracing_db.models import IngestionJob, ModelVersion, PredictionRun, RaceResult
+from horseracing_scrape import robots_cache
 from horseracing_scrape.fetch import HttpFetcher
 from horseracing_scrape.pipeline import (
     discover_races,
@@ -61,13 +62,22 @@ _BETTING_DIR = Path(__file__).resolve().parents[3] / "betting"
 _BETTING_TIMEOUT_S = 300
 
 
-def make_fetcher(min_interval: float = 1.0, cache_dir: str | None = None) -> HttpFetcher:
+def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None) -> HttpFetcher:
     """A polite fetcher reusing scrape's robots/rate-limit/backoff/cache (FR-014).
 
     Crucially passes a real httpx client — without it the fetcher can only serve cached pages and
-    every LIVE netkeiba fetch fails (robots check dereferences a None client)."""
+    every LIVE netkeiba fetch fails (robots check dereferences a None client).
+
+    ``min_interval`` defaults to ``OPS_FETCH_MIN_INTERVAL``; it previously hardcoded 1.0 and
+    ignored that setting, so raising the configured interval changed nothing. The shared robots
+    cache is attached here because this factory is called once per worker loop iteration — a
+    fresh in-process robots memo every time is precisely what made robots a third to a half of
+    the daily request budget."""
+    if min_interval is None:
+        min_interval = CONFIG.fetch_min_interval
     return HttpFetcher(
         user_agent=_USER_AGENT, min_interval_s=min_interval, cache_dir=cache_dir,
+        robots_cache_store=robots_cache.shared_cache(),
         client=httpx.Client(headers={"User-Agent": _USER_AGENT}, timeout=20.0),
     )
 

@@ -7,6 +7,7 @@ parser/pipeline tests.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import re
 import time
@@ -17,6 +18,17 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
+
+from . import robots_cache
+
+
+class _Missing:
+    """Distinguishes "no cached robots" from a cached "this site has no robots" (both falsy)."""
+
+
+_MISSING = _Missing()
+#: TTL for the in-process robots cache when no durable cache is configured.
+_L1_TTL_S = 24 * 60 * 60
 
 _META_CHARSET_RE = re.compile(rb"""charset=["']?\s*([\w-]+)""", re.IGNORECASE)
 _MAX_RETRY_AFTER_S = 6 * 60 * 60
@@ -151,6 +163,7 @@ class HttpFetcher:
         clock=time.monotonic,
         respect_robots: bool = True,
         pre_request: PreRequest | None = None,
+        robots_cache_store: robots_cache.RobotsCache | None = None,
     ):
         self.user_agent = user_agent
         self.min_interval_s = min_interval_s
@@ -162,7 +175,12 @@ class HttpFetcher:
         self._respect_robots = respect_robots
         self._pre_request = pre_request
         self._last_fetch: dict[str, float] = {}
-        self._robots: dict[str, RobotFileParser | None] = {}
+        #: origin -> (parser|None, stored_at). Timestamped so a long-lived fetcher cannot
+        #: hold an 'allow' forever after the durable entry has expired.
+        self._robots: dict[str, tuple] = {}
+        #: Durable cross-process robots store. None = in-process only (the old behaviour), which
+        #: keeps every existing unit test isolated from any shared directory.
+        self._robots_cache = robots_cache_store
 
     # --- public -------------------------------------------------------------
     def get(self, url: str, *, use_cache: bool = True) -> str:
@@ -181,27 +199,93 @@ class HttpFetcher:
         return text
 
     # --- robots -------------------------------------------------------------
+    def _parse_robots(self, body: bytes) -> RobotFileParser:
+        rp = RobotFileParser()
+        rp.parse(body.decode("utf-8", errors="replace").splitlines())
+        return rp
+
+    def _robots_from_cache(self, origin: str) -> RobotFileParser | None | _Missing:
+        """Durable-cache lookup. Returns a parser, None (site has no robots), or _MISSING."""
+        if self._robots_cache is None:
+            return _MISSING
+        entry = self._robots_cache.get(origin)
+        if entry is None:
+            return _MISSING
+        return None if entry.outcome == robots_cache.ABSENT else self._parse_robots(entry.body)
+
     def _robot_allows(self, url: str) -> bool:
-        domain = _domain(url)
-        if domain not in self._robots:
-            rp: RobotFileParser | None = RobotFileParser()
-            try:
-                robots_url = f"{domain}/robots.txt"
-                self._before_request(robots_url)
-                resp = self._client.get(robots_url)
-                if resp.status_code == 200:
-                    rp.parse(resp.text.splitlines())
-                elif resp.status_code == 429:
-                    raise _refused(resp, robots_url)
-                else:
-                    rp = None  # no robots -> allow
-            except FetchRefused:
-                raise
-            except Exception:
-                rp = None
-            self._robots[domain] = rp
-        rp = self._robots[domain]
+        origin = _domain(url)
+        cached = self._l1_robots(origin)
+        if cached is not _MISSING:
+            return True if cached is None else cached.can_fetch(self.user_agent, url)
+
+        from_disk = self._robots_from_cache(origin)
+        if from_disk is not _MISSING:
+            self._remember_robots(origin, from_disk)
+            return True if from_disk is None else from_disk.can_fetch(self.user_agent, url)
+
+        # Cache miss: one fetch per origin, serialized across threads and processes so a TTL
+        # boundary does not make four callers each spend a request slot on the same file.
+        ctx = (
+            self._robots_cache.refresh_lock(origin)
+            if self._robots_cache is not None
+            else contextlib.nullcontext(False)
+        )
+        with ctx as got_lock:
+            if got_lock:  # another holder may have just filled it while we waited
+                again = self._robots_from_cache(origin)
+                if again is not _MISSING:
+                    self._remember_robots(origin, again)
+                    return True if again is None else again.can_fetch(self.user_agent, url)
+            rp, cacheable = self._fetch_robots(origin)
+
+        # Only site-level outcomes reach the durable store. A 5xx or a dropped connection says
+        # nothing about the site's policy, and freezing it as "allow" would keep us fetching
+        # paths robots forbids for a whole TTL.
+        if cacheable is not None and self._robots_cache is not None:
+            outcome, status, body = cacheable
+            with contextlib.suppress(Exception):  # write failure must not change the decision
+                self._robots_cache.put(origin, outcome=outcome, status=status, body=body)
+        if cacheable is not None:
+            self._remember_robots(origin, rp)
         return True if rp is None else rp.can_fetch(self.user_agent, url)
+
+    def _fetch_robots(self, origin: str):
+        """Fetch robots for ``origin``. Returns ``(parser_or_None, cacheable_or_None)``."""
+        robots_url = f"{origin}/robots.txt"
+        try:
+            self._before_request(robots_url)
+            resp = self._client.get(robots_url)
+            if resp.status_code == 200:
+                body = getattr(resp, "content", None)
+                if body is None:
+                    body = (resp.text or "").encode("utf-8")
+                return self._parse_robots(body), (robots_cache.RULES, 200, body)
+            if resp.status_code == 429:
+                raise _refused(resp, robots_url)
+            if resp.status_code in (404, 410):
+                # A site that answers "no such file" has no robots policy. That IS durable.
+                return None, (robots_cache.ABSENT, resp.status_code, b"")
+            return None, None  # transient/refusal — allow this request, cache nothing
+        except FetchRefused:
+            raise
+        except Exception:  # noqa: BLE001 — unreachable robots keeps the caller's prior behaviour
+            return None, None
+
+    def _l1_robots(self, origin: str):
+        """In-process cache, expired against the same TTL as the durable store."""
+        hit = self._robots.get(origin)
+        if hit is None:
+            return _MISSING
+        rp, stored_at = hit
+        ttl = self._robots_cache.ttl_s if self._robots_cache is not None else _L1_TTL_S
+        if (time.time() - stored_at) >= ttl:
+            self._robots.pop(origin, None)
+            return _MISSING
+        return rp
+
+    def _remember_robots(self, origin: str, rp: RobotFileParser | None) -> None:
+        self._robots[origin] = (rp, time.time())
 
     # --- rate limit ---------------------------------------------------------
     def _rate_limit(self, domain: str) -> None:
