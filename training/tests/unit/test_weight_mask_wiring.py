@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from horseracing_features.weight_mask import WEIGHT_MASK_COLUMNS, MaskSpec, apply_weight_mask
+
 from horseracing_training.recipe import ModelRecipe
 
 SPEC = MaskSpec(rate=0.5, seed=20260810, unit="race")

@@ -930,6 +930,8 @@ def main(argv: list[str] | None = None) -> int:
     # Feature 091: which input regime(s) to score under. The PRIMARY measurement is `serving`
     # (same-day weight masked on BOTH arms) because that is the condition predictions are made in;
     # `full_info` is the non-inferiority guard. `both` produces the regime report + verdict.
+    pe.add_argument("--out", default=None,
+                    help="091: write the regime report JSON (artifact_kind / verdict.adopt) here")
     pe.add_argument("--weight-regime", choices=("serving", "full_info", "both"), default=None,
                     help="091: evaluate under the serving regime (weight masked on both arms), "
                          "full-info, or both (both => regime report with a materialised verdict)")
@@ -1333,15 +1335,26 @@ def _recipe_from_spec(spec: str):
     calibration = parts[1] if len(parts) > 1 else "isotonic"
     calib_frac = DEFAULT_CALIB_FRAC
     drop_features: tuple[str, ...] = ()
+    # Feature 091: 'wmask=<rate>/<seed>' trains this arm with the race-atomic weight mask. The
+    # candidate carries it; the active arm does not (and additionally drops weight_history, since
+    # the model it stands for has no prev_weight column at all).
+    wmask_rate = wmask_seed = None
     for seg in parts[2:]:
         if seg.startswith("drop="):
             groups = tuple(g for g in seg[len("drop="):].split(",") if g)
             drop_features = _expand_group_drops(groups)
+        elif seg.startswith("wmask="):
+            rate_s, _, seed_s = seg[len("wmask="):].partition("/")
+            if not seed_s:
+                raise ValueError("wmask= needs '<rate>/<seed>' (a rate without a seed is not "
+                                 "reproducible)")
+            wmask_rate, wmask_seed = float(rate_s), int(seed_s)
         elif seg:
             calib_frac = float(seg)
     return ModelRecipe(
         objective=objective, calibration=calibration, calib_frac=calib_frac,
         drop_features=drop_features, label=spec,
+        weight_mask_rate=wmask_rate, weight_mask_seed=wmask_seed,
     )
 
 
@@ -1474,6 +1487,58 @@ def _verify_manifest_cmd(args) -> int:
     return 0
 
 
+
+def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year) -> int:
+    """Feature 091 T048: serving-regime PRIMARY + full-info guard, with a materialised verdict."""
+    import json
+
+    from horseracing_eval.regime_paired import VERDICT_KIND, evaluate_regimes
+    from horseracing_features.weight_mask import MaskSpec
+
+    if not gate_cfg:
+        print("--weight-regime requires --gate-config (the mask spec is pre-registered there)",
+              file=sys.stderr)
+        return 1
+    wm = gate_cfg["weight_mask"]
+    # The evaluation-time serving spec masks EVERY race (rate=1.0): it reproduces the condition,
+    # it is not the training mixture. The training rate lives in the recipe.
+    serving_spec = MaskSpec(rate=float(wm["eval_serving_rate"]), seed=int(wm["seed"]),
+                            unit=wm["unit"])
+    kind = VERDICT_KIND
+    if getattr(args, "acceptance_recent_folds", None):
+        kind = "acceptance"  # outcome-blind wiring check; its folds are inside the confirm window
+
+    report = evaluate_regimes(
+        cand, act, eval_races,
+        serving_spec=serving_spec,
+        gate_config=gate_cfg,
+        first_valid_year=eval_start_year,
+        num_threads=args.num_threads,
+        artifact_kind=kind,
+    )
+    d = report.to_dict()
+    d["snapshot"] = {"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
+                     "candidate_spec": args.candidate, "active_spec": args.active}
+    srv, fi = d["serving_regime"], d["full_info_regime"]
+    print(f"paired-eval[regime] candidate={args.candidate} active={args.active} "
+          f"kind={d['artifact_kind']} races={d['notes']['n_valid_races']}")
+    print(f"  serving  diff={srv['diff']:+.6f} CI=[{srv['ci_low']:+.6f},{srv['ci_high']:+.6f}] "
+          f"n={srv['n_races']} masked={srv['mask_races_candidate']}")
+    print(f"  full_info diff={fi['diff']:+.6f} CI=[{fi['ci_low']:+.6f},{fi['ci_high']:+.6f}] "
+          f"guard={d['full_info_guard']}")
+    for regime, u in (d.get("uncalibrated") or {}).items():
+        if isinstance(u, dict) and u.get("available"):
+            print(f"  uncalibrated[{regime}] diff={u['diff']:+.6f} "
+                  f"CI=[{u['ci_low']:+.6f},{u['ci_high']:+.6f}]  (DIAGNOSTIC)")
+    v = d["verdict"]
+    print(f"  verdict.adopt={v['adopt']} (primary={v['primary']} delta={v['min_effect_delta']})")
+    if getattr(args, "out", None):
+        with open(args.out, "w") as fh:
+            json.dump(d, fh, ensure_ascii=False, indent=2, default=float)
+        print(f"  wrote {args.out}")
+    return 0
+
+
 def _paired_eval(session: Session, args) -> int:
     """Feature 068 (T018): build two RecipeFactory arms, run paired_eval, print + optional JSON.
 
@@ -1516,6 +1581,13 @@ def _paired_eval(session: Session, args) -> int:
     eval_races = load_eval_races(session, start_date=None, end_date=args.to)
     cand = _factory_from_spec(session, args.candidate)
     act = _factory_from_spec(session, args.active)
+
+    # Feature 091: regime-aware path. The standard paired-eval scores settled races, where the
+    # same-day weight is present — the one condition under which this feature cannot help. The
+    # PRIMARY measurement has to be taken with the weight masked on BOTH arms.
+    if getattr(args, "weight_regime", None):
+        return _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
+
     report = paired_eval(
         cand, act, eval_races,
         gate_config=gate_cfg,

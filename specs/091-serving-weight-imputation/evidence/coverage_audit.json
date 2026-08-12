@@ -1,0 +1,129 @@
+{
+  "settled_rows": 956086,
+  "pending_rows": 13,
+  "by_year": {
+    "2007": {
+      "rows": 48692,
+      "prev_weight_coverage": 0.7841739916208001
+    },
+    "2008": {
+      "rows": 50110,
+      "prev_weight_coverage": 0.8999401317102375
+    },
+    "2009": {
+      "rows": 50225,
+      "prev_weight_coverage": 0.9071976107516178
+    },
+    "2010": {
+      "rows": 49796,
+      "prev_weight_coverage": 0.9060968752510242
+    },
+    "2011": {
+      "rows": 48888,
+      "prev_weight_coverage": 0.9042096219931272
+    },
+    "2012": {
+      "rows": 49691,
+      "prev_weight_coverage": 0.905536213801292
+    },
+    "2013": {
+      "rows": 49792,
+      "prev_weight_coverage": 0.9080173521850899
+    },
+    "2014": {
+      "rows": 50048,
+      "prev_weight_coverage": 0.9082281010230179
+    },
+    "2015": {
+      "rows": 49750,
+      "prev_weight_coverage": 0.9086231155778894
+    },
+    "2016": {
+      "rows": 49850,
+      "prev_weight_coverage": 0.9074623871614844
+    },
+    "2017": {
+      "rows": 49081,
+      "prev_weight_coverage": 0.9052994030276482
+    },
+    "2018": {
+      "rows": 48376,
+      "prev_weight_coverage": 0.9020795435753266
+    },
+    "2019": {
+      "rows": 47272,
+      "prev_weight_coverage": 0.8964926383482823
+    },
+    "2020": {
+      "rows": 48058,
+      "prev_weight_coverage": 0.8990802779974197
+    },
+    "2021": {
+      "rows": 47609,
+      "prev_weight_coverage": 0.9023503959335419
+    },
+    "2022": {
+      "rows": 46986,
+      "prev_weight_coverage": 0.899991486825863
+    },
+    "2023": {
+      "rows": 47432,
+      "prev_weight_coverage": 0.8987603305785123
+    },
+    "2024": {
+      "rows": 46921,
+      "prev_weight_coverage": 0.8949724004177234
+    },
+    "2025": {
+      "rows": 47655,
+      "prev_weight_coverage": 0.8952051201342986
+    },
+    "2026": {
+      "rows": 29854,
+      "prev_weight_coverage": 0.9194077845514839
+    }
+  },
+  "staleness_band": {
+    "121-365": 68640,
+    "46-120": 237289,
+    "<=45": 546655,
+    ">365": 5327,
+    "no_source": 98175
+  },
+  "id_namespace": {
+    "canonical": {
+      "rows": 942052,
+      "prev_weight_coverage": 0.9000766412045195
+    },
+    "nk": {
+      "rows": 14047,
+      "prev_weight_coverage": 0.712180536769417
+    }
+  },
+  "no_proxy_breakdown": {
+    "true_debut_no_past_start": 98175,
+    "has_past_start_but_no_weighed_one": 1,
+    "nk_namespace_share": 0.04118114406779661,
+    "note": "a `nk:` split shows up as a MISSING proxy, not a wrong one (067 unimplemented). It is a coverage loss, never a mis-join."
+  },
+  "race_level_coverage": {
+    "all_horses": 51245,
+    "some_horses": 10875,
+    "no_horses": 5659
+  },
+  "sc005": {
+    "population": "result-pending started rows whose same-day weight is missing",
+    "n_rows": 0,
+    "n_with_prev_weight": 0,
+    "coverage": null,
+    "floor": 0.85,
+    "status": "NOT_MEASURABLE",
+    "reference_measurement": {
+      "when": "2026-08-09",
+      "n_rows": 451,
+      "n_with_prev_weight": 405,
+      "coverage": 0.898,
+      "note": "taken when a full race day was pending; retained because the live cohort is usually too small or too fully-weighed to measure."
+    }
+  }
+}

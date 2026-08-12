@@ -170,6 +170,10 @@ class RecipeFactory:
                 restrict_features=self.restrict_features,
                 ev_weight=self.recipe.ev_weight,
                 oof_p=self.oof_p,
+                # Feature 091: the FIT-scope mask (training mixture). The PREDICT-scope regime is
+                # set separately per regime by eval via set_predict_weight_mask — one fit, many
+                # regimes.
+                fit_weight_mask=self.recipe.weight_mask_spec(),
             )
         self._pred.fit(train_races)
         return self._pred
