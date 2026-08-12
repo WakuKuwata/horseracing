@@ -147,6 +147,13 @@ def _refused(resp, url: str) -> FetchRefused:
     )
 
 
+#: Called with the refusal the moment the source declines, before it propagates. The shared
+#: politeness policy uses it to install a cooldown that every OTHER process observes — without
+#: it, only the process that got refused would back off and the rest keep hammering a source
+#: that is already blocking us.
+OnRefusal = Callable[[FetchRefused], None]
+
+
 class HttpFetcher:
     """Production fetcher. ``client`` must expose ``get(url) -> response`` with ``status_code``
     and ``text`` (httpx.Client by default). ``sleep``/``clock`` are injectable for tests."""
@@ -163,6 +170,7 @@ class HttpFetcher:
         clock=time.monotonic,
         respect_robots: bool = True,
         pre_request: PreRequest | None = None,
+        on_refusal: OnRefusal | None = None,
         robots_cache_store: robots_cache.RobotsCache | None = None,
     ):
         self.user_agent = user_agent
@@ -174,6 +182,7 @@ class HttpFetcher:
         self._clock = clock
         self._respect_robots = respect_robots
         self._pre_request = pre_request
+        self._on_refusal = on_refusal
         self._last_fetch: dict[str, float] = {}
         #: origin -> (parser|None, stored_at). Timestamped so a long-lived fetcher cannot
         #: hold an 'allow' forever after the durable entry has expired.
@@ -262,7 +271,7 @@ class HttpFetcher:
                     body = (resp.text or "").encode("utf-8")
                 return self._parse_robots(body), (robots_cache.RULES, 200, body)
             if resp.status_code == 429:
-                raise _refused(resp, robots_url)
+                raise self._refuse(resp, robots_url)
             if resp.status_code in (404, 410):
                 # A site that answers "no such file" has no robots policy. That IS durable.
                 return None, (robots_cache.ABSENT, resp.status_code, b"")
@@ -298,6 +307,17 @@ class HttpFetcher:
         self._last_fetch[domain] = self._clock()
 
     # --- fetch + backoff ----------------------------------------------------
+    def _refuse(self, resp, url: str) -> FetchRefused:
+        """Build the refusal AND notify the policy. Reporting must not mask the refusal, so a
+        broken hook is swallowed — the caller still sees the source say no."""
+        exc = _refused(resp, url)
+        if self._on_refusal is not None:
+            try:
+                self._on_refusal(exc)
+            except Exception:  # noqa: BLE001
+                pass
+        return exc
+
     def _before_request(self, url: str) -> None:
         if self._pre_request is not None:
             self._pre_request(url)
@@ -312,7 +332,7 @@ class HttpFetcher:
                 if resp.status_code == 200:
                     return _resolve_text(resp)
                 if resp.status_code in REFUSAL_STATUSES:
-                    raise _refused(resp, url)
+                    raise self._refuse(resp, url)
                 last_err = FetchError(f"HTTP {resp.status_code} for {url}")
             except FetchRefused:
                 raise

@@ -20,6 +20,7 @@ from pathlib import Path
 from horseracing_db.session import create_db_engine
 from sqlalchemy.orm import Session
 
+from . import robots_cache
 from .fetch import HttpFetcher
 from .pipeline import (
     complete_profiles,
@@ -31,6 +32,7 @@ from .pipeline import (
     scrape_odds,
     scrape_results,
 )
+from .politeness import background_policy
 from .urls import (
     entries_url,
     horse_pedigree_url,
@@ -54,13 +56,37 @@ _CAPTURE = {
 }
 
 
-def _make_fetcher(min_interval: float, cache_dir: str | None) -> HttpFetcher:
+def _make_fetcher(
+    min_interval: float, cache_dir: str | None, database_url: str | None = None
+) -> HttpFetcher:
+    """The fetcher every ingest CLI shares.
+
+    Attaching the DB-backed policy here is what makes "1 request per minute" true of the MACHINE
+    rather than of one object: `_rate_limit` keys on the fetcher instance and the hostname, so the
+    worker's per-iteration fetcher starts with an empty dict, race.netkeiba and db.netkeiba each
+    got a full budget, and a second process shared nothing at all.
+
+    No database configured -> `background_policy` returns None and we fall back to the local
+    limiter (see its docstring).
+    """
     import httpx
 
+    policy = background_policy(min_interval_s=min_interval, database_url=database_url)
     return HttpFetcher(
         user_agent=_USER_AGENT, min_interval_s=min_interval, cache_dir=cache_dir,
         client=httpx.Client(headers={"User-Agent": _USER_AGENT}, timeout=20.0),
+        pre_request=None if policy is None else policy.pre_request,
+        on_refusal=None if policy is None else policy.record_refusal,
+        # One request per origin, ever — instead of a robots round-trip that used to bypass the
+        # limiter entirely on every fetch.
+        robots_cache_store=robots_cache.shared_cache(),
     )
+
+
+def _fetcher_for(args, cache_dir: str | None) -> HttpFetcher:
+    """Every subcommand's fetcher. Subcommands that take no --database-url still coordinate,
+    through whatever DATABASE_URL the environment names."""
+    return _make_fetcher(args.min_interval, cache_dir, getattr(args, "database_url", None))
 
 
 def _capture_fixture(args) -> int:
@@ -69,7 +95,7 @@ def _capture_fixture(args) -> int:
     if not ident:
         raise SystemExit(f"--{id_arg.replace('_', '-')} is required for kind={args.kind}")
     url = url_fn(ident)
-    fetcher = _make_fetcher(args.min_interval, None)  # capture never uses a stale cache
+    fetcher = _fetcher_for(args, None)  # capture never uses a stale cache
     payload = fetcher.get(url, use_cache=use_cache)
 
     out = Path(args.out)
@@ -178,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
         return _capture_fixture(args)
 
     if args.command == "list-races":
-        fetcher = _make_fetcher(args.min_interval, None)
+        fetcher = _fetcher_for(args, None)
         listing = discover_races(fetcher, args.date)
         for rid in listing.race_ids:
             if args.urls:
@@ -216,7 +242,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if not rep.errors else 1
 
     if args.command == "scrape-exotic-quotes":
-        fetcher = _make_fetcher(args.min_interval, None)  # volatile: never cached
+        fetcher = _fetcher_for(args, None)  # volatile: never cached
         bet_types = args.bet_types or ["quinella", "wide", "trio"]
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -261,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "scrape-laps":
-        fetcher = _make_fetcher(args.min_interval, args.cache_dir)
+        fetcher = _fetcher_for(args, args.cache_dir)
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             race_ids = args.race_id
@@ -290,7 +316,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if summary.status != "failed" else 1
 
     if args.command == "complete-profiles":
-        fetcher = _make_fetcher(args.min_interval, args.cache_dir)
+        fetcher = _fetcher_for(args, args.cache_dir)
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             summary = complete_profiles(
@@ -303,7 +329,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if summary.status != "failed" else 1
 
     fn = _COMMANDS[args.command]
-    fetcher = _make_fetcher(args.min_interval, args.cache_dir)
+    fetcher = _fetcher_for(args, args.cache_dir)
     engine = create_db_engine(args.database_url)
     kwargs = {"urls": args.url, "fetcher": fetcher, "scope_value": args.url[0]}
     if args.command == "scrape-entries":

@@ -70,6 +70,13 @@ def engine(_migrated: str) -> Engine:
 
 
 @pytest.fixture
+def session_factory(engine: Engine):
+    """A factory, not a session — RequestPoliteness deliberately opens its OWN short-lived
+    sessions so a reservation commits independently of whatever transaction the caller holds."""
+    return sessionmaker(bind=engine, expire_on_commit=False)
+
+
+@pytest.fixture
 def session(engine: Engine) -> Session:
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     sess = factory()
