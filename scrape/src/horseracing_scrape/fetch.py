@@ -7,7 +7,9 @@ parser/pipeline tests.
 
 from __future__ import annotations
 
+import gzip
 import hashlib
+import os
 import re
 import time
 from collections.abc import Callable
@@ -127,6 +129,19 @@ def _retry_after_s(resp) -> float | None:
 REFUSAL_STATUSES: frozenset[int] = frozenset({400, 403, 429})
 
 
+#: URL PATHS that are never archived, matched on the normalized path so no query/type variant can
+#: slip past. The odds API is excluded because a timestamped archive of it would be an odds time
+#: series through the back door, and the constitution stores odds as a single latest value with no
+#: history. Every win/exotic quote variant shares this one path, differing only by `type=`.
+#: Result pages carry settled dividends (a final fact, not a series) and are fine.
+ARCHIVE_DENY_PATHS: frozenset[str] = frozenset({"/api/api_get_jra_odds.html"})
+
+
+def archive_allowed(url: str) -> bool:
+    """Whether a fetched URL may be retained in the page archive (constitution V)."""
+    return urlsplit(url).path not in ARCHIVE_DENY_PATHS
+
+
 def _refused(resp, url: str) -> FetchRefused:
     return FetchRefused(
         resp.status_code,
@@ -145,6 +160,7 @@ class HttpFetcher:
         user_agent: str,
         min_interval_s: float = 1.0,
         cache_dir: str | Path | None = None,
+        archive_dir: str | Path | None = None,
         max_retries: int = 3,
         client=None,
         sleep=time.sleep,
@@ -156,6 +172,14 @@ class HttpFetcher:
         self.min_interval_s = min_interval_s
         self.max_retries = max_retries
         self.cache_dir = Path(cache_dir) if cache_dir else None
+        self.archive_dir = Path(archive_dir) if archive_dir else None
+        if self.cache_dir is not None and self.archive_dir is not None:
+            # The two are opposites: cache_dir SERVES saved bytes instead of fetching (fine for a
+            # one-off backfill, fatal for the daily job — a result page fetched while the race was
+            # still pending would be served forever and the race would never get its results).
+            # archive_dir always fetches and keeps a copy. Allowing both invites exactly that
+            # confusion, so refuse it rather than silently pick one.
+            raise ValueError("cache_dir and archive_dir are mutually exclusive")
         self._client = client
         self._sleep = sleep
         self._clock = clock
@@ -175,7 +199,7 @@ class HttpFetcher:
         if self._respect_robots and not self._robot_allows(url):
             raise RobotsDisallowed(url)
         self._rate_limit(_domain(url))
-        text = self._fetch_with_backoff(url)
+        text = self._fetch_with_backoff(url)  # archives the accepted 200 internally
         if use_cache:
             self._cache_write(url, text)
         return text
@@ -226,6 +250,11 @@ class HttpFetcher:
                 self._before_request(url)
                 resp = self._client.get(url)
                 if resp.status_code == 200:
+                    # Archive the ACCEPTED response only, and do it here where the raw bytes are
+                    # still in hand: _resolve_text may decode with errors="replace", so archiving
+                    # the decoded string would bake a lossy transcription into the permanent copy.
+                    # Being inside the retry loop also means a 500-then-200 archives only the 200.
+                    self._archive_write(url, resp)
                     return _resolve_text(resp)
                 if resp.status_code in REFUSAL_STATUSES:
                     raise _refused(resp, url)
@@ -257,3 +286,50 @@ class HttpFetcher:
         if path is not None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
+
+    # --- archive --------------------------------------------------------------
+    def _archive_write(self, url: str, resp) -> None:
+        """Keep a gzipped copy of an accepted response. Write-only and append-only.
+
+        This is NOT a cache: nothing reads it back during a run, so it cannot make the pipeline
+        serve stale content. Each fetch lands in its own timestamped file, so a results page
+        fetched while the race was still pending stays distinguishable from the settled one
+        fetched later — "is this race final?" is answered from race_results in the DB, never from
+        a file here, and never from "newest wins".
+
+        RAW BYTES are stored, not decoded text: db.netkeiba is EUC-JP and ``_resolve_text`` falls
+        back to ``errors="replace"``, so archiving the decoded string would bake a lossy
+        transcription into the copy that exists precisely to be re-parsed later.
+
+        Failures are swallowed: a full disk must not take down a scrape run.
+        """
+        if self.archive_dir is None or not archive_allowed(url):
+            return
+        try:
+            raw = getattr(resp, "content", None)
+            if raw is None:  # test double without .content
+                raw = (resp.text or "").encode("utf-8")
+            if not raw:
+                return
+            parts = urlsplit(url)
+            host = parts.netloc or "unknown"
+            key = hashlib.sha256(url.encode()).hexdigest()[:16]
+            folder = self.archive_dir / host / key
+            folder.mkdir(parents=True, exist_ok=True)
+            marker = folder / "url.txt"  # the hash alone is not reversible
+            if not marker.exists():
+                marker.write_text(url + "\n", encoding="utf-8")
+            stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+            # Exclusive create with a collision suffix: two threads sharing a microsecond must
+            # not silently drop one observation, and nothing may overwrite an existing one.
+            for n in range(100):
+                path = folder / (f"{stamp}.html.gz" if n == 0 else f"{stamp}-{n}.html.gz")
+                try:
+                    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+                except FileExistsError:
+                    continue
+                with os.fdopen(fd, "wb") as fh, gzip.GzipFile(fileobj=fh, mode="wb") as gz:
+                    gz.write(raw)
+                return
+        except Exception:  # noqa: BLE001 — archiving is best-effort, never fatal
+            return
