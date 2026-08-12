@@ -101,6 +101,22 @@ def _now() -> datetime.datetime:
 #: subprocess may still be writing (codex). Margin over the subprocess timeout, not under it.
 STALE_RANGE_SECONDS = 3900
 
+#: NOTE (092): a refresh_race can legitimately run for tens of minutes once the politeness
+#: interval is raised (18 debut horses × profile+pedigree alone is 36 requests). It is tempting to
+#: widen the stale window to match — DON'T, not while `recover_stale` is startup-only.
+#:
+#: The window is not a liveness check; it is a margin against a SECOND worker starting while a
+#: first one is alive. Recovery runs once, in `main()`, at which point the previous process is
+#: already dead — so any RUNNING row it finds is genuinely orphaned. Widening the window there
+#: only makes orphan recovery LATE: a worker that dies 20 minutes into an 84-minute window
+#: restarts, judges the orphan "fresh", leaves it RUNNING, and never looks again — the job is
+#: stuck forever and dedup then refuses to re-enqueue it. Re-scraping an idempotent race costs
+#: requests; a permanently stuck race costs the race.
+#:
+#: The real fix for long jobs is a heartbeat/lease (recover against LAST PROGRESS, not
+#: `started_at`), which needs a schema column and periodic recovery. Until then the generic
+#: window stands, and a restart mid-race re-scrapes that race.
+
 
 def recover_stale(session: Session, *, stale_seconds: int = STALE_RUNNING_SECONDS) -> int:
     """Re-queue (or fail) RUNNING jobs with no progress past the stale window. Returns count.

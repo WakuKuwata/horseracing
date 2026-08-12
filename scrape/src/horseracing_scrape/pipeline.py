@@ -283,7 +283,13 @@ def complete_profiles(
                     netkeiba_damsire_id=damsire[0], damsire_name=damsire[1],
                 )
             except Exception as exc:  # noqa: BLE001 — pedigree optional; keep identity
-                parts.append(Counts(error_messages=[f"pedigree skipped {netkeiba_id}: {exc}"]))
+                # errors=1, not just a message: without it the job reports SUCCEEDED while
+                # `sire_id` stays NULL, so the horse re-enters the completion query and its
+                # profile page — which DID succeed — is fetched again on the next pass. At one
+                # request per minute a silently-retried page is a real cost, and "succeeded with
+                # the pedigree still missing" is exactly the failure that hides itself.
+                parts.append(Counts(errors=1,
+                                    error_messages=[f"pedigree skipped {netkeiba_id}: {exc}"]))
             parts.append(complete_horse_profile(session, horse_id, profile))
         return _aggregate(parts)
 
