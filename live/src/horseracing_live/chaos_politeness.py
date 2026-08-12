@@ -8,21 +8,23 @@ session: reservations and cooldowns must commit independently of capture success
 from __future__ import annotations
 
 import asyncio
-import datetime
 import threading
 import time
 from collections.abc import Callable
 from contextlib import contextmanager
-from dataclasses import dataclass
 from typing import Literal, Protocol
 
 import httpx
-from horseracing_db.models import FetchThrottleState
 from horseracing_db.session import create_db_engine
 from horseracing_scrape import robots_cache
-from horseracing_scrape.fetch import FetchRefused, HttpFetcher, _domain
-from sqlalchemy import Engine, func, select
-from sqlalchemy.dialects.postgresql import insert
+from horseracing_scrape.fetch import FetchRefused, HttpFetcher
+from horseracing_scrape.politeness import (  # moved to scrape so ops can use it too;
+    PolitenessReason,  # these are the SAME objects, not wrappers, so `except
+    PolitenessRefused,  # PolitenessRefused` written against either module still works
+    RequestPoliteness,
+    ReservationDecision,
+)
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 CaptureTrigger = Literal[
@@ -30,11 +32,6 @@ CaptureTrigger = Literal[
     "predict_auto",
     "daily_operational",
     "explicit_command",
-]
-PolitenessReason = Literal[
-    "source_cooldown",
-    "throttle_backlog",
-    "deadline_exceeded",
 ]
 
 _CAPTURE_USER_AGENT = "horseracing-live/0.1 (personal use; contact via repo)"
@@ -60,26 +57,6 @@ def deadline_for(trigger: str) -> float:
         return deadlines[trigger]
     except KeyError as exc:
         raise ValueError(f"unsupported capture trigger: {trigger!r}") from exc
-
-
-@dataclass(frozen=True)
-class ReservationDecision:
-    """Result of reserving one outbound HTTP request."""
-
-    domain: str
-    allowed: bool
-    reason: PolitenessReason | None = None
-    wait_s: float = 0.0
-
-
-class PolitenessRefused(FetchRefused):
-    """A local reservation/deadline refusal carrying the capture skip reason."""
-
-    def __init__(self, reason: PolitenessReason, url: str):
-        self.reason = reason
-        status_code = 408 if reason == "deadline_exceeded" else 429
-        super().__init__(status_code, url)
-        self.args = (f"request skipped ({reason}) for {url}",)
 
 
 class _DeadlineBudget:
@@ -125,189 +102,6 @@ class _PolitenessPolicy(Protocol):
         *,
         request_url: str | None = None,
     ) -> None: ...
-
-
-class RequestPoliteness:
-    """Reserve request slots and persist source cooldowns in independent DB sessions."""
-
-    def __init__(
-        self,
-        session_factory: Callable[[], Session],
-        *,
-        min_interval_s: float = _DEFAULT_MIN_INTERVAL_S,
-        max_wait_s: float = _DEFAULT_MAX_WAIT_S,
-        sleep: Callable[[float], None] = time.sleep,
-        deadline_budget: _DeadlineBudget | None = None,
-    ) -> None:
-        if min_interval_s < 0:
-            raise ValueError("min_interval_s must be non-negative")
-        if max_wait_s < 0:
-            raise ValueError("max_wait_s must be non-negative")
-        self._session_factory = session_factory
-        self.min_interval_s = float(min_interval_s)
-        self.max_wait_s = float(max_wait_s)
-        self._sleep = sleep
-        self._deadline_budget = deadline_budget
-
-    @classmethod
-    def for_engine(
-        cls,
-        engine: Engine,
-        *,
-        min_interval_s: float = _DEFAULT_MIN_INTERVAL_S,
-        max_wait_s: float = _DEFAULT_MAX_WAIT_S,
-        sleep: Callable[[float], None] = time.sleep,
-        deadline_budget: _DeadlineBudget | None = None,
-    ) -> RequestPoliteness:
-        factory = sessionmaker(bind=engine, expire_on_commit=False)
-        return cls(
-            factory,
-            min_interval_s=min_interval_s,
-            max_wait_s=max_wait_s,
-            sleep=sleep,
-            deadline_budget=deadline_budget,
-        )
-
-    def reserve(self, url: str) -> ReservationDecision:
-        """Atomically reserve one request without sleeping or holding the row lock."""
-
-        domain = _domain(url)
-        with self._session_factory() as session, session.begin():
-            session.execute(
-                insert(FetchThrottleState)
-                .values(
-                    domain=domain,
-                    next_allowed_at=func.clock_timestamp(),
-                    updated_at=func.clock_timestamp(),
-                )
-                .on_conflict_do_nothing(index_elements=[FetchThrottleState.domain])
-            )
-            row = session.scalar(
-                select(FetchThrottleState)
-                .where(FetchThrottleState.domain == domain)
-                .with_for_update()
-            )
-            if row is None:  # pragma: no cover - INSERT + PK make this structurally unreachable
-                raise RuntimeError(f"failed to initialize fetch throttle row for {domain}")
-            now = session.scalar(select(func.clock_timestamp()))
-            if now is None:  # pragma: no cover - PostgreSQL always returns clock_timestamp()
-                raise RuntimeError("database did not return clock_timestamp()")
-
-            if row.blocked_until is not None and row.blocked_until > now:
-                return ReservationDecision(
-                    domain=domain,
-                    allowed=False,
-                    reason="source_cooldown",
-                )
-
-            wait_s = max(0.0, (row.next_allowed_at - now).total_seconds())
-            if wait_s > self.max_wait_s:
-                return ReservationDecision(
-                    domain=domain,
-                    allowed=False,
-                    reason="throttle_backlog",
-                    wait_s=wait_s,
-                )
-
-            row.next_allowed_at = now + datetime.timedelta(
-                seconds=wait_s + self.min_interval_s
-            )
-            row.updated_at = now
-            return ReservationDecision(domain=domain, allowed=True, wait_s=wait_s)
-
-    def pre_request(self, url: str) -> None:
-        """Reserve, wait locally, then re-read cooldown immediately before the send."""
-
-        self._ensure_deadline(url)
-        decision = self.reserve(url)
-        if not decision.allowed:
-            assert decision.reason is not None
-            raise PolitenessRefused(decision.reason, url)
-
-        if decision.wait_s > 0:
-            remaining = self._remaining()
-            required_wait = decision.wait_s + _SEND_SAFETY_MARGIN_S
-            if remaining is not None and required_wait >= remaining:
-                raise PolitenessRefused("deadline_exceeded", url)
-            self._sleep(required_wait)
-
-        self._ensure_deadline(url)
-        if self._is_blocked(decision.domain):
-            raise PolitenessRefused("source_cooldown", url)
-        self._ensure_deadline(url)
-
-    def record_refusal(
-        self,
-        refusal: FetchRefused,
-        *,
-        request_url: str | None = None,
-    ) -> None:
-        """Commit a real HTTP 403/429 cooldown independently of the capture transaction."""
-
-        if isinstance(refusal, PolitenessRefused):
-            return
-        if refusal.status_code not in _COOLDOWN_S:
-            return
-        refused_url = refusal.url or request_url
-        if refused_url is None:
-            raise ValueError("FetchRefused.url is required to persist a cooldown")
-
-        retry_after_s = refusal.retry_after_s
-        cooldown_s = (
-            float(_COOLDOWN_S[refusal.status_code])
-            if retry_after_s is None
-            else min(max(float(retry_after_s), 0.0), float(_MAX_RETRY_AFTER_S))
-        )
-        domain = _domain(refused_url)
-        reason = f"http_{refusal.status_code}"
-
-        with self._session_factory() as session, session.begin():
-            session.execute(
-                insert(FetchThrottleState)
-                .values(
-                    domain=domain,
-                    next_allowed_at=func.clock_timestamp(),
-                    updated_at=func.clock_timestamp(),
-                )
-                .on_conflict_do_nothing(index_elements=[FetchThrottleState.domain])
-            )
-            row = session.scalar(
-                select(FetchThrottleState)
-                .where(FetchThrottleState.domain == domain)
-                .with_for_update()
-            )
-            if row is None:  # pragma: no cover - INSERT + PK make this structurally unreachable
-                raise RuntimeError(f"failed to initialize fetch throttle row for {domain}")
-            now = session.scalar(select(func.clock_timestamp()))
-            if now is None:  # pragma: no cover
-                raise RuntimeError("database did not return clock_timestamp()")
-            proposed_until = now + datetime.timedelta(seconds=cooldown_s)
-            if row.blocked_until is None or proposed_until > row.blocked_until:
-                row.blocked_until = proposed_until
-                row.block_reason = reason
-            row.updated_at = now
-
-    def _remaining(self) -> float | None:
-        return None if self._deadline_budget is None else self._deadline_budget.remaining()
-
-    def _ensure_deadline(self, url: str) -> None:
-        remaining = self._remaining()
-        if remaining is not None and remaining <= 0:
-            raise PolitenessRefused("deadline_exceeded", url)
-
-    def _is_blocked(self, domain: str) -> bool:
-        with self._session_factory() as session:
-            now = session.scalar(select(func.clock_timestamp()))
-            blocked_until = session.scalar(
-                select(FetchThrottleState.blocked_until).where(
-                    FetchThrottleState.domain == domain
-                )
-            )
-        return bool(
-            now is not None
-            and blocked_until is not None
-            and blocked_until > now
-        )
 
 
 class _DeadlineHttpClient:
