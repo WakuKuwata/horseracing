@@ -1,0 +1,38 @@
+{
+  "_comment": "Feature 090 (nick cross) adoption gate. FROZEN 2026-08-11 BEFORE any paired evaluation was run — no candidate/active metric had been observed at freeze time. The verdict formula is contracts/feature-columns.md '判定式(3 分岐)': ADOPT iff gate.adopted AND subgroup_guard; REJECT if the evaluation completed and that conjunction fails (a CI crossing zero is a REJECT, per the 070 precedent); NO_DECISION ONLY if the evaluation itself cannot run. report.decision is a 073 reference value, never the verdict.",
+  "evaluation_contract_version": "v2",
+  "primary": "winner_nll",
+  "top_noninferior": {"top2": 0.0005, "top3": 0.0005},
+  "calibration": {"metric": "mean_ece", "noninferior_width": 0.001, "emergency_abs_ece": 0.05},
+  "subgroup_guard": {
+    "_comment": "Same intersection-union three-way as 069/070 so verdicts stay comparable. adopted requires ALL critical subgroups PASS.",
+    "critical_subgroups": ["2026_only", "nk", "2026_nk"],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "three_way",
+    "race_level_subgroups": ["2026_only", "2026_field_has_nk"],
+    "horse_level_subgroups": ["canonical", "nk", "2026_nk"],
+    "absolute_benchmark": "candidate_minus_uniform",
+    "no_decision_min_days": 10
+  },
+  "eval_window": {
+    "_comment": "Same pre-registered OOS window as 069/070 so this verdict is comparable with the past-market bundles.",
+    "from": "2019-01-01",
+    "to": "2026-07-12"
+  },
+  "bootstrap": {"b": 2000, "seed": 20260811, "block": "race_day", "scheme": "moving_block", "alpha": 0.05},
+  "arms": {
+    "_comment": "drop=nick_cross expands to the two 090 columns, so the baseline arm is features-021 MINUS the nick block = the features-018 input set. Both arms refit per fold (068 contract).",
+    "candidate": "pl_topk:isotonic:0.3",
+    "active": "pl_topk:isotonic:0.3:drop=nick_cross"
+  },
+  "feature_definition": {
+    "_comment": "Frozen feature constants (INV-N5). Changing any of these after this freeze invalidates the verdict.",
+    "lambda_l0": 350.0,
+    "lambda_l1": 350.0,
+    "eps_lo": 0.0001,
+    "eps_hi": 0.9,
+    "hierarchy": "nested partial pooling L0(sire x damsire) -> L1(sire x damsire_line, leave-child-out) -> independence expectation; no hard cell threshold",
+    "residual": "log(mu_L0) - log(p_sire * p_damsire / p_overall)"
+  }
+}

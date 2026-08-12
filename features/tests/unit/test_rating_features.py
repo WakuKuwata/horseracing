@@ -218,7 +218,7 @@ def test_rating_is_not_in_the_default_feature_set():
         model_input_features,
     )
 
-    assert FEATURE_VERSION == "features-020"  # 062 rating still rejected; 070 reverted
+    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 018 = 069 F02
     rating_cols = {
         "asof_rating", "asof_rating_recent_delta", "asof_rating_max",
         "asof_rating_starts", "asof_rating_vs_field",
@@ -238,9 +238,8 @@ def test_no_odds_or_result_leakage_in_source():
     """grep-style guard: the rating module reads finish_order/race_date only, never odds/payout."""
     import pathlib
 
-    # Resolve from the module itself, not from the cwd: a bare relative path only works when
-    # pytest happens to be invoked from features/, so the guard silently vanished (errored) when
-    # the suite ran from the repo root.
+    # Resolve from the module itself, not the cwd: a bare relative path only works when pytest
+    # happens to run from features/, so this guard silently errored out from the repo root.
     import horseracing_features.rating_features as rating_mod
 
     src = pathlib.Path(rating_mod.__file__).read_text()

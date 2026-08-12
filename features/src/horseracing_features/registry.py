@@ -209,6 +209,14 @@ REGISTRY: dict[str, FeatureMeta] = {
     "asof_pm_support_sd5": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.NULL),
     "asof_pm_obs_count": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
     "asof_pm_has_obs": FeatureMeta("pm_core_strength", _T.PRE_ENTRY, _M.ZERO_OK),
+    # Feature 088 (finish-rank decomposition: field-size normalized position + individual lags +
+    # 5-run windows + trend) was REJECTED at the pre-registered gate on the production pl_topk
+    # arms: the full-window winner-NLL point estimate favoured the bundle (-0.00055) but the
+    # race-day cluster bootstrap CI straddled zero ([-0.00221, +0.00117]) AND the recent-3y window
+    # DEGRADED (+0.00091); all three critical subgroups were underpowered. Not merged (027/062/070
+    # precedent: a rejected FEATURE_VERSION bump would push the active model onto the compat path
+    # for no gain). finish_decomposition_features.py + its unit tests are preserved (unwired) as
+    # the documented negative result — see specs/088-finish-rank-decomposition.
     # Feature 070 (F03 rank-percentile / F04 expectation-residual / F05 conditioned) was evaluated
     # as an accuracy-first candidate on the 069 subgroup gate and REJECTED at every staged bundle
     # (all three point-estimate favourable, all critical subgroups PASS, but the block-bootstrap
@@ -372,7 +380,7 @@ FEATURE_GROUPS: dict[str, str] = {
 #: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
 #: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
 #: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
-FEATURE_VERSION = "features-020"
+FEATURE_VERSION = "features-021"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -416,13 +424,16 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
     # a disjoint column name), so all 137 features-018 columns stay byte-identical - measured on
     # the real DB against a captured baseline (INV-W7, test_features020_parity). The pinned hash is
     # lgbm-064-f02acc's OWN trained feature_hash, read from its artifact metadata. Keeps lgbm-064
-    # (features-018) servable under features-020 via the compat path.
+    # (features-018) servable under features-021 via the compat path.
     # features-019 is a BURNED number (070 revert); it is deliberately absent.
-    "features-020": {
+    "features-021": {
         "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f",
     },
     # Feature 070's features-019 compat entry was REMOVED with the reverted bump (all bundles
     # rejected at the staged gate). No model was ever trained on features-019.
+    # features-020 is ALSO burned: 088 (finish-rank decomposition) bumped to it, was
+    # REJECTED at the pl_topk gate, and reverted. 091 briefly reused 020 before that was
+    # noticed — renamed to 021 so one label never names two different column sets.
 }
 
 

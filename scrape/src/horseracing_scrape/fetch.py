@@ -7,7 +7,10 @@ parser/pipeline tests.
 
 from __future__ import annotations
 
+import contextlib
+import gzip
 import hashlib
+import os
 import re
 import time
 from collections.abc import Callable
@@ -17,6 +20,17 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
+
+from . import robots_cache
+
+
+class _Missing:
+    """Distinguishes "no cached robots" from a cached "this site has no robots" (both falsy)."""
+
+
+_MISSING = _Missing()
+#: TTL for the in-process robots cache when no durable cache is configured.
+_L1_TTL_S = 24 * 60 * 60
 
 _META_CHARSET_RE = re.compile(rb"""charset=["']?\s*([\w-]+)""", re.IGNORECASE)
 _MAX_RETRY_AFTER_S = 6 * 60 * 60
@@ -127,12 +141,32 @@ def _retry_after_s(resp) -> float | None:
 REFUSAL_STATUSES: frozenset[int] = frozenset({400, 403, 429})
 
 
+#: URL PATHS that are never archived, matched on the normalized path so no query/type variant can
+#: slip past. The odds API is excluded because a timestamped archive of it would be an odds time
+#: series through the back door, and the constitution stores odds as a single latest value with no
+#: history. Every win/exotic quote variant shares this one path, differing only by `type=`.
+#: Result pages carry settled dividends (a final fact, not a series) and are fine.
+ARCHIVE_DENY_PATHS: frozenset[str] = frozenset({"/api/api_get_jra_odds.html"})
+
+
+def archive_allowed(url: str) -> bool:
+    """Whether a fetched URL may be retained in the page archive (constitution V)."""
+    return urlsplit(url).path not in ARCHIVE_DENY_PATHS
+
+
 def _refused(resp, url: str) -> FetchRefused:
     return FetchRefused(
         resp.status_code,
         url,
         retry_after_s=_retry_after_s(resp),
     )
+
+
+#: Called with the refusal the moment the source declines, before it propagates. The shared
+#: politeness policy uses it to install a cooldown that every OTHER process observes — without
+#: it, only the process that got refused would back off and the rest keep hammering a source
+#: that is already blocking us.
+OnRefusal = Callable[[FetchRefused], None]
 
 
 class HttpFetcher:
@@ -145,24 +179,41 @@ class HttpFetcher:
         user_agent: str,
         min_interval_s: float = 1.0,
         cache_dir: str | Path | None = None,
+        archive_dir: str | Path | None = None,
         max_retries: int = 3,
         client=None,
         sleep=time.sleep,
         clock=time.monotonic,
         respect_robots: bool = True,
         pre_request: PreRequest | None = None,
+        on_refusal: OnRefusal | None = None,
+        robots_cache_store: robots_cache.RobotsCache | None = None,
     ):
         self.user_agent = user_agent
         self.min_interval_s = min_interval_s
         self.max_retries = max_retries
         self.cache_dir = Path(cache_dir) if cache_dir else None
+        self.archive_dir = Path(archive_dir) if archive_dir else None
+        if self.cache_dir is not None and self.archive_dir is not None:
+            # The two are opposites: cache_dir SERVES saved bytes instead of fetching (fine for a
+            # one-off backfill, fatal for the daily job — a result page fetched while the race was
+            # still pending would be served forever and the race would never get its results).
+            # archive_dir always fetches and keeps a copy. Allowing both invites exactly that
+            # confusion, so refuse it rather than silently pick one.
+            raise ValueError("cache_dir and archive_dir are mutually exclusive")
         self._client = client
         self._sleep = sleep
         self._clock = clock
         self._respect_robots = respect_robots
         self._pre_request = pre_request
+        self._on_refusal = on_refusal
         self._last_fetch: dict[str, float] = {}
-        self._robots: dict[str, RobotFileParser | None] = {}
+        #: origin -> (parser|None, stored_at). Timestamped so a long-lived fetcher cannot
+        #: hold an 'allow' forever after the durable entry has expired.
+        self._robots: dict[str, tuple] = {}
+        #: Durable cross-process robots store. None = in-process only (the old behaviour), which
+        #: keeps every existing unit test isolated from any shared directory.
+        self._robots_cache = robots_cache_store
 
     # --- public -------------------------------------------------------------
     def get(self, url: str, *, use_cache: bool = True) -> str:
@@ -175,33 +226,99 @@ class HttpFetcher:
         if self._respect_robots and not self._robot_allows(url):
             raise RobotsDisallowed(url)
         self._rate_limit(_domain(url))
-        text = self._fetch_with_backoff(url)
+        text = self._fetch_with_backoff(url)  # archives the accepted 200 internally
         if use_cache:
             self._cache_write(url, text)
         return text
 
     # --- robots -------------------------------------------------------------
+    def _parse_robots(self, body: bytes) -> RobotFileParser:
+        rp = RobotFileParser()
+        rp.parse(body.decode("utf-8", errors="replace").splitlines())
+        return rp
+
+    def _robots_from_cache(self, origin: str) -> RobotFileParser | None | _Missing:
+        """Durable-cache lookup. Returns a parser, None (site has no robots), or _MISSING."""
+        if self._robots_cache is None:
+            return _MISSING
+        entry = self._robots_cache.get(origin)
+        if entry is None:
+            return _MISSING
+        return None if entry.outcome == robots_cache.ABSENT else self._parse_robots(entry.body)
+
     def _robot_allows(self, url: str) -> bool:
-        domain = _domain(url)
-        if domain not in self._robots:
-            rp: RobotFileParser | None = RobotFileParser()
-            try:
-                robots_url = f"{domain}/robots.txt"
-                self._before_request(robots_url)
-                resp = self._client.get(robots_url)
-                if resp.status_code == 200:
-                    rp.parse(resp.text.splitlines())
-                elif resp.status_code == 429:
-                    raise _refused(resp, robots_url)
-                else:
-                    rp = None  # no robots -> allow
-            except FetchRefused:
-                raise
-            except Exception:
-                rp = None
-            self._robots[domain] = rp
-        rp = self._robots[domain]
+        origin = _domain(url)
+        cached = self._l1_robots(origin)
+        if cached is not _MISSING:
+            return True if cached is None else cached.can_fetch(self.user_agent, url)
+
+        from_disk = self._robots_from_cache(origin)
+        if from_disk is not _MISSING:
+            self._remember_robots(origin, from_disk)
+            return True if from_disk is None else from_disk.can_fetch(self.user_agent, url)
+
+        # Cache miss: one fetch per origin, serialized across threads and processes so a TTL
+        # boundary does not make four callers each spend a request slot on the same file.
+        ctx = (
+            self._robots_cache.refresh_lock(origin)
+            if self._robots_cache is not None
+            else contextlib.nullcontext(False)
+        )
+        with ctx as got_lock:
+            if got_lock:  # another holder may have just filled it while we waited
+                again = self._robots_from_cache(origin)
+                if again is not _MISSING:
+                    self._remember_robots(origin, again)
+                    return True if again is None else again.can_fetch(self.user_agent, url)
+            rp, cacheable = self._fetch_robots(origin)
+
+        # Only site-level outcomes reach the durable store. A 5xx or a dropped connection says
+        # nothing about the site's policy, and freezing it as "allow" would keep us fetching
+        # paths robots forbids for a whole TTL.
+        if cacheable is not None and self._robots_cache is not None:
+            outcome, status, body = cacheable
+            with contextlib.suppress(Exception):  # write failure must not change the decision
+                self._robots_cache.put(origin, outcome=outcome, status=status, body=body)
+        if cacheable is not None:
+            self._remember_robots(origin, rp)
         return True if rp is None else rp.can_fetch(self.user_agent, url)
+
+    def _fetch_robots(self, origin: str):
+        """Fetch robots for ``origin``. Returns ``(parser_or_None, cacheable_or_None)``."""
+        robots_url = f"{origin}/robots.txt"
+        try:
+            self._before_request(robots_url)
+            resp = self._client.get(robots_url)
+            if resp.status_code == 200:
+                body = getattr(resp, "content", None)
+                if body is None:
+                    body = (resp.text or "").encode("utf-8")
+                return self._parse_robots(body), (robots_cache.RULES, 200, body)
+            if resp.status_code == 429:
+                raise self._refuse(resp, robots_url)
+            if resp.status_code in (404, 410):
+                # A site that answers "no such file" has no robots policy. That IS durable.
+                return None, (robots_cache.ABSENT, resp.status_code, b"")
+            return None, None  # transient/refusal — allow this request, cache nothing
+        except FetchRefused:
+            raise
+        except Exception:  # noqa: BLE001 — unreachable robots keeps the caller's prior behaviour
+            return None, None
+
+    def _l1_robots(self, origin: str):
+        """In-process cache, expired against the same TTL as the durable store."""
+        hit = self._robots.get(origin)
+        if hit is None:
+            return _MISSING
+        rp, stored_at = hit
+        ttl = self._robots_cache.ttl_s if self._robots_cache is not None else _L1_TTL_S
+        if (time.time() - stored_at) >= ttl:
+            self._robots.pop(origin, None)
+            return _MISSING
+        return rp
+
+    def _remember_robots(self, origin: str, rp: RobotFileParser | None) -> None:
+        self._robots[origin] = (rp, time.time())
 
     # --- rate limit ---------------------------------------------------------
     def _rate_limit(self, domain: str) -> None:
@@ -214,6 +331,17 @@ class HttpFetcher:
         self._last_fetch[domain] = self._clock()
 
     # --- fetch + backoff ----------------------------------------------------
+    def _refuse(self, resp, url: str) -> FetchRefused:
+        """Build the refusal AND notify the policy. Reporting must not mask the refusal, so a
+        broken hook is swallowed — the caller still sees the source say no."""
+        exc = _refused(resp, url)
+        if self._on_refusal is not None:
+            try:
+                self._on_refusal(exc)
+            except Exception:  # noqa: BLE001
+                pass
+        return exc
+
     def _before_request(self, url: str) -> None:
         if self._pre_request is not None:
             self._pre_request(url)
@@ -226,9 +354,14 @@ class HttpFetcher:
                 self._before_request(url)
                 resp = self._client.get(url)
                 if resp.status_code == 200:
+                    # Archive the ACCEPTED response only, and do it here where the raw bytes are
+                    # still in hand: _resolve_text may decode with errors="replace", so archiving
+                    # the decoded string would bake a lossy transcription into the permanent copy.
+                    # Being inside the retry loop also means a 500-then-200 archives only the 200.
+                    self._archive_write(url, resp)
                     return _resolve_text(resp)
                 if resp.status_code in REFUSAL_STATUSES:
-                    raise _refused(resp, url)
+                    raise self._refuse(resp, url)
                 last_err = FetchError(f"HTTP {resp.status_code} for {url}")
             except FetchRefused:
                 raise
@@ -257,3 +390,50 @@ class HttpFetcher:
         if path is not None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
+
+    # --- archive --------------------------------------------------------------
+    def _archive_write(self, url: str, resp) -> None:
+        """Keep a gzipped copy of an accepted response. Write-only and append-only.
+
+        This is NOT a cache: nothing reads it back during a run, so it cannot make the pipeline
+        serve stale content. Each fetch lands in its own timestamped file, so a results page
+        fetched while the race was still pending stays distinguishable from the settled one
+        fetched later — "is this race final?" is answered from race_results in the DB, never from
+        a file here, and never from "newest wins".
+
+        RAW BYTES are stored, not decoded text: db.netkeiba is EUC-JP and ``_resolve_text`` falls
+        back to ``errors="replace"``, so archiving the decoded string would bake a lossy
+        transcription into the copy that exists precisely to be re-parsed later.
+
+        Failures are swallowed: a full disk must not take down a scrape run.
+        """
+        if self.archive_dir is None or not archive_allowed(url):
+            return
+        try:
+            raw = getattr(resp, "content", None)
+            if raw is None:  # test double without .content
+                raw = (resp.text or "").encode("utf-8")
+            if not raw:
+                return
+            parts = urlsplit(url)
+            host = parts.netloc or "unknown"
+            key = hashlib.sha256(url.encode()).hexdigest()[:16]
+            folder = self.archive_dir / host / key
+            folder.mkdir(parents=True, exist_ok=True)
+            marker = folder / "url.txt"  # the hash alone is not reversible
+            if not marker.exists():
+                marker.write_text(url + "\n", encoding="utf-8")
+            stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+            # Exclusive create with a collision suffix: two threads sharing a microsecond must
+            # not silently drop one observation, and nothing may overwrite an existing one.
+            for n in range(100):
+                path = folder / (f"{stamp}.html.gz" if n == 0 else f"{stamp}-{n}.html.gz")
+                try:
+                    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+                except FileExistsError:
+                    continue
+                with os.fdopen(fd, "wb") as fh, gzip.GzipFile(fileobj=fh, mode="wb") as gz:
+                    gz.write(raw)
+                return
+        except Exception:  # noqa: BLE001 — archiving is best-effort, never fatal
+            return

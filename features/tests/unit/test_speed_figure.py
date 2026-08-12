@@ -198,7 +198,7 @@ def test_registry_version_and_compat_pins():
         model_input_features,
     )
 
-    assert FEATURE_VERSION == "features-020"  # 091 prev_weight (019 burned by 070)
+    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 018 = 069 F02
     # 061's historical compat story (features-016 pinned 014/015) still holds when checked against
     # that version explicitly.
     pins = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-016"]
@@ -211,7 +211,7 @@ def test_registry_version_and_compat_pins():
     # Feature 069 (018) is ADDITIVE on 017, so it pins lgbm-063's features-017 hash (servable).
     assert set(COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-018"]) == {"features-017"}
     # Feature 091: the current version pins the PREVIOUS one directly (non-transitive).
-    assert set(COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-020"]) == {"features-018"}
+    assert set(COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-021"]) == {"features-018"}
     assert "features-019" not in COMPATIBLE_PRIOR_FEATURE_VERSIONS  # burned by 070
     # 061 columns are as-of (materialized), NEVER static; and they are model inputs
     assert not (set(SPEED_FIGURE_COLUMNS) & set(STATIC_COLUMNS))

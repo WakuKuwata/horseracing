@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 from alembic import command
@@ -119,3 +119,15 @@ def _truncate_between_tests(request):
                 """
             )
         )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_robots_cache(monkeypatch):
+    """Keep the shared robots cache out of the tests, in both directions.
+
+    Production resolves it to a real repo directory. Without this, a test's fake robots.txt gets
+    written there and can later be served to a real fetch — and conversely a stale entry from an
+    earlier run silently changes what a test observes. Tests that mean to exercise the cache build
+    a RobotsCache on tmp_path explicitly.
+    """
+    monkeypatch.setenv("HORSERACING_ROBOTS_CACHE_DIR", "")

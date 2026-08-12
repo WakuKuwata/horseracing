@@ -296,6 +296,10 @@ def build_asof_features(
             frames, target_race_ids=target_race_ids
         )
         out = out.merge(pmcs, on=_KEYS, how="left")
+    # Feature 088 (finish-rank decomposition) was REJECTED at the pre-registered gate (CI straddled
+    # zero and the recent-3y window degraded) — NOT wired in (bump reverted).
+    # finish_decomposition_features.py + its unit tests are kept as the documented negative result
+    # (the tests call the build function directly).
     # Feature 070 (F03/F04/F05 past-market bundle) was rejected at the staged gate — NOT wired in
     # (bump reverted). pm_rank_robust/pm_expectation_residual/pm_conditioned.py kept as the
     # documented negative result (their unit tests call the build functions directly).

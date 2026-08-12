@@ -1,5 +1,11 @@
-c3594766334d837fafa203eb910065ec8cbf977e98514f386028119821b106d5
-# canonical gate-config hash frozen 2026-08-09
+5524f474dc6f2b0297e4d26da7b62f6c18c2b8c8b2066618b6a369122630c15d
+# canonical gate-config hash (re-frozen 2026-08-12)
+# PREVIOUS: c3594766334d837fafa203eb910065ec8cbf977e98514f386028119821b106d5
+#   The confirmatory run (evidence/confirmatory.json) was executed under the PREVIOUS hash.
+#   The only field that changed since is ['serving'] — a label correction: 091 had reused
+#   features-020, which 088 burned by bumping and reverting it. The gate logic never reads
+#   that field; every decision-relevant key (evaluation_contract_version, min_effect_delta, weight_mask, full_info_guard, top_noninferior, calibration, subgroup_guard, eval_window, bootstrap) is byte-identical,
+#   verified programmatically before re-freezing. The verdict therefore stands unchanged.
 # eval_window = 2021-01-01..2026-08-09
 # min_effect_delta=0.002 full_info_noninferior_width=0.003
 # weight_mask rate=0.5 seed=20260810

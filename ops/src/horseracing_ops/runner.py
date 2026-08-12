@@ -27,14 +27,17 @@ from pathlib import Path
 import httpx
 from horseracing_db.enums import JobStatus
 from horseracing_db.models import IngestionJob, ModelVersion, PredictionRun, RaceResult
+from horseracing_scrape import robots_cache
 from horseracing_scrape.fetch import HttpFetcher
 from horseracing_scrape.pipeline import (
+    complete_profiles,
     discover_races,
     scrape_entries,
     scrape_exotic_quotes,
     scrape_odds,
     scrape_results,
 )
+from horseracing_scrape.politeness import background_policy
 from horseracing_scrape.urls import entries_url, result_url, win_odds_url
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -61,13 +64,50 @@ _BETTING_DIR = Path(__file__).resolve().parents[3] / "betting"
 _BETTING_TIMEOUT_S = 300
 
 
-def make_fetcher(min_interval: float = 1.0, cache_dir: str | None = None) -> HttpFetcher:
-    """A polite fetcher reusing scrape's robots/rate-limit/backoff/cache (FR-014).
+#: Where the daily job keeps its gzipped copy of every page it fetches. Set the env var to an
+#: empty string to turn archiving off. This is an archive, not a cache: pages are always fetched
+#: fresh and merely copied aside, so re-parsing a field we forgot to extract (the recurring cost
+#: this exists to remove) never costs another netkeiba request.
+_ARCHIVE_ENV = "HORSERACING_SCRAPE_ARCHIVE_DIR"
+_DEFAULT_ARCHIVE_DIR = Path(__file__).resolve().parents[3] / "artifacts" / "scrape_archive"
+
+
+def _archive_dir() -> str | None:
+    raw = os.environ.get(_ARCHIVE_ENV)
+    if raw is None:
+        return str(_DEFAULT_ARCHIVE_DIR)
+    raw = raw.strip()
+    return raw or None
+
+
+def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None) -> HttpFetcher:
+    """A polite fetcher reusing scrape's robots/rate-limit/backoff/archive (FR-014).
 
     Crucially passes a real httpx client — without it the fetcher can only serve cached pages and
-    every LIVE netkeiba fetch fails (robots check dereferences a None client)."""
+    every LIVE netkeiba fetch fails (robots check dereferences a None client).
+
+    ``cache_dir`` (read-through) stays off by default and archiving is only wired when it is:
+    serving a cached page would let a results page fetched while the race was still pending be
+    replayed forever, so the race would never pick up its results.
+
+    ``min_interval`` defaults to ``OPS_FETCH_MIN_INTERVAL``. It previously hardcoded 1.0 and
+    ignored that setting entirely, so raising the configured interval had no effect on any
+    netkeiba request the daily job made.
+
+    This is the daily job's fetcher, so it is the LARGEST of the streams competing for the
+    machine-wide budget — it gets the shared limiter and the shared robots cache. The robots
+    cache matters especially here because this factory runs once per worker loop iteration: a
+    fresh in-process robots memo every time is what made robots a third to a half of the daily
+    request budget."""
+    if min_interval is None:
+        min_interval = CONFIG.fetch_min_interval
+    _policy = background_policy(min_interval_s=min_interval, database_url=owner_database_url())
     return HttpFetcher(
         user_agent=_USER_AGENT, min_interval_s=min_interval, cache_dir=cache_dir,
+        robots_cache_store=robots_cache.shared_cache(),
+        archive_dir=None if cache_dir else _archive_dir(),
+        pre_request=None if _policy is None else _policy.pre_request,
+        on_refusal=None if _policy is None else _policy.record_refusal,
         client=httpx.Client(headers={"User-Agent": _USER_AGENT}, timeout=20.0),
     )
 
@@ -133,8 +173,15 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     if refresh_origin not in {"manual_ui", "daily_bulk"}:
         raise ValueError(f"invalid or missing refresh_origin: {refresh_origin!r}")
 
+    # complete_profiles_after=False: pedigree/identity enrichment is deferred to the END of this
+    # job. It is the ONLY sub-step here that is never time-critical — a horse's sire does not
+    # expire — yet inline it ran first and blocked everything behind it. Measured on this DB,
+    # 28–67 new surrogate horses appear per race day at 2 requests each, so at the operator's
+    # 1-request-per-minute budget a debut-heavy race could spend ~20 minutes on enrichment before
+    # the pre-race odds and exotic price grid were even requested. Those two cannot be recovered
+    # once the race runs.
     entries = scrape_entries(session, urls=[entries_url(race_id)], fetcher=fetcher,
-                             scope_value=race_id)
+                             scope_value=race_id, complete_profiles_after=False)
     results = scrape_results(session, urls=[result_url(race_id)], fetcher=fetcher,
                              scope_value=race_id)
     odds = scrape_odds(session, urls=[win_odds_url(race_id)], fetcher=fetcher, scope_value=race_id)
@@ -155,6 +202,20 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
                                       fetcher=fetcher, scope_value=race_id)
         summaries.append(quotes)
 
+    # Enrichment last, once every unrecoverable pre-race capture is safely in. Still BEFORE the
+    # predict follow-up is enqueued, so a debut horse's pedigree/sex/birth_year are present by the
+    # time that job is claimed — those features are exactly what carries debut horses in this
+    # model, so deferring them past predict would trade one silent degradation for another.
+    #
+    # Deliberately NOT in `summaries`: enrichment must not drive the race refresh's terminal
+    # status. Entries/results/odds are what this job exists to ingest; a sire lookup that failed
+    # (or that a source-wide block refused) would otherwise paint every race PARTIAL and bury the
+    # signal. It is reported in the summary instead, because the previous code discarded the
+    # result entirely — which is how a failing enrichment could go unnoticed indefinitely.
+    profiles = None
+    if entries.status != JobStatus.FAILED:
+        profiles = complete_profiles(session, fetcher=fetcher, race_id=race_id)
+
     written = sum(s.written for s in summaries)
     errors = sum(s.errors for s in summaries)
     job.status = _terminal(
@@ -172,6 +233,11 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
         "calls": [{"job_type": s.job_type, "status": s.status, "written": s.written,
                    "skipped": s.skipped, "errors": s.errors} for s in summaries],
     }
+    if profiles is not None:
+        summary["profiles"] = {
+            "status": profiles.status, "written": profiles.written,
+            "skipped": profiles.skipped, "errors": profiles.errors,
+        }
     # precompute predictions once entries exist (see docstring). enqueue in THIS transaction, then
     # assign summary ONCE (a later in-place mutation of a flushed dict is invisible to JSONB change
     # tracking — same pattern as run_predict's recommend follow-up).

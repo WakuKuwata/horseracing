@@ -16,6 +16,7 @@ from types import SimpleNamespace
 import pytest
 from horseracing_db.models import FetchThrottleState
 from horseracing_scrape.fetch import FetchRefused, _domain
+from horseracing_scrape.politeness import throttle_key
 from horseracing_scrape.urls import win_odds_url
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -169,7 +170,7 @@ def test_reservation_skips_during_cooldown_and_resumes_after_expiry(
     now = datetime.datetime.now(datetime.UTC)
     session.add(
         FetchThrottleState(
-            domain=_domain(url),
+            domain=throttle_key(url),
             next_allowed_at=now,
             blocked_until=now + datetime.timedelta(minutes=5),
             block_reason="http_429",
@@ -183,7 +184,7 @@ def test_reservation_skips_during_cooldown_and_resumes_after_expiry(
     assert not blocked.allowed
     assert blocked.reason == "source_cooldown"
 
-    row = session.get(FetchThrottleState, _domain(url))
+    row = session.get(FetchThrottleState, throttle_key(url))
     assert row is not None
     row.blocked_until = now - datetime.timedelta(seconds=1)
     session.commit()
@@ -212,7 +213,12 @@ def test_two_processes_can_initialize_the_same_domain_without_pk_failure(
         process.join(timeout=15.0)
 
     assert all(process.exitcode == 0 for process in processes)
-    assert received == [(True, None), (True, None)]
+    # Neither process may crash on the insert race — and, now that the reservation claims the
+    # slot instead of booking a future one, EXACTLY ONE of two simultaneous claimants may send.
+    # The old expectation (both allowed) was the per-host budget being handed out twice.
+    allowed = [ok for ok, _reason in received]
+    assert sorted(allowed) == [False, True], received
+    assert {reason for ok, reason in received if not ok} == {"throttle_backlog"}
 
 
 def test_waiter_rereads_cooldown_and_sends_zero_requests(engine) -> None:
@@ -292,17 +298,20 @@ def test_real_fetcher_spaces_robots_and_main_request(engine) -> None:
     assert server.requests[1][1] - server.requests[0][1] >= 1.0
 
 
-def test_real_cli_odds_url_uses_the_canonical_scrape_domain_key(
+def test_real_cli_odds_url_uses_the_canonical_source_key(
     engine,
     session: Session,
 ) -> None:
+    """One row for the whole source. The key used to be `_domain(url)` — scheme+host — which gave
+    race.netkeiba and db.netkeiba a full budget each and doubled the rate the site saw."""
     url = win_odds_url("202607260101")
     gate = RequestPoliteness.for_engine(engine)
 
     assert gate.reserve(url).allowed
 
     rows = list(session.scalars(select(FetchThrottleState)))
-    assert [row.domain for row in rows] == [_domain(url)]
+    assert [row.domain for row in rows] == ["netkeiba.com"]
+    assert _domain(url) == "https://race.netkeiba.com"  # robots still resolves per host
 
 
 @pytest.mark.parametrize(
@@ -339,7 +348,7 @@ def test_real_refusal_commits_cooldown_with_retry_after_cap(
         fetcher.close()
 
     with Session(engine) as verify:
-        row = verify.get(FetchThrottleState, _domain(url))
+        row = verify.get(FetchThrottleState, throttle_key(url))
         assert row is not None
         assert row.block_reason == reason
         duration_s = (row.blocked_until - before).total_seconds()
@@ -359,7 +368,7 @@ def test_cooldown_commit_survives_an_unrelated_capture_session_rollback(
     session.rollback()
 
     with Session(engine) as verify:
-        row = verify.get(FetchThrottleState, _domain(url))
+        row = verify.get(FetchThrottleState, throttle_key(url))
         assert row is not None
         assert row.block_reason == "http_429"
         assert row.blocked_until > datetime.datetime.now(datetime.UTC)
@@ -396,7 +405,7 @@ def test_capture_refusal_cooldown_survives_capture_transaction_rollback(
     session.rollback()
 
     with Session(engine) as verify:
-        row = verify.get(FetchThrottleState, _domain(win_odds_url(RACE_ID)))
+        row = verify.get(FetchThrottleState, throttle_key(win_odds_url(RACE_ID)))
         assert row is not None
         assert row.block_reason == "http_429"
         assert row.blocked_until > datetime.datetime.now(datetime.UTC)

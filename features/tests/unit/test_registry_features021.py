@@ -50,10 +50,10 @@ def test_column_order_is_deterministic():
 
 
 def test_feature_version_and_compat_pin():
-    assert FEATURE_VERSION == "features-020"
+    assert FEATURE_VERSION == "features-021"
     # 019 was burned by 070's revert and must never be reintroduced
     assert "features-019" not in COMPATIBLE_PRIOR_FEATURE_VERSIONS
-    assert set(COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-020"]) == {"features-018"}
+    assert set(COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-021"]) == {"features-018"}
 
 
 def test_prev_weight_declares_pre_entry_availability():

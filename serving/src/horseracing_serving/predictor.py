@@ -19,6 +19,7 @@ from horseracing_training.calibration import DEFAULT_CLIP
 from horseracing_training.explanation import compute_explanations
 from horseracing_training.predictor import assemble_predictions
 from horseracing_training.target_encoding import apply_encoded_columns
+from horseracing_training.win_model import WinModel
 
 from .model_loader import ServingModel
 
@@ -153,12 +154,50 @@ def predict_race(
         started_ids, calibrated, eps=DEFAULT_CLIP, stage_discount=stage_discount
     )
 
-    # Feature 040: per-horse score-contribution explanation (display-only; NEVER a model feature).
-    # Decomposes the RAW booster margin (before race-softmax/isotonic/009) — additive, top-K.
-    # Degenerate model (no booster) -> all None. Does not touch predictions/snapshots (INV-E2).
+    # Feature 040/089: per-horse score-contribution explanation (display-only; NEVER a model
+    # feature). Degenerate model (no booster) -> all None. Never touches predictions/snapshots
+    # (INV-E2), and any failure degrades to "no explanation", never to a failed prediction.
+    #
+    # 089: for a race-softmax model WITHOUT a market offset the contributions are centred within
+    # the race (v2) — race-constant contributions cancel in the softmax, so selecting the top-K by
+    # the population-relative magnitude surfaces features that cannot affect the ordering (e.g.
+    # every debutant sharing prev_finish=NaN). Excluded from v2:
+    #   * binary objective — no race-softmax, so a race-constant contribution DOES move p_i;
+    #   * market-offset models — the softmax input is (log-q offset + tree margin) but pred_contrib
+    #     only decomposes the tree part, so "relative score decomposition" would be a false claim.
+    # ``expected_raw_scores`` is the INDEPENDENT tree margin used to reconcile the decomposition
+    # (base + Σcontrib), and it is supplied ONLY on the v2 path. It must NOT be ``raw``:
+    # ``ServingModel.raw_predict`` post-processes race-softmax objectives (and adds the market
+    # offset), so ``raw`` is a probability vector here, not a margin — reconciling against it fails
+    # on every row and would wipe out every v2 explanation. Take the margin straight from the
+    # booster instead (one extra forward pass over the ~16 started rows; the pred_contrib call
+    # inside compute_explanations already costs more).
     if model.booster is not None:
-        exp_list = compute_explanations(model.booster, X, model.feature_cols)
-        explanations: dict[str, dict | None] = dict(zip(started_ids, exp_list, strict=True))
+        try:
+            # Inside the guard on purpose: even the objective/offset probe must not be able to
+            # raise into the prediction path (INV-E2).
+            centered = (
+                model.objective in WinModel.SOFTMAX_OBJECTIVES and model.market_offset is None
+            )
+            margin = (
+                np.asarray(
+                    model.booster.predict(X[model.feature_cols], raw_score=True), dtype=float
+                )
+                if centered
+                else None
+            )
+            exp_list = compute_explanations(
+                model.booster,
+                X,
+                model.feature_cols,
+                center_within_group=centered,
+                expected_raw_scores=margin,
+            )
+            explanations: dict[str, dict | None] = dict(
+                zip(started_ids, exp_list, strict=True)
+            )
+        except Exception:  # noqa: BLE001 — explanation must never break the prediction pipeline
+            explanations = {hid: None for hid in started_ids}
     else:
         explanations = {hid: None for hid in started_ids}
 

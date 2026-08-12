@@ -72,7 +72,7 @@
   },
   "serving": {
     "_comment": "features-019 is a burned number (070 revert, no model was ever trained on it). The pinned hash is lgbm-064-f02acc's OWN trained feature_hash, read from its artifact metadata.",
-    "feature_version": "features-020",
+    "feature_version": "features-021",
     "compat_pins": {
       "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"
     },

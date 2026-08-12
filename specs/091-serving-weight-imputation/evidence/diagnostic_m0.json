@@ -1,0 +1,538 @@
+{
+  "artifact_kind": "full_walk_forward",
+  "eligible_for_verdict": true,
+  "race_set_hash": "79062383f240c1c70655d2ccf8980a18672fcc9d067cc59106473c78a2834246",
+  "serving_regime": {
+    "regime": "serving",
+    "candidate": {
+      "winner_nll": 2.0733770022157487,
+      "winner_excluded": 30,
+      "started_all": {
+        "log_loss": 0.21735069545362942,
+        "brier": 0.06039202321940711
+      },
+      "ece_equal_width_like": {
+        "ece": 0.0015029929655004165,
+        "n_bins": 11,
+        "bin_counts": [
+          26646,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          6
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.00023870844035672745,
+        "[0.05,0.15)": 0.0003586496781564502,
+        "[0.15,0.30)": 0.005133653337843602,
+        "[0.30,1.00]": 0.007317275023053127
+      },
+      "top2_logloss": 0.3405301370138124,
+      "top3_logloss": 0.4298596689177178
+    },
+    "active": {
+      "winner_nll": 2.073098850939944,
+      "winner_excluded": 30,
+      "started_all": {
+        "log_loss": 0.21733238669455568,
+        "brier": 0.06038596459181766
+      },
+      "ece_equal_width_like": {
+        "ece": 0.0013979409272559667,
+        "n_bins": 11,
+        "bin_counts": [
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26647,
+          26645,
+          26645,
+          5
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.00045455262448219555,
+        "[0.05,0.15)": 1.6926235576530946e-05,
+        "[0.15,0.30)": 0.004212473828803492,
+        "[0.30,1.00]": 0.003782700207215939
+      },
+      "top2_logloss": 0.3405539335724361,
+      "top3_logloss": 0.4299341536950648
+    },
+    "diff": 0.00027815127580495806,
+    "ci_low": -0.001220983316120193,
+    "ci_high": 0.0018023183828349114,
+    "n_races": 19400,
+    "n_days": 602,
+    "mask_races_candidate": 19430,
+    "mask_races_active": 19430,
+    "gate": {
+      "adopted": false,
+      "sub_gates": {
+        "effect_beats_delta": false,
+        "ci_upper_below_zero": false,
+        "top2_noninferior": true,
+        "top3_noninferior": true,
+        "calibration_noninferior": true,
+        "calibration_not_emergency": true
+      }
+    },
+    "subgroups": {
+      "race_subgroups": {
+        "2026_field_has_nk": {
+          "bootstrap_ci": {
+            "point": -0.0016862521082065375,
+            "ci_low": -0.0075102663205464885,
+            "ci_high": 0.00430995817362259,
+            "b": 2000,
+            "seed": 20260810,
+            "block": "race_day",
+            "n_days": 66,
+            "no_decision": false
+          },
+          "decision": "PASS",
+          "n_days": 66,
+          "cand_minus_uniform": -0.5442562788965041
+        },
+        "2026_only": {
+          "bootstrap_ci": {
+            "point": -0.0024801675294316475,
+            "ci_low": -0.007677803216503551,
+            "ci_high": 0.002365582409039583,
+            "b": 2000,
+            "seed": 20260810,
+            "block": "race_day",
+            "n_days": 66,
+            "no_decision": false
+          },
+          "decision": "PASS",
+          "n_days": 66,
+          "cand_minus_uniform": -0.5073405597164182
+        }
+      },
+      "horse_subgroups": {
+        "canonical": {
+          "bootstrap_ci": {
+            "point": 3.820248948734676e-05,
+            "ci_low": -9.361308513897703e-05,
+            "ci_high": 0.00016937717838769962,
+            "b": 2000,
+            "seed": 20260810,
+            "block": "race_day",
+            "n_days": 602,
+            "no_decision": false
+          },
+          "decision": "PASS",
+          "n_days": 602,
+          "cand_minus_uniform": -0.04199984119107406
+        },
+        "nk": {
+          "bootstrap_ci": {
+            "point": -0.0003391877799709227,
+            "ci_low": -0.0008395802966775529,
+            "ci_high": 0.00017513181321187287,
+            "b": 2000,
+            "seed": 20260810,
+            "block": "race_day",
+            "n_days": 92,
+            "no_decision": false
+          },
+          "decision": "PASS",
+          "n_days": 92,
+          "cand_minus_uniform": -0.042253878514628467
+        },
+        "2026_nk": {
+          "bootstrap_ci": {
+            "point": -0.0004423433101215302,
+            "ci_low": -0.0010560255878132845,
+            "ci_high": 0.00016344326601153844,
+            "b": 2000,
+            "seed": 20260810,
+            "block": "race_day",
+            "n_days": 66,
+            "no_decision": false
+          },
+          "decision": "PASS",
+          "n_days": 66,
+          "cand_minus_uniform": -0.04392530072865949
+        }
+      },
+      "critical": [
+        "2026_only",
+        "nk",
+        "2026_nk"
+      ],
+      "subgroup_guard": true,
+      "subgroup_decisions": {
+        "2026_only": "PASS",
+        "nk": "PASS",
+        "2026_nk": "PASS"
+      }
+    }
+  },
+  "full_info_regime": {
+    "regime": "full_info",
+    "candidate": {
+      "winner_nll": 2.060053875078795,
+      "winner_excluded": 30,
+      "started_all": {
+        "log_loss": 0.21627786748286795,
+        "brier": 0.06021389214866556
+      },
+      "ece_equal_width_like": {
+        "ece": 0.0015350610842041824,
+        "n_bins": 11,
+        "bin_counts": [
+          26645,
+          26645,
+          26645,
+          26646,
+          26645,
+          26645,
+          26646,
+          26645,
+          26645,
+          26645,
+          5
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.0002432560190505223,
+        "[0.05,0.15)": 0.00018240504313696282,
+        "[0.15,0.30)": 0.004019257454568076,
+        "[0.30,1.00]": 0.004932435529119317
+      },
+      "top2_logloss": 0.33932738163373993,
+      "top3_logloss": 0.4288732926079306
+    },
+    "active": {
+      "winner_nll": 2.0601365234062405,
+      "winner_excluded": 30,
+      "started_all": {
+        "log_loss": 0.2162840426922673,
+        "brier": 0.060214083880303186
+      },
+      "ece_equal_width_like": {
+        "ece": 0.001043047872685427,
+        "n_bins": 11,
+        "bin_counts": [
+          26645,
+          26645,
+          26647,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          26645,
+          5
+        ]
+      },
+      "ece_by_band": {
+        "[0.00,0.05)": 0.00018626313483832702,
+        "[0.05,0.15)": 0.0007047739211137882,
+        "[0.15,0.30)": 0.00568871796941825,
+        "[0.30,1.00]": 0.006639639106389927
+      },
+      "top2_logloss": 0.33931955140105285,
+      "top3_logloss": 0.42883463445914793
+    },
+    "diff": -8.264832744570229e-05,
+    "ci_low": -0.0013687617462305414,
+    "ci_high": 0.001256920203439218,
+    "n_races": 19400,
+    "n_days": 602,
+    "mask_races_candidate": 0,
+    "mask_races_active": 0
+  },
+  "full_info_guard": true,
+  "verdict": {
+    "adopt": false,
+    "status": "REJECT",
+    "sub_gates": {
+      "effect_beats_delta": false,
+      "ci_upper_below_zero": false,
+      "top2_noninferior": true,
+      "top3_noninferior": true,
+      "calibration_noninferior": true,
+      "calibration_not_emergency": true
+    },
+    "formula": "serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard",
+    "primary": false,
+    "min_effect_delta": 0.002,
+    "noninferior_width": 0.003,
+    "subgroup_guard": true
+  },
+  "uncalibrated": {
+    "serving": {
+      "available": true,
+      "candidate_winner_nll": 2.0770724059291252,
+      "active_winner_nll": 2.0770567955550483,
+      "diff": 1.561037407655531e-05,
+      "ci_low": -0.0012194512571703008,
+      "ci_high": 0.001224952070864713,
+      "n_races": 19401
+    },
+    "full_info": {
+      "available": true,
+      "candidate_winner_nll": 2.0646291024902137,
+      "active_winner_nll": 2.064533719429169,
+      "diff": 9.538306104441994e-05,
+      "ci_low": -0.0009482137996047766,
+      "ci_high": 0.0011315233714846295,
+      "n_races": 19401
+    },
+    "note": "DIAGNOSTIC ONLY. Compare the sign with serving_regime.diff: agreement means the feature moved the model; disagreement means the calibrator did.",
+    "sign_matches_calibrated": null
+  },
+  "subgroups": {
+    "race_subgroups": {
+      "2026_field_has_nk": {
+        "bootstrap_ci": {
+          "point": -0.0016862521082065375,
+          "ci_low": -0.0075102663205464885,
+          "ci_high": 0.00430995817362259,
+          "b": 2000,
+          "seed": 20260810,
+          "block": "race_day",
+          "n_days": 66,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 66,
+        "cand_minus_uniform": -0.5442562788965041
+      },
+      "2026_only": {
+        "bootstrap_ci": {
+          "point": -0.0024801675294316475,
+          "ci_low": -0.007677803216503551,
+          "ci_high": 0.002365582409039583,
+          "b": 2000,
+          "seed": 20260810,
+          "block": "race_day",
+          "n_days": 66,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 66,
+        "cand_minus_uniform": -0.5073405597164182
+      }
+    },
+    "horse_subgroups": {
+      "canonical": {
+        "bootstrap_ci": {
+          "point": 3.820248948734676e-05,
+          "ci_low": -9.361308513897703e-05,
+          "ci_high": 0.00016937717838769962,
+          "b": 2000,
+          "seed": 20260810,
+          "block": "race_day",
+          "n_days": 602,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 602,
+        "cand_minus_uniform": -0.04199984119107406
+      },
+      "nk": {
+        "bootstrap_ci": {
+          "point": -0.0003391877799709227,
+          "ci_low": -0.0008395802966775529,
+          "ci_high": 0.00017513181321187287,
+          "b": 2000,
+          "seed": 20260810,
+          "block": "race_day",
+          "n_days": 92,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 92,
+        "cand_minus_uniform": -0.042253878514628467
+      },
+      "2026_nk": {
+        "bootstrap_ci": {
+          "point": -0.0004423433101215302,
+          "ci_low": -0.0010560255878132845,
+          "ci_high": 0.00016344326601153844,
+          "b": 2000,
+          "seed": 20260810,
+          "block": "race_day",
+          "n_days": 66,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "n_days": 66,
+        "cand_minus_uniform": -0.04392530072865949
+      }
+    },
+    "critical": [
+      "2026_only",
+      "nk",
+      "2026_nk"
+    ],
+    "subgroup_guard": true,
+    "subgroup_decisions": {
+      "2026_only": "PASS",
+      "nk": "PASS",
+      "2026_nk": "PASS"
+    }
+  },
+  "gate_config": {
+    "_comment": "091: pre-registered adoption gate (frozen BEFORE OOS, constitution III). PRIMARY is the SERVING regime (weight columns masked at predict time on BOTH arms) because that is the condition under which predictions are actually made; full-info is a non-inferiority guard. Values that must be frozen are written as REAL keys — '_'-prefixed keys are excluded from the canonical hash (069 warning, re-confirmed in 088).",
+    "evaluation_contract_version": "v2",
+    "min_effect_delta": 0.002,
+    "weight_mask": {
+      "_comment": "Race-atomic masking. Row-level masking is forbidden: the missingness arises per time regime (when the prediction was run), not per horse. Applied to model-fit rows AND the isotonic calibration holdout with the SAME seed so the calibrator's domain matches runtime.",
+      "rate": 0.5,
+      "seed": 20260810,
+      "unit": "race",
+      "columns": [
+        "weight",
+        "weight_diff",
+        "carried_weight_ratio"
+      ],
+      "apply_to_calibration_holdout": true,
+      "eval_serving_rate": 1.0,
+      "apply_to_both_arms": true,
+      "eval_full_info_spec": null
+    },
+    "full_info_guard": {
+      "_comment": "The feature deliberately trades a little full-info accuracy for serving accuracy. The replay measured the total value of same-day weight at 0.0187; up to ~1/6 of that is accepted as the price. Exceeding it signals the mask rate broke the same-day-weight path.",
+      "metric": "winner_nll",
+      "noninferior_width": 0.003
+    },
+    "top_noninferior": {
+      "top2": 0.0005,
+      "top3": 0.0005
+    },
+    "calibration": {
+      "metric": "mean_ece",
+      "noninferior_width": 0.001,
+      "emergency_abs_ece": 0.05
+    },
+    "subgroup_guard": {
+      "_comment": "069 three-way intersection-union. 069's coverage bands are NOT included: they are defined by F02 market observation counts and are unrelated to this feature (088 caught the same class of error).",
+      "critical_subgroups": [
+        "2026_only",
+        "nk",
+        "2026_nk"
+      ],
+      "non_inferior_margin_winner_nll": 0.005,
+      "non_inferior_margin_horse_logloss": 0.001,
+      "decision": "three_way",
+      "race_level_subgroups": [
+        "2026_only",
+        "2026_field_has_nk"
+      ],
+      "horse_level_subgroups": [
+        "canonical",
+        "nk",
+        "2026_nk"
+      ],
+      "absolute_benchmark": "candidate_minus_uniform",
+      "no_decision_min_days": 10
+    },
+    "eval_window": {
+      "_comment": "'to' is fixed at freeze time to the latest settled race date available then; it must match the --to passed to the confirmatory run or assert_confirmatory fails closed.",
+      "from": "2021-01-01",
+      "to": "2026-08-09",
+      "to_is_provisional": false
+    },
+    "bootstrap": {
+      "b": 2000,
+      "seed": 20260810,
+      "block": "race_day",
+      "scheme": "moving_block",
+      "alpha": 0.05
+    },
+    "determinism": {
+      "tolerance": 1e-09,
+      "num_threads": 1
+    },
+    "serving": {
+      "_comment": "features-019 is a burned number (070 revert, no model was ever trained on it). The pinned hash is lgbm-064-f02acc's OWN trained feature_hash, read from its artifact metadata.",
+      "feature_version": "features-020",
+      "compat_pins": {
+        "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"
+      },
+      "byte_parity_target": "model_input_137_cols_shared_with_features_018"
+    },
+    "diagnostics_not_gating": {
+      "_comment": "Reported alongside the verdict but NEVER used to change it. A winning diagnostic arm requires a NEW pre-registration (III, 068 C2).",
+      "uncalibrated_winner_nll": true,
+      "mask_rate_arms": [
+        0.0,
+        1.0
+      ],
+      "bootstrap_block_widths": [
+        2,
+        3,
+        4,
+        "week"
+      ],
+      "coverage_audit_axes": [
+        "year",
+        "race_prev_weight_coverage",
+        "staleness_band",
+        "true_debut_vs_broken_history",
+        "id_namespace"
+      ]
+    },
+    "verdict": {
+      "_comment": "Single source of truth. Individual numbers must not be re-read post hoc to argue a different outcome.",
+      "formula": "serving_regime.gate.adopted AND full_info_guard AND serving_regime.subgroups.subgroup_guard",
+      "paths": {
+        "primary": "serving_regime.gate.adopted",
+        "full_info": "full_info_guard",
+        "subgroup": "serving_regime.subgroups.subgroup_guard",
+        "materialized": "verdict.adopt"
+      },
+      "no_decision": "only when the evaluation cannot be run; never because a number is borderline"
+    },
+    "primary_metric": "winner_nll",
+    "primary_regime": "serving",
+    "artifact_isolation": {
+      "_comment": "Every evaluation artifact stamps these. The verdict loader accepts full_walk_forward only and fails closed on eligible_for_verdict=false. Acceptance runs are outcome-blind (wiring only) because their folds sit inside the confirmatory window.",
+      "verdict_kind": "full_walk_forward",
+      "kinds": [
+        "full_walk_forward",
+        "acceptance",
+        "diagnostic"
+      ],
+      "eligible_kinds": [
+        "full_walk_forward"
+      ]
+    }
+  },
+  "notes": {
+    "regimes": [
+      "serving",
+      "full_info"
+    ],
+    "both_arms_masked": true,
+    "n_valid_races": 19430
+  },
+  "snapshot": {
+    "git_sha": "820a4b016d5096cba6f5cf2d3a31b64456c64f64",
+    "feature_version": "features-020",
+    "candidate_spec": "pl_topk:isotonic:0.3:wmask=0.0/20260810",
+    "active_spec": "pl_topk:isotonic:0.3:drop=weight_history",
+    "num_threads": 1,
+    "determinism_declared": {
+      "tolerance": 1e-09,
+      "num_threads": 1
+    }
+  }
+}
