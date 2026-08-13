@@ -106,6 +106,7 @@ def build_training_matrix(
     end_date: datetime.date | None = None,
     use_materialized: bool = False,
     materialized_path: str | None = None,
+    skip_fingerprint_verify: bool = False,
 ) -> TrainingMatrix:
     """Assemble the started-population feature matrix joined with race_date + win label.
 
@@ -114,6 +115,9 @@ def build_training_matrix(
     matrix = build_feature_matrix(
         session, end_date=end_date,
         use_materialized=use_materialized, materialized_path=materialized_path,
+        # Feature 091 (D16): evaluation pins the snapshot on purpose; every other caller leaves
+        # this False and keeps the fail-closed staleness check.
+        skip_fingerprint_verify=skip_fingerprint_verify,
     )
     feature_cols = model_input_features()
 

@@ -85,6 +85,9 @@ class LightGBMPredictor:
         objective: str = "binary",
         use_materialized: bool = False,
         materialized_path: str | None = None,
+        # Feature 091 (D16): read the parquet even if the database has moved past it. Only
+        # evaluation should ask for this — see RecipeFactory.pin_snapshot for why.
+        skip_fingerprint_verify: bool = False,
         market_offset: bool = False,
         calibration_split_unit: str = LEGACY_CALIBRATION_SPLIT_UNIT,
         restrict_features: tuple[str, ...] | None = None,
@@ -124,6 +127,7 @@ class LightGBMPredictor:
         # fail-closed on stale/missing. Default False keeps the historical path unchanged.
         self.use_materialized = use_materialized
         self.materialized_path = materialized_path
+        self.skip_fingerprint_verify = skip_fingerprint_verify
         # Feature 060: market-residual mode — devig log q of the TARGET race's own win odds
         # becomes the race-softmax offset; trees learn the residual. Intentionally reads
         # result-time (closing-leaning) odds, so the leaky-reference flag is set truthfully.
@@ -172,6 +176,7 @@ class LightGBMPredictor:
                 self.session,
                 use_materialized=self.use_materialized,
                 materialized_path=self.materialized_path,
+                skip_fingerprint_verify=self.skip_fingerprint_verify,
             )
             if self.restrict_features is not None:
                 # Feature 074 (D9): keep EXACTLY the legacy model's ordered columns (inclusion).

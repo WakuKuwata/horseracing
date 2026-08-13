@@ -939,6 +939,18 @@ def main(argv: list[str] | None = None) -> int:
                     help="091: outcome-blind wiring acceptance over the most recent N folds. "
                          "Stamps artifact_kind=acceptance / eligible_for_verdict=false — its folds "
                          "are inside the confirmatory window, so its NUMBERS must never gate")
+    # Feature 091 (research D16): pin the input. The database moves under a multi-hour evaluation
+    # — 4.8% of the window's rows were rewritten between two confirmatory runs — so a run that
+    # reads it live cannot be repeated, and the frozen `determinism.tolerance` cannot be honoured.
+    pe.add_argument("--use-materialized", action="store_true",
+                    help="091: read the as-of block from a materialised parquet instead of the "
+                         "live DB, so the run is repeatable")
+    pe.add_argument("--materialized-path", default=None,
+                    help="091: parquet to read (required with --use-materialized)")
+    pe.add_argument("--pin-snapshot", action="store_true",
+                    help="091: read the parquet even though the DB has moved past it. For a "
+                         "paired comparison that is the point; the parquet identity is recorded "
+                         "in the report so a pinned run is never mistaken for a fresh one")
     pe.add_argument("--compute-sensitivity", action="store_true",
                     help="073: also compute diagnostic block-width bootstrap sensitivities")
     pe.add_argument("--json", dest="json_out", default=None, help="write PairedReport JSON here")
@@ -1358,7 +1370,9 @@ def _recipe_from_spec(spec: str):
     )
 
 
-def _factory_from_spec(session, spec: str):
+def _factory_from_spec(session, spec: str, *, use_materialized: bool = False,
+                       materialized_path: str | None = None,
+                       pin_snapshot: bool = False):
     """Build the right PredictorFactory for a recipe spec.
 
     ``objective:oof_power`` → 068 C/D arm (full-history booster + strict-past OOF power γ);
@@ -1380,7 +1394,11 @@ def _factory_from_spec(session, spec: str):
             method=oof_method,
         )
     from .recipe import RecipeFactory
-    return RecipeFactory(session, _recipe_from_spec(spec))
+    return RecipeFactory(
+        session, _recipe_from_spec(spec),
+        use_materialized=use_materialized, materialized_path=materialized_path,
+        pin_snapshot=pin_snapshot,
+    )
 
 
 def _oof_generate(session: Session, args) -> int:
@@ -1488,6 +1506,36 @@ def _verify_manifest_cmd(args) -> int:
 
 
 
+
+def _input_provenance(args) -> dict:
+    """Identify the exact input a paired run consumed (091 research D16).
+
+    Reading the live database makes a multi-hour evaluation unrepeatable: the daily ingest rewrites
+    rows underneath it. When the run is pinned to a parquet we record that parquet's fingerprint
+    and coverage, so "same inputs?" is a question the artifact can answer by itself.
+    """
+    if not getattr(args, "use_materialized", False):
+        return {"input_source": "live_database",
+                "input_note": ("NOT reproducible: the source tables can change between runs. "
+                               "Use --use-materialized --pin-snapshot for a repeatable result.")}
+    import json as _json
+    from pathlib import Path as _Path
+
+    path = _Path(args.materialized_path)
+    out: dict = {"input_source": "materialized_parquet", "materialized_path": str(path),
+                 "pinned": bool(getattr(args, "pin_snapshot", False))}
+    mpath = path.with_suffix(".manifest.json")
+    try:
+        m = _json.loads(mpath.read_text())
+        out["snapshot_fingerprint"] = m.get("source_fingerprint")
+        out["snapshot_data_through"] = m.get("data_through")
+        out["snapshot_content_hash"] = m.get("content_hash")
+        out["snapshot_feature_version"] = m.get("feature_version")
+    except Exception as exc:  # noqa: BLE001 — provenance is recorded, never load-bearing
+        out["manifest_error"] = f"{type(exc).__name__}: {exc}"
+    return out
+
+
 def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year) -> int:
     """Feature 091 T048: serving-regime PRIMARY + full-info guard, with a materialised verdict."""
     import json
@@ -1541,6 +1589,10 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
     d = report.to_dict()
     d["snapshot"] = {"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
                      "candidate_spec": args.candidate, "active_spec": args.active,
+                     # 091 D16: WHICH bytes this run read. Without it "we re-ran it and got a
+                     # different number" is unanswerable — that is how the determinism drift went
+                     # misattributed to LightGBM threading for a day.
+                     **_input_provenance(args),
                      # record what was ACTUALLY used, so a reader can tell whether the run met
                      # the frozen determinism contract or ran wider than it
                      "num_threads": num_threads,
@@ -1616,6 +1668,20 @@ def _paired_eval(session: Session, args) -> int:
     injects the training-side factories (020 boundary)."""
     import json
 
+    mat_kwargs = {
+        "use_materialized": bool(getattr(args, "use_materialized", False)),
+        "materialized_path": getattr(args, "materialized_path", None),
+        "pin_snapshot": bool(getattr(args, "pin_snapshot", False)),
+    }
+    if mat_kwargs["use_materialized"] and not mat_kwargs["materialized_path"]:
+        print("--use-materialized requires --materialized-path (fail-closed: an implicit default "
+              "would silently pick whichever parquet happens to be on disk)", file=sys.stderr)
+        return 1
+    if mat_kwargs["pin_snapshot"] and not mat_kwargs["use_materialized"]:
+        print("--pin-snapshot only means something with --use-materialized", file=sys.stderr)
+        return 1
+
+
     from horseracing_eval.dataset import load_eval_races
     from horseracing_eval.paired import paired_eval
 
@@ -1648,8 +1714,8 @@ def _paired_eval(session: Session, args) -> int:
     # (empty train) — e.g. --from 2019 trained the 2020 fold on 2019 only, not 2008-2019.
     eval_start_year = args.from_.year if args.from_ else args.first_valid_year
     eval_races = load_eval_races(session, start_date=None, end_date=args.to)
-    cand = _factory_from_spec(session, args.candidate)
-    act = _factory_from_spec(session, args.active)
+    cand = _factory_from_spec(session, args.candidate, **mat_kwargs)
+    act = _factory_from_spec(session, args.active, **mat_kwargs)
 
     # Feature 091: regime-aware path. The standard paired-eval scores settled races, where the
     # same-day weight is present — the one condition under which this feature cannot help. The

@@ -144,6 +144,19 @@ class RecipeFactory:
     #: ev_weight is off. The SAME frozen bundle is used across all folds (strict-past guarantee
     #: is the bundle's, not the weighted fit's — 079 never iterates weights from itself).
     oof_p: dict | None = None
+    #: Feature 091 (research D16): read the as-of block from a materialised parquet instead of the
+    #: live database. Evaluation is the one caller that WANTS a frozen input — the database moves
+    #: under a multi-hour run (measured: 4.8% of the eval window's rows were rewritten between two
+    #: confirmatory runs), which is why the same arms produced −0.010592 one day and −0.010539 the
+    #: next against a config declaring a 1e-9 tolerance. Not part of recipe_hash: this is fit
+    #: SCOPE, like restrict_features, not model identity.
+    use_materialized: bool = False
+    materialized_path: str | None = None
+    #: Deliberately read the parquet even though the database has moved past it. For SERVING that
+    #: would be a bug (silently stale features); for a paired comparison it is the entire point —
+    #: both arms must see the same bytes, and the run must be repeatable next week. Always
+    #: recorded in the report so a pinned run is never mistaken for a fresh one.
+    pin_snapshot: bool = False
     _pred: LightGBMPredictor | None = field(default=None, init=False, repr=False)
 
     @property
@@ -174,6 +187,9 @@ class RecipeFactory:
                 # set separately per regime by eval via set_predict_weight_mask — one fit, many
                 # regimes.
                 fit_weight_mask=self.recipe.weight_mask_spec(),
+                use_materialized=self.use_materialized,
+                materialized_path=self.materialized_path,
+                skip_fingerprint_verify=self.pin_snapshot,
             )
         self._pred.fit(train_races)
         return self._pred
