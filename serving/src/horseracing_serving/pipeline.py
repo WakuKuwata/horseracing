@@ -151,8 +151,11 @@ def run_serving(
             print(f"skip (market-offset, no full odds): {rid}")
     obs = wobs.as_dict()
     if obs["races_regime_applicable"]:
+        # stderr, not stdout: run_serving's stdout is parsed by callers (the betting CLI reads it
+        # and asserts on the first line), so an operator note there corrupts their contract.
         print(f"weight regime: serving={obs['races_serving_regime']} "
-              f"full_info={obs['races_full_info']} normalised={obs['races_normalised']}")
+              f"full_info={obs['races_full_info']} normalised={obs['races_normalised']}",
+              file=sys.stderr)
         if obs["post_normalisation_uniformity_violations"]:
             print("WARNING: a race stayed partially weighed after normalisation — the FR-034 "
                   "rule did not take effect; predictions are out-of-distribution", file=sys.stderr)

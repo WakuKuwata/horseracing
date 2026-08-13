@@ -371,8 +371,6 @@ def refresh_range(
     in BOTH stages (serving stage-discount λ, betting recommendation two-gamma). A preflight fails
     the whole refresh closed up front (before either stage) on a structurally-bad manifest.
     """
-    from dataclasses import asdict
-
     from horseracing_betting.cli import recommend_backfill
     from horseracing_serving.pipeline import run_serving_backfill
 
@@ -381,11 +379,14 @@ def refresh_range(
     predict: dict | None = None
     predict_error: str | None = None
     try:
-        predict = asdict(run_serving_backfill(
+        # `.as_dict()`, not `asdict()`: the counts type owns its serialisation and omits optional
+        # observability fields when they are absent. Going around it re-serialised the dataclass
+        # by reflection and leaked a null field into the report.
+        predict = run_serving_backfill(
             session, date_from=date_from, date_to=date_to, force=force,
             calib_manifest=calib_manifest, calib_mode=calib_mode,
             use_materialized=use_materialized, materialized_path=materialized_path,
-        ))
+        ).as_dict()
     except Exception as exc:  # noqa: BLE001 — stage isolation; recommend is idempotent-safe
         session.rollback()
         predict_error = f"{type(exc).__name__}: {exc}"

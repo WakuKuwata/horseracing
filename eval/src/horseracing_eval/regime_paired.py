@@ -351,6 +351,17 @@ def evaluate_regimes(
         full_info_regime=scored[FULL_INFO].to_dict(),
         full_info_guard=full_info_guard,
         verdict={
+            # A diagnostic/acceptance artifact still computes the gate arithmetic, and a reader
+            # skimming the JSON would see `"status": "ADOPT"` and take it for a decision. The
+            # loader refuses it, but the file should not need the loader to be read correctly.
+            **({} if artifact_kind == VERDICT_KIND else {
+                "advisory_only": True,
+                "advisory_note": (
+                    f"artifact_kind={artifact_kind!r}: this arm CANNOT decide adoption. Its folds "
+                    "sit inside the confirmatory window, so acting on the numbers below would be "
+                    "a selection leak. The fields are the same arithmetic, not a verdict."
+                ),
+            }),
             "adopt": adopt,
             "status": status,
             "sub_gates": sub_gates,

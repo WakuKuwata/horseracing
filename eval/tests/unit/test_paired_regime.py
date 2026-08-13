@@ -358,3 +358,23 @@ def test_an_inert_active_arm_is_still_a_fault_on_a_diagnostic():
             _races(), serving_spec=object(), gate_config=GATE, first_valid_year=2024,
             artifact_kind="diagnostic",
         )
+
+
+def test_non_verdict_artifacts_say_so_inside_the_verdict_block():
+    """`"status": "ADOPT"` in a diagnostic file is a misreading hazard on its own. The loader
+    refuses it, but the artifact should not need the loader to be read correctly."""
+    rep = evaluate_regimes(
+        _Factory(_Predictor(0.62, 0.02)), _Factory(_Predictor(0.60, 0.10)), _races(),
+        serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+        artifact_kind="diagnostic",
+    )
+    assert rep.verdict["advisory_only"] is True
+    assert "CANNOT decide adoption" in rep.verdict["advisory_note"]
+
+
+def test_a_real_verdict_carries_no_advisory_marker():
+    rep = evaluate_regimes(
+        _Factory(_Predictor(0.62, 0.02)), _Factory(_Predictor(0.60, 0.10)), _races(),
+        serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+    )
+    assert "advisory_only" not in rep.verdict

@@ -259,6 +259,8 @@
   },
   "full_info_guard": true,
   "verdict": {
+    "advisory_only": true,
+    "advisory_note": "artifact_kind='diagnostic': this arm CANNOT decide adoption. Its folds sit inside the confirmatory window, so acting on the numbers below would be a selection leak. The fields are the same arithmetic, not a verdict.",
     "adopt": false,
     "status": "REJECT",
     "sub_gates": {
