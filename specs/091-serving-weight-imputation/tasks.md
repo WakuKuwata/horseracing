@@ -146,7 +146,7 @@
 - [X] T049 [US2] `eval/src/horseracing_eval/decision.py` に **verdict loader のガード**を追加: `artifact_kind="full_walk_forward"` のみを受理し、`eligible_for_verdict=false` の artifact を読んだら fail-closed。最終 fold 集合の完全一致・重複なし・受入 run ID を含まないことを検証(codex #4)
 - [x] T050 [US2] [P] **診断アーム m=0.0** を同条件で実行し `specs/091-serving-weight-imputation/evidence/diagnostic_m0.json` に保存。目的は「mask が本当に必要か」の対照。artifact に `artifact_kind="diagnostic"` / `eligible_for_verdict=false` を刻む。**verdict には使わない**
 - [x] T051 [US2] [P] **診断アーム m=1.0** を同条件で実行し `specs/091-serving-weight-imputation/evidence/diagnostic_m1.json` に保存。目的は「当日体重を捨てる設計」の先行測定。artifact に `artifact_kind="diagnostic"` / `eligible_for_verdict=false` を刻む。**verdict には使わない**
-- [ ] T052 [US2] [P] bootstrap block 幅感度(2/3/4 日・週)を `specs/091-serving-weight-imputation/evidence/bootstrap_sensitivity.json` に出力(073 の診断枠。`artifact_kind="diagnostic"` を刻む。**ゲートに AND しない**)
+- [x] T052 [US2] [P] bootstrap block 幅感度(2/3/4 日・週)を `specs/091-serving-weight-imputation/evidence/bootstrap_sensitivity.json` に出力(073 の診断枠。`artifact_kind="diagnostic"` を刻む。**ゲートに AND しない**)
 - [X] T053 [US2] `eval/tests/unit/test_verdict_isolation.py` を新規作成。**受入(T044)と診断アーム(T050/T051)の数値を改変しても verdict が変わらない**ことを機械的に確認(codex #4/#5)
 - [X] T054 [US2] verdict を **`verdict.adopt`(レポートが出力する単一真偽値)**から読み取り、`specs/091-serving-weight-imputation/evidence/verdict.json` に記録。**個別数値の事後読み替えを行わない**。実行不能なら NO_DECISION(ボーダー数値を理由にしない)
 
@@ -180,7 +180,7 @@
 - [~] T063 **REJECT の場合のみ**: rollback 対象を漏れなく列挙して revert する — (a) `features/src/horseracing_features/registry.py` の FEATURE_VERSION bump と compat pin(T037)(b) `features/src/horseracing_features/materialize.py` の結線(T011)(c) **`serving/src/horseracing_serving/predictor.py` の可用性正規化(T026)**(d) `serving/src/horseracing_serving/pipeline.py` の観測配線(T067)。`weight_history_features.py` と `weight_mask.py` は**単体テストごと非結線で保全**(062/070 の前例)。**training / eval の mask 配線(T018-T022 / T028-T031)は既定 `None` のまま残置する** — `spec=None` はバイト同一なので「非結線」とみなせる(呼び出し箇所を物理削除する必要はない)。parquet を `features-018` で再 materialize
 - [~] T064a **REJECT の場合のみ**: **FR-029a の退避先を記録する** — 「serving 経路での既存 `weight` 列への充当」(kill-test が実測した構成そのもの)を検討対象として `specs/091-serving-weight-imputation/research.md` に追記する。採用を約束するものではない。実際に採る場合の最低条件(入力方針の版を `logic_version` に持たせ、**その版を予測の冪等キーにも参加させる** = 076 の `;calib=` と同型)も併記し、別 feature として起こす
 - [~] T064 **REJECT の場合のみ**: 負の結果をメモリファイル `body-weight-serving-skew.md` を更新して記録する。「固定モデルの replay では −0.0123 出たが、独立列 + mask の再学習では再現しなかった」という事実と、**配線診断(T043)と診断アーム(T050/T051)から読み取れる原因**(配線不良か、学習はしたが効果が無いか)を書き分ける
-- [ ] T065 全パッケージのテストスイートを実行して緑を確認: `uv run --project features pytest features/tests` / `training` / `eval` / `serving`。`ruff` クリーン
+- [x] T065 全パッケージのテストスイートを実行して緑を確認: `uv run --project features pytest features/tests` / `training` / `eval` / `serving`。`ruff` クリーン
 - [x] T066 `git diff --stat` で **スキーマ・migration・API・OpenAPI・買い目生成に差分が無い**ことを確認(SC-007)
 - [x] T067 [P] **可用性正規化の運用可視化**(FR-035・採否と独立・**早く始めるほど観測が貯まるので Phase 3 完了後いつでも着手してよい**): 開催日の予測実行時に、T026 の正規化が発動した回数と、その際の (計測済み頭数 / 出走頭数) の分布を `serving/src/horseracing_serving/pipeline.py` から記録する。**これは正しさの担保ではない** — 混在は T026 で構造的に起こらなくなっているので、ここで見るのは「どれだけ頻繁に full-info を手放しているか」という運用上の量である。`0` と `N` の二値しか出ないはずの分布に中間値が現れたら、それは T026 の判定が効いていない合図なので調査する
 
