@@ -29,6 +29,7 @@ export const FEATURE_LABELS: Record<string, FeatureLabel> = {
   trainer_id: { label: "調教師" },
   weight: { label: "馬体重" },
   weight_diff: { label: "馬体重増減" },
+  prev_weight: { label: "前走の馬体重" },
   // --- handicap (斤量) ---
   carried_weight: { label: "斤量" },
   carried_weight_ratio: { label: "斤量/馬体重比" },

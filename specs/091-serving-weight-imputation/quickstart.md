@@ -82,7 +82,7 @@ uv run --project features features materialize
 
 ## 5. serving 互換の実 DB E2E(Phase D0)
 
-`features-020` の下で現行 active の予測がバイト不変であることを確認する(INV-W9)。
+`features-021` の下で現行 active の予測がバイト不変であることを確認する(INV-W9)。
 
 ```bash
 uv run --project serving serving predict --race-id 202504040301 --model-version lgbm-064-f02acc

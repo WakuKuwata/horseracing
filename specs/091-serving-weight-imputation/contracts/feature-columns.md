@@ -13,7 +13,7 @@
 | missing_policy | `null`(Unknown。0 と区別する) |
 | FEATURE_GROUPS | `weight_history` |
 | 単位 | kg |
-| FEATURE_VERSION | `features-020` で導入 |
+| FEATURE_VERSION | `features-021` で導入(019 は 070、020 は 088 が bump 後 REJECT で revert した焼却番号) |
 
 ## 2. 導出規約
 

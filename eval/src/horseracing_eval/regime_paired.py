@@ -6,7 +6,7 @@ is to fix the *serving* input looks worthless. The measurement has to be taken u
 predictions are actually made.
 
   serving regime  -> both arms predict with the same-day weight columns masked  (PRIMARY)
-  full-info       -> both arms predict untouched                                (non-inferiority guard)
+  full-info       -> both arms predict untouched      (non-inferiority guard)
 
 Both arms are masked. The active model has no `prev_weight`, so it simply degrades — that IS the
 quantity being measured (what production currently loses at serve time). Masking one arm only
@@ -21,7 +21,10 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from .bootstrap import race_day_cluster_bootstrap_ci_v1
+from .bootstrap import (
+    race_day_cluster_bootstrap_ci_v1,
+    race_day_cluster_bootstrap_sensitivity_v2,
+)
 from .foldfit import predict_over_folds_multi
 from .hashing import race_set_hash
 from .paired import (
@@ -77,6 +80,13 @@ class RegimeReport:
     subgroups: dict = field(default_factory=dict)
     gate_config: dict = field(default_factory=dict)
     notes: dict = field(default_factory=dict)
+    #: DIAGNOSTIC ONLY (073 FR-014): the primary CI re-bucketed into coarser blocks. Never ANDed
+    #: into the gate — picking the width that clears zero is the post-hoc estimator choice the
+    #: pre-registration exists to prevent.
+    bootstrap_sensitivity: dict = field(default_factory=dict)
+    #: Per-day paired winner-NLL differences, kept so any later CI question is answerable from the
+    #: artifact rather than from another multi-hour re-fit.
+    diffs_by_day: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -207,10 +217,15 @@ def evaluate_regimes(
     ni_width = float(gate_config.get("full_info_guard", {}).get("noninferior_width", 0.0))
 
     scored: dict[str, RegimeScores] = {}
+    day_diffs: dict[str, dict[str, list[float]]] = {}
     for name in (SERVING, FULL_INFO):
         spec = regimes[name]
         cand_preds, act_preds = cand_by_regime[name], act_by_regime[name]
         diffs_by_day, n_races = _paired_diff(cand_valid, cand_preds, act_preds)
+        # Keep the per-day paired differences. They are the input to every CI variant, so storing
+        # them makes any later re-bucketing question (block width, sensitivity, a different alpha)
+        # answerable from the artifact instead of costing another multi-hour re-fit.
+        day_diffs[name] = diffs_by_day
         ci = race_day_cluster_bootstrap_ci_v1(
             diffs_by_day,
             b=boot.get("b", 2000),
@@ -348,4 +363,21 @@ def evaluate_regimes(
             "both_arms_masked": True,
             "n_valid_races": len(cand_ids),
         },
+        # DIAGNOSTIC (073 FR-014 / 091 T052). Block-width sensitivity is NEVER ANDed into the gate:
+        # the primary estimator stays race_day_cluster_bootstrap_ci_v1, frozen before OOS. Widening
+        # the blocks until the CI clears zero — or narrowing them until it does — is exactly the
+        # post-hoc estimator choice pre-registration exists to prevent.
+        bootstrap_sensitivity={
+            name: {
+                k: asdict(v)
+                for k, v in race_day_cluster_bootstrap_sensitivity_v2(
+                    diffs,
+                    b=boot.get("b", 2000),
+                    seed=boot.get("seed", 20260810),
+                    alpha=float(boot.get("alpha", 0.05)),
+                ).items()
+            }
+            for name, diffs in day_diffs.items()
+        },
+        diffs_by_day=day_diffs,
     )

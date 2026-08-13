@@ -1,6 +1,6 @@
 {
-  "artifact_kind": "full_walk_forward",
-  "eligible_for_verdict": true,
+  "artifact_kind": "diagnostic",
+  "eligible_for_verdict": false,
   "race_set_hash": "79062383f240c1c70655d2ccf8980a18672fcc9d067cc59106473c78a2834246",
   "serving_regime": {
     "regime": "serving",
@@ -534,5 +534,6 @@
       "tolerance": 1e-09,
       "num_threads": 1
     }
-  }
+  },
+  "_restamp_note": "Computed while the CLI stamped every regime run 'full_walk_forward'. The NUMBERS are unchanged and valid; only the label was wrong, and the label is what stops a control arm from being read as a verdict. Re-stamped, and the CLI now derives the kind from the arm's mask rate so it cannot be forgotten."
 }

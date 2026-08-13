@@ -8,8 +8,10 @@ as-of each row's own race_date (same-day excluded), so result-pending future rac
 from __future__ import annotations
 
 import datetime
+import sys
 from dataclasses import dataclass
 
+import pandas as pd
 from horseracing_db.enums import EntryStatus
 from horseracing_db.models import PredictionRun, Race, RaceHorse
 from horseracing_eval.consistency import check_consistency
@@ -21,7 +23,7 @@ from sqlalchemy.orm import Session
 from . import SERVING_LOGIC_VERSION
 from .model_loader import ServingError, load_serving_model
 from .persistence import persist_run
-from .predictor import predict_race
+from .predictor import predict_race, race_weight_availability
 
 
 def _base_logic_version(model) -> str:
@@ -128,14 +130,17 @@ def run_serving(
     )
 
     results: list[ServingResult] = []
+    wobs = WeightRegimeObserver()
     for rid in race_ids:
         if rid not in present:  # no started horses / out of feature scope
             continue
+        avail = race_weight_availability(feature_rows, rid, model=model)
+        wobs.observe(avail)
         try:
             results.append(
                 _predict_persist(
                     session, model, rid, feature_rows, logic_version, stage_discount=sd,
-                    calib_digest=calib_digest,
+                    calib_digest=calib_digest, availability=avail,
                 )
             )
         except MarketOffsetSkip:
@@ -144,6 +149,13 @@ def run_serving(
             if race_id is not None:
                 raise
             print(f"skip (market-offset, no full odds): {rid}")
+    obs = wobs.as_dict()
+    if obs["races_regime_applicable"]:
+        print(f"weight regime: serving={obs['races_serving_regime']} "
+              f"full_info={obs['races_full_info']} normalised={obs['races_normalised']}")
+        if obs["post_normalisation_uniformity_violations"]:
+            print("WARNING: a race stayed partially weighed after normalisation — the FR-034 "
+                  "rule did not take effect; predictions are out-of-distribution", file=sys.stderr)
     return results
 
 
@@ -203,9 +215,78 @@ def _sdisc_lv(logic_version: str, sd) -> str:
     return f"{logic_version};{frag}" if frag else logic_version
 
 
+def _wregime_of(availability) -> str | None:
+    """``"serving"`` / ``"full_info"``, or None when the model has no regime distinction."""
+    if availability is None or not availability.applicable or availability.n_started == 0:
+        return None
+    return "full_info" if availability.n_weighed == availability.n_started else "serving"
+
+
+class WeightRegimeObserver:
+    """Feature 091 T067 (FR-035): how often is full-info being given up, and is the rule working?
+
+    Not a correctness guarantee — mixing is structurally impossible downstream of the
+    normalisation. This measures the operational quantity (how many predictions are made blind to
+    today's weight) and carries one health check: after normalisation every race must be uniformly
+    weighed or uniformly not. An intermediate value there would mean the rule did not fire.
+    """
+
+    def __init__(self) -> None:
+        self.applicable = 0
+        self.full_info = 0
+        self.serving = 0
+        self.normalised = 0        # the rule actually collapsed a mixed race
+        self.partial_buckets: dict[str, int] = {}
+        self.uniformity_violations = 0
+
+    def observe(self, availability) -> None:
+        if availability is None or not availability.applicable or availability.n_started == 0:
+            return
+        self.applicable += 1
+        if availability.n_weighed == availability.n_started:
+            self.full_info += 1
+        else:
+            self.serving += 1
+        if availability.normalised:
+            self.normalised += 1
+            frac = availability.n_weighed / availability.n_started
+            bucket = f"{int(frac * 10) * 10}-{int(frac * 10) * 10 + 9}%"
+            self.partial_buckets[bucket] = self.partial_buckets.get(bucket, 0) + 1
+        post = pd.to_numeric(availability.rows.get("weight"), errors="coerce") \
+            if "weight" in getattr(availability.rows, "columns", []) else None
+        if post is not None and 0 < int(post.notna().sum()) < availability.n_started:
+            self.uniformity_violations += 1
+
+    def as_dict(self) -> dict:
+        return {
+            "races_regime_applicable": self.applicable,
+            "races_full_info": self.full_info,
+            "races_serving_regime": self.serving,
+            "races_normalised": self.normalised,
+            "weighed_fraction_of_normalised_races": dict(sorted(self.partial_buckets.items())),
+            # must stay 0: a non-zero value means the normalisation did not take effect
+            "post_normalisation_uniformity_violations": self.uniformity_violations,
+        }
+
+
+def _wregime_lv(logic_version: str, availability) -> str:
+    """Feature 091 T061: record WHICH weight regime a prediction was computed under.
+
+    This is a filter, not an audit record — reproducibility is already covered by
+    ``feature_snapshots`` storing the per-horse input vector. Its purpose is to let a later
+    analysis separate "predicted before the weights were published" from "predicted with them",
+    which is the difference the whole feature exists to handle.
+
+    Absent for models without ``prev_weight``: they have no regime distinction, and adding a
+    segment would change their logic_version (and therefore their idempotency key) for no reason.
+    """
+    regime = _wregime_of(availability)
+    return logic_version if regime is None else f"{logic_version};wregime={regime}"
+
+
 def _predict_persist(
     session: Session, model, race_id: str, feature_rows, logic_version: str, stage_discount=None,
-    calib_digest: str | None = None,
+    calib_digest: str | None = None, availability=None,
 ) -> ServingResult:
     """Predict one race + persist the run (shared by run_serving and run_serving_backfill).
 
@@ -233,6 +314,7 @@ def _predict_persist(
     logic_version = _sdisc_lv(logic_version, stage_discount)
     if calib_digest is not None:  # Feature 076: manifest provenance for the discounted top2/top3
         logic_version = f"{logic_version};calib={calib_digest};calibmode=manifest"
+    logic_version = _wregime_lv(logic_version, availability)
     check_consistency(predictions)  # fail-fast (INV-S2); nothing persisted on violation
     run_id = persist_run(
         session,
@@ -257,13 +339,17 @@ class BackfillCounts:
     skip_no_started: int = 0  # no started horses / out of feature scope
     error_days: int = 0       # days whose processing raised (isolated, not aborting)
     skip_no_odds: int = 0     # Feature 060: market-offset model, race lacks full odds
+    weight_regime: dict | None = None  # Feature 091 T067: availability observability (or None)
 
     def as_dict(self) -> dict:
-        return {
+        d = {
             "generated": self.generated, "skip_exists": self.skip_exists,
             "skip_no_started": self.skip_no_started, "error_days": self.error_days,
             "skip_no_odds": self.skip_no_odds,
         }
+        if self.weight_regime:
+            d["weight_regime"] = self.weight_regime
+        return d
 
 
 def run_serving_backfill(
@@ -306,6 +392,7 @@ def run_serving_backfill(
         )
     calib_digest = calib_act.digest12 if calib_act is not None else None
     gen = skip_exists = skip_no_started = error_days = skip_no_odds = 0
+    wobs = WeightRegimeObserver()
 
     day = date_from
     while day <= date_to:
@@ -339,15 +426,18 @@ def run_serving_backfill(
                     if rid not in present:
                         skip_no_started += 1
                         continue
+                    avail = race_weight_availability(feature_rows, rid, model=model)
+                    wobs.observe(avail)
                     if not force and _has_run_for_model(
-                        session, rid, model.model_version, calib_digest=calib_digest
+                        session, rid, model.model_version, calib_digest=calib_digest,
+                        wregime=_wregime_of(avail),
                     ):
                         skip_exists += 1
                         continue
                     try:
                         _predict_persist(
                             session, model, rid, feature_rows, logic_version, stage_discount=sd,
-                            calib_digest=calib_digest,
+                            calib_digest=calib_digest, availability=avail,
                         )
                     except MarketOffsetSkip:
                         skip_no_odds += 1  # typed skip: no prediction row (INV-M4)
@@ -358,15 +448,18 @@ def run_serving_backfill(
             error_days += 1
         day += datetime.timedelta(days=1)
 
+    obs = wobs.as_dict()
     return BackfillCounts(
         generated=gen, skip_exists=skip_exists,
         skip_no_started=skip_no_started, error_days=error_days,
         skip_no_odds=skip_no_odds,
+        weight_regime=obs if obs["races_regime_applicable"] else None,
     )
 
 
 def _has_run_for_model(
-    session: Session, race_id: str, model_version: str, *, calib_digest: str | None = None
+    session: Session, race_id: str, model_version: str, *, calib_digest: str | None = None,
+    wregime: str | None = None,
 ) -> bool:
     """True if the race already has a prediction_run for this model_version (idempotency).
 
@@ -384,4 +477,12 @@ def _has_run_for_model(
         q = q.where(PredictionRun.logic_version.contains(f";calib={calib_digest};"))
     else:
         q = q.where(~PredictionRun.logic_version.contains(";calib="))
+    # Feature 091 (research D6, same trap as 076's ';calib='): the regime marker must take part in
+    # the key. Without it, a race predicted live BEFORE the weights were published would count as
+    # "already done", and the better-informed full-info prediction would never be produced. With
+    # it, the two regimes are distinct runs (append-only; the read API takes the latest).
+    if wregime is not None:
+        q = q.where(PredictionRun.logic_version.contains(f";wregime={wregime}"))
+    else:
+        q = q.where(~PredictionRun.logic_version.contains(";wregime="))
     return session.scalars(q).first() is not None

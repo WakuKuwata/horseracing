@@ -190,3 +190,45 @@ def test_kill_prev_weight_accidentally_masked_is_caught():
     wrong.loc[:, "prev_weight"] = np.nan
     with pytest.raises(AssertionError):
         pd.testing.assert_series_equal(wrong["prev_weight"], df["prev_weight"], check_names=False)
+
+
+# --- diagnostic arms must not be able to decide a verdict ---------------------------------------
+
+
+def _kind_for(spec: str, frozen_rate: float) -> str:
+    """Mirror of the CLI's stamping rule, exercised without a DB or a full evaluation."""
+    from horseracing_eval.regime_paired import VERDICT_KIND
+
+    from horseracing_training.cli import _recipe_from_spec
+
+    cand = _recipe_from_spec(spec)
+    if cand.weight_mask_rate is not None and abs(cand.weight_mask_rate - frozen_rate) > 1e-12:
+        return "diagnostic"
+    return VERDICT_KIND
+
+
+def test_off_registration_mask_rate_is_stamped_diagnostic():
+    """m=0 / m=1 are controls, not candidates. Stamping is derived from the spec rather than a
+    flag, because a forgotten flag produces an artifact the verdict loader would ACCEPT — the
+    post-hoc arm selection the pre-registration exists to prevent (068 C2)."""
+    from horseracing_eval.decision import VerdictSourceError, assert_verdict_eligible
+
+    for off_spec in ("pl_topk:isotonic:0.3:wmask=0.0/20260810",
+                     "pl_topk:isotonic:0.3:wmask=1.0/20260810"):
+        kind = _kind_for(off_spec, 0.5)
+        assert kind == "diagnostic", off_spec
+        with pytest.raises(VerdictSourceError):
+            assert_verdict_eligible({"artifact_kind": kind, "eligible_for_verdict": False})
+
+
+def test_registered_rate_stays_verdict_eligible():
+    from horseracing_eval.decision import assert_verdict_eligible
+
+    kind = _kind_for("pl_topk:isotonic:0.3:wmask=0.5/20260810", 0.5)
+    assert_verdict_eligible({"artifact_kind": kind, "eligible_for_verdict": True})
+
+
+def test_active_arm_without_a_mask_is_not_mistaken_for_a_diagnostic():
+    """The active arm carries no wmask segment at all; that is the baseline, not an off-registration
+    rate, so it must not flip the whole run to diagnostic."""
+    assert _kind_for("pl_topk:isotonic:0.3:drop=weight_history", 0.5) == "full_walk_forward"

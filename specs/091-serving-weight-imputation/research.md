@@ -165,8 +165,8 @@ ADOPT ⟺ serving_regime.gate.adopted
 ## D8: FEATURE_VERSION と serving 互換
 
 **Decision**:
-- `features-018` → **`features-020`**(`features-019` は 070 の revert で焼却済み。[registry.py:408-409](../../features/src/horseracing_features/registry.py) に「No model was ever trained on features-019」と明記されている)
-- compat pin: `"features-020": {"features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"}`
+- `features-018` → **`features-021`**(`features-019` は 070 の revert で焼却済み。[registry.py:408-409](../../features/src/horseracing_features/registry.py) に「No model was ever trained on features-019」と明記されている)
+- compat pin: `"features-021": {"features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f"}`
   - この hash は lgbm-064-f02acc の artifact metadata から**実測**した値(070 の gate-config に記録された値とも一致)
 - `features-017` は pin しない(lgbm-063 は retired)
 - 純加算 1 列なので既存列はバイト不変。additive left-merge による構造的保証に加え、**一度きりの共有列 parity を実データで実測**する(058/061/069 と同型)

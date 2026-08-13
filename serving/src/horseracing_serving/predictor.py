@@ -90,6 +90,22 @@ def normalise_weight_availability(
     return WeightAvailability(out, True, True, n_started, n_weighed)
 
 
+def race_weight_availability(
+    feature_rows: pd.DataFrame, race_id: str, *, model: ServingModel
+) -> WeightAvailability:
+    """Availability of one race, from the SAME slice + rule ``predict_race`` uses.
+
+    The pipeline needs this to stamp the regime marker and to report how often full-info is being
+    given up. It must not re-derive the answer independently: a marker that disagrees with the
+    input the model actually received is worse than no marker, because it would be trusted when
+    filtering. So both callers go through this one function.
+    """
+    rows = feature_rows[feature_rows["race_id"] == race_id]
+    if rows.empty:
+        return WeightAvailability(rows, PREV_WEIGHT_COLUMN in model.feature_cols, False, 0, 0)
+    return normalise_weight_availability(rows, feature_cols=model.feature_cols)
+
+
 def predict_race(
     model: ServingModel, race_id: str, feature_rows: pd.DataFrame, *,
     stage_discount=None, win_odds: dict[str, float | None] | None = None,

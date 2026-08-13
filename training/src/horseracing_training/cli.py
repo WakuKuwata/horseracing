@@ -1507,6 +1507,16 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
     kind = VERDICT_KIND
     if getattr(args, "acceptance_recent_folds", None):
         kind = "acceptance"  # outcome-blind wiring check; its folds are inside the confirm window
+    # A diagnostic arm (m=0 / m=1) is any candidate whose training mask rate is NOT the frozen
+    # pre-registered one. Derive it from the spec rather than asking for a flag: an operator who
+    # forgets the flag would otherwise emit an artifact that the verdict loader happily accepts,
+    # which is exactly the post-hoc arm selection the pre-registration exists to prevent (068 C2).
+    elif (cand_rate := _recipe_from_spec(args.candidate).weight_mask_rate) is not None and (
+        abs(cand_rate - float(wm["rate"])) > 1e-12
+    ):
+        kind = "diagnostic"
+        print(f"[091] candidate trains at m={cand_rate} but the frozen arm is "
+              f"m={wm['rate']} -> artifact_kind=diagnostic (not verdict-eligible)")
 
     # The frozen config declares a determinism contract. It was being ignored: LightGBM sums
     # partial gradients per thread, so a multi-threaded run is only reproducible to ~1e-4, while

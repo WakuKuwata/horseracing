@@ -8,6 +8,27 @@
 - 集計: `n_settled`・`n_hit`・`hit_rate`・`recovery_rate`（Σrealized_return / n_settled_valued）・`n_pending`（marker あり未確定=集計外）・`n_void`・`by_month`・`first_at`/`last_at`・`weak_pretime`(post_time 未知=弱保証の別掲数)。**skip-rate は出さない**(行が残らず分母不能)。
 - betting 非 import(049 と同じ純述語境界)。results はモデル特徴に戻さない(II)。
 
+## 予測の入力 regime を混ぜない（091 T062・上の「closing を読まない」と同型の禁止）
+
+shadow-log が守っているのは「**判断した時点で知り得た情報だけで採点する**」であって、オッズは
+その一例にすぎない。091 以降、予測は **入力 regime** でも二分される:
+
+- `logic_version` に `;wregime=serving` = 当日馬体重が公表される前に計算された予測
+- `;wregime=full_info` = 当日馬体重ありで計算された予測（backfill はほぼ常にこちら）
+
+**full-info 予測の成績を live 品質の代理として報告してはならない**。live の予測は実測で 97.4%
+が体重なしで走るので、体重ありの backfill 成績を「このモデルの実力」として出すと、065 が
+closing オッズで踏んだのと同型の楽観バイアスになる（[091 contracts/weight-mask.md §7]）。
+
+- regime 別に**分けて**報告する。混ぜた単一の数字を出さない
+- 混在した母集団しか作れない場合は、その旨を明示するか報告しない
+- marker を持たないモデル（`prev_weight` を持たないもの）は regime 区別が存在しないので対象外
+
+同じ禁止は backtest 表示（`api/backtest.py`）にも及ぶ。現状 `shadow_log_summary` は
+`;prospective=1` marker で絞っており、prospective 行は定義上 live 実行なので **今は混入しない**
+——ただしそれは述語の副作用であって設計上の保証ではないので、regime 別集計を足すときは
+上の規約に従うこと。
+
 ## クエリ(重要)
 
 - recommendations を **run 跨ぎで直接クエリ**(prospective marker 条件で全 run から集める)。**active-run scoped の表示クエリ(select_prediction_run)は使わない**=codex 指摘(active/latest run に限定されてしまう)。
