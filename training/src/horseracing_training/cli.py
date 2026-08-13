@@ -1581,7 +1581,28 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
         print(f"  verdict.adopt={v['adopt']} "
               f"(primary={v['primary']} delta={v['min_effect_delta']})")
     if getattr(args, "out", None):
-        with open(args.out, "w") as fh:
+        # The per-day diffs are ~19k floats; pretty-printed inline they turn a 16 KB report into a
+        # 1.1 MB file that nobody can read. Split them into a compact sibling instead — the report
+        # stays reviewable and the raw material for any later CI question is still on disk.
+        from pathlib import Path as _Path
+
+        out = _Path(args.out)
+        diffs = d.pop("diffs_by_day", None)
+        # ...and only for the run that can actually decide something. Keeping 800 KB of raw floats
+        # beside a control arm buys little: the block-width table is already in every report, and a
+        # diagnostic's CI is not one anybody will need to re-derive.
+        if diffs and d.get("eligible_for_verdict"):
+            side = out.with_suffix(".diffs.json")
+            side.write_text(json.dumps(diffs, separators=(",", ":"), default=float))
+            d["diffs_by_day_file"] = side.name
+            print(f"  per-day diffs -> {side.name}")
+        elif diffs:
+            d["diffs_by_day_file"] = None
+            d["diffs_by_day_note"] = (
+                "not retained: this artifact cannot decide a verdict, and the block-width "
+                "sensitivity table above already covers the re-bucketing questions."
+            )
+        with open(out, "w") as fh:
             json.dump(d, fh, ensure_ascii=False, indent=2, default=float)
         print(f"  wrote {args.out}")
     return 0
