@@ -269,7 +269,15 @@ def evaluate_regimes(
         )
         if s_arm["winner_nll"] == f_arm["winner_nll"]
     ]
-    if inert:
+    # One expected exception, and only for artifacts that can never decide anything: an arm trained
+    # with EVERY race masked (the m=1.0 control) genuinely reads no same-day weight, so the serving
+    # mask is correctly a no-op on it. That is the property under examination, not a wiring fault —
+    # and it is distinguishable from a fault, because a broken mask would leave BOTH arms inert.
+    # The strict rule still applies in full to verdict-eligible runs.
+    regime_invariance_expected = (
+        artifact_kind != VERDICT_KIND and len(inert) == 1 and inert[0] == "candidate"
+    )
+    if inert and not regime_invariance_expected:
         raise PairedContractError(
             f"serving regime had NO effect on {inert}: winner NLL is bit-identical to full-info. "
             "Either the predictor swallowed set_predict_weight_mask, or that arm reads none of "
@@ -362,6 +370,15 @@ def evaluate_regimes(
             "regimes": [SERVING, FULL_INFO],
             "both_arms_masked": True,
             "n_valid_races": len(cand_ids),
+            # Surfaced, not buried: without this a reader would see a "serving regime" comparison
+            # in which one arm never actually experienced the regime.
+            "candidate_is_regime_invariant": regime_invariance_expected,
+            **({"regime_invariance_note": (
+                "The candidate's serving and full-info scores are bit-identical because it was "
+                "trained with every race masked, so it reads no same-day weight at all. That is "
+                "what this control arm exists to measure. The active arm IS affected, which is "
+                "how this is distinguished from a broken mask (a fault would leave both inert)."
+            )} if regime_invariance_expected else {}),
         },
         # DIAGNOSTIC (073 FR-014 / 091 T052). Block-width sensitivity is NEVER ANDed into the gate:
         # the primary estimator stays race_day_cluster_bootstrap_ci_v1, frozen before OOS. Widening

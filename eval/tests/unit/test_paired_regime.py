@@ -12,6 +12,7 @@ import datetime as dt
 from dataclasses import dataclass
 
 import pytest
+
 from horseracing_eval.foldfit import RegimeUnsupported, predict_over_folds_multi
 from horseracing_eval.paired import PairedContractError
 from horseracing_eval.predictor import Prediction
@@ -301,3 +302,59 @@ def test_sub_gates_are_all_reported_so_a_partial_pass_is_visible():
     }
     # primary is the AND of all of them, never a subset
     assert rep.verdict["primary"] == all(sg.values())
+
+
+# --- the ONE expected exception: the m=1.0 control arm ------------------------------------------
+
+
+class _RegimeInvariant(_Predictor):
+    """An arm trained with every race masked: it reads no same-day weight, so the serving mask is
+    correctly a no-op on it."""
+
+    def set_predict_weight_mask(self, spec):
+        self.applied.append(spec)
+
+
+def test_regime_invariant_candidate_is_allowed_only_for_non_verdict_artifacts():
+    """m=1.0 discards today's weight by construction, so serving == full-info for that arm. That is
+    the property being measured, not a broken mask — and it is only tolerated on an artifact that
+    can never decide anything."""
+    rep = evaluate_regimes(
+        _Factory(_RegimeInvariant(0.62, 0.02)), _Factory(_Predictor(0.60, 0.10)), _races(),
+        serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+        artifact_kind="diagnostic",
+    )
+    assert rep.notes["candidate_is_regime_invariant"] is True
+    assert "regime_invariance_note" in rep.notes
+    assert rep.eligible_for_verdict is False
+
+
+def test_the_same_shape_still_fails_closed_on_a_verdict_artifact():
+    """The relaxation must not leak into the run that decides adoption."""
+    with pytest.raises(PairedContractError, match="NO effect"):
+        evaluate_regimes(
+            _Factory(_RegimeInvariant(0.62, 0.02)), _Factory(_Predictor(0.60, 0.10)), _races(),
+            serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+        )
+
+
+def test_both_arms_inert_is_still_a_fault_even_on_a_diagnostic():
+    """A genuinely broken mask leaves BOTH arms inert. That is how a fault is told apart from the
+    m=1.0 property, so it must keep failing closed regardless of artifact kind."""
+    with pytest.raises(PairedContractError, match="NO effect"):
+        evaluate_regimes(
+            _Factory(_RegimeInvariant(0.62, 0.02)), _Factory(_RegimeInvariant(0.60, 0.10)),
+            _races(), serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+            artifact_kind="diagnostic",
+        )
+
+
+def test_an_inert_active_arm_is_still_a_fault_on_a_diagnostic():
+    """Only the CANDIDATE may be regime-invariant. An inert active arm means the baseline never
+    experienced the condition it is supposed to be losing under."""
+    with pytest.raises(PairedContractError, match="NO effect"):
+        evaluate_regimes(
+            _Factory(_Predictor(0.62, 0.02)), _Factory(_RegimeInvariant(0.60, 0.10)),
+            _races(), serving_spec=object(), gate_config=GATE, first_valid_year=2024,
+            artifact_kind="diagnostic",
+        )
