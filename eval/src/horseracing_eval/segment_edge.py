@@ -12,6 +12,7 @@ predictor-agnostic discipline as market_edge (eval does not import training).
 from __future__ import annotations
 
 import datetime
+import unicodedata
 from dataclasses import dataclass
 
 from sqlalchemy import func, select
@@ -63,7 +64,12 @@ def q_band(q: float) -> str:
 def class_group(race_class) -> str:
     if race_class is None:
         return "unknown"
-    c = str(race_class)
+    # NFKC first. The substring tests are half-width, but the JRA-VAN feed wrote the grade
+    # full-width (`Ｇ１`) and open class as half-width katakana (`ｵｰﾌﾟﾝ`) — so without this every
+    # graded race of that era, and 81 open races in 2024 alone, silently fell through to 条件. The
+    # feature layer already normalises the same column this way before ranking it; this diagnostic
+    # was the one consumer that did not.
+    c = unicodedata.normalize("NFKC", str(race_class))
     if "新馬" in c:
         return "新馬"
     if "未勝利" in c:

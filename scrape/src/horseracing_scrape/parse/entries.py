@@ -49,6 +49,18 @@ _JST = ZoneInfo("Asia/Tokyo")
 _GRADE_BY_ICON = {"1": "G1", "2": "G2", "3": "G3"}
 _CLASS_TOKENS = ("新馬", "未勝利", "３勝", "3勝", "２勝", "2勝", "１勝", "1勝",
                  "オープン", "Ｇ", "G1", "G2", "G3")
+#: JRA-VAN put the grade INTO `race_class` (full-width `Ｇ１`); netkeiba splits it, calling a G1 an
+#: `オープン` and putting the grade in its own field. Downstream, `race_class` is a CATEGORICAL
+#: model input and the source of the ordered class rank, and it reads only that one column — so
+#: after the cutover every graded race arrived looking like a plain open-class race. Measured
+#: cost on the 484 races it reaches: winner NLL −0.0129 (see scripts/killtest_grade.py).
+#:
+#: Canonicalise here, at the point where the supplier's schema becomes ours, so a single column has
+#: a single meaning across both eras. The spelling is JRA-VAN's own full-width form on purpose: the
+#: categorical input uses the RAW string, so a half-width `G1` would be a category fifteen years of
+#: training data never contained. The `grade` column keeps netkeiba's value untouched — nothing is
+#: invented and no provenance is lost.
+_CLASS_BY_GRADE = {"G1": "Ｇ１", "G2": "Ｇ２", "G3": "Ｇ３"}
 
 
 def _text(el) -> str:
@@ -112,6 +124,10 @@ def _race_meta(soup, key) -> ScrapedRace:
                    if _GRADE_ICON_RE.search(c)), None)
         if gm:
             grade = _GRADE_BY_ICON.get(gm.group(1))
+    # A graded race is not merely "open class": carry the grade into race_class the way the
+    # JRA-VAN feed did (see _CLASS_BY_GRADE). Only when a grade was actually found.
+    if grade in _CLASS_BY_GRADE:
+        race_class = _CLASS_BY_GRADE[grade]
 
     post_time = None
     pm = _POST_TIME_RE.search(rd01)
