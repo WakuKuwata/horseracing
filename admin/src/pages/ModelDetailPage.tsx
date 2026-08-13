@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { useCalibration, useImportance, useModels } from "../api/queries";
 import { ErrorView, LoadingView, QueryStateView } from "../components/StateView";
+import { featureLabel } from "../lib/featureLabels";
 import { formatDateTime, formatInt, formatNum, textOr } from "../lib/format";
 
 /**
@@ -116,12 +117,19 @@ export function ModelDetailPage() {
                   <tr><th>特徴</th><th className="num">gain</th></tr>
                 </thead>
                 <tbody>
-                  {imp.values.slice(0, 20).map((v) => (
-                    <tr key={v.feature}>
-                      <td>{v.feature}</td>
-                      <td className="num">{formatNum(v.gain, 1)}</td>
-                    </tr>
-                  ))}
+                  {imp.values.slice(0, 20).map((v) => {
+                    const fl = featureLabel(v.feature);
+                    return (
+                      <tr key={v.feature}>
+                        <td>
+                          {fl.label}
+                          {fl.derived ? <span className="badge">導出特徴</span> : null}
+                          {fl.label !== v.feature ? <> <code>{v.feature}</code></> : null}
+                        </td>
+                        <td className="num">{formatNum(v.gain, 1)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

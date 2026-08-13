@@ -23,7 +23,9 @@ describe("ModelDetailPage", () => {
     server.use(...happyHandlers);
     renderDetail("lgbm-042");
     await screen.findByText("adopted=True(機械通過)");
-    expect(screen.getByText("jockey_place_rate")).toBeInTheDocument();  // importance row
+    // importance row: Japanese label first, raw column name kept alongside for auditability
+    expect(screen.getByText("騎手連対率")).toBeInTheDocument();
+    expect(screen.getByText("jockey_place_rate")).toBeInTheDocument();
     expect(screen.getByText("0.0480")).toBeInTheDocument();             // realized_rate bin
     expect(screen.getByText("2025-10-25")).toBeInTheDocument();         // train_through
     // Feature 057: purpose metadata rendered
