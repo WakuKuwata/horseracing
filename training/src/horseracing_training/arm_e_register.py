@@ -117,6 +117,8 @@ def run(
     artifacts_dir: str,
     n_oof_blocks: int = 8,
     seed: int = 42,
+    weight_mask_rate: float | None = None,
+    weight_mask_seed: int | None = None,
     num_threads: int | None = None,
 ) -> dict[str, Any]:
     races = load_eval_races(session)
@@ -124,7 +126,15 @@ def run(
         raise ArmERegisterError("no eligible races — refusing to build")
     contexts = [er.context for er in races]
 
-    recipe = ModelRecipe(objective="pl_topk", calibration="isotonic", calib_frac=0.3, seed=seed)
+    # The recipe must be the one in production, not a fixed guess. When arm E was first built
+    # the active recipe had no weight mask, so hardcoding was harmless; feature 091 added one and
+    # a hardcoded recipe would now register a full-history booster that silently predates it —
+    # and the prospective holdout would then be measuring arm E + the missing mask at once,
+    # attributing both to arm E.
+    recipe = ModelRecipe(
+        objective="pl_topk", calibration="isotonic", calib_frac=0.3, seed=seed,
+        weight_mask_rate=weight_mask_rate, weight_mask_seed=weight_mask_seed,
+    )
     predictor = OofCalibratedPredictor(
         session,
         recipe,

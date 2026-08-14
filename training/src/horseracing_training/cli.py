@@ -983,6 +983,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="MUST be absolute; a bare relative path breaks ops predict (cwd=serving)")
     ae.add_argument("--n-oof-blocks", type=int, default=8)
     ae.add_argument("--seed", type=int, default=42)
+    ae.add_argument("--weight-mask-rate", type=float, default=None,
+                    help="091 fit-scope mask rate; must match the recipe being reproduced")
+    ae.add_argument("--weight-mask-seed", type=int, default=None)
     ae.add_argument("--num-threads", type=int, default=None)
     ae.add_argument("--json", dest="json_out", default=None)
     ae.add_argument("--database-url", default=None)
@@ -1924,7 +1927,9 @@ def _register_arm_e(session: Session, args) -> int:
         )
     payload = run(
         session, model_version=args.model_version, artifacts_dir=str(art),
-        n_oof_blocks=args.n_oof_blocks, seed=args.seed, num_threads=args.num_threads,
+        n_oof_blocks=args.n_oof_blocks, seed=args.seed,
+        weight_mask_rate=args.weight_mask_rate, weight_mask_seed=args.weight_mask_seed,
+        num_threads=args.num_threads,
     )
     print(f"register-arm-e {payload['model_version']}  races={payload['n_races']}  "
           f"oof_rows={payload['n_oof_rows']}")

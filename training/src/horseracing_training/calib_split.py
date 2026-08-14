@@ -16,6 +16,7 @@ across the full-history booster and every inner OOF booster (the build dominates
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -172,7 +173,46 @@ class OofCalibratedPredictor:
             "score_min": None, "score_max": None,
         }
 
+    #: Every ModelRecipe field must be accounted for below, so that a field added to the recipe
+    #: LATER cannot be silently ignored here. That is not hypothetical: `weight_mask_rate`
+    #: (feature 091) was added after this builder was written and was dropped for a whole
+    #: release — producing a booster that trained fine, scored fine on the full-information
+    #: window, and was blind to the path serving takes. A hand-picked subset of fields is the
+    #: defect; this map is the fail-closed guard against the next instance of it.
+    #:
+    #:   "forward" = passed straight through to the booster
+    #:   "override" = arm E deliberately differs (this IS the arm: full-history booster, no
+    #:                calibration holdout, calibration fitted out-of-fold instead)
+    #:   "not-applicable" = carries no meaning for the booster itself
+    _RECIPE_FIELD_DISPOSITION = {
+        "objective": "forward",
+        "target_encode_cols": "forward",
+        "te_smoothing": "forward",
+        "seed": "forward",
+        "drop_features": "forward",
+        "weight_mask_rate": "forward",   # via weight_mask_spec()
+        "weight_mask_seed": "forward",   # via weight_mask_spec()
+        "calibration": "override",       # -> "none"; the OOF calibrator is grafted on after
+        "calib_frac": "override",        # -> 0.0; full-history booster is the point of the arm
+        "calibration_split_unit": "override",  # no contiguous holdout exists to split
+        "market_offset": "not-applicable",     # arm E is defined on the non-offset recipe
+        "ev_weight": "not-applicable",         # kill-test-only, never active
+        "label": "not-applicable",             # provenance string
+    }
+
+    def _check_recipe_fields_accounted_for(self) -> None:
+        known = set(self._RECIPE_FIELD_DISPOSITION)
+        actual = {f.name for f in dataclasses.fields(self.recipe)}
+        if unhandled := actual - known:
+            raise ArmNotServable(
+                f"ModelRecipe gained field(s) {sorted(unhandled)} that arm E's booster builder "
+                "does not account for. Add them to _RECIPE_FIELD_DISPOSITION — forwarding them "
+                "if they change the booster, marking them override/not-applicable otherwise. "
+                "Failing closed here beats registering a model that quietly ignores the recipe."
+            )
+
     def _make_base(self) -> LightGBMPredictor:
+        self._check_recipe_fields_accounted_for()
         p = LightGBMPredictor(
             self.session,
             objective=self.recipe.objective,
@@ -186,6 +226,13 @@ class OofCalibratedPredictor:
             te_smoothing=self.recipe.te_smoothing,
             seed=self.recipe.seed,
             drop_features=self.recipe.drop_features,
+            # Feature 091: the fit-scope weight mask. Arm E overrides the CALIBRATION fields
+            # above — that is what the arm is — but everything else must survive, and dropping
+            # this one is invisible: the booster still trains, still scores well on the
+            # full-information window, and is simply blind to the path serving actually takes
+            # (97% of live races have no same-day weight). Omitting it here recorded a
+            # pre-091 model as "arm E of this recipe".
+            fit_weight_mask=self.recipe.weight_mask_spec(),
         )
         if self._shared is not None:
             p._data = self._shared
