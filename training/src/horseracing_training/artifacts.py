@@ -103,6 +103,57 @@ def build_preprocessor(predictor: LightGBMPredictor, feature_version: str) -> di
     return prep
 
 
+
+class DurableArtifactRoot(RuntimeError):
+    """The artifacts root would not survive, so refuse to register a model that points at it."""
+
+
+def check_artifact_root(artifacts_root) -> Path:
+    """Validate the artifacts root BEFORE writing anything, and return it resolved.
+
+    A model row outlives the command that created it, so the location it points at has to outlive
+    that command too. Two ways that failed in practice, neither of which an
+    "does the file exist?" check would have caught — the files were present both times:
+
+    * **Registered from a git worktree.** `lgbm-091-wmask` stored
+      `.claude/worktrees/090-.../artifacts/...`; the worktree was removed later and every
+      production prediction failed on the missing calibrator. A linked worktree is detectable
+      because its `.git` is a FILE (`gitdir: ...`) rather than a directory — which is precisely
+      the statement "this checkout is disposable".
+    * **Root passed one level too deep.** The layout below is `<root>/model_versions/<version>`,
+      so passing `.../artifacts/model_versions` nests it twice. Self-consistent, therefore silent.
+    """
+    root = Path(artifacts_root)
+    if not root.is_absolute():
+        raise DurableArtifactRoot(
+            f"artifacts root must be absolute (got {str(root)!r}). The URIs are read back by the "
+            "serving CLI, which runs with cwd=serving/, so a relative path resolves somewhere "
+            "else entirely."
+        )
+    root = root.resolve()
+
+    if root.name == "model_versions":
+        raise DurableArtifactRoot(
+            f"artifacts root must not end in 'model_versions' (got {str(root)!r}): this function "
+            f"appends 'model_versions/<version>' itself, so the artifacts would land in a doubled "
+            f"path. Pass {str(root.parent)!r} instead."
+        )
+
+    for parent in (root, *root.parents):
+        dot_git = parent / ".git"
+        if dot_git.is_file():
+            raise DurableArtifactRoot(
+                f"refusing to register artifacts under the git worktree at {str(parent)!r}: the "
+                "model row would outlive the worktree, and removing the worktree deletes the "
+                "artifacts out from under production (this is how the active model's calibrator "
+                "was lost). Write to the main checkout's artifacts directory instead."
+            )
+        if dot_git.is_dir():
+            break
+
+    return root
+
+
 def save_model_version(
     session: Session,
     *,
@@ -160,7 +211,7 @@ def save_model_version(
     # would store a relative URI that resolves to serving/artifacts/... under that cwd and fail with
     # "metadata.json missing". Storing absolute makes the URI resolve from any cwd. Do NOT revert to
     # a relative path here.
-    root = Path(artifacts_root).resolve()
+    root = check_artifact_root(artifacts_root)
     art_dir = root / "model_versions" / model_version
     art_dir.mkdir(parents=True, exist_ok=True)
     model_path = art_dir / "model.txt"

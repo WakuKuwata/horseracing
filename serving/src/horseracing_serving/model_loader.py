@@ -171,6 +171,20 @@ def load_serving_model(
     if mv is None or not mv.weights_uri or not mv.calibrator_uri:
         raise ServingError(f"model '{mv_name}' has no artifacts (weights/calibrator)")
 
+    # Check the files the row points at before anything else. A row can outlive its artifacts —
+    # the active model's calibrator was registered inside a git worktree and disappeared when the
+    # worktree was removed — and without this the failure surfaced as a bare FileNotFoundError
+    # from `open()` further down, naming a path but not the model, not that the path was a model
+    # artifact, and not that the row itself is what needs repairing.
+    for label, uri in (("weights", mv.weights_uri), ("calibrator", mv.calibrator_uri)):
+        if not Path(uri).exists():
+            raise ServingError(
+                f"{label} artifact missing for '{mv_name}': {uri} does not exist. The model row "
+                f"outlived its files (a removed worktree or a moved artifacts directory will do "
+                f"this). Repair the {label}_uri column to point at the current location, or "
+                f"re-register the model."
+            )
+
     art_dir = Path(mv.weights_uri).parent
     meta_path = art_dir / "metadata.json"
     if not meta_path.exists():
