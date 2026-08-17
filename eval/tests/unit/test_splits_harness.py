@@ -45,3 +45,48 @@ def test_harness_deterministic():
     r1 = evaluate(UniformBaseline(), races).to_summary()
     r2 = evaluate(UniformBaseline(), races).to_summary()
     assert r1 == r2
+
+
+# --- 2026-08: day-exact scored window ---------------------------------------------------------
+
+def _dated_race(rid: str, d: datetime.date, n: int = 4) -> EvalRace:
+    horses = tuple(HorseEntry(horse_id=f"{rid}-H{i}", horse_number=i + 1) for i in range(n))
+    ctx = RaceContext(race_id=rid, race_date=d, started_horses=horses)
+    labels = tuple(
+        ScoringLabel(horse_id=h.horse_id, win=int(i == 0), top2=int(i < 2), top3=int(i < 3))
+        for i, h in enumerate(horses)
+    )
+    return EvalRace(context=ctx, labels=labels)
+
+
+def test_valid_from_narrows_only_the_scored_side():
+    """`--from` looked like a date but only moved the START YEAR, so a window beginning mid-year
+    silently scored the whole year — a "prospective holdout from 2026-07-13" would have scored the
+    January-to-July races the development window had already used."""
+    races = [_dated_race(f"r{y}{m:02d}", datetime.date(y, m, 15))
+             for y in (2025, 2026) for m in (1, 3, 8, 11)]
+
+    full = {f.valid_year: f for f in expanding_folds(races, 2026)}
+    assert len(full[2026].valid) == 4                      # 既定は年まるごと
+    train_before = {er.context.race_id for er in full[2026].train}
+
+    cut = datetime.date(2026, 7, 13)
+    narrowed = {f.valid_year: f for f in expanding_folds(races, 2026, valid_from=cut)}
+    assert len(narrowed[2026].valid) == 2                  # 8月・11月のみ
+    assert all(er.context.race_date >= cut for er in narrowed[2026].valid)
+    # 学習側は年単位のまま = 既存 fold の数値が動かない
+    assert {er.context.race_id for er in narrowed[2026].train} == train_before
+
+
+def test_valid_from_none_reproduces_the_previous_folds():
+    races = [_dated_race(f"r{y}{m:02d}", datetime.date(y, m, 15))
+             for y in (2025, 2026) for m in (1, 6, 12)]
+    a = [(f.valid_year, [e.context.race_id for e in f.valid]) for f in expanding_folds(races, 2026)]
+    b = [(f.valid_year, [e.context.race_id for e in f.valid])
+         for f in expanding_folds(races, 2026, valid_from=None)]
+    assert a == b
+
+
+def test_valid_from_that_empties_a_year_skips_the_fold():
+    races = [_dated_race("a", datetime.date(2025, 5, 1)), _dated_race("b", datetime.date(2026, 2, 1))]
+    assert list(expanding_folds(races, 2026, valid_from=datetime.date(2026, 7, 1))) == []

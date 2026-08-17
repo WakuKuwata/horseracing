@@ -345,13 +345,18 @@ def paired_eval(
     subgroups: bool = False,
     obs_count: dict | None = None,
     compute_sensitivity: bool = False,
+    valid_from=None,
 ) -> PairedReport:
     cfg = gate_config or {}
+    # ``valid_from`` narrows the SCORED races to a day-exact window. Without it a window starting
+    # mid-year silently scored the whole year (2026-08 review).
     cand_preds, valid_races = predict_over_folds(
-        candidate, eval_races, first_valid_year=first_valid_year, num_threads=num_threads
+        candidate, eval_races, first_valid_year=first_valid_year, num_threads=num_threads,
+        valid_from=valid_from,
     )
     act_preds, act_valid = predict_over_folds(
-        active, eval_races, first_valid_year=first_valid_year, num_threads=num_threads
+        active, eval_races, first_valid_year=first_valid_year, num_threads=num_threads,
+        valid_from=valid_from,
     )
     # model-blind fixed race set: both arms MUST cover the identical valid races (C8).
     cand_ids = {er.context.race_id for er in valid_races}

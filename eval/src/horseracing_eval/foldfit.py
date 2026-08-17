@@ -13,6 +13,7 @@ run multi-thread (research I1/U1).
 
 from __future__ import annotations
 
+import datetime
 from typing import Protocol, runtime_checkable
 
 from .dataset import EvalRace
@@ -44,6 +45,7 @@ def predict_over_folds(
     *,
     first_valid_year: int = FIRST_VALID_YEAR,
     num_threads: int | None = None,
+    valid_from: datetime.date | None = None,
 ) -> tuple[dict[str, dict[str, Prediction]], list[EvalRace]]:
     """Re-fit ``factory`` on each expanding fold's train rows and predict its valid races.
 
@@ -53,7 +55,7 @@ def predict_over_folds(
     """
     preds: dict[str, dict[str, Prediction]] = {}
     valid_races: list[EvalRace] = []
-    for fold in expanding_folds(eval_races, first_valid_year):
+    for fold in expanding_folds(eval_races, first_valid_year, valid_from=valid_from):
         predictor = factory.fit([er.context for er in fold.train], num_threads=num_threads)
         for er in fold.valid:
             preds[er.context.race_id] = predictor.predict_race(er.context)
@@ -73,6 +75,7 @@ def predict_over_folds_multi(
     first_valid_year: int = FIRST_VALID_YEAR,
     num_threads: int | None = None,
     collect_raw: bool = False,
+    valid_from: datetime.date | None = None,
 ) -> tuple[dict[str, dict[str, dict[str, Prediction]]], list[EvalRace], dict]:
     """Feature 091: ONE fit per fold, predicted under SEVERAL input regimes.
 
@@ -95,7 +98,7 @@ def predict_over_folds_multi(
     preds: dict[str, dict[str, dict[str, Prediction]]] = {name: {} for name in regimes}
     raw: dict[str, dict[str, dict[str, float]]] = {name: {} for name in regimes}
     valid_races: list[EvalRace] = []
-    for fold in expanding_folds(eval_races, first_valid_year):
+    for fold in expanding_folds(eval_races, first_valid_year, valid_from=valid_from):
         predictor = factory.fit([er.context for er in fold.train], num_threads=num_threads)
         if non_default and not hasattr(predictor, "set_predict_weight_mask"):
             raise RegimeUnsupported(

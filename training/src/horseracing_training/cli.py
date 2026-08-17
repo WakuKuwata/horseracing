@@ -1825,6 +1825,10 @@ def _paired_eval(session: Session, args) -> int:
         cand, act, eval_races,
         gate_config=gate_cfg,
         first_valid_year=eval_start_year,
+        # `--from` は年ではなく日付として効く。年単位 fold のままだと、年の途中から始まる窓が
+        # その年をまるごと採点していた(2026-08 のレビュー)。Jan-1 始まりの既存 config では
+        # 挙動は変わらない。
+        valid_from=args.from_,
         bootstrap_seed=args.seed,
         bootstrap_b=args.bootstrap_b,
         num_threads=args.num_threads,
