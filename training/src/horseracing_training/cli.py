@@ -465,6 +465,47 @@ def _register_market_model(session: Session, args) -> int:
     return 0
 
 
+def _promote_model(session: Session, args) -> int:
+    """active の切り替え。既定は dry-run — 本番の予測を差し替える操作なので明示を要求する。"""
+    import datetime as _dt
+
+    from .promote import PromoteError, apply_promotion, plan_promotion
+
+    try:
+        plan = plan_promotion(
+            session,
+            model_version=args.model_version,
+            override_reason=args.override_reason,
+            verdict=_load_verdict(args.verdict),
+            current_fv=FEATURE_VERSION,
+        )
+    except PromoteError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"promote {plan.model_version}  (現行 active: {plan.previous_active})")
+    print(f"  根拠: {plan.basis}" + (f" — {plan.override_reason}" if plan.override_reason else ""))
+    if plan.verdict_summary:
+        print(f"  v3 verdict: {plan.verdict_summary}")
+    if plan.problems:
+        print("  昇格前確認 NG:", file=sys.stderr)
+        for p in plan.problems:
+            print(f"    - {p}", file=sys.stderr)
+        return 1
+    print("  昇格前確認: OK(artifact 実在・feature schema が serving に乗る)")
+    if not args.apply:
+        print("  dry-run。実行するには --apply を付ける")
+        return 0
+    rec = apply_promotion(
+        session, plan, at=args.at or _dt.datetime.now().isoformat(timespec="seconds"),
+        git_sha=_git_sha(),
+    )
+    print(f"  ACTIVE = {plan.model_version}"
+          + (f" / {plan.previous_active} は candidate へ降格" if plan.previous_active else ""))
+    print(f"  rollback: {rec['rollback_command']}")
+    return 0
+
+
 def _set_model_label(session: Session, args) -> int:
     """Feature 057: write display_name/purpose on a model_versions row (display-only metadata).
 
@@ -757,6 +798,18 @@ def main(argv: list[str] | None = None) -> int:
 
     # Feature 057: set human-readable purpose metadata on a model (display-only; NOT adoption).
     # Omitted arg = leave unchanged; empty string = clear to NULL. Never touches adoption_status.
+    pm = sub.add_parser("promote-model",
+                        help="active を切り替える(単一 active 不変条件 + 記録される override)")
+    pm.add_argument("--model-version", required=True)
+    pm.add_argument("--verdict", default=None,
+                    help="v3 評価レポート。昇格要件を満たすならこれだけで足りる")
+    pm.add_argument("--override-reason", default=None,
+                    help="v3 verdict が無い/満たさない場合に必須。理由は metrics_summary に残る")
+    pm.add_argument("--apply", action="store_true",
+                    help="これが無いと dry-run(計画を出すだけで DB を触らない)")
+    pm.add_argument("--at", default=None, help="ISO タイムスタンプ(既定=現在時刻)")
+    pm.add_argument("--database-url", default=None)
+
     sml = sub.add_parser("set-model-label",
                          help="057: set display_name/purpose on a model (omit=keep, ''=clear)")
     sml.add_argument("--model-version", required=True)
@@ -1205,6 +1258,10 @@ def main(argv: list[str] | None = None) -> int:
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
             return _generate_manifest(session, args)
+    if args.command == "promote-model":
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            return _promote_model(session, args)
     if args.command == "paired-eval":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
