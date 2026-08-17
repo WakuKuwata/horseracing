@@ -356,3 +356,63 @@ provenance が要るのは昇格時**で、そのとき必ず作り直す機会�
    → `sufficient` と非 identity を保存時に必須化
 5. **split-unit ガードの取りこぼし** — `None` が legacy 既定に潰れ、arm E が 70/30 モデルを
    同一 model_version で上書きしてもガードが鳴らなかった → protocol を比較に含めて是正
+
+---
+
+## 12. prospective holdout の事前登録(2026-08-17・append-only)
+
+§7 の外挿を evaluation contract **v3** で凍結した。
+
+- config: [gate-config-prospective-v3.json](gate-config-prospective-v3.json)
+- canonical hash: `2a982ca31520ca66a31ddb2f1a3a59444e461cda78cc3a1b82cc9c614943695e`
+- 窓: **2026-07-13 .. 2027-01-31 / min_eval_days 48**
+- 候補: `lgbm-093-armE-wmask`(arm E × 091 体重マスクで再導出済み)/ 凍結時の active: `lgbm-091-wmask`
+
+### 12.1 §7 の 27 開催日を 48 に改めた理由
+
+§7 の表は「CI 上限 <0 に必要な race-days」であって、**それは点推定が真値にちょうど乗ったときに
+初めて 0 を切る点=検出力 56%**。80% ではない。085 実測(CI 半幅 0.00218 @ 813 開催日 →
+SE 0.001112)から引き直すと、δ=−0.0128 に対して:
+
+| 開催日 | CI 半幅 | 検出力 |
+|---:|---:|---:|
+| 27(§7 の値) | 0.0120 | **0.56** |
+| 48 | 0.0090 | **0.80** |
+| 64 | 0.0070 | 0.90 |
+
+27 で凍結すると、効果が本物でも約 44% で NO_DECISION になり、3 か月の待ちが無駄になる。
+**48(週2開催日で約 24 週 ≒ 2027-01 下旬)を選択**(ユーザー判断 2026-08-17)。停止日を先に
+確約し、結果を覗いて延長しない。48 に届かなければ harness が NO_DECISION を返す。
+
+### 12.2 この窓で変更した 2 点(いずれも §7 の宿題)
+
+**ECE**: §7 が「gate 上 CI を持たない点推定比較なので小標本で不安定=事前に別途規定が要る」と
+書いた宿題への回答。48 開催日 ≒ 1,730 レースは development 窓の 1/15 で ECE 差のばらつきは
+約 3.9 倍。0.001 のままでは雑音で落ちる。arm E の ECE 非劣後は development 窓で測って通って
+いる(0.000785 → 0.001043 = **+0.000258**)ので、この窓では絶対上限 0.05 を安全柵として残し、
+非劣後幅を 0.004 に広げ、`powered_in_this_window: false` を実キーで凍結した。
+**この窓は ECE の検定として設計されていない。**
+
+**部分集団ガード**: `critical_subgroups` を**空**にした。069 のガードは「全体では良いが直近
+レジームで死んでいる候補」を捕まえるためのものだが、**この窓は全体が直近レジーム**なので
+守るべき対比が存在せず、主 CI そのものが現行レジームの測定である。加えて race-level の
+`recent_year_*` は target_year が窓の最終年(2027)から導出されるため、この窓では 2027-01 の
+数開催日だけを指す**検定不能な極小 veto** に退化する(2026-08 のレビューで塞いだ欠陥と同型)。
+nk コホートの非劣後は 091 confirmatory で PASS 済み。gate はしないが `--subgroups` で
+**report には全部出す**ので事後の点検材料は残る。
+
+### 12.3 実行コマンド(窓が埋まってから)
+
+```
+cd training && uv run python -m horseracing_training paired-eval \
+  --candidate  "pl_topk:isotonic:0.3" --active "pl_topk:isotonic:0.3" \
+  --from 2026-07-13 --to 2027-01-31 --subgroups \
+  --confirmatory --gate-config specs/085-oof-isotonic-arm/gate-config-prospective-v3.json \
+  --gate-config-hash 2a982ca31520ca66a31ddb2f1a3a59444e461cda78cc3a1b82cc9c614943695e \
+  --json out/085-armE-prospective-verdict.json
+```
+
+`--candidate`/`--active` の recipe spec は arm E の OOF 校正経路(§3)に合わせて実行時に確定
+すること。ADOPT なら `train-evaluate --verdict out/085-armE-prospective-verdict.json` で初めて
+active 昇格の要件を満たす。REJECT / NO_DECISION なら §4.1 のとおり arm E はこのコホートで
+閉じる — 窓の延長も閾値の変更もしない。

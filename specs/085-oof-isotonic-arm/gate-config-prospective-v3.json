@@ -1,0 +1,108 @@
+{
+  "_comment": "085 §7 prospective holdout の事前登録(evaluation contract v3)。085 の判定窓は development evidence であって confirmatory ではない(§4.1 で降格を明示済み)。この config は 2026-07-12 より後の未使用レースだけで arm E を確認するためのもの。'_' 始まりのキーは canonical hash から除外されるので、凍結したい値はすべて実キーで書いてある。",
+  "_pre_registered_at": "2026-08-17",
+  "_supersedes": "085 の development 窓で使った v2 config (gate_hash c3b33affec01)。過去 verdict は不変で、これはそれを書き換えるものではない。",
+
+  "evaluation_contract_version": "v3",
+  "primary_metric": "winner_nll",
+  "primary_regime": "standard",
+
+  "arms": {
+    "_comment": "凍結する比較対象。arm E は 091 の体重マスクと組み合わせて再導出済み(lgbm-093-armE-wmask)なので、mask rate/seed も arm の一部として固定する。",
+    "candidate_model_version": "lgbm-093-armE-wmask",
+    "candidate_calibration_protocol": "strict_past_oof_isotonic_v1",
+    "active_at_freeze": "lgbm-091-wmask",
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810
+  },
+
+  "_min_effect_delta": "091 の前例値。期待効果 -0.0128 は余裕で超えるので、これは『機構が効かなくても毛差で通る』経路だけを塞ぐ。",
+  "min_effect_delta": 0.002,
+
+  "eval_window": {
+    "_comment": "085 §7 の外挿を v3 の power 要件で引き直した結果。§7 の『-0.012 なら約 27 開催日』は CI 上限がちょうど 0 を切る点=検出力 56% であって 80% ではない。停止日を先に確約し、結果を覗いて延長しない。窓が 48 開催日に届かなければ harness が NO_DECISION を返す(min_eval_days)。届かなかった場合は延長ではなく新規の事前登録をやり直す。",
+    "from": "2026-07-13",
+    "to": "2027-01-31",
+    "min_eval_days": 48
+  },
+
+  "power": {
+    "_comment": "085 実測 CI 半幅 0.00218 @ 813 開催日 から SE=0.001112 を得て、SE ∝ 1/sqrt(開催日) で外挿。検出力は P(point + 1.96·SE < 0 | δ)。50% なら 23 開催日、80% で 48、90% で 64(=約32週)。48 を選んだのはユーザー判断(2026-08-17)。",
+    "expected_se": 0.00458,
+    "mde_80": 0.0128,
+    "target_effect": -0.012838,
+    "power_at_target": 0.80,
+    "observed_se_source": "085 development window: half-width 0.00218 / 813 race-days"
+  },
+
+  "recent_guard": {
+    "_comment": "この窓は約 6.5 か月しかないので、3年窓も5年窓も窓全体に一致する=主 CI の複製で、主ゲートが通るときは常に自動的に通る。無効化はせず据え置く(条件を窓ごとに削ると経路が分岐する)。退化していることを記録しておくのが本項の目的。",
+    "mode": "non_inferiority",
+    "windows_years": [3, 5],
+    "non_inferior_margin": 0.005,
+    "degenerate_in_this_window": true
+  },
+
+  "top_noninferior": {
+    "_comment": "081/088/090/091 と同値。派生ラベルは行数が多いのでこの窓でも測れる。",
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+
+  "calibration": {
+    "_comment": "085 §7 が『ECE は gate 上 CI を持たない点推定比較なので小標本で不安定=主要エンドポイントは winner NLL、ECE は事前に別途規定が要る』と明記している。その規定がこれ。48 開催日 ≒ 1,730 レースは 085 の 26,050 レースの 1/15 で、ECE 差のばらつきは約 3.9 倍になるため 0.001 のままでは雑音で落ちる。arm E の ECE 非劣後は development 窓で既に測って通っている(0.000785 → 0.001043 = +0.000258)ので、この窓では絶対上限だけを安全柵として残し、非劣後幅は雑音スケールに合わせて広げる。この窓は ECE の検定として設計されていない、というのが正直な記述。",
+    "metric": "mean_ece",
+    "noninferior_width": 0.004,
+    "emergency_abs_ece": 0.05,
+    "evidence_source_for_noninferiority": "085 development window (+0.000258 at 26,050 races)",
+    "powered_in_this_window": false
+  },
+
+  "subgroup_guard": {
+    "_comment": "critical をゼロにする。理由: 069 の部分集団ガードは『全体では良いが直近レジームで死んでいる候補』を捕まえるために置かれたものだが、この窓は 2026-07 以降=**全体が直近レジーム**なので、守るべき対比が存在しない。主 CI そのものが現行レジームの測定である。さらに race-level の recent_year_* は target_year が窓の最終年(2027)から導出されるため、この窓では 2027-01 の数開催日だけを指す極小部分集団に退化し、検定不能な veto を新設することになる(2026-08 のレビューで塞いだ欠陥そのもの)。nk コホートの非劣後は 091 confirmatory で PASS 済み。**gate はしないが report には全部出す**(標準経路を --subgroups で回すと critical でない部分集団も CI つきで出力される)ので、事後の点検材料は残る。",
+    "critical_subgroups": [],
+    "rationale": "window_is_entirely_current_regime",
+    "target_year": 2026,
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "four_state",
+    "report_only_subgroups": ["nk", "canonical", "recent_year_only", "recent_year_nk"],
+    "no_decision_min_days": 48
+  },
+
+  "bootstrap": {
+    "_comment": "主 CI・recent 窓・全部分集団で共有。b/seed/alpha/block を凍結する。",
+    "b": 2000,
+    "seed": 20260817,
+    "block": "race_day",
+    "alpha": 0.05
+  },
+
+  "determinism": {
+    "_comment": "v3 は矛盾する --num-threads を拒否する。1 で回すこと。",
+    "tolerance": 1e-09,
+    "num_threads": 1
+  },
+
+  "diagnostics_not_gating": {
+    "_comment": "併記するが判定は変えない。勝った診断アームを採用に使うには新規の事前登録が要る(068 C2)。",
+    "uncalibrated_winner_nll": true,
+    "bootstrap_block_widths": [2, 3, 4, "week"],
+    "transport_check_at_source_cutover": true,
+    "subgroup_report_without_gating": true
+  },
+
+  "verdict": {
+    "_comment": "正本は単一式。個別の数値を事後に読み替えて別の結論を主張しない。critical_subgroups が空なので subgroup_assurance は full になり、ADOPT なら active 昇格の要件(d90231a)を満たす。",
+    "formula": "gate.adopted AND subgroup_guard_status NOT IN {FAIL, MISSING}",
+    "adopt_requires_full_subgroup_assurance": true,
+    "no_decision": "48 開催日に届かない / 評価が実行できない / 点推定は候補有利だが CI がゼロを跨ぐ。数値が微妙だからという理由では NO_DECISION にしない",
+    "on_reject_or_no_decision": "085 §4.1 のとおり arm E はこのコホートで閉じる。窓の延長も閾値の変更もしない"
+  },
+
+  "artifact_isolation": {
+    "verdict_kind": "full_walk_forward",
+    "kinds": ["full_walk_forward", "acceptance", "diagnostic", "exploratory"],
+    "eligible_kinds": ["full_walk_forward"]
+  }
+}
