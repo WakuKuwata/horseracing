@@ -82,10 +82,46 @@ A v2-stamped config fails closed under `--confirmatory`. That is deliberate: its
 judged under different rules, and silently re-judging them would break the immutability of the
 verdict it recorded. Re-freeze as v3 rather than editing the version string on an old file.
 
-## Known limits (not fixed here)
+## Measured limit: v3 cannot see a recent-regime-only degradation
 
-- The power table assumes a **uniform** effect. A candidate that improves overall while degrading
-  one subgroup is not represented; that scenario needs its own simulation.
+`scripts/gate_power_heterogeneity.py` (run 2026-08-17, same 088 parameters). Scenario: the
+candidate improves everywhere **except** the current-regime year, where it degrades by `h`. The
+current-regime year is 66 of 821 race-days, so the overall mean hides it almost completely — a
+`h = +0.010` degradation moves the overall by only +0.0008.
+
+| true effect elsewhere | h (2026 harm) | true overall | v2 adopts | **v3 adopts** | guard detects |
+|---:|---:|---:|---:|---:|---:|
+| −0.005 | 0 | −0.0046 | 0.128 | 0.999 | 0.001 |
+| −0.005 | +0.005 | −0.0042 | 0.001 | **0.969** | 0.029 |
+| −0.005 | +0.010 | −0.0038 | 0.000 | **0.679** | 0.318 |
+| −0.005 | +0.020 | −0.0030 | 0.000 | 0.002 | 0.998 |
+
+The FAIL arm — the only thing that vetoes under v3 — detects a `+0.010` degradation **32%** of the
+time, `+0.008` 15%, `+0.005` 3%. It only becomes reliable at `+0.015` (87%).
+
+Consequence, stated plainly: if one in ten candidates that improve overall degrade the current
+regime by +0.010, then **5.1% of v3 adoptions are harmful** (v2: 0.0%). At one in two, 33%.
+
+This is a real cost of the v3 relaxation and it is not mitigated by anything in this contract.
+What v2 bought instead was *nothing adopted at all*: it took a uniform −0.003 improvement only
+43.5% of the time (v3: 92.4%). Its zero harmful-adoption rate is a corollary of its rejection
+rate, not a safety property.
+
+**Neither setting solves the underlying problem: 66 race-days cannot support a decision at either
+margin.** No gate rule fixes that. The two real fixes are:
+
+1. **Measure in the deployment regime** rather than measuring historically and guarding — this is
+   exactly what 091 did by making the serving regime PRIMARY (`regime_paired.py`). Where a feature
+   targets the current regime, use that path, not the standard one plus a subgroup guard.
+2. **Shorten or reweight the evaluation window toward the current source regime.** The standard
+   window gives ~92% of its weight to pre-cutover years. That is a pre-registration decision, not a
+   code default, so it is not made here.
+
+Until one of those happens, treat `subgroup_assurance="partial"` as **"this run cannot speak about
+the current regime"**, and read `critical_residual_risk` before adopting.
+
+## Other known limits
+
 - Two nested recent windows each get a one-sided harm test, so the false-FAIL rate exceeds a
   single window's. Uncorrected: at SE ≈ 0.0014 against a 0.005 margin a false FAIL is a ~3.5σ
   event. A simultaneous (max-T) construction is the fix if that ratio narrows.
