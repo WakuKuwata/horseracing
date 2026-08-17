@@ -23,7 +23,7 @@ from horseracing_eval.decision import (
 from horseracing_eval.paired import GateResult
 
 CFG = {
-    "evaluation_contract_version": "v2",
+    "evaluation_contract_version": "v3",
     "eval_window": {"from": "2019-01-01", "to": "2026-07-12", "min_eval_days": 10},
     "subgroup_guard": {
         "critical_subgroups": ["2026_only", "nk", "2026_nk"],
@@ -117,17 +117,37 @@ def test_no_decision_when_empty_window():
     assert r["cause"] == "insufficient_eval_days"
 
 
-def test_no_decision_when_critical_subgroup_underpowered():
+def test_v3_untestable_critical_subgroup_does_not_block_but_is_disclosed():
+    """v2 turned "this subgroup cannot be tested" into REJECT/NO_DECISION. v3 adopts and says so."""
     gate = _gate(primary=True, stat=True, recent=True, top=True, cal=True, diff=-0.01)
-    d, r = final_decision(gate, _sg({**PASS_SG, "2026_nk": "NO_DECISION"}), n_days=30, cfg=CFG)
-    assert d == NO_DECISION
-    assert r["cause"] == "critical_subgroup_underpowered"
+    for state in ("NO_DECISION", "UNDERPOWERED"):
+        d, r = final_decision(gate, _sg({**PASS_SG, "2026_nk": state}), n_days=30, cfg=CFG)
+        assert d == ADOPT
+        assert r["subgroup_assurance"] == "partial"
+        assert r["subgroup_guard_status"] == "NOT_PROVEN"
+
+
+def test_v3_full_assurance_is_reported_when_every_subgroup_passes():
+    gate = _gate(primary=True, stat=True, recent=True, top=True, cal=True, diff=-0.01)
+    d, r = final_decision(gate, _sg(PASS_SG), n_days=30, cfg=CFG)
+    assert d == ADOPT
+    assert r["subgroup_assurance"] == "full"
+
+
+def test_reject_when_critical_subgroup_is_confidently_worse():
+    """The guard still bites on EVIDENCE of harm — that is the case it was written for."""
+    gate = _gate(primary=True, stat=True, recent=True, top=True, cal=True, diff=-0.01)
+    d, r = final_decision(gate, _sg({**PASS_SG, "2026_nk": "FAIL"}), n_days=30, cfg=CFG)
+    assert d == REJECT
+    assert r["cause"] == "critical_subgroup_fail"
 
 
 def test_no_decision_when_critical_subgroup_missing():
+    """MISSING is a wiring fault, not a statistical outcome -> stays fail-closed."""
     gate = _gate(primary=True, stat=True, recent=True, top=True, cal=True, diff=-0.01)
     d, r = final_decision(gate, _sg({"2026_only": "PASS", "nk": "PASS"}), n_days=30, cfg=CFG)
     assert d == NO_DECISION  # 2026_nk absent -> MISSING
+    assert r["cause"] == "critical_subgroup_not_computed"
 
 
 # --- confirmatory guard + hash ------------------------------------------------------------
@@ -167,13 +187,21 @@ def test_confirmatory_fails_on_window_mismatch():
 
 # --- T024: verdict immutability (FR-015) --------------------------------------------------
 
-def test_new_contract_version_is_v2():
-    assert EVALUATION_CONTRACT_VERSION == "v2"
+def test_new_contract_version_is_v3():
+    assert EVALUATION_CONTRACT_VERSION == "v3"
+
+
+def test_v2_gate_config_fails_closed_in_confirmatory_mode():
+    """A v2 config was frozen against different rules; re-judging it silently would break the
+    immutability of the verdict it recorded."""
+    v2 = {**CFG, "evaluation_contract_version": "v2"}
+    with pytest.raises(ConfirmatoryContractError):
+        assert_confirmatory(v2, expected_hash=gate_config_hash(v2))
 
 
 def test_verdict_immutable_allows_fresh_and_rejects_overwrite():
     assert_verdict_immutable(None)  # no prior verdict -> fresh write allowed
-    for prior in ("v1", "v2"):
+    for prior in ("v1", "v2", "v3"):
         with pytest.raises(ConfirmatoryContractError):
             assert_verdict_immutable(prior)  # any prior verdict is immutable
 
@@ -205,7 +233,7 @@ def test_confirmatory_rejects_a_window_that_differs_from_the_frozen_config():
     from horseracing_eval.decision import ConfirmatoryContractError, assert_confirmatory
 
     cfg = {
-        "evaluation_contract_version": "v2",
+        "evaluation_contract_version": "v3",
         "eval_window": {"from": "2019-01-01", "to": "2026-07-12"},
     }
     # matching window passes
