@@ -416,3 +416,59 @@ cd training && uv run python -m horseracing_training paired-eval \
 すること。ADOPT なら `train-evaluate --verdict out/085-armE-prospective-verdict.json` で初めて
 active 昇格の要件を満たす。REJECT / NO_DECISION なら §4.1 のとおり arm E はこのコホートで
 閉じる — 窓の延長も閾値の変更もしない。
+
+---
+
+## 13. 昇格の override と巻き戻し規則(2026-08-18・append-only・**切替前に登録**)
+
+§4.1 の事前登録は「development 窓の PASS は昇格根拠ではない」であり、§7 の prospective
+holdout がその根拠になるはずだった。**それを待たずに昇格させる**という判断をここに記録する。
+これは事前登録の上書きであり、confirmatory ゲートは戻らない。
+
+### 13.1 なぜ待たないか
+
+- **前向き窓は設計どおりに隔離できない**(§12 で凍結した config の欠陥)。fold は年単位
+  (`expanding_folds` の valid = その年の全レース)なので `--from 2026-07-13` は開始「年」しか
+  動かさず、2026 fold には 1〜7 月の既使用レースが入る。待っても名目上のゲートしか得られない
+- **選択の問題の大きさが効果量に対して小さい**。arm E は校正器 4 択からの事後選択で、選択が
+  推定値を膨らませる程度は SE の桁(0.0011)。Bonferroni×4 の閾値 0.0028 に対し実測 −0.0128 は
+  4.6 倍。**2026 のレースだけでも −0.01068 CI[−0.01776, −0.00377] でゼロを切っている**
+- **外した場合の損失が小さく可逆**。精度は ROI レバーとして死んでおり([[lgbm-065-roi-ceiling-confirmed]])
+  自動購入も無い。損失は「表示確率が期待ほど良くならない」だけで、巻き戻しは 1 コマンド
+- 待つ費用は 4 か月ぶんの、測定済みで最大の改善(−0.0128)
+
+### 13.2 巻き戻し規則(**結果を見る前に固定する**)
+
+**契機**: 2026-07-12 より後の確定開催日が 48 に達した時点(見込み 2026-12 下旬)。
+`scripts/ingest_gap_audit.py` が進捗を出す。
+
+**測定**: 2026 のレースを対象に arm E レシピ vs 昇格前レシピの paired-eval。
+`--from 2026-01-01`(fold は年単位なので実質 2026 全体)。
+
+```
+cd training && uv run python -m horseracing_training paired-eval \
+  --candidate <armE recipe> --active <pre-armE recipe> \
+  --from 2026-01-01 --to <その時点の最終確定日> --subgroups \
+  --json out/085-armE-rollback-check.json
+```
+
+**判定**:
+
+| 条件 | 措置 |
+|---|---|
+| **CI 下限 > +0.002**(自信を持って min_effect_delta より悪い) | **即時巻き戻し** `promote-model --model-version <昇格前> --override-reason "rollback: ..." --apply` |
+| CI がゼロを跨ぐ / 候補有利 | 現状維持。以後は監視のみ |
+| 実行不能 | 現状維持。次の 48 開催日で再試行 |
+
+**この窓が 2026 全体で、arm E の選択に使われたデータを含むことは承知のうえ。** 汚染は
+arm E を良く見せる方向に働くので、**害の検定としては保守的**(汚染があってなお害が出るなら
+その信号は強い)。逆向き(採用の根拠)には使えない。
+
+**運用上の即時巻き戻し**: serving で Σwin≠1 / ロード失敗 / 予測が出ない等が起きたら、
+上表を待たずに戻す。
+
+### 13.3 この判断で失うもの(記録)
+
+prospective confirmatory ゲートは失われる。以後の前向きデータは**ゲートではなく監視**であり、
+「arm E は当時の active より良かったか」は既決になる。§12 で凍結した config
+(hash `2a982ca3…`)は**執行されない**。破棄はせず、判定に使わなかった記録として残す。
