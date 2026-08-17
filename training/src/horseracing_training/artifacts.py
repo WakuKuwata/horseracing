@@ -24,7 +24,7 @@ from horseracing_eval.harness import EvalResult
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from .adoption import AdoptionDecision, AdoptionGate
+from .adoption import AdoptionDecision, AdoptionGate, evaluate_promotion
 from .predictor import LightGBMPredictor
 
 MODEL_FAMILY = "lightgbm"
@@ -166,13 +166,20 @@ def save_model_version(
     feature_version: str,
     git_sha: str | None = None,
     register_as_candidate: bool = False,
+    verdict: dict | None = None,
 ) -> Path:
     """Write artifacts and upsert the model_versions row. Returns the artifacts dir.
 
     Feature 060: ``register_as_candidate=True`` pins the row to CANDIDATE even when the
     decision passed — accuracy-first models never auto-activate (FR-006); promotion to
     default is a separate explicit user decision. Default False keeps the pre-060
-    pass->ACTIVE behaviour byte-identical."""
+    pass->ACTIVE behaviour byte-identical.
+
+    2026-08: going ACTIVE now also requires ``verdict`` — a v3 evaluation report (either report
+    shape) that is verdict-eligible, says ADOPT, and has FULL subgroup assurance. Without it the
+    row is saved as a CANDIDATE and the reason is recorded in ``metrics_summary["promotion"]``.
+    The legacy ``decision`` gate is four point-estimate comparisons with no paired design, CI,
+    subgroup guard or artifact isolation, so on its own it cannot justify activating a model."""
     # Feature 079 (codex #12): an EV-weighted predictor is a retrospective, artifact-only
     # kill-test and must NEVER be persisted as a servable model_version (candidate or active) —
     # 057 lets non-active models be selected, so a registry row is not isolation. (This is
@@ -305,9 +312,14 @@ def save_model_version(
     if info.get("calibration_protocol"):  # Feature 085: same, for the arm E protocol
         summary["training"]["calibration_protocol"] = dict(info["calibration_protocol"])
 
-    status = AdoptionStatus.ACTIVE if (
-        decision.adopted and not register_as_candidate
-    ) else AdoptionStatus.CANDIDATE
+    promotion = evaluate_promotion(
+        legacy=decision, verdict=verdict, register_as_candidate=register_as_candidate
+    )
+    summary["promotion"] = {
+        "promotable": promotion.promotable, "status": promotion.status,
+        "reasons": promotion.reasons,
+    }
+    status = AdoptionStatus.ACTIVE if promotion.promotable else AdoptionStatus.CANDIDATE
     values = dict(
         model_version=model_version,
         model_family=MODEL_FAMILY,

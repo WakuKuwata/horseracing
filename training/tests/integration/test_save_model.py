@@ -44,7 +44,15 @@ def test_train_evaluate_saves_row_and_artifacts(session, tmp_path):
     assert mv is not None
     assert mv.model_family == "lightgbm"
     assert mv.label_schema == "win_top2_top3"
-    assert mv.adoption_status in ("active", "candidate")
+    # 2026-08: the legacy 4-metric gate alone can no longer activate a model. This call passes no
+    # v3 verdict, so the row must land as a CANDIDATE with the reason recorded. The previous
+    # assertion here was `in ("active", "candidate")` — a tautology that covered nothing.
+    assert mv.adoption_status == "candidate"
+    promo = mv.metrics_summary["promotion"]
+    assert promo["promotable"] is False
+    assert promo["reasons"]["cause"] in (
+        "no_v3_verdict_supplied", "legacy_gate_not_adopted", "register_as_candidate_requested",
+    )
     assert mv.weights_uri and mv.calibrator_uri
     # URIs must be ABSOLUTE so they resolve from any cwd — the ops predict job shells out to the
     # serving CLI with cwd=serving/, and a bare-relative URI would fail "metadata.json missing".

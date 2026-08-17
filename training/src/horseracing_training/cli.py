@@ -56,6 +56,17 @@ def _require_subgroups(args) -> bool:
     return False
 
 
+def _load_verdict(path: str | None) -> dict | None:
+    """Read a v3 evaluation report for the promotion boundary. Missing file fails loudly: an
+    operator who mistypes the path must not silently get a CANDIDATE they think is ACTIVE."""
+    if not path:
+        return None
+    import json as _json
+    from pathlib import Path as _Path
+
+    return _json.loads(_Path(path).read_text())
+
+
 def _git_sha() -> str | None:
     try:
         out = subprocess.run(
@@ -90,6 +101,7 @@ def train_evaluate(
     materialized_path: str | None = None,
     drop_features: tuple[str, ...] = (),
     register_as_candidate: bool = False,
+    verdict: dict | None = None,
     weight_mask_rate: float | None = None,
     weight_mask_seed: int | None = None,
 ) -> dict:
@@ -138,6 +150,7 @@ def train_evaluate(
         feature_version=FEATURE_VERSION,
         git_sha=_git_sha(),
         register_as_candidate=register_as_candidate,
+        verdict=verdict,
     )
 
     overall = result.to_summary()["eval"]["overall"]
@@ -610,6 +623,11 @@ def main(argv: list[str] | None = None) -> int:
     te.add_argument("--use-materialized", action="store_true",
                     help="055: read as-of features from the 025 parquet (bit-parity, fail-closed)")
     te.add_argument("--materialized-path", default="../artifacts/features.parquet")
+    te.add_argument("--verdict", default=None,
+                    help="path to a v3 evaluation report (paired-eval / regime JSON). REQUIRED to "
+                         "reach adoption_status=active: the legacy 4-metric gate has no paired "
+                         "design, CI, subgroup guard or artifact isolation, so on its own it "
+                         "cannot justify activating a model. Without it the row is a CANDIDATE.")
     te.add_argument("--register-candidate", action="store_true",
                     help="060/069: pin the saved row to CANDIDATE (non-active) even if the gate "
                          "passes — for accuracy-first models kept out of the default p⊥q model")
@@ -1313,6 +1331,7 @@ def main(argv: list[str] | None = None) -> int:
                 materialized_path=args.materialized_path if args.use_materialized else None,
                 drop_features=drop_cols,
                 register_as_candidate=getattr(args, "register_candidate", False),
+                verdict=_load_verdict(getattr(args, "verdict", None)),
                 weight_mask_rate=getattr(args, "weight_mask_rate", None),
                 weight_mask_seed=getattr(args, "weight_mask_seed", None),
             )

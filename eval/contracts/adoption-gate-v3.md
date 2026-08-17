@@ -146,6 +146,23 @@ own labels is ~2e-5 of a 700k-row mean and changing it would break recipe-hash c
 `race_count_v1` splitting a race day across the model/calibration boundary is 073's documented
 choice, with `race_day_v1` available.
 
+## The promotion boundary
+
+A verdict decides **adoption**; it does not by itself decide **activation**. `adoption_status=active`
+additionally requires, at `save_model_version`:
+
+1. the legacy 4-metric gate passes (unchanged), **and**
+2. a v3 verdict that is verdict-eligible, says `ADOPT`, and has `subgroup_assurance="full"`.
+
+Pass it with `train-evaluate --verdict <report.json>` (either report shape). Without it the row is
+saved as a CANDIDATE and the reason lands in `metrics_summary["promotion"]`. Nothing raises — a
+trained model is never lost to a contract error.
+
+Until 2026-08 the legacy gate was the only thing between a fresh model and production, so a
+candidate that v3 would REJECT could go live by beating four point estimates. `partial` assurance
+staying a candidate is the same rule 085 and 091 followed by hand: a run that cannot speak about
+the current regime waits for evidence that can.
+
 ## Other known limits
 
 - Two nested recent windows each get a one-sided harm test, so the false-FAIL rate exceeds a

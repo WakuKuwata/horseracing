@@ -72,3 +72,101 @@ def evaluate_gate(
     }
     adopted = all(r["pass"] for r in reasons.values())
     return AdoptionDecision(adopted=adopted, reasons=reasons)
+
+
+# ---------------------------------------------------------------------------------------------
+# Promotion boundary (2026-08 multi-codex review)
+#
+# ``evaluate_gate`` above is the LEGACY gate: four point-estimate comparisons against a stored
+# baseline summary. It has no paired design, no confidence interval, no subgroup guard, no
+# confirmatory contract and no artifact isolation — none of which existed when it was written.
+# But it was the ONLY thing standing between a freshly trained model and ``adoption_status=active``,
+# so a candidate that evaluation contract v3 would REJECT (say, confidently worse in the current
+# regime) could still go live by beating those four numbers.
+#
+# Going ACTIVE now additionally requires a v3 verdict that (a) came from a verdict-eligible
+# artifact, (b) says ADOPT, and (c) has FULL subgroup assurance. Partial assurance is exactly the
+# case the harness cannot speak about — it belongs in a candidate row awaiting current-regime
+# evidence, which is what 085/091 already did by hand.
+# ---------------------------------------------------------------------------------------------
+
+CONTRACT_VERSION = "v3"
+VERDICT_ARTIFACT_KIND = "full_walk_forward"
+
+
+@dataclass(frozen=True)
+class PromotionDecision:
+    """Whether a model may become ACTIVE, and why (recorded on the model row)."""
+
+    promotable: bool
+    status: str  # "active" | "candidate"
+    reasons: dict
+
+
+def normalize_verdict(report: dict | None) -> dict | None:
+    """Read either report shape into one view.
+
+    The two evaluation paths spell the verdict differently: ``paired.PairedReport`` carries
+    ``decision`` / ``decision_reason`` at the top level, while ``regime_paired.RegimeReport``
+    nests it under ``verdict`` and adds ``artifact_kind`` / ``eligible_for_verdict``.
+    """
+    if not report:
+        return None
+    v = report.get("verdict") or {}
+    status = v.get("status") or report.get("decision")
+    reason = v.get("decision_reason") or report.get("decision_reason") or {}
+    return {
+        "status": status,
+        "subgroup_assurance": v.get("subgroup_assurance") or reason.get("subgroup_assurance"),
+        "contract_version": report.get("evaluation_contract_version")
+        or (report.get("gate_config") or {}).get("evaluation_contract_version"),
+        # absent on the standard path, which has no acceptance/diagnostic arms to isolate
+        "artifact_kind": report.get("artifact_kind"),
+        "eligible_for_verdict": report.get("eligible_for_verdict"),
+    }
+
+
+def evaluate_promotion(
+    *, legacy: AdoptionDecision, verdict: dict | None, register_as_candidate: bool = False
+) -> PromotionDecision:
+    """Fold the legacy gate and the v3 verdict into one ACTIVE/CANDIDATE decision.
+
+    Never raises: a run that cannot justify promotion still saves its artifact as a CANDIDATE with
+    the reason recorded, because losing a trained model to a contract error helps nobody.
+    """
+    reasons: dict = {"legacy_gate_adopted": legacy.adopted}
+    if register_as_candidate:
+        reasons["cause"] = "register_as_candidate_requested"
+        return PromotionDecision(False, "candidate", reasons)
+    if not legacy.adopted:
+        reasons["cause"] = "legacy_gate_not_adopted"
+        return PromotionDecision(False, "candidate", reasons)
+
+    v = normalize_verdict(verdict)
+    reasons["v3_verdict"] = v
+    if v is None:
+        reasons["cause"] = "no_v3_verdict_supplied"
+        reasons["hint"] = (
+            "run `paired-eval --confirmatory --gate-config-hash ... --subgroups` and pass its "
+            "report; the legacy 4-metric gate alone cannot justify an ACTIVE promotion"
+        )
+        return PromotionDecision(False, "candidate", reasons)
+    if v["contract_version"] != CONTRACT_VERSION:
+        reasons["cause"] = "verdict_contract_version_mismatch"
+        return PromotionDecision(False, "candidate", reasons)
+    if v["artifact_kind"] is not None and (
+        v["artifact_kind"] != VERDICT_ARTIFACT_KIND or not v["eligible_for_verdict"]
+    ):
+        # acceptance / diagnostic / exploratory arms share folds with the confirmatory window
+        reasons["cause"] = "verdict_artifact_not_eligible"
+        return PromotionDecision(False, "candidate", reasons)
+    if v["status"] != "ADOPT":
+        reasons["cause"] = "v3_verdict_not_adopt"
+        return PromotionDecision(False, "candidate", reasons)
+    if v["subgroup_assurance"] not in (None, "full"):
+        # "no FAIL" is not "no harm": an untestable critical subgroup means this run cannot speak
+        # about that population, so the model waits as a candidate for current-regime evidence.
+        reasons["cause"] = "subgroup_assurance_not_full"
+        return PromotionDecision(False, "candidate", reasons)
+    reasons["cause"] = "legacy_gate_and_v3_verdict_agree"
+    return PromotionDecision(True, "active", reasons)
