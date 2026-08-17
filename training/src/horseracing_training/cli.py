@@ -1750,6 +1750,18 @@ def _paired_eval(session: Session, args) -> int:
           f"point={ci['point']:+.6f} days={ci['n_days']} no_decision={ci['no_decision']}")
     print(f"  gate: primary={g.primary} stat_guard={g.stat_guard} recent={g.recent_guard} "
           f"top_ni={g.top_noninferior} calib={g.calibration} -> ADOPTED={g.adopted}")
+    # v3: the recent guard is an evidence-of-harm veto with a margin, not a sign test — show the
+    # per-window interval so "recent=True" cannot be read as "the recent window is fine".
+    _recent = (g.reasons or {}).get("recent") or {}
+    if _recent.get("windows"):
+        for lab, w in _recent["windows"].items():
+            if w.get("empty"):
+                print(f"  {lab}: (no races in window)")
+            elif "ci_low" in w:
+                print(f"  {lab}: diff={w['diff']:+.6f} CI[{w['ci_low']:+.6f},{w['ci_high']:+.6f}] "
+                      f"margin={_recent['margin']} -> {w['decision']}")
+            else:
+                print(f"  {lab}: diff={w['diff']:+.6f} (legacy point test) -> {w['decision']}")
     # Feature 073 US1 (FR-001): single machine-decided tri-value verdict (operator judgement=0).
     print(f"  DECISION={report.decision} "
           f"(cause={report.decision_reason.get('cause')}) "
@@ -1759,11 +1771,18 @@ def _paired_eval(session: Session, args) -> int:
         for grain in ("race_subgroups", "horse_subgroups"):
             for lab, v in sg[grain].items():
                 cci = v["bootstrap_ci"]
+                rr = v.get("residual_risk")
                 print(f"  subgroup[{lab}]: decision={v['decision']} "
                       f"CI[{cci['ci_low']},{cci['ci_high']}] days={v['n_days']} "
-                      f"cand_minus_uniform={v['cand_minus_uniform']}")
-        print(f"  subgroup_guard(critical={sg['critical']}): {sg['subgroup_guard']} "
-              f"decisions={sg['subgroup_decisions']}")
+                      f"cand_minus_uniform={v['cand_minus_uniform']}"
+                      + (f" residual_risk={rr:+.6f}" if rr is not None else ""))
+        # v3: status is the veto input (FAIL/MISSING only); `subgroup_guard` is the strict IU
+        # claim, kept as the "was full assurance achieved" audit field.
+        print(f"  subgroup_guard(critical={sg['critical']}): status={sg['subgroup_guard_status']} "
+              f"full_assurance={sg['subgroup_guard']} decisions={sg['subgroup_decisions']}")
+        if sg["subgroup_guard_status"] == "NOT_PROVEN":
+            print("    NOTE: 'no FAIL' is not 'no harm' — at least one critical subgroup could "
+                  "not establish non-inferiority; see residual_risk for what is still admitted.")
     if args.json_out:
         with open(args.json_out, "w") as fh:
             json.dump(report.to_dict(), fh, indent=2, default=str)

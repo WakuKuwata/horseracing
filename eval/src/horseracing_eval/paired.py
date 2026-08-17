@@ -24,6 +24,7 @@ from .decision import (
     gate_config_hash,
 )
 from .foldfit import PredictorFactory, predict_over_folds
+from .gates import evaluate_core_gate, recent_window_guard
 from .metrics import (
     ece_by_prob_band,
     ece_equal_mass,
@@ -93,6 +94,9 @@ class PairedReport:
     #: Feature 073 US3 (FR-014): diagnostic block-width sensitivities (2/3/4-day, week). Empty
     #: unless paired_eval(compute_sensitivity=True). NEVER ANDed into the gate — diagnostic only.
     bootstrap_sensitivity: dict = field(default_factory=dict)
+    #: Contract v3: the year the ``recent_year_*`` subgroups refer to (window's latest year, or a
+    #: gate-config pin). v2 hard-coded 2026, which would have frozen the "current regime" guard.
+    target_year: int | None = None
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -163,32 +167,27 @@ def _period_subset(valid_races, *, min_date):
 
 
 def _build_gate(cand: ArmScores, act: ArmScores, ci: dict, recent: dict, cfg: dict) -> GateResult:
-    top = cfg.get("top_noninferior", {"top2": 0.0005, "top3": 0.0005})
-    cal = cfg.get("calibration", {"noninferior_width": 0.001, "emergency_abs_ece": 0.05})
-    primary = cand.winner_nll < act.winner_nll
-    ci_upper = ci.get("ci_high")
-    stat_guard = ci_upper is not None and ci_upper < 0.0
-    recent_guard = recent["pass"]
-    top_ni = (
-        (cand.top2_logloss - act.top2_logloss) <= top["top2"]
-        and (cand.top3_logloss - act.top3_logloss) <= top["top3"]
+    """Adapter onto the shared ``gates.evaluate_core_gate`` (contract v3).
+
+    The conditions themselves now live in ONE place so this path and the regime path cannot drift;
+    the legacy 5-field ``GateResult`` shape is preserved for its existing consumers.
+    """
+    core = evaluate_core_gate(
+        diff=cand.winner_nll - act.winner_nll,
+        ci_low=ci.get("ci_low"),
+        ci_high=ci.get("ci_high"),
+        recent=recent,
+        top2_diff=cand.top2_logloss - act.top2_logloss,
+        top3_diff=cand.top3_logloss - act.top3_logloss,
+        cand_ece=cand.ece_equal_width_like["ece"],
+        act_ece=act.ece_equal_width_like["ece"],
+        cfg=cfg,
     )
-    cand_ece = cand.ece_equal_width_like["ece"]
-    act_ece = act.ece_equal_width_like["ece"]
-    emergency = cand_ece >= cal["emergency_abs_ece"]  # absolute stop overrides non-inferiority
-    calibration = (not emergency) and ((cand_ece - act_ece) <= cal["noninferior_width"])
-    adopted = primary and stat_guard and recent_guard and top_ni and calibration
     return GateResult(
-        primary=primary, stat_guard=stat_guard, recent_guard=recent_guard,
-        top_noninferior=top_ni, calibration=calibration, adopted=adopted,
-        reasons={
-            "winner_nll_diff": cand.winner_nll - act.winner_nll,
-            "ci_high": ci_upper,
-            "top2_diff": cand.top2_logloss - act.top2_logloss,
-            "top3_diff": cand.top3_logloss - act.top3_logloss,
-            "cand_ece": cand_ece, "act_ece": act_ece,
-            "emergency_stop": emergency, "recent": recent,
-        },
+        primary=core.primary, stat_guard=core.stat_guard, recent_guard=core.recent,
+        top_noninferior=core.top_noninferior, calibration=core.calibration,
+        adopted=core.adopted,
+        reasons={**core.reasons, "sub_gates": core.sub_gates},
     )
 
 
@@ -198,22 +197,42 @@ def _horse_logloss(p: float, y: int) -> float:
 
 
 def _ci_and_decision(diffs_by_day, uniform_by_day, *, b, seed, margin, alpha=0.05):
-    """Bootstrap CI + three-way decision + subgroup-internal cand−uniform for one subgroup."""
-    from .subgroups import three_way
+    """Bootstrap CI + four-state decision + subgroup-internal cand−uniform for one subgroup."""
+    from .subgroups import residual_risk, three_way
     ci = race_day_cluster_bootstrap_ci_v1(diffs_by_day, b=b, seed=seed, alpha=alpha)
     d = asdict(ci)
-    decision = three_way(d.get("ci_low"), d.get("ci_high"), margin)
+    # percentile intervals are asymmetric -> judge precision on the upper arm, not the half-width
+    decision = three_way(d.get("ci_low"), d.get("ci_high"), margin, point=d.get("point"))
     all_u = [u for us in uniform_by_day.values() for u in us]
     cand_minus_uniform = (sum(all_u) / len(all_u)) if all_u else None
     return {
-        "bootstrap_ci": d, "decision": decision,
+        "bootstrap_ci": d, "decision": decision, "margin": margin,
         "n_days": d.get("n_days"), "cand_minus_uniform": cand_minus_uniform,
+        # "no FAIL" is not "no harm": for an inconclusive subgroup this is the worst degradation
+        # still admitted by the interval. None when the subgroup concluded.
+        "residual_risk": residual_risk(d.get("ci_high"), decision),
     }
+
+
+def resolve_target_year(valid_races, cfg: dict | None = None) -> int:
+    """The year the ``recent_year_*`` subgroups refer to (contract v3).
+
+    v2 hard-coded 2026, so from 2027 on the "current regime" guard would have silently kept
+    testing a frozen past year. The window's latest year is the default; a gate-config may pin
+    ``subgroup_guard.target_year`` when a pre-registration wants the year frozen.
+    """
+    pinned = ((cfg or {}).get("subgroup_guard", {}) or {}).get("target_year")
+    if pinned is not None:
+        return int(pinned)
+    if not valid_races:
+        from .subgroups import _TARGET_YEAR
+        return _TARGET_YEAR
+    return max(er.context.race_date.year for er in valid_races)
 
 
 def _compute_subgroups(
     valid_races, cand_preds, act_preds, cand_wp, act_wp, cfg, *,
-    obs_count=None, b=2000, seed=20260712, alpha=0.05,
+    obs_count=None, b=2000, seed=20260712, alpha=0.05, target_year=None,
 ) -> dict:
     """Race-level (winner NLL) + horse-level (started-all per-horse logloss) subgroup CIs + the
     intersection-union three-way guard (FR-001/002/003, codex C1/C2/C3/C6). ``obs_count`` maps
@@ -223,11 +242,14 @@ def _compute_subgroups(
         is_nk,
         race_subgroup_labels,
         subgroup_guard,
+        subgroup_guard_status,
     )
     sg = cfg.get("subgroup_guard", {})
     m_win = sg.get("non_inferior_margin_winner_nll", 0.005)
     m_horse = sg.get("non_inferior_margin_horse_logloss", 0.001)
     critical = sg.get("critical_subgroups", ["2026_only", "nk", "2026_nk"])
+    if target_year is None:
+        target_year = resolve_target_year(valid_races, cfg)
 
     # race-level: per-race winner-NLL paired diff, grouped by (subgroup -> day)
     race_diffs: dict = {}
@@ -240,7 +262,7 @@ def _compute_subgroups(
         day = er.context.race_date.isoformat()
         n = len(er.context.started_horses)
         u = math.log(n) if n > 0 else 0.0  # uniform winner NLL = -log(1/N) = log(N)
-        for lab in race_subgroup_labels(yr, field_has_nk):
+        for lab in race_subgroup_labels(yr, field_has_nk, target_year=target_year):
             race_diffs.setdefault(lab, {}).setdefault(day, []).append(_clip_nll(cp) - _clip_nll(ap))
             race_unif.setdefault(lab, {}).setdefault(day, []).append(_clip_nll(cp) - u)
 
@@ -260,7 +282,7 @@ def _compute_subgroups(
             dc = cll - _horse_logloss(float(apreds[hid].win), y)
             du = cll - _horse_logloss(u_p, y)
             oc = obs_count.get((er.context.race_id, hid)) if obs_count else None
-            for lab in horse_subgroup_labels(hid, yr, obs_count=oc):
+            for lab in horse_subgroup_labels(hid, yr, obs_count=oc, target_year=target_year):
                 horse_diffs.setdefault(lab, {}).setdefault(day, []).append(dc)
                 horse_unif.setdefault(lab, {}).setdefault(day, []).append(du)
 
@@ -274,10 +296,22 @@ def _compute_subgroups(
     }
     decisions = {lab: v["decision"] for lab, v in {**race_out, **horse_out}.items()}
     guard_pass = subgroup_guard(decisions, critical)
+    status = subgroup_guard_status(decisions, critical)
     return {
         "race_subgroups": race_out, "horse_subgroups": horse_out,
-        "critical": critical, "subgroup_guard": guard_pass,
+        "critical": critical,
+        #: strict intersection-union — "was FULL assurance achieved" (audit field)
+        "subgroup_guard": guard_pass,
+        #: contract v3 veto input — only FAIL (confidently worse) or MISSING (never computed)
+        #: blocks adoption; an untestable subgroup is disclosed, not treated as harm.
+        "subgroup_guard_status": status,
+        "target_year": target_year,
         "subgroup_decisions": {c: decisions.get(c, "MISSING") for c in critical},
+        #: per critical subgroup, the worst degradation its interval still admits (None once the
+        #: subgroup concluded). Adoption under NOT_PROVEN must be read against these numbers.
+        "critical_residual_risk": {
+            c: ({**race_out, **horse_out}.get(c) or {}).get("residual_risk") for c in critical
+        },
     }
 
 
@@ -351,31 +385,33 @@ def paired_eval(
         "candidate": cand_scores.winner_nll, "active": act_scores.winner_nll,
         "diff": cand_scores.winner_nll - act_scores.winner_nll, "n_races": len(valid_races),
     }}
-    recent_pass = True
-    recent_detail = {}
-    for label, years in (("recent_3y", 3), ("recent_5y", 5)):
-        min_date = max_date.replace(year=max_date.year - years)
-        sub = _period_subset(valid_races, min_date=min_date)
+    from .gates import DEFAULT_RECENT_WINDOWS, _window_start
+    years_list = tuple(
+        (cfg.get("recent_guard", {}) or {}).get("windows_years", DEFAULT_RECENT_WINDOWS)
+    )
+    for years in years_list:
+        label = f"recent_{years}y"
+        sub = _period_subset(valid_races, min_date=_window_start(max_date, int(years)))
         if not sub:
             periods[label] = {"n_races": 0, "empty": True}
-            recent_detail[label] = "empty"
             continue
         c = _winner_nll_over(sub, cand_preds)
         a = _winner_nll_over(sub, act_preds)
-        degraded = not (c < a or math.isclose(c, a))
         periods[label] = {"candidate": c, "active": a, "diff": c - a, "n_races": len(sub)}
-        recent_detail[label] = {"diff": c - a, "degraded": degraded}
-        if degraded:
-            recent_pass = False  # conservative AND: any window degrading fails (analyze C2)
-    recent = {"pass": recent_pass, "windows": recent_detail}
+    # Contract v3: the recent-window guard is a non-inferiority test on the SAME per-day paired
+    # diffs and the SAME bootstrap as the primary CI — not a zero-tolerance sign test on the point
+    # estimate (which failed ~60% of the time under the null and was mapped to REJECT).
+    recent = recent_window_guard(diffs_by_day, cfg=cfg, max_date=max_date)
 
     gate = _build_gate(cand_scores, act_scores, asdict(ci), recent, cfg)
+    target_year = resolve_target_year(valid_races, cfg)
     sg = None
     if subgroups:
         sg = _compute_subgroups(
             valid_races, cand_preds, act_preds, cand_wp, act_wp, cfg,
             obs_count=obs_count, b=boot_cfg.get("b", bootstrap_b),
             seed=boot_cfg.get("seed", bootstrap_seed), alpha=boot_alpha,
+            target_year=target_year,
         )
     # Feature 073 US1: one machine-decided tri-value verdict (FR-001/002). n_days from the
     # primary CI drives the eval-window sufficiency check (empty/short window -> NO_DECISION).
@@ -401,4 +437,5 @@ def paired_eval(
         evaluation_contract_version=EVALUATION_CONTRACT_VERSION,
         gate_config_hash=gate_config_hash(cfg),
         bootstrap_sensitivity=bootstrap_sensitivity,
+        target_year=target_year,
     )

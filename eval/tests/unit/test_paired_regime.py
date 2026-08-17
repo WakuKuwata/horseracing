@@ -296,8 +296,10 @@ def test_sub_gates_are_all_reported_so_a_partial_pass_is_visible():
         serving_spec=object(), gate_config=GATE, first_valid_year=2024,
     )
     sg = rep.verdict["sub_gates"]
+    # v3: the regime path shares ONE gate implementation with the standard paired path, so it now
+    # also carries the recent-window guard it silently omitted before.
     assert set(sg) == {
-        "effect_beats_delta", "ci_upper_below_zero", "top2_noninferior",
+        "effect_beats_delta", "ci_upper_below_zero", "recent_no_evidence_of_harm", "top2_noninferior",
         "top3_noninferior", "calibration_noninferior", "calibration_not_emergency",
     }
     # primary is the AND of all of them, never a subset

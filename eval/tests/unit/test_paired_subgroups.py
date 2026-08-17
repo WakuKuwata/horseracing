@@ -76,7 +76,7 @@ def test_subgroups_on_reports_race_and_horse_grains():
     assert {"canonical", "nk", "2026_nk"} <= set(sg["horse_subgroups"].keys())
     # each subgroup carries a CI + three-way decision + cand-uniform
     for v in sg["race_subgroups"].values():
-        assert "bootstrap_ci" in v and v["decision"] in ("PASS", "FAIL", "NO_DECISION")
+        assert "bootstrap_ci" in v and v["decision"] in ("PASS", "FAIL", "NO_DECISION", "INCONCLUSIVE_LOW_PRECISION")
         assert "cand_minus_uniform" in v
 
 

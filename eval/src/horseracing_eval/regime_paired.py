@@ -26,6 +26,7 @@ from .bootstrap import (
     race_day_cluster_bootstrap_sensitivity_v2,
 )
 from .foldfit import predict_over_folds_multi
+from .gates import evaluate_core_gate, recent_window_guard
 from .hashing import race_set_hash
 from .paired import (
     DEFAULT_BAND_EDGES,
@@ -34,7 +35,9 @@ from .paired import (
     _compute_subgroups,
     _score_arm,
     _winner_probs,
+    resolve_target_year,
 )
+from .subgroups import GUARD_FAIL, GUARD_MISSING, GUARD_PASS
 
 SERVING = "serving"
 FULL_INFO = "full_info"
@@ -289,30 +292,23 @@ def evaluate_regimes(
     # `serving_regime.gate.adopted` in the contract is the 068 gate AND the 091 minimum effect.
     # Evaluating only the effect would let through a candidate that wins on winner NLL while
     # degrading top2/top3 or calibration.
-    top = gate_config.get("top_noninferior", {}) or {}
-    cal = gate_config.get("calibration", {}) or {}
     c_s, a_s = srv.candidate, srv.active
 
     def _ece(scores):
         return (scores.get("ece_equal_width_like") or {}).get("ece")
 
-    sub_gates = {
-        "effect_beats_delta": bool(srv.diff < -delta),
-        "ci_upper_below_zero": bool(srv.ci_high is not None and srv.ci_high < 0.0),
-        "top2_noninferior": bool(
-            (c_s["top2_logloss"] - a_s["top2_logloss"]) <= float(top.get("top2", 0.0005))
-        ),
-        "top3_noninferior": bool(
-            (c_s["top3_logloss"] - a_s["top3_logloss"]) <= float(top.get("top3", 0.0005))
-        ),
-        "calibration_noninferior": bool(
-            (_ece(c_s) - _ece(a_s)) <= float(cal.get("noninferior_width", 0.001))
-        ),
-        "calibration_not_emergency": bool(
-            _ece(c_s) < float(cal.get("emergency_abs_ece", 0.05))
-        ),
-    }
-    primary = all(sub_gates.values())
+    # Contract v3: ONE gate implementation shared with the standard paired path. Before v3 this
+    # block was a hand-rolled copy that happened to omit the recent-window guard entirely, so the
+    # two "adoption gates" in the repo applied different conditions to the same question.
+    recent = recent_window_guard(day_diffs[SERVING], cfg=gate_config)
+    core = evaluate_core_gate(
+        diff=srv.diff, ci_low=srv.ci_low, ci_high=srv.ci_high, recent=recent,
+        top2_diff=c_s["top2_logloss"] - a_s["top2_logloss"],
+        top3_diff=c_s["top3_logloss"] - a_s["top3_logloss"],
+        cand_ece=_ece(c_s), act_ece=_ece(a_s), cfg=gate_config,
+    )
+    sub_gates = core.sub_gates
+    primary = core.adopted
     full_info_guard = scored[FULL_INFO].diff <= ni_width
 
     # --- subgroup guard, computed UNDER THE SERVING REGIME (the verdict path is regime-qualified)
@@ -329,15 +325,26 @@ def evaluate_regimes(
             alpha=float(boot.get("alpha", 0.05)),
         )
     sg_guard = (subgroups or {}).get("subgroup_guard")
+    sg_status = (subgroups or {}).get("subgroup_guard_status")
 
-    # FAIL CLOSED: the contract is a three-term AND. A term that was never computed makes the
-    # verdict undecidable, NOT true. Reporting ADOPT off two of three terms is exactly the shape
-    # of failure this feature's gate exists to prevent.
-    if sg_cfg.get("critical_subgroups") and sg_guard is None:
+    # FAIL CLOSED: a term that was never computed makes the verdict undecidable, NOT true.
+    # Reporting ADOPT off two of three terms is exactly the shape of failure this gate prevents.
+    #
+    # v3 splits what v2 collapsed. `sg_guard is not False` treated "confidently worse in 2026" and
+    # "2026 has 66 race-days so nothing is testable at a 0.005 margin" as the same outcome. Only
+    # the former is evidence; the latter is disclosed via subgroup_assurance.
+    if sg_cfg.get("critical_subgroups") and sg_status is None:
         status, adopt = "NO_DECISION", False
+    elif sg_status == GUARD_MISSING:
+        status, adopt = "NO_DECISION", False
+    elif sg_status == GUARD_FAIL:
+        status, adopt = "REJECT", False
     else:
-        adopt = bool(primary and full_info_guard and (sg_guard is not False))
+        adopt = bool(primary and full_info_guard)
         status = "ADOPT" if adopt else "REJECT"
+    subgroup_assurance = (
+        "full" if sg_status in (None, GUARD_PASS) else "partial"
+    )
 
     return RegimeReport(
         artifact_kind=artifact_kind,
@@ -367,12 +374,16 @@ def evaluate_regimes(
             "sub_gates": sub_gates,
             "formula": (
                 "serving_regime.gate.adopted AND full_info_guard "
-                "AND serving_regime.subgroups.subgroup_guard"
+                "AND NOT serving_regime.subgroups.subgroup_guard_status in {FAIL, MISSING}"
             ),
             "primary": primary,
             "min_effect_delta": delta,
             "noninferior_width": ni_width,
             "subgroup_guard": sg_guard,
+            "subgroup_guard_status": sg_status,
+            "subgroup_assurance": subgroup_assurance,
+            "critical_residual_risk": (subgroups or {}).get("critical_residual_risk"),
+            "recent_guard": recent,
         },
         subgroups=subgroups or {},
         gate_config=gate_config,
@@ -381,6 +392,9 @@ def evaluate_regimes(
             "regimes": [SERVING, FULL_INFO],
             "both_arms_masked": True,
             "n_valid_races": len(cand_ids),
+            #: v3: which year `recent_year_*` refers to, so a report read in a later season is not
+            #: silently interpreted against a frozen 2026.
+            "target_year": resolve_target_year(cand_valid, gate_config),
             # Surfaced, not buried: without this a reader would see a "serving regime" comparison
             # in which one arm never actually experienced the regime.
             "candidate_is_regime_invariant": regime_invariance_expected,

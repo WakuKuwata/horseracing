@@ -1,0 +1,66 @@
+{
+  "_comment": "TEMPLATE for evaluation contract v3. Copy into specs/<NNN>-<feature>/gate-config.json, fill the window and margins, then FREEZE (record the hash) BEFORE looking at any OOS number. Keys starting with '_' are excluded from the canonical hash, so anything that must be frozen has to be a REAL key. A v2 config fails closed under --confirmatory on purpose: its verdict was judged under different rules.",
+
+  "evaluation_contract_version": "v3",
+  "primary_metric": "winner_nll",
+
+  "_min_effect_delta": "Applies to the POINT ESTIMATE (diff < -delta), separately from ci_high < 0. 0.0 reproduces pre-091 behaviour. Set it above 0 when a hair's-width win would not be worth adopting; note the recorded instrument needs ~0.006 for 80% power, so a delta near 0.002 is already at the edge of what can be measured.",
+  "min_effect_delta": 0.002,
+
+  "recent_guard": {
+    "_comment": "EVIDENCE-OF-HARM veto (ci_low > margin), NOT a non-inferiority test. Passing means 'no degradation beyond the margin was detected in the recent window'. v2's zero-tolerance point-estimate sign test is still reachable via mode='legacy_point_estimate', for reproducing a v1/v2 verdict only.",
+    "mode": "non_inferiority",
+    "windows_years": [3, 5],
+    "non_inferior_margin": 0.005
+  },
+
+  "top_noninferior": { "top2": 0.0005, "top3": 0.0005 },
+
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+
+  "subgroup_guard": {
+    "_comment": "Only FAIL (confidently worse than the margin) or MISSING (never computed) blocks adoption. PASS in every critical subgroup yields subgroup_assurance='full'; anything else yields 'partial' plus a per-subgroup residual_risk. Declare ONLY subgroups this feature could plausibly move — 088/090 both carried critical subgroups unrelated to what they changed.",
+    "_naming": "Prefer the stable names (recent_year_only / recent_year_nk); the year-stamped aliases (2026_only) resolve to the same subgroup while target_year matches.",
+    "critical_subgroups": ["recent_year_only", "nk", "recent_year_nk"],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "four_state",
+    "_target_year": "Omit to follow the eval window's latest year; pin an integer only when the pre-registration deliberately freezes it.",
+    "no_decision_min_days": 10
+  },
+
+  "eval_window": {
+    "_comment": "'to' is fixed at freeze time to the latest settled race date then; --from and --to must BOTH be passed and must match, or assert_confirmatory fails closed.",
+    "from": "REPLACE-ME",
+    "to": "REPLACE-ME",
+    "min_eval_days": 10
+  },
+
+  "bootstrap": {
+    "_comment": "Shared by the primary CI, the recent-window guard and every subgroup CI, so they cannot drift apart.",
+    "b": 2000,
+    "seed": 0,
+    "block": "race_day",
+    "alpha": 0.05
+  },
+
+  "determinism": { "tolerance": 1e-09, "num_threads": 1 },
+
+  "_power": "REQUIRED before freezing: state the effect size this window can actually detect. Compute SE from a prior run of comparable size, then record MDE(80%) here. The 088 record gives SE=0.000863 over 821 race-days -> MDE 0.0024 for the primary alone, ~0.006 once every guard is ANDed. Freezing a gate that cannot see the effect you are hoping for produces a REJECT that means nothing.",
+  "power": {
+    "expected_se": null,
+    "mde_80": null,
+    "target_effect": null
+  },
+
+  "verdict": {
+    "_comment": "Single source of truth. Individual numbers must not be re-read post hoc to argue a different outcome.",
+    "formula": "gate.adopted AND subgroup_guard_status NOT IN {FAIL, MISSING}",
+    "adopt_requires_full_subgroup_assurance": false,
+    "no_decision": "when the evaluation cannot be run, when the window is too short, or when the point estimate favours the candidate but the CI straddles zero; never because a number is borderline"
+  }
+}
