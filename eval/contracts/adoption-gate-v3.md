@@ -120,6 +120,32 @@ margin.** No gate rule fixes that. The two real fixes are:
 Until one of those happens, treat `subgroup_assurance="partial"` as **"this run cannot speak about
 the current regime"**, and read `critical_residual_risk` before adopting.
 
+## 2026-08 hardening pass (multi-lens review)
+
+Four independent review lenses were run over the harness. **No defect was found that had distorted
+a recorded number** — every past verdict stands. What they found was fail-OPEN behaviour, fixed
+here:
+
+| fixed | was |
+|---|---|
+| the regime path now returns NO_DECISION | it collapsed everything non-ADOPT to REJECT and never checked `min_eval_days`, so an underpowered run — the case v3 exists to relabel — came out as "the candidate is worse" (found by two lenses independently) |
+| `--confirmatory` requires the hash AND both window ends | they were checked only *if supplied*, so the flag alone verified nothing beyond "a v3 config exists" |
+| a regime run without `--confirmatory` is stamped `exploratory` | it was stamped verdict-eligible, indistinguishable from a confirmed run |
+| a candidate whose mask rate is `None` is `diagnostic` | only a *differing* rate was; a pre-091 recipe stayed verdict-eligible against a config whose frozen arm is m=0.5 |
+| conflicting `--num-threads` is refused | an explicit value silently beat the frozen determinism contract |
+| probabilities are validated before clipping | `p=1.2` or `inf` clipped to `1-1e-15`, scoring winner NLL ≈ 0 — a corrupted arm looked like a perfect predictor |
+| equal-mass ECE never exceeds `bins` | the remainder became an extra final bin of as few as 1 row, entering the weighted sum at up to 1/n |
+| empty / non-finite race-day clusters raise | a replicate drawing only empty days produced a NaN percentile reported as a number |
+| partial-ingest races leave the started-all arrays | they contributed fabricated 0 labels to the top2/top3 and ECE gates (2 races of 26,411) |
+| both paths share one recent-window reference date | the regime path used the last day carrying a paired diff, not the last valid race date |
+
+Deliberately NOT changed: OOF target encoding uses chronological leave-one-block-out including
+later blocks — that is not an evaluation leak (the outer-valid year enters no encoder) and it
+matches serving, where the encoder is fit on all history. The TE prior including the held race's
+own labels is ~2e-5 of a 700k-row mean and changing it would break recipe-hash compatibility.
+`race_count_v1` splitting a race day across the model/calibration boundary is 073's documented
+choice, with `race_day_v1` available.
+
 ## Other known limits
 
 - Two nested recent windows each get a one-sided harm test, so the false-FAIL rate exceeds a

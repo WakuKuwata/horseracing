@@ -13,6 +13,31 @@ from sklearn.metrics import log_loss, ndcg_score, roc_auc_score
 
 _CLIP = 1e-15
 DEFAULT_ECE_BINS = 10
+#: float tolerance when checking that a probability really is a probability
+_PROB_TOL = 1e-9
+
+
+class InvalidProbability(ValueError):
+    """A predicted probability is non-finite or outside [0, 1] (fail-closed).
+
+    Clipping used to absorb these silently, which is fail-OPEN in the worst direction: a broken
+    arm emitting ``p=1.2`` or ``+inf`` for the winner had it clipped to ``1-1e-15``, scoring a
+    winner NLL of ~0 — a corrupted candidate would look like a perfect predictor and win the gate
+    (2026-08 multi-codex review). NaN was loud (it poisons the mean); out-of-range was not.
+    """
+
+
+def validate_probs(values, *, where: str):
+    """Return ``values`` as a float array, refusing non-finite or out-of-range entries."""
+    arr = np.asarray(values, dtype=float)
+    if arr.size == 0:
+        return arr
+    if not np.all(np.isfinite(arr)):
+        raise InvalidProbability(f"{where}: non-finite probability (NaN/inf) in {arr.size} values")
+    lo, hi = float(arr.min()), float(arr.max())
+    if lo < -_PROB_TOL or hi > 1.0 + _PROB_TOL:
+        raise InvalidProbability(f"{where}: probability outside [0,1] (min={lo!r}, max={hi!r})")
+    return arr
 
 
 def log_loss_label(probs, labels) -> float:
@@ -110,7 +135,7 @@ def winner_nll(winner_probs) -> tuple[float, int]:
     n_excluded = len(list(winner_probs)) - len(eligible)
     if not eligible:
         return float("nan"), n_excluded
-    p = np.clip(np.asarray(eligible, dtype=float), _CLIP, 1 - _CLIP)
+    p = np.clip(validate_probs(eligible, where="winner_nll"), _CLIP, 1 - _CLIP)
     return float(np.mean(-np.log(p))), n_excluded
 
 
@@ -148,12 +173,19 @@ def ece_equal_mass(probs, labels, bins: int = DEFAULT_ECE_BINS) -> dict:
         return {"ece": 0.0, "n_bins": 0, "bin_counts": []}
     order = np.argsort(p, kind="mergesort")  # stable
     p_sorted, y_sorted = p[order], y[order]
-    target = max(1, n // max(1, bins))
+    # Cut points from linspace rather than a fixed width. A fixed ``n // bins`` leaves a remainder
+    # that became an EXTRA final bin holding as few as one row, whose |conf - acc| enters the
+    # weighted sum at up to 1/n — at small n that single row can exceed the whole 0.001 calibration
+    # margin (2026-08 multi-codex review). linspace distributes the remainder instead, so the bin
+    # count never exceeds ``bins``.
+    cuts = np.linspace(0, n, max(1, bins) + 1).astype(int)
     ece = 0.0
     counts: list[int] = []
     start = 0
-    while start < n:
-        end = min(start + target, n)
+    for cut in cuts[1:]:
+        if cut <= start:
+            continue
+        end = int(cut)
         # tie-safe: extend the bin to include all rows sharing the boundary probability
         while end < n and p_sorted[end] == p_sorted[end - 1]:
             end += 1
@@ -163,6 +195,8 @@ def ece_equal_mass(probs, labels, bins: int = DEFAULT_ECE_BINS) -> dict:
         ece += (cnt / n) * abs(seg_p.mean() - seg_y.mean())
         counts.append(cnt)
         start = end
+        if start >= n:
+            break
     return {"ece": float(ece), "n_bins": len(counts), "bin_counts": counts}
 
 

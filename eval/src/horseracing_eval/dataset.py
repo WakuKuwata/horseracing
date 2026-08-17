@@ -60,6 +60,9 @@ class RacePopulation:
     winner_horse_id: str | None
     n_winners: int
     eligible: bool
+    #: every started horse has SOME result row. False = partial ingest, so the "absent = 0 label"
+    #: convention is unverifiable and the race must not feed label-based metrics at all.
+    complete_results: bool = True
 
 
 def population_masks(er: EvalRace) -> RacePopulation:
@@ -80,7 +83,10 @@ def population_masks(er: EvalRace) -> RacePopulation:
     # codex C#2 fail-closed: a race with FEWER result rows (any status) than started horses is a
     # partial ingest — some started horses have no outcome at all, so the "absent = 0 label"
     # convention above is unverifiable. Ineligible for winner NLL (docstring promise made real).
-    if eligible and er.n_result_rows is not None and er.n_result_rows < len(started_ids):
+    complete_results = not (
+        er.n_result_rows is not None and er.n_result_rows < len(started_ids)
+    )
+    if not complete_results:
         eligible = False
     return RacePopulation(
         race_id=er.context.race_id,
@@ -92,6 +98,7 @@ def population_masks(er: EvalRace) -> RacePopulation:
         winner_horse_id=winners[0] if eligible else None,
         n_winners=n_winners,
         eligible=eligible,
+        complete_results=complete_results,
     )
 
 

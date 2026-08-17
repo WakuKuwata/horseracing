@@ -205,17 +205,35 @@ def assert_confirmatory(
     cfg: dict | None, *, expected_hash: str | None, eval_window: dict | None = None
 ) -> None:
     """Confirmatory-mode fail-closed checks (FR-002): unknown/missing config, window mismatch,
-    or gate-config hash mismatch all raise instead of silently proceeding."""
+    or gate-config hash mismatch all raise instead of silently proceeding.
+
+    v3: the hash and the window are now REQUIRED, not "checked if supplied". Previously an
+    operator who ran ``--confirmatory`` without ``--gate-config-hash`` got a run that skipped the
+    hash comparison entirely, and omitting BOTH ``--from`` and ``--to`` skipped the window
+    comparison — leaving only "a config exists and says v3". A pre-registration whose enforcement
+    depends on the operator remembering three flags is not an enforcement (2026-08 multi-codex
+    review).
+    """
     if not cfg:
         raise ConfirmatoryContractError("confirmatory mode requires a gate-config (missing)")
     if cfg.get("evaluation_contract_version") != EVALUATION_CONTRACT_VERSION:
         raise ConfirmatoryContractError(
             f"gate-config evaluation_contract_version != {EVALUATION_CONTRACT_VERSION!r}"
         )
-    if expected_hash is not None and gate_config_hash(cfg) != expected_hash:
+    if expected_hash is None:
+        raise ConfirmatoryContractError(
+            "confirmatory mode requires the expected gate-config hash (--gate-config-hash). "
+            f"This config hashes to {gate_config_hash(cfg)!r}; pass it to prove the frozen "
+            "config is the one being used."
+        )
+    if gate_config_hash(cfg) != expected_hash:
         raise ConfirmatoryContractError("gate-config hash mismatch (config changed after freeze)")
-    if eval_window is not None:
-        cfg_win = _strip_comments(cfg.get("eval_window", {}) or {})
-        want = _strip_comments(eval_window)
-        if (cfg_win.get("from"), cfg_win.get("to")) != (want.get("from"), want.get("to")):
-            raise ConfirmatoryContractError("eval window mismatch vs pre-registered gate-config")
+    if eval_window is None or eval_window.get("from") is None or eval_window.get("to") is None:
+        raise ConfirmatoryContractError(
+            "confirmatory mode requires BOTH --from and --to so the scored window can be checked "
+            "against the pre-registered eval_window (omitting them scored an unverified window)."
+        )
+    cfg_win = _strip_comments(cfg.get("eval_window", {}) or {})
+    want = _strip_comments(eval_window)
+    if (cfg_win.get("from"), cfg_win.get("to")) != (want.get("from"), want.get("to")):
+        raise ConfirmatoryContractError("eval window mismatch vs pre-registered gate-config")

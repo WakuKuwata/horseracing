@@ -231,21 +231,40 @@ def test_confirmatory_rejects_a_window_that_differs_from_the_frozen_config():
     import pytest
 
     from horseracing_eval.decision import ConfirmatoryContractError, assert_confirmatory
+    from horseracing_eval.decision import gate_config_hash as _h
 
     cfg = {
         "evaluation_contract_version": "v3",
         "eval_window": {"from": "2019-01-01", "to": "2026-07-12"},
     }
-    # matching window passes
+    # matching window passes (v3 also requires the hash — see the dedicated tests below)
     assert_confirmatory(
-        cfg, expected_hash=None,
+        cfg, expected_hash=_h(cfg),
         eval_window={"from": "2019-01-01", "to": "2026-07-12"},
     )
     # a different window fails closed
     for bad in ({"from": "2020-01-01", "to": "2026-07-12"},
                 {"from": "2019-01-01", "to": "2025-12-31"}):
         with pytest.raises(ConfirmatoryContractError, match="eval window mismatch"):
-            assert_confirmatory(cfg, expected_hash=None, eval_window=bad)
+            assert_confirmatory(cfg, expected_hash=_h(cfg), eval_window=bad)
+
+
+def test_v3_confirmatory_requires_the_hash_and_both_window_ends():
+    """v2 checked the hash/window only *if the caller supplied them*, so `--confirmatory` alone
+    verified nothing beyond "a v3 config exists". Enforcement must not depend on the operator
+    remembering three flags."""
+    cfg = {
+        "evaluation_contract_version": "v3",
+        "eval_window": {"from": "2019-01-01", "to": "2026-07-12"},
+    }
+    h = gate_config_hash(cfg)
+    win = {"from": "2019-01-01", "to": "2026-07-12"}
+    with pytest.raises(ConfirmatoryContractError, match="requires the expected gate-config hash"):
+        assert_confirmatory(cfg, expected_hash=None, eval_window=win)
+    for bad_win in (None, {"from": "2019-01-01", "to": None}, {"from": None, "to": "2026-07-12"}):
+        with pytest.raises(ConfirmatoryContractError, match="requires BOTH --from and --to"):
+            assert_confirmatory(cfg, expected_hash=h, eval_window=bad_win)
+    assert_confirmatory(cfg, expected_hash=h, eval_window=win)  # all three present -> passes
 
 
 def test_gate_config_alpha_is_actually_used_by_the_bootstrap():

@@ -25,6 +25,7 @@ from .bootstrap import (
     race_day_cluster_bootstrap_ci_v1,
     race_day_cluster_bootstrap_sensitivity_v2,
 )
+from .decision import ADOPT, REJECT, final_decision
 from .foldfit import predict_over_folds_multi
 from .gates import evaluate_core_gate, recent_window_guard
 from .hashing import race_set_hash
@@ -37,7 +38,7 @@ from .paired import (
     _winner_probs,
     resolve_target_year,
 )
-from .subgroups import GUARD_FAIL, GUARD_MISSING, GUARD_PASS
+from .subgroups import GUARD_PASS
 
 SERVING = "serving"
 FULL_INFO = "full_info"
@@ -300,7 +301,13 @@ def evaluate_regimes(
     # Contract v3: ONE gate implementation shared with the standard paired path. Before v3 this
     # block was a hand-rolled copy that happened to omit the recent-window guard entirely, so the
     # two "adoption gates" in the repo applied different conditions to the same question.
-    recent = recent_window_guard(day_diffs[SERVING], cfg=gate_config)
+    # Same reference date as the standard path: the latest VALID race date, not the latest day
+    # that happens to carry a paired difference. They diverge when the final day has no
+    # single-winner race, which silently shifts this path's window into the past (2026-08 review).
+    recent = recent_window_guard(
+        day_diffs[SERVING], cfg=gate_config,
+        max_date=max(er.context.race_date for er in cand_valid),
+    )
     core = evaluate_core_gate(
         diff=srv.diff, ci_low=srv.ci_low, ci_high=srv.ci_high, recent=recent,
         top2_diff=c_s["top2_logloss"] - a_s["top2_logloss"],
@@ -327,21 +334,21 @@ def evaluate_regimes(
     sg_guard = (subgroups or {}).get("subgroup_guard")
     sg_status = (subgroups or {}).get("subgroup_guard_status")
 
-    # FAIL CLOSED: a term that was never computed makes the verdict undecidable, NOT true.
-    # Reporting ADOPT off two of three terms is exactly the shape of failure this gate prevents.
-    #
-    # v3 splits what v2 collapsed. `sg_guard is not False` treated "confidently worse in 2026" and
-    # "2026 has 66 race-days so nothing is testable at a 0.005 margin" as the same outcome. Only
-    # the former is evidence; the latter is disclosed via subgroup_assurance.
-    if sg_cfg.get("critical_subgroups") and sg_status is None:
-        status, adopt = "NO_DECISION", False
-    elif sg_status == GUARD_MISSING:
-        status, adopt = "NO_DECISION", False
-    elif sg_status == GUARD_FAIL:
-        status, adopt = "REJECT", False
-    else:
-        adopt = bool(primary and full_info_guard)
-        status = "ADOPT" if adopt else "REJECT"
+    # ONE verdict mapping for both evaluation paths (2026-08 multi-codex review, found
+    # independently by two lenses). The v3 unification made the two paths agree on the GATE
+    # CONDITIONS but left them with different VERDICT mappings: this path collapsed everything
+    # non-ADOPT to REJECT and never checked min_eval_days, so an underpowered run — the very case
+    # v3 exists to stop mislabelling — came out as "the candidate is worse". `final_decision`
+    # already distinguishes REJECT (evidence against) from NO_DECISION (cannot tell), so this path
+    # calls it instead of re-deciding. A CoreGate duck-types as a GateResult for that call.
+    status, decision_reason = final_decision(core, subgroups, n_days=srv.n_days, cfg=gate_config)
+    # full_info non-inferiority is this path's extra term and is not part of the shared mapping:
+    # breaching it is evidence of harm under full information, so it downgrades ADOPT to REJECT.
+    if status == ADOPT and not full_info_guard:
+        status = REJECT
+        decision_reason = {"cause": "full_info_guard_breach",
+                           "full_info_diff": scored[FULL_INFO].diff, "noninferior_width": ni_width}
+    adopt = status == ADOPT
     subgroup_assurance = (
         "full" if sg_status in (None, GUARD_PASS) else "partial"
     )
@@ -382,6 +389,7 @@ def evaluate_regimes(
             "subgroup_guard": sg_guard,
             "subgroup_guard_status": sg_status,
             "subgroup_assurance": subgroup_assurance,
+            "decision_reason": decision_reason,
             "critical_residual_risk": (subgroups or {}).get("critical_residual_risk"),
             "recent_guard": recent,
         },

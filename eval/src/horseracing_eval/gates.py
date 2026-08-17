@@ -69,6 +69,12 @@ class CoreGate:
     def recent(self) -> bool:
         return self.sub_gates["recent_no_evidence_of_harm"]
 
+    #: alias so a CoreGate satisfies the same duck-type as ``paired.GateResult`` and can be fed
+    #: straight to ``decision.final_decision`` — one verdict mapping for both evaluation paths.
+    @property
+    def recent_guard(self) -> bool:
+        return self.recent
+
     @property
     def top_noninferior(self) -> bool:
         return self.sub_gates["top2_noninferior"] and self.sub_gates["top3_noninferior"]
@@ -140,7 +146,12 @@ def recent_window_guard(
     for years in years_list:
         label = f"recent_{years}y"
         start = _window_start(max_date, int(years))
-        sub = {d: v for d, v in diffs_by_day.items() if datetime.date.fromisoformat(d) >= start}
+        # bounded on BOTH ends: an explicit max_date has to actually cap the window, or a day
+        # after the reference date would slip in (2026-08 multi-codex review).
+        sub = {
+            d: v for d, v in diffs_by_day.items()
+            if start <= datetime.date.fromisoformat(d) <= max_date
+        }
         if not sub:
             windows[label] = {
                 "n_races": 0, "empty": True, "decision": INCONCLUSIVE_LOW_PRECISION,

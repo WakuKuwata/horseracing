@@ -380,3 +380,40 @@ def test_a_real_verdict_carries_no_advisory_marker():
         serving_spec=object(), gate_config=GATE, first_valid_year=2024,
     )
     assert "advisory_only" not in rep.verdict
+
+
+def test_underpowered_regime_run_is_no_decision_not_reject():
+    """The v3 unification made both paths agree on the GATE CONDITIONS but left this path with its
+    own verdict mapping: everything non-ADOPT collapsed to REJECT and min_eval_days was never
+    checked. An underpowered run — the exact case v3 exists to stop mislabelling — came out as
+    "the candidate is worse" (found independently by two 2026-08 review lenses)."""
+    # The toy predictors are deliberately terrible on the derived labels (the fixture's top2/top3
+    # are all zero) and as calibrators (ECE ~0.4), so those sub-gates would fail for reasons that
+    # have nothing to do with the case under test. Widen ONLY them, leaving stat_guard as the one
+    # unmet condition.
+    cfg = {**GATE,
+           "calibration": {"noninferior_width": 1.0, "emergency_abs_ece": 1.0},
+           "top_noninferior": {"top2": 1.0, "top3": 1.0}}
+    rep = evaluate_regimes(
+        _Factory(_Predictor(base=0.62, serving_penalty=0.02)),
+        _Factory(_Predictor(base=0.60, serving_penalty=0.10)),
+        _races(n_days=1, per_day=3),
+        serving_spec=object(), gate_config=cfg, first_valid_year=2024,
+    )
+    # one race-day -> the cluster bootstrap cannot form a CI at all
+    assert rep.serving_regime["n_days"] == 1
+    assert rep.serving_regime["ci_high"] is None
+    assert rep.verdict["status"] == "NO_DECISION"
+    assert rep.verdict["adopt"] is False
+    assert rep.verdict["decision_reason"]["cause"] == "stat_guard_underpowered"
+
+
+def test_min_eval_days_is_enforced_on_the_regime_path_too():
+    cfg = {**GATE, "eval_window": {"min_eval_days": 99}}
+    rep = evaluate_regimes(
+        _Factory(_Predictor(base=0.62, serving_penalty=0.02)),
+        _Factory(_Predictor(base=0.60, serving_penalty=0.10)),
+        _races(), serving_spec=object(), gate_config=cfg, first_valid_year=2024,
+    )
+    assert rep.verdict["status"] == "NO_DECISION"
+    assert rep.verdict["decision_reason"]["cause"] == "insufficient_eval_days"

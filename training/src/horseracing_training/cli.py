@@ -1556,18 +1556,28 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
     serving_spec = MaskSpec(rate=float(wm["eval_serving_rate"]), seed=int(wm["seed"]),
                             unit=wm["unit"])
     kind = VERDICT_KIND
+    cand_rate = _recipe_from_spec(args.candidate).weight_mask_rate
     if getattr(args, "acceptance_recent_folds", None):
         kind = "acceptance"  # outcome-blind wiring check; its folds are inside the confirm window
     # A diagnostic arm (m=0 / m=1) is any candidate whose training mask rate is NOT the frozen
     # pre-registered one. Derive it from the spec rather than asking for a flag: an operator who
     # forgets the flag would otherwise emit an artifact that the verdict loader happily accepts,
     # which is exactly the post-hoc arm selection the pre-registration exists to prevent (068 C2).
-    elif (cand_rate := _recipe_from_spec(args.candidate).weight_mask_rate) is not None and (
-        abs(cand_rate - float(wm["rate"])) > 1e-12
-    ):
+    #
+    # `is None` counts as "not the frozen arm" (2026-08 multi-codex review). It previously did not,
+    # so a pre-091 recipe — one that predates the masking mechanism entirely — ran against a
+    # gate-config whose frozen arm is m=0.5 and still came out stamped verdict-eligible.
+    elif cand_rate is None or abs(cand_rate - float(wm["rate"])) > 1e-12:
         kind = "diagnostic"
         print(f"[091] candidate trains at m={cand_rate} but the frozen arm is "
               f"m={wm['rate']} -> artifact_kind=diagnostic (not verdict-eligible)")
+    elif not getattr(args, "confirmatory", False):
+        # A run that never proved it used the frozen config must not be indistinguishable from one
+        # that did: `assert_verdict_eligible` reads only kind + flag, so the distinction has to be
+        # stamped here.
+        kind = "exploratory"
+        print("[091] --weight-regime without --confirmatory -> artifact_kind=exploratory "
+              "(not verdict-eligible; re-run with --confirmatory --gate-config-hash to decide)")
 
     # The frozen config declares a determinism contract. It was being ignored: LightGBM sums
     # partial gradients per thread, so a multi-threaded run is only reproducible to ~1e-4, while
@@ -1575,9 +1585,18 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
     # -0.0106 effect, but it made the recorded "deterministic" claim false. Honour the declaration
     # instead of quietly running wider than it.
     det = gate_cfg.get("determinism") or {}
+    frozen_threads = det.get("num_threads")
     num_threads = args.num_threads
-    if det.get("num_threads") is not None and num_threads is None:
-        num_threads = int(det["num_threads"])
+    if frozen_threads is not None:
+        # An explicit --num-threads used to win silently, which made the recorded "deterministic"
+        # claim false again by a different route. A conflicting request is refused rather than
+        # resolved: whichever way it resolved, one of the two statements would be a lie.
+        if num_threads is not None and int(num_threads) != int(frozen_threads):
+            print(f"error: --num-threads {num_threads} contradicts the frozen determinism "
+                  f"contract (determinism.num_threads={frozen_threads}). Drop the flag to honour "
+                  "the freeze, or re-freeze the config.", file=sys.stderr)
+            return 1
+        num_threads = int(frozen_threads)
         print(f"[091] honouring frozen determinism.num_threads={num_threads} "
               f"(tolerance {det.get('tolerance')})")
 

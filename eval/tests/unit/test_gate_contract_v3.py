@@ -294,3 +294,98 @@ def test_percentile_interval_precision_uses_the_upper_arm():
     # but the upper arm (0.0008) is below it, so the test could have concluded.
     assert three_way(-0.004, -0.0007, 0.001, point=-0.0015) == "PASS"
     assert three_way(-0.004, 0.0012, 0.001, point=0.0004) == "NO_DECISION"
+
+
+# --- 2026-08 multi-codex hardening pass --------------------------------------------------------
+
+def test_invalid_probabilities_fail_closed_instead_of_being_clipped():
+    """A broken arm emitting p>1 for the winner used to score winner NLL ~0 — a corrupted
+    candidate would have looked like a perfect predictor and won the gate."""
+    import pytest
+
+    from horseracing_eval.metrics import InvalidProbability, validate_probs, winner_nll
+    from horseracing_eval.paired import _clip_nll
+
+    for bad in (1.2, -0.5, float("inf"), float("nan")):
+        with pytest.raises(InvalidProbability):
+            validate_probs([bad], where="t")
+        with pytest.raises(InvalidProbability):
+            _clip_nll(bad)
+        with pytest.raises(InvalidProbability):
+            winner_nll([0.3, bad])
+    # legitimate float slop at the boundary is still accepted, then clipped
+    assert _clip_nll(1.0 + 1e-12) >= 0.0
+    assert winner_nll([0.5, 0.25])[0] > 0.0
+
+
+def test_equal_mass_ece_never_exceeds_the_requested_bin_count():
+    """A fixed ``n // bins`` width left the remainder as an EXTRA final bin holding as little as
+    one row, whose deviation entered the weighted sum at up to 1/n."""
+    import numpy as np
+
+    from horseracing_eval.metrics import ece_equal_mass
+
+    rng = np.random.default_rng(3)
+    for n in (101, 999, 1000, 1007, 37):
+        p = rng.uniform(0.01, 0.99, n)
+        y = (rng.uniform(size=n) < p).astype(int)
+        out = ece_equal_mass(p, y, bins=10)
+        assert out["n_bins"] <= 10, (n, out["n_bins"])
+        assert sum(out["bin_counts"]) == n
+    # all-identical predictions still collapse to a single bin (tie-safety preserved)
+    flat = ece_equal_mass([0.2] * 50, [0] * 50, bins=10)
+    assert flat["n_bins"] == 1 and flat["bin_counts"] == [50]
+
+
+def test_empty_or_non_finite_race_day_clusters_fail_closed():
+    """An empty cluster is counted as a day but contributes no rows, so a replicate drawing only
+    empty days averages an empty array -> NaN percentile reported as a number."""
+    import pytest
+
+    from horseracing_eval.bootstrap import race_day_cluster_bootstrap_ci_v1
+
+    with pytest.raises(ValueError, match="empty"):
+        race_day_cluster_bootstrap_ci_v1({"2026-01-03": [], "2026-01-04": [0.01]}, b=10)
+    with pytest.raises(ValueError, match="non-finite"):
+        race_day_cluster_bootstrap_ci_v1(
+            {"2026-01-03": [float("nan")], "2026-01-04": [0.01]}, b=10
+        )
+
+
+def test_partial_ingest_races_are_excluded_from_started_all_metrics():
+    """`eligible` already refused them for winner NLL, but the started-all arrays took them and
+    scored a horse with NO result row as a real 0 on win/top2/top3."""
+    import datetime as dt
+
+    from horseracing_eval.dataset import EvalRace, ScoringLabel, population_masks
+    from horseracing_eval.paired import _started_all_arrays
+    from horseracing_eval.predictor import HorseEntry, Prediction, RaceContext
+
+    def race(rid, n_result_rows):
+        horses = tuple(HorseEntry(horse_id=h, frame=1, horse_number=i + 1)
+                       for i, h in enumerate(("A", "B")))
+        return EvalRace(
+            context=RaceContext(race_id=rid, race_date=dt.date(2026, 1, 4), started_horses=horses),
+            labels=(ScoringLabel(horse_id="A", win=1, top2=1, top3=1),),
+            n_result_rows=n_result_rows,
+        )
+
+    complete, partial = race("r-complete", 2), race("r-partial", 1)
+    assert population_masks(complete).complete_results is True
+    assert population_masks(partial).complete_results is False
+
+    preds = {r.context.race_id: {"A": Prediction(0.6, 0.6, 0.6), "B": Prediction(0.4, 0.4, 0.4)}
+             for r in (complete, partial)}
+    arr = _started_all_arrays([complete, partial], preds)
+    assert len(arr["win"][0]) == 2  # only the complete race's two horses
+
+
+def test_recent_window_is_bounded_at_both_ends():
+    """An explicit reference date must cap the window; a later day used to slip in."""
+    days = {
+        "2026-01-04": [-0.01], "2026-06-01": [-0.01],
+        "2027-01-04": [+5.0],  # after the reference date -> must be excluded
+    }
+    res = recent_window_guard(days, cfg=CFG, max_date=datetime.date(2026, 6, 1))
+    assert res["windows"]["recent_3y"]["n_races"] == 2
+    assert res["pass"] is True  # the excluded day would have forced a FAIL

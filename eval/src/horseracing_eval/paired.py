@@ -43,6 +43,12 @@ class PairedContractError(RuntimeError):
 
 
 def _clip_nll(p: float) -> float:
+    """-log(p) with clipping, but only AFTER the value is confirmed to be a probability.
+
+    Clipping first was fail-open: ``p=1.2`` became ``1-1e-15`` and scored a winner NLL of ~0, so a
+    broken arm looked like a perfect predictor (2026-08 multi-codex review)."""
+    from .metrics import validate_probs
+    validate_probs([p], where="paired winner probability")
     return -math.log(min(max(p, 1e-15), 1.0 - 1e-15))
 
 
@@ -118,10 +124,19 @@ def _winner_probs(valid_races, preds, *, arm: str):
 
 
 def _started_all_arrays(valid_races, preds):
-    """Flatten per started horse: win/top2/top3 probs + started labels (DNF=0)."""
+    """Flatten per started horse: win/top2/top3 probs + started labels (DNF=0).
+
+    Partial-ingest races are skipped. ``population_masks`` already refuses them for winner NLL,
+    but the started-all arrays took them anyway, so a started horse with NO result row at all was
+    scored as a real 0 on win/top2/top3 — a fabricated label feeding the top2/top3 non-inferiority
+    gate and the ECE gate. Measured incidence on the 2019+ window: 2 races of 26,411 (30 rows of
+    362,776), so no recorded verdict moves; the labels were wrong regardless (2026-08 review).
+    """
     win_p, win_y, top2_p, top2_y, top3_p, top3_y, field_sizes = [], [], [], [], [], [], []
     for er in valid_races:
         pop = population_masks(er)
+        if not pop.complete_results:
+            continue
         race_preds = preds[er.context.race_id]
         for hid in pop.started_horse_ids:
             pr = race_preds.get(hid)

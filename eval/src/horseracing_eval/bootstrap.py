@@ -50,6 +50,15 @@ def race_day_cluster_bootstrap_ci_v1(
     """
     days = sorted(diffs_by_day.keys())
     day_arrays = [np.asarray(diffs_by_day[d], dtype=float) for d in days]
+    # An EMPTY cluster is counted as a day but contributes no rows, so a replicate that happens to
+    # draw only empty days averages an empty array -> NaN -> a NaN percentile, i.e. a silently
+    # undecidable CI reported as a number. Non-finite diffs poison the same way. Both indicate a
+    # construction bug upstream, so they fail closed here rather than propagating (2026-08 review).
+    for d, arr in zip(days, day_arrays, strict=True):
+        if arr.size == 0:
+            raise ValueError(f"race-day cluster {d!r} is empty; days must carry at least one race")
+        if not np.all(np.isfinite(arr)):
+            raise ValueError(f"race-day cluster {d!r} contains non-finite paired differences")
     n_days = len(days)
     all_diffs = np.concatenate(day_arrays) if day_arrays else np.asarray([], dtype=float)
     point = float(all_diffs.mean()) if all_diffs.size else float("nan")
