@@ -37,6 +37,7 @@ from horseracing_eval.dataset import load_eval_races, population_masks
 from horseracing_eval.foldfit import predict_over_folds
 from sqlalchemy.orm import Session
 
+from horseracing_training.calib_split import CalibSplitFactory
 from horseracing_training.predictor import LightGBMPredictor
 from horseracing_training.recipe import ModelRecipe
 from horseracing_training.win_model import DEFAULT_PARAMS
@@ -98,6 +99,13 @@ def diffs_by_day(valid_races, pa, pb) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--arm", choices=("holdout", "armE"), default="holdout",
+                    help="holdout=旧レシピ(calib_frac 0.3) / "
+                         "armE=本番(全期間 booster + OOF isotonic)")
+    ap.add_argument("--rounds", default=None,
+                    help="armE 用: 比較する n_estimators をカンマ区切りで(例 300,900,1800)")
+    ap.add_argument("--n-oof-blocks", type=int, default=3,
+                    help="armE の OOF ブロック数。本番は 8 だが探索ではコストのため 3")
     ap.add_argument("--first-valid-year", type=int, default=2025)
     ap.add_argument("--to", default="2026-08-16")
     ap.add_argument("--seed", type=int, default=42)
@@ -107,26 +115,47 @@ def main() -> None:
     args = ap.parse_args()
 
     print("*** SCREENING ONLY — can_adopt=false。勝ちは別窓で新規に事前登録して確認する ***\n")
+
+    if args.arm == "armE":
+        rounds = [int(x) for x in (args.rounds or "300,900,1800").split(",")]
+        grid = {f"armE rounds={r}": {"n_estimators": r} for r in rounds}
+        base_name = f"armE rounds={rounds[0]}"
+        print(f"arm: arm E(全期間 booster + strict-past OOF isotonic / "
+              f"n_oof_blocks={args.n_oof_blocks})")
+    else:
+        grid, base_name = GRID, "base(300/31/0.05)"
+        print("arm: holdout(calib_frac 0.3)")
+
     engine = create_db_engine(DB)
     with Session(engine) as session:
         races = load_eval_races(session, end_date=datetime.date.fromisoformat(args.to))
-        recipe = ModelRecipe(objective="pl_topk", calibration="isotonic", calib_frac=0.3,
-                             seed=args.seed, label="capacity-screen")
         preds, valid = {}, None
-        for name, over in GRID.items():
-            fac = ParamFactory(session, recipe, over,
-                               materialized_path=args.materialized_path)
+        for name, over in grid.items():
+            recipe = ModelRecipe(
+                objective="pl_topk",
+                calibration=("none" if args.arm == "armE" else "isotonic"),
+                calib_frac=(0.0 if args.arm == "armE" else 0.3),
+                seed=args.seed,
+                params=tuple(sorted(over.items())) or None,
+                label=f"capacity-screen:{name}",
+            )
+            if args.arm == "armE":
+                fac = CalibSplitFactory(session, recipe, n_oof_blocks=args.n_oof_blocks,
+                                        method="isotonic", require_sufficient=False)
+            else:
+                fac = ParamFactory(session, recipe, over,
+                                   materialized_path=args.materialized_path)
             t0 = time.time()
             p, v = predict_over_folds(fac, races, first_valid_year=args.first_valid_year,
                                       num_threads=1)
             preds[name], valid = p, v
             print(f"  {name:<32} {time.time()-t0:7.1f}s  valid={len(v):,} races")
 
-    base = preds["base(300/31/0.05)"]
+    base = preds[base_name]
     rows = []
     print()
-    for name in GRID:
-        if name.startswith("base"):
+    for name in grid:
+        if name == base_name:
             continue
         ci = race_day_cluster_bootstrap_ci_v1(diffs_by_day(valid, preds[name], base),
                                               b=args.bootstrap_b, seed=20260818)
@@ -148,7 +177,8 @@ def main() -> None:
 
     if args.json_out:
         with open(args.json_out, "w") as fh:
-            json.dump({"grid": {k: v for k, v in GRID.items()}, "seed": args.seed,
+            json.dump({"arm": args.arm, "grid": {k: v for k, v in grid.items()},
+                       "seed": args.seed,
                        "first_valid_year": args.first_valid_year, "results": rows,
                        "screening_only": True, "can_adopt": False}, fh, indent=2)
         print(f"  wrote {args.json_out}")
