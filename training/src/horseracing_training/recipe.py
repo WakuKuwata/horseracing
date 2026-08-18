@@ -59,6 +59,12 @@ class ModelRecipe:
     #: switched off for this experiment", None records "this recipe predates the mechanism".
     weight_mask_rate: float | None = None
     weight_mask_seed: int | None = None
+    #: LightGBM の容量など、既定からの上書きだけを (key, value) の組で持つ。dict ではなく
+    #: タプルなのは frozen dataclass を本当に不変にするため。`None`(上書きなし)は
+    #: recipe_hash から省かれるので、**これ以前のレシピは 1 件もハッシュが動かない**。
+    #: 容量はモデルの同一性そのものなので fit-scope ではなく recipe に置く: 900 本の木の
+    #: モデルは 300 本のモデルと別物であり、別の model_version であるべきである。
+    params: tuple[tuple[str, float | int], ...] | None = None
     label: str = ""
 
     def __post_init__(self) -> None:
@@ -110,7 +116,18 @@ class ModelRecipe:
         # different model identity from "recipe predates masking" (provenance, not just value).
         if d.get("weight_mask_rate") is None:
             d = {k: v for k, v in d.items() if k not in ("weight_mask_rate", "weight_mask_seed")}
+        # 容量の上書きが無い(None)レシピは、この欄が足される前と同じハッシュになる。
+        if d.get("params") is None:
+            d = {k: v for k, v in d.items() if k != "params"}
         return stable_hash(d)
+
+    def resolved_params(self) -> dict | None:
+        """LightGBM に渡す完全な params。上書きが無ければ None(= 既定のまま・挙動不変)。"""
+        if not self.params:
+            return None
+        from .win_model import DEFAULT_PARAMS
+
+        return {**DEFAULT_PARAMS, **dict(self.params)}
 
     def weight_mask_spec(self):
         """The features-layer MaskSpec for this recipe, or None when masking is not configured."""
@@ -178,6 +195,7 @@ class RecipeFactory:
                 te_smoothing=self.recipe.te_smoothing,
                 drop_features=self.recipe.drop_features,
                 objective=self.recipe.objective,
+                params=self.recipe.resolved_params(),
                 market_offset=self.recipe.market_offset,
                 calibration_split_unit=self.recipe.calibration_split_unit,
                 restrict_features=self.restrict_features,

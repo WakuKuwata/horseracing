@@ -190,6 +190,7 @@ class OofCalibratedPredictor:
         "te_smoothing": "forward",
         "seed": "forward",
         "drop_features": "forward",
+        "params": "forward",             # via resolved_params(); 容量はモデル同一性の一部
         "weight_mask_rate": "forward",   # via weight_mask_spec()
         "weight_mask_seed": "forward",   # via weight_mask_spec()
         "calibration": "override",       # -> "none"; the OOF calibrator is grafted on after
@@ -233,6 +234,9 @@ class OofCalibratedPredictor:
             # (97% of live races have no same-day weight). Omitting it here recorded a
             # pre-091 model as "arm E of this recipe".
             fit_weight_mask=self.recipe.weight_mask_spec(),
+            # 容量。arm E は booster が見る行が約 40% 増えるので、旧レシピで測った最適本数が
+            # そのまま当てはまる保証は無い。ここを配線しないと arm E で容量を振れない。
+            params=self.recipe.resolved_params(),
         )
         if self._shared is not None:
             p._data = self._shared
