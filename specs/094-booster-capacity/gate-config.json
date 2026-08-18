@@ -1,0 +1,90 @@
+{
+  "_comment": "094 容量確認の事前登録(evaluation contract v3)。スクリーニング(2025-2026)で rounds を選んだので、確認は **disjoint な窓(2019-2024)** で行う。これが選択リークを断つ肝。'_' 始まりのキーは canonical hash から除外されるので、凍結したい値はすべて実キーで書いてある。",
+  "_pre_registered_at": "2026-08-18",
+  "_screening_provenance": "out/capacity-screen.json (旧レシピ・rounds x3 = -0.0066) と out/capacity-screen-armE.json (arm E・900 = -0.0052 / 1800 = -0.0058)。いずれも can_adopt=false。窓は 2025-2026 で本確認と重ならない。",
+
+  "evaluation_contract_version": "v3",
+  "primary_metric": "winner_nll",
+  "primary_regime": "standard",
+
+  "arms": {
+    "_comment": "変えるのは n_estimators ただ 1 つ。900 と 1800 は差 0.0006 = 再学習ノイズ(0.0018)の内側で統計的に区別がつかないので、**安い方(900)を確認する**。点推定がわずかに良いという理由で 1800 を選ぶのは noise-chasing。",
+    "arm": "oof_isotonic",
+    "n_oof_blocks": 8,
+    "candidate_n_estimators": 900,
+    "active_n_estimators": 300,
+    "objective": "pl_topk",
+    "seed": 42,
+    "everything_else": "identical"
+  },
+
+  "_min_effect_delta": "期待効果 0.0052 に対し十分低く、かつ毛差での通過を塞ぐ水準。",
+  "min_effect_delta": 0.002,
+
+  "eval_window": {
+    "_comment": "スクリーニング窓(2025-2026)と完全に disjoint。fold は 2019..2024 の 6 つ。--from/--to の両方が必須で、この値と一致しなければ fail-closed。",
+    "from": "2019-01-01",
+    "to": "2024-12-31",
+    "min_eval_days": 400
+  },
+
+  "power": {
+    "_comment": "088 実測 SE 0.000863 @ 821 開催日 から開催日数で外挿し、**本日実測の再学習ノイズを合成した**。CI 自体には seed ノイズが入らない(それが今日の発見)ので、検出力の見積もりには入れておかないと過大評価になる。",
+    "n_races": 20730,
+    "n_days": 646,
+    "expected_se_bootstrap": 0.000973,
+    "expected_seed_noise": 0.000741,
+    "expected_se": 0.001223,
+    "mde_80": 0.00342,
+    "target_effect": -0.0052,
+    "power_at_target": 0.989
+  },
+
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [3, 5],
+    "non_inferior_margin": 0.005
+  },
+
+  "top_noninferior": { "top2": 0.0005, "top3": 0.0005 },
+
+  "calibration": {
+    "_comment": "両アームとも arm E で校正器は同一。違うのは booster の本数だけなので ECE の比較は等条件。",
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+
+  "subgroup_guard": {
+    "_comment": "critical をゼロにする。069 のガードは『全体では良いが直近レジームで死んでいる候補』を捕まえるためのものだが、**この窓(2019-2024)には現行レジームのデータが 1 レースも無い**ので、守るべき対比が窓の中に存在しない。`recent_year_*` は窓の最終年 2024 を指し、現行レジームとは別物になる。検定不能な veto を新設しないため critical には入れない。gate はしないが --subgroups で report には出す。",
+    "critical_subgroups": [],
+    "rationale": "window_contains_no_current_regime_data",
+    "target_year": 2024,
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "decision": "four_state",
+    "no_decision_min_days": 400
+  },
+
+  "current_regime_evidence": {
+    "_comment": "この確認は履歴窓での話であり、現行レジームについては何も立証しない。現行レジームでの証拠はスクリーニング窓(2025-2026 / arm E で -0.0052 CI[-0.0080,-0.0023])にあるが、そこは設定を選んだ窓なので **効果の大きさの主張には使えない**。存在の傍証まで。昇格を検討する際はこの限界を併記すること。",
+    "screening_window_effect": -0.005214,
+    "usable_for_magnitude": false
+  },
+
+  "bootstrap": { "b": 2000, "seed": 20260818, "block": "race_day", "alpha": 0.05 },
+  "determinism": { "tolerance": 1e-09, "num_threads": 1 },
+
+  "verdict": {
+    "formula": "gate.adopted AND subgroup_guard_status NOT IN {FAIL, MISSING}",
+    "adopt_requires_full_subgroup_assurance": true,
+    "no_decision": "評価が実行できない / 開催日が 400 未満 / 点推定は候補有利だが CI がゼロを跨ぐ",
+    "on_reject_or_no_decision": "容量の軸を閉じる。1800 など別の本数を試し直さない(それは窓を見てからの設定変更になる)"
+  },
+
+  "artifact_isolation": {
+    "verdict_kind": "full_walk_forward",
+    "kinds": ["full_walk_forward", "screening", "exploratory"],
+    "eligible_kinds": ["full_walk_forward"]
+  }
+}
