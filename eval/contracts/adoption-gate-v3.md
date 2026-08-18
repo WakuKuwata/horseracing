@@ -163,6 +163,49 @@ candidate that v3 would REJECT could go live by beating four point estimates. `p
 staying a candidate is the same rule 085 and 091 followed by hand: a run that cannot speak about
 the current regime waits for evidence that can.
 
+## Measured limit: the CI does not contain retraining noise
+
+`scripts/seed_variance_probe.py` (run 2026-08-18). The same two-arm comparison was re-run six
+times changing ONLY the training seed — same data (pinned parquet), same recipe, `num_threads=1`,
+a near-null contrast (`drop=pace_first3f`, 3 columns / 17 splits in the active model). The true
+effect is fixed, so the spread is pure retraining noise.
+
+| | |
+|---|---:|
+| measured diffs across six reruns | −0.003755 … +0.002075 |
+| **seed noise SD** | **0.001816** |
+| same-fold bootstrap SE | 0.002239 |
+| **ratio** | **0.81** |
+
+The day-cluster bootstrap resamples RACES; it cannot see the variation that comes from refitting
+the model. Combining the two (independent) sources widens the interval by 29% at fold level.
+
+Extrapolating to the 088 window (8 folds, treating fold-level noise as independent — NOT measured):
+seed noise ≈ 0.00064 against a reported SE of 0.00086, a ratio of 0.74, giving a combined SE of
+≈0.00108 and an all-gates MDE nearer **0.0030** than 0.0024.
+
+What this means for reading past results:
+
+| | effect | in units of seed noise (fold level) |
+|---|---:|---:|
+| 036 target encoding | −0.0134 | 7.4× |
+| 085 arm E | −0.0128 | 7.0× |
+| grade repair | −0.0129 | 7.1× |
+| prize backfill | −0.0098 | 5.4× |
+| 069 F02 | −0.0057 | 3.1× |
+| 070 F04 | −0.0015 | **0.8×** |
+| 088 | −0.0006 | **0.3×** |
+
+The adopted results are 5–7× the retraining noise and are safe. **The 0.0005–0.002 band that the
+shelved features occupied is at or below it** — those measurements were never distinguishable from
+re-running the same experiment with a different seed. That is a stronger statement than
+"underpowered": more eval races would not have fixed it, because the noise is in the fit, not the
+sample.
+
+Not fixed here. The options are to average each arm over k seeds (noise/√k, k× the compute), to
+resample seeds inside the interval (needs the same refits), or to state the wider MDE and stop
+claiming resolution below it. Whichever is chosen belongs in a pre-registration, not in a default.
+
 ## Other known limits
 
 - Two nested recent windows each get a one-sided harm test, so the false-FAIL rate exceeds a
