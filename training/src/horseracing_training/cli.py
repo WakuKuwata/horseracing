@@ -1057,6 +1057,8 @@ def main(argv: list[str] | None = None) -> int:
     ae.add_argument("--weight-mask-rate", type=float, default=None,
                     help="091 fit-scope mask rate; must match the recipe being reproduced")
     ae.add_argument("--weight-mask-seed", type=int, default=None)
+    ae.add_argument("--n-estimators", type=int, default=None,
+                    help="094: booster の本数。確認で通した値を渡す(未指定=既定 300)")
     ae.add_argument("--num-threads", type=int, default=None)
     ae.add_argument("--json", dest="json_out", default=None)
     ae.add_argument("--database-url", default=None)
@@ -2047,6 +2049,7 @@ def _register_arm_e(session: Session, args) -> int:
         session, model_version=args.model_version, artifacts_dir=str(art),
         n_oof_blocks=args.n_oof_blocks, seed=args.seed,
         weight_mask_rate=args.weight_mask_rate, weight_mask_seed=args.weight_mask_seed,
+        n_estimators=args.n_estimators,
         num_threads=args.num_threads,
     )
     print(f"register-arm-e {payload['model_version']}  races={payload['n_races']}  "

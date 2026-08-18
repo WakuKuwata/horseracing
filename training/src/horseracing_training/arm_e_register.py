@@ -119,6 +119,7 @@ def run(
     seed: int = 42,
     weight_mask_rate: float | None = None,
     weight_mask_seed: int | None = None,
+    n_estimators: int | None = None,
     num_threads: int | None = None,
 ) -> dict[str, Any]:
     races = load_eval_races(session)
@@ -131,9 +132,12 @@ def run(
     # a hardcoded recipe would now register a full-history booster that silently predates it —
     # and the prospective holdout would then be measuring arm E + the missing mask at once,
     # attributing both to arm E.
+    # 094: 容量も同じ理由でレシピの一部である。ここを固定値にすると、確認で通した本数と
+    # 違うモデルを「その verdict のモデル」として登録してしまう。
     recipe = ModelRecipe(
         objective="pl_topk", calibration="isotonic", calib_frac=0.3, seed=seed,
         weight_mask_rate=weight_mask_rate, weight_mask_seed=weight_mask_seed,
+        params=(("n_estimators", int(n_estimators)),) if n_estimators is not None else None,
     )
     predictor = OofCalibratedPredictor(
         session,
