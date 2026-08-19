@@ -389,3 +389,45 @@ def test_recent_window_is_bounded_at_both_ends():
     res = recent_window_guard(days, cfg=CFG, max_date=datetime.date(2026, 6, 1))
     assert res["windows"]["recent_3y"]["n_races"] == 2
     assert res["pass"] is True  # the excluded day would have forced a FAIL
+
+
+# --- contract v4: 判定に使う区間が再学習分散を含む ------------------------------------------
+
+def test_inflated_interval_widens_each_arm_independently():
+    """percentile 区間は非対称で、その非対称性は推定値についての情報を持つ。合成は各腕に
+    独立に(分散の加法で)行い、点推定は動かさない。"""
+    from horseracing_eval.bootstrap import BootstrapCI, inflate_for_seed_noise
+
+    # 下側に長い非対称区間(下腕 0.0025 / 上腕 0.0017)
+    ci = BootstrapCI(point=-0.0020, ci_low=-0.0045, ci_high=-0.0003, b=2000, seed=1,
+                     block="race_day", n_days=821, no_decision=False)
+    out = inflate_for_seed_noise(ci, sd_fold=0.001816, n_folds=8)
+    assert out.point == ci.point                       # 点推定は不変
+    assert out.ci_low < ci.ci_low and out.ci_high > ci.ci_high
+    # 元が下側に長い非対称なら、合成後も下側が長いまま
+    assert (out.point - out.ci_low) > (out.ci_high - out.point)
+    # ゼロを切っていた区間が、再学習分散を数えるとゼロを跨ぐ — これが実効 α 5.8% の正体
+    assert ci.ci_high < 0 and out.ci_high > 0
+
+
+def test_seed_noise_scales_with_folds_and_k_but_never_removes_sampling_error():
+    import pytest
+
+    from horseracing_eval.bootstrap import seed_noise_sd
+
+    assert seed_noise_sd(0.001816, n_folds=1) > seed_noise_sd(0.001816, n_folds=8)
+    assert seed_noise_sd(0.001816, n_folds=8, k_seeds=4) == pytest.approx(
+        seed_noise_sd(0.001816, n_folds=8) / 2.0, rel=1e-9)
+    assert seed_noise_sd(0.0, n_folds=8) == 0.0        # 宣言が無ければ何も足さない
+
+
+def test_no_declared_noise_leaves_the_interval_untouched():
+    """v3 以前の artifact と比較可能であること(合成しなければバイト同一)。"""
+    from horseracing_eval.bootstrap import BootstrapCI, inflate_for_seed_noise
+
+    ci = BootstrapCI(point=-0.002, ci_low=-0.004, ci_high=0.0, b=10, seed=1,
+                     block="race_day", n_days=5, no_decision=False)
+    assert inflate_for_seed_noise(ci, sd_fold=0.0, n_folds=8) is ci
+    undecided = BootstrapCI(point=float("nan"), ci_low=None, ci_high=None, b=10, seed=1,
+                            block="race_day", n_days=1, no_decision=True)
+    assert inflate_for_seed_noise(undecided, sd_fold=0.001816, n_folds=8) is undecided

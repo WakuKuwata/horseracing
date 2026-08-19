@@ -31,10 +31,14 @@ REJECT = "REJECT"
 NO_DECISION = "NO_DECISION"
 
 #: v3 (2026-08): unified gate implementation, recent-window non-inferiority test, power-aware
-#: subgroup states, window-derived target year. A v2-stamped gate-config FAILS CLOSED in
-#: confirmatory mode on purpose — its numbers were judged under different rules, and silently
-#: re-judging them would break the immutability of the verdict it recorded.
-EVALUATION_CONTRACT_VERSION = "v3"
+#: subgroup states, window-derived target year.
+#: v4 (2026-08-18): the interval the gate reads now includes the declared RETRAINING variance.
+#: The cluster bootstrap resamples races and is blind to refitting; leaving it out made the
+#: interval ~20% too narrow and the effective false-positive rate 5.8% against a nominal 2.5%.
+#: A gate-config from an older contract FAILS CLOSED in confirmatory mode on purpose — its numbers
+#: were judged under different rules, and silently re-judging them would break the immutability of
+#: the verdict it recorded.
+EVALUATION_CONTRACT_VERSION = "v4"
 
 #: Feature 091: the only artifact kind a verdict may be read from.
 VERDICT_ARTIFACT_KIND = "full_walk_forward"
@@ -219,6 +223,17 @@ def assert_confirmatory(
     if cfg.get("evaluation_contract_version") != EVALUATION_CONTRACT_VERSION:
         raise ConfirmatoryContractError(
             f"gate-config evaluation_contract_version != {EVALUATION_CONTRACT_VERSION!r}"
+        )
+    # v4: the retraining-variance term is REQUIRED, not optional. Making it opt-in would rebuild
+    # the "fail-open unless the operator remembers" shape that this contract removed three times
+    # over in the 2026-08 review.
+    sn = (cfg.get("seed_noise") or {})
+    if not sn.get("sd_fold"):
+        raise ConfirmatoryContractError(
+            "confirmatory mode requires a seed_noise.sd_fold (the measured fold-level retraining "
+            "SD). The cluster bootstrap cannot see refitting variance; without this the interval "
+            "understates and the gate runs above its nominal error rate. Measure it with "
+            "scripts/seed_variance_probe.py, or restate the last measurement and cite it."
         )
     if expected_hash is None:
         raise ConfirmatoryContractError(

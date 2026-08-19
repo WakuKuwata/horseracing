@@ -1,4 +1,4 @@
-# Adoption gate — evaluation contract v3
+# Adoption gate — evaluation contract v4
 
 Single definition: `eval/src/horseracing_eval/gates.py`. Both the standard paired path
 (`paired.paired_eval`) and the regime path (`regime_paired.evaluate_regimes`) call it.
@@ -205,6 +205,78 @@ sample.
 Not fixed here. The options are to average each arm over k seeds (noise/√k, k× the compute), to
 resample seeds inside the interval (needs the same refits), or to state the wider MDE and stop
 claiming resolution below it. Whichever is chosen belongs in a pre-registration, not in a default.
+
+## v4: the interval the gate reads includes retraining variance
+
+The cluster bootstrap resamples RACES. It is blind to the variation that comes from refitting the
+model — measured by re-running the same two-arm comparison with only the seed changed:
+
+| | |
+|---|---:|
+| seed noise SD (fold level) | 0.001816 |
+| same-fold bootstrap SE | 0.002239 |
+| **ratio** | **0.81** |
+
+Left out, the reported interval was ~20% too narrow on a standard 8-fold window and the gate's
+**effective false-positive rate was 5.8%, not the nominal 2.5%**.
+
+v4 therefore requires a declared `seed_noise.sd_fold` and the gate reads a COMBINED interval:
+each arm of the percentile interval is widened by `z · sd_fold / sqrt(n_folds · k_seeds)` in
+quadrature. The point estimate never moves; `bootstrap_ci` (sampling only) and `total_ci`
+(combined) are both reported so the components stay separable and older artifacts stay comparable.
+
+**Averaging k seeds does not fix this and is a bad trade.** The race sample is identical across
+those runs, so only the seed component shrinks and the total can never fall below the sampling SE:
+
+| k | total SD | understatement | compute |
+|---:|---:|---:|---:|
+| 1 | 0.001076 | 19.8% | 1× |
+| 3 | 0.000939 | 8.1% | 3× |
+| ∞ | 0.000863 | 0% | ∞ |
+
+Three times the compute for an 8% correction. Declaring the variance costs nothing and is honest.
+
+`sd_fold` is recipe- and window-dependent, and the fold-independence assumption behind
+`/sqrt(n_folds)` is **not measured** — which is why it is a frozen, cited input rather than
+something the harness infers. Re-measure with `scripts/seed_variance_probe.py` when the recipe
+changes materially.
+
+## Opportunity set — measuring a feature where it applies (optional)
+
+The primary estimand averages over the whole window, so a feature that helps a lot in a small
+slice is divided by its coverage. A candidate worth −0.006 on the 25% of races where it applies
+reads as −0.0015 overall, which sits inside the measurement noise — the band that twenty-plus
+feature attempts have landed in. The July 2026 three-lens metric review converged independently on
+this design; it is implemented here.
+
+Declaring `opportunity_set` changes the primary arm of the gate to **both** of:
+
+| sub-gate | on |
+|---|---|
+| `opportunity_effect_beats_delta` / `opportunity_ci_upper_below_zero` | the pre-registered slice — **superiority** |
+| `overall_noninferior` | the whole window — `ci_low ≤ margin`, **not** superiority |
+| `opportunity_coverage_as_declared` | realized coverage inside the frozen range |
+
+**Superiority on the slice alone is never adoptable.** A feature that earns its keep in one slice
+while quietly costing the rest of the book is worse than nothing, and the whole-window arm is what
+catches that. Both halves are gate terms, not one plus a note.
+
+What it buys, at the current combined SE:
+
+| coverage f | overall effect detectable at 80% power |
+|---:|---:|
+| 100% (no slice) | 0.0026 |
+| 50% | 0.0018 |
+| 25% | **0.0013** |
+| 10% | **0.0008** |
+
+The mask is built by the caller and injected — `eval` does not import `features` or `training`, so
+it cannot check the mask is as-of safe. What it enforces instead is that the mask must be DECLARED
+with an expected coverage range, and the realized coverage must land inside it. A mask that is not
+the registered one, or that selects on something it should not, almost always moves coverage.
+
+**This is optional on purpose.** Unlike `seed_noise` — which fixes a defect present in every run —
+this is a choice of estimand. Applying it to a feature that is not narrow answers nothing.
 
 ## Other known limits
 
