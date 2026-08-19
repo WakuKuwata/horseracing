@@ -160,3 +160,51 @@ def test_without_an_opportunity_set_the_gate_is_byte_identical_to_before():
         "calibration_not_emergency",
     }
     assert g.adopted is True
+
+
+# --- paired_eval まで通る配線の確認 -------------------------------------------------------
+
+def test_paired_eval_reports_the_opportunity_block_end_to_end():
+    """`score_opportunity` の単体ではなく、CLI が呼ぶ経路そのものを通す。"""
+    import sys
+
+    sys.path.insert(0, __file__.rsplit("/", 1)[0])
+    from test_paired_subgroups import _FakeFactory, _mixed_races
+
+    from horseracing_eval.paired import paired_eval
+
+    races = _mixed_races()
+    # first_valid_year=2024 だと 2024 は学習側に回る(それ以前が無い)ので、採点されるのは
+    # 2026 だけ。マスクはその中から作らないと 0 件になる。
+    scored = [er.context.race_id for er in races if er.context.race_date.year == 2026]
+    mask = set(scored[: max(1, len(scored) // 2)])
+    cfg = {
+        **CFG,
+        "opportunity_set": {**CFG["opportunity_set"], "expected_coverage": [0.0, 1.0]},
+        "subgroup_guard": {"critical_subgroups": []},
+    }
+    rep = paired_eval(
+        _FakeFactory(0.6, "c"), _FakeFactory(0.4, "a"), races,
+        gate_config=cfg, first_valid_year=2024, bootstrap_b=50,
+        opportunity_races=mask,
+    )
+    assert rep.opportunity is not None
+    assert rep.opportunity["n_races"] > 0
+    assert rep.opportunity["coverage_as_declared"] is True
+    # ゲートの主部が適用集合の項に差し替わっている
+    assert "opportunity_ci_upper_below_zero" in rep.gate.reasons["sub_gates"]
+    assert "ci_upper_below_zero" not in rep.gate.reasons["sub_gates"]
+
+
+def test_paired_eval_without_a_mask_leaves_the_block_empty():
+    import sys
+
+    sys.path.insert(0, __file__.rsplit("/", 1)[0])
+    from test_paired_subgroups import _FakeFactory, _mixed_races
+
+    from horseracing_eval.paired import paired_eval
+
+    rep = paired_eval(_FakeFactory(0.6, "c"), _FakeFactory(0.4, "a"), _mixed_races(),
+                      first_valid_year=2024, bootstrap_b=50)
+    assert rep.opportunity is None
+    assert "ci_upper_below_zero" in rep.gate.reasons["sub_gates"]

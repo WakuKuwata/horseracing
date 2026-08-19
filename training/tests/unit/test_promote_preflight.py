@@ -115,3 +115,42 @@ def test_no_registration_key_when_there_was_nothing_prior():
 
     assert "registration" not in merged_promotion_record(None, _record())
     assert "registration" not in merged_promotion_record({}, _record())
+
+
+# --- 適用集合の race_id 一覧の読み込み(2026-08-18) -------------------------------------------
+
+def test_opportunity_race_list_parsing_and_provenance(tmp_path):
+    """マスクは判定の入力になるので、**どのファイルを読んだか**を残す。事後に差し替えられては
+    事前登録の意味が無い。"""
+    from horseracing_training.cli import _load_opportunity_races
+
+    f = tmp_path / "mask.txt"
+    f.write_text("# opportunity set: X が全馬非欠損\n# coverage 0.25\nR001\nR002\n\n  R003  \n")
+    ids, prov = _load_opportunity_races(str(f))
+    assert ids == {"R001", "R002", "R003"}          # コメントと空行は無視、前後空白は落ちる
+    assert prov["n_race_ids"] == 3
+    assert len(prov["sha256"]) == 64
+    assert prov["path"] == str(f)
+
+    # 内容が 1 文字でも変われば hash が動く
+    f.write_text("R001\nR002\nR003\nR004\n")
+    _, prov2 = _load_opportunity_races(str(f))
+    assert prov2["sha256"] != prov["sha256"]
+
+
+def test_no_mask_gives_no_provenance():
+    from horseracing_training.cli import _load_opportunity_races
+
+    assert _load_opportunity_races(None) == (None, {})
+
+
+def test_empty_mask_file_is_refused(tmp_path):
+    """空のマスクで走らせると『適用集合ゼロ』を黙って測ることになる。"""
+    import pytest
+
+    from horseracing_training.cli import _load_opportunity_races
+
+    f = tmp_path / "empty.txt"
+    f.write_text("# コメントだけ\n\n")
+    with pytest.raises(SystemExit, match="empty"):
+        _load_opportunity_races(str(f))

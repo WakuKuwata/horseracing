@@ -56,6 +56,32 @@ def _require_subgroups(args) -> bool:
     return False
 
 
+def _load_opportunity_races(path: str | None) -> tuple[set | None, dict]:
+    """適用集合の race_id 一覧を読み、由来を記録する。
+
+    マスクは呼び出し側(= 特徴を知っている側)が作る。eval は features を import しないので
+    中身の as-of 安全性は検証できず、代わりに凍結された expected_coverage との照合で守る。
+    ここでは**どのファイルを読んだか**を残す — 事後にマスクを差し替えられては意味が無い。
+    """
+    if not path:
+        return None, {}
+    import hashlib
+    from pathlib import Path as _Path
+
+    raw = _Path(path).read_text()
+    ids = {
+        ln.strip() for ln in raw.splitlines()
+        if ln.strip() and not ln.lstrip().startswith("#")
+    }
+    if not ids:
+        raise SystemExit(f"error: opportunity race list is empty: {path}")
+    return ids, {
+        "path": str(path),
+        "sha256": hashlib.sha256(raw.encode()).hexdigest(),
+        "n_race_ids": len(ids),
+    }
+
+
 def _load_verdict(path: str | None) -> dict | None:
     """Read a v3 evaluation report for the promotion boundary. Missing file fails loudly: an
     operator who mistypes the path must not silently get a CANDIDATE they think is ACTIVE."""
@@ -991,6 +1017,10 @@ def main(argv: list[str] | None = None) -> int:
     pe.add_argument("--bootstrap-b", type=int, default=2000)
     pe.add_argument("--num-threads", type=int, default=None)
     pe.add_argument("--gate-config", default=None, help="pre-registered gate-config.json path")
+    pe.add_argument("--opportunity-races", default=None,
+                    help="事前登録した適用集合の race_id 一覧(1 行 1 件・# はコメント)。"
+                         "gate-config の opportunity_set 宣言とセットでのみ有効。"
+                         "scripts/build_opportunity_mask.py で作る")
     pe.add_argument("--subgroups", action="store_true",
                     help="069: report 2026/nk/coverage subgroup CIs + intersection-union guard")
     pe.add_argument("--confirmatory", action="store_true",
@@ -1813,6 +1843,9 @@ def _paired_eval(session: Session, args) -> int:
     # silently truncated every fold's outer-train to >= --from and dropped the first eval year
     # (empty train) — e.g. --from 2019 trained the 2020 fold on 2019 only, not 2008-2019.
     eval_start_year = args.from_.year if args.from_ else args.first_valid_year
+    opp_races, opp_provenance = _load_opportunity_races(
+        getattr(args, "opportunity_races", None)
+    )
     eval_races = load_eval_races(session, start_date=None, end_date=args.to)
     cand = _factory_from_spec(session, args.candidate, **mat_kwargs)
     act = _factory_from_spec(session, args.active, **mat_kwargs)
@@ -1834,8 +1867,10 @@ def _paired_eval(session: Session, args) -> int:
         bootstrap_seed=args.seed,
         bootstrap_b=args.bootstrap_b,
         num_threads=args.num_threads,
+        opportunity_races=opp_races,
         snapshot={"git_sha": _git_sha(), "feature_version": FEATURE_VERSION,
-                  "candidate_spec": args.candidate, "active_spec": args.active},
+                  "candidate_spec": args.candidate, "active_spec": args.active,
+                  **({"opportunity_mask": opp_provenance} if opp_provenance else {})},
         subgroups=_require_subgroups(args),
         compute_sensitivity=getattr(args, "compute_sensitivity", False),
     )
@@ -1867,6 +1902,16 @@ def _paired_eval(session: Session, args) -> int:
     print(f"  DECISION={report.decision} "
           f"(cause={report.decision_reason.get('cause')}) "
           f"contract={report.evaluation_contract_version} gate_hash={report.gate_config_hash[:12]}")
+    if report.opportunity:  # 適用集合(宣言があるときのみ)
+        o = report.opportunity
+        print(f"  opportunity[{o['definition']}]:")
+        print(f"    coverage {o['coverage']:.3f} ({o['n_races']:,}/{o['n_eligible_total']:,} "
+              f"レース・{o['n_days']} 開催日) 宣言 {o['declared_coverage']} "
+              f"-> {'OK' if o['coverage_as_declared'] else 'NG'}")
+        if o["ci_low"] is not None:
+            print(f"    diff={o['diff']:+.6f} 標本CI[{o['ci_low']:+.6f}, {o['ci_high']:+.6f}] "
+                  f"合成CI[{o['total_ci_low']:+.6f}, {o['total_ci_high']:+.6f}]")
+        print("    注: 適用集合の優越性だけでは採用しない(全体非劣性と AND)")
     if report.subgroups:  # Feature 069 US1
         sg = report.subgroups
         for grain in ("race_subgroups", "horse_subgroups"):
