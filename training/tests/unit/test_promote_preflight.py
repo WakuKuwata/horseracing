@@ -65,3 +65,53 @@ def test_missing_metadata_is_caught(tmp_path):
     row = _artifact(tmp_path, write_meta=False)
     assert any("metadata.json が無い" in p
                for p in _artifact_problems(row, current_fv=FEATURE_VERSION))
+
+
+# --- 昇格記録の組み立て(2026-08-18) ---------------------------------------------------------
+
+def _record(basis="v3_verdict", **over):
+    r = {"promoted_at": "2026-08-18T09:00:00", "basis": basis, "override_reason": None,
+         "v3_verdict": {"status": "ADOPT"}, "previous_active": "lgbm-old",
+         "git_sha": "abc123", "rollback_command": "..."}
+    r.update(over)
+    return r
+
+
+def test_registration_time_decision_does_not_survive_into_the_promotion_record():
+    """実際に起きた不備: 登録時に save_model_version が書いた
+    `reasons: {"cause": "register_as_candidate_requested"}` がマージで生き残り、昇格後の行に
+    `basis: "v3_verdict"` と並んでいた。昇格自体は正しくても監査欄に矛盾する根拠が 2 つ並ぶ。"""
+    from horseracing_training.promote import merged_promotion_record
+
+    prior = {"basis": None, "promotable": False, "status": "candidate",
+             "reasons": {"cause": "register_as_candidate_requested",
+                         "legacy_gate_adopted": False},
+             "v3_verdict": None, "git_sha": "old000"}
+    out = merged_promotion_record(prior, _record())
+
+    assert out["basis"] == "v3_verdict"
+    assert out["status"] == "active" and out["promotable"] is True
+    assert "reasons" not in out                      # 登録時の判定は最上位に残さない
+    assert out["git_sha"] == "abc123"                # 昇格時の値で上書きされる
+    # provenance は捨てずに退避する
+    assert out["registration"]["reasons"]["cause"] == "register_as_candidate_requested"
+
+
+def test_re_promotion_does_not_nest_the_registration_record():
+    """戻して再度昇格しても registration が入れ子にならない(元の登録記録が保たれる)。"""
+    from horseracing_training.promote import merged_promotion_record
+
+    first = merged_promotion_record(
+        {"reasons": {"cause": "register_as_candidate_requested"}}, _record())
+    second = merged_promotion_record(first, _record(basis="override",
+                                                    override_reason="rollback"))
+    assert second["basis"] == "override"
+    assert second["registration"] == {"reasons": {"cause": "register_as_candidate_requested"}}
+    assert "registration" not in second["registration"]
+
+
+def test_no_registration_key_when_there_was_nothing_prior():
+    from horseracing_training.promote import merged_promotion_record
+
+    assert "registration" not in merged_promotion_record(None, _record())
+    assert "registration" not in merged_promotion_record({}, _record())

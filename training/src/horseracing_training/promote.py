@@ -149,6 +149,28 @@ def plan_promotion(
     return plan
 
 
+def merged_promotion_record(prior: dict | None, record: dict) -> dict:
+    """昇格時の記録を、登録時の記録の上に**置き換えて**組み立てる。
+
+    以前はここが単純なマージだったので、登録時に `save_model_version` が書いた
+    `reasons: {"cause": "register_as_candidate_requested"}` が生き残り、昇格後の行に
+    `basis: "v3_verdict"` と並んで載っていた。昇格そのものは正しく行われていても、
+    監査欄としては 2 つの矛盾する根拠が並ぶ。
+
+    登録時の判定は昇格の根拠ではないので、別キー `registration` に退避する。再昇格しても
+    入れ子にならないよう、既に退避済みならそれをそのまま保つ。
+    """
+    prior = dict(prior or {})
+    promotion_keys = set(record) | {"promotable", "status"}
+    registration = prior.get("registration") or {
+        k: v for k, v in prior.items() if k not in promotion_keys
+    }
+    out = {**record, "promotable": True, "status": "active"}
+    if registration:
+        out["registration"] = registration
+    return out
+
+
 def apply_promotion(
     session: Session, plan: PromotePlan, *, at: str, git_sha: str | None = None
 ) -> dict:
@@ -167,8 +189,7 @@ def apply_promotion(
     }
     target = session.get(ModelVersion, plan.model_version)
     summary = dict(target.metrics_summary or {})
-    summary["promotion"] = {**(summary.get("promotion") or {}), **record,
-                            "promotable": True, "status": "active"}
+    summary["promotion"] = merged_promotion_record(summary.get("promotion"), record)
     target.metrics_summary = summary
     target.adoption_status = str(AdoptionStatus.ACTIVE)
 
