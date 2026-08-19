@@ -49,6 +49,15 @@
     "_note": "sd_fold はレシピと窓に依存する。流用する場合はその旨を source に書き、疑わしければ measure し直すこと。fold 間独立の仮定は未実測。"
   },
 
+  "_opportunity_set": "OPTIONAL。狭いが強い特徴のための推定量。主指標は窓全体の平均なので、適用率 f の層で −0.006 の効果は全体では −0.0015 に薄まり測定ノイズに沈む(20 件超の特徴がその帯に落ちた)。宣言すると判定は **適用集合での優越性 AND 窓全体での非劣性** に変わる。**片方だけでは採用しない** — 狭い層で稼いで残りで損する候補を通してしまうため。マスクは呼び出し側が作って注入する(eval は features/training を import しない)ので、eval 側は as-of 安全性を検証できない。代わりに expected_coverage を凍結し、実測被覆率がその外なら fail-closed にする(登録したものと違うマスクや、選んではいけないもので選んでいるマスクは、たいてい被覆率が動く)。**必須にしていないのは、これが欠陥の修正ではなく estimand の選択だから** — 狭くない特徴に当てる意味は無い。",
+  "opportunity_set": {
+    "definition": "REPLACE-ME(例: 牝馬かつ 6-9 月 = 候補特徴が利用可能でレース内に変動がある race)",
+    "expected_coverage": [0.20, 0.30],
+    "overall_noninferior_margin": 0.001,
+    "fail_closed_on_coverage": true,
+    "_note": "適用集合の検出力は f が小さいほど良くなる(効果 1/f 倍・SE 1/sqrt(f) 倍 → z は 1/sqrt(f) 倍)。f=25% で全体効果 0.0013 が 80% 検出力に届く(全体指標だけなら 0.0026 必要)。ただし n が小さくなるので min_eval_days とは別に被覆の下限を実測で確認すること。"
+  },
+
   "bootstrap": {
     "_comment": "Shared by the primary CI, the recent-window guard and every subgroup CI, so they cannot drift apart.",
     "b": 2000,

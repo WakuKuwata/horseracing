@@ -241,6 +241,43 @@ Three times the compute for an 8% correction. Declaring the variance costs nothi
 something the harness infers. Re-measure with `scripts/seed_variance_probe.py` when the recipe
 changes materially.
 
+## Opportunity set — measuring a feature where it applies (optional)
+
+The primary estimand averages over the whole window, so a feature that helps a lot in a small
+slice is divided by its coverage. A candidate worth −0.006 on the 25% of races where it applies
+reads as −0.0015 overall, which sits inside the measurement noise — the band that twenty-plus
+feature attempts have landed in. The July 2026 three-lens metric review converged independently on
+this design; it is implemented here.
+
+Declaring `opportunity_set` changes the primary arm of the gate to **both** of:
+
+| sub-gate | on |
+|---|---|
+| `opportunity_effect_beats_delta` / `opportunity_ci_upper_below_zero` | the pre-registered slice — **superiority** |
+| `overall_noninferior` | the whole window — `ci_low ≤ margin`, **not** superiority |
+| `opportunity_coverage_as_declared` | realized coverage inside the frozen range |
+
+**Superiority on the slice alone is never adoptable.** A feature that earns its keep in one slice
+while quietly costing the rest of the book is worse than nothing, and the whole-window arm is what
+catches that. Both halves are gate terms, not one plus a note.
+
+What it buys, at the current combined SE:
+
+| coverage f | overall effect detectable at 80% power |
+|---:|---:|
+| 100% (no slice) | 0.0026 |
+| 50% | 0.0018 |
+| 25% | **0.0013** |
+| 10% | **0.0008** |
+
+The mask is built by the caller and injected — `eval` does not import `features` or `training`, so
+it cannot check the mask is as-of safe. What it enforces instead is that the mask must be DECLARED
+with an expected coverage range, and the realized coverage must land inside it. A mask that is not
+the registered one, or that selects on something it should not, almost always moves coverage.
+
+**This is optional on purpose.** Unlike `seed_noise` — which fixes a defect present in every run —
+this is a choice of estimand. Applying it to a feature that is not narrow answers nothing.
+
 ## Other known limits
 
 - Two nested recent windows each get a one-sided harm test, so the false-FAIL rate exceeds a

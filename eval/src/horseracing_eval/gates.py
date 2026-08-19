@@ -59,11 +59,13 @@ class CoreGate:
     # --- adapters onto the legacy 5-field GateResult shape (unchanged consumers) ------------
     @property
     def primary(self) -> bool:
-        return self.sub_gates["effect_beats_delta"]
+        sg = self.sub_gates
+        return sg.get("opportunity_effect_beats_delta", sg.get("effect_beats_delta", False))
 
     @property
     def stat_guard(self) -> bool:
-        return self.sub_gates["ci_upper_below_zero"]
+        sg = self.sub_gates
+        return sg.get("opportunity_ci_upper_below_zero", sg.get("ci_upper_below_zero", False))
 
     @property
     def recent(self) -> bool:
@@ -193,6 +195,7 @@ def evaluate_core_gate(
     cand_ece: float | None,
     act_ece: float | None,
     cfg: dict,
+    opportunity=None,
 ) -> CoreGate:
     """The pre-registered adoption conditions, evaluated once for every caller.
 
@@ -216,9 +219,25 @@ def evaluate_core_gate(
 
     # A missing ECE cannot be verified, so it fails closed rather than defaulting to "fine".
     ece_available = cand_ece is not None and act_ece is not None
+    if opportunity is None:
+        primary_terms = {
+            "effect_beats_delta": bool(diff < -delta),
+            "ci_upper_below_zero": bool(ci_high is not None and ci_high < 0.0),
+        }
+    else:
+        # 事前登録した適用集合では**優越性**を、窓全体では**非劣性**を要求する。
+        # 片方だけにすると、狭い層で稼いで残りで損する候補が通ってしまう。
+        ni = float((cfg.get("opportunity_set") or {}).get("overall_noninferior_margin", 0.001))
+        o_hi = opportunity.total_ci_high
+        primary_terms = {
+            "opportunity_effect_beats_delta": bool(opportunity.diff < -delta),
+            "opportunity_ci_upper_below_zero": bool(o_hi is not None and o_hi < 0.0),
+            "opportunity_coverage_as_declared": bool(opportunity.coverage_as_declared),
+            # 全体は「自信を持ってマージンより悪い」ことが無ければよい(優越性は求めない)
+            "overall_noninferior": bool(ci_low is not None and ci_low <= ni),
+        }
     sub_gates = {
-        "effect_beats_delta": bool(diff < -delta),
-        "ci_upper_below_zero": bool(ci_high is not None and ci_high < 0.0),
+        **primary_terms,
         "recent_no_evidence_of_harm": bool(recent.get("pass", True)),
         "top2_noninferior": bool(top2_diff <= top2_tol),
         "top3_noninferior": bool(top3_diff <= top3_tol),
@@ -233,6 +252,7 @@ def evaluate_core_gate(
         reasons={
             "winner_nll_diff": diff,
             "min_effect_delta": delta,
+            "opportunity": (opportunity.to_dict() if opportunity is not None else None),
             "ci_low": ci_low,
             "ci_high": ci_high,
             "top2_diff": top2_diff,
