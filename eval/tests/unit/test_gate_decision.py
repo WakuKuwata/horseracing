@@ -23,12 +23,14 @@ from horseracing_eval.decision import (
 from horseracing_eval.paired import GateResult
 
 CFG = {
-    "evaluation_contract_version": "v3",
+    "evaluation_contract_version": "v4",
     "eval_window": {"from": "2019-01-01", "to": "2026-07-12", "min_eval_days": 10},
     "subgroup_guard": {
         "critical_subgroups": ["2026_only", "nk", "2026_nk"],
         "no_decision_min_days": 10,
     },
+    # v4: 再学習分散は confirmatory の必須項目
+    "seed_noise": {"sd_fold": 0.001816, "k_seeds": 1, "source": "seed_variance_probe 2026-08-18"},
 }
 
 
@@ -187,14 +189,23 @@ def test_confirmatory_fails_on_window_mismatch():
 
 # --- T024: verdict immutability (FR-015) --------------------------------------------------
 
-def test_new_contract_version_is_v3():
-    assert EVALUATION_CONTRACT_VERSION == "v3"
+def test_new_contract_version_is_v4():
+    assert EVALUATION_CONTRACT_VERSION == "v4"
 
 
-def test_v2_gate_config_fails_closed_in_confirmatory_mode():
+def test_v4_confirmatory_requires_the_measured_retraining_variance():
+    """クラスタブートストラップはレースを再標本化するので学習し直す変動を見られない。
+    これを任意にすると『運用者が覚えていなければ fail-open』の形が戻る。"""
+    cfg = {k: v for k, v in CFG.items() if k != "seed_noise"}
+    with pytest.raises(ConfirmatoryContractError, match="seed_noise.sd_fold"):
+        assert_confirmatory(cfg, expected_hash=gate_config_hash(cfg),
+                            eval_window={"from": "2019-01-01", "to": "2026-07-12"})
+
+
+def test_older_contract_gate_config_fails_closed_in_confirmatory_mode():
     """A v2 config was frozen against different rules; re-judging it silently would break the
     immutability of the verdict it recorded."""
-    v2 = {**CFG, "evaluation_contract_version": "v2"}
+    v2 = {**CFG, "evaluation_contract_version": "v3"}  # 直前の契約でも拒否される
     with pytest.raises(ConfirmatoryContractError):
         assert_confirmatory(v2, expected_hash=gate_config_hash(v2))
 
@@ -234,8 +245,9 @@ def test_confirmatory_rejects_a_window_that_differs_from_the_frozen_config():
     from horseracing_eval.decision import gate_config_hash as _h
 
     cfg = {
-        "evaluation_contract_version": "v3",
+        "evaluation_contract_version": "v4",
         "eval_window": {"from": "2019-01-01", "to": "2026-07-12"},
+        "seed_noise": {"sd_fold": 0.001816},
     }
     # matching window passes (v3 also requires the hash — see the dedicated tests below)
     assert_confirmatory(
@@ -249,13 +261,14 @@ def test_confirmatory_rejects_a_window_that_differs_from_the_frozen_config():
             assert_confirmatory(cfg, expected_hash=_h(cfg), eval_window=bad)
 
 
-def test_v3_confirmatory_requires_the_hash_and_both_window_ends():
+def test_v4_confirmatory_requires_the_hash_and_both_window_ends():
     """v2 checked the hash/window only *if the caller supplied them*, so `--confirmatory` alone
     verified nothing beyond "a v3 config exists". Enforcement must not depend on the operator
     remembering three flags."""
     cfg = {
-        "evaluation_contract_version": "v3",
+        "evaluation_contract_version": "v4",
         "eval_window": {"from": "2019-01-01", "to": "2026-07-12"},
+        "seed_noise": {"sd_fold": 0.001816},
     }
     h = gate_config_hash(cfg)
     win = {"from": "2019-01-01", "to": "2026-07-12"}

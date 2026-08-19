@@ -18,7 +18,8 @@ same seed produce bit-identical CIs (SC-002/SC-003). Fewer than 2 race-days → 
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import statistics
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -187,3 +188,58 @@ def race_day_cluster_ratio_bootstrap_ci_v1(
     ci_high = float(np.percentile(boots, 100.0 * (1.0 - alpha / 2.0)))
     return RatioBootstrapCI(point, ci_low, ci_high, b, seed, "race_day", n_days,
                             no_decision=False, replicates=tuple(float(x) for x in boots))
+
+
+# ---------------------------------------------------------------------------------------------
+# Retraining noise (2026-08-18).
+#
+# The cluster bootstrap resamples RACES. It cannot see the variation that comes from refitting the
+# model: measured by re-running the same two-arm comparison with only the seed changed, the diff
+# moved with SD 0.001816 at fold level, against a same-fold bootstrap SE of 0.002239 — a ratio of
+# 0.81. Because that component is missing, the reported interval was ~20% too narrow on a standard
+# window and the gate's effective false-positive rate was 5.8%, not the nominal 2.5%.
+#
+# Averaging k seeds is a bad trade and does NOT fix it: the race sample is identical across those
+# runs, so only the seed component shrinks and the total can never fall below the sampling SE
+# (k=3 buys an 8% correction for 3x the compute; k->inf still leaves the 20%-understated interval
+# unchanged in the limit of what it can reach). The fix is to REPORT the missing variance, not to
+# average it away.
+# ---------------------------------------------------------------------------------------------
+
+
+def seed_noise_sd(sd_fold: float, *, n_folds: int, k_seeds: int = 1) -> float:
+    """Window-level retraining SD from the fold-level measurement.
+
+    Each outer fold is a separate fit, so its seed perturbation is an independent draw and the
+    window mean averages them: ``sd_fold / sqrt(n_folds)``. Running the whole comparison ``k``
+    times and averaging shrinks it by a further ``sqrt(k)``.
+
+    The fold-independence assumption is NOT measured — it is the reason this is a declared,
+    frozen input rather than something the harness infers.
+    """
+    if sd_fold <= 0 or n_folds < 1 or k_seeds < 1:
+        return 0.0
+    return float(sd_fold) / (float(n_folds) ** 0.5 * float(k_seeds) ** 0.5)
+
+
+def inflate_for_seed_noise(
+    ci: BootstrapCI, *, sd_fold: float, n_folds: int, k_seeds: int = 1, alpha: float = 0.05
+) -> BootstrapCI:
+    """Widen a sampling-only interval by the independent retraining component.
+
+    Variances add, so each ARM is widened separately (percentile intervals are not symmetric and
+    the asymmetry carries real information about the estimate). Returns the interval unchanged
+    when there is nothing to add or no interval to widen.
+    """
+    sd = seed_noise_sd(sd_fold, n_folds=n_folds, k_seeds=k_seeds)
+    if sd <= 0 or ci.ci_low is None or ci.ci_high is None:
+        return ci
+    z = statistics.NormalDist().inv_cdf(1.0 - alpha / 2.0)
+    pad = z * sd
+    lo_arm = ci.point - ci.ci_low
+    hi_arm = ci.ci_high - ci.point
+    return replace(
+        ci,
+        ci_low=ci.point - float(np.hypot(lo_arm, pad)),
+        ci_high=ci.point + float(np.hypot(hi_arm, pad)),
+    )

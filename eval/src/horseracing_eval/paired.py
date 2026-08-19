@@ -15,7 +15,7 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass, field
 
-from .bootstrap import race_day_cluster_bootstrap_ci_v1
+from .bootstrap import inflate_for_seed_noise, race_day_cluster_bootstrap_ci_v1
 from .dataset import EvalRace, population_masks
 from .decision import (
     EVALUATION_CONTRACT_VERSION,
@@ -100,6 +100,12 @@ class PairedReport:
     #: Feature 073 US3 (FR-014): diagnostic block-width sensitivities (2/3/4-day, week). Empty
     #: unless paired_eval(compute_sensitivity=True). NEVER ANDed into the gate — diagnostic only.
     bootstrap_sensitivity: dict = field(default_factory=dict)
+    #: Contract v4: ``bootstrap_ci`` widened by the declared retraining (seed) variance. The gate
+    #: reads THIS interval, not the sampling-only one. Both are reported so the two components
+    #: stay separable and past artifacts remain comparable.
+    total_ci: dict = field(default_factory=dict)
+    #: what was added and where the number came from (frozen in the gate-config)
+    seed_noise: dict = field(default_factory=dict)
     #: Contract v3: the year the ``recent_year_*`` subgroups refer to (window's latest year, or a
     #: gate-config pin). v2 hard-coded 2026, which would have frozen the "current regime" guard.
     target_year: int | None = None
@@ -423,7 +429,22 @@ def paired_eval(
     # estimate (which failed ~60% of the time under the null and was mapped to REJECT).
     recent = recent_window_guard(diffs_by_day, cfg=cfg, max_date=max_date)
 
-    gate = _build_gate(cand_scores, act_scores, asdict(ci), recent, cfg)
+    # Contract v4: the cluster bootstrap resamples RACES and is blind to the variation from
+    # refitting the model (measured 2026-08-18: fold-level SD 0.001816 against a same-fold
+    # sampling SE of 0.002239). Left out, the interval is ~20% too narrow and the gate's effective
+    # false-positive rate is 5.8%, not the nominal 2.5%. The gate reads the combined interval.
+    sn = (cfg.get("seed_noise") or {})
+    n_folds = len({er.context.race_date.year for er in valid_races})
+    total = inflate_for_seed_noise(
+        ci, sd_fold=float(sn.get("sd_fold", 0.0)), n_folds=n_folds,
+        k_seeds=int(sn.get("k_seeds", 1)), alpha=boot_alpha,
+    )
+    seed_noise_info = {
+        "sd_fold": sn.get("sd_fold"), "k_seeds": int(sn.get("k_seeds", 1)),
+        "n_folds": n_folds, "source": sn.get("source"),
+        "applied": total.ci_low != ci.ci_low or total.ci_high != ci.ci_high,
+    }
+    gate = _build_gate(cand_scores, act_scores, asdict(total), recent, cfg)
     target_year = resolve_target_year(valid_races, cfg)
     sg = None
     if subgroups:
@@ -449,6 +470,8 @@ def paired_eval(
         ),
         periods=periods,
         bootstrap_ci=asdict(ci),
+        total_ci=asdict(total),
+        seed_noise=seed_noise_info,
         gate=gate,
         snapshot=snapshot or {},
         subgroups=sg,
