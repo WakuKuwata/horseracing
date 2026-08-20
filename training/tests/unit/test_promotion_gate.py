@@ -96,7 +96,7 @@ def test_a_v2_era_verdict_cannot_promote():
     report["evaluation_contract_version"] = "v2"
     d = _promote(report)
     assert d.status == "candidate"
-    assert d.reasons["cause"] == "verdict_contract_version_mismatch"
+    assert d.reasons["cause"] == "verdict_contract_too_old"
 
 
 def test_legacy_gate_failure_short_circuits():
@@ -133,3 +133,28 @@ def test_promotion_never_raises_so_a_trained_model_is_never_lost():
     for junk in ({}, {"verdict": {}}, {"decision": None}, {"artifact_kind": "full_walk_forward"}):
         d = _promote(junk)
         assert d.status == "candidate" and d.promotable is False
+
+
+def test_current_eval_contract_can_promote():
+    """eval が今出している契約版で実際に昇格できること。
+
+    この 1 件が無いと、契約版を上げた瞬間に昇格経路が黙って死ぬ。実際に一度死んでいる: training が
+    "v3" を等値で要求している間に eval が "v4" になり、**より強い証拠**(v4 は再学習分散を区間に
+    畳み込む)を出した判定がすべて mismatch として candidate に落とされていた。ここは eval の生の
+    定数を読むので、次に契約版が動いたとき training 側で気づける。
+    """
+    from horseracing_eval.decision import EVALUATION_CONTRACT_VERSION
+
+    report = _paired_report()
+    report["evaluation_contract_version"] = EVALUATION_CONTRACT_VERSION
+    assert _promote(report).status == "active"
+
+
+def test_unparseable_contract_fails_closed():
+    """読めない契約版は「新しいかもしれない」ではなく昇格不可に倒す。"""
+    for bad in (None, "", "bogus", "3", "v", "v3.1"):
+        report = _paired_report()
+        report["evaluation_contract_version"] = bad
+        d = _promote(report)
+        assert d.status == "candidate", bad
+        assert d.reasons["cause"] == "verdict_contract_too_old", bad

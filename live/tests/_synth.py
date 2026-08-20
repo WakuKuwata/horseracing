@@ -15,7 +15,12 @@ from horseracing_db.models import Horse, Jockey, Race, RaceHorse, RaceResult, Tr
 from horseracing_eval.dataset import load_eval_races
 from horseracing_eval.harness import evaluate
 from horseracing_features.registry import FEATURE_VERSION
-from horseracing_training.adoption import AdoptionDecision, AdoptionGate
+from horseracing_eval.decision import EVALUATION_CONTRACT_VERSION
+from horseracing_training.adoption import (
+    AdoptionDecision,
+    AdoptionGate,
+    VERDICT_ARTIFACT_KIND,
+)
 from horseracing_training.artifacts import save_model_version
 from horseracing_training.predictor import LightGBMPredictor
 from sqlalchemy.orm import Session
@@ -66,6 +71,26 @@ def seed_learnable(session: Session, *, years=(2007, 2008), races_per_year=10, f
                          horses=horses, with_results=True)
 
 
+def adopt_verdict() -> dict:
+    """A confirmatory paired-eval report shaped like one that ADOPTed.
+
+    ``save_model_version`` will not mark a model ACTIVE without one: the legacy 4-metric gate alone
+    cannot justify a promotion. Tests that need a genuinely active model therefore have to supply
+    this, and supplying it exercises the real contract rather than an escape hatch.
+
+    The contract version is READ FROM eval, never spelled out here. Hard-coding it is precisely how
+    the promotion path broke once already — training pinned "v3" by equality while eval moved to
+    "v4", and every valid verdict was silently downgraded to a candidate.
+    """
+    return {
+        "decision": "ADOPT",
+        "evaluation_contract_version": EVALUATION_CONTRACT_VERSION,
+        "artifact_kind": VERDICT_ARTIFACT_KIND,
+        "eligible_for_verdict": True,
+        "decision_reason": {"subgroup_assurance": "full"},
+    }
+
+
 def make_active_model(session: Session, artifacts_root, *, model_version="live-test") -> str:
     races = load_eval_races(session)
     result = evaluate(LightGBMPredictor(session, seed=42), races, first_valid_year=2008)
@@ -73,7 +98,7 @@ def make_active_model(session: Session, artifacts_root, *, model_version="live-t
     final.fit([er.context for er in races])
     save_model_version(
         session, model_version=model_version, predictor=final, eval_result=result,
-        decision=AdoptionDecision(adopted=True, reasons={}),
+        decision=AdoptionDecision(adopted=True, reasons={}), verdict=adopt_verdict(),
         gate=AdoptionGate(ece_threshold=1.0), artifacts_root=str(artifacts_root),
         feature_version=FEATURE_VERSION, git_sha=None,
     )

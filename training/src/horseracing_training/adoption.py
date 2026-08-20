@@ -15,6 +15,7 @@ else candidate.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 
@@ -90,7 +91,21 @@ def evaluate_gate(
 # evidence, which is what 085/091 already did by hand.
 # ---------------------------------------------------------------------------------------------
 
-CONTRACT_VERSION = "v3"
+#: Oldest evaluation contract whose verdict may justify an ACTIVE promotion. v3 is the floor
+#: because it is where the adoption gate was repaired (the v2 recent-window guard was a
+#: zero-tolerance sign test that mapped noise to REJECT, and the subgroup guard was degenerate).
+#:
+#: Compared as ">= this", NOT for equality. Equality was the original spelling and it silently
+#: broke every promotion the moment eval moved to v4: a genuine v4 verdict — strictly STRONGER
+#: evidence, since v4 folds retraining variance into the interval — was rejected as a mismatch and
+#: the model quietly saved as a candidate. A safety check that refuses all valid evidence is a
+#: defect, not a safety property.
+#:
+#: This relies on contract versions being monotonically stricter, which has held for v1..v4.
+#: ``test_current_eval_contract_can_promote`` pins eval's live constant against this floor, so a
+#: future contract that RELAXES something fails here loudly instead of auto-passing.
+MIN_CONTRACT_VERSION = 3
+CONTRACT_VERSION = "v3"  # retained: the floor's name, for reasons/audit output
 VERDICT_ARTIFACT_KIND = "full_walk_forward"
 
 
@@ -126,6 +141,14 @@ def normalize_verdict(report: dict | None) -> dict | None:
     }
 
 
+def _contract_number(version: str | None) -> int | None:
+    """"v4" -> 4. Unparseable or absent -> None, which fails closed at the call site."""
+    if not version:
+        return None
+    m = re.fullmatch(r"v(\d+)", str(version).strip())
+    return int(m.group(1)) if m else None
+
+
 def evaluate_promotion(
     *, legacy: AdoptionDecision, verdict: dict | None, register_as_candidate: bool = False
 ) -> PromotionDecision:
@@ -151,8 +174,10 @@ def evaluate_promotion(
             "report; the legacy 4-metric gate alone cannot justify an ACTIVE promotion"
         )
         return PromotionDecision(False, "candidate", reasons)
-    if v["contract_version"] != CONTRACT_VERSION:
-        reasons["cause"] = "verdict_contract_version_mismatch"
+    n = _contract_number(v["contract_version"])
+    if n is None or n < MIN_CONTRACT_VERSION:
+        reasons["cause"] = "verdict_contract_too_old"
+        reasons["min_contract_version"] = CONTRACT_VERSION
         return PromotionDecision(False, "candidate", reasons)
     if v["artifact_kind"] is not None and (
         v["artifact_kind"] != VERDICT_ARTIFACT_KIND or not v["eligible_for_verdict"]
