@@ -6,7 +6,8 @@ or invariant breaks, parsers fail-close (raise ParseError) rather than inventing
 
 Also hosts ``parse_horse_profile`` — the leak-safe db.netkeiba.com horse-page parser used by the
 opt-in profile-completion pass. It reads identity/pedigree ONLY (name / sex / birth_year /
-sire・dam・damsire); career performance stats on the page are never touched (leak boundary).
+sire・dam・damsire) plus 馬主/生産者; career performance stats on the page are never touched
+(leak boundary).
 """
 
 from __future__ import annotations
@@ -66,13 +67,34 @@ def _sex_from_title(profile_txt: str) -> str | None:
     return "セ" if m.group(1) in "セせ騙" else m.group(1)
 
 
-def _birth_year(soup) -> int | None:
-    """生年月日 row in the profile table -> birth year (e.g. '2022年1月28日' -> 2022)."""
+def _prof_rows(soup) -> dict[str, str]:
+    """The profile table as {見出し: 値}. One pass, since several fields come from it."""
+    out: dict[str, str] = {}
     for row in soup.select("table.db_prof_table tr"):
-        th = _text(row.find("th"))
+        th, td = _text(row.find("th")), _text(row.find("td"))
+        if th:
+            out.setdefault(th, td)
+    return out
+
+
+def _birth_year(rows: dict[str, str]) -> int | None:
+    """生年月日 row -> birth year (e.g. '2022年1月28日' -> 2022)."""
+    for th, td in rows.items():
         if "生年月日" in th:
-            m = _BIRTH_YEAR_RE.search(_text(row.find("td")))
+            m = _BIRTH_YEAR_RE.search(td)
             return int(m.group(1)) if m else None
+    return None
+
+
+def _party(rows: dict[str, str], key: str) -> str | None:
+    """馬主 / 生産者 の名前。空欄・"-" は None(欠損を空文字で埋めない)。
+
+    値は既に読んでいる同じテーブルの中にある — 生年月日のためにこの表を歩きながら、この 2 行だけ
+    読んでいなかった。追加のリクエストは発生しない。"""
+    for th, td in rows.items():
+        if key in th:
+            v = td.strip()
+            return v or None if v not in {"-", "--", "―"} else None
     return None
 
 
@@ -88,11 +110,14 @@ def parse_horse_profile(html: str, netkeiba_horse_id: str) -> ScrapedHorseProfil
         raise ParseError("missing required element: .horse_title h1 (horse name)")
 
     profile_txt = _text(title.select_one(".txt_01")) if title else ""
+    rows = _prof_rows(soup)
     return ScrapedHorseProfile(
         netkeiba_horse_id=netkeiba_horse_id,
         horse_name=name,
         sex=_sex_from_title(profile_txt),
-        birth_year=_birth_year(soup),
+        birth_year=_birth_year(rows),
+        owner_name=_party(rows, "馬主"),
+        breeder_name=_party(rows, "生産者"),
         netkeiba_sire_id=None, sire_name=None,
         netkeiba_dam_id=None, dam_name=None,
         netkeiba_damsire_id=None, damsire_name=None,

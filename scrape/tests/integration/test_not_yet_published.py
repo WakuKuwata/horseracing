@@ -137,3 +137,33 @@ def test_odds_after_post_time_still_fails(session):
     page = f"https://race.netkeiba.com/odds/index.html?race_id={RID}"
     f = FixtureFetcher({win_odds_url(RID): '{"data":{"odds":{}}}'})
     assert scrape_odds(session, urls=[page], fetcher=f).status == "failed"
+
+
+# --- 馬主・生産者の補完対象選定 --------------------------------------------------------------
+
+def test_horse_missing_only_owner_is_selected_for_completion(session):
+    """sex/生年/血統が揃っていても、馬主が欠けていれば補完対象に入ること。
+
+    この条件が無いと netkeiba 由来の 4,149 頭のうち 1 頭しか選ばれない — 他は識別情報が既に
+    埋まっているため。対象の 97% は現役なので、通常運用の中で自然に埋まる。
+    """
+    from horseracing_db.models import Horse
+
+    from horseracing_scrape import SURROGATE_PREFIX
+    from horseracing_scrape.pipeline import complete_profiles
+
+    nk = "2020999001"
+    session.merge(Horse(horse_id=f"{SURROGATE_PREFIX}{nk}", horse_name="テスト",
+                        sex="牡", birth_year=2020, sire_id="X", sire_name="父",
+                        owner_name=None, breeder_name=None, data_source="netkeiba"))
+    session.commit()
+
+    seen: list[str] = []
+
+    class _Recording:
+        def get(self, url):
+            seen.append(url)
+            raise RuntimeError("fetch stopped — 選定されたことだけ確認する")
+
+    complete_profiles(session, fetcher=_Recording())
+    assert any(nk in u for u in seen), "馬主のみ欠けた馬が選ばれなかった"

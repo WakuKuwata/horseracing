@@ -1,0 +1,59 @@
+{
+  "arms": {
+    "B_masked_all": {
+      "full": {
+        "point": -0.02261803311205097,
+        "ci_low": -0.02397947558134203,
+        "ci_high": -0.021286606258417197,
+        "n_days": 823,
+        "n_races": 26410
+      },
+      "recent": {
+        "point": -0.019203539096923353,
+        "ci_low": -0.021708666259100305,
+        "ci_high": -0.016590326301601965,
+        "n_days": 177,
+        "n_races": 5680
+      }
+    },
+    "C_masked_43pct": {
+      "full": {
+        "point": -0.011940475248419727,
+        "ci_low": -0.01297240639774389,
+        "ci_high": -0.010937685678619278,
+        "n_days": 823,
+        "n_races": 26410
+      },
+      "recent": {
+        "point": -0.00977728301475129,
+        "ci_low": -0.011630691644452181,
+        "ci_high": -0.007826444187188156,
+        "n_days": 177,
+        "n_races": 5680
+      }
+    }
+  },
+  "coverage": {
+    "A_real": {
+      "asof_owner_win_rate": 0.9262491661199354,
+      "asof_owner_place_rate": 0.9262491661199354,
+      "asof_breeder_win_rate": 0.9362116208423154
+    },
+    "B_masked_all": {
+      "asof_owner_win_rate": 0.0,
+      "asof_owner_place_rate": 0.0,
+      "asof_breeder_win_rate": 0.0
+    },
+    "C_masked_43pct": {
+      "asof_owner_win_rate": 0.5150015712781383,
+      "asof_owner_place_rate": 0.5150015712781383,
+      "asof_breeder_win_rate": 0.5272713238983135
+    }
+  },
+  "model": "lgbm-094-cap900",
+  "window": [
+    "2019-01-01",
+    "2026-08-16"
+  ],
+  "mask_pct": 43
+}

@@ -312,7 +312,20 @@ def complete_profiles(
                 select(Horse.horse_id)
                 .where(Horse.horse_id.like(f"{SURROGATE_PREFIX}%"))
                 .where(or_(Horse.sex.is_(None), Horse.birth_year.is_(None),
-                           Horse.sire_id.is_(None)))
+                           Horse.sire_id.is_(None),
+                           # 馬主・生産者も欠けていれば対象。この 2 列は長らく parser が読んで
+                           # おらず、netkeiba 由来の 4,149 頭すべてで NULL のままだった。sex や
+                           # 血統は埋まっているので、この条件が無いと 1 頭しか選ばれない。
+                           #
+                           # 効果は測ってある: 本番相当の欠損率で winner NLL -0.0098 〜 -0.0119
+                           # (必要効果 0.0030 の 3-4 倍)。対象の 97% は現役なので、まとめて
+                           # backfill しなくても次に走った時点で通常運用の中で埋まる。
+                           #
+                           # 代償: ページに馬主欄が本当に無い馬は、走るたびに 1 リクエスト取りに
+                           # いき続ける。レース単位の補完なので上限は「出走回数」であり、実測でも
+                           # JRA 所属馬に馬主欄が無い例は見ていない。増えるようなら
+                           # ingestion_jobs の processed と written の差に出る。
+                           Horse.owner_name.is_(None), Horse.breeder_name.is_(None)))
                 .order_by(Horse.horse_id)
             )
             if race_id is not None:  # scope to one race's surrogate horses (auto-after-entries)

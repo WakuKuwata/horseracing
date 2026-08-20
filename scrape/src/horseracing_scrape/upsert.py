@@ -374,6 +374,8 @@ def complete_horse_profile(
         "dam_name": profile.dam_name,
         "damsire_id": _ped_id(profile.netkeiba_damsire_id),
         "damsire_name": profile.damsire_name,
+        "owner_name": profile.owner_name,
+        "breeder_name": profile.breeder_name,
     }
     changed = False
     for col, value in candidates.items():

@@ -193,3 +193,11 @@ class ScrapedHorseProfile:
     dam_name: str | None
     netkeiba_damsire_id: str | None
     damsire_name: str | None
+    #: 馬主・生産者。JRA-VAN 期の馬は 100% 埋まっているが netkeiba 由来の馬は 0% で、
+    #: `asof_owner_win_rate` / `asof_owner_place_rate` / `asof_breeder_win_rate`(稼働モデルの
+    #: split の 4.3%)の充足率が 94% -> 60% に落ちていた。kill-test で本番相当の欠損率における
+    #: 損失は winner NLL **-0.0098 〜 -0.0119** と測れており、必要効果 0.0030 の 3-4 倍にあたる。
+    #: 帰属は成績ではなく**属性**なのでリーク境界には触れない(as-of 集計側が strictly-before を
+    #: 担保する)。ページ上の通算成績・獲得賞金は従来どおり一切読まない。
+    owner_name: str | None = None
+    breeder_name: str | None = None
