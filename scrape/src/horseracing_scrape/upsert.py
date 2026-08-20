@@ -294,6 +294,27 @@ def _derive_running_style(corner_orders, field_size: int) -> str | None:
 
 
 # --- results ----------------------------------------------------------------
+#: テン3F を導出できる唯一の距離。JRA-VAN の col55 と `finish_time - last_3f` は 1200m のとき
+#: **187,833 行で平均誤差 0.0000 秒**、他の距離(1000/1400/1600/2000m)では 3〜50 秒ずれて全く
+#: 一致しない。つまり JRA 自身が 1200m のテン3F を「走破時計 − 上がり3F」として出しており、
+#: ここで計算しているのは推定値ではなく**同じ定義の再現**である。
+#:
+#: なぜ要るか: `race_results.first_3f` は JRA-VAN 生 CSV 由来で、供給停止により 2024 年 96.8%
+#: → 2025 年 74.4% → **2026 年 0.0%** と消えた。netkeiba は馬ごとの上がり3F しか出さず、テン3F
+#: は出さない(ラップページが持つのはレース単位の先頭ペースであって馬ごとの値ではない)。全復旧は
+#: 不可能で、kill-test では定常状態で「何も無い」に対し「1200m だけある」が winner NLL で
+#: **-0.0045** 良い。取得は一切増えない。
+DERIVABLE_FIRST3F_DISTANCE = 1200
+
+
+def _derive_first_3f(distance: int | None, finish_td, last_3f) -> Decimal | None:
+    """1200m に限り テン3F = 走破時計 − 上がり3F。他距離は None(推測しない)。"""
+    if distance != DERIVABLE_FIRST3F_DISTANCE or finish_td is None or last_3f is None:
+        return None
+    v = Decimal(str(finish_td.total_seconds())) - Decimal(str(last_3f))
+    return v if v > 0 else None      # 負や 0 は入力が壊れている合図。埋めない。
+
+
 def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> Counts:
     c = Counts()
     started = set(
@@ -304,6 +325,7 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
         )
     )
     field_size = len(started)
+    distance = session.scalar(select(Race.distance).where(Race.race_id == race_id))
     # winner time anchors finish_time_diff (seconds behind winner — JRA-VAN-consistent interval)
     winner_td = next(
         (parse_netkeiba_time(r.finish_time) for r in scraped.rows if r.finish_order == 1), None
@@ -326,6 +348,7 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
                 race_id=race_id, horse_id=horse_id, finish_order=row.finish_order,
                 result_status=row.result_status, finish_time=own_td, finish_time_diff=diff,
                 last_3f=row.last_3f,
+                first_3f=_derive_first_3f(distance, own_td, row.last_3f),
                 corner_orders=list(row.corner_orders) if row.corner_orders else None,
             ).on_conflict_do_nothing(index_elements=["race_id", "horse_id"])
         )
