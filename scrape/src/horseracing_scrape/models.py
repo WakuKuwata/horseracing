@@ -10,6 +10,20 @@ class ParseError(ValueError):
     """Raised when a required element is missing (fail-close — never invent data)."""
 
 
+class NotYetPublished(ParseError):
+    """The page parsed fine but the source has not published this datum YET.
+
+    Distinct from ParseError because the two demand opposite responses: a ParseError means the
+    markup changed and someone must look at it, while this means the race has not run (no result
+    table) or win odds are not on sale — normal operation on a pre-race fetch. Recording the
+    second as a failure is not merely cosmetic: 380 such rows in 14 days buried the genuine
+    failures in the operator's job history, which is the one screen built to spot them.
+
+    It stays a ParseError subclass so any caller that has not been taught the distinction keeps
+    the old fail-closed behaviour rather than silently swallowing a missing element.
+    """
+
+
 @dataclass(frozen=True)
 class ScrapedRaceKey:
     year: int

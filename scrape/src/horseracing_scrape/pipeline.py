@@ -12,14 +12,14 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 
 from horseracing_db.enums import JobStatus, Source
-from horseracing_db.models import Horse, IngestionJob, RaceHorse
+from horseracing_db.models import Horse, IngestionJob, Race, RaceHorse
 from horseracing_db.validation import is_valid_race_id
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from . import SCRAPE_PARSER_VERSION, SURROGATE_PREFIX
 from .fetch import FetchRefused, PoliteFetcher
-from .models import ParseError, ScrapedRaceList
+from .models import NotYetPublished, ParseError, ScrapedRaceList
 from .odds_adapter import fetch_win_odds
 from .parse._profile import parse_horse_pedigree, parse_horse_profile
 from .parse.entries import parse_entries
@@ -59,6 +59,51 @@ class JobSummary:
     status: str
 
 
+#: Results appear on the page a few minutes after the race, so a fetch taken right at post time
+#: legitimately finds nothing. Win odds have no such lag — they are on sale long before the race —
+#: so absence AT post time is already wrong.
+_RESULT_PUBLISH_GRACE = datetime.timedelta(minutes=30)
+
+
+def _race_id_in_url(url: str) -> str | None:
+    m = re.search(r"race_id=(\d{12})", url)
+    return m.group(1) if m else None
+
+
+def _has_started(session: Session, race_id: str | None, *, at: datetime.datetime,
+                 grace: datetime.timedelta = datetime.timedelta(0)) -> bool:
+    """Had this race already run by ``at``? Unknown counts as YES (fail-closed).
+
+    This is the discriminator that keeps "the source has nothing yet" from swallowing a real
+    breakage. If netkeiba renames the result table, races that HAVE run still answer True here and
+    so still surface as failures; only genuinely-future races are excused. Anything we cannot
+    establish — no race_id in the url, no row, no schedule — answers True as well, because the
+    alternative is to file an unexplained absence as normal and never look at it again.
+    """
+    if race_id is None:
+        return True
+    row = session.execute(
+        select(Race.post_time, Race.race_date).where(Race.race_id == race_id)
+    ).first()
+    if row is None:
+        return True
+    post_time, race_date = row
+    if post_time is not None:
+        # A naive timestamp cannot be compared to an aware "now" without inventing a zone, and
+        # guessing wrong shifts the verdict by hours in either direction. Refuse to guess (codex).
+        if post_time.tzinfo is None:
+            return True
+        return post_time + grace <= at
+    # post_time is only populated from the netkeiba era (2026: 100%, 2025: 23%, 2024: 0%), so
+    # older rows fall back to the date. A DATE is not a start instant: on the race's own day it
+    # cannot say whether the race has run, so that day counts as started rather than excusing an
+    # absence for a full 24 hours (codex — the lenient reading would let a markup change go unseen
+    # for a whole race day, which is exactly when it matters).
+    if race_date is None:
+        return True
+    return race_date <= at.date()
+
+
 def _now() -> datetime.datetime:
     return datetime.datetime.now(datetime.UTC)
 
@@ -75,7 +120,16 @@ def _run_job(
     session.flush()
     try:
         c = work()
-        status = JobStatus.PARTIAL if c.errors else JobStatus.SUCCEEDED
+        # Nothing failed but nothing was done either: report that, rather than a "succeeded" row
+        # the operator has to open to discover it wrote nothing (086 made the same reclassification
+        # for chaos capture, and for the same reason — the console exists to show what needs
+        # attention).
+        if c.errors:
+            status = JobStatus.PARTIAL
+        elif c.processed == 0 and c.written == 0 and c.skipped > 0:
+            status = JobStatus.SKIPPED
+        else:
+            status = JobStatus.SUCCEEDED
     except Exception as exc:  # noqa: BLE001 — fatal: record FAILED, never leave 'running'
         session.rollback()
         job = IngestionJob(
@@ -157,7 +211,17 @@ def scrape_odds(
                 continue
             race_id = m.group(1)
             # win-odds JSON, fetched no-cache (single-latest, constitution V) via the adapter
-            scraped = fetch_win_odds(fetcher, race_id)
+            try:
+                scraped = fetch_win_odds(fetcher, race_id)
+            except NotYetPublished as exc:
+                # Win odds go on sale well before the race, so their absence BEFORE post time is
+                # the normal state on a pre-race fetch — not a failure. After post time it is a
+                # failure, and _has_started answers True for anything we cannot establish.
+                if _has_started(session, race_id, at=_now()):
+                    raise
+                parts.append(Counts(skipped=1,
+                                    error_messages=[f"odds not on sale yet {race_id}: {exc}"]))
+                continue
             parts.append(update_odds(session, race_id, scraped))
         return _aggregate(parts)
 
@@ -353,7 +417,19 @@ def scrape_results(
         parts: list[Counts] = []
         for u in urls:
             html = fetcher.get(u)
-            scraped = parse_results(html)
+            try:
+                scraped = parse_results(html)
+            except NotYetPublished as exc:
+                # The operator pre-fetches upcoming races (e.g. every Friday for the weekend), so a
+                # result page with no result table is the expected state, not a failure. Measured
+                # over 14 days, 239/239 such rows were races that had not run at fetch time and 0
+                # had. Recording them as failures buried the real ones in the job-history console.
+                if _has_started(session, _race_id_in_url(u), at=_now(),
+                                grace=_RESULT_PUBLISH_GRACE):
+                    raise
+                parts.append(Counts(skipped=1,
+                                    error_messages=[f"result not published yet {u}: {exc}"]))
+                continue
             race_id = _race_id_of(scraped.key)
             if race_id is None:
                 parts.append(Counts(skipped=1, error_messages=["race_id not constructible"]))

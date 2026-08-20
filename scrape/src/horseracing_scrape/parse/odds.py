@@ -24,7 +24,7 @@ from __future__ import annotations
 import datetime
 import json
 
-from ..models import ParseError, ScrapedOdds, ScrapedOddsRow, ScrapedPlaceQuoteRow
+from ..models import NotYetPublished, ParseError, ScrapedOdds, ScrapedOddsRow, ScrapedPlaceQuoteRow
 from ._common import race_key_from_race_id
 
 #: netkeiba's official_datetime is wall-clock JST with no offset.
@@ -85,7 +85,7 @@ def parse_odds(payload: str, race_id: str) -> ScrapedOdds:
     odds = data.get("odds") if isinstance(data, dict) else None
     win = odds.get("1") if isinstance(odds, dict) else None
     if not isinstance(win, dict) or not win:
-        raise ParseError("missing required key data.odds['1'] (win odds) in JSON")
+        raise NotYetPublished("missing required key data.odds['1'] (win odds) in JSON")
 
     rows = []
     for umaban, vals in win.items():

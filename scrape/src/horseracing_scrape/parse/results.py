@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from horseracing_db.enums import ResultStatus
 
-from ..models import ParseError, ScrapedResult, ScrapedResultRow
+from ..models import NotYetPublished, ParseError, ScrapedResult, ScrapedResultRow
 from ._common import id_from_href, race_id_from_html, race_key_from_race_id, soup_of
 
 # 着順セルのテキスト先頭で状態を判定（数字=finished）
@@ -48,7 +48,7 @@ def parse_results(html: str) -> ScrapedResult:
 
     table = soup.select_one("table.RaceTable01")
     if table is None:
-        raise ParseError("missing required element: table.RaceTable01")
+        raise NotYetPublished("missing required element: table.RaceTable01")
 
     out: list[ScrapedResultRow] = []
     for tr in table.select("tr"):
