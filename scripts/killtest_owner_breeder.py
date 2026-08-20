@@ -49,7 +49,9 @@ from sqlalchemy.orm import Session
 
 from horseracing_db.session import create_db_engine
 
-OUT = Path("out/owner-killtest")
+#: リポジトリ直下に固定する。相対パスだと実行ディレクトリ次第で落ち先が変わり、実際に一度
+#: training/out/ に書かれた。証跡は追跡される場所に置く(root の out/ は git 管理外)。
+OUT = Path(__file__).resolve().parent.parent / "evidence"
 #: 稼働モデルの置き場は DB が正本。相対パスを書くと実行ディレクトリ次第で落ちるし、
 #: 行が artifact より長生きする事故もあるので、毎回 DB から引いて実在を確かめる。
 CLIP = 1e-6
@@ -188,10 +190,10 @@ def main() -> int:
             if r:
                 print(f"    {label:<20} {r['point']:+.6f}  "
                       f"CI[{r['ci_low']:+.6f}, {r['ci_high']:+.6f}]  n_races={r['n_races']:,}")
-    (OUT / "result.json").write_text(json.dumps(
+    (OUT / "owner-breeder-killtest.json").write_text(json.dumps(
         {"arms": out, "coverage": {k: v["coverage"] for k, v in per_arm.items()},
          "model": mv, "window": [str(FROM), str(END)], "mask_pct": MASK_PCT}, indent=2))
-    print(f"\n  wrote {OUT/'result.json'}")
+    print(f"\n  wrote {OUT/'owner-breeder-killtest.json'}")
     return 0
 
 
