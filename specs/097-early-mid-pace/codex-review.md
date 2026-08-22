@@ -44,3 +44,29 @@ rel_first3f 列も同じ性質で 023 以来受容済み。レース内相対が
   ただし **`ci_high < -0.002` は不採用**: v4 の共有ゲート実装は
   `point < -δ AND ci_high < 0`(+seed 分散込み区間)で、feature ごとに判定式を変えるのは
   v3 が排除した「2 つのゲート実装」の再発になる。既定式 δ=0.002 を維持し、乖離は plan に記録
+
+
+# codex tasks レビュー(2026-08-22・取得成功)
+
+## Q1 選択リーク / 事前登録違反 → 「手続き上、あり」
+
+- (a) smoke が実カットオフを低容量で回すのは確認データの**中間閲覧**。**採用**: 事前登録外の
+  cutoff 2016-01-01(採点 2017)に変更し、効果の数値を stdout/JSON から除去(T025・gate-config `smoke`)
+- (b) guard を同一 driver で計算するのは閾値と結合規則が凍結済みなら可。ただし途中結果が見えて
+  primary の計算を止めたり変えたりできるなら違反。**採用**: 全成分が揃うまで数値を一切出さない
+  出力規律を gate-config と T021 に固定
+- (c) coverage/parity/E2E は候補 vs 基準の成績を測らない整合性検査なのでリークなし。**確認のみ**
+- (d) **最重要**: verdict はマスク学習環境の列採用証拠であり、実データで学習した登録モデルの
+  検証ではない。しかも `full_walk_forward` で出すと `evaluate_promotion`(今週導入)が**これで
+  ACTIVE 昇格を通す**。**採用**: artifact_kind を `counterfactual_supply_simulation` に変更し
+  昇格ゲートから構造的に弾く(実行前なので再事前登録・新 hash 7d2dfe95…)。登録 metadata に
+  `evidence_regime` / `model_training_regime` を分けて記録(T024/T032)
+
+## Q2 最もありそうな誤 verdict → トランザクション・マスクの provenance 失敗
+
+- materialized キャッシュ・DataFrame キャッシュ・別コネクションが片方/両方のアームに非マスクの
+  first_3f を供給しうる。採点集合の対称性 assert はこれを**通してしまう**(両方汚染なら効果が減衰、
+  片方なら任意方向にずれる)。**採用**: loader 境界(features の Frames)で
+  `(race_id, horse_id, race_date, distance, first_3f)` の決定論 hash を両アームで一致 assert +
+  cutoff 以降∧距離≠1200m の first_3f 非 NULL が 0 行 assert + 両アーム `use_materialized=False`
+  assert(T019 で hash 関数を単体テスト・T021(3b) で driver に組込・gate-config に凍結)

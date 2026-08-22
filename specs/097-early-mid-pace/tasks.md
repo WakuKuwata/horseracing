@@ -20,7 +20,7 @@ contracts(feature-columns INV-EM1..EM8・adoption-gate) / gate-config.json(凍�
 
 ## Phase 1: Setup
 
-- [ ] T001 `specs/097-early-mid-pace/gate-config.hash.txt` の hash が `gate_config_hash(gate-config.json)` と一致することを確認し、以降 gate-config.json を変更しない(変更が要る場合は新 hash を記録して commit = 再事前登録として扱う)
+- [ ] T001 `specs/097-early-mid-pace/gate-config.hash.txt` の hash(`7d2dfe95…`= codex tasks レビュー反映後の再事前登録値)が `gate_config_hash(gate-config.json)` と一致することを確認し、以降 gate-config.json を変更しない
 - [ ] T002 実 DB で前提を再確認して `specs/097-early-mid-pace/evidence-preflight.md` に記録: active=lgbm-094-cap900・feature_version=features-021・feature_hash=663fe86c…(metadata.json)・registry 138 列・`race_results.finish_time/last_3f` の 2026 充足 ≥99%
 
 ---
@@ -73,16 +73,16 @@ verdict を出す。
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] `training/tests/unit/test_097_mask.py`: マスク SQL の単体テスト — 合成 DB 行で「cutoff 以降 ∧ distance≠1200 の first_3f のみ NULL、1200m と cutoff 前は不変、他列不変、行数不変」を assert(contracts/adoption-gate の対称性の一部)
+- [ ] T019 [P] [US2] `training/tests/unit/test_097_mask.py`: マスク SQL の単体テスト — 合成 DB 行で「cutoff 以降 ∧ distance≠1200 の first_3f のみ NULL、1200m と cutoff 前は不変、他列不変、行数不変」を assert(contracts/adoption-gate の対称性の一部)。加えて **provenance hash 関数**(`(race_id, horse_id, race_date, distance, first_3f)` の決定論 hash)を同ファイルで定義・テスト(codex tasks Q2)
 - [ ] T020 [P] [US2] `eval/tests/unit/test_paired_report_diffs_by_day.py`: T003 の露出フィールドで pooled CI が単窓 CI と整合する(1 窓だけ渡せば既存 `bootstrap_ci` と一致)ことを固定
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] `scripts/097_simulated_supply_gate.py` を新規作成。`assert_confirmatory(cfg, expected_hash, eval_window)` を冒頭で通し、3 カットオフを順次: (1) `s.rollback()` (2) マスク UPDATE(未 commit) (3) **対称性 assert**: マスク前後で `load_eval_races` の race_id 集合・各レースの started 集合・winner が同一(破れたら即 fail) (4) 候補 factory = `CalibSplitFactory(ModelRecipe(pl_topk, calibration none, params n_estimators=900, weight_mask 0.5/20260810, seed 42), n_oof_blocks=8, isotonic)` / 基準 = 同レシピ + `drop_features=FEATURE_GROUPS の early_mid_pace 展開` (5) `paired_eval(... first_valid_year=窓年, valid_from=窓始, subgroups=False, num_threads=1)` (6) `diffs_by_day` を回収 (7) `s.rollback()`。採点窓は gate-config の `scored_windows` を読む(ハードコード禁止)
+- [ ] T021 [US2] `scripts/097_simulated_supply_gate.py` を新規作成。`assert_confirmatory(cfg, expected_hash, eval_window)` を冒頭で通し、3 カットオフを順次: (1) `s.rollback()` (2) マスク UPDATE(未 commit) (3) **対称性 assert**: マスク前後で `load_eval_races` の race_id 集合・各レースの started 集合・winner が同一(破れたら即 fail) (3b) **マスク provenance assert**(codex tasks Q2): features の loader で Frames を読み、cutoff 以降∧距離≠1200m の first_3f 非 NULL が **0 行**であること、両アームの build が同一 Frames hash を見ていること、両アームとも `use_materialized=False`(parquet は非マスク世界の凍結物)を assert (4) 候補 factory = `CalibSplitFactory(ModelRecipe(pl_topk, calibration none, params n_estimators=900, weight_mask 0.5/20260810, seed 42), n_oof_blocks=8, isotonic)` / 基準 = 同レシピ + `drop_features=FEATURE_GROUPS の early_mid_pace 展開` (5) `paired_eval(... first_valid_year=窓年, valid_from=窓始, subgroups=False, num_threads=1)` (6) `diffs_by_day` を回収 (7) `s.rollback()`。採点窓は gate-config の `scored_windows` を読む(ハードコード禁止)。**出力規律**(codex tasks Q1b): primary・guard1・guard2 の全成分が揃うまで効果の数値を stdout にも JSON にも出さない(進捗は「cutoff X: build OK / symmetry OK / provenance OK / fit OK」のみ)
 - [ ] T022 [US2] 同 driver: 3 窓の `diffs_by_day` を union(互いに素を assert)→ `race_day_cluster_bootstrap_ci_v1` → `inflate_for_seed_noise(sd_fold, n_folds=3)` → `evaluate_core_gate(diff, ci_low, ci_high(総), recent=…, top2/top3/ECE は 3 窓 pooled, cfg)` で v4 標準式を適用。**新しい判定式を書かない**
 - [ ] T023 [US2] 同 driver: guard 1(full-info)— マスク無しで同 3 窓を同手順で実行し pooled diff に `three_way(ci_low, ci_high, margin=0.003)` → FAIL なら guard1=False。guard 2 — 実窓 2025-10-11..最新(マスク無し・first_valid_year=2025・valid_from=2025-10-11)の paired diff に `ci_low > 0.005` で FAIL
-- [ ] T024 [US2] 同 driver: verdict JSON を `specs/097-early-mid-pace/verdict.json` に書く: `evaluation_contract_version="v4"`・`artifact_kind="full_walk_forward"`・`eligible_for_verdict=True`・gate_config_hash・両アーム recipe_hash・各カットオフの race_id_set_hash・マスク定義・採点窓・pooled point/CI(標本・総)・guard 2 本の詳細・`verdict` と式 `primary_pooled AND guard1 AND guard2`・「反実仮想頑健性(counterfactual robustness)として報告」の注記
-- [ ] T025 [US2] smoke(配線のみ・数値は捨てる): rounds=50・blocks=2・カットオフ 1 本・b=200 で driver を通し、対称性 assert と JSON 形を確認。`artifact_kind="smoke"`/`eligible_for_verdict=False` で `out/` に出す(追跡しない)
+- [ ] T024 [US2] 同 driver: verdict JSON を `specs/097-early-mid-pace/verdict.json` に書く: `evaluation_contract_version="v4"`・`artifact_kind="counterfactual_supply_simulation"`(codex tasks Q1d: full_walk_forward だと `evaluate_promotion` がこれで ACTIVE 昇格を通す構造的な穴 → 専用種別で昇格ゲートから弾く。列採用の適格性は別キー `feature_adoption_eligible=True`)・`eligible_for_verdict=False`(モデル昇格には使えない)・`evidence_regime="masked_pseudo_supply_death"`・gate_config_hash・両アーム recipe_hash・各カットオフの race_id_set_hash・マスク定義・採点窓・pooled point/CI(標本・総)・guard 2 本の詳細・`verdict` と式 `primary_pooled AND guard1 AND guard2`・「反実仮想頑健性(counterfactual robustness)として報告」の注記
+- [ ] T025 [US2] smoke(配線のみ): gate-config `smoke` 節の**事前登録外カットオフ 2016-01-01・採点窓 2017**(codex tasks Q1a: 実カットオフの smoke は確認データの中間閲覧になる)・rounds=50・blocks=2・b=200 で driver を通し、対称性・provenance・JSON 形を確認。**効果の数値は stdout/JSON とも非表示**(`redact_effect_numbers`)。`artifact_kind="smoke"` で `out/` に出す(追跡しない)
 - [ ] T026 [US2] 本実行: quickstart §2 のコマンドで nohup 実行(推定 ~4.5h・実績比)。完了後 `verdict.json` をコミット。**個別カットオフの数値を見て解釈を変えない**(pooled が正本)
 - [ ] T027 [US2] 結果を `spec.md` 末尾の「実測結果」節に転記(primary pooled・guard1・guard2・verdict・限界 D10 の再掲)
 
@@ -105,7 +105,7 @@ verdict を出す。
 
 ### ADOPT 分岐
 
-- [ ] T032 [US3] 実データ(マスク無し)で候補モデルを学習・登録: `register-arm-e --n-estimators 900 --verdict ../specs/097-early-mid-pace/verdict.json --artifacts-dir <絶対パス>`(weights_uri 相対パス事故の回避)。**昇格しない**(contracts/adoption-gate: 標準窓非劣化+本 verdict+prospective の 3 点セットで別段)
+- [ ] T032 [US3] 実データ(マスク無し)で候補モデルを学習・登録: `register-arm-e --n-estimators 900 --verdict ../specs/097-early-mid-pace/verdict.json --artifacts-dir <絶対パス>`(weights_uri 相対パス事故の回避)。verdict は `counterfactual_supply_simulation` 種別なので `evaluate_promotion` は **構造的に candidate 止まり**(verdict_artifact_not_eligible)になることを登録ログで確認。metadata に `evidence_regime=masked_pseudo_supply_death` / `model_training_regime=real_unmasked` を記録(codex tasks Q1d: 証拠と学習レジームが異なることを明示)。**昇格しない**(contracts/adoption-gate: 標準窓非劣化+本 verdict+prospective の 3 点セットで別段)
 - [ ] T033 [US3] 候補モデルで標準窓(2019-2024)の対 active 非劣化を確認評価(別 gate-config・新規事前登録)。結果を spec に転記。prospective 監視の開始日と判定日を `specs/097-early-mid-pace/prospective.md` に凍結
 
 ---

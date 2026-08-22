@@ -1,23 +1,38 @@
 {
   "_comment": "097 early-mid pace 採否ゲート。**実行前凍結**。primary は擬似供給停止シミュレーション(定常状態 estimand)。詳細は contracts/adoption-gate.md。",
   "_pre_registered_at": "2026-08-22",
-
   "evaluation_contract_version": "v4",
   "primary_metric": "winner_nll",
   "primary_regime": "simulated_supply_death",
-
   "simulation": {
-    "cutoffs": ["2019-01-01", "2021-01-01", "2023-01-01"],
+    "cutoffs": [
+      "2019-01-01",
+      "2021-01-01",
+      "2023-01-01"
+    ],
     "mask": "race_results.first_3f = NULL WHERE race_date >= cutoff AND distance <> 1200",
     "mask_rationale": "1200m 導出は本番で生きている(ecf0c69)ためマスクしない = 定常状態の忠実な再現",
-    "scored_windows": [["2020-01-01", "2020-12-31"], ["2022-01-01", "2022-12-31"], ["2024-01-01", "2024-12-31"]],
+    "scored_windows": [
+      [
+        "2020-01-01",
+        "2020-12-31"
+      ],
+      [
+        "2022-01-01",
+        "2022-12-31"
+      ],
+      [
+        "2024-01-01",
+        "2024-12-31"
+      ]
+    ],
     "washout_years": 1,
     "washout_measured": "cutoff+1y 時点で直近5完走の 98.1% が cutoff 後 (n=42,621)",
     "estimand": "steady_state",
     "train_masking": "fold 内で両アームともマスク済みデータから再学習(学習非マスク+採点マスクは禁止)",
-    "symmetry_assert": "マスク前後で採点レース集合・started 集合・winner が不変であることを実行時 assert"
+    "symmetry_assert": "マスク前後で採点レース集合・started 集合・winner が不変であることを実行時 assert",
+    "mask_provenance_assert": "codex tasks レビュー Q2: マスク後、各アームの loader 境界(features の Frames)で (race_id, horse_id, race_date, distance, first_3f) の決定論 hash を取り両アーム一致を assert。かつ cutoff 以降∧距離≠1200m の first_3f 非 NULL が 0 行であることを Frames 上で assert。両アームとも use_materialized=False(parquet は非マスク世界の凍結物)を assert。"
   },
-
   "arms": {
     "candidate": "features-022 全列",
     "active": "同一マスク環境で drop=early_mid_pace",
@@ -25,22 +40,21 @@
       "objective": "pl_topk",
       "kind": "oof_isotonic",
       "n_oof_blocks": 8,
-      "params": { "n_estimators": 900 },
+      "params": {
+        "n_estimators": 900
+      },
       "weight_mask_rate": 0.5,
       "weight_mask_seed": 20260810,
       "seed": 42
     }
   },
-
   "min_effect_delta": 0.002,
-
   "seed_noise": {
     "sd_fold": 0.001816,
     "k_seeds": 1,
     "n_folds": 3,
     "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)"
   },
-
   "guards": {
     "full_info": {
       "mode": "evidence_of_harm",
@@ -55,13 +69,11 @@
       "rationale": "実劣化窓は MDE 0.0094 で検出力不足のため成立は要求しない。方向不一致の安全弁"
     }
   },
-
   "eval_window": {
     "from": "2020-01-01",
     "to": "2024-12-31",
     "min_eval_days": 400
   },
-
   "power": {
     "expected_n_races": 10350,
     "expected_se": 0.0017,
@@ -69,19 +81,48 @@
     "target_effect": -0.005,
     "note": "kill-test の -0.0095(流し込み)と 1200m 復元 -0.0041 の間を見込む。見込みであって登録値ではない"
   },
-
-  "bootstrap": { "b": 2000, "seed": 20260822, "block": "race_day", "alpha": 0.05 },
-  "determinism": { "tolerance": 1e-09, "num_threads": 1 },
-
+  "bootstrap": {
+    "b": 2000,
+    "seed": 20260822,
+    "block": "race_day",
+    "alpha": 0.05
+  },
+  "determinism": {
+    "tolerance": 1e-09,
+    "num_threads": 1
+  },
   "verdict": {
     "formula": "primary_pooled AND guard_full_info AND guard_real_direction",
     "no_decision": "評価実行不能の場合のみ。個別カットオフの事後選別禁止(pooled が正本)",
-    "on_adopt": "列の採用のみ。モデル昇格は標準窓非劣化+本 verdict+prospective の 3 点セットで別途"
+    "on_adopt": "列の採用のみ。モデル昇格は標準窓非劣化+本 verdict+prospective の 3 点セットで別途",
+    "output_discipline": "codex tasks レビュー Q1(b): primary・guard1・guard2 の全成分を計算し終えるまで一切の効果数値を出力しない。guard の途中結果で primary の計算を中断・変更しない(verdict は全成分計算後に 1 回だけ評価)。"
   },
-
   "artifact_isolation": {
-    "verdict_kind": "full_walk_forward",
-    "kinds": ["full_walk_forward", "screening", "remeasurement"],
-    "eligible_kinds": ["full_walk_forward"]
+    "_comment": "codex tasks レビュー Q1(d): 本 verdict は『マスクした擬似供給停止』環境での列採用の証拠であって、実データで学習した登録モデルの標準窓 verdict ではない。full_walk_forward にすると training の evaluate_promotion がこれで ACTIVE 昇格を通してしまう(構造的な穴)。専用種別にして、昇格ゲート(full_walk_forward のみ受理)から構造的に弾く。",
+    "verdict_kind": "counterfactual_supply_simulation",
+    "feature_adoption_eligible_kinds": [
+      "counterfactual_supply_simulation"
+    ],
+    "model_promotion_eligible_kinds": [
+      "full_walk_forward"
+    ],
+    "kinds": [
+      "counterfactual_supply_simulation",
+      "full_walk_forward",
+      "screening",
+      "smoke",
+      "remeasurement"
+    ]
+  },
+  "smoke": {
+    "_comment": "codex tasks レビュー Q1(a): smoke は確認データの中間閲覧になりうる。事前登録外のカットオフを使い、効果の数値は stdout/JSON に出さない(配線・対称性・JSON 形のみ検証)。",
+    "cutoff": "2016-01-01",
+    "scored_window": [
+      "2017-01-01",
+      "2017-12-31"
+    ],
+    "redact_effect_numbers": true,
+    "artifact_kind": "smoke",
+    "eligible_for_verdict": false
   }
 }
