@@ -5,7 +5,6 @@ from __future__ import annotations
 import datetime
 import random
 
-import pytest
 from horseracing_eval.dataset import EvalRace, ScoringLabel
 from horseracing_eval.predictor import HorseEntry, Prediction, RaceContext
 from horseracing_eval.stage_discount_eval import (

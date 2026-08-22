@@ -112,6 +112,12 @@ class PairedReport:
     #: Contract v3: the year the ``recent_year_*`` subgroups refer to (window's latest year, or a
     #: gate-config pin). v2 hard-coded 2026, which would have frozen the "current regime" guard.
     target_year: int | None = None
+    #: Feature 097: the per-race-day paired diffs (candidate − active winner NLL, day key →
+    #: list) that ``bootstrap_ci`` was computed from. Exposed so a driver that evaluates several
+    #: disjoint pseudo-worlds can POOL them into one race-day cluster bootstrap instead of
+    #: subtracting two per-window intervals (which has no interval). Purely additive: every
+    #: pre-097 key of ``to_dict()`` is unchanged.
+    diffs_by_day: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -499,4 +505,5 @@ def paired_eval(
         gate_config_hash=gate_config_hash(cfg),
         bootstrap_sensitivity=bootstrap_sensitivity,
         target_year=target_year,
+        diffs_by_day=diffs_by_day,
     )

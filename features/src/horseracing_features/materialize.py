@@ -30,6 +30,10 @@ import pandas as pd
 from .condition_change_features import build_condition_change_features
 from .corner_trajectory_features import build_corner_trajectory_features
 from .debut_pedigree_features import build_debut_pedigree_features
+from .early_mid_pace_features import (  # Feature 097
+    EARLY_MID_PACE_COLUMNS,
+    build_early_mid_pace_features,
+)
 from .extra_features import build_extra_features
 from .history import build_history_features
 from .human_form import build_human_form_features
@@ -61,6 +65,9 @@ _KEYS = ["race_id", "horse_id"]
 #: only after confirming it is merged after every consumer (i.e. a true leaf).
 _OPTIONAL_LEAF_BLOCKS: dict[str, tuple[str, ...]] = {
     "pm_core_strength": tuple(PM_CORE_STRENGTH_COLUMNS),
+    # Feature 097: merged LAST in build_asof_features (no consumer reads it) => a true leaf. Lets
+    # the 088-style single-process double build prove the features-021 columns byte-identical.
+    "early_mid_pace": tuple(EARLY_MID_PACE_COLUMNS),
 }
 
 
@@ -296,6 +303,12 @@ def build_asof_features(
             frames, target_race_ids=target_race_ids
         )
         out = out.merge(pmcs, on=_KEYS, how="left")
+    # Feature 097: early-mid pace — independent as-of block over race_results.finish_time/last_3f
+    # (both already loaded => source_fingerprint unchanged, INV-EM6). Additive left-merge over a
+    # disjoint column pair, merged LAST (leaf). Never writes first_3f or its aggregates (INV-EM2).
+    if "early_mid_pace" not in skip_blocks:
+        emp = build_early_mid_pace_features(frames, target_race_ids=target_race_ids)  # per-horse
+        out = out.merge(emp, on=_KEYS, how="left")
     # Feature 088 (finish-rank decomposition) was REJECTED at the pre-registered gate (CI straddled
     # zero and the recent-3y window degraded) — NOT wired in (bump reverted).
     # finish_decomposition_features.py + its unit tests are kept as the documented negative result

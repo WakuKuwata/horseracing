@@ -20,15 +20,15 @@ contracts(feature-columns INV-EM1..EM8・adoption-gate) / gate-config.json(凍�
 
 ## Phase 1: Setup
 
-- [ ] T001 `specs/097-early-mid-pace/gate-config.hash.txt` の hash(`6f76bf15…`= codex tasks レビュー + analyze 2 周反映後の再事前登録値)が `gate_config_hash(gate-config.json)` と一致することを確認し、以降 gate-config.json を変更しない
-- [ ] T002 実 DB で前提を再確認して `specs/097-early-mid-pace/evidence-preflight.md` に記録: active=lgbm-094-cap900・feature_version=features-021・feature_hash=663fe86c…(metadata.json)・registry 138 列・`race_results.finish_time/last_3f` の 2026 充足 ≥99%
+- [X] T001 `specs/097-early-mid-pace/gate-config.hash.txt` の hash(`6f76bf15…`= codex tasks レビュー + analyze 2 周反映後の再事前登録値)が `gate_config_hash(gate-config.json)` と一致することを確認し、以降 gate-config.json を変更しない
+- [X] T002 実 DB で前提を再確認して `specs/097-early-mid-pace/evidence-preflight.md` に記録: active=lgbm-094-cap900・feature_version=features-021・feature_hash=663fe86c…(metadata.json)・registry 138 列・`race_results.finish_time/last_3f` の 2026 充足 ≥99%
 
 ---
 
 ## Phase 2: Foundational(全 US の前提)
 
-- [ ] T003 `eval/src/horseracing_eval/paired.py`: `PairedReport` に `diffs_by_day: dict[str, list[float]]` を追加し `to_dict()` に含める(既存フィールド不変・既存テスト無改修で緑)。3 カットオフの pooled CI を driver で取るために必要。`eval/tests/unit/` に「既存レポートの to_dict キーが純増である」テストを追加。併せて `eval/src/horseracing_eval/provenance.py` を新規: `frame_projection_hash(df, cols) -> str`(決定論・行順非依存・pure pandas、features を import しない=020 境界)。driver と T019 はここから import する(テストモジュールから本番 assert を import しない)
-- [ ] T004 `features/src/horseracing_features/pace_features.py` の `_pace_runs` / `_rolling_asof` が他モジュールから import 可能であることを確認(private 名のまま再利用する。二重実装禁止=025 単一 as-of 源)。変更不要なら本タスクは確認のみ
+- [X] T003 `eval/src/horseracing_eval/paired.py`: `PairedReport` に `diffs_by_day: dict[str, list[float]]` を追加し `to_dict()` に含める(既存フィールド不変・既存テスト無改修で緑)。3 カットオフの pooled CI を driver で取るために必要。`eval/tests/unit/` に「既存レポートの to_dict キーが純増である」テストを追加。併せて `eval/src/horseracing_eval/provenance.py` を新規: `frame_projection_hash(df, cols) -> str`(決定論・行順非依存・pure pandas、features を import しない=020 境界)。driver と T019 はここから import する(テストモジュールから本番 assert を import しない)
+- [X] T004 `features/src/horseracing_features/pace_features.py` の `_pace_runs` / `_rolling_asof` が他モジュールから import 可能であることを確認(private 名のまま再利用する。二重実装禁止=025 単一 as-of 源)。変更不要なら本タスクは確認のみ
 
 ---
 
@@ -41,23 +41,23 @@ contracts(feature-columns INV-EM1..EM8・adoption-gate) / gate-config.json(凍�
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] `features/tests/unit/test_early_mid_pace_features.py`: 手計算 fixture(INV-EM8)— 3 頭×3 レースの合成 Frames で `em = time_s − last3f_s`、レース内完走馬平均との差、直近 5 走 mean/min を手で計算した厳密値と `assert_frame_equal(check_exact=True)`。秒単位で意味のある規模(例: 70.5−35.2)を使う
-- [ ] T006 [P] [US1] 同ファイル: 欠損規則(INV-EM4)— finish_time 欠損 / last_3f 欠損 / em ≤ 0(入力破損)/ 過去完走ゼロ の各ケースで NaN。0 埋め・平均埋めが無いことを assert
-- [ ] T007 [P] [US1] `features/tests/unit/test_early_mid_pace_leak.py`: リーク 3 方向(INV-EM3・023 の `test_pace_features_leak.py` を雛形に)— (a) 対象レースの結果変更 (b) 同日他レースの結果変更 (c) 未来レースの結果変更 → 対象行の 2 列が不変
-- [ ] T008 [P] [US1] `features/tests/unit/test_early_mid_pace_features.py`: INV-EM7(1200m 恒等)— distance=1200 の fixture で走単位 `rel_em == rel_first3f`(両方非欠損の行で厳密一致)。INV-EM2(独立性)— `first_3f` 列を全 NaN にしても新列の値が不変
-- [ ] T009 [P] [US1] `features/tests/unit/test_registry_features022.py`(`test_registry_features021.py` を雛形に): 2 列が REGISTRY に 1 回ずつ・group `early_mid_pace` のメンバーが厳密にその 2 列・`materialized_columns()` に含まれる・列順決定論・`COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-022"]["features-021"] == "663fe86c…"`(T002 で実測した完全 hash)
+- [X] T005 [P] [US1] `features/tests/unit/test_early_mid_pace_features.py`: 手計算 fixture(INV-EM8)— 3 頭×3 レースの合成 Frames で `em = time_s − last3f_s`、レース内完走馬平均との差、直近 5 走 mean/min を手で計算した厳密値と `assert_frame_equal(check_exact=True)`。秒単位で意味のある規模(例: 70.5−35.2)を使う
+- [X] T006 [P] [US1] 同ファイル: 欠損規則(INV-EM4)— finish_time 欠損 / last_3f 欠損 / em ≤ 0(入力破損)/ 過去完走ゼロ の各ケースで NaN。0 埋め・平均埋めが無いことを assert
+- [X] T007 [P] [US1] `features/tests/unit/test_early_mid_pace_leak.py`: リーク 3 方向(INV-EM3・023 の `test_pace_features_leak.py` を雛形に)— (a) 対象レースの結果変更 (b) 同日他レースの結果変更 (c) 未来レースの結果変更 → 対象行の 2 列が不変
+- [X] T008 [P] [US1] `features/tests/unit/test_early_mid_pace_features.py`: INV-EM7(1200m 恒等)— distance=1200 の fixture で走単位 `rel_em == rel_first3f`(両方非欠損の行で厳密一致)。INV-EM2(独立性)— `first_3f` 列を全 NaN にしても新列の値が不変
+- [X] T009 [P] [US1] `features/tests/unit/test_registry_features022.py`(`test_registry_features021.py` を雛形に): 2 列が REGISTRY に 1 回ずつ・group `early_mid_pace` のメンバーが厳密にその 2 列・`materialized_columns()` に含まれる・列順決定論・`COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-022"]["features-021"] == "663fe86c…"`(T002 で実測した完全 hash)
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] `features/src/horseracing_features/early_mid_pace_features.py` を新規作成: `build_early_mid_pace_features(frames, *, target_race_ids=None) -> DataFrame[race_id, horse_id, asof_rel_early_mid_avg, asof_rel_early_mid_best]`。`_pace_runs(frames)` を呼び `em_s = time_s − last3f_s`(em_s ≤ 0 → NaN)、完走馬の `race_mean_em`、`rel_em = em_s − race_mean_em` を追加し、`_rolling_asof(fin, targets, {"asof_rel_early_mid_avg": ("rel_em","mean"), "asof_rel_early_mid_best": ("rel_em","min")})` で集約。全列 float64。docstring に D2(近線形冗長)と INV-EM1/2 を明記
-- [ ] T011 [US1] `features/src/horseracing_features/registry.py`: REGISTRY に 2 列(`FeatureMeta("early_mid_pace", _T.PRE_ENTRY, _M.NULL)` 相当・timing は既存 pace 列と同じ)、`FEATURE_GROUPS` に `early_mid_pace`、`FEATURE_VERSION = "features-022"`、`COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-022"] = {"features-021": <T002 実測 hash>}`(コメントに「lgbm-094-cap900 の metadata.feature_hash を 2026-08-22 に実測」と根拠を書く)
-- [ ] T012 [US1] `features/src/horseracing_features/materialize.py`: `_OPTIONAL_LEAF_BLOCKS["early_mid_pace"] = (2 列)` を追加し、`build_asof_features` の最後段(全 consumer の後=真の leaf)で `build_early_mid_pace_features(frames, target_race_ids=target_race_ids)` を left-merge。`skip_blocks={"early_mid_pace"}` で features-021 と同一列集合になること
-- [ ] T013 [US1] `scripts/parity_097.py`(`parity_088.py` を雛形に): 単一プロセス・単一スナップショットで `skip_blocks=∅` と `skip_blocks={"early_mid_pace"}` の二重ビルドを行い、共有 138 列全量 `assert_frame_equal(check_exact=True, check_dtype=True)`。結果(行数・列数・mismatch 0)を `specs/097-early-mid-pace/evidence-parity.md` に記録(SC-001 / INV-EM5)
-- [ ] T014 [US1] `scripts/coverage_097.py`: 年別×列別の充足率(全行・`has_past_race` 行)と、2026 の `has_past_race` 行で ≥95% を assert(SC-002)。`evidence-coverage.md` に記録
-- [ ] T015 [US1] 072 投影パリティ: `features/tests/unit/test_early_mid_pace_features.py` に `target_race_ids` 指定ビルドが full ビルドの該当行と `check_exact` 一致するテストを追加(per-horse 型)
-- [ ] T016 [US1] `features materialize` を features-022 で実行し manifest の `source_fingerprint` が 021 の manifest と一致(新規ソース列ゼロ=INV-EM6)・`feature_version=features-022` を確認。結果を `evidence-preflight.md` に追記
-- [ ] T017 [P] [US1] 表示ラベル: `front/src/components/featureLabels.ts` と `admin/src/lib/featureLabels.ts` に 2 列の日本語ラベル(例「前中盤ペース 平均」「前中盤ペース 最速」)を**同一内容で**追加(088 の教訓: `test_display_label_coverage` が要求)。front/admin のテストが緑
-- [ ] T018 [US1] serving 配線 E2E smoke: 実 DB で `predict --race-id <2026 の任意レース>` を features-022 registry 下で実行し、(a) active lgbm-094 が compat 経路(`reg=features-021` マーカー)でロードされ (b) 予測 win_prob が bump 前の永続化値と **18 頭バイト一致**(091 T 配線 smoke の同型)。結果を `evidence-preflight.md` に追記
+- [X] T010 [US1] `features/src/horseracing_features/early_mid_pace_features.py` を新規作成: `build_early_mid_pace_features(frames, *, target_race_ids=None) -> DataFrame[race_id, horse_id, asof_rel_early_mid_avg, asof_rel_early_mid_best]`。`_pace_runs(frames)` を呼び `em_s = time_s − last3f_s`(em_s ≤ 0 → NaN)、完走馬の `race_mean_em`、`rel_em = em_s − race_mean_em` を追加し、`_rolling_asof(fin, targets, {"asof_rel_early_mid_avg": ("rel_em","mean"), "asof_rel_early_mid_best": ("rel_em","min")})` で集約。全列 float64。docstring に D2(近線形冗長)と INV-EM1/2 を明記
+- [X] T011 [US1] `features/src/horseracing_features/registry.py`: REGISTRY に 2 列(`FeatureMeta("early_mid_pace", _T.PRE_ENTRY, _M.NULL)` 相当・timing は既存 pace 列と同じ)、`FEATURE_GROUPS` に `early_mid_pace`、`FEATURE_VERSION = "features-022"`、`COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-022"] = {"features-021": <T002 実測 hash>}`(コメントに「lgbm-094-cap900 の metadata.feature_hash を 2026-08-22 に実測」と根拠を書く)
+- [X] T012 [US1] `features/src/horseracing_features/materialize.py`: `_OPTIONAL_LEAF_BLOCKS["early_mid_pace"] = (2 列)` を追加し、`build_asof_features` の最後段(全 consumer の後=真の leaf)で `build_early_mid_pace_features(frames, target_race_ids=target_race_ids)` を left-merge。`skip_blocks={"early_mid_pace"}` で features-021 と同一列集合になること
+- [X] T013 [US1] `scripts/parity_097.py`(`parity_088.py` を雛形に): 単一プロセス・単一スナップショットで `skip_blocks=∅` と `skip_blocks={"early_mid_pace"}` の二重ビルドを行い、共有 138 列全量 `assert_frame_equal(check_exact=True, check_dtype=True)`。結果(行数・列数・mismatch 0)を `specs/097-early-mid-pace/evidence-parity.md` に記録(SC-001 / INV-EM5)
+- [X] T014 [US1] `scripts/coverage_097.py`: 年別×列別の充足率(全行・`has_past_race` 行)と、2026 の `has_past_race` 行で ≥95% を assert(SC-002)。`evidence-coverage.md` に記録
+- [X] T015 [US1] 072 投影パリティ: `features/tests/unit/test_early_mid_pace_features.py` に `target_race_ids` 指定ビルドが full ビルドの該当行と `check_exact` 一致するテストを追加(per-horse 型)
+- [X] T016 [US1] `features materialize` を features-022 で実行し manifest の `source_fingerprint` が 021 の manifest と一致(新規ソース列ゼロ=INV-EM6)・`feature_version=features-022` を確認。結果を `evidence-preflight.md` に追記
+- [X] T017 [P] [US1] 表示ラベル: `front/src/components/featureLabels.ts` と `admin/src/lib/featureLabels.ts` に 2 列の日本語ラベル(例「前中盤ペース 平均」「前中盤ペース 最速」)を**同一内容で**追加(088 の教訓: `test_display_label_coverage` が要求)。front/admin のテストが緑
+- [X] T018 [US1] serving 配線 E2E smoke: 実 DB で `predict --race-id <2026 の任意レース>` を features-022 registry 下で実行し、(a) active lgbm-094 が compat 経路(`reg=features-021` マーカー)でロードされ (b) 予測 win_prob が bump 前の永続化値と **18 頭バイト一致**(091 T 配線 smoke の同型)。結果を `evidence-preflight.md` に追記
 
 **中断点**: T013 で mismatch>0 なら即中断(既存列を動かした=設計違反)。
 
@@ -74,7 +74,7 @@ verdict を出す。
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] `training/src/horseracing_training/supply_mask.py` を新規(`apply_first3f_mask(session, cutoff)`・`symmetry_snapshot(session, races) -> (race_id 集合, started 集合, winner map)`・`provenance_violations(session, cutoff) -> int`。driver と本テストが import する — `scripts/` はパッケージでないため。analyze C9)。`training/tests/unit/test_097_mask.py`: マスク SQL の単体テスト — 合成 DB 行で「cutoff 以降 ∧ distance≠1200 の first_3f のみ NULL、1200m と cutoff 前は不変、他列不変、行数不変」を assert(contracts/adoption-gate の対称性の一部)。加えて `horseracing_eval.provenance.frame_projection_hash` を `(race_id, horse_id, race_date, distance, first_3f)` 射影で単体テスト(行順入替で不変・1 値変更で変化)(codex tasks Q2)
+- [X] T019 [P] [US2] `training/src/horseracing_training/supply_mask.py` を新規(`apply_first3f_mask(session, cutoff)`・`symmetry_snapshot(session, races) -> (race_id 集合, started 集合, winner map)`・`provenance_violations(session, cutoff) -> int`。driver と本テストが import する — `scripts/` はパッケージでないため。analyze C9)。`training/tests/unit/test_097_mask.py`: マスク SQL の単体テスト — 合成 DB 行で「cutoff 以降 ∧ distance≠1200 の first_3f のみ NULL、1200m と cutoff 前は不変、他列不変、行数不変」を assert(contracts/adoption-gate の対称性の一部)。加えて `horseracing_eval.provenance.frame_projection_hash` を `(race_id, horse_id, race_date, distance, first_3f)` 射影で単体テスト(行順入替で不変・1 値変更で変化)(codex tasks Q2)
 - [ ] T020 [P] [US2] `eval/tests/unit/test_paired_report_diffs_by_day.py`: T003 の露出フィールドで pooled CI が単窓 CI と整合する(1 窓だけ渡せば既存 `bootstrap_ci` と一致)ことを固定
 
 ### Implementation for User Story 2

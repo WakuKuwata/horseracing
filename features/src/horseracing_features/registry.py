@@ -234,6 +234,10 @@ REGISTRY: dict[str, FeatureMeta] = {
     # closing-3F axis is ~redundant with 061's absolute finish-time figure over the full period
     # (corr 0.727; recent-fold pl_topk gain washed to 0.00000 full-mean, 9/19 folds). Not merged
     # (027 precedent). closing_figure_features.py + tests kept as the documented negative result.
+    # --- Feature 097: early-mid pace (as-of; replaces the dying first3f axis with a
+    #     never-dying, consistently-defined quantity; independent of asof_rel_first3f_*) ---
+    "asof_rel_early_mid_avg": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
+    "asof_rel_early_mid_best": FeatureMeta("pace", _T.PRE_ENTRY, _M.NULL),
 }
 
 #: Feature 020: column → group, for ablation (NOT used to select adopted features; the candidate set
@@ -368,6 +372,9 @@ FEATURE_GROUPS: dict[str, str] = {
     "asof_pm_has_obs": "pm_core_strength",
     # Feature 070 (F03/F04/F05) rejected at the staged gate — NOT registered (bump reverted, see the
     # REGISTRY note above). Feature 062 (rating) / 063 (closing figure) also rejected.
+    # Feature 097
+    "asof_rel_early_mid_avg": "early_mid_pace",
+    "asof_rel_early_mid_best": "early_mid_pace",
 }
 
 #: feature schema version. 026/030-033; 041 (corner trajectory); 056 (raw columns);
@@ -380,7 +387,10 @@ FEATURE_GROUPS: dict[str, str] = {
 #: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
 #: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
 #: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
-FEATURE_VERSION = "features-021"
+#: Feature 097: early_mid_pace is PURELY ADDITIVE on top of features-021 (additive left-merge
+#: over a disjoint column pair at the END of build_asof_features; no new source column). 019 (070)
+#: and 020 (088) are burned and must never be reused.
+FEATURE_VERSION = "features-022"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -427,6 +437,16 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
     # (features-018) servable under features-021 via the compat path.
     # features-019 is a BURNED number (070 revert); it is deliberately absent.
     "features-021": {
+        "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f",
+    },
+    # Feature 097: early_mid_pace is purely additive on top of features-021 (optional leaf block
+    # merged last; single-process double build proves all 138 shared columns byte-identical —
+    # scripts/parity_097.py, T013). The pinned hash is lgbm-094-cap900's OWN trained
+    # feature_hash, MEASURED from its metadata.json on 2026-08-22 (specs/097-early-mid-pace/
+    # evidence-preflight.md) — not recomputed from the registry. features-018 is carried forward
+    # transitively (018→021 parity proven in 091; 021→022 by T013).
+    "features-022": {
+        "features-021": "663fe86c756428fca7411f23bb5f0a4eaa91926b067a0e0acc4a11d581da0f7a",
         "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f",
     },
     # Feature 070's features-019 compat entry was REMOVED with the reverted bump (all bundles

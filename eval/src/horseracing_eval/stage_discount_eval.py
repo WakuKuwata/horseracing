@@ -20,7 +20,6 @@ from .splits import FIRST_VALID_YEAR, expanding_folds
 from .stage_discount import (
     DEFAULT_MIN_RACES,
     IDENTITY,
-    StageDiscount,
     TopkSample,
     fit_stage_discount,
 )

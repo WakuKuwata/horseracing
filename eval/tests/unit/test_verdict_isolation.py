@@ -7,6 +7,7 @@ The guard is structural (artifact_kind), and tampering with their NUMBERS must c
 from __future__ import annotations
 
 import pytest
+
 from horseracing_eval.decision import (
     VERDICT_ARTIFACT_KIND,
     VerdictSourceError,

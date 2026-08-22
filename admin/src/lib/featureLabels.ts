@@ -121,6 +121,9 @@ export const FEATURE_LABELS: Record<string, FeatureLabel> = {
   asof_rel_first3f_avg: { label: "テン3F（相対・平均）" },
   asof_rel_first3f_best: { label: "テン3F（相対・最良）" },
   asof_pace_balance_avg: { label: "ペース配分（テン/上がり型）" },
+  // --- early-mid pace (097, as-of; 走破時計−上がり3F のレース内相対) ---
+  asof_rel_early_mid_avg: { label: "前中盤ペース（相対・平均）" },
+  asof_rel_early_mid_best: { label: "前中盤ペース（相対・最速）" },
   // --- owner / breeder (056, as-of) ---
   asof_owner_win_rate: { label: "馬主 勝率" },
   asof_owner_place_rate: { label: "馬主 連対率" },

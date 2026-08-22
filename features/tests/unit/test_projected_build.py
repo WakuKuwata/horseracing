@@ -62,7 +62,9 @@ def test_assemble_projected_matches_full_sliced():
 def test_wanting_an_f02_column_keeps_the_whole_block():
     # a candidate model that reads one F02 column must get the FULL block (all-or-nothing).
     wanted = frozenset({"asof_pm_support_last", "win_rate"})
-    assert skip_blocks_for_wanted(wanted) == frozenset()
+    # Feature 097: early_mid_pace is a second optional leaf; a model reading none of its columns
+    # skips it, while the F02 block is kept whole because one of its columns is wanted.
+    assert skip_blocks_for_wanted(wanted) == frozenset({"early_mid_pace"})
     frames = _frames()
     proj = assemble_feature_matrix(frames, wanted=wanted)
     for c in PM_CORE_STRENGTH_COLUMNS:
@@ -82,8 +84,10 @@ def test_unknown_skip_block_raises():
 
 def test_registry_lists_only_true_f02_columns():
     # guards against a future edit registering a non-leaf block silently.
-    assert set(_OPTIONAL_LEAF_BLOCKS) == {"pm_core_strength"}
+    assert set(_OPTIONAL_LEAF_BLOCKS) == {"pm_core_strength", "early_mid_pace"}
     assert set(_OPTIONAL_LEAF_BLOCKS["pm_core_strength"]) == set(PM_CORE_STRENGTH_COLUMNS)
+    from horseracing_features.early_mid_pace_features import EARLY_MID_PACE_COLUMNS
+    assert set(_OPTIONAL_LEAF_BLOCKS["early_mid_pace"]) == set(EARLY_MID_PACE_COLUMNS)
 
 
 def test_wanted_missing_from_schema_is_fail_closed():
