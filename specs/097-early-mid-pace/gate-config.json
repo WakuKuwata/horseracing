@@ -1,0 +1,87 @@
+{
+  "_comment": "097 early-mid pace 採否ゲート。**実行前凍結**。primary は擬似供給停止シミュレーション(定常状態 estimand)。詳細は contracts/adoption-gate.md。",
+  "_pre_registered_at": "2026-08-22",
+
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "primary_regime": "simulated_supply_death",
+
+  "simulation": {
+    "cutoffs": ["2019-01-01", "2021-01-01", "2023-01-01"],
+    "mask": "race_results.first_3f = NULL WHERE race_date >= cutoff AND distance <> 1200",
+    "mask_rationale": "1200m 導出は本番で生きている(ecf0c69)ためマスクしない = 定常状態の忠実な再現",
+    "scored_windows": [["2020-01-01", "2020-12-31"], ["2022-01-01", "2022-12-31"], ["2024-01-01", "2024-12-31"]],
+    "washout_years": 1,
+    "washout_measured": "cutoff+1y 時点で直近5完走の 98.1% が cutoff 後 (n=42,621)",
+    "estimand": "steady_state",
+    "train_masking": "fold 内で両アームともマスク済みデータから再学習(学習非マスク+採点マスクは禁止)",
+    "symmetry_assert": "マスク前後で採点レース集合・started 集合・winner が不変であることを実行時 assert"
+  },
+
+  "arms": {
+    "candidate": "features-022 全列",
+    "active": "同一マスク環境で drop=early_mid_pace",
+    "recipe": {
+      "objective": "pl_topk",
+      "kind": "oof_isotonic",
+      "n_oof_blocks": 8,
+      "params": { "n_estimators": 900 },
+      "weight_mask_rate": 0.5,
+      "weight_mask_seed": 20260810,
+      "seed": 42
+    }
+  },
+
+  "min_effect_delta": 0.002,
+
+  "seed_noise": {
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "n_folds": 3,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)"
+  },
+
+  "guards": {
+    "full_info": {
+      "mode": "evidence_of_harm",
+      "margin": 0.003,
+      "windows": "primary と同一の採点 3 窓・マスク無し",
+      "rationale": "実測 first3f が生きた世界で新列が害にならないこと。効果ゼロは PASS(期待どおり)"
+    },
+    "real_degraded_direction": {
+      "mode": "evidence_of_harm",
+      "margin": 0.005,
+      "window_from": "2025-10-11",
+      "rationale": "実劣化窓は MDE 0.0094 で検出力不足のため成立は要求しない。方向不一致の安全弁"
+    }
+  },
+
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2024-12-31",
+    "min_eval_days": 400
+  },
+
+  "power": {
+    "expected_n_races": 10350,
+    "expected_se": 0.0017,
+    "mde_80": 0.0048,
+    "target_effect": -0.005,
+    "note": "kill-test の -0.0095(流し込み)と 1200m 復元 -0.0041 の間を見込む。見込みであって登録値ではない"
+  },
+
+  "bootstrap": { "b": 2000, "seed": 20260822, "block": "race_day", "alpha": 0.05 },
+  "determinism": { "tolerance": 1e-09, "num_threads": 1 },
+
+  "verdict": {
+    "formula": "primary_pooled AND guard_full_info AND guard_real_direction",
+    "no_decision": "評価実行不能の場合のみ。個別カットオフの事後選別禁止(pooled が正本)",
+    "on_adopt": "列の採用のみ。モデル昇格は標準窓非劣化+本 verdict+prospective の 3 点セットで別途"
+  },
+
+  "artifact_isolation": {
+    "verdict_kind": "full_walk_forward",
+    "kinds": ["full_walk_forward", "screening", "remeasurement"],
+    "eligible_kinds": ["full_walk_forward"]
+  }
+}
