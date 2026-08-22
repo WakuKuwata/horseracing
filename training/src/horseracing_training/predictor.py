@@ -178,37 +178,47 @@ class LightGBMPredictor:
                 materialized_path=self.materialized_path,
                 skip_fingerprint_verify=self.skip_fingerprint_verify,
             )
-            if self.restrict_features is not None:
-                # Feature 074 (D9): keep EXACTLY the legacy model's ordered columns (inclusion).
-                # Fail-closed if any is absent (a column that lgbm-063 used has since been removed
-                # => cannot faithfully reproduce). Order is taken from restrict_features (the legacy
-                # order), so column order matches the legacy model for a faithful fresh fit.
-                import dataclasses
-                available = set(full.feature_cols)
-                missing = [c for c in self.restrict_features if c not in available]
-                if missing:
-                    raise ValueError(
-                        "restrict_features not present in the current feature schema (cannot "
-                        f"reproduce the legacy model faithfully): {missing}"
-                    )
-                keep = list(self.restrict_features)
-                full = dataclasses.replace(
-                    full,
-                    feature_cols=keep,
-                    categorical_cols=[c for c in full.categorical_cols if c in keep],
-                )
-            elif self.drop_features:
-                # Feature 020: drop excluded columns from feature_cols (frame keeps them, unused).
-                # All downstream uses data.feature_cols, so a single filter propagates everywhere.
-                import dataclasses
-                keep = [c for c in full.feature_cols if c not in self.drop_features]
-                full = dataclasses.replace(
-                    full,
-                    feature_cols=keep,
-                    categorical_cols=[c for c in full.categorical_cols if c in keep],
-                )
-            self._data = full
+            self._data = self._scope_columns(full)
         return self._data
+
+    def _scope_columns(self, full: TrainingMatrix) -> TrainingMatrix:
+        """Apply ``restrict_features`` / ``drop_features`` to a built matrix.
+
+        ONE implementation for both ways a matrix reaches a predictor: built here by
+        ``_ensure_data`` or injected already-built (``OofCalibratedPredictor`` shares one matrix
+        across arms). Feature 097 found the injected path skipped this scope entirely, so an
+        arm-E arm with ``drop_features`` silently trained on every column and a paired
+        evaluation against it measured exactly 0.000000 everywhere — two identical models.
+        The frame is never mutated; only ``feature_cols`` / ``categorical_cols`` shrink.
+        """
+        import dataclasses
+
+        if self.restrict_features is not None:
+            # Feature 074 (D9): keep EXACTLY the legacy model's ordered columns (inclusion).
+            # Fail-closed if any is absent (a column that lgbm-063 used has since been removed
+            # => cannot faithfully reproduce). Order is taken from restrict_features (the legacy
+            # order), so column order matches the legacy model for a faithful fresh fit.
+            available = set(full.feature_cols)
+            missing = [c for c in self.restrict_features if c not in available]
+            if missing:
+                raise ValueError(
+                    "restrict_features not present in the current feature schema (cannot "
+                    f"reproduce the legacy model faithfully): {missing}"
+                )
+            keep = list(self.restrict_features)
+            return dataclasses.replace(
+                full, feature_cols=keep,
+                categorical_cols=[c for c in full.categorical_cols if c in keep],
+            )
+        if self.drop_features:
+            # Feature 020: drop excluded columns from feature_cols (frame keeps them, unused).
+            # All downstream uses data.feature_cols, so a single filter propagates everywhere.
+            keep = [c for c in full.feature_cols if c not in self.drop_features]
+            return dataclasses.replace(
+                full, feature_cols=keep,
+                categorical_cols=[c for c in full.categorical_cols if c in keep],
+            )
+        return full
 
     # --- fit -----------------------------------------------------------------
     def fit(self, train_races: list[RaceContext]) -> None:

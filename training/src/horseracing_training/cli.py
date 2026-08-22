@@ -1500,8 +1500,13 @@ def _factory_from_spec(session, spec: str, *, use_materialized: bool = False,
     if oof_method is not None:
         from .calib_split import CalibSplitFactory
         from .recipe import ModelRecipe
+        # A trailing drop=<groups> (069) MUST survive into the OOF arm: the earlier form
+        # discarded it, so "pl_topk:oof_isotonic:drop=g" silently evaluated the full column set
+        # (same latent fault as the shared-matrix scope bypass fixed in feature 097).
+        base = _recipe_from_spec(spec)
         return CalibSplitFactory(
-            session, ModelRecipe(objective=parts[0], calibration="none", label=spec),
+            session, ModelRecipe(objective=parts[0], calibration="none",
+                                 drop_features=base.drop_features, label=spec),
             method=oof_method,
         )
     from .recipe import RecipeFactory

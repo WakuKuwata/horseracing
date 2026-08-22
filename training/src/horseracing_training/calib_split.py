@@ -239,7 +239,11 @@ class OofCalibratedPredictor:
             params=self.recipe.resolved_params(),
         )
         if self._shared is not None:
-            p._data = self._shared
+            # The shared matrix is built WITHOUT any arm's column scope (it is shared precisely
+            # so both arms see one build). Scope it here exactly as _ensure_data would have —
+            # assigning it raw skipped drop_features/restrict_features (feature 097 found a
+            # drop-group arm silently identical to its candidate).
+            p._data = p._scope_columns(self._shared)
         return p
 
     def fit(self, train_races: list[RaceContext], *, num_threads: int | None = None):

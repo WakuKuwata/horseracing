@@ -96,6 +96,14 @@ def _arms(session, cfg, *, rounds, blocks):
     cand._shared = shared
     act._shared = shared
     assert cand._shared is act._shared
+    # STRUCTURAL: the two arms must differ by exactly the dropped columns. Run 1 of this gate
+    # measured 0.000000 everywhere because the shared matrix bypassed drop_features and both
+    # arms trained on every column. Check the effective scope on the REAL matrix, before any fit.
+    eff_c = set(LightGBMPredictor(session, drop_features=())._scope_columns(shared).feature_cols)
+    eff_a = set(LightGBMPredictor(session, drop_features=drop)._scope_columns(shared).feature_cols)
+    assert eff_c - eff_a == set(drop) and eff_a <= eff_c, (
+        f"arms do not differ by the drop set: {sorted(eff_c ^ eff_a)}")
+    assert set(drop) <= eff_c, "dropped columns are not even in the built matrix"
     return cand, act, drop
 
 
@@ -125,6 +133,14 @@ def _run_window(session, cfg, *, w_from, w_to, mask_cutoff, rounds, blocks, b, s
                   "mask_cutoff": audit["mask_cutoff"], "dropped_in_active": list(drop)},
     )
     log("fit OK")
+    # STRUCTURAL: two different column sets cannot yield byte-identical predictions on every
+    # race. A paired diff of exactly 0.0 everywhere means the comparison did not happen
+    # (identical models) — abort rather than record a verdict. Reporting the COUNT of non-zero
+    # diffs reveals structure, not effect size, so it is allowed even in smoke.
+    n_all = sum(len(v) for v in rep.diffs_by_day.values())
+    n_nonzero = sum(1 for v in rep.diffs_by_day.values() for x in v if x != 0.0)
+    assert n_nonzero > 0, "arms produced identical predictions on every race — comparison invalid"
+    log(f"arms differ OK ({n_nonzero}/{n_all} races with non-zero paired diff)")
     session.rollback()
     audit.update({"n_races": rep.n_races, "n_days": rep.bootstrap_ci["n_days"],
                   "race_id_set_hash": rep.race_id_set_hash,
