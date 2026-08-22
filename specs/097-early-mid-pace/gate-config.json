@@ -66,14 +66,16 @@
       "mode": "evidence_of_harm",
       "margin": 0.005,
       "window_from": "2025-10-11",
-      "rationale": "実劣化窓は MDE 0.0094 で検出力不足のため成立は要求しない。方向不一致の安全弁"
+      "rationale": "実劣化窓は MDE 0.0094 で検出力不足のため成立は要求しない。方向不一致の安全弁",
+      "window_to": "実行時の DB 最新 race_date(verdict.json に window_to と race_set_hash を記録=analyze C11)"
     }
   },
   "eval_window": {
     "from": "2020-01-01",
     "to": "2024-12-31",
-    "min_eval_days": 400,
-    "_comment": "assert_confirmatory に渡す envelope。scored_windows ⊂ envelope を driver で assert。guard 2(2025-10-11+)は envelope 外だが設計どおり(実レジームの方向一致 guard)。"
+    "min_eval_days": 300,
+    "_comment": "assert_confirmatory に渡す envelope。scored_windows ⊂ envelope を driver で assert。guard 2(2025-10-11+)は envelope 外だが設計どおり(実レジームの方向一致 guard)。",
+    "_min_eval_days_note": "pooled 3 窓の開催日は実測 2020=109 / 2022=108 / 2024=106 = 323 日。400 では満たせないため 300 に凍結(analyze 2 周目 C1)。driver は pooled n_days >= min_eval_days を sufficiency として適用し、未満なら NO_DECISION。窓ごとの PairedReport.decision は参考値で転記しない。"
   },
   "power": {
     "expected_n_races": 10350,
@@ -149,5 +151,11 @@
     "metric": "mean_ece",
     "noninferior_width": 0.001,
     "emergency_abs_ece": 0.05
+  },
+  "pooling": {
+    "_comment": "analyze 2 周目 C7: PairedReport は窓ごとのスカラしか露出しない。sub-gate に使う付随指標の集約規則を凍結。",
+    "winner_nll": "per-day diffs の union(互いに素)→ race-day cluster bootstrap → seed inflate(n_folds=3)",
+    "top2_top3_diff": "n_races 加重平均(厳密)",
+    "ece": "n_races 加重平均(equal-mass bin 境界が窓ごとに異なるため近似。ECE sub-gate は幅 0.001 の非劣性なので近似誤差は保守側に働かない点を開示)"
   }
 }

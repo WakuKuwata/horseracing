@@ -18,6 +18,11 @@
   margin +0.003)が出たら FAIL
 - **guard 2(実レジーム方向一致)**: 2025-10-11 以降の実劣化窓の paired 差で ci_low > +0.005
   なら FAIL(検出力不足のため成立は要求しない)。この窓は `eval_window` envelope の**外**だが設計どおり
+- **充足(sufficiency)**: pooled n_days ≥ `min_eval_days`=300(実測 2020=109/2022=108/2024=106 =
+  323 日)。未満なら NO_DECISION。窓ごとの PairedReport.decision は参考値
+- **付随指標の pooled 集約**(gate-config `pooling`): winner NLL は per-day diffs の union →
+  cluster bootstrap → seed inflate / top2・top3 差は n_races 加重平均(厳密)/ ECE は n_races
+  加重平均(equal-mass bin が窓ごとに異なるため**近似**と明記)
 - **凍結した付随成分**(コード既定値に落とさず gate-config に明示): recent_guard(non_inferiority・
   窓 3/5 年・margin 0.005・max_date=2024-12-31。pooled 3 窓を暦日で扱い 3y=2022/2024・5y=全窓)/
   top2・top3 非劣性 0.0005 / ECE 幅 0.001・緊急 0.05
@@ -42,13 +47,18 @@
 
 ## provenance の契約(実行時 assert・codex tasks Q2)
 
-- マスクを当てたセッションで **1 回だけ** Frames をロードし、その射影 `(race_id, horse_id,
-  race_date, distance, first_3f)` で cutoff 以降∧距離≠1200m の first_3f 非 NULL が **0 行**
+- マスクを当てたセッションで matrix 構築(`_ensure_data`)の**直前**に射影クエリ 1 本
+  `(race_id, horse_id, race_date, distance, first_3f)` を取り、cutoff 以降∧距離≠1200m の
+  first_3f 非 NULL が **0 行**であることと `frame_projection_hash` を記録。matrix は同一セッション
+  から **1 回だけ**構築し両アームに同一オブジェクトを注入(`is`)。hash が証明するのは構築直前の
+  セッション状態であり、matrix の同一性は単一構築で担保する(analyze C6)
 - 両アームとも `use_materialized=False`(parquet は非マスク世界の凍結物)
 - `frame_projection_hash` を verdict JSON に記録(再実行時の同一性照合用)
 
 ## artifact の隔離(gate-config `artifact_isolation` と同値)
 
+- verdict JSON の `verdict` は RegimeReport 準拠のオブジェクト(`{"status", "adopt", "formula",
+  "decision_reason"}`)。文字列にすると `normalize_verdict` が落ちて構造的拒否のログが出ない
 - verdict の種別は **`counterfactual_supply_simulation`**。これは**列採用**の証拠であり、実データで
   学習した登録モデルの標準窓検証ではない
 - `eligible_for_verdict=False` → training の `evaluate_promotion`(full_walk_forward のみ受理)は

@@ -75,11 +75,13 @@ as-of 特徴群を持ちたい。テン3F 供給停止後も、馬の「序盤�
 **Acceptance Scenarios**:
 
 1. **Given** 凍結済み gate-config(evaluation contract v4・seed 分散宣言込み), **When** 確認
-   評価を実行する, **Then** 判定式は単一(`gate.adopted AND subgroup_guard`)で、レポートに
-   gate-config hash・レース集合 hash・両アームの recipe hash が記録される
+   評価を実行する, **Then** 判定式は単一(`primary(pooled) AND guard1(full-info) AND
+   guard2(実レジーム方向)`。部分集団ガードは本 feature では計算しない — 採点窓に 2026 系が
+   構造的に存在しないため)で、レポートに gate-config hash・レース集合 hash・両アームの
+   recipe hash が記録される
 2. **Given** 供給死亡レジームを反映した primary 評価, **When** 候補(新列あり)と基準(新列なし)
-   を比較する, **Then** 差の判定区間(再学習分散込み)が事前登録した最小効果 δ を下回る場合のみ
-   primary 成立
+   を比較する, **Then** **点推定 < −δ(δ=0.002)かつ 再学習分散込み CI 上限 < 0** の両方を満たす
+   場合のみ primary 成立(v4 標準式。`CI 上限 < −δ` ではない — codex 提案として検討し不採用)
 3. **Given** full-info(実測テン3F が生きている窓)の guard 評価, **When** 候補が基準より
    悪化していないかを検査する, **Then** 非劣性マージン内でない場合は ADOPT しない
 4. **Given** 評価が実行不能な場合のみ, **Then** NO_DECISION(ボーダーの数値の読み替えによる

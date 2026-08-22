@@ -81,3 +81,16 @@ gate-config に無くコード既定値に落ちていた=hash に含まれな�
 合わせる、guard1 の「中断点」を「verdict 分岐」に、provenance 関数は `eval/provenance.py` に
 置き driver/テストが import、単一ロード(同一 matrix を両アームに注入)を T021 に明記、
 FR-012 に表示ラベル許容を追記。
+
+# analyze 2 周目の反映(2026-08-22)
+
+HIGH 3 / MEDIUM 6 / LOW 4 を全件修正。C1(`min_eval_days=400` が pooled 実測 323 日で満たせず、
+適用すれば常に NO_DECISION・適用しなければ hash に含まれる凍結値に消費者が無い)は閾値 300 に改め
+sufficiency を driver に適用 → **再事前登録 hash 6dd6a013… → 6f76bf15…**。C3(`register-arm-e` に
+`--weight-mask-rate/--weight-mask-seed` が無いとマスク無しレシピの候補が無音登録される)は完全な
+引数列を固定。C5(verdict を文字列にすると `normalize_verdict` が落ちる)は RegimeReport 準拠の
+オブジェクト形を契約化。C6(Frames 単一ロードは `_ensure_data` が Frames を保持しないため実装不能)
+は「射影クエリ 1 本 + matrix 単一構築」に是正。C7(ECE は線形に pool できない)は n_races 加重平均を
+近似と明記して凍結。C8(`paired_eval` に `valid_to` が無い)は窓ごと `load_eval_races(end_date=
+window_to)` で単一 fold 化。C9 は mask SQL を `training/supply_mask.py` に。C2/C4 は spec の
+判定式・primary の読みを凍結式に統一。

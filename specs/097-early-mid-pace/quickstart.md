@@ -55,13 +55,15 @@ VERDICT = ADOPT|REJECT|NO_DECISION(実行不能のみ)
 
 ## 3. 後始末(Phase C)
 
-- REJECT: revert 後に `uv run python -m horseracing_serving predict --race-id <id>` の出力が
+- REJECT: revert 後に `uv run python -m horseracing_serving predict --race-id <id>`(**cwd=serving/**)の出力が
   revert 前とバイト一致(SC-005)、保全テストは
   `uv run pytest tests/unit/test_early_mid_pace_features.py -q`(build 直呼び)で緑。
-- ADOPT: 実データ学習 → `register-arm-e --n-estimators 900 --artifacts-dir <絶対パス>` で候補
-  登録(`--verdict` 引数は無い)→ `promote-model --model-version <名> --verdict
-  ../specs/097-early-mid-pace/verdict.json`(**--apply 無し=dry-run**)で
-  `verdict_artifact_not_eligible` により昇格が構造的に拒否されることを確認。昇格はしない。
+- ADOPT: 実データ学習 → `register-arm-e --model-version lgbm-097-emp --n-estimators 900
+  --weight-mask-rate 0.5 --weight-mask-seed 20260810 --n-oof-blocks 8 --seed 42
+  --artifacts-dir <絶対パス>`(gate-config `arms.recipe` と一致・`--verdict` 引数は無い)→
+  `promote-model --model-version lgbm-097-emp --verdict ../specs/097-early-mid-pace/verdict.json`
+  (**--apply 無し=dry-run**)。期待結果は `error: … verdict_artifact_not_eligible` + **exit 1**
+  (失敗ではなく構造的拒否の証明)。昇格はしない。
 
 ## SC 対応表
 

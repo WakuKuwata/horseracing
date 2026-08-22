@@ -63,6 +63,7 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
     features/tests/unit/test_early_mid_pace_features.py   # 手計算 fixture + リーク 3 方向
     eval/src/horseracing_eval/paired.py                   # PairedReport.diffs_by_day 純増
     eval/src/horseracing_eval/provenance.py               # frame_projection_hash(pure pandas)
+    training/src/horseracing_training/supply_mask.py       # mask SQL / symmetry / provenance(driver とテストが import)
     scripts/097_simulated_supply_gate.py                  # driver(CLI 本体は不変)
     front/src/components/featureLabels.ts + admin/src/lib/featureLabels.ts   # ラベル 2 行
 
@@ -91,7 +92,8 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
    - アーム: features-022 全列 vs `drop=early_mid_pace`(同一マスク環境・同一ビルド)
    - レシピ: 現 active 同等(pl_topk・arm E OOF isotonic 8 blocks・rounds 900・091 体重マスク・
      seed 42・num_threads 1)
-   - primary: pooled paired winner NLL・v4 標準式(δ=0.002・sd_fold=0.001816・n_folds=3)
+   - primary: pooled paired winner NLL・v4 標準式(δ=0.002・sd_fold=0.001816・n_folds=3)・
+     sufficiency = pooled n_days ≥ 300(実測 323)・top2/top3/ECE は n_races 加重平均(ECE は近似)
    - guard 1: full-info(マスク無し・同窓)evidence-of-harm(margin +0.003)
    - guard 2: 実 2025-10-11+ 方向一致 evidence-of-harm(margin +0.005)
    - verdict 正本: `primary(pooled) AND guard1 AND guard2`。個別カットオフの事後選別禁止
