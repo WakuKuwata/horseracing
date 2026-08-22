@@ -18,6 +18,8 @@
   margin +0.003)が出たら FAIL
 - **guard 2(実レジーム方向一致)**: 2025-10-11 以降の実劣化窓の paired 差で ci_low > +0.005
   なら FAIL(検出力不足のため成立は要求しない)。この窓は `eval_window` envelope の**外**だが設計どおり
+- **guard の CI 種別**: guard 1/2 とも**標本 CI**(seed inflate 無し)= v4 の evidence-of-harm 既定と
+  同じ。広げるほど FAIL しにくくなる向きなので事前に固定(analyze 3 周目 A1)
 - **充足(sufficiency)**: pooled n_days ≥ `min_eval_days`=300(実測 2020=109/2022=108/2024=106 =
   323 日)。未満なら NO_DECISION。窓ごとの PairedReport.decision は参考値
 - **付随指標の pooled 集約**(gate-config `pooling`): winner NLL は per-day diffs の union →
@@ -51,7 +53,9 @@
   `(race_id, horse_id, race_date, distance, first_3f)` を取り、cutoff 以降∧距離≠1200m の
   first_3f 非 NULL が **0 行**であることと `frame_projection_hash` を記録。matrix は同一セッション
   から **1 回だけ**構築し両アームに同一オブジェクトを注入(`is`)。hash が証明するのは構築直前の
-  セッション状態であり、matrix の同一性は単一構築で担保する(analyze C6)
+  セッション状態であり、matrix の同一性は単一構築で担保する(analyze C6)。gate-config
+  `mask_provenance_assert` の「両アームの hash 一致」はこの単一構築(`is`)により**構造的に充足**
+  され、verdict.json の provenance hash は 1 本で足りる(analyze I1・hash を動かさず契約で閉じる)
 - 両アームとも `use_materialized=False`(parquet は非マスク世界の凍結物)
 - `frame_projection_hash` を verdict JSON に記録(再実行時の同一性照合用)
 

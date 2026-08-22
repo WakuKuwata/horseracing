@@ -42,7 +42,7 @@ cd training && PYTHONUNBUFFERED=1 nohup uv run python \
 期待する出力の形(**出力規律**: 全成分が揃うまで効果数値は出ない):
 
 ```
-cutoff 2019-01-01: mask OK / single-load OK / symmetry OK / provenance OK / fit OK
+cutoff 2019-01-01: mask OK / symmetry OK / provenance OK / build OK / fit OK
 cutoff 2021-01-01: …
 cutoff 2023-01-01: …
 guard1 full-info: 3 windows fit OK

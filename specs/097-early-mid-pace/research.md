@@ -66,10 +66,12 @@
   触れない = 両アームの母集団が同一(codex (i) の契約テスト)。
 - マスク環境の再構築は in-memory ビルド(parquet は非マスク世界の凍結物なので使わない)。
   非マスク世界と parquet の一致は T016 の materialize parity で担保する(driver 側では再検査しない)。
-- **provenance**(codex tasks Q2): マスクを当てたセッションで Frames を 1 回だけロードし両アームに
-  同一 matrix を注入。射影 hash・違反行 0・`use_materialized=False` を assert。対称性 assert だけ
+- **provenance**(codex tasks Q2・analyze C6 で是正): マスクを当てたセッションで matrix 構築の直前に
+  射影クエリ 1 本を取り射影 hash・違反行 0 を assert、matrix は同一セッションから 1 回だけ構築し
+  両アームに同一オブジェクトを注入(`is`)。`use_materialized=False` を assert。対称性 assert だけ
   では parquet/キャッシュ/別コネクションによる非対称汚染を通してしまう。
-- 概算コスト: 1 カットオフ = ビルド 2 回 + arm E fit 2 本(~650-700s/本) ≈ 40 分 → 3 本で ~2h。
+- 概算コスト: 1 カットオフ = マスク世界のビルド 1 回(単一構築)+ arm E fit 2 本(~650-700s/本)
+  ≈ 35-40 分 → 3 本で ~2h(full-info guard のビルドは別枠 ~2.4h。合計 ~4.5h は不変)。
 
 ## D7: FEATURE_VERSION と serving 互換
 

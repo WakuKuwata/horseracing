@@ -94,3 +94,10 @@ sufficiency を driver に適用 → **再事前登録 hash 6dd6a013… → 6f76
 近似と明記して凍結。C8(`paired_eval` に `valid_to` が無い)は窓ごと `load_eval_races(end_date=
 window_to)` で単一 fold 化。C9 は mask SQL を `training/supply_mask.py` に。C2/C4 は spec の
 判定式・primary の読みを凍結式に統一。
+
+# analyze 3 周目(2026-08-22)= 収束
+
+MEDIUM 以上ゼロ。LOW 8 件を文書のみで修正(gate-config 非変更・hash 6f76bf15… 据え置き)。
+事前登録として意味を持つのは A1(guard 1/2 の CI は**標本 CI・seed inflate 無し** — 広げるほど
+FAIL しにくい向きなので 1 bit を固定)と A2(NO_DECISION の列挙に sufficiency 未達を含める)。
+I1 は gate-config の旧表現を契約の 1 文で閉じた(単一構築により両アーム hash 一致は構造的に充足)。

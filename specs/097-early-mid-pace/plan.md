@@ -60,7 +60,12 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
     ├── pace_features.py                # 不変(既存 first3f 列は触らない)
     ├── registry.py                     # FEATURE_GROUPS + FEATURE_VERSION bump
     └── materialize.py                  # build_asof_features に 1 箇所結線
-    features/tests/unit/test_early_mid_pace_features.py   # 手計算 fixture + リーク 3 方向
+    features/tests/unit/test_early_mid_pace_features.py   # 手計算 fixture・欠損・1200m 恒等・投影 parity
+    features/tests/unit/test_early_mid_pace_leak.py       # リーク 3 方向
+    features/tests/unit/test_registry_features022.py      # 登録・group・compat pin
+    training/tests/unit/test_097_mask.py                  # mask SQL / provenance hash
+    eval/tests/unit/test_paired_report_diffs_by_day.py    # diffs_by_day 純増
+    scripts/parity_097.py / scripts/coverage_097.py       # SC-001 / SC-002 の証跡
     eval/src/horseracing_eval/paired.py                   # PairedReport.diffs_by_day 純増
     eval/src/horseracing_eval/provenance.py               # frame_projection_hash(pure pandas)
     training/src/horseracing_training/supply_mask.py       # mask SQL / symmetry / provenance(driver とテストが import)
@@ -98,7 +103,8 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
    - guard 2: 実 2025-10-11+ 方向一致 evidence-of-harm(margin +0.005)
    - verdict 正本: `primary(pooled) AND guard1 AND guard2`。個別カットオフの事後選別禁止
 6. driver `scripts/097_simulated_supply_gate.py`: assert_confirmatory → 3 カットオフ順次
-   (マスク→**単一ロード**→対称性+provenance assert→両アーム fit→採点→rollback)→ pooled CI →
+   (マスク→対称性 assert→provenance assert(射影クエリ)→**matrix 単一構築**→両アーム fit→採点→
+   rollback)→ pooled CI →
    guard 2 本 → verdict JSON(**artifact_kind="counterfactual_supply_simulation"・
    eligible_for_verdict=False・feature_adoption_eligible=True・evidence_regime**・両アーム
    recipe hash・マスク定義・採点窓を記録)。**出力規律**: 全成分が揃うまで効果数値を出さない
@@ -116,8 +122,9 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
 8. REJECT → bump/registry/結線/compat pin を revert・モジュール+テスト非結線保全・
    active 予測バイト一致検証(SC-005)・結果を spec に転記
 9. ADOPT → 列採用を確定(features-022 が正)・実データで候補モデルを学習・登録
-   (`register-arm-e` 系・verdict 添付)。**昇格はしない** — 標準窓非劣化 + prospective の
-   3 点セットで別途(research D9)
+   (`register-arm-e`・引数列は T032 — `--verdict` は存在しない)→ `promote-model --verdict`
+   dry-run で `verdict_artifact_not_eligible` による昇格拒否を確認。**昇格はしない** —
+   標準窓非劣化 + 本 verdict + prospective の 3 点セットで別途(research D9)
 
 ## 検証ゲート(要約)
 
