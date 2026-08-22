@@ -72,7 +72,8 @@
   "eval_window": {
     "from": "2020-01-01",
     "to": "2024-12-31",
-    "min_eval_days": 400
+    "min_eval_days": 400,
+    "_comment": "assert_confirmatory に渡す envelope。scored_windows ⊂ envelope を driver で assert。guard 2(2025-10-11+)は envelope 外だが設計どおり(実レジームの方向一致 guard)。"
   },
   "power": {
     "expected_n_races": 10350,
@@ -95,7 +96,12 @@
     "formula": "primary_pooled AND guard_full_info AND guard_real_direction",
     "no_decision": "評価実行不能の場合のみ。個別カットオフの事後選別禁止(pooled が正本)",
     "on_adopt": "列の採用のみ。モデル昇格は標準窓非劣化+本 verdict+prospective の 3 点セットで別途",
-    "output_discipline": "codex tasks レビュー Q1(b): primary・guard1・guard2 の全成分を計算し終えるまで一切の効果数値を出力しない。guard の途中結果で primary の計算を中断・変更しない(verdict は全成分計算後に 1 回だけ評価)。"
+    "output_discipline": "codex tasks レビュー Q1(b): primary・guard1・guard2 の全成分を計算し終えるまで一切の効果数値を出力しない。guard の途中結果で primary の計算を中断・変更しない(verdict は全成分計算後に 1 回だけ評価)。",
+    "allowed": [
+      "ADOPT",
+      "REJECT",
+      "NO_DECISION(評価実行不能の場合のみ)"
+    ]
   },
   "artifact_isolation": {
     "_comment": "codex tasks レビュー Q1(d): 本 verdict は『マスクした擬似供給停止』環境での列採用の証拠であって、実データで学習した登録モデルの標準窓 verdict ではない。full_walk_forward にすると training の evaluate_promotion がこれで ACTIVE 昇格を通してしまう(構造的な穴)。専用種別にして、昇格ゲート(full_walk_forward のみ受理)から構造的に弾く。",
@@ -124,5 +130,24 @@
     "redact_effect_numbers": true,
     "artifact_kind": "smoke",
     "eligible_for_verdict": false
+  },
+  "recent_guard": {
+    "_comment": "pooled した互いに素な 3 窓(2020/2022/2024)を暦日で扱う。max_date=2024-12-31 基準で 3y 窓は 2022/2024 の採点日、5y 窓は 3 窓すべてを含む。疑似世界を跨ぐ pooled 上の evidence-of-harm 検査であり、現行レジームの証拠ではない。",
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005,
+    "max_date": "2024-12-31"
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
   }
 }

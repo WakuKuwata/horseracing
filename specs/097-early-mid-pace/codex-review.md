@@ -70,3 +70,14 @@ rel_first3f 列も同じ性質で 023 以来受容済み。レース内相対が
   `(race_id, horse_id, race_date, distance, first_3f)` の決定論 hash を両アームで一致 assert +
   cutoff 以降∧距離≠1200m の first_3f 非 NULL が 0 行 assert + 両アーム `use_materialized=False`
   assert(T019 で hash 関数を単体テスト・T021(3b) で driver に組込・gate-config に凍結)
+
+# analyze 1 周目の反映(2026-08-22)
+
+HIGH 5 / MEDIUM 11 / LOW 5 を全件修正。C6(recent_guard / top_noninferior / calibration が
+gate-config に無くコード既定値に落ちていた=hash に含まれない)はキーを明示凍結して解決したため
+**再事前登録 hash 7d2dfe95… → 6dd6a013…**(実行前なので正当)。他の主な修正: artifact_kind の
+全文書波及(tasks 71 行目・plan 手順 6・data-model)、`register-arm-e --verdict` は存在しない引数
+→ `promote-model` dry-run で昇格拒否を確認する手順に変更、quickstart の期待出力を出力規律に
+合わせる、guard1 の「中断点」を「verdict 分岐」に、provenance 関数は `eval/provenance.py` に
+置き driver/テストが import、単一ロード(同一 matrix を両アームに注入)を T021 に明記、
+FR-012 に表示ラベル許容を追記。

@@ -65,7 +65,10 @@
 - マスクは `race_results.first_3f` のみに作用し、行の適格性(started/winner/採点対象)には一切
   触れない = 両アームの母集団が同一(codex (i) の契約テスト)。
 - マスク環境の再構築は in-memory ビルド(parquet は非マスク世界の凍結物なので使わない)。
-  A 環境(非マスク)は parquet とバイト一致すること(既存 parity 機構)。
+  非マスク世界と parquet の一致は T016 の materialize parity で担保する(driver 側では再検査しない)。
+- **provenance**(codex tasks Q2): マスクを当てたセッションで Frames を 1 回だけロードし両アームに
+  同一 matrix を注入。射影 hash・違反行 0・`use_materialized=False` を assert。対称性 assert だけ
+  では parquet/キャッシュ/別コネクションによる非対称汚染を通してしまう。
 - 概算コスト: 1 カットオフ = ビルド 2 回 + arm E fit 2 本(~650-700s/本) ≈ 40 分 → 3 本で ~2h。
 
 ## D7: FEATURE_VERSION と serving 互換
@@ -86,7 +89,9 @@
 
 - REJECT: bump+結線のみ revert・モジュール+単体テスト非結線保全(062/070/090 同型)・active
   予測バイト一致検証。
-- ADOPT: **列の採用 = registry 結線 + features-022 確定**。ただし**モデル昇格は別段**:
+- ADOPT: **列の採用 = registry 結線 + features-022 確定**。ただし**モデル昇格は別段**(verdict は
+  `counterfactual_supply_simulation` 種別・`eligible_for_verdict=False` で、`evaluate_promotion`
+  が構造的に拒否する=規約でなく機構で分離):
   実データで学習した候補は ≤2024 で実測 first3f を使えるため、標準窓の対 active 評価は非劣性
   しか示せない(それで正しい — 価値は前向きに発現する)。昇格は「標準窓の非劣化 PASS +
   097 シミュレーション verdict + prospective 監視」の 3 点セットで別途判断し、

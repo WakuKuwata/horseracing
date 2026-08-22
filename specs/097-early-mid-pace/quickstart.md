@@ -11,11 +11,11 @@ cd features && uv run pytest tests/unit/test_early_mid_pace_features.py -q
 共有列パリティ(SC-001)と充足監査(SC-002):
 
 ```bash
-cd training && uv run python ../scripts/097_parity_and_coverage.py
+cd training && uv run python ../scripts/parity_097.py && uv run python ../scripts/coverage_097.py
 ```
 
-期待: `shared 138 columns: byte-identical (mismatch 0)` / `2026 coverage (has_past_race):
->= 95%`。
+期待: `shared 138 columns: byte-identical (mismatch 0)`(→ evidence-parity.md)/
+`2026 coverage (has_past_race): >= 95%`(→ evidence-coverage.md)。
 
 ## 2. 判定(Phase B)
 
@@ -39,15 +39,18 @@ cd training && PYTHONUNBUFFERED=1 nohup uv run python \
   --json ../specs/097-early-mid-pace/verdict.json > ../out/097-gate.log 2>&1 &
 ```
 
-期待する出力の形:
+期待する出力の形(**出力規律**: 全成分が揃うまで効果数値は出ない):
 
 ```
-cutoff 2019-01-01: masked build OK / symmetry OK / diff=…
+cutoff 2019-01-01: mask OK / single-load OK / symmetry OK / provenance OK / fit OK
 cutoff 2021-01-01: …
 cutoff 2023-01-01: …
-pooled: point=… total CI[…, …]
-guard1 full-info: … / guard2 real-window: …
-VERDICT = ADOPT|REJECT
+guard1 full-info: 3 windows fit OK
+guard2 real-window: fit OK
+--- all components computed ---
+pooled: point=… sample CI[…, …] total CI[…, …]
+guard1: … / guard2: …
+VERDICT = ADOPT|REJECT|NO_DECISION(実行不能のみ)
 ```
 
 ## 3. 後始末(Phase C)
@@ -55,14 +58,16 @@ VERDICT = ADOPT|REJECT
 - REJECT: revert 後に `uv run python -m horseracing_serving predict --race-id <id>` の出力が
   revert 前とバイト一致(SC-005)、保全テストは
   `uv run pytest tests/unit/test_early_mid_pace_features.py -q`(build 直呼び)で緑。
-- ADOPT: 実データ学習 → `register-arm-e --verdict ../specs/097-early-mid-pace/verdict.json …`
-  で候補登録。昇格はしない(contracts/adoption-gate.md)。
+- ADOPT: 実データ学習 → `register-arm-e --n-estimators 900 --artifacts-dir <絶対パス>` で候補
+  登録(`--verdict` 引数は無い)→ `promote-model --model-version <名> --verdict
+  ../specs/097-early-mid-pace/verdict.json`(**--apply 無し=dry-run**)で
+  `verdict_artifact_not_eligible` により昇格が構造的に拒否されることを確認。昇格はしない。
 
 ## SC 対応表
 
 | SC | 検証コマンド |
 |---|---|
-| SC-001/002 | `097_parity_and_coverage.py` |
+| SC-001/002 | `parity_097.py` / `coverage_097.py` |
 | SC-003 | 単体テスト(リーク 3 方向) |
 | SC-004 | verdict.json の hash 3 点 + 判定式 |
 | SC-005 | REJECT 分岐の予測バイト一致 |

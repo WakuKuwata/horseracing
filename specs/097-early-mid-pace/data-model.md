@@ -37,5 +37,7 @@
 ## 判定成果物(append-only・追跡パス)
 
 `specs/097-early-mid-pace/` 配下: gate-config.json(+hash)・verdict JSON
-(artifact_kind="full_walk_forward"・pooled CI・guard 2 本・両アーム recipe hash・マスク定義・
-採点窓・レース集合 hash)。
+(**artifact_kind="counterfactual_supply_simulation"**・`eligible_for_verdict=False`(モデル昇格には
+使えない=`evaluate_promotion` が構造的に拒否)・`feature_adoption_eligible=True`・
+`evidence_regime="masked_pseudo_supply_death"`・pooled CI(標本・総)・guard 2 本・
+両アーム recipe hash・マスク定義・採点窓・レース集合 hash・verdict と式)。

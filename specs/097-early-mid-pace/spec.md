@@ -149,8 +149,9 @@ serving 継続できる。
   悪化しないこと)
 - **FR-011**: REJECT 時は bump+結線のみ revert し、モジュール+単体テストを非結線保全する。
   revert 後に active モデルの予測バイト一致を実 DB で検証する
-- **FR-012**: スキーマ・migration・API・OpenAPI・買い目・ops は不変。変更は features/training/
-  eval の 3 パッケージに閉じる
+- **FR-012**: モデル入力・スキーマ・migration・API・OpenAPI・買い目・ops は不変。実装変更は
+  features/training/eval に閉じる。**表示専用ラベル**(front/admin の featureLabels)の追加は許容
+  する(088 の教訓: 表示ラベル網羅テストが model-input 列すべてに日本語ラベルを要求する)
 - **FR-013**: 判定に使った evidence(kill-test JSON・確認評価レポート)は追跡されるパスに置く
 
 ### Key Entities

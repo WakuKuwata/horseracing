@@ -13,8 +13,10 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
 
 ## Technical Context
 
-- **変更パッケージ**: features(新モジュール+registry+materialize 結線)/ training(評価
-  driver)/ eval(不変 — 既存 paired_eval・v4 ゲートをそのまま使う)/ serving(compat pin 1 行)
+- **変更パッケージ**: features(新モジュール+registry(FEATURE_VERSION/compat pin)+materialize 結線)/
+  training(評価 driver)/ eval(`PairedReport.diffs_by_day` の純増露出 + `provenance.py` 小ヘルパ。
+  ゲート実装は不変)/ serving(**無改修** — compat pin は features/registry.py にある)/
+  front+admin(表示ラベル 2 行のみ=088 の教訓)
 - **新列**: `asof_rel_early_mid_avg` / `asof_rel_early_mid_best`(FEATURE_GROUP
   `early_mid_pace`・float64・NaN=情報なし)
 - **FEATURE_VERSION**: features-021 → features-022(019/020 焼却済み再利用禁止)。
@@ -35,7 +37,8 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
 - **V. 再現性と監査**: evidence 追跡パス・hash 3 点(gate-config/レース集合/recipe)・マスクは
   未 commit + 必ず rollback → PASS
 - **VI. feature 分割規律**: 単一束・単一 spec・REJECT 時の revert 手順を事前定義 → PASS
-- **Codex ゲート**: spec 段階で取得成功・全採否記録済み(codex-review.md)→ PASS
+- **Codex ゲート**: spec 段階(2 問)+ tasks 段階(2 問)の計 4 問を取得成功・全採否記録済み
+  (codex-review.md)。tasks 段階で昇格ゲートの構造的な穴とマスク provenance を検出し再事前登録 → PASS
 
 ## Project Structure
 
@@ -58,8 +61,10 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
     ├── registry.py                     # FEATURE_GROUPS + FEATURE_VERSION bump
     └── materialize.py                  # build_asof_features に 1 箇所結線
     features/tests/unit/test_early_mid_pace_features.py   # 手計算 fixture + リーク 3 方向
-    training/… (scripts/097_simulated_supply_gate.py として driver。CLI 本体は不変)
-    serving/src/horseracing_serving/model_loader.py       # COMPAT pin 1 エントリ追加
+    eval/src/horseracing_eval/paired.py                   # PairedReport.diffs_by_day 純増
+    eval/src/horseracing_eval/provenance.py               # frame_projection_hash(pure pandas)
+    scripts/097_simulated_supply_gate.py                  # driver(CLI 本体は不変)
+    front/src/components/featureLabels.ts + admin/src/lib/featureLabels.ts   # ラベル 2 行
 
 ## 実装フェーズ
 
@@ -91,12 +96,18 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
    - guard 2: 実 2025-10-11+ 方向一致 evidence-of-harm(margin +0.005)
    - verdict 正本: `primary(pooled) AND guard1 AND guard2`。個別カットオフの事後選別禁止
 6. driver `scripts/097_simulated_supply_gate.py`: assert_confirmatory → 3 カットオフ順次
-   (マスク→ビルド→両アーム fit→採点→rollback)→ pooled CI → guard 2 本 → verdict JSON
-   (artifact_kind="full_walk_forward"・両アーム recipe hash・マスク定義・採点窓を記録)
-7. **対称性の契約テスト**(codex (i)): マスク適用前後で採点対象レース集合・started 集合が
-   不変であることを driver 内で assert(破れたら即 fail)
+   (マスク→**単一ロード**→対称性+provenance assert→両アーム fit→採点→rollback)→ pooled CI →
+   guard 2 本 → verdict JSON(**artifact_kind="counterfactual_supply_simulation"・
+   eligible_for_verdict=False・feature_adoption_eligible=True・evidence_regime**・両アーム
+   recipe hash・マスク定義・採点窓を記録)。**出力規律**: 全成分が揃うまで効果数値を出さない
+7. **対称性の契約テスト**(codex (i)): マスク適用前後で採点対象レース集合・started 集合・winner
+   が不変であることを driver 内で assert(破れたら即 fail)
+7b. **provenance の契約テスト**(codex tasks Q2): マスク後 Frames 射影で (a) cutoff 以降∧距離≠1200m
+   の first_3f 非 NULL が 0 行 (b) 両アームが同一 matrix オブジェクト(`is`)(c) `use_materialized=False`
+   を assert。parquet/キャッシュ/別コネクションによる非対称汚染を構造的に排除する
 
-**中断点**: guard 1 が FAIL(full-info で自信を持って害)なら primary の値に関わらず REJECT。
+**verdict 分岐**: guard 1 が FAIL(full-info で自信を持って害)なら verdict=REJECT。実行は全成分を
+完走させ verdict は最後に 1 回だけ評価する(中断ではない)。
 
 ### Phase C: 後始末(US3)
 
@@ -113,7 +124,8 @@ pooled paired winner NLL・v4 標準ゲート)で決める。full-info 非劣化
 | 共有列パリティ | 138 列全量バイト一致 | 即中断 |
 | リーク 3 方向 | 今走/同日/未来 不変 | 即中断 |
 | 対称性 | マスクが母集団を変えない | 即 fail |
-| primary | pooled: point<−0.002 ∧ 総 CI 上限<0 | REJECT |
+| provenance | 違反行 0・同一 matrix・use_materialized=False | 即 fail |
+| primary | pooled: point<−0.002 ∧ 総 CI 上限<0(+recent/top/ECE は凍結既定値) | REJECT |
 | guard 1 | full-info で害の証拠なし(+0.003) | REJECT |
 | guard 2 | 実窓で害の証拠なし(+0.005) | REJECT |
 

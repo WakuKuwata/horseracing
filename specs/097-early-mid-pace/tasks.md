@@ -1,7 +1,7 @@
 # Tasks: Early-Mid Pace Features (rel_early_mid)
 
 **Input**: spec.md / plan.md / research.md(D1-D10) / codex-review.md / data-model.md /
-contracts(feature-columns INV-EM1..EM8・adoption-gate) / gate-config.json(凍結 hash 90806379…)
+contracts(feature-columns INV-EM1..EM8・adoption-gate) / gate-config.json(凍結 hash 6dd6a013…=analyze 反映後の再事前登録値)
 
 **テストは必須**(憲法 II/III: リーク境界と評価先行は挙動テストで固定する)。
 
@@ -20,14 +20,14 @@ contracts(feature-columns INV-EM1..EM8・adoption-gate) / gate-config.json(凍�
 
 ## Phase 1: Setup
 
-- [ ] T001 `specs/097-early-mid-pace/gate-config.hash.txt` の hash(`7d2dfe95…`= codex tasks レビュー反映後の再事前登録値)が `gate_config_hash(gate-config.json)` と一致することを確認し、以降 gate-config.json を変更しない
+- [ ] T001 `specs/097-early-mid-pace/gate-config.hash.txt` の hash(`6dd6a013…`= codex tasks レビュー + analyze 反映後の再事前登録値)が `gate_config_hash(gate-config.json)` と一致することを確認し、以降 gate-config.json を変更しない
 - [ ] T002 実 DB で前提を再確認して `specs/097-early-mid-pace/evidence-preflight.md` に記録: active=lgbm-094-cap900・feature_version=features-021・feature_hash=663fe86c…(metadata.json)・registry 138 列・`race_results.finish_time/last_3f` の 2026 充足 ≥99%
 
 ---
 
 ## Phase 2: Foundational(全 US の前提)
 
-- [ ] T003 `eval/src/horseracing_eval/paired.py`: `PairedReport` に `diffs_by_day: dict[str, list[float]]` を追加し `to_dict()` に含める(既存フィールド不変・既存テスト無改修で緑)。3 カットオフの pooled CI を driver で取るために必要。`eval/tests/unit/` に「既存レポートの to_dict キーが純増である」テストを追加
+- [ ] T003 `eval/src/horseracing_eval/paired.py`: `PairedReport` に `diffs_by_day: dict[str, list[float]]` を追加し `to_dict()` に含める(既存フィールド不変・既存テスト無改修で緑)。3 カットオフの pooled CI を driver で取るために必要。`eval/tests/unit/` に「既存レポートの to_dict キーが純増である」テストを追加。併せて `eval/src/horseracing_eval/provenance.py` を新規: `frame_projection_hash(df, cols) -> str`(決定論・行順非依存・pure pandas、features を import しない=020 境界)。driver と T019 はここから import する(テストモジュールから本番 assert を import しない)
 - [ ] T004 `features/src/horseracing_features/pace_features.py` の `_pace_runs` / `_rolling_asof` が他モジュールから import 可能であることを確認(private 名のまま再利用する。二重実装禁止=025 単一 as-of 源)。変更不要なら本タスクは確認のみ
 
 ---
@@ -68,25 +68,26 @@ contracts(feature-columns INV-EM1..EM8・adoption-gate) / gate-config.json(凍�
 **Goal**: 凍結 gate-config の下でシミュレーション primary + guard 2 本を 1 回実行し、単一式で
 verdict を出す。
 
-**Independent Test**: `verdict.json` が artifact_kind=full_walk_forward・hash 3 点・
-`verdict ∈ {ADOPT, REJECT}` を持ち、quickstart §2 の出力形と一致。
+**Independent Test**: `verdict.json` が `artifact_kind=counterfactual_supply_simulation`・
+`eligible_for_verdict=False`・`feature_adoption_eligible=True`・hash 3 点・
+`verdict ∈ {ADOPT, REJECT, NO_DECISION(実行不能のみ)}` を持ち、quickstart §2 の出力形と一致。
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] `training/tests/unit/test_097_mask.py`: マスク SQL の単体テスト — 合成 DB 行で「cutoff 以降 ∧ distance≠1200 の first_3f のみ NULL、1200m と cutoff 前は不変、他列不変、行数不変」を assert(contracts/adoption-gate の対称性の一部)。加えて **provenance hash 関数**(`(race_id, horse_id, race_date, distance, first_3f)` の決定論 hash)を同ファイルで定義・テスト(codex tasks Q2)
+- [ ] T019 [P] [US2] `training/tests/unit/test_097_mask.py`: マスク SQL の単体テスト — 合成 DB 行で「cutoff 以降 ∧ distance≠1200 の first_3f のみ NULL、1200m と cutoff 前は不変、他列不変、行数不変」を assert(contracts/adoption-gate の対称性の一部)。加えて `horseracing_eval.provenance.frame_projection_hash` を `(race_id, horse_id, race_date, distance, first_3f)` 射影で単体テスト(行順入替で不変・1 値変更で変化)(codex tasks Q2)
 - [ ] T020 [P] [US2] `eval/tests/unit/test_paired_report_diffs_by_day.py`: T003 の露出フィールドで pooled CI が単窓 CI と整合する(1 窓だけ渡せば既存 `bootstrap_ci` と一致)ことを固定
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] `scripts/097_simulated_supply_gate.py` を新規作成。`assert_confirmatory(cfg, expected_hash, eval_window)` を冒頭で通し、3 カットオフを順次: (1) `s.rollback()` (2) マスク UPDATE(未 commit) (3) **対称性 assert**: マスク前後で `load_eval_races` の race_id 集合・各レースの started 集合・winner が同一(破れたら即 fail) (3b) **マスク provenance assert**(codex tasks Q2): features の loader で Frames を読み、cutoff 以降∧距離≠1200m の first_3f 非 NULL が **0 行**であること、両アームの build が同一 Frames hash を見ていること、両アームとも `use_materialized=False`(parquet は非マスク世界の凍結物)を assert (4) 候補 factory = `CalibSplitFactory(ModelRecipe(pl_topk, calibration none, params n_estimators=900, weight_mask 0.5/20260810, seed 42), n_oof_blocks=8, isotonic)` / 基準 = 同レシピ + `drop_features=FEATURE_GROUPS の early_mid_pace 展開` (5) `paired_eval(... first_valid_year=窓年, valid_from=窓始, subgroups=False, num_threads=1)` (6) `diffs_by_day` を回収 (7) `s.rollback()`。採点窓は gate-config の `scored_windows` を読む(ハードコード禁止)。**出力規律**(codex tasks Q1b): primary・guard1・guard2 の全成分が揃うまで効果の数値を stdout にも JSON にも出さない(進捗は「cutoff X: build OK / symmetry OK / provenance OK / fit OK」のみ)
-- [ ] T022 [US2] 同 driver: 3 窓の `diffs_by_day` を union(互いに素を assert)→ `race_day_cluster_bootstrap_ci_v1` → `inflate_for_seed_noise(sd_fold, n_folds=3)` → `evaluate_core_gate(diff, ci_low, ci_high(総), recent=…, top2/top3/ECE は 3 窓 pooled, cfg)` で v4 標準式を適用。**新しい判定式を書かない**
+- [ ] T021 [US2] `scripts/097_simulated_supply_gate.py` を新規作成。`assert_confirmatory(cfg, expected_hash, eval_window)` を冒頭で通し、3 カットオフを順次: (1) `s.rollback()` (2) マスク UPDATE(未 commit) (3) **対称性 assert**: マスク前後で `load_eval_races` の race_id 集合・各レースの started 集合・winner が同一(破れたら即 fail) (3b) **マスク provenance assert**(codex tasks Q2): features の loader で Frames を読み、cutoff 以降∧距離≠1200m の first_3f 非 NULL が **0 行**であること、両アームの build が同一 Frames hash を見ていること、両アームとも `use_materialized=False`(parquet は非マスク世界の凍結物)を assert (3c) **単一ロード**(analyze P3): マスクを当てたセッション `s` で `LightGBMPredictor(s, ...)._ensure_data()` を **1 回だけ**呼んで `TrainingMatrix` を作り、両アームの `CalibSplitFactory._shared` に同一オブジェクトを注入する(fold 内での再ロード禁止・`is` で同一性 assert)。provenance hash はこの matrix の元 Frames 射影で取る。`eval_window` は `cfg["eval_window"]` をそのまま渡し、`scored_windows ⊂ envelope` を assert(analyze C7) (4) 候補 factory = `CalibSplitFactory(ModelRecipe(pl_topk, calibration none, params n_estimators=900, weight_mask 0.5/20260810, seed 42), n_oof_blocks=8, isotonic)` / 基準 = 同レシピ + `drop_features=FEATURE_GROUPS の early_mid_pace 展開` (5) `paired_eval(... first_valid_year=窓年, valid_from=窓始, subgroups=False, num_threads=1)` (6) `diffs_by_day` を回収 (7) `s.rollback()`。採点窓は gate-config の `scored_windows` を読む(ハードコード禁止)。**出力規律**(codex tasks Q1b): primary・guard1・guard2 の全成分が揃うまで効果の数値を stdout にも JSON にも出さない(進捗は「cutoff X: build OK / symmetry OK / provenance OK / fit OK」のみ)
+- [ ] T022 [US2] 同 driver: 3 窓の `diffs_by_day` を union(互いに素を assert)→ `race_day_cluster_bootstrap_ci_v1` → `inflate_for_seed_noise(sd_fold, n_folds=3)` → `recent_window_guard(pooled_diffs_by_day, cfg=cfg, max_date=2024-12-31)`(gate-config `recent_guard` の凍結値。暦日で 3y 窓=2022/2024 の採点日・5y 窓=3 窓全部) → `evaluate_core_gate(diff, ci_low, ci_high(総), recent=その結果, top2/top3/ECE は 3 窓 pooled, cfg)` で v4 標準式を適用。**新しい判定式を書かない**
 - [ ] T023 [US2] 同 driver: guard 1(full-info)— マスク無しで同 3 窓を同手順で実行し pooled diff に `three_way(ci_low, ci_high, margin=0.003)` → FAIL なら guard1=False。guard 2 — 実窓 2025-10-11..最新(マスク無し・first_valid_year=2025・valid_from=2025-10-11)の paired diff に `ci_low > 0.005` で FAIL
 - [ ] T024 [US2] 同 driver: verdict JSON を `specs/097-early-mid-pace/verdict.json` に書く: `evaluation_contract_version="v4"`・`artifact_kind="counterfactual_supply_simulation"`(codex tasks Q1d: full_walk_forward だと `evaluate_promotion` がこれで ACTIVE 昇格を通す構造的な穴 → 専用種別で昇格ゲートから弾く。列採用の適格性は別キー `feature_adoption_eligible=True`)・`eligible_for_verdict=False`(モデル昇格には使えない)・`evidence_regime="masked_pseudo_supply_death"`・gate_config_hash・両アーム recipe_hash・各カットオフの race_id_set_hash・マスク定義・採点窓・pooled point/CI(標本・総)・guard 2 本の詳細・`verdict` と式 `primary_pooled AND guard1 AND guard2`・「反実仮想頑健性(counterfactual robustness)として報告」の注記
 - [ ] T025 [US2] smoke(配線のみ): gate-config `smoke` 節の**事前登録外カットオフ 2016-01-01・採点窓 2017**(codex tasks Q1a: 実カットオフの smoke は確認データの中間閲覧になる)・rounds=50・blocks=2・b=200 で driver を通し、対称性・provenance・JSON 形を確認。**効果の数値は stdout/JSON とも非表示**(`redact_effect_numbers`)。`artifact_kind="smoke"` で `out/` に出す(追跡しない)
 - [ ] T026 [US2] 本実行: quickstart §2 のコマンドで nohup 実行(推定 ~4.5h・実績比)。完了後 `verdict.json` をコミット。**個別カットオフの数値を見て解釈を変えない**(pooled が正本)
 - [ ] T027 [US2] 結果を `spec.md` 末尾の「実測結果」節に転記(primary pooled・guard1・guard2・verdict・限界 D10 の再掲)
 
-**中断点**: guard 1 が FAIL なら primary の値に関わらず REJECT として Phase 5 の REJECT 分岐へ。
+**verdict 分岐**(中断ではない=analyze O2): guard 1 が FAIL なら verdict=REJECT として Phase 5 の REJECT 分岐へ。実行は全成分を完走させ、verdict は最後に 1 回だけ評価する(出力規律)。
 
 ---
 
@@ -105,7 +106,7 @@ verdict を出す。
 
 ### ADOPT 分岐
 
-- [ ] T032 [US3] 実データ(マスク無し)で候補モデルを学習・登録: `register-arm-e --n-estimators 900 --verdict ../specs/097-early-mid-pace/verdict.json --artifacts-dir <絶対パス>`(weights_uri 相対パス事故の回避)。verdict は `counterfactual_supply_simulation` 種別なので `evaluate_promotion` は **構造的に candidate 止まり**(verdict_artifact_not_eligible)になることを登録ログで確認。metadata に `evidence_regime=masked_pseudo_supply_death` / `model_training_regime=real_unmasked` を記録(codex tasks Q1d: 証拠と学習レジームが異なることを明示)。**昇格しない**(contracts/adoption-gate: 標準窓非劣化+本 verdict+prospective の 3 点セットで別段)
+- [ ] T032 [US3] 実データ(マスク無し)で候補モデルを学習・登録: `register-arm-e --n-estimators 900 --artifacts-dir <絶対パス>`(weights_uri 相対パス事故の回避。**`--verdict` 引数は存在しない**=analyze C1。register-arm-e は常に CANDIDATE 登録)。続けて `promote-model --model-version <登録名> --verdict ../specs/097-early-mid-pace/verdict.json`(**--apply 無し=dry-run**)を実行し、`verdict_artifact_not_eligible` で昇格が**構造的に拒否される**ことをログで確認して `evidence-preflight.md` に貼る。証拠と学習レジームの違い(`evidence_regime=masked_pseudo_supply_death` / `model_training_regime=real_unmasked`)は verdict.json 側に記録済み(T024)。**昇格しない**(contracts/adoption-gate: 標準窓非劣化+本 verdict+prospective の 3 点セットで別段)
 - [ ] T033 [US3] 候補モデルで標準窓(2019-2024)の対 active 非劣化を確認評価(別 gate-config・新規事前登録)。結果を spec に転記。prospective 監視の開始日と判定日を `specs/097-early-mid-pace/prospective.md` に凍結
 
 ---
