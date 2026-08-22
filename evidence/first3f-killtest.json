@@ -2,51 +2,88 @@
   "arms": {
     "B_masked_all": {
       "full": {
-        "point": -0.01625314771498107,
-        "ci_low": -0.01719898105379094,
-        "ci_high": -0.01529899933433537,
+        "point": -0.01576334740008559,
+        "ci_low": -0.016733266211811895,
+        "ci_high": -0.014840762438887234,
         "n_days": 823,
         "n_races": 26410
       },
       "recent": {
-        "point": -0.015471558759067403,
-        "ci_low": -0.017450943450595773,
-        "ci_high": -0.013575567999664605,
+        "point": -0.013194159759703039,
+        "ci_low": -0.015260834375575825,
+        "ci_high": -0.011142123680466357,
         "n_days": 177,
         "n_races": 5680
       }
     },
     "C_masked_horses": {
       "full": {
-        "point": -0.009471673552288054,
-        "ci_low": -0.010357204305867385,
-        "ci_high": -0.008659869451447947,
+        "point": -0.008981873237392576,
+        "ci_low": -0.009908553514123293,
+        "ci_high": -0.00816430021470078,
         "n_days": 823,
         "n_races": 26410
       },
       "recent": {
-        "point": -0.008667172847426715,
-        "ci_low": -0.010321801779197068,
-        "ci_high": -0.006981544488331979,
+        "point": -0.00638977384806235,
+        "ci_low": -0.008000723788748077,
+        "ci_high": -0.00471046798566474,
         "n_days": 177,
         "n_races": 5680
       }
     },
     "D_1200m_only": {
       "full": {
-        "point": -0.012170823098969823,
-        "ci_low": -0.013029427791706018,
-        "ci_high": -0.011264646643304569,
+        "point": -0.011681022784074345,
+        "ci_low": -0.012526732452834779,
+        "ci_high": -0.010784932378651744,
         "n_days": 823,
         "n_races": 26410
       },
       "recent": {
-        "point": -0.013974306312425945,
-        "ci_low": -0.015956235013168396,
-        "ci_high": -0.012120619650360398,
+        "point": -0.011696907313061585,
+        "ci_low": -0.013481157323481253,
+        "ci_high": -0.010005938713325883,
         "n_days": 177,
         "n_races": 5680
       }
+    },
+    "E_early_mid_proxy": {
+      "full": {
+        "point": -0.006231067902701988,
+        "ci_low": -0.0069280925632353415,
+        "ci_high": -0.0056058522369458455,
+        "n_days": 823,
+        "n_races": 26410
+      },
+      "recent": {
+        "point": -0.010018124427133852,
+        "ci_low": -0.012051997857263642,
+        "ci_high": -0.008129761947420863,
+        "n_days": 177,
+        "n_races": 5680
+      }
+    },
+    "E_early_mid_proxy_minus_C_masked_horses": {
+      "point": -0.0027508053346905863,
+      "ci_low": -0.0037784634269426402,
+      "ci_high": -0.0017084371306263987,
+      "n_days": 823,
+      "n_races": 26410
+    },
+    "E_early_mid_proxy_minus_B_masked_all": {
+      "point": -0.009532279497383602,
+      "ci_low": -0.010625894133686033,
+      "ci_high": -0.00845925514598639,
+      "n_days": 823,
+      "n_races": 26410
+    },
+    "E_early_mid_proxy_minus_A_real": {
+      "point": 0.006231067902701988,
+      "ci_low": 0.005605852236945845,
+      "ci_high": 0.006928092563235341,
+      "n_days": 823,
+      "n_races": 26410
     },
     "steady_state_D_minus_B": {
       "point": -0.004082324616011245,
@@ -58,9 +95,9 @@
   },
   "coverage": {
     "A_real": {
-      "asof_rel_first3f_avg": 0.848,
-      "asof_rel_first3f_best": 0.848,
-      "asof_pace_balance_avg": 0.848
+      "asof_rel_first3f_avg": 0.859,
+      "asof_rel_first3f_best": 0.859,
+      "asof_pace_balance_avg": 0.859
     },
     "B_masked_all": {
       "asof_rel_first3f_avg": 0.0,
@@ -76,6 +113,11 @@
       "asof_rel_first3f_avg": 0.296,
       "asof_rel_first3f_best": 0.296,
       "asof_pace_balance_avg": 0.296
+    },
+    "E_early_mid_proxy": {
+      "asof_rel_first3f_avg": 0.9,
+      "asof_rel_first3f_best": 0.9,
+      "asof_pace_balance_avg": 0.9
     }
   },
   "model": "lgbm-094-cap900",

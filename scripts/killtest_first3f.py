@@ -16,7 +16,17 @@
     arm A (real)     : first_3f あり = 復旧後にあるべき状態
     arm B (all NULL) : 全消し = **上限**(学習時 88% 充足に対し 0% は未学習分布)
     arm C (馬単位)   : 実測 2026 の充足率 46% を再現 = **現状**
-    arm D (1200m のみ): 恒等式で復元できる分だけ残す = **無料でできる復旧の到達点**
+    arm D (1200m のみ): 恒等式で復元できる分だけ残す
+    arm E (代替量)    : 全距離で `走破時計 − 上がり3F` に差し替える = **無料の全距離代替**
+
+arm E の背景: `finish_time`(99.5%) と `last_3f`(99.4%) は per-horse で残っているので、その差
+「上がり3F を除いた自分の走破時間」= 前半+中盤 は全距離で作れる。1200m では テン3F と恒等、
+1200m 超でも `corr(rel_early_mid, rel_first3f) = +0.9754`、位置で説明できない残差との相関
++0.5781、着順との相関は rel_first3f(+0.3374)を上回る +0.3484。
+
+**ただし長距離では別の量である。** モデルは実測のテン3F で学習しているので、同じ列名に意味の違う
+値を入れると 017/091 と同型の train/serve ミスマッチになる。arm E はまさにそれを測る — 再学習
+せずに差し替えたとき、何も無い(B)より良いか、実測(A)にどこまで迫るか。
 
 **当初想定した復旧経路は使えなかった。** `race_laps` が持つのは `pace_first_3f` = レース単位の
 先頭ペースで、特徴が使う `race_results.first_3f` = **馬ごとのテン3F** とは別物である
@@ -134,13 +144,22 @@ def main() -> int:
 
         per_arm = {}
         try:
-            for arm in ("A_real", "B_masked_all", "C_masked_horses", "D_1200m_only"):
+            for arm in ("A_real", "B_masked_all", "C_masked_horses", "D_1200m_only",
+                        "E_early_mid_proxy"):
                 s.rollback()
                 if arm == "B_masked_all":
                     n = s.execute(text(
                         "UPDATE race_results SET first_3f = NULL "
                         "WHERE first_3f IS NOT NULL")).rowcount
                     print(f"  arm B: {n:,} 行の first_3f を NULL 化(全消し・未 commit)")
+                elif arm == "E_early_mid_proxy":
+                    n = s.execute(text("""
+                        UPDATE race_results
+                        SET first_3f = (extract(epoch FROM finish_time) - last_3f)::numeric
+                        WHERE finish_time IS NOT NULL AND last_3f IS NOT NULL
+                          AND extract(epoch FROM finish_time) - last_3f > 0
+                    """)).rowcount
+                    print(f"  arm E: {n:,} 行を代替量に差し替え(全距離・未 commit)")
                 elif arm == "D_1200m_only":
                     n = s.execute(text("""
                         UPDATE race_results SET first_3f = NULL
@@ -178,7 +197,7 @@ def main() -> int:
         d = {k: [u - v for u, v in zip(px[k], py[k])] for k in sorted(set(px) & set(py))}
         return _ci(d)
     print("\n=== diff = A(あり) − arm。負なら「ある方が良い」= 復旧の価値 ===")
-    for arm in ("B_masked_all", "C_masked_horses", "D_1200m_only"):
+    for arm in ("B_masked_all", "C_masked_horses", "D_1200m_only", "E_early_mid_proxy"):
         z = per_arm[arm]["by_day"]
         diff = {d: [x - y for x, y in zip(a[d], z[d])] for d in sorted(set(a) & set(z))}
         full, recent = _ci(diff), _ci({d: v for d, v in diff.items()
@@ -186,7 +205,8 @@ def main() -> int:
         out[arm] = {"full": full, "recent": recent}
         tag = {"B_masked_all": "上限(全消し)",
                "C_masked_horses": f"現状({MASK_PCT}% 馬単位)",
-               "D_1200m_only": "1200m のみ復元(無料経路の到達点)"}[arm]
+               "D_1200m_only": "1200m のみ復元",
+               "E_early_mid_proxy": "全距離を代替量に差し替え(無料)"}[arm]
         print(f"\n  --- {tag} ---")
         for label, r in (("全窓 2019-2026", full), ("切替後 2025-2026", recent)):
             if r:
@@ -195,6 +215,14 @@ def main() -> int:
     # 供給停止は恒久なので、いずれ全履歴が停止後になる。その定常状態での比較が本命:
     # 「何も無い(B)」に対して「1200m だけ導出できる(D)」がどれだけ良いか。
     steady = _paired("D_1200m_only", "B_masked_all")
+    for x, y, lab in (("E_early_mid_proxy", "C_masked_horses", "代替量 − 現状"),
+                      ("E_early_mid_proxy", "B_masked_all", "代替量 − 何も無い"),
+                      ("E_early_mid_proxy", "A_real", "代替量 − 実測(0 なら完全代替)")):
+        r = _paired(x, y)
+        out[f"{x}_minus_{y}"] = r
+        if r:
+            print(f"\n  {lab}: {r['point']:+.6f}  "
+                  f"CI[{r['ci_low']:+.6f}, {r['ci_high']:+.6f}]")
     print("\n=== 定常状態の比較: D(1200m のみ) − B(何も無い)。負なら D が良い ===")
     if steady:
         print(f"    {steady['point']:+.6f}  CI[{steady['ci_low']:+.6f}, {steady['ci_high']:+.6f}]"
