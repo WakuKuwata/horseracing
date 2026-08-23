@@ -90,7 +90,7 @@ def main() -> int:
         w_margin = w_win = 0.0
         n_exact = n_tot = 0
         for rid in sample:
-            preds, snaps, _ = predict_race(model, rid, full_patched)
+            preds, snaps, _, _ = predict_race(model, rid, full_patched)
             m = sub["race_id"].to_numpy() == rid
             hids = sub.loc[m, "horse_id"].tolist()
             ref_win = np.array([preds[h].win for h in hids])

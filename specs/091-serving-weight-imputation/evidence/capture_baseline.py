@@ -82,7 +82,7 @@ def main() -> int:
             if rows.empty:
                 print(f"    {rid}: no rows, skipped", flush=True)
                 continue
-            preds, _, _ = predict_race(model, rid, fm)
+            preds, _, _, _ = predict_race(model, rid, fm)
             preds_out["races"][rid] = {
                 h: {"win": repr(p.win), "top2": repr(p.top2), "top3": repr(p.top3)}
                 for h, p in sorted(preds.items())

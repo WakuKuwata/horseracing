@@ -16,12 +16,13 @@ encoding in the MVP, so no cross-row label leakage is possible.
 from __future__ import annotations
 
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pandas as pd
 from horseracing_db.enums import ResultStatus
 from horseracing_db.models import Race, RaceHorse, RaceResult
 from horseracing_features.builder import build_feature_matrix
+from horseracing_features.race_class_canon import REPRESENTATIONS, canonicalise
 from horseracing_features.registry import model_input_features
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -65,6 +66,42 @@ class TrainingMatrix:
     frame: pd.DataFrame
     feature_cols: list[str]
     categorical_cols: list[str]
+    build_audit: dict = field(default_factory=dict)
+
+
+def _validate_representation(representation: str) -> None:
+    if representation not in REPRESENTATIONS:
+        raise ValueError(f"unknown race_class representation: {representation!r}")
+
+
+def _astype_category(series: pd.Series) -> pd.Series:
+    """Small seam for the INV-R7 kill-test; production uses pandas' native coercion."""
+    return series.astype("category")
+
+
+def apply_race_class_representation(
+    df: pd.DataFrame, representation: str
+) -> tuple[pd.DataFrame, dict]:
+    """Return a copied frame with the explicit race_class representation and category dtype.
+
+    The representation transform runs before category coercion so no legitimate spelling can be
+    silently converted to missing. ``raw`` changes no values and has an empty audit.
+    """
+    _validate_representation(representation)
+    result = df.copy()
+    audit: dict = {}
+    if representation == "canonical-v1":
+        result["race_class"], audit = canonicalise(result["race_class"])
+
+    missing_before = int(result["race_class"].isna().sum())
+    result["race_class"] = _astype_category(result["race_class"])
+    missing_after = int(result["race_class"].isna().sum())
+    if missing_after > missing_before:
+        raise RuntimeError(
+            "race_class category coercion introduced NaN "
+            f"({missing_before} -> {missing_after})"
+        )
+    return result, audit
 
 
 def _win_pairs(session: Session) -> set[tuple[str, str]]:
@@ -103,6 +140,7 @@ def _odds_map(session: Session) -> dict[tuple[str, str], float | None]:
 def build_training_matrix(
     session: Session,
     *,
+    representation: str,
     end_date: datetime.date | None = None,
     use_materialized: bool = False,
     materialized_path: str | None = None,
@@ -112,6 +150,7 @@ def build_training_matrix(
 
     Feature 055: ``use_materialized`` reads the as-of block from the 025 parquet (bit-parity,
     fail-closed on stale/missing). Default False keeps the historical path byte-identical."""
+    _validate_representation(representation)
     matrix = build_feature_matrix(
         session, end_date=end_date,
         use_materialized=use_materialized, materialized_path=materialized_path,
@@ -125,7 +164,9 @@ def build_training_matrix(
     winners = _win_pairs(session)
     ranks = _rank_map(session)
 
-    df = matrix.copy()
+    # ``matrix`` is a fresh local build. The representation helper below makes the defensive copy
+    # it promises, so copying here as well would retain three near-million-row frames at once.
+    df = matrix
     df[RACE_DATE] = df["race_id"].map(race_dates)
     df[WIN_LABEL] = [
         1 if (rid, hid) in winners else 0
@@ -150,8 +191,12 @@ def build_training_matrix(
         errors="coerce",
     ).astype(float)
 
+    df, race_class_audit = apply_race_class_representation(df, representation)
+
     categorical_cols = [c for c in CATEGORICAL_FEATURES if c in feature_cols]
     for col in categorical_cols:
+        if col == "race_class":
+            continue
         df[col] = df[col].astype("category")
     # Non-categorical model inputs must be numeric for LightGBM: coerce Decimal -> float and
     # all-None columns (object dtype) -> float NaN. NaN stays distinct from 0 (missing policy).
@@ -160,5 +205,8 @@ def build_training_matrix(
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
     return TrainingMatrix(
-        frame=df, feature_cols=feature_cols, categorical_cols=categorical_cols
+        frame=df,
+        feature_cols=feature_cols,
+        categorical_cols=categorical_cols,
+        build_audit={"race_class": race_class_audit},
     )

@@ -38,7 +38,7 @@ def main() -> int:
 
         total = mismatch = 0
         for rid, want in baseline["races"].items():
-            preds, _, _ = predict_race(model, rid, fm)
+            preds, _, _, _ = predict_race(model, rid, fm)
             for hid, exp in want.items():
                 total += 1
                 got = preds[hid]

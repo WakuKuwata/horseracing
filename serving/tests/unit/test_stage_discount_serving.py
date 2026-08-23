@@ -30,8 +30,8 @@ def _rows(n: int) -> pd.DataFrame:
 
 
 def test_none_and_identity_are_byte_identical():
-    base, _, _ = predict_race(_model(), _RACE, _rows(8))
-    ident, _, _ = predict_race(_model(), _RACE, _rows(8), stage_discount=StageDiscount())
+    base, _, _, _ = predict_race(_model(), _RACE, _rows(8))
+    ident, _, _, _ = predict_race(_model(), _RACE, _rows(8), stage_discount=StageDiscount())
     for h in base:
         assert base[h].win == ident[h].win
         assert base[h].top2 == ident[h].top2   # identity path == legacy, exact
@@ -40,8 +40,8 @@ def test_none_and_identity_are_byte_identical():
 
 def test_discount_leaves_win_unchanged():
     # win is byte-identical regardless of the discount (INV-S2), even though the tail formula runs
-    base, _, _ = predict_race(_model(), _RACE, _rows(8))
-    disc, _, _ = predict_race(
+    base, _, _, _ = predict_race(_model(), _RACE, _rows(8))
+    disc, _, _, _ = predict_race(
         _model(), _RACE, _rows(8), stage_discount=StageDiscount(lambda2=0.7, lambda3=0.6)
     )
     for h in base:
@@ -60,5 +60,5 @@ def test_logic_version_fragment_appended():
 
 def test_win_probs_sum_to_one_regardless_of_discount():
     for sd in (None, StageDiscount(lambda2=0.5, lambda3=0.5)):
-        preds, _, _ = predict_race(_model(), _RACE, _rows(10), stage_discount=sd)
+        preds, _, _, _ = predict_race(_model(), _RACE, _rows(10), stage_discount=sd)
         assert abs(sum(p.win for p in preds.values()) - 1.0) < 1e-9

@@ -15,7 +15,11 @@ import sys
 from horseracing_db.models import ModelVersion
 from horseracing_db.session import create_db_engine
 from horseracing_eval.harness import evaluate
-from horseracing_features.registry import FEATURE_GROUPS, FEATURE_VERSION
+from horseracing_features.registry import (
+    FEATURE_GROUPS,
+    FEATURE_VERSION,
+    RACE_CLASS_REPRESENTATION,
+)
 from sqlalchemy.orm import Session
 
 from .adoption import AdoptionGate, evaluate_gate
@@ -148,6 +152,7 @@ def train_evaluate(
             objective=objective, drop_features=drop_features,
             use_materialized=use_materialized, materialized_path=materialized_path,
             fit_weight_mask=fit_mask,
+            race_class_representation=RACE_CLASS_REPRESENTATION,
         )
 
     predictor = _make()
@@ -359,10 +364,16 @@ def _run_feature_command(session: Session, args) -> int:
         candidate = LightGBMPredictor(
             session, seed=args.seed, target_encode_cols=te_cols,
             te_smoothing=args.te_smoothing, calibration=args.calibration,
-            objective=objective, **mat,
+            objective=objective, race_class_representation=RACE_CLASS_REPRESENTATION, **mat,
         )
         # baseline = current production shape (binary). Feature 039 candidate = cond_logit.
-        baseline = LightGBMPredictor(session, seed=args.seed, calibration=args.calibration, **mat)
+        baseline = LightGBMPredictor(
+            session,
+            seed=args.seed,
+            calibration=args.calibration,
+            race_class_representation=RACE_CLASS_REPRESENTATION,
+            **mat,
+        )
         r = evaluate_feature_adoption(
             session, candidate=candidate, baseline=baseline,
             ece_tol=args.ece_tol, worst_fold_ece_tol=args.worst_fold_ece_tol,

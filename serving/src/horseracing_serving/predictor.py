@@ -2,26 +2,30 @@
 
 Order: started-align -> apply target encoders -> booster raw -> calibrate -> clip ->
 race-normalize -> Harville (all reused from training's pure parts). Returns a Prediction per
-started horse plus a per-horse snapshot of the POST-preprocessing model-input vector (+ raw
-and calibrated win) so the inference is fully reproducible/auditable even for TE models.
+started horse, a per-horse snapshot of the POST-preprocessing model-input vector (+ raw and
+calibrated win), explanations, and the race_class vocabulary audit.
 Session-independent: the caller supplies the as-of feature rows.
 """
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 from horseracing_eval.predictor import Prediction
+from horseracing_features.race_class_canon import canonicalise
 from horseracing_training.calibration import DEFAULT_CLIP
 from horseracing_training.explanation import compute_explanations
 from horseracing_training.predictor import assemble_predictions
 from horseracing_training.target_encoding import apply_encoded_columns
 from horseracing_training.win_model import WinModel
 
-from .model_loader import ServingModel
+from .model_loader import ServingError, ServingModel
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _jsonable(v):
@@ -109,7 +113,7 @@ def race_weight_availability(
 def predict_race(
     model: ServingModel, race_id: str, feature_rows: pd.DataFrame, *,
     stage_discount=None, win_odds: dict[str, float | None] | None = None,
-) -> tuple[dict[str, Prediction], dict[str, dict], dict[str, dict | None]]:
+) -> tuple[dict[str, Prediction], dict[str, dict], dict[str, dict | None], dict]:
     """Feature 060: for a market-offset model the caller supplies ``win_odds``
     (horse_id -> win odds of THIS race); the devig log-q offset is rebuilt here with the
     same pure functions as training (INV-M1). Missing/invalid odds for ANY started horse
@@ -133,11 +137,50 @@ def predict_race(
     weight_normalised = normalise_weight_availability(rows, feature_cols=model.feature_cols)
     rows = weight_normalised.rows
 
+    # Feature 098 (INV-R4/R7): representation and vocabulary audit happen before pandas category
+    # coercion. Unknown values are observed but kept for LightGBM's missing-category path; a new,
+    # legitimate class label must not stop the whole serving run.
+    race_class_nan_before = (
+        int(rows["race_class"].isna().sum()) if "race_class" in rows.columns else 0
+    )
+    if model.race_class_representation == "canonical-v1" and "race_class" in rows.columns:
+        rows["race_class"], _ = canonicalise(rows["race_class"])
+
+    race_class_vocab = model.categorical_vocab.get("race_class", [])
+    if not race_class_vocab or "race_class" not in rows.columns:
+        n_unknown: int | None = None
+        unknown_values: list[str] = []
+    else:
+        unknown = rows["race_class"].notna() & ~rows["race_class"].isin(race_class_vocab)
+        n_unknown = int(unknown.sum())
+        unknown_values = sorted(str(v) for v in rows.loc[unknown, "race_class"].unique())
+        if len(rows) and n_unknown / len(rows) > 0.01:
+            _LOGGER.warning(
+                "race_class unknown rate %.2f%% exceeds 1%% for model=%s representation=%s "
+                "unknown_values=%s",
+                100.0 * n_unknown / len(rows),
+                model.model_version,
+                model.race_class_representation,
+                unknown_values,
+            )
+    audit = {
+        "n_unknown": n_unknown,
+        "unknown_values": unknown_values,
+        "representation": model.race_class_representation,
+        "feature_version": model.feature_version,
+        "n_rows": len(rows),
+    }
+
     # Match training's dtype coercion (build_feature_matrix leaves raw object/Decimal columns,
     # but the booster was trained on category + numeric like build_training_matrix produces).
     for col in model.categorical_cols:
         if col in rows.columns:
             rows[col] = rows[col].astype("category")
+    if (
+        "race_class" in rows.columns
+        and int(rows["race_class"].isna().sum()) > race_class_nan_before
+    ):
+        raise ServingError("race_class NaN count increased during representation/category coercion")
     numeric_cols = [
         c for c in model.feature_cols if c not in model.categorical_cols and c not in model.encoders
     ]
@@ -223,4 +266,4 @@ def predict_race(
         feat["_raw_win"] = float(raw[i])
         feat["_calibrated_win"] = float(calibrated[i])
         snapshots[hid] = feat
-    return predictions, snapshots, explanations
+    return predictions, snapshots, explanations, audit

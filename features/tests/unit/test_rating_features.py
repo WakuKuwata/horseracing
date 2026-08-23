@@ -218,7 +218,7 @@ def test_rating_is_not_in_the_default_feature_set():
         model_input_features,
     )
 
-    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 018 = 069 F02
+    assert FEATURE_VERSION == "features-023"  # 098: race_class 正準表現の値変更 bump(022 は 097 焼却)
     rating_cols = {
         "asof_rating", "asof_rating_recent_delta", "asof_rating_max",
         "asof_rating_starts", "asof_rating_vs_field",

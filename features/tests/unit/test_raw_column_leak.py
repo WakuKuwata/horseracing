@@ -175,7 +175,7 @@ def test_groups_registered_for_feature_eval_default():
         "asof_breeder_win_rate", "asof_owner_place_rate", "asof_owner_win_rate"]
     assert sorted(groups["race_level"]) == ["asof_prize_avg", "prize_money_log", "prize_rel"]
     assert sorted(groups["sire_line"]) == ["damsire_line", "sire_line"]
-    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 018 = 069 F02
+    assert FEATURE_VERSION == "features-023"  # 098: race_class 正準表現の値変更 bump(022 は 097 焼却)
 
 
 def test_no_forbidden_tokens_in_new_modules():

@@ -51,7 +51,7 @@ def main() -> int:
     n_exact = 0
     n_total = 0
     for rid in sample:
-        preds, _, _ = predict_race(model, rid, feats)
+        preds, _, _, _ = predict_race(model, rid, feats)
         mask = sub["race_id"].to_numpy() == rid
         hids = sub.loc[mask, "horse_id"].tolist()
         ref = np.array([preds[h].win for h in hids], dtype=float)

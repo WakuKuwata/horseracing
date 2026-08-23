@@ -59,6 +59,28 @@ def assert_split_unit_compatible(
         )
 
 
+def categorical_vocab_from_booster(
+    booster, feature_cols: list[str], categorical_cols: list[str]
+) -> dict[str, list[str]]:
+    """Feature 098 (INV-R3): the ORDERED category vocabulary the booster was trained with, per
+    categorical column. LightGBM stores ``pandas_categorical`` (one list per pandas-category
+    column, in DataFrame column order) in the model file; we re-key it by column name using the
+    same order training used (categorical columns in ``feature_cols`` order)."""
+    ordered = [c for c in feature_cols if c in set(categorical_cols)]
+    stored = getattr(booster, "pandas_categorical", None) or []
+    if len(stored) != len(ordered):
+        raise ValueError(
+            f"pandas_categorical has {len(stored)} lists but {len(ordered)} categorical columns"
+        )
+    return {col: [str(v) for v in vals] for col, vals in zip(ordered, stored, strict=True)}
+
+
+def vocab_hash(vocab: dict[str, list[str]]) -> str:
+    """sha256 over the ordered vocabulary (column order and value order both matter)."""
+    payload = json.dumps(vocab, ensure_ascii=False, sort_keys=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def feature_hash(feature_cols: list[str]) -> str:
     return hashlib.sha256("|".join(feature_cols).encode()).hexdigest()
 
@@ -89,6 +111,7 @@ def build_preprocessor(predictor: LightGBMPredictor, feature_version: str) -> di
         "encoders": dict(predictor.encoders_),  # col -> TargetEncoder (empty if no TE)
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
+        "race_class_representation": info.get("race_class_representation", "raw"),
         "model_degenerate": bool(info.get("model_degenerate")),
         # Feature 039: serving must apply the matching postprocess (binary sigmoid vs
         # cond_logit race-softmax). Default "binary" keeps pre-039 artifacts backward-compatible.
@@ -191,6 +214,7 @@ def save_model_version(
         )
     info = predictor.fit_info_ or {}
     fcols = info.get("feature_cols", predictor.feature_cols_ or [])
+    race_class_representation = info.get("race_class_representation", "raw")
 
     # Feature 073 US2 (FR-010): fail closed if a model_version already exists with a DIFFERENT
     # calibration split unit (a split change must mint a new model_version, not overwrite one).
@@ -211,6 +235,17 @@ def save_model_version(
             prior_protocol=prior_protocol,
             new_protocol=(info.get("calibration_protocol") or {}).get("protocol"),
         )
+
+    fitted_booster = None if predictor.win_model_ is None else predictor.win_model_.booster_
+    booster = (
+        None if fitted_booster is None else getattr(fitted_booster, "booster_", fitted_booster)
+    )
+    categorical_cols = list(info.get("categorical_cols", []))
+    categorical_vocab = (
+        {}
+        if booster is None
+        else categorical_vocab_from_booster(booster, fcols, categorical_cols)
+    )
 
     # Resolve to an ABSOLUTE path before deriving the URIs persisted below. weights_uri /
     # calibrator_uri are read back by the serving CLI, which the ops predict job shells out to with
@@ -249,6 +284,9 @@ def save_model_version(
         "fold_boundaries": list(eval_result.valid_years),
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
+        "race_class_representation": race_class_representation,
+        "categorical_vocab": categorical_vocab,
+        "categorical_vocab_hash": vocab_hash(categorical_vocab),
         "target_encode_cols": list(predictor.te_cols_),  # serving backward-compat detection
         "te_smoothing": predictor.te_smoothing if predictor.te_cols_ else None,
         "git_sha": git_sha,
@@ -288,6 +326,7 @@ def save_model_version(
         "objective": info.get("objective", "binary"),  # Feature 039
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
+        "race_class_representation": race_class_representation,
         "seed": info.get("seed"),
         "calibration": info.get("calibration"),
         "git_sha": git_sha,

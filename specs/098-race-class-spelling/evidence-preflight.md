@@ -30,3 +30,14 @@ race_class    n         d0         d1
 ```
 
 → `１勝/２勝/３勝/オープン` は 2025-10-11 以降のみ、`1勝/2勝/3勝/ｵｰﾌﾟﾝ/OP(L)` は 2025-10-05 以前のみ(quickstart §0 と一致)。
+
+## T016 serving E2E(features-023 registry・active lgbm-094 = compat 経路)
+
+- race 202601020101(12 頭)。worktree(features-023 registry)の `serving predict` は compat 経路でロードされ logic_version に `reg=features-023;rcr=raw` が付く(run `2166859c-…`)。
+- **同一 DB 状態**で main tree(features-021 registry)から同レースを予測(run `f3eabc4c-…`)し突き合わせ: **win/top2/top3 の mismatch 0・最大絶対差 0.0**(SC-004 成立)。
+- 注記: 08-22 の旧 run(`b81d8c85-…`)との比較は 12/12 で不一致だったが、これは 08-22→08-23 の間に馬主/生産者・血統系統・通過順の修復で as-of 特徴が動いたため(表現とは無関係)。比較は必ず同一スナップショットで行う(088 の教訓)。
+- 監査 dict(語彙外値 n_unknown)は predict の run summary(CLI 出力)に載る設計。今回のレースは語彙内のみ。
+
+## T017 materialize(features-023)
+
+- manifest: feature_version=features-023・n_rows 963,019・materialized_columns 113 = 021 と同一集合(`race_class` は静的列で非 materialize)。source_fingerprint は 021 manifest(00:08 時点)と異なるが data_through は同日で、差は日次取込で DB が動いた分(表現は parquet に載らない)。
