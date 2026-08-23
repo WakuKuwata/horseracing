@@ -11,9 +11,36 @@
             "title": "Children",
             "type": "array"
           },
+          "discovered": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovered"
+          },
+          "enqueued": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enqueued"
+          },
           "failed": {
             "default": 0,
             "title": "Failed",
+            "type": "integer"
+          },
+          "partial": {
+            "default": 0,
+            "title": "Partial",
             "type": "integer"
           },
           "running": {
@@ -31,6 +58,11 @@
               }
             ],
             "title": "Scope Value"
+          },
+          "skipped": {
+            "default": 0,
+            "title": "Skipped",
+            "type": "integer"
           },
           "status": {
             "enum": [
@@ -456,6 +488,7 @@
   "paths": {
     "/ops/v1/batches/{trace_id}": {
       "get": {
+        "description": "Report the state of THE DAY this batch refreshed — not merely of the rows it created.\n\nA child that `enqueue_race` reused (already active, or refreshed inside the freshness window)\nkeeps its ORIGINAL trace_id, so a trace-scoped query cannot see it. That made the aggregate\ndescribe an arbitrary subset: a day where 20 of 36 races were reused reported\n「完了 16/16 成功」 and, when every race was reused, 「完了 0/0 成功」 — and a reused race that\nlater FAILED was reported nowhere at all.\n\nSo membership is resolved from the race ids the parent discovered, and each race contributes\nits CURRENT job whoever enqueued it. This deliberately does not try to make one job belong to\ntwo batches; the batch is a question about a day, and it is answered about that day.",
         "operationId": "get_batch_ops_v1_batches__trace_id__get",
         "parameters": [
           {

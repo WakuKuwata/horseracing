@@ -11,7 +11,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Batch */
+        /**
+         * Get Batch
+         * @description Report the state of THE DAY this batch refreshed — not merely of the rows it created.
+         *
+         *     A child that `enqueue_race` reused (already active, or refreshed inside the freshness window)
+         *     keeps its ORIGINAL trace_id, so a trace-scoped query cannot see it. That made the aggregate
+         *     describe an arbitrary subset: a day where 20 of 36 races were reused reported
+         *     「完了 16/16 成功」 and, when every race was reused, 「完了 0/0 成功」 — and a reused race that
+         *     later FAILED was reported nowhere at all.
+         *
+         *     So membership is resolved from the race ids the parent discovered, and each race contributes
+         *     its CURRENT job whoever enqueued it. This deliberately does not try to make one job belong to
+         *     two batches; the batch is a question about a day, and it is answered about that day.
+         */
         get: operations["get_batch_ops_v1_batches__trace_id__get"];
         put?: never;
         post?: never;
@@ -139,11 +152,20 @@ export interface components {
              * @default []
              */
             children: components["schemas"]["Job"][];
+            /** Discovered */
+            discovered?: number | null;
+            /** Enqueued */
+            enqueued?: number | null;
             /**
              * Failed
              * @default 0
              */
             failed: number;
+            /**
+             * Partial
+             * @default 0
+             */
+            partial: number;
             /**
              * Running
              * @default 0
@@ -151,6 +173,11 @@ export interface components {
             running: number;
             /** Scope Value */
             scope_value?: string | null;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
             /**
              * Status
              * @enum {string}

@@ -44,7 +44,16 @@ from sqlalchemy.orm import Session
 
 from .config import CONFIG
 from .deps import owner_database_url
-from .enqueue import enqueue_predict, enqueue_race, enqueue_recommend
+from .enqueue import (
+    enqueue_predict,
+    enqueue_race,
+    enqueue_recommend,
+    races_missing_corner_orders,
+)
+
+#: race_date is a JRA calendar date; deriving "today" from UTC would shift the backfill window by a
+#: day for the nine hours after midnight JST.
+_JST = datetime.timezone(datetime.timedelta(hours=9))
 
 _USER_AGENT = "horseracing-ops/0.1 (personal use; contact via repo)"
 
@@ -170,7 +179,7 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     fetcher = fetcher or make_fetcher()
     race_id = job.scope_value or ""
     refresh_origin = (job.summary or {}).get("refresh_origin")
-    if refresh_origin not in {"manual_ui", "daily_bulk"}:
+    if refresh_origin not in {"manual_ui", "daily_bulk", "corner_backfill"}:
         raise ValueError(f"invalid or missing refresh_origin: {refresh_origin!r}")
 
     # complete_profiles_after=False: pedigree/identity enrichment is deferred to the END of this
@@ -646,6 +655,8 @@ def run_day(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     no-op SUCCEEDED parent. The children are drained in subsequent worker iterations."""
     fetcher = fetcher or make_fetcher()
     date = datetime.date.fromisoformat(job.scope_value or "")
+    # read BEFORE the summary is reassigned below (that assignment replaces the dict wholesale)
+    force = bool((job.summary or {}).get("force"))
     listing = discover_races(fetcher, date.strftime("%Y%m%d"))
 
     n_new = 0
@@ -655,14 +666,40 @@ def run_day(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
             rid,
             origin="daily_bulk",
             trace_id=job.trace_id,
+            force=force,
         )
         if not reused:
             n_new += 1
 
+    # 通過順 patch-up. netkeiba leaves the passing order empty on race night and fills it about a
+    # day later, and `backfill_results` writes that column NULL-only — so the only way it ever
+    # lands is a LATER visit, which nothing scheduled. Riding along with the day refresh is what
+    # makes it happen without adding a scheduler (the constitution keeps execution manual).
+    #
+    # These children deliberately do NOT carry the parent's trace_id: the batch the operator is
+    # watching must keep reporting the day they asked for, not 36 unrelated patch-up races.
+    backfill = races_missing_corner_orders(
+        session,
+        today=_now().astimezone(_JST).date(),
+        lookback_days=CONFIG.corner_backfill_days,
+        limit=CONFIG.corner_backfill_max_races,
+        exclude_date=date,
+    )
+    n_backfill = 0
+    for rid in backfill:
+        _child, reused = enqueue_race(session, rid, origin="corner_backfill")
+        if not reused:
+            n_backfill += 1
+
     job.status = JobStatus.SUCCEEDED
     job.processed_rows = len(listing.race_ids)
     job.completed_at = _now()
-    job.summary = {"kind": "discover", "races": len(listing.race_ids), "children_new": n_new}
+    # race_ids, not just a count: the batch poll reports the state of THE DAY, and a child that
+    # was reused keeps its original trace_id and so is invisible to a trace-scoped query. Recording
+    # the ids is what lets the poll find those races' current jobs whoever enqueued them.
+    job.summary = {"kind": "discover", "races": len(listing.race_ids), "children_new": n_new,
+                   "force": force, "corner_backfill": n_backfill,
+                   "race_ids": list(listing.race_ids)}
     session.add(job)
     session.commit()
     return job

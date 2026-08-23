@@ -51,6 +51,18 @@ class OpsConfig:
     exotic_quote_bet_types: tuple[str, ...] = _csv(
         "OPS_EXOTIC_QUOTE_BET_TYPES", ("quinella", "wide", "trio")
     )
+    #: 通過順 (corner passing order) is EMPTY on netkeiba on race night and appears about a day
+    #: later — measured from archived pages: 2.4% of cells filled at lag 0, 99.8% at lag 1. Nothing
+    #: ever went back for it, so every race day left `race_results.corner_orders` NULL forever
+    #: unless a human happened to re-run that day by hand, starving the corner-trajectory,
+    #: running-style and pace-scenario features.
+    #:
+    #: A day refresh therefore also patches recent days that still have holes. Gap-driven, NOT
+    #: "re-fetch at lag 1": 2026-08-22 was still empty at lag 1, so a fixed schedule would have
+    #: missed it and never looked again. Days: how far back to keep patching (0 disables). Races:
+    #: the per-refresh cap, so one click can never balloon into an unbounded scrape.
+    corner_backfill_days: int = _int("OPS_CORNER_BACKFILL_DAYS", 14)
+    corner_backfill_max_races: int = _int("OPS_CORNER_BACKFILL_MAX_RACES", 36)
 
 
 CONFIG = OpsConfig()

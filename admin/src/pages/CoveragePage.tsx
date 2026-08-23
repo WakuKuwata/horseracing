@@ -3,13 +3,8 @@ import { useState } from "react";
 import { useCoverage } from "../api/queries";
 import { RefreshRangeButton } from "../components/RefreshRangeButton";
 import { QueryStateView } from "../components/StateView";
+import { isoDaysAgo } from "../lib/dates";
 import { formatInt, textOr } from "../lib/format";
-
-function isoDaysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
 
 /**
  * Feature 052 US1: per-day product coverage. A day where n_predicted_active < n_races is a HOLE

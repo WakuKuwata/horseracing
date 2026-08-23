@@ -12,7 +12,7 @@ import datetime
 from typing import Literal
 
 from horseracing_db.enums import JobStatus, Source
-from horseracing_db.models import IngestionJob, Race
+from horseracing_db.models import IngestionJob, Race, RaceResult
 from horseracing_db.validation import is_valid_race_id
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
@@ -31,7 +31,7 @@ DEFAULT_FRESH_SECONDS = CONFIG.fresh_seconds
 
 _ACTIVE = (JobStatus.QUEUED, JobStatus.RUNNING)
 PredictOrigin = Literal["manual_ui", "auto_after_refresh"]
-RefreshOrigin = Literal["manual_ui", "daily_bulk"]
+RefreshOrigin = Literal["manual_ui", "daily_bulk", "corner_backfill"]
 
 
 def _now() -> datetime.datetime:
@@ -58,7 +58,7 @@ def enqueue_race(
     trace_id: str | None = None,
 ) -> tuple[IngestionJob, bool]:
     """Return (job, reused). Caller commits (releasing the advisory lock)."""
-    if origin not in {"manual_ui", "daily_bulk"}:
+    if origin not in {"manual_ui", "daily_bulk", "corner_backfill"}:
         raise ValueError(f"unsupported refresh origin: {origin!r}")
     _lock_race(session, race_id)
 
@@ -239,13 +239,63 @@ def list_race_ids_for_day(session: Session, date: datetime.date) -> list[str]:
     return [r for r in rows if is_valid_race_id(r)]
 
 
-def enqueue_day_parent(session: Session, date: datetime.date) -> IngestionJob:
+def races_missing_corner_orders(
+    session: Session, *, today: datetime.date, lookback_days: int, limit: int,
+    exclude_date: datetime.date | None = None,
+) -> list[str]:
+    """Recent finished races whose results carry no 通過順 yet, newest first.
+
+    netkeiba publishes the passing order about a day after the race, so a race night's ingest can
+    only ever store NULL there — and `backfill_results` fills that column NULL-only, which means the
+    single chance to capture it is a LATER visit. Nothing scheduled such a visit, so the column
+    stayed empty for every race day that no one happened to re-run by hand.
+
+    Gap-driven rather than age-driven on purpose: the gap is the thing we can observe, and the
+    publish delay is not reliably one day (2026-08-22 was still empty 24h later). Bounded by
+    ``lookback_days`` because a race old enough to still be missing is one netkeiba is not going to
+    fill, and re-asking forever would spend the request budget on nothing.
+    """
+    if lookback_days <= 0 or limit <= 0:
+        return []
+    cutoff = today - datetime.timedelta(days=lookback_days)
+    has_result = (
+        select(RaceResult.race_id).where(RaceResult.race_id == Race.race_id).exists()
+    )
+    has_corners = (
+        select(RaceResult.race_id)
+        .where(RaceResult.race_id == Race.race_id)
+        .where(RaceResult.corner_orders.is_not(None))
+        .exists()
+    )
+    stmt = (
+        select(Race.race_id)
+        .where(Race.race_date >= cutoff)
+        .where(Race.race_date < today)  # race night is 2% filled; there is nothing to collect yet
+        .where(has_result)
+        .where(~has_corners)
+        .order_by(Race.race_date.desc(), Race.race_id.asc())
+        .limit(limit)
+    )
+    if exclude_date is not None:
+        stmt = stmt.where(Race.race_date != exclude_date)
+    return [r for r in session.scalars(stmt) if is_valid_race_id(r)]
+
+
+def enqueue_day_parent(session: Session, date: datetime.date, *,
+                       force: bool = False) -> IngestionJob:
     """Create just the parent refresh_day job (QUEUED) and return it; the worker discovers the
     day's races from netkeiba and fans out refresh_race children (so the POST returns 202 without a
-    netkeiba round-trip). Accepts any date — even one with no DB races yet (worker discovers)."""
+    netkeiba round-trip). Accepts any date — even one with no DB races yet (worker discovers).
+
+    ``force`` is carried on the parent's summary because the flag is set at request time but is
+    only consumed later, in the worker, when ``run_day`` fans the children out. Without it the
+    endpoint accepted ``force`` from the published contract and silently dropped it: every child
+    fell into the 600s freshness reuse, so re-pressing 「この日を更新」 inside that window issued
+    no netkeiba request at all while the batch still reported done."""
     parent = IngestionJob(
         source=Source.NETKEIBA, job_type=JOB_TYPE_DAY, scope="day",
         scope_value=date.isoformat(), status=JobStatus.QUEUED,
+        summary={"force": bool(force)},
     )
     session.add(parent)
     session.flush()

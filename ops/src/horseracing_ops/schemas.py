@@ -80,4 +80,23 @@ class Batch(BaseModel):
     succeeded: int = 0
     failed: int = 0
     running: int = 0
+    # partial/skipped children used to be counted nowhere: the aggregate only exposed
+    # succeeded/failed/running, so on a race day (where every not-yet-run race ends PARTIAL
+    # because its result page has no table yet) the front showed 「完了 12/36 成功・0 失敗」 and
+    # the other 24 races were invisible — indistinguishable from "did nothing". Additive fields,
+    # so an older client simply ignores them.
+    partial: int = 0
+    skipped: int = 0
+    #: races the worker DISCOVERED for this day (parent summary["races"]), which is not the same as
+    #: ``total``. A child that was reused (already active, or refreshed inside the freshness window)
+    #: keeps its ORIGINAL trace_id, so it is absent from this batch entirely: a day where 20 of 36
+    #: races were reused reports total=16 and, if all 36 were reused, total=0 — previously rendered
+    #: as a green 「完了 0/0 成功」. None before discovery / when the parent row is unavailable.
+    discovered: int | None = None
+    #: how many races THIS request actually enqueued (parent summary["children_new"]). `total`
+    #: reports the day, so it can no longer say whether the click did any work: a day whose races
+    #: were all refreshed moments ago legitimately enqueues nothing and still reports 36/36. That
+    #: is the difference between "already up to date" and "your click did nothing", and it is also
+    #: what tells the operator a forced refresh is the only way to get fresher odds.
+    enqueued: int | None = None
     children: list[Job] = []

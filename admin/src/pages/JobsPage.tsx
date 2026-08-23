@@ -6,7 +6,25 @@ import { capturePresentation } from "../lib/captureLabels";
 import { formatDateTime, formatInt, textOr } from "../lib/format";
 
 const STATUSES = ["", "queued", "running", "succeeded", "partial", "skipped", "failed"];
-const JOB_TYPES = ["", "refresh_race", "refresh_day", "predict", "recommend", "exotic_odds", "laps"];
+// Every job_type the ops worker and the scrape pipeline actually write. The previous list omitted
+// the scrape sub-jobs (entries/results/odds/exotic_quotes/horse_profile) — which are exactly the
+// rows an operator needs when a refresh reports 一部 — and refresh_range, while listing "laps",
+// which this deployment does not produce.
+const JOB_TYPES = [
+  "",
+  "refresh_race",
+  "refresh_day",
+  "refresh_range",
+  "entries",
+  "results",
+  "odds",
+  "exotic_quotes",
+  "exotic_odds",
+  "horse_profile",
+  "predict",
+  "recommend",
+  "race_laps",
+];
 
 /**
  * Feature 052 US2: ingestion_jobs history — the ops service only exposes single-job polling;

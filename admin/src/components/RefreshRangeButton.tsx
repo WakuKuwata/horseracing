@@ -25,14 +25,23 @@ export function RefreshRangeButton({
 
   async function run() {
     setPhase("pending");
-    const { job, error: err } = await postRefreshRange(dateFrom, dateTo);
-    if (err) {
-      setError(`${err.code}: ${err.detail}`);
+    // postRefreshRange maps HTTP 4xx/5xx to a typed error, but a TRANSPORT failure (ops service
+    // down, proxy refused, fetch aborted) REJECTS instead. Without this catch the rejection escaped
+    // an event handler, phase stayed "pending", and the control sat disabled on 投入中… with no
+    // error and no way back short of reloading the page.
+    try {
+      const { job, error: err } = await postRefreshRange(dateFrom, dateTo);
+      if (err) {
+        setError(`${err.code}: ${err.detail}`);
+        setPhase("error");
+        return;
+      }
+      setJobId(job?.job_id ?? null);
+      setPhase("done");
+    } catch (e) {
+      setError(`network: ${e instanceof Error ? e.message : String(e)}`);
       setPhase("error");
-      return;
     }
-    setJobId(job?.job_id ?? null);
-    setPhase("done");
   }
 
   if (phase === "done") {
