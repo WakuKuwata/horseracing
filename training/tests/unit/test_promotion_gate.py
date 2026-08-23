@@ -158,3 +158,43 @@ def test_unparseable_contract_fails_closed():
         d = _promote(report)
         assert d.status == "candidate", bad
         assert d.reasons["cause"] == "verdict_contract_too_old", bad
+
+
+# --- serving がロードできない artifact は ACTIVE にしない(2026-08-23) -------------------------
+#
+# 実害の記録: lgbm-065 は `drop_features` で F02 を落とした 128 列で学習されたのに、
+# 刻印はコード定数の features-018 のままだった(feature_hash は実列由来なので 300b28a9…=
+# features-017 相当)。exact 経路にも compat pin にも乗らないので serving は永久にロードできず、
+# active になった直後から predict ジョブが 37/37 失敗した。
+#
+# `promote-model` は f764ebc で preflight を得たが、`train-evaluate` は
+# `save_model_version` から直接 ACTIVE を書けるのでこの経路は開いたままだった。
+
+def test_an_unloadable_artifact_is_never_promoted():
+    """指標が何を言おうと、ロードできない artifact は candidate 止まり."""
+    d = evaluate_promotion(
+        legacy=ADOPTED, verdict=_regime_report(), servable=False
+    )
+    assert d.promotable is False
+    assert d.status == "candidate"
+    assert d.reasons["cause"] == "artifact_not_servable"
+
+
+def test_unservable_is_reported_ahead_of_softer_causes():
+    """理由が他の原因に隠れないこと。
+
+    `register_as_candidate` も candidate を返すので結果は同じだが、**なぜ**昇格しなかったのかは
+    別物。ロードできないという事実の方が常に重い。
+    """
+    d = evaluate_promotion(
+        legacy=NOT_ADOPTED, verdict=None, register_as_candidate=True, servable=False
+    )
+    assert d.reasons["cause"] == "artifact_not_servable"
+
+
+def test_a_servable_artifact_is_unaffected():
+    """既定 servable=True は従来どおり(この修正が正常系を変えていない)."""
+    assert evaluate_promotion(legacy=ADOPTED, verdict=_regime_report()).promotable is True
+    assert evaluate_promotion(
+        legacy=ADOPTED, verdict=_regime_report(), servable=True
+    ).promotable is True

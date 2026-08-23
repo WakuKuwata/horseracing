@@ -82,3 +82,69 @@ def test_train_evaluate_saves_row_and_artifacts(session, tmp_path):
     with (art / "calibrator.pkl").open("rb") as fh:
         calibrator = pickle.load(fh)
     assert hasattr(calibrator, "transform")
+
+
+# --- drop_features で学習した artifact の刻印と昇格(2026-08-23) -------------------------------
+#
+# 実害の記録: `feature_version` は呼び出し元が渡すコード定数で、`drop_features` で列を減らして
+# 学習しても現行版を名乗る。一方 `feature_hash` は実列由来。両者が食い違った artifact は
+# serving の exact 経路にも compat pin にも乗らず**永久にロードできない**。
+# lgbm-065 がまさにこれで、active になった直後に predict ジョブが 37/37 失敗した(2026-07)。
+# 実 DB には今もこの行が残っている(feature_version=features-018 / hash=features-017 相当)。
+
+def test_a_dropped_column_build_is_recorded_as_unservable_and_stays_candidate(session, tmp_path):
+    from horseracing_features.registry import FEATURE_VERSION, model_input_features
+
+    from horseracing_training.artifacts import feature_hash
+
+    seed_learnable(session, years=(2007, 2008, 2009), races_per_year=12, field_size=8)
+    races = load_eval_races(session)
+    save_baseline(session, "uniform", evaluate(UniformBaseline(), races, first_valid_year=2008))
+
+    dropped = ("jockey_win_rate",)
+    assert dropped[0] in model_input_features(), "前提: 落とす列が現行スキーマに存在すること"
+
+    train_evaluate(
+        session,
+        first_valid_year=2008, calibration="platt", ece_threshold=0.5, baseline="uniform",
+        model_version="lgbm-dropcols", artifacts_dir=str(tmp_path), seed=42,
+        drop_features=dropped,
+    )
+
+    mv = session.get(ModelVersion, "lgbm-dropcols")
+    fs = mv.metrics_summary["training"]["feature_schema"]
+
+    # 刻印は現行版を名乗るが、実列はそれではない ← これが誤刻印の本体
+    assert fs["feature_version"] == FEATURE_VERSION
+    assert fs["feature_hash"] != feature_hash(model_input_features())
+    assert fs["n_feature_cols"] == len(model_input_features()) - len(dropped)
+
+    # その事実が記録として残り、serve できないことが明示されている
+    assert fs["is_current_schema"] is False
+    assert fs["servable"] is False
+    assert "not_servable_reason" in fs
+
+    # そして ACTIVE にはならない(2026-07 の停止事故の入口を閉じる)
+    assert mv.adoption_status == "candidate"
+    assert mv.metrics_summary["promotion"]["reasons"]["cause"] == "artifact_not_servable"
+
+    # metadata.json 側にも同じ事実が載る(serving/運用が読むのはこちら)
+    meta = json.loads((Path(mv.weights_uri).parent / "metadata.json").read_text())
+    assert meta["feature_schema"]["servable"] is False
+
+
+def test_a_full_schema_build_is_recorded_as_servable(session, tmp_path):
+    """正常系が変わっていないこと(この検査が全部を candidate にしていないことの証明)."""
+    seed_learnable(session, years=(2007, 2008, 2009), races_per_year=12, field_size=8)
+    races = load_eval_races(session)
+    save_baseline(session, "uniform", evaluate(UniformBaseline(), races, first_valid_year=2008))
+
+    train_evaluate(
+        session,
+        first_valid_year=2008, calibration="platt", ece_threshold=0.5, baseline="uniform",
+        model_version="lgbm-fullcols", artifacts_dir=str(tmp_path), seed=42,
+    )
+    fs = session.get(ModelVersion, "lgbm-fullcols").metrics_summary["training"]["feature_schema"]
+    assert fs["is_current_schema"] is True
+    assert fs["servable"] is True
+    assert "not_servable_reason" not in fs

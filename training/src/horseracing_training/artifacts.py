@@ -99,6 +99,12 @@ class Servability:
     current_hash: str
 
 
+def _registry_feature_version() -> str:
+    from horseracing_features.registry import FEATURE_VERSION
+
+    return FEATURE_VERSION
+
+
 def resolve_servability(
     trained_fv: str | None,
     trained_hash: str | None,
@@ -281,6 +287,32 @@ def save_model_version(
     # This check MUST run before any disk write: raising after the artifact files are replaced
     # would leave the existing model_version's on-disk booster/calibrator overwritten while the
     # DB row still carries the old metrics (serving would load new weights under old metadata).
+    # この artifact の feature schema の「実態」。``feature_version`` は呼び出し元が渡す
+    # コード定数で、``drop_features`` / ``restrict_features`` で列を減らして学習しても現行版を
+    # 名乗ってしまう。一方 ``feature_hash`` は実列から計算される。両者が食い違った artifact は
+    # serving の exact 経路にも compat 経路にも乗らず、**永久にロードできない**。
+    # 実例: lgbm-065 は feature_version=features-018 を名乗りながら hash は features-017 の
+    # 128 列のもので、active になった直後に predict ジョブが 37/37 失敗した(2026-07)。
+    # 刻印を推測で書き換えることはしない(実列がたまたま既知の版と一致するとは限らない)。
+    # 代わりに「現行スキーマそのものか」「serve できるか」を明示的に記録し、下の昇格判定で
+    # ロードできない artifact が ACTIVE になる経路を閉じる。
+    schema = resolve_servability(feature_version, feature_hash(fcols))
+    feature_schema = {
+        "feature_version": feature_version,
+        "feature_hash": feature_hash(fcols),
+        "n_feature_cols": len(fcols),
+        "registry_feature_version": _registry_feature_version(),
+        "registry_feature_hash": schema.current_hash,
+        "is_current_schema": schema.exact,
+        "servable": schema.servable,
+    }
+    if not schema.servable:
+        feature_schema["not_servable_reason"] = (
+            "trained feature_cols do not hash to the declared feature_version's schema and are "
+            "not a pinned compat version — most likely a drop_features/restrict_features build "
+            "stamped with the current FEATURE_VERSION. serving cannot load this artifact."
+        )
+
     existing = session.get(ModelVersion, model_version)
     if existing is not None:
         prior_split = ((existing.metrics_summary or {}).get("training") or {}).get(
@@ -344,6 +376,7 @@ def save_model_version(
         "fold_boundaries": list(eval_result.valid_years),
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
+        "feature_schema": feature_schema,
         "race_class_representation": race_class_representation,
         "categorical_vocab": categorical_vocab,
         "categorical_vocab_hash": vocab_hash(categorical_vocab),
@@ -386,6 +419,7 @@ def save_model_version(
         "objective": info.get("objective", "binary"),  # Feature 039
         "feature_version": feature_version,
         "feature_hash": feature_hash(fcols),
+        "feature_schema": feature_schema,
         "race_class_representation": race_class_representation,
         "seed": info.get("seed"),
         "calibration": info.get("calibration"),
@@ -412,7 +446,8 @@ def save_model_version(
         summary["training"]["calibration_protocol"] = dict(info["calibration_protocol"])
 
     promotion = evaluate_promotion(
-        legacy=decision, verdict=verdict, register_as_candidate=register_as_candidate
+        legacy=decision, verdict=verdict, register_as_candidate=register_as_candidate,
+        servable=schema.servable,
     )
     summary["promotion"] = {
         "promotable": promotion.promotable, "status": promotion.status,

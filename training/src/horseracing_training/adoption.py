@@ -150,7 +150,8 @@ def _contract_number(version: str | None) -> int | None:
 
 
 def evaluate_promotion(
-    *, legacy: AdoptionDecision, verdict: dict | None, register_as_candidate: bool = False
+    *, legacy: AdoptionDecision, verdict: dict | None, register_as_candidate: bool = False,
+    servable: bool = True,
 ) -> PromotionDecision:
     """Fold the legacy gate and the v3 verdict into one ACTIVE/CANDIDATE decision.
 
@@ -158,6 +159,20 @@ def evaluate_promotion(
     the reason recorded, because losing a trained model to a contract error helps nobody.
     """
     reasons: dict = {"legacy_gate_adopted": legacy.adopted}
+    # An artifact serving cannot LOAD must never become ACTIVE, whatever the metrics say. This is
+    # checked before anything else so the cause is always surfaced rather than hidden behind a
+    # softer one. lgbm-065 went ACTIVE in 2026-07 with a drop_features column set stamped as the
+    # full schema and every predict job failed (37/37) until it was rolled back; `promote-model`
+    # gained a preflight for the manual path, but `train-evaluate` can auto-activate straight from
+    # here and had no such check.
+    if not servable:
+        reasons["cause"] = "artifact_not_servable"
+        reasons["hint"] = (
+            "the trained feature_cols do not match the declared feature_version's schema and are "
+            "not a pinned compat version (see metrics_summary.training.feature_schema). serving "
+            "would refuse to load this model, so it is saved as a CANDIDATE."
+        )
+        return PromotionDecision(False, "candidate", reasons)
     if register_as_candidate:
         reasons["cause"] = "register_as_candidate_requested"
         return PromotionDecision(False, "candidate", reasons)
