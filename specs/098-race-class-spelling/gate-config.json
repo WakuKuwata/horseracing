@@ -6,18 +6,18 @@
   "primary_regime": "simulated_spelling_split",
   "simulation": {
     "cutoffs": [
-      "2019-01-01",
       "2021-01-01",
+      "2022-01-01",
       "2023-01-01"
     ],
     "scored_windows": [
       [
-        "2020-01-01",
-        "2020-12-31"
-      ],
-      [
         "2022-01-01",
         "2022-12-31"
+      ],
+      [
+        "2023-01-01",
+        "2023-12-31"
       ],
       [
         "2024-01-01",
@@ -25,12 +25,13 @@
       ]
     ],
     "washout_years": 1,
-    "washout_measured": "cutoff+1y 時点でアーム A のモデルは分裂綴りを約 1 年分学習済み(実切替後 10 か月の近似)",
+    "washout_measured": "各カットオフで arm A のモデルは分裂綴りを 1 年分(cutoff〜採点窓前)学習し、その前に正準綴りを 1.5/2.5/3.5 年分持つ=実切替(正準 6.3 年+分裂 10 か月)の近似",
     "estimand": "cost_of_split_vocabulary_under_retraining",
     "train_regime": "fold 内で両アームとも各自の表現で再学習(保存モデル流用禁止)",
     "split": "arm A: race_class に逆写像 {1勝→１勝, 2勝→２勝, 3勝→３勝} を race_date >= cutoff の行へ適用(DataFrame 変換・DB 不変)。arm B: canonical-v1 matrix の原本(シミュレーション窓の学習・採点行は JRA-VAN 期=生値が既に正準なので canonicalise は no-op)。表外(オープン/重賞/新馬/未勝利/Ｇ*)は両アームとも不変",
     "arm_identity_assert": "INV-A1..A5(contracts/adoption-gate.md): race_class 以外の全列 check_exact 一致 / race_class の差異行は race_date>=cutoff ∧ 値∈{1勝,2勝,3勝} に限り差異行数>0 / paired diff 全 0 は abort / 差異行数と両アームの race_class 列 hash を記録 / 測定ごとに matrix 1 回構築(sim=canonical-v1・実窓=raw)+use_materialized=False+コピー(is not)+feature_cols 同一集合(drop 不使用)",
-    "_split_onset_note": "1勝/2勝/3勝 の名称は 2019-06-01 開始(それ以前は 500万/1000万/1600万 で変換表外)。したがってカットオフ 2019-01-01 の分裂は実質 2019-06-01 から始まり、2020 窓の washout は約 7 か月(2021/2023 は 1 年)。estimand の宣言としてここに記録する(verdict にも転記)。"
+    "_split_onset_note": "1勝/2勝/3勝 の名称は 2019-06-01 開始(それ以前は 500万/1000万/1600万 で変換表外)。したがってカットオフ 2019-01-01 の分裂は実質 2019-06-01 から始まり、2020 窓の washout は約 7 か月(2021/2023 は 1 年)。estimand の宣言としてここに記録する(verdict にも転記)。",
+    "_repreg_note": "2026-08-23 再事前登録(本番 run 1 回目が cutoff 2019-01-01 で INV-A3 abort・効果数値は未出力=覗き見なし)。理由: 1勝/2勝/3勝 は 2019-06-01 開始のため 2019-01-01 カットオフではアーム A の勝クラス行が全て分裂綴りになり正準綴りと共存しない → カテゴリの一対一付け替え=同一分割=同一モデル。実世界は正準 6.3 年+分裂 10 か月の共存なので、共存のあるカットオフ(2021/2022/2023: 共存 1.5/2.5/3.5 年・washout 1 年・採点 2022/2023/2024 互いに素・envelope 2020-2024 内)に置換。推定 n_days ≈ 320 ≥ 300。"
   },
   "arms": {
     "candidate": "B: 正準表現(無変換)",

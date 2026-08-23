@@ -56,3 +56,5 @@ error: v3 verdict が昇格要件を満たさないため override が必要: ve
 ## T024 本番 run
 
 - 起動 2026-08-23 14:26:44(pid 22903・`out/098-gate.log`・hash `596818d1…`・REAL)
+- **1 回目 abort**(cutoff 2019-01-01・identity OK 後の fit で INV-A3: 両アーム全レース同一予測)。効果数値は未出力。原因=1勝/2勝/3勝 が 2019-06 開始で共存なし → research D5b。カットオフを 2021/2022/2023 に再事前登録して再実行。
+
