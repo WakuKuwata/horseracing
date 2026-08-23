@@ -380,13 +380,16 @@ FEATURE_GROUPS: dict[str, str] = {
 #: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
 #: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
 #: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
-#: Feature 098 uses 023 because 022 is burned: commit 808f92c used it and main commit 8122f64
-#: reverted it, so that label must never be reused for another meaning.
-FEATURE_VERSION = "features-023"
+#: 022 is burned (097: 808f92c used it, 8122f64 reverted it) and 023 is burned too (098 race_class
+#: canonical representation: bumped, REJECTED at the pre-registered gate — pooled +0.0004, no
+#: measurable cost of the spelling split under retraining — and reverted; specs/098 verdict.json).
+#: Neither label may be reused for another meaning; the next bump is features-024.
+FEATURE_VERSION = "features-021"
 
 #: The value drivers pass when TRAINING under this registry version. A reader of an existing
 #: artifact must use its marker/compat dispatch and must never guess this value from the registry.
-RACE_CLASS_REPRESENTATION = "canonical-v1"
+#: 098 REJECT (2026-08-23): "canonical-v1" stays unwired (specs/098 verdict.json).
+RACE_CLASS_REPRESENTATION = "raw"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to
@@ -434,12 +437,6 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
     # features-019 is a BURNED number (070 revert); it is deliberately absent.
     "features-021": {
         "features-018": "263ef6b7ac5eccf45faf90005a5904de91adfed639b8d3f14a04c4d20f141a3f",
-    },
-    # Feature 098 differs from Feature 017's empty compat: the compat path explicitly hands an
-    # old features-021 model the RAW race_class representation. The shared columns are therefore
-    # byte-identical (INV-R2/R6), which makes this exact lgbm-094-cap900 hash pin legitimate.
-    "features-023": {
-        "features-021": "663fe86c756428fca7411f23bb5f0a4eaa91926b067a0e0acc4a11d581da0f7a",
     },
     # Feature 070's features-019 compat entry was REMOVED with the reverted bump (all bundles
     # rejected at the staged gate). No model was ever trained on features-019.

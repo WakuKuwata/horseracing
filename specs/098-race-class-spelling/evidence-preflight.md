@@ -58,3 +58,12 @@ error: v3 verdict が昇格要件を満たさないため override が必要: ve
 - 起動 2026-08-23 14:26:44(pid 22903・`out/098-gate.log`・hash `596818d1…`・REAL)
 - **1 回目 abort**(cutoff 2019-01-01・identity OK 後の fit で INV-A3: 両アーム全レース同一予測)。効果数値は未出力。原因=1勝/2勝/3勝 が 2019-06 開始で共存なし → research D5b。カットオフを 2021/2022/2023 に再事前登録して再実行。
 
+- 2 回目起動 2026-08-23 14:49:36(pid 24898・hash ecfb8305b166)
+
+## T027/T028 REJECT 分岐の後始末
+
+- registry を features-021 / `RACE_CLASS_REPRESENTATION="raw"` に戻し、023 の compat pin を削除(023 は焼却番号として注記)。`race_class_canon.py`・`spelling_split.py`・`spelling_gate.py`・driver・golden fixture・注入テストは非結線保全(テストは直接呼び出しで緑)。
+- E2E: revert 後の worktree(021 exact 経路・logic_version `rcr=raw`)で race 202601020101 を予測(run `c0b21504-…`)→ main(021)run `f3eabc4c-…` と **12 頭 mismatch 0・最大絶対差 0.0**。
+- materialize: `feature_version=features-021` に復帰(fingerprint `50b29385…`・DB は日次で動くため 021 の旧 manifest と値は一致しない)。
+- 全スイート: features 438 / training 391 / serving 83 / betting 122 / eval 339 緑・ruff クリーン。
+
