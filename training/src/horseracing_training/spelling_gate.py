@@ -66,9 +66,7 @@ def transportability(
     loo_sign_ok = bool(loo_points) and all(
         _sign(float(point)) == pooled_sign for point in loo_points
     )
-    real_not_contradicting = not (
-        pooled_point < 0.0 and (real_ci_low is None or real_ci_low > 0.0)
-    )
+    real_not_contradicting = not (pooled_point < 0.0 and (real_ci_low is None or real_ci_low > 0.0))
     ok = per_cutoff_sign_ok and loo_sign_ok and real_not_contradicting
     return {
         "per_cutoff_sign_ok": per_cutoff_sign_ok,

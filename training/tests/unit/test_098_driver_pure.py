@@ -31,11 +31,9 @@ def test_transportability_passes_all_three_rules() -> None:
 @pytest.mark.parametrize(
     ("per_cutoff", "loo", "real_ci_low", "failed_rule"),
     [
-        ([-0.003, 0.001, -0.001], [-0.002, -0.001, -0.003], -0.001,
-         "per_cutoff_sign_ok"),
+        ([-0.003, 0.001, -0.001], [-0.002, -0.001, -0.003], -0.001, "per_cutoff_sign_ok"),
         ([-0.003, -0.002, -0.001], [-0.002, 0.001, -0.003], -0.001, "loo_sign_ok"),
-        ([-0.003, -0.002, -0.001], [-0.002, -0.001, -0.003], 0.0001,
-         "real_not_contradicting"),
+        ([-0.003, -0.002, -0.001], [-0.002, -0.001, -0.003], 0.0001, "real_not_contradicting"),
     ],
 )
 def test_transportability_fails_each_frozen_rule(
@@ -124,9 +122,7 @@ def test_transportability_real_rule_is_vacuous_for_nonnegative_pool() -> None:
         ),
     ],
 )
-def test_verdict_precedence(
-    inputs: dict[str, bool], status: str, cause: str
-) -> None:
+def test_verdict_precedence(inputs: dict[str, bool], status: str, cause: str) -> None:
     verdict = verdict_precedence(**inputs)
 
     assert verdict["status"] == status
