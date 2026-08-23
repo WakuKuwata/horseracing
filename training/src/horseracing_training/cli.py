@@ -1729,6 +1729,12 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
         serving_spec=serving_spec,
         gate_config=gate_cfg,
         first_valid_year=eval_start_year,
+        # Folds are year-granular, so --from only picks the eval START YEAR. Without also
+        # passing it as the day-exact scored-window start, a mid-year frozen window (arm E's
+        # prospective holdout: 2026-07-13) scores the whole calendar year — and
+        # assert_confirmatory would still report the window as checked, because it compares the
+        # CLI flags to the gate-config, not the races that were scored.
+        valid_from=args.from_,
         num_threads=num_threads,
         artifact_kind=kind,
     )

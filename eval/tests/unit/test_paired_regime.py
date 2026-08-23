@@ -417,3 +417,58 @@ def test_min_eval_days_is_enforced_on_the_regime_path_too():
     )
     assert rep.verdict["status"] == "NO_DECISION"
     assert rep.verdict["decision_reason"]["cause"] == "insufficient_eval_days"
+
+
+# --- 凍結窓(valid_from)が regime 経路にも効くこと(2026-08-23) ---------------------------------
+#
+# 実害の記録: fold は年粒度なので --from は「評価開始 *年*」しか決めない。日単位に絞る
+# valid_from は paired_eval には配線されていたが、この経路には無かった。arm E の prospective
+# holdout は 2026-07-13 で凍結されているのに、走らせれば 2026 年の全レースが採点される
+# — 実 DB で開発窓 1,866 レース / 58 開催日 に対し本来の prospective は 432 / 12。
+# min_eval_days(48)は**開発日だけで**満たされ、harness は「窓は十分」と判断して verdict を出す。
+# しかも assert_confirmatory は CLI の --from/--to と gate-config を突き合わせるだけなので、
+# 「窓は照合済み」と報告したうえでこれが起きる。
+
+def _regime_report(*, valid_from):
+    return evaluate_regimes(
+        _Factory(_Predictor(base=0.60, serving_penalty=0.10)),
+        _Factory(_Predictor(base=0.55, serving_penalty=0.10)),
+        _races(n_days=6, per_day=3),
+        serving_spec=object(),
+        gate_config=GATE,
+        first_valid_year=2024,
+        valid_from=valid_from,
+    )
+
+
+def test_regime_path_honours_the_frozen_window_start():
+    """日単位の凍結窓が採点集合を実際に絞る(年ではなく日で切れている)."""
+    narrowed = _regime_report(valid_from=dt.date(2024, 1, 4))
+    # 2024-01-01..01-06 の 6 日 × 3 レース。01-04 以降は 3 日 = 9 レースだけが採点対象。
+    assert narrowed.serving_regime["n_races"] == 9
+    assert narrowed.serving_regime["n_days"] == 3
+
+
+def test_without_a_window_the_whole_first_year_is_scored():
+    """valid_from 無しの既定は従来どおり(年粒度)。修正が既存の呼び出しを変えていない."""
+    whole = _regime_report(valid_from=None)
+    assert whole.serving_regime["n_races"] == 18
+    assert whole.serving_regime["n_days"] == 6
+
+
+def test_scored_window_assertion_catches_an_unthreaded_valid_from():
+    """配線が外れたら数字ではなく例外で落ちること。
+
+    これがドリフトの本体を止める石。`assert_scored_window` は宣言ではなく**実際に採点した
+    レース**を見るので、どの経路が走っても成立する。
+    """
+    from horseracing_eval.splits import assert_scored_window
+
+    races = _races(n_days=6, per_day=3)  # 2023 と 2024 の両方を含む
+    with pytest.raises(ValueError, match="scored window starts"):
+        assert_scored_window(races, valid_from=dt.date(2024, 1, 4))
+
+    # 窓を守っている集合は通る / 窓が無ければ何も主張しない
+    kept = [er for er in races if er.context.race_date >= dt.date(2024, 1, 4)]
+    assert_scored_window(kept, valid_from=dt.date(2024, 1, 4))
+    assert_scored_window(races, valid_from=None)

@@ -51,3 +51,26 @@ def expanding_folds(
         if not train or not valid:
             continue
         yield Fold(valid_year=year, train=train, valid=valid)
+
+
+def assert_scored_window(valid_races, *, valid_from: datetime.date | None) -> None:
+    """Fail closed if the SCORED races start before the frozen window.
+
+    ``valid_from`` narrows the scored side, but only if every path actually threads it through.
+    ``paired_eval`` did; ``regime_paired.evaluate_regimes`` did not, so a prospective holdout
+    frozen at 2026-07-13 scored the whole of 2026 — including the races the development window
+    had already used — while ``assert_confirmatory`` verified the CLI's --from/--to and reported
+    the window as checked. A guard that validates the DECLARED window and not the SCORED one is
+    worse than none, because it reads as assurance.
+
+    This checks the races that were actually scored, so it holds no matter which path ran.
+    """
+    if valid_from is None or not valid_races:
+        return
+    first = min(er.context.race_date for er in valid_races)
+    if first < valid_from:
+        raise ValueError(
+            f"scored window starts {first} but the pre-registered window starts {valid_from}: "
+            f"{sum(1 for er in valid_races if er.context.race_date < valid_from)} of "
+            f"{len(valid_races)} scored races predate it (valid_from was not threaded through)"
+        )

@@ -33,7 +33,7 @@ from .metrics import (
     uniform_baseline_winner_nll,
     winner_nll,
 )
-from .splits import FIRST_VALID_YEAR
+from .splits import FIRST_VALID_YEAR, assert_scored_window
 
 DEFAULT_BAND_EDGES = (0.05, 0.15, 0.30)
 
@@ -376,6 +376,10 @@ def paired_eval(
         active, eval_races, first_valid_year=first_valid_year, num_threads=num_threads,
         valid_from=valid_from,
     )
+    # Structural check on what was ACTUALLY scored (shared with regime_paired, so the two paths
+    # cannot drift on it the way valid_from itself did).
+    assert_scored_window(valid_races, valid_from=valid_from)
+
     # model-blind fixed race set: both arms MUST cover the identical valid races (C8).
     cand_ids = {er.context.race_id for er in valid_races}
     act_ids = {er.context.race_id for er in act_valid}

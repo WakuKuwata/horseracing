@@ -18,6 +18,7 @@ pinning it) stay untouched.
 
 from __future__ import annotations
 
+import datetime
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -38,6 +39,7 @@ from .paired import (
     _winner_probs,
     resolve_target_year,
 )
+from .splits import assert_scored_window
 from .subgroups import GUARD_PASS
 
 SERVING = "serving"
@@ -181,6 +183,7 @@ def evaluate_regimes(
     serving_spec: Any,
     gate_config: dict,
     first_valid_year: int | None = None,
+    valid_from: datetime.date | None = None,
     num_threads: int | None = None,
     band_edges: tuple[float, ...] = DEFAULT_BAND_EDGES,
     artifact_kind: str = VERDICT_KIND,
@@ -196,7 +199,12 @@ def evaluate_regimes(
             "full-info and the comparison would measure nothing (fail-closed)"
         )
 
-    kwargs = {"num_threads": num_threads}
+    # ``valid_from`` narrows the SCORED side to a day-exact window. Folds are year-granular, so
+    # without it a window frozen mid-year silently scores the whole calendar year — for the arm E
+    # prospective holdout (frozen 2026-07-13) that is 1,866 already-used development races against
+    # 432 genuinely prospective ones, and ``min_eval_days`` is satisfied by the development days
+    # alone. ``paired_eval`` has taken this since the 2026-08 review; this path had not.
+    kwargs = {"num_threads": num_threads, "valid_from": valid_from}
     if first_valid_year is not None:
         kwargs["first_valid_year"] = first_valid_year
     regimes = {SERVING: serving_spec, FULL_INFO: None}
@@ -207,6 +215,9 @@ def evaluate_regimes(
     act_by_regime, act_valid, act_raw = predict_over_folds_multi(
         active, eval_races, regimes=regimes, collect_raw=True, **kwargs
     )
+
+    # Structural check on what was ACTUALLY scored, not on what the caller declared.
+    assert_scored_window(cand_valid, valid_from=valid_from)
 
     cand_ids = {er.context.race_id for er in cand_valid}
     act_ids = {er.context.race_id for er in act_valid}
