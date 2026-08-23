@@ -41,3 +41,18 @@ race_class    n         d0         d1
 ## T017 materialize(features-023)
 
 - manifest: feature_version=features-023・n_rows 963,019・materialized_columns 113 = 021 と同一集合(`race_class` は静的列で非 materialize)。source_fingerprint は 021 manifest(00:08 時点)と異なるが data_through は同日で、差は日次取込で DB が動いた分(表現は parquet に載らない)。
+
+## T023 smoke(配線のみ・効果 redact)
+
+- 1 回目(cutoff 2016-01-01/採点 2017)は **INV-A3 で abort**: `1勝/2勝/3勝` は 2019-06-01 以降にしか存在せず学習データに分裂行が無い → 両アーム同一(assert が設計どおり作動)。smoke を 2020-01-01/2021 に再凍結(hash `596818d1…`・主測定パラメータ不変)。
+- 2 回目: arms OK / identity OK(n_rows_differing=143,264・race_class hash A≠B)/ fit OK(**3,425/3,447 レースで paired diff 非ゼロ**)。JSON: artifact_kind=smoke・eligible_for_verdict=false・効果数値は null。
+- `promote-model --model-version lgbm-094-cap900 --verdict out/098-smoke.json`(`--apply` 無し)→ 構造的拒否(下記ログ)。
+
+
+```
+error: v3 verdict が昇格要件を満たさないため override が必要: verdict_artifact_not_eligible。--override-reason に理由を書くこと(理由は metrics_summary に残る)
+```
+
+## T024 本番 run
+
+- 起動 2026-08-23 14:26:44(pid 22903・`out/098-gate.log`・hash `596818d1…`・REAL)
