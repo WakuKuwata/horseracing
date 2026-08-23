@@ -112,6 +112,13 @@ class Manifest:
     #: Feature 055: fingerprint algorithm tag. Old manifests (field absent -> None) predate the
     #: value-canonical hash and MUST be regenerated — fail-closed, never silently accepted.
     fingerprint_algo: str | None = None
+    #: sha256 of the parquet FILE, verified on every read (integrity: truncation / partial write /
+    #: corruption / hand-edit). Absent -> old manifest -> fail closed, same as fingerprint_algo.
+    parquet_sha256: str | None = None
+    #: sha256 of this package's sources — the code that produced the cached values.
+    #: source_fingerprint covers the DB inputs only, so without this a parquet built by older
+    #: feature code passes every check while serving values the current code would not produce.
+    feature_code_hash: str | None = None
 
     def to_json(self) -> str:
         return json.dumps(dataclasses.asdict(self), ensure_ascii=False, sort_keys=True, indent=2)
@@ -156,6 +163,44 @@ def _hash_frame(df: pd.DataFrame, cols: list[str]) -> str:
     return hashlib.sha256(
         pd.util.hash_pandas_object(sub, index=False).values.tobytes()
     ).hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    """sha256 of the file BYTES. Cheap enough to verify on every read.
+
+    Measured on the real 307MB parquet: read_parquet 0.3s, file sha256 0.1s, value-canonical
+    ``_hash_frame`` 30.0s. The value hash is 100x the entire read, so verifying THAT on every
+    read would undo the whole point of materialisation (a 59s build becomes a 17s read). File
+    bytes are also the right thing to check here: what this guards is a truncated, partially
+    written, corrupted or hand-edited parquet — not a dtype-level value question.
+    """
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(8 * 1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _feature_code_hash() -> str:
+    """sha256 over the sources of this package — the CODE that produced the cached values.
+
+    ``source_fingerprint`` covers the DB inputs, so a parquet built by older feature code passes
+    every existing check while serving values the current code would never produce. That is not
+    hypothetical: fixing the row-order dependence in ``jockey_recent_win_rate`` (2026-08-23)
+    changed 12.21% of that column's values and left the on-disk parquet silently wrong, with no
+    check anywhere able to notice.
+
+    Whole-package rather than a dependency-precise set: enumerating exactly which modules feed
+    ``build_asof_features`` is fragile and fails open when someone adds a block. A comment-only
+    edit therefore invalidates the cache too — a few minutes of rebuild against serving values
+    that no longer match the code that is running.
+    """
+    root = Path(__file__).parent
+    h = hashlib.sha256()
+    for f in sorted(root.glob("*.py")):
+        h.update(f.name.encode("utf-8"))
+        h.update(f.read_bytes())
+    return h.hexdigest()
 
 
 def _restrict(frames: Frames, through: datetime.date | None) -> Frames:
@@ -343,11 +388,16 @@ def write_materialized(
         n_rows=int(len(asof)),
         data_from=(dates.min().date().isoformat() if len(dates) else None),
         data_through=(through.isoformat() if through else None),
+        # value-canonical hash of the CONTENT. Recorded for cross-machine/value-level comparison
+        # (two builds on different hosts should agree here); NOT the read-time check — see
+        # _file_sha256 for why (30.0s vs 0.1s on the real parquet).
         content_hash=_hash_frame(asof, list(asof.columns)),
         source_fingerprint=source_fingerprint(frames, through=through),
         materialized_columns=materialized_columns(),
         generated_at=generated_at,
         fingerprint_algo=FINGERPRINT_ALGO,
+        parquet_sha256=_file_sha256(parquet_path),
+        feature_code_hash=_feature_code_hash(),
     )
     _manifest_path(parquet_path).write_text(manifest.to_json(), encoding="utf-8")
     return manifest
@@ -367,6 +417,19 @@ def read_manifest(parquet_path: str | Path) -> Manifest:
 def read_materialized(parquet_path: str | Path) -> tuple[pd.DataFrame, Manifest]:
     parquet_path = Path(parquet_path)
     manifest = read_manifest(parquet_path)
+    # Integrity. The manifest advertised a content hash from the day this was written and nothing
+    # ever compared it, so a truncated or edited parquet passed every check: source_fingerprint
+    # verifies the DATABASE, not the file. A short-read leaves rows missing, and the builder's
+    # left-merge turns those into a silently all-NaN history for the affected horses rather than
+    # an error.
+    actual = _file_sha256(parquet_path)
+    if manifest.parquet_sha256 != actual:
+        raise MaterializationError(
+            f"parquet integrity check failed for {parquet_path}: manifest="
+            f"{(manifest.parquet_sha256 or 'absent')[:12]} actual={actual[:12]} (truncated, "
+            "partially written, edited, or written by a pre-integrity build) — re-run "
+            "`features materialize`."
+        )
     df = pd.read_parquet(parquet_path)
     return df, manifest
 
@@ -384,6 +447,17 @@ def assert_manifest_compatible(manifest: Manifest) -> None:
         raise MaterializationError(
             f"fingerprint algo mismatch: manifest={manifest.fingerprint_algo!r} "
             f"now={FINGERPRINT_ALGO!r} (old-format manifest) — re-run `features materialize`"
+        )
+    # The CODE that produced the cache. source_fingerprint answers "did the DB inputs change";
+    # this answers "would today's code still produce these values". Nothing asked that before,
+    # so a feature fix left the parquet silently wrong (see _feature_code_hash).
+    current_code = _feature_code_hash()
+    if manifest.feature_code_hash != current_code:
+        raise MaterializationError(
+            "feature code changed since this parquet was built: manifest="
+            f"{(manifest.feature_code_hash or 'absent')[:12]} now={current_code[:12]} — the "
+            "cached values may not be what the current code produces. Re-run "
+            "`features materialize`."
         )
 
 
