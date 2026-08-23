@@ -472,3 +472,62 @@ def test_scored_window_assertion_catches_an_unthreaded_valid_from():
     kept = [er for er in races if er.context.race_date >= dt.date(2024, 1, 4)]
     assert_scored_window(kept, valid_from=dt.date(2024, 1, 4))
     assert_scored_window(races, valid_from=None)
+
+
+# --- 契約 v4 の再学習分散インフレが regime 経路にも効くこと(2026-08-23) ------------------------
+#
+# 実害の記録: `inflate_for_seed_noise` の呼び出しは paired.py と opportunity.py の 2 箇所しか
+# 無く、`evaluate_regimes` は標本のみの CI をそのままゲートに渡していた。paired.py 自身が
+# 影響を数値化している —「インフレを外すと区間は約 20% 狭く、ゲートの実効偽陽性率は
+# 名目 2.5% でなく 5.8%」。同じ契約を 2 つの経路が別々に実装し、片方だけが追随していなかった。
+#
+# 版で分岐せず config 駆動にしてある: `seed_noise` を持たない config(v3 は全部そう)は
+# sd=0 で区間が変わらないので、事前登録済みの v3 run は v4 の規則で再判定されない。
+
+_V4 = {**GATE, "seed_noise": {"sd_fold": 0.002, "k_seeds": 1, "source": "test"}}
+
+
+def _regime(gate):
+    return evaluate_regimes(
+        _Factory(_Predictor(base=0.60, serving_penalty=0.10)),
+        _Factory(_Predictor(base=0.55, serving_penalty=0.10)),
+        _races(n_days=6, per_day=3),
+        serving_spec=object(), gate_config=gate, first_valid_year=2024,
+    )
+
+
+def test_a_v3_config_without_seed_noise_is_unchanged():
+    """事前登録済みの v3 run を遡って別の規則で判定し直さないこと."""
+    srv = _regime(GATE).serving_regime
+    assert srv["total_ci_low"] == srv["ci_low"]
+    assert srv["total_ci_high"] == srv["ci_high"]
+    assert srv["seed_noise"]["applied"] is False
+
+
+def test_a_v4_config_widens_the_interval_the_gate_reads():
+    """seed_noise を宣言した config では区間が実際に広がり、ゲートはその広い方を読む."""
+    srv = _regime(_V4).serving_regime
+    assert srv["seed_noise"]["applied"] is True
+    # 両腕とも外側に広がる(percentile 区間は非対称なので腕ごとに広げる)
+    assert srv["total_ci_low"] < srv["ci_low"]
+    assert srv["total_ci_high"] > srv["ci_high"]
+    assert srv["seed_noise"]["sd_fold"] == 0.002
+
+
+def test_the_gate_reads_the_widened_interval_not_the_sampling_one():
+    """これがドリフトの本体。狭い区間なら通る候補が、広い区間では通らないことを実経路で示す。
+
+    宣言した sd_fold を大きく取り、標本のみの CI 上限は 0 を下回るが総 CI 上限は 0 を跨ぐ状況を
+    作る。旧実装(標本のみの CI をゲートに渡す)ならここは True のままで、名目 2.5% より高い
+    偽陽性率でゲートを通していた。`<=` のような弱い表明では、効果量が大きい fixture では
+    両者が一致して素通りするので、**反転する点**を選んである。
+    """
+    loud = {**GATE, "seed_noise": {"sd_fold": 0.2, "k_seeds": 1, "source": "test"}}
+    report = _regime(loud)
+    srv = report.serving_regime
+
+    assert srv["ci_high"] < 0                      # 標本のみなら「有意に改善」に見える
+    assert srv["total_ci_high"] > 0                # 再学習分散を入れると跨ぐ
+    # レポートのゲート(= 実際に判定した値)は広い方を読んでいる
+    assert srv["gate"]["sub_gates"]["ci_upper_below_zero"] is False
+    assert srv["gate"]["adopted"] is False

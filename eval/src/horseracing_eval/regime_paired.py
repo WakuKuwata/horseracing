@@ -23,6 +23,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .bootstrap import (
+    inflate_for_seed_noise,
     race_day_cluster_bootstrap_ci_v1,
     race_day_cluster_bootstrap_sensitivity_v2,
 )
@@ -65,6 +66,13 @@ class RegimeScores:
     n_days: int
     mask_races_candidate: int
     mask_races_active: int
+    #: Contract v4: ``ci_low``/``ci_high`` are sampling-only (the cluster bootstrap resamples races
+    #: and is blind to refitting). The GATE reads these, widened by the declared retraining
+    #: variance. Both are kept so the two components stay separable and pre-v4 artifacts remain
+    #: comparable. With no ``seed_noise`` in the gate-config these equal the sampling interval.
+    total_ci_low: float | None = None
+    total_ci_high: float | None = None
+    seed_noise: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -233,6 +241,8 @@ def evaluate_regimes(
 
     scored: dict[str, RegimeScores] = {}
     day_diffs: dict[str, dict[str, list[float]]] = {}
+    sn = (gate_config.get("seed_noise") or {})
+    n_folds = len({er.context.race_date.year for er in cand_valid})
     for name in (SERVING, FULL_INFO):
         spec = regimes[name]
         cand_preds, act_preds = cand_by_regime[name], act_by_regime[name]
@@ -247,6 +257,18 @@ def evaluate_regimes(
             seed=boot.get("seed", 20260810),
             alpha=float(boot.get("alpha", 0.05)),
         )
+        # Contract v4: widen by the declared retraining variance before the gate sees it.
+        # paired_eval has done this since 2026-08-18; this path did not, so the same contract was
+        # enforced two different ways and the regime gate ran at the pre-v4 (~20% too narrow)
+        # interval — an effective false-positive rate of 5.8% against a nominal 2.5%.
+        # Config-driven, exactly as in paired_eval: a gate-config with no ``seed_noise`` block
+        # (every v3 config, including the frozen arm E prospective one) yields sd=0, and
+        # inflate_for_seed_noise returns the interval unchanged. So pre-registered v3 runs are
+        # byte-identical and their verdicts are not retro-judged under v4 rules.
+        total = inflate_for_seed_noise(
+            ci, sd_fold=float(sn.get("sd_fold", 0.0)), n_folds=n_folds,
+            k_seeds=int(sn.get("k_seeds", 1)), alpha=float(boot.get("alpha", 0.05)),
+        )
         scored[name] = RegimeScores(
             regime=name,
             candidate=_score_arm(cand_valid, cand_preds, band_edges=band_edges).__dict__,
@@ -254,6 +276,13 @@ def evaluate_regimes(
             diff=ci.point,
             ci_low=ci.ci_low,
             ci_high=ci.ci_high,
+            total_ci_low=total.ci_low,
+            total_ci_high=total.ci_high,
+            seed_noise={
+                "sd_fold": sn.get("sd_fold"), "k_seeds": int(sn.get("k_seeds", 1)),
+                "n_folds": n_folds, "source": sn.get("source"),
+                "applied": total.ci_low != ci.ci_low or total.ci_high != ci.ci_high,
+            },
             n_races=n_races,
             n_days=ci.n_days,
             mask_races_candidate=_count_masked(cand_preds, spec),
@@ -320,7 +349,9 @@ def evaluate_regimes(
         max_date=max(er.context.race_date for er in cand_valid),
     )
     core = evaluate_core_gate(
-        diff=srv.diff, ci_low=srv.ci_low, ci_high=srv.ci_high, recent=recent,
+        # v4: the gate reads the interval that includes retraining variance, not the
+        # sampling-only one (paired_eval passes the same widened interval).
+        diff=srv.diff, ci_low=srv.total_ci_low, ci_high=srv.total_ci_high, recent=recent,
         top2_diff=c_s["top2_logloss"] - a_s["top2_logloss"],
         top3_diff=c_s["top3_logloss"] - a_s["top3_logloss"],
         cand_ece=_ece(c_s), act_ece=_ece(a_s), cfg=gate_config,
