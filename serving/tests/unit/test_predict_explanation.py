@@ -53,7 +53,7 @@ def _model(objective: str = "binary", booster: lgb.Booster | None = None) -> Ser
 
 
 def test_degenerate_model_explanations_all_none():
-    _, _, exps = predict_race(_model(booster=None), _RACE, _rows(5))
+    _, _, exps, _ = predict_race(_model(booster=None), _RACE, _rows(5))
     assert set(exps) == {f"H{i}" for i in range(5)}
     assert all(v is None for v in exps.values())
 
@@ -61,7 +61,7 @@ def test_degenerate_model_explanations_all_none():
 def test_explanation_present_and_additive_binary():
     m = _model("binary", _booster("binary"))
     rows = _rows(6)
-    _, _, exps = predict_race(m, _RACE, rows)
+    _, _, exps, _ = predict_race(m, _RACE, rows)
     for e in exps.values():
         assert e is not None
         recon = e["base_value"] + sum(it["contribution"] for it in e["items"]) + e["other_contribution"]
@@ -77,7 +77,7 @@ def test_inv_e2_predictions_unchanged_by_explanation():
 
     m = _model("binary", _booster("binary"))
     rows = _rows(7)
-    preds, _, _ = predict_race(m, _RACE, rows)
+    preds, _, _, _ = predict_race(m, _RACE, rows)
     ids = sorted(rows["horse_id"])
     r2 = rows.set_index("horse_id").reindex(ids)
     for c in _FEATS:
@@ -96,7 +96,7 @@ def test_cond_logit_score_is_margin_not_softmax():
     b = _booster("cond_logit")
     m = _model("cond_logit", b)
     rows = _rows(8)
-    _, _, exps = predict_race(m, _RACE, rows)
+    _, _, exps, _ = predict_race(m, _RACE, rows)
     r2 = rows.set_index("horse_id").reindex(sorted(rows["horse_id"]))
     margin = b.predict(r2[_FEATS], raw_score=True)
     softmaxed = m.raw_predict(r2[_FEATS])  # race-softmax -> sums to 1
@@ -120,7 +120,7 @@ def test_v2_for_race_softmax_model_without_offset():
     ``raw_predict`` (softmaxed for cond_logit/pl_topk) instead of the booster margin makes the
     check fail on every row and silently degrades the entire race to no explanation."""
     m = _model("cond_logit", _booster("cond_logit"))
-    _, _, exps = predict_race(m, _RACE, _rows(8))
+    _, _, exps, _ = predict_race(m, _RACE, _rows(8))
 
     assert all(e is not None for e in exps.values()), "v2 race must not degrade to NULL"
     for e in exps.values():
@@ -148,7 +148,7 @@ def test_binary_model_stays_v1():
     """089 T008(c): binary has no race-softmax, so a race-constant contribution DOES move p_i —
     centering would be a false attribution."""
     m = _model("binary", _booster("binary"))
-    _, _, exps = predict_race(m, _RACE, _rows(6))
+    _, _, exps, _ = predict_race(m, _RACE, _rows(6))
 
     for e in exps.values():
         assert e is not None and e["method_version"] == 1
@@ -161,7 +161,7 @@ def test_market_offset_model_stays_v1_and_is_not_wiped_out():
     Supplying an offset-carrying margin as the reconciliation target would fail every row and
     replace a valid v1 explanation with NULL."""
     m = _offset_model(_booster("cond_logit"))
-    _, _, exps = predict_race(
+    _, _, exps, _ = predict_race(
         m, _RACE, _rows(6), win_odds={f"H{i}": 2.0 + i for i in range(6)}
     )
 
@@ -176,14 +176,16 @@ def test_inv_e2_probabilities_identical_across_explanation_versions():
     probabilities — explanation semantics never touch win/top2/top3."""
     b = _booster("cond_logit")
     rows = _rows(9)
-    v2_preds, v2_snaps, exps = predict_race(_model("cond_logit", b), _RACE, rows)
+    v2_preds, v2_snaps, exps, _ = predict_race(_model("cond_logit", b), _RACE, rows)
 
     # Same model, explanation forced onto the v1 path by hiding the objective from the router.
     v1_model = _model("binary", b)
-    v1_preds, v1_snaps, _ = predict_race(v1_model, _RACE, rows)
+    v1_preds, v1_snaps, _, _ = predict_race(v1_model, _RACE, rows)
     # (the v1 model differs only in explanation routing; raw_predict postprocess differs, so
     #  compare each version against a re-run of ITSELF for byte-stability)
-    again_preds, again_snaps, again_exps = predict_race(_model("cond_logit", b), _RACE, rows)
+    again_preds, again_snaps, again_exps, _ = predict_race(
+        _model("cond_logit", b), _RACE, rows
+    )
     for hid in v2_preds:
         assert v2_preds[hid].win == again_preds[hid].win
         assert v2_preds[hid].top2 == again_preds[hid].top2

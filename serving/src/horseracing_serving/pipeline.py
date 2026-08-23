@@ -38,6 +38,7 @@ def _base_logic_version(model) -> str:
         lv += f";reg={FEATURE_VERSION}"
     if getattr(model, "market_offset", None) is not None:
         lv += ";mkt=logq"
+    lv += f";rcr={model.race_class_representation}"
     return lv
 
 
@@ -65,6 +66,7 @@ class ServingResult:
     model_version: str
     logic_version: str
     n_horses: int
+    audit: dict
 
 
 def _targets(
@@ -303,7 +305,7 @@ def _predict_persist(
     if getattr(model, "market_offset", None) is not None:
         win_odds = _race_win_odds(session, race_id)
         try:
-            predictions, snapshots, explanations = predict_race(
+            predictions, snapshots, explanations, audit = predict_race(
                 model, race_id, feature_rows, stage_discount=stage_discount, win_odds=win_odds
             )
         except ValueError as exc:
@@ -311,7 +313,7 @@ def _predict_persist(
                 raise MarketOffsetSkip(str(exc)) from exc
             raise
     else:
-        predictions, snapshots, explanations = predict_race(
+        predictions, snapshots, explanations, audit = predict_race(
             model, race_id, feature_rows, stage_discount=stage_discount
         )
     logic_version = _sdisc_lv(logic_version, stage_discount)
@@ -331,7 +333,7 @@ def _predict_persist(
     )
     return ServingResult(
         prediction_run_id=run_id, race_id=race_id, model_version=model.model_version,
-        logic_version=logic_version, n_horses=len(predictions),
+        logic_version=logic_version, n_horses=len(predictions), audit=audit,
     )
 
 
@@ -434,6 +436,7 @@ def run_serving_backfill(
                     if not force and _has_run_for_model(
                         session, rid, model.model_version, calib_digest=calib_digest,
                         wregime=_wregime_of(avail),
+                        race_class_representation=model.race_class_representation,
                     ):
                         skip_exists += 1
                         continue
@@ -463,6 +466,7 @@ def run_serving_backfill(
 def _has_run_for_model(
     session: Session, race_id: str, model_version: str, *, calib_digest: str | None = None,
     wregime: str | None = None,
+    race_class_representation: str | None = None,
 ) -> bool:
     """True if the race already has a prediction_run for this model_version (idempotency).
 
@@ -488,4 +492,12 @@ def _has_run_for_model(
         q = q.where(PredictionRun.logic_version.contains(f";wregime={wregime}"))
     else:
         q = q.where(~PredictionRun.logic_version.contains(";wregime="))
+    # Feature 098: a representation change changes model inputs just like the calibration and
+    # weight regimes above. Markerless legacy runs must not suppress a newly bound rcr run.
+    if race_class_representation is not None:
+        q = q.where(
+            PredictionRun.logic_version.contains(f";rcr={race_class_representation}")
+        )
+    else:
+        q = q.where(~PredictionRun.logic_version.contains(";rcr="))
     return session.scalars(q).first() is not None

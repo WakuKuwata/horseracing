@@ -380,7 +380,16 @@ FEATURE_GROUPS: dict[str, str] = {
 #: jump backfill is accuracy-neutral but corrects surface-keyed as-of aggregates). This is a
 #: SAME-COLUMN, VALUE-CHANGING bump: feature_hash (column-name-only) is UNCHANGED, so serving must
 #: fail-close old same-hash models by feature_version (see model_loader exact-path + empty compat).
+#: 022 is burned (097: 808f92c used it, 8122f64 reverted it) and 023 is burned too (098 race_class
+#: canonical representation: bumped, REJECTED at the pre-registered gate — pooled +0.0004, no
+#: measurable cost of the spelling split under retraining — and reverted; specs/098 verdict.json).
+#: Neither label may be reused for another meaning; the next bump is features-024.
 FEATURE_VERSION = "features-021"
+
+#: The value drivers pass when TRAINING under this registry version. A reader of an existing
+#: artifact must use its marker/compat dispatch and must never guess this value from the registry.
+#: 098 REJECT (2026-08-23): "canonical-v1" stays unwired (specs/098 verdict.json).
+RACE_CLASS_REPRESENTATION = "raw"
 
 #: Feature 058 (案C'): serving compatibility across feature versions. A model trained on an
 #: OLDER version V' may be served under the CURRENT registry V iff (a) V' is pinned here for V to

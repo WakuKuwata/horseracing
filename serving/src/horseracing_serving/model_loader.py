@@ -20,20 +20,90 @@ import numpy as np
 import pandas as pd
 from horseracing_db.enums import AdoptionStatus
 from horseracing_db.models import ModelVersion
-from horseracing_features.registry import (
-    FEATURE_VERSION,
-    is_feature_version_servable,
-    model_input_features,
+from horseracing_features import registry as feature_registry
+from horseracing_features.race_class_canon import REPRESENTATIONS, SPLIT_TOKENS
+from horseracing_training.artifacts import (
+    categorical_vocab_from_booster,
+    feature_hash,
+    vocab_hash,
 )
-from horseracing_training.artifacts import feature_hash
 from horseracing_training.dataset import CATEGORICAL_FEATURES
 from horseracing_training.target_encoding import DEFAULT_SMOOTHING
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+FEATURE_VERSION = feature_registry.FEATURE_VERSION
+COMPATIBLE_PRIOR_FEATURE_VERSIONS = feature_registry.COMPATIBLE_PRIOR_FEATURE_VERSIONS
+RACE_CLASS_REPRESENTATION = getattr(feature_registry, "RACE_CLASS_REPRESENTATION", None)
+model_input_features = feature_registry.model_input_features
+
 
 class ServingError(RuntimeError):
     """Raised when no/ambiguous model, missing artifacts, or feature-schema mismatch."""
+
+
+def resolve_representation(
+    trained_fv: str,
+    current_fv: str,
+    exact: bool,
+    marker: str | None,
+    registry_representation: str | None,
+) -> str:
+    """Resolve the artifact's race-class representation from the declared serving path.
+
+    Compatibility itself is pinned and checked by ``load_serving_model`` before this function is
+    called. This pure allowlist additionally binds features-023's value semantics and preserves
+    legacy test registries, whose exact artifacts predate representation metadata.
+    """
+    if marker is not None and marker not in REPRESENTATIONS:
+        raise ServingError(f"unknown race_class representation marker: {marker!r}")
+
+    if current_fv == "features-023":
+        if exact:
+            if trained_fv != current_fv:
+                raise ServingError("exact representation path requires matching feature versions")
+            if marker != "canonical-v1" or registry_representation != "canonical-v1":
+                raise ServingError(
+                    "features-023 exact artifact requires race_class_representation="
+                    "'canonical-v1'"
+                )
+            return "canonical-v1"
+        if trained_fv == "features-021":
+            return "raw"
+        raise ServingError(
+            f"undeclared race_class representation path: {trained_fv!r} -> {current_fv!r}"
+        )
+
+    if exact:
+        if trained_fv != current_fv:
+            raise ServingError("exact representation path requires matching feature versions")
+        if marker is None:
+            return "raw"
+        if registry_representation is None:
+            if marker == "raw":
+                return "raw"
+            raise ServingError(
+                f"artifact marker {marker!r} has no matching registry representation"
+            )
+        if marker != registry_representation:
+            raise ServingError(
+                f"artifact marker {marker!r} disagrees with registry representation "
+                f"{registry_representation!r}"
+            )
+        return marker
+
+    if trained_fv == current_fv:
+        raise ServingError("compat representation path requires different feature versions")
+    # A compat pin only proves the SHARED COLUMNS are byte-identical under the RAW build; an
+    # artifact that declares a non-raw representation (e.g. a features-023 canonical model served
+    # under some future version) would be fed raw spellings it was never trained on. Such pairs
+    # need their own explicit allowlist entry above — never a silent fallback (098 codex plan Q1).
+    if marker not in (None, "raw"):
+        raise ServingError(
+            f"compat path cannot serve representation {marker!r} ({trained_fv!r} -> "
+            f"{current_fv!r}) without an explicit allowlist entry"
+        )
+    return "raw"
 
 
 @dataclass(frozen=True)
@@ -47,6 +117,8 @@ class ServingModel:
     encoders: dict = field(default_factory=dict)  # col -> TargetEncoder
     feature_version: str = ""
     feature_hash: str = ""
+    race_class_representation: str = "raw"
+    categorical_vocab: dict[str, list[str]] = field(default_factory=dict)
     objective: str = "binary"  # 039/042: "binary" | "cond_logit" | "pl_topk"
     metadata: dict = field(default_factory=dict)
     #: Feature 060: market-offset definition dict (metadata.market_offset) for models whose
@@ -206,11 +278,20 @@ def load_serving_model(
     model_hash = metadata.get("feature_hash")
     model_fv = metadata.get("feature_version", "")
     exact = model_hash == current_hash and model_fv == FEATURE_VERSION
-    if not exact and not is_feature_version_servable(model_fv, model_hash):
+    compat_pin = COMPATIBLE_PRIOR_FEATURE_VERSIONS.get(FEATURE_VERSION, {}).get(model_fv)
+    if not exact and compat_pin != model_hash:
         raise ServingError(
             f"feature_hash mismatch for '{mv_name}': trained {model_fv!r} not servable under "
             f"current {FEATURE_VERSION!r} (no parity-tested compatibility for this hash)"
         )
+
+    race_class_representation = resolve_representation(
+        model_fv,
+        FEATURE_VERSION,
+        exact,
+        metadata.get("race_class_representation"),
+        RACE_CLASS_REPRESENTATION,
+    )
 
     prep = _load_preprocessor(art_dir, metadata, model_hash, exact)
 
@@ -222,6 +303,31 @@ def load_serving_model(
         constant = float(json.loads(Path(mv.weights_uri).read_text())["degenerate_constant_win"])
     else:
         booster = lgb.Booster(model_file=str(mv.weights_uri))
+
+    categorical_vocab: dict[str, list[str]] = {}
+    if booster is not None:
+        try:
+            categorical_vocab = categorical_vocab_from_booster(
+                booster,
+                list(prep["feature_cols"]),
+                list(prep["categorical_cols"]),
+            )
+        except ValueError as exc:
+            raise ServingError(f"invalid categorical vocabulary for '{mv_name}': {exc}") from exc
+        expected_vocab_hash = metadata.get("categorical_vocab_hash")
+        if expected_vocab_hash is None:
+            if race_class_representation != "raw":
+                raise ServingError(
+                    f"categorical_vocab_hash missing for canonical artifact '{mv_name}'"
+                )
+        elif vocab_hash(categorical_vocab) != expected_vocab_hash:
+            raise ServingError(f"categorical_vocab_hash mismatch for '{mv_name}'")
+        if race_class_representation == "canonical-v1":
+            split = sorted(SPLIT_TOKENS.intersection(categorical_vocab.get("race_class", [])))
+            if split:
+                raise ServingError(
+                    f"canonical artifact '{mv_name}' contains split race_class tokens: {split}"
+                )
 
     with Path(mv.calibrator_uri).open("rb") as fh:
         calibrator = pickle.load(fh)
@@ -254,6 +360,8 @@ def load_serving_model(
         encoders=dict(prep.get("encoders", {})),
         feature_version=metadata.get("feature_version", ""),
         feature_hash=model_hash,
+        race_class_representation=race_class_representation,
+        categorical_vocab=categorical_vocab,
         # Feature 039: prefer preprocessor, fall back to metadata, default binary (pre-039)
         objective=prep.get("objective", metadata.get("objective", "binary")),
         metadata=metadata,

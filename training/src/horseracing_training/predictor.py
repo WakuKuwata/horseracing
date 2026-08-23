@@ -20,6 +20,8 @@ import datetime
 import numpy as np
 from horseracing_eval.baselines import harville_topk
 from horseracing_eval.predictor import Prediction, RaceContext
+from horseracing_features import registry as feature_registry
+from horseracing_features.race_class_canon import REPRESENTATIONS
 from sqlalchemy.orm import Session
 
 from .calibration import (
@@ -62,6 +64,13 @@ def _weight_mask_columns() -> tuple[str, ...]:
 
 
 class LightGBMPredictor:
+    """LightGBM training adapter.
+
+    Standalone drivers and parity scripts must pass ``race_class_representation`` explicitly.
+    ``None`` exists only for compatibility with older constructor call sites and is resolved in
+    ``_ensure_data``.
+    """
+
     #: never references result-time odds/popularity (FR-004)
     is_leaky_reference = False
 
@@ -85,6 +94,7 @@ class LightGBMPredictor:
         objective: str = "binary",
         use_materialized: bool = False,
         materialized_path: str | None = None,
+        race_class_representation: str | None = None,
         # Feature 091 (D16): read the parquet even if the database has moved past it. Only
         # evaluation should ask for this — see RecipeFactory.pin_snapshot for why.
         skip_fingerprint_verify: bool = False,
@@ -128,6 +138,8 @@ class LightGBMPredictor:
         self.use_materialized = use_materialized
         self.materialized_path = materialized_path
         self.skip_fingerprint_verify = skip_fingerprint_verify
+        self.race_class_representation = race_class_representation
+        self.race_class_representation_: str | None = None
         # Feature 060: market-residual mode — devig log q of the TARGET race's own win odds
         # becomes the race-softmax offset; trees learn the residual. Intentionally reads
         # result-time (closing-leaning) odds, so the leaky-reference flag is set truthfully.
@@ -171,9 +183,16 @@ class LightGBMPredictor:
 
     # --- data (built once, reused across folds) ------------------------------
     def _ensure_data(self) -> TrainingMatrix:
+        if self.race_class_representation_ is None:
+            resolved = self.race_class_representation
+            if resolved is None:
+                resolved = feature_registry.RACE_CLASS_REPRESENTATION
+            assert resolved in REPRESENTATIONS
+            self.race_class_representation_ = resolved
         if self._data is None:
             full = build_training_matrix(
                 self.session,
+                representation=self.race_class_representation_,
                 use_materialized=self.use_materialized,
                 materialized_path=self.materialized_path,
                 skip_fingerprint_verify=self.skip_fingerprint_verify,
@@ -363,6 +382,8 @@ class LightGBMPredictor:
         self.fit_info_ = {
             "seed": self.seed,
             "objective": self.objective,
+            "race_class_representation": self.race_class_representation_,
+            "build_audit": dict(data.build_audit),
             "postprocess": (
                 "group_softmax"
                 if self.objective in WinModel.SOFTMAX_OBJECTIVES else "sigmoid"

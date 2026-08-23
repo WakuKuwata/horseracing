@@ -141,7 +141,7 @@ def test_feature_version_servability():
 
     # 058's compat story is checked against ITS version (features-016 pinned 014/015) explicitly.
     pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-016"]["features-015"]
-    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 018 = 069 F02
+    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 097/098 rejected+reverted (022/023 burned)
     # Feature 069: lgbm-063 (features-017) is servable under 018 via the additive compat pin.
     _pin017 = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-018"]["features-017"]
     assert is_feature_version_servable("features-017", _pin017, "features-018")
