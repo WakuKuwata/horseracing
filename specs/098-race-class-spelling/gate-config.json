@@ -1,0 +1,190 @@
+{
+  "_comment": "098 race_class 表記統一の採否ゲート。**実行前凍結**(hash は凍結時に gate-config.hash.txt に記録)。primary は擬似分裂シミュレーション(DB マスク不要・DataFrame 変換)。詳細は contracts/adoption-gate.md / research.md D5-D7。",
+  "_pre_registered_at": "2026-08-23 (frozen at T018; hash in gate-config.hash.txt)",
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "primary_regime": "simulated_spelling_split",
+  "simulation": {
+    "cutoffs": [
+      "2019-01-01",
+      "2021-01-01",
+      "2023-01-01"
+    ],
+    "scored_windows": [
+      [
+        "2020-01-01",
+        "2020-12-31"
+      ],
+      [
+        "2022-01-01",
+        "2022-12-31"
+      ],
+      [
+        "2024-01-01",
+        "2024-12-31"
+      ]
+    ],
+    "washout_years": 1,
+    "washout_measured": "cutoff+1y 時点でアーム A のモデルは分裂綴りを約 1 年分学習済み(実切替後 10 か月の近似)",
+    "estimand": "cost_of_split_vocabulary_under_retraining",
+    "train_regime": "fold 内で両アームとも各自の表現で再学習(保存モデル流用禁止)",
+    "split": "arm A: race_class に逆写像 {1勝→１勝, 2勝→２勝, 3勝→３勝} を race_date >= cutoff の行へ適用(DataFrame 変換・DB 不変)。arm B: canonical-v1 matrix の原本(シミュレーション窓の学習・採点行は JRA-VAN 期=生値が既に正準なので canonicalise は no-op)。表外(オープン/重賞/新馬/未勝利/Ｇ*)は両アームとも不変",
+    "arm_identity_assert": "INV-A1..A5(contracts/adoption-gate.md): race_class 以外の全列 check_exact 一致 / race_class の差異行は race_date>=cutoff ∧ 値∈{1勝,2勝,3勝} に限り差異行数>0 / paired diff 全 0 は abort / 差異行数と両アームの race_class 列 hash を記録 / 測定ごとに matrix 1 回構築(sim=canonical-v1・実窓=raw)+use_materialized=False+コピー(is not)+feature_cols 同一集合(drop 不使用)"
+  },
+  "arms": {
+    "candidate": "B: 正準表現(無変換)",
+    "active": "A: 同一 matrix のコピーに pseudo_split(cutoff) を適用",
+    "direction": "paired diff = B − A(負 = 正準が良い)",
+    "recipe": {
+      "objective": "pl_topk",
+      "kind": "oof_isotonic",
+      "n_oof_blocks": 8,
+      "params": {
+        "n_estimators": 900
+      },
+      "weight_mask_rate": 0.5,
+      "weight_mask_seed": 20260810,
+      "seed": 42
+    }
+  },
+  "min_effect_delta": 0.002,
+  "seed_noise": {
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "n_folds": 3,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)"
+  },
+  "guards": {
+    "real_direction": {
+      "mode": "evidence_of_harm",
+      "margin": 0.005,
+      "window_from": "2025-10-11",
+      "window_to": "実行時の DB 最新 race_date(verdict.json に window_to と race_set_hash を記録)",
+      "arms": "A = 生の実 matrix(取込どおり分裂) / B = canonicalise 適用コピー。両アーム fold 内再学習",
+      "rationale": "実窓は MDE≈0.009 で検出力不足のため成立は要求しない。方向不一致の安全弁",
+      "name": "guard_real_direction"
+    }
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2024-12-31",
+    "min_eval_days": 300,
+    "_comment": "assert_confirmatory に渡す envelope。scored_windows ⊂ envelope を driver で assert。実窓ガード guards.real_direction(2025-10-11+)は envelope 外だが設計どおり(実レジームの方向一致 guard)。",
+    "_min_eval_days_note": "pooled 3 窓の開催日は 097 実測 2020=109 / 2022=108 / 2024=106 = 323 日(同一カットオフ・同一採点窓)。300 に凍結。driver は pooled n_days >= min_eval_days を sufficiency として適用し、未満なら NO_DECISION(実行不能扱い=spec FR-007 優先順位 (1))。窓ごとの PairedReport.decision は参考値で転記しない。"
+  },
+  "power": {
+    "expected_n_races": 10350,
+    "expected_se": 0.0017,
+    "mde_80": 0.0048,
+    "target_effect": "未登録(null-is-success)。race_class はレース内定数で主効果が相殺されるため交互作用経由の小さな量と見込む"
+  },
+  "bootstrap": {
+    "b": 2000,
+    "seed": 20260822,
+    "block": "race_day",
+    "alpha": 0.05
+  },
+  "determinism": {
+    "tolerance": 1e-09,
+    "num_threads": 1
+  },
+  "verdict": {
+    "formula": "primary_pooled AND guard_real_direction AND transportable",
+    "no_decision": "評価実行不能、または transportability 不成立の場合のみ。個別カットオフの事後選別禁止(pooled が正本)",
+    "on_adopt": "表現(features-023・canonical-v1)の採用のみ。モデル昇格は標準窓非劣化+本 verdict+prospective の 3 点セットで別途。旧 active は compat(raw)で serve 継続",
+    "output_discipline": "primary・guard_real_direction・transportability の全成分を計算し終えるまで一切の効果数値を出力しない。guard の途中結果で primary の計算を中断・変更しない(verdict は全成分計算後に 1 回だけ評価)。",
+    "allowed": [
+      "ADOPT",
+      "REJECT",
+      "NO_DECISION(評価実行不能・充足未達、または primary∧guard 成立下での transportability 不成立)"
+    ],
+    "precedence": [
+      "1. 実行不能・充足未達(pooled n_days < eval_window.min_eval_days) -> NO_DECISION",
+      "2. primary_pooled AND guard_real_direction が不成立 -> REJECT(transportability は記録のみ・verdict を変えない)",
+      "3. 両方成立かつ transportable 不成立 -> NO_DECISION",
+      "4. 全成立 -> ADOPT"
+    ]
+  },
+  "artifact_isolation": {
+    "_comment": "本 verdict は『綴りを人工的に分裂させた』環境での表現採用の証拠であって、実データで学習した登録モデルの標準窓 verdict ではない。eligible_for_verdict=False で evaluate_promotion が構造的に拒否する(097 同型)。",
+    "verdict_kind": "counterfactual_spelling_simulation",
+    "feature_adoption_eligible_kinds": [
+      "counterfactual_spelling_simulation"
+    ],
+    "model_promotion_eligible_kinds": [
+      "full_walk_forward"
+    ],
+    "kinds": [
+      "counterfactual_spelling_simulation",
+      "counterfactual_supply_simulation",
+      "full_walk_forward",
+      "screening",
+      "smoke",
+      "remeasurement"
+    ]
+  },
+  "smoke": {
+    "_comment": "smoke は確認データの中間閲覧になりうる。事前登録外のカットオフを使い、効果の数値は stdout/JSON に出さない(配線・アーム同一性・JSON 形のみ検証)。容量は本節から読む(driver にハードコードしない)。",
+    "cutoff": "2016-01-01",
+    "scored_window": [
+      "2017-01-01",
+      "2017-12-31"
+    ],
+    "redact_effect_numbers": true,
+    "artifact_kind": "smoke",
+    "eligible_for_verdict": false,
+    "rounds": 50,
+    "n_oof_blocks": 2,
+    "b": 200
+  },
+  "recent_guard": {
+    "_comment": "pooled した互いに素な 3 窓(2020/2022/2024)を暦日で扱う。max_date=2024-12-31 基準で 3y 窓は 2022/2024 の採点日、5y 窓は 3 窓すべてを含む。疑似世界を跨ぐ pooled 上の evidence-of-harm 検査であり、現行レジームの証拠ではない。",
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005,
+    "max_date": "2024-12-31"
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "pooling": {
+    "_comment": "097 gate-config から継承: PairedReport は窓ごとのスカラしか露出しない。sub-gate に使う付随指標の集約規則を凍結。",
+    "winner_nll": "per-day diffs の union(互いに素)→ race-day cluster bootstrap → seed inflate(n_folds=3)",
+    "top2_top3_diff": "n_races 加重平均(厳密)",
+    "ece": "n_races 加重平均(equal-mass bin 境界が窓ごとに異なるため近似。ECE sub-gate は幅 0.001 の非劣性なので近似誤差は保守側に働かない点を開示)"
+  },
+  "transportability": {
+    "per_cutoff_sign": "各カットオフの点推定が pooled と同符号",
+    "leave_one_cutoff_out_sign": "1 本を除いた pooled の点推定が同符号(3 通り)",
+    "real_window_not_contradicting": "pooled<0 のとき実窓の標本 CI の ci_low <= 0(点推定の符号一致は要求しない=research D6)",
+    "on_fail": "NO_DECISION(primary_pooled AND guard_real_direction が成立しているときのみ。不成立なら REJECT が優先=verdict.precedence)"
+  },
+  "representation": {
+    "feature_version": "features-023",
+    "race_class_representation": "canonical-v1",
+    "table": {
+      "１勝": "1勝",
+      "２勝": "2勝",
+      "３勝": "3勝"
+    },
+    "compat_pin": {
+      "features-021": "663fe86c756428fca7411f23bb5f0a4eaa91926b067a0e0acc4a11d581da0f7a"
+    },
+    "dispatch": "artifact 主導・明示引数(registry 既定値を暗黙参照しない)。allowlist: (features-021, features-023) -> raw / (features-023, features-023) -> canonical-v1。それ以外は fail-closed(codex plan Q1/Q5)"
+  },
+  "evidence": {
+    "replay_fixed_model": "scripts/killtest_class_spelling.py: B−A = +0.02933 CI[+0.02538, +0.03331], 1,559 races / 94 days (lgbm-094-cap900 固定・再学習なし)。採否には使わない"
+  },
+  "diagnostics": {
+    "real_window_strata": "実窓 paired 差を『前走にリステッド/オープン歴の有無』『レース内 nk: 馬割合(0 / <50% / >=50%)』で層別して報告。**verdict に入れない**(報告のみ・codex plan Q2)"
+  }
+}
