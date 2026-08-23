@@ -29,7 +29,8 @@
     "estimand": "cost_of_split_vocabulary_under_retraining",
     "train_regime": "fold 内で両アームとも各自の表現で再学習(保存モデル流用禁止)",
     "split": "arm A: race_class に逆写像 {1勝→１勝, 2勝→２勝, 3勝→３勝} を race_date >= cutoff の行へ適用(DataFrame 変換・DB 不変)。arm B: canonical-v1 matrix の原本(シミュレーション窓の学習・採点行は JRA-VAN 期=生値が既に正準なので canonicalise は no-op)。表外(オープン/重賞/新馬/未勝利/Ｇ*)は両アームとも不変",
-    "arm_identity_assert": "INV-A1..A5(contracts/adoption-gate.md): race_class 以外の全列 check_exact 一致 / race_class の差異行は race_date>=cutoff ∧ 値∈{1勝,2勝,3勝} に限り差異行数>0 / paired diff 全 0 は abort / 差異行数と両アームの race_class 列 hash を記録 / 測定ごとに matrix 1 回構築(sim=canonical-v1・実窓=raw)+use_materialized=False+コピー(is not)+feature_cols 同一集合(drop 不使用)"
+    "arm_identity_assert": "INV-A1..A5(contracts/adoption-gate.md): race_class 以外の全列 check_exact 一致 / race_class の差異行は race_date>=cutoff ∧ 値∈{1勝,2勝,3勝} に限り差異行数>0 / paired diff 全 0 は abort / 差異行数と両アームの race_class 列 hash を記録 / 測定ごとに matrix 1 回構築(sim=canonical-v1・実窓=raw)+use_materialized=False+コピー(is not)+feature_cols 同一集合(drop 不使用)",
+    "_split_onset_note": "1勝/2勝/3勝 の名称は 2019-06-01 開始(それ以前は 500万/1000万/1600万 で変換表外)。したがってカットオフ 2019-01-01 の分裂は実質 2019-06-01 から始まり、2020 窓の washout は約 7 か月(2021/2023 は 1 年)。estimand の宣言としてここに記録する(verdict にも転記)。"
   },
   "arms": {
     "candidate": "B: 正準表現(無変換)",
@@ -124,11 +125,11 @@
     ]
   },
   "smoke": {
-    "_comment": "smoke は確認データの中間閲覧になりうる。事前登録外のカットオフを使い、効果の数値は stdout/JSON に出さない(配線・アーム同一性・JSON 形のみ検証)。容量は本節から読む(driver にハードコードしない)。",
-    "cutoff": "2016-01-01",
+    "_comment": "配線確認のみ。事前登録カットオフ(2019/2021/2023)外・採点窓(2020/2022/2024)と互いに素・効果の数値は redact。当初の 2016/2017 は『1勝/2勝/3勝 は 2019-06-01 以降にしか存在しない(それ以前は 500万/1000万/1600万)』ため学習データに分裂行が無く、INV-A3(両アーム同一)で abort した → 2020/2021 に再凍結(2026-08-23・主測定のパラメータは不変)。",
+    "cutoff": "2020-01-01",
     "scored_window": [
-      "2017-01-01",
-      "2017-12-31"
+      "2021-01-01",
+      "2021-12-31"
     ],
     "redact_effect_numbers": true,
     "artifact_kind": "smoke",
