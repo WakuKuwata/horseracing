@@ -74,7 +74,11 @@ def class_group(race_class) -> str:
         return "新馬"
     if "未勝利" in c:
         return "未勝利"
-    if "オープン" in c or "G1" in c or "G2" in c or "G3" in c or "OP" in c:
+    # `重賞` (12 races, e.g. アルテミスＳ) is the JRA-VAN feed naming the class instead of the
+    # grade. It is a graded stakes by definition, so filing it under 条件 described it as a
+    # conditioned race — the same way the missing NFKC once did for the whole graded era.
+    if ("オープン" in c or "G1" in c or "G2" in c or "G3" in c or "OP" in c
+            or "重賞" in c):
         return "OP系"
     return "条件"
 

@@ -33,6 +33,7 @@ import numpy as np
 
 from .bootstrap import race_day_cluster_bootstrap_ci_v1
 from .hashing import stable_hash
+from .segment_edge import class_group
 
 MASK_LIBRARY_VERSION = "sa-mask-v1"
 METRIC_CONTRACT_VERSION = "sa-v1"
@@ -91,15 +92,12 @@ def _assign_race_axis(axis_id: str, attrs: dict) -> str:
         return _band(a.get("distance"), [1401, 1801, 2201], ["<=1400", "<=1800", "<=2200", ">2200"])
     if axis_id == "race_class":
         rc = a.get("race_class")
-        if not rc:
-            return MISSING
-        if rc == "新馬":
-            return "新馬"
-        if rc == "未勝利":
-            return "未勝利"
-        if rc in ("ｵｰﾌﾟﾝ", "オープン", "OP(L)", "Ｇ３", "Ｇ２", "Ｇ１"):
-            return "OP系"
-        return "条件"
+        # 047's definition, not a second copy of it. The exact-match whitelist this replaces filed
+        # ＪＧ１/ＪＧ２/ＪＧ３ (187 graded jump races) under 条件, so "how does the model do on
+        # conditioned races" was reading a set that included graded stakes. `class_group` answers
+        # the same axis by NFKC + substring, which is what makes it survive a vocabulary that
+        # demonstrably moved at the source cutover (`1勝` → `１勝`, `ｵｰﾌﾟﾝ` → `オープン`).
+        return class_group(rc) if rc else MISSING
     if axis_id == "field_size_band":
         return _band(a.get("field_size"), [9, 14], ["<=8", "9-13", ">=14"])
     if axis_id == "venue_track":
