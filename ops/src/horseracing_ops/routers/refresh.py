@@ -58,7 +58,8 @@ def refresh_day(date: datetime.date, body: RefreshRequest | None = None,
     """Accept a day refresh and return 202 immediately. The worker discovers the day's races from
     netkeiba and fans out refresh_race children; poll the batch for progress. No netkeiba round-trip
     here (never block), and any date is accepted — discovery (not the DB) decides the race set."""
-    parent = enqueue_day_parent(session, date)
+    force = bool(body.force) if body else False
+    parent = enqueue_day_parent(session, date, force=force)
     return BatchAccepted(
         trace_id=parent.trace_id, status=parent.status,
         scope_value=parent.scope_value, poll_url=f"{API_PREFIX}/batches/{parent.trace_id}",

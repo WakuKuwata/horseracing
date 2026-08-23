@@ -271,4 +271,29 @@ describe("JobsPage", () => {
       new Set([...CAPTURE_ELIGIBILITY_REASONS, ...CAPTURE_ATTENTION_REASONS]),
     ).toEqual(new Set([...expected["適格"], ...expected["取得不可"]]));
   });
+
+  it("offers the job types the pipeline actually writes", async () => {
+    // The filter used to list "laps" (never produced here) while omitting the scrape sub-jobs —
+    // exactly the rows an operator needs when a day refresh reports 一部.
+    server.use(http.get(`${BASE}/jobs`, () => HttpResponse.json({ items: [] })));
+    renderWithProviders(<JobsPage />);
+
+    const select = (await screen.findAllByRole("combobox"))[1];
+    const options = Array.from(select.querySelectorAll("option")).map((o) => o.value);
+    for (const t of [
+      "refresh_race",
+      "refresh_day",
+      "refresh_range",
+      "entries",
+      "results",
+      "odds",
+      "exotic_quotes",
+      "horse_profile",
+      "predict",
+      "recommend",
+    ]) {
+      expect(options).toContain(t);
+    }
+    expect(options).not.toContain("laps");
+  });
 });

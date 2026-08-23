@@ -84,23 +84,47 @@ def _insert_ignore(session: Session, model, values: dict, pk: tuple[str, ...]) -
     session.execute(insert(model).values(**values).on_conflict_do_nothing(index_elements=list(pk)))
 
 
+#: `never_blank="*"` — protect every non-PK column the caller supplies, including ones added later.
+#: Naming the columns instead would silently drop protection the next time the values dict grows.
+NEVER_BLANK_ALL = "*"
+
+
 def _upsert(
     session: Session, model, values: dict, pk: tuple[str, ...],
     fill_if_null: tuple[str, ...] = (),
+    never_blank: tuple[str, ...] | str = (),
 ) -> None:
     """Upsert ``values``, overwriting on conflict.
 
-    Columns named in ``fill_if_null`` are instead COALESCEd: they populate a NULL but never
-    replace a value that is already there. Use it for fields netkeiba supplies opportunistically
-    (a page that stops showing one must not blank a good JRA-VAN value on the next re-scrape).
+    Two graduated protections, both COALESCE but in opposite directions:
+
+    * ``fill_if_null`` — populate a NULL, never replace a value that is already there. For a field
+      whose stored value outranks the scraped one.
+    * ``never_blank`` (or ``NEVER_BLANK_ALL``) — take the scraped value, EXCEPT when it is NULL, in
+      which case keep what is stored. This is the "a re-scrape may update a fact but may never
+      erase one" rule.
+
+    ``never_blank`` exists because a plain overwrite makes a degraded parse destructive. netkeiba
+    pages legitimately answer "nothing here" for a field they showed before (a layout change, a
+    different page variant for a settled race, a value not published yet), and the parser turns
+    that into None. Overwriting with it wipes good data — and does so silently, since nothing about
+    a NULL column says it was ever populated. That is not hypothetical: a repair that restored
+    `races.grade` for the graded races lost after the source cutover was ROLLED BACK for 77 rows by
+    an ordinary nightly entries re-fetch.
+
+    A field that genuinely changes (取消, a jockey swap, 計不 → an actual body weight) still
+    overwrites, because those arrive as values, not as NULL.
     """
     stmt = insert(model).values(**values)
+    protect_all = never_blank == NEVER_BLANK_ALL
     update_cols = {}
     for c in values:
         if c in pk:
             continue
         if c in fill_if_null:
             update_cols[c] = func.coalesce(getattr(model, c), getattr(stmt.excluded, c))
+        elif protect_all or c in never_blank:
+            update_cols[c] = func.coalesce(getattr(stmt.excluded, c), getattr(model, c))
         else:
             update_cols[c] = getattr(stmt.excluded, c)
     stmt = stmt.on_conflict_do_update(index_elements=list(pk), set_=update_cols)
@@ -128,7 +152,7 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
         "race_class": scraped.race.race_class, "race_name": scraped.race.race_name,
         "grade": scraped.race.grade, "post_time": scraped.race.post_time,
         "prize_money": scraped.race.prize_money,
-    }, ("race_id",), fill_if_null=("prize_money",))
+    }, ("race_id",), fill_if_null=("prize_money",), never_blank=NEVER_BLANK_ALL)
 
     # Feature 067: entries carry the horse/jockey/trainer NAME (and horse AGE), so identity
     # evidence is available here — resolve_entity can promote to canonical instead of minting a new
@@ -168,7 +192,7 @@ def upsert_entries(session: Session, scraped: ScrapedEntry) -> Counts:
             "weight": h.weight, "weight_diff": h.weight_diff, "jockey_weight": h.jockey_weight,
             "sex": h.sex, "age": h.age,
             "entry_status": h.entry_status or EntryStatus.STARTED,
-        }, ("race_id", "horse_id"))
+        }, ("race_id", "horse_id"), never_blank=NEVER_BLANK_ALL)
         c.written += 1
     return c
 

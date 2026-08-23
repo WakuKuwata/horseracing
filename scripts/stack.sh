@@ -109,6 +109,25 @@ start_one() {
   esac
 }
 
+# 停止要求のあと、実際にプロセスが消えるまで待つ。worker は SIGTERM を受けてから
+# 走行中ジョブを畳んでキューに戻して終了するので、消えるまで最大 10 数秒かかる。
+# 待たずに start へ進むと is_up がまだ true を返し「[skip] 既に稼働中」で起動を飛ばす
+# ——古いコードが動き続け、restart したつもりが無反映になる(このリポジトリで過去に
+# 実際に起きた事故と同じ形)。
+wait_gone() {
+  local c="$1" i=0
+  while is_up "$c" && [ "$i" -lt 40 ]; do sleep 0.5; i=$((i+1)); done
+  if is_up "$c"; then
+    echo "[warn] $c が 20 秒経っても停止しない。強制終了する" >&2
+    case "$c" in
+      worker) for pid in $(pgrep -f "horseracing_ops\.worker"); do kill -9 "$pid" 2>/dev/null; done ;;
+      *) local p; p="$(port_of "$c")"
+         [ -n "$p" ] && for pid in $(lsof -nP -iTCP:"$p" -sTCP:LISTEN -t); do kill -9 "$pid" 2>/dev/null; done ;;
+    esac
+    while is_up "$c" && [ "$i" -lt 60 ]; do sleep 0.5; i=$((i+1)); done
+  fi
+}
+
 stop_one() {
   local c="$1"
   case "$c" in
@@ -164,7 +183,8 @@ case "$cmd" in
     ;;
   restart)
     for c in "${targets[@]}"; do stop_one "$c"; done
-    sleep 2
+    # 固定 sleep ではなく実際に消えるまで待つ(worker の graceful shutdown は最大十数秒)
+    for c in "${targets[@]}"; do [ "$c" = "postgres" ] || wait_gone "$c"; done
     for c in "${targets[@]}"; do start_one "$c"; done
     ;;
   status)

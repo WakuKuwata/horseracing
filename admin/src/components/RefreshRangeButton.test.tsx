@@ -56,4 +56,19 @@ describe("RefreshRangeButton", () => {
     await userEvent.click(screen.getByRole("button", { name: "実行" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("range_too_wide");
   });
+
+  it("surfaces a TRANSPORT failure instead of sticking on 投入中…", async () => {
+    // ops service down / connection refused: openapi-fetch REJECTS rather than returning {error}.
+    // Without a catch the phase stayed "pending" and the control was disabled forever.
+    server.use(http.post(`${OPS}/refresh-range`, () => HttpResponse.error()));
+    renderWithProviders(
+      <RefreshRangeButton dateFrom="2025-01-05" dateTo="2025-01-05" label="この日を更新" />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "この日を更新" }));
+    await userEvent.click(screen.getByRole("button", { name: "実行" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toMatch(/失敗/);
+    expect(screen.queryByText("投入中…")).not.toBeInTheDocument();
+  });
 });

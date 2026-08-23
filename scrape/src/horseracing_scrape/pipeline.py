@@ -11,15 +11,15 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-from horseracing_db.enums import JobStatus, ResultStatus, Source
+from horseracing_db.enums import EntryStatus, JobStatus, ResultStatus, Source
 from horseracing_db.models import Horse, IngestionJob, Race, RaceHorse, RaceResult
 from horseracing_db.validation import is_valid_race_id
-from sqlalchemy import or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from . import SCRAPE_PARSER_VERSION, SURROGATE_PREFIX
 from .fetch import FetchRefused, PoliteFetcher
-from .models import NotYetPublished, ParseError, ScrapedRaceList
+from .models import NotYetPublished, ScrapedRaceList
 from .odds_adapter import fetch_win_odds
 from .parse._profile import parse_horse_pedigree, parse_horse_profile
 from .parse.entries import parse_entries
@@ -200,6 +200,35 @@ def _race_id_of(key) -> str | None:
                          nichime=key.nichime, race_no=key.race_no)
 
 
+def _win_odds_already_final(session: Session, race_id: str | None) -> bool:
+    """True when re-fetching this race's win odds could not change a single cell.
+
+    Once a race is settled, netkeiba's live odds endpoint stops serving group "1" at all, so the
+    request fails BY CONSTRUCTION — on this DB every one of the 314 recorded odds failures was a
+    race that already had its result. And a successful answer could not have helped either:
+    ``update_odds`` is fill-if-null on a settled race (it must never clobber a final value), so
+    with every started horse already priced there is no cell left to fill.
+
+    Testing it BEFORE the fetch is the point: the alternative only silences the status while still
+    spending one request per race per refresh out of a budget this project treats as scarce.
+
+    Deliberately narrow. A settled race with an UNPRICED starter still goes out and still fails
+    loudly, because that is a real gap — and it is also the shape a renamed JSON key would take,
+    which is exactly what the fail-loud rule exists to catch.
+    """
+    if race_id is None:
+        return False
+    n_started, n_priced = session.execute(
+        select(func.count(), func.count(RaceHorse.odds)).where(
+            RaceHorse.race_id == race_id,
+            RaceHorse.entry_status == EntryStatus.STARTED,
+        )
+    ).one()
+    if not n_started or n_started != n_priced:
+        return False
+    return bool(session.scalar(select(exists().where(RaceResult.race_id == race_id))))
+
+
 def scrape_odds(
     session: Session, *, urls: list[str], fetcher: PoliteFetcher, scope_value: str | None = None
 ) -> JobSummary:
@@ -211,6 +240,11 @@ def scrape_odds(
                 parts.append(Counts(skipped=1, error_messages=["no race_id in url"]))
                 continue
             race_id = m.group(1)
+            if _win_odds_already_final(session, race_id):
+                parts.append(Counts(skipped=1, error_messages=[
+                    f"win odds already final for {race_id} (settled, every starter priced) "
+                    f"— not re-requested"]))
+                continue
             # win-odds JSON, fetched no-cache (single-latest, constitution V) via the adapter
             try:
                 scraped = fetch_win_odds(fetcher, race_id)
@@ -459,13 +493,27 @@ def scrape_exotic_quotes(
                     parts.append(Counts(errors=1, error_messages=[
                         f"{race_id}/{bet_type}: {exc} — aborting the pass (source is refusing)"]))
                     return _aggregate(parts)
-                except ParseError as exc:
+                except NotYetPublished as exc:
                     # Not yet on sale. JRA opens combination pools well after the win pool: two
                     # days out the odds API answers status="NG" / "history odds empty" for
                     # type=4..8 while type=1 already carries win and place prices. That is the
                     # normal state for most of a race's life, so counting it as an error would
                     # leave every daily job PARTIAL and bury the failures that matter — which is
                     # exactly how the 080 piggyback stayed silently dead for five days.
+                    #
+                    # Only NotYetPublished lands here now. It used to be EVERY ParseError, so a
+                    # renamed key or a changed payload shape read as "not on sale" forever and the
+                    # whole exotic capture could retire without one failed job. Other ParseErrors
+                    # fall through to the handler below and count as errors.
+                    if _has_started(session, race_id, at=_now()):
+                        # By post time every pool is on sale, so an absent grid here is not "not
+                        # yet" — it is wrong. Recorded rather than raised (unlike win odds) so the
+                        # remaining bet types of this pass still land; c.errors makes the job
+                        # PARTIAL, which the batch aggregate now surfaces.
+                        parts.append(Counts(errors=1, error_messages=[
+                            f"{race_id}/{bet_type}: pools should be on sale by post time "
+                            f"but the grid is absent ({exc})"]))
+                        continue
                     parts.append(Counts(skipped=1,
                                         error_messages=[f"{race_id}/{bet_type}: not on sale yet "
                                                         f"({exc})"]))
