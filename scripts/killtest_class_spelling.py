@@ -43,13 +43,12 @@ from pathlib import Path
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
+from horseracing_db.session import create_db_engine
 from horseracing_features.builder import build_feature_matrix
 from horseracing_training.cond_logit import race_softmax
 from horseracing_training.target_encoding import apply_encoded_columns
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-
-from horseracing_db.session import create_db_engine
 
 OUT = Path("/Users/kuwatawaku/workspace/horseracing/out/class-spelling-killtest")
 MODEL = Path("/Users/kuwatawaku/workspace/horseracing/artifacts/model_versions/lgbm-094-cap900")

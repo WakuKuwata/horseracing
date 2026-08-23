@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from . import robots_cache
 from .fetch import HttpFetcher
 from .pipeline import (
+    complete_corner_orders,
     complete_profiles,
     discover_races,
     scrape_entries,
@@ -165,6 +166,19 @@ def main(argv: list[str] | None = None) -> int:
                  "(write-only archive, not a cache; disables --cache-dir)")
     cp.add_argument("--min-interval", type=float, default=1.0)
     cp.add_argument("--database-url", default=None)
+
+    cc = sub.add_parser("complete-corners",
+                        help="re-fetch result pages of finished races whose 通過順 is still NULL "
+                             "(race-night pages lack it; fill-NULL-only, 1 request per race)")
+    cc.add_argument("--race-id", action="append", default=None,
+                    help="JRA-VAN 12-digit race_id (repeat); omit to select by NULL corners")
+    cc.add_argument("--older-than-days", type=int, default=1,
+                    help="only races at least this many days old (source publishes corners later)")
+    cc.add_argument("--limit", type=int, default=None, help="max races this run")
+    cc.add_argument("--archive-dir", default=None,
+        help="gzip a copy of every fetched page here (write-only archive, not a cache)")
+    cc.add_argument("--min-interval", type=float, default=1.0)
+    cc.add_argument("--database-url", default=None)
 
     # ⑤ sectional lap backfill (034): by explicit race_id(s) or a date range of races missing laps
     eq = sub.add_parser(
@@ -334,6 +348,20 @@ def main(argv: list[str] | None = None) -> int:
             scope = (args.race_id[0] if args.race_id
                      else f"{args.from_ or '..'}..{args.to or '..'}")
             summary = scrape_laps(session, race_ids=race_ids, fetcher=fetcher, scope_value=scope)
+        print(
+            f"{summary.job_type}: status={summary.status} processed={summary.processed} "
+            f"written={summary.written} skipped={summary.skipped} errors={summary.errors}"
+        )
+        return 0 if summary.status != "failed" else 1
+
+    if args.command == "complete-corners":
+        fetcher = _fetcher_for(args, None)  # never a read-through cache: we WANT the fresh page
+        engine = create_db_engine(args.database_url)
+        with Session(engine) as session:
+            summary = complete_corner_orders(
+                session, fetcher=fetcher, older_than_days=args.older_than_days,
+                limit=args.limit, race_ids=args.race_id,
+            )
         print(
             f"{summary.job_type}: status={summary.status} processed={summary.processed} "
             f"written={summary.written} skipped={summary.skipped} errors={summary.errors}"

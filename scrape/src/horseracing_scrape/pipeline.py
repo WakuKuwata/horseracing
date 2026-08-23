@@ -11,8 +11,8 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-from horseracing_db.enums import JobStatus, Source
-from horseracing_db.models import Horse, IngestionJob, Race, RaceHorse
+from horseracing_db.enums import JobStatus, ResultStatus, Source
+from horseracing_db.models import Horse, IngestionJob, Race, RaceHorse, RaceResult
 from horseracing_db.validation import is_valid_race_id
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -44,6 +44,7 @@ from .urls import (
     horse_profile_url,
     race_db_url,
     race_list_url,
+    result_url,
 )
 from .venues import build_race_id
 
@@ -293,6 +294,10 @@ def discover_races(fetcher: PoliteFetcher, date: str) -> ScrapedRaceList:
     )
 
 
+class _PedigreeAlreadyKnown(Exception):
+    """Control-flow sentinel: the pedigree page was skipped because the row already has it."""
+
+
 def complete_profiles(
     session: Session, *, fetcher: PoliteFetcher,
     netkeiba_horse_ids: list[str] | None = None, race_id: str | None = None,
@@ -347,9 +352,20 @@ def complete_profiles(
             except Exception as exc:  # noqa: BLE001 — one bad page must not abort the pass
                 parts.append(Counts(processed=1, errors=1, error_messages=[str(exc)]))
                 continue
+            # The pedigree page is only worth a request while the pedigree is still unknown.
+            # Once sire/dam/damsire ids are on the row, a horse re-enters this pass only for a
+            # non-pedigree gap (owner/breeder were added to the selection in 1e0d0b4) — fetching
+            # the pedigree again would double the cost of that backfill (4,196 horses × 2 pages)
+            # for columns `complete_horse_profile` is not allowed to touch anyway (fill-NULL-only).
+            existing = session.get(Horse, horse_id)
+            pedigree_known = existing is not None and all(
+                getattr(existing, col) is not None for col in ("sire_id", "dam_id", "damsire_id")
+            )
             # pedigree lives on a separate server-rendered page; its failure must not drop the
             # identity we already have — merge what we can (Unknown pedigree stays None).
             try:
+                if pedigree_known:
+                    raise _PedigreeAlreadyKnown
                 sire, dam, damsire = parse_horse_pedigree(
                     fetcher.get(horse_pedigree_url(netkeiba_id)), netkeiba_id
                 )
@@ -359,6 +375,8 @@ def complete_profiles(
                     netkeiba_dam_id=dam[0], dam_name=dam[1],
                     netkeiba_damsire_id=damsire[0], damsire_name=damsire[1],
                 )
+            except _PedigreeAlreadyKnown:
+                pass  # no request made; identity/owner columns still get their fill-NULL pass
             except Exception as exc:  # noqa: BLE001 — pedigree optional; keep identity
                 # errors=1, not just a message: without it the job reports SUCCEEDED while
                 # `sire_id` stays NULL, so the horse re-enters the completion query and its
@@ -372,6 +390,43 @@ def complete_profiles(
 
     return _run_job(session, job_type="horse_profile", scope="surrogate_horses",
                     scope_value=str(limit) if limit is not None else None, work=work)
+
+
+def complete_corner_orders(
+    session: Session, *, fetcher: PoliteFetcher, older_than_days: int = 1,
+    limit: int | None = None, race_ids: list[str] | None = None,
+) -> JobSummary:
+    """Re-fetch the result page of finished races whose 通過順 is still NULL.
+
+    netkeiba publishes the finishing order on race night but adds the corner passing orders
+    later; a race ingested the same evening therefore has every `corner_orders` NULL, and the
+    results upsert is INSERT-ONLY for everything except that one cell (see backfill_results).
+    This pass costs ONE request per race and runs through the ordinary results path, so exotic
+    dividends on the same page are picked up too (0 extra requests).
+
+    ``older_than_days`` keeps the pass from re-fetching last night's races before the source
+    has had time to publish (default: at least one day old). An explicit ``race_ids`` list
+    bypasses the selection (operator repair of a known set)."""
+    if race_ids is None:
+        cutoff = datetime.date.today() - datetime.timedelta(days=older_than_days)
+        stmt = (
+            select(RaceResult.race_id)
+            .join(Race, Race.race_id == RaceResult.race_id)
+            .where(RaceResult.result_status == ResultStatus.FINISHED)
+            .where(RaceResult.corner_orders.is_(None))
+            .where(Race.race_date <= cutoff)
+            .group_by(RaceResult.race_id)
+            .order_by(RaceResult.race_id)
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        race_ids = list(session.scalars(stmt))
+    urls = [result_url(r) for r in race_ids if is_valid_race_id(r)]
+    if not urls:
+        return _run_job(session, job_type="results", scope="urls",
+                        scope_value="corner_completion:0", work=lambda: Counts())
+    return scrape_results(session, urls=urls, fetcher=fetcher,
+                          scope_value=f"corner_completion:{len(urls)}")
 
 
 def scrape_exotic_quotes(

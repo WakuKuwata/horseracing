@@ -9,21 +9,24 @@
   (1) 単独オラクル上限 = 固定モデル p を offset にしたレース内 softmax にセルダミーを足し
       winner NLL を in-sample 最小化
   (2) 既存軸に対する入れ子 = 既存軸セルの上に候補を積んだ増分
-  (3) 順列ヌル = 同じ自由度でラベルをシャッフルした過学習の床。実測Δが床(最良)を下回って初めて情報あり
+  (3) 順列ヌル = 同じ自由度でラベルをシャッフルした過学習の床。
+      実測Δが床(最良)を下回って初めて情報あり
 
 候補軸(全て strictly-before の過去走のみ。今走のオッズ・結果は不使用):
   C1 同格以上での支持    = 過去走のうち class_rank >= 今走 のレースの s 平均(該当無しは別セル)
   C2 格下での支持        = 過去走のうち class_rank <  今走 のレースの s 平均
   C3 前走支持 × 前走格差 = s_last のビン × (今走 − 前走 class_rank) の 昇/同/降
   C4 直近5走支持 × 平均格差 = s_mean5 のビン × 直近5走の平均 class_rank − 今走 のビン
-  C5 格調整支持          = 直近5走の mean(s + γ·(cls_past − cls_today)) を γ∈{0.5,1.0} で(粗い連続補正)
+  C5 格調整支持          = 直近5走の mean(s + γ·(cls_past − cls_today)) を γ∈{0.5,1.0} で
+                           (粗い連続補正)
 
 既存軸(入れ子の参照):
   ref1 = s_mean5 ビン × 直近5走の class_rank 平均ビン          (= 069 + 056 asof_prize_avg 相当)
   ref2 = ref1 × class_transition(今走 − 前走)の 昇/同/降           (= 020 class_transition 相当)
 
 使い方:
-    cd training && uv run python ../scripts/killtest_class_support.py [--model lgbm-058-acc] [--n-null 8]
+    cd training && uv run python ../scripts/killtest_class_support.py \
+        [--model lgbm-058-acc] [--n-null 8]
 """
 
 from __future__ import annotations
@@ -39,7 +42,8 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from screen_axes import DB, Oracle as _Oracle  # noqa: E402
+from screen_axes import DB  # noqa: E402
+from screen_axes import Oracle as _Oracle
 
 
 class Oracle(_Oracle):
@@ -87,7 +91,8 @@ class AdditiveOracle(Oracle):
         codes, sizes = [], []
         for ax in axes:
             c, u = pd.factorize(pd.Series(ax).astype(str))
-            codes.append(c.astype(np.intp)); sizes.append(len(u))
+            codes.append(c.astype(np.intp))
+            sizes.append(len(u))
         offs = np.cumsum([0, *sizes[:-1]])
         K = int(sum(sizes))
         rid, nR, lp, iswin = self.rid, self.nR, self.lp, self.iswin
@@ -95,14 +100,18 @@ class AdditiveOracle(Oracle):
 
         def fg(b):
             s = lp.copy()
-            for c, o in zip(codes, offs):
+            for c, o in zip(codes, offs, strict=True):
                 s += b[o + c]
-            m = np.full(nR, -np.inf); np.maximum.at(m, rid, s)
-            e = np.exp(s - m[rid]); den = np.zeros(nR); np.add.at(den, rid, e)
+            m = np.full(nR, -np.inf)
+            np.maximum.at(m, rid, s)
+            e = np.exp(s - m[rid])
+            den = np.zeros(nR)
+            np.add.at(den, rid, e)
             sm = e / den[rid]
             g = np.zeros(K)
-            for c, o in zip(codes, offs):
-                np.add.at(g, o + c[iswin], -1.0); np.add.at(g, o + c, sm)
+            for c, o in zip(codes, offs, strict=True):
+                np.add.at(g, o + c[iswin], -1.0)
+                np.add.at(g, o + c, sm)
             return -np.sum(np.log(sm[iswin])) / nrace, g / nrace
 
         from scipy.optimize import minimize
@@ -223,7 +232,8 @@ def asof_axes(d: pd.DataFrame, runs: pd.DataFrame) -> pd.DataFrame:
     cols = {k: [] for k in (
         "n_obs", "s_last", "s_mean5", "cls_last", "cls_mean5",
         "s_ge", "n_ge", "s_lt", "n_lt", "s_adj05", "s_adj10", "s_career")}
-    for h, dt, cls_today in zip(d["horse_id"], d["race_date"].to_numpy(), d["cls"]):
+    for h, dt, cls_today in zip(d["horse_id"], d["race_date"].to_numpy(), d["cls"],
+                                strict=True):
         rec = hist.get(h)
         if rec is None:
             k = 0
@@ -275,7 +285,8 @@ def main() -> None:
     d = asof_axes(load_targets(a.model), runs)
     print(f"model={a.model} rows={len(d)} races={d['race_id'].nunique()} "
           f"{d['race_date'].min().date()}..{d['race_date'].max().date()}")
-    print(f"支持履歴あり {np.mean(d['n_obs'] > 0):.1%} / 同格以上の過去走あり {np.mean(d['n_ge'] > 0):.1%} "
+    print(f"支持履歴あり {np.mean(d['n_obs'] > 0):.1%} / "
+          f"同格以上の過去走あり {np.mean(d['n_ge'] > 0):.1%} "
           f"/ 格下の過去走あり {np.mean(d['n_lt'] > 0):.1%}")
     print("今走 class_rank 分布:", d.groupby("cls")["race_id"].nunique().to_dict(), "\n")
 
@@ -319,7 +330,8 @@ def main() -> None:
         res["nested_ref2"][k] = o.screen("+ " + k, v, nested=ref2, n_null=a.n_null, rng=rng)
     # 決定打: ref2 にクラス無視の支持集約(対照 T1/T2)まで積んだ上で、C1 がなお残るか
     ref3 = ref2 + "|" + _b(d["s_career"], S) + "|" + _b(d["s_last"], S)
-    print("\n--- 入れ子 ref3(ref2×全過去走支持×前走支持 = クラス無視の支持集約を全部含む)の上に積む ---")
+    print("\n--- 入れ子 ref3(ref2×全過去走支持×前走支持 = クラス無視の支持集約を全部含む)"
+          "の上に積む ---")
     res["nested_ref3"] = {}
     for k in ("C1 同格以上での支持", "C2 格下での支持", "C5a 格調整支持 γ=0.5"):
         res["nested_ref3"][k] = o.screen("+ " + k, cand[k], nested=ref3, n_null=a.n_null, rng=rng)
@@ -330,7 +342,8 @@ def main() -> None:
     refA = [_b(d["s_mean5"], S), _b(d["cls_mean5"], C), _gap3(d["gap_last"]),
             _b(d["s_career"], S), _b(d["s_last"], S), d["cls"].astype(int).astype(str)]
     refA_nll, refA_k = ao.fit_add(refA)
-    print(f"\n--- 加法オラクル: 参照 K={refA_k} Δ={refA_nll - ao.base:+.6f}(主効果の和)の上に候補の主効果を積む ---")
+    print(f"\n--- 加法オラクル: 参照 K={refA_k} Δ={refA_nll - ao.base:+.6f}(主効果の和)"
+          "の上に候補の主効果を積む ---")
     res["additive"] = {}
     for k, v in cand.items():
         if k.startswith("T"):

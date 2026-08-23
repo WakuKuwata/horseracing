@@ -73,6 +73,76 @@ def test_complete_profiles_never_clobbers_existing(session):
     assert horse.sire_id == "nk:2005103461"  # NULL column still filled
 
 
+_PROFILE_WITH_PARTIES = """
+<div class="horse_title"><h1>サラブレッド</h1><p class="txt_01">現役 牡4歳 鹿毛</p></div>
+<table class="db_prof_table">
+  <tr><th>生年月日</th><td>2020年4月1日</td></tr>
+  <tr><th>馬主</th><td>テスト牧場HD</td></tr>
+  <tr><th>生産者</th><td>テスト生産牧場</td></tr>
+</table>
+"""
+
+
+def test_pedigree_page_is_not_fetched_when_pedigree_already_known(session):
+    """A horse that re-enters the pass only for owner/breeder (1e0d0b4) must cost ONE request:
+    the fixture deliberately has no pedigree page, so a fetch attempt would surface as an error."""
+    session.add(Horse(horse_id="nk:2020100000", horse_name="サラブレッド", data_source="netkeiba",
+                      sex="牡", birth_year=2020,
+                      sire_id="nk:2005103461", sire_name="父サイアー",
+                      dam_id="nk:2010104000", dam_name="母",
+                      damsire_id="nk:2000100000", damsire_name="母父"))
+    session.commit()
+
+    fetcher = FixtureFetcher({horse_profile_url("2020100000"): _PROFILE_WITH_PARTIES})
+    summary = complete_profiles(session, fetcher=fetcher, netkeiba_horse_ids=["2020100000"])
+
+    assert summary.status == JobStatus.SUCCEEDED
+    assert summary.errors == 0          # no pedigree request was attempted
+    assert summary.written == 1
+    horse = session.get(Horse, "nk:2020100000")
+    assert horse.owner_name == "テスト牧場HD"
+    assert horse.breeder_name == "テスト生産牧場"
+    assert horse.sire_id == "nk:2005103461"  # untouched
+
+
+def test_pedigree_page_is_still_fetched_when_pedigree_unknown(session):
+    """Guard must not regress the original path: unknown pedigree -> both pages -> filled."""
+    session.add(Horse(horse_id="nk:2020100000", horse_name="サラブレッド", data_source="netkeiba",
+                      sire_id="nk:2005103461"))  # partial: dam/damsire still NULL
+    session.commit()
+
+    summary = complete_profiles(session, fetcher=_fetcher("2020100000"),
+                                netkeiba_horse_ids=["2020100000"])
+    assert summary.errors == 0
+    horse = session.get(Horse, "nk:2020100000")
+    assert horse.dam_id == "nk:2010104000" and horse.damsire_id == "nk:2000100000"
+
+
+def test_bloodline_line_is_derived_from_existing_horses(session):
+    """sire_line/damsire_line never come from netkeiba; they are a function of the sire NAME in
+    the horses we already hold, so profile completion derives them locally (zero requests)."""
+    session.add(Horse(horse_id="2015100001", horse_name="既存産駒", data_source="jra_van",
+                      sire_name="父サイアー", sire_line="サンデーサイレンス系",
+                      damsire_name="母父", damsire_line="ノーザンダンサー系"))
+    session.add(Horse(horse_id="2015100002", horse_name="別の産駒", data_source="jra_van",
+                      sire_name="曖昧な父", sire_line="A系"))
+    session.add(Horse(horse_id="2015100003", horse_name="また別の産駒", data_source="jra_van",
+                      sire_name="曖昧な父", sire_line="B系"))
+    session.add(Horse(horse_id="nk:2020100000", horse_name="サラブレッド", data_source="netkeiba"))
+    session.add(Horse(horse_id="nk:2020100001", horse_name="曖昧な子", data_source="netkeiba",
+                      sire_name="曖昧な父", sire_id="nk:1", dam_id="nk:2", damsire_id="nk:3"))
+    session.commit()
+
+    complete_profiles(session, fetcher=_fetcher("2020100000"), netkeiba_horse_ids=["2020100000"])
+    horse = session.get(Horse, "nk:2020100000")
+    assert horse.sire_line == "サンデーサイレンス系"       # derived via 父サイアー
+    assert horse.damsire_line == "ノーザンダンサー系"      # derived via 母父
+
+    complete_profiles(session, fetcher=FixtureFetcher({horse_profile_url("2020100001"): _PROFILE}),
+                      netkeiba_horse_ids=["2020100001"])
+    assert session.get(Horse, "nk:2020100001").sire_line is None  # ambiguous name -> never guessed
+
+
 def test_complete_profiles_skips_horse_not_in_db(session):
     summary = complete_profiles(
         session, fetcher=_fetcher("2020109999"), netkeiba_horse_ids=["2020109999"]

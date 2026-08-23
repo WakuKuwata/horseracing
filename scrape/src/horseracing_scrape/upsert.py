@@ -352,6 +352,20 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
                 corner_orders=list(row.corner_orders) if row.corner_orders else None,
             ).on_conflict_do_nothing(index_elements=["race_id", "horse_id"])
         )
+        # corner_orders fill-NULL-only. The result page fetched on race night carries the
+        # finishing order and times but NOT yet the 通過順 (measured 2026-07/08: rows created the
+        # same night were 100% NULL, rows fetched days later 0%); with the insert above being
+        # INSERT-ONLY that gap never closed, and corner_trajectory/position_style/pace_scenario
+        # as-of features were silently starving. Only the NULL cell is filled — finish_order /
+        # status / times stay whatever was inserted first (JRA-VAN rows are never clobbered, and a
+        # JRA-VAN row already has its corners so this never matches one).
+        if row.corner_orders:
+            session.execute(
+                update(RaceResult)
+                .where(RaceResult.race_id == race_id, RaceResult.horse_id == horse_id,
+                       RaceResult.corner_orders.is_(None))
+                .values(corner_orders=list(row.corner_orders))
+            )
         # B: fill-if-null derived 脚質 (never clobbers a JRA-VAN running_style)
         style = _derive_running_style(row.corner_orders, field_size)
         if style is not None:
@@ -363,6 +377,18 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
             )
         c.written += 1
     return c
+
+
+def bloodline_for(session: Session, *, line_col: str, name_col: str, name: str) -> str | None:
+    """The single bloodline line recorded for ``name`` among horses that already carry one.
+
+    Returns None when the name is unknown OR maps to more than one distinct line (ambiguous —
+    never pick one). Exact-name match on purpose: a looser match would be a guess."""
+    line_attr, name_attr = getattr(Horse, line_col), getattr(Horse, name_col)
+    lines = list(session.scalars(
+        select(line_attr).where(name_attr == name, line_attr.isnot(None)).distinct()
+    ))
+    return lines[0] if len(lines) == 1 else None
 
 
 # --- horse profile completion (leak-safe, opt-in) ---------------------------
@@ -405,6 +431,17 @@ def complete_horse_profile(
         if value is not None and getattr(horse, col) is None:
             setattr(horse, col, value)
             changed = True
+    # Bloodline LINES (sire_line/damsire_line, categorical model inputs since 056) only ever came
+    # from the JRA-VAN CSV, so every netkeiba horse had them NULL. The line is a pure function of
+    # the sire's name in the data we already hold (1,679 sires, none with two lines), so derive it
+    # locally — zero requests — and refuse the rare ambiguous name rather than guess.
+    for line_col, name_col in (("sire_line", "sire_name"), ("damsire_line", "damsire_name")):
+        if getattr(horse, line_col) is None and getattr(horse, name_col):
+            line = bloodline_for(session, line_col=line_col, name_col=name_col,
+                                 name=getattr(horse, name_col))
+            if line is not None:
+                setattr(horse, line_col, line)
+                changed = True
     if changed:
         c.written += 1
     else:
