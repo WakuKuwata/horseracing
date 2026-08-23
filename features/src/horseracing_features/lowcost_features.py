@@ -80,12 +80,33 @@ def _prev_started(runs: pd.DataFrame, targets: pd.DataFrame, attr: str) -> pd.Da
 
 def _recent_rate(runs: pd.DataFrame, targets: pd.DataFrame, by: str, hit: str, out: str,
                  n: int) -> pd.DataFrame:
-    fin = runs[runs["is_finished"] == 1].sort_values([by, "race_date"], kind="stable").copy()
+    """Rolling last-``n`` hit rate per cross-entity key, as of strictly before the target day.
+
+    The sort key must be a TOTAL order. Sorting by ``[by, race_date]`` alone leaves same-day rows
+    in whatever order ``read_sql`` returned (neither race_horses nor race_results is loaded with
+    an ORDER BY), and a jockey rides 4.11 finished mounts per race-day on average — so a 20-mount
+    window almost always ends mid-day and its oldest rows are chosen arbitrarily. Measured on the
+    real DB by rebuilding with the input rows shuffled: 12.21% of rows changed, by up to 0.15 on
+    a rate whose mean is ~0.08. Nothing detected it, because the in-process parity tests compare
+    two builds from the SAME load, and PostgreSQL returns a stable heap order until rows are
+    rewritten — which entries/odds upserts do routinely.
+
+    ``race_id`` is also the right order on the merits: it encodes venue + race number, so within
+    a day it follows the actual running order. ``horse_id`` only makes the order total in the
+    face of a duplicated entry row; it costs nothing and removes the last tie.
+    """
+    order = [by, "race_date", "race_id", "horse_id"]
+    fin = runs[runs["is_finished"] == 1].sort_values(order, kind="stable").copy()
     fin[out] = fin.groupby(by, sort=False)[hit].transform(
         lambda s: s.rolling(n, min_periods=1).mean()
     )
-    t = targets.sort_values("race_date", kind="stable")
-    return pd.merge_asof(t, fin[[by, "race_date", out]].sort_values("race_date", kind="stable"),
+    t = targets.sort_values(["race_date", "race_id", "horse_id"], kind="stable")
+    # merge_asof takes the LAST right row at or before the key, so the right frame needs the same
+    # total order: with ties it would otherwise pick an arbitrary mount from the last prior day.
+    right = fin[[by, "race_date", "race_id", out]].sort_values(
+        ["race_date", "race_id"], kind="stable"
+    )
+    return pd.merge_asof(t, right.drop(columns=["race_id"]),
                          on="race_date", by=by, direction="backward", allow_exact_matches=False)
 
 
