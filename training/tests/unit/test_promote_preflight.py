@@ -67,6 +67,81 @@ def test_missing_metadata_is_caught(tmp_path):
                for p in _artifact_problems(row, current_fv=FEATURE_VERSION))
 
 
+# --- 昇格前確認と serving の判定が食い違わないこと(2026-08-23) --------------------------------
+#
+# 実害の記録: 昇格前確認は hash 一致だけで通していたのに、serving の loader は
+# 「hash 一致 **かつ** feature_version 一致」を要求していた。feature_hash は列名の並びしか
+# 見ないので、列名を変えずに値の意味だけ変える bump(017 の class_transition/track_type、
+# 098 の race_class 正準化)では hash が動かない。結果、古い版を名乗る artifact が昇格を通り、
+# 直後に loader に蹴られて本番の予測が全件停止した(2026-07: predict ジョブ 37/37 失敗)。
+
+def test_hash_matches_but_feature_version_is_older_is_caught(tmp_path):
+    """列名 hash は一致するが版が古い artifact = 値の意味が違う。昇格させてはならない。
+
+    これがドリフトの本体。旧実装は hash 一致だけを見ていたのでここを素通りさせた。
+    """
+    row = _artifact(tmp_path, fv="features-018")  # fh は現行の正しい hash のまま
+    problems = _artifact_problems(row, current_fv=FEATURE_VERSION)
+    assert any("feature schema が serving に乗らない" in p for p in problems)
+
+
+def test_metadata_without_a_feature_hash_is_caught(tmp_path):
+    """hash 欠落 + 未 pin の版。旧 loader は None != None が False で素通りさせていた。"""
+    d = tmp_path / "mv"
+    d.mkdir(exist_ok=True)
+    (d / "model.txt").write_text("x")
+    (d / "calibrator.pkl").write_text("x")
+    (d / "metadata.json").write_text(json.dumps({"feature_version": "features-999"}))
+    row = _Row(str(d / "model.txt"), str(d / "calibrator.pkl"))
+    assert any("feature schema が serving に乗らない" in p
+               for p in _artifact_problems(row, current_fv=FEATURE_VERSION))
+
+
+def test_preflight_and_serving_agree_on_every_case():
+    """昇格前確認と serving が同一述語を使っていることを、境界ケースで機械的に固定する。
+
+    片方だけ直しても緑にならないよう、**serving の分岐を再実装せず** resolve_servability の
+    結果そのものを表明する。ここが割れたら、割れた瞬間に落ちる。
+    """
+    from horseracing_training.artifacts import resolve_servability
+
+    current = feature_hash(model_input_features())
+    cases = {
+        # (trained_fv, trained_hash) -> servable であるべきか
+        (FEATURE_VERSION, current): True,        # exact
+        ("features-018", current): False,        # 同一列名・別版 = 値の意味が違う(本ドリフト)
+        (FEATURE_VERSION, "deadbeef" * 8): False,  # 同一版・列 subset(drop_features ablation)
+        ("features-999", "deadbeef" * 8): False,   # 未知の版
+        ("features-999", None): False,             # hash 欠落 + 未 pin(None == None の穴)
+    }
+    for (fv, fh), expected in cases.items():
+        assert resolve_servability(fv, fh).servable is expected, (fv, fh)
+
+    # exact は「hash 一致 かつ 版一致」の両方を要求する(片方だけでは compat 扱い/不可)
+    assert resolve_servability(FEATURE_VERSION, current).exact is True
+    assert resolve_servability("features-018", current).exact is False
+
+
+def test_a_genuinely_pinned_prior_version_still_passes():
+    """厳しくした結果 compat 経路(= rollback 経路)を潰していないことを示す。
+
+    pin 表の実値をそのまま引く。「厳しくした」だけを固定して「通るべきものが通る」を
+    固定しないと、rollback できない状態に静かに縛られる。
+    """
+    from horseracing_features.registry import COMPATIBLE_PRIOR_FEATURE_VERSIONS
+
+    from horseracing_training.artifacts import resolve_servability
+
+    pins = COMPATIBLE_PRIOR_FEATURE_VERSIONS.get(FEATURE_VERSION) or {}
+    assert pins, f"{FEATURE_VERSION} に compat pin が 1 件も無い(この表明の前提が崩れている)"
+    for prior_fv, pinned_hash in pins.items():
+        v = resolve_servability(prior_fv, pinned_hash)
+        assert v.servable is True, prior_fv      # compat 経路で serve できる
+        assert v.exact is False, prior_fv        # ただし exact ではない(列を選択して読む)
+        # pin された版でも hash が違えば閉じる(pin は版ではなく hash に対して効く)
+        assert resolve_servability(prior_fv, "deadbeef" * 8).servable is False, prior_fv
+
+
 # --- 昇格記録の組み立て(2026-08-18) ---------------------------------------------------------
 
 def _record(basis="v3_verdict", **over):

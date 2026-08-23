@@ -25,6 +25,7 @@ from horseracing_features.race_class_canon import REPRESENTATIONS, SPLIT_TOKENS
 from horseracing_training.artifacts import (
     categorical_vocab_from_booster,
     feature_hash,
+    resolve_servability,
     vocab_hash,
 )
 from horseracing_training.dataset import CATEGORICAL_FEATURES
@@ -274,12 +275,22 @@ def load_serving_model(
     # Compat path (Feature 058, 案C'): an OLDER version whose columns are an additive subset of the
     # current registry may serve by selecting its own columns — allowed only for a parity-tested
     # transition (is_feature_version_servable) with subset+integrity enforced in _load_preprocessor.
-    current_hash = feature_hash(model_input_features())
     model_hash = metadata.get("feature_hash")
     model_fv = metadata.get("feature_version", "")
-    exact = model_hash == current_hash and model_fv == FEATURE_VERSION
-    compat_pin = COMPATIBLE_PRIOR_FEATURE_VERSIONS.get(FEATURE_VERSION, {}).get(model_fv)
-    if not exact and compat_pin != model_hash:
+    # ONE predicate, shared with training.promote's preflight (artifacts.resolve_servability).
+    # The two used to be written out separately and drifted: the preflight accepted on hash
+    # equality alone, so an artifact this loader rejects could still be promoted to ACTIVE and
+    # take every prediction down. The inline pin lookup that used to live here also passed an
+    # artifact whose metadata carried NO feature_hash against an unpinned version (None != None
+    # is False); is_feature_version_servable requires a real pinned match, so that is closed now.
+    verdict = resolve_servability(
+        model_fv, model_hash,
+        current_fv=FEATURE_VERSION,
+        current_hash=feature_hash(model_input_features()),
+        compat_table=COMPATIBLE_PRIOR_FEATURE_VERSIONS,
+    )
+    exact = verdict.exact
+    if not verdict.servable:
         raise ServingError(
             f"feature_hash mismatch for '{mv_name}': trained {model_fv!r} not servable under "
             f"current {FEATURE_VERSION!r} (no parity-tested compatibility for this hash)"

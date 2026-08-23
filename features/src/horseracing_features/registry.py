@@ -447,7 +447,8 @@ COMPATIBLE_PRIOR_FEATURE_VERSIONS: dict[str, dict[str, str]] = {
 
 
 def is_feature_version_servable(
-    trained_fv: str, trained_hash: str | None = None, current_fv: str = FEATURE_VERSION
+    trained_fv: str, trained_hash: str | None = None, current_fv: str = FEATURE_VERSION,
+    *, compat_table: dict[str, dict[str, str]] | None = None,
 ) -> bool:
     """True only if a model trained on an OLDER, parity-tested feature version may be served under
     ``current_fv`` via the compat path.
@@ -459,7 +460,8 @@ def is_feature_version_servable(
     it did before Feature 058. An older version holds only via an explicit
     COMPATIBLE_PRIOR_FEATURE_VERSIONS entry whose PINNED hash equals ``trained_hash``.
     """
-    pinned = COMPATIBLE_PRIOR_FEATURE_VERSIONS.get(current_fv, {}).get(trained_fv)
+    table = COMPATIBLE_PRIOR_FEATURE_VERSIONS if compat_table is None else compat_table
+    pinned = table.get(current_fv, {}).get(trained_fv)
     return pinned is not None and trained_hash == pinned
 
 #: identifier columns present in the matrix but NOT model features.

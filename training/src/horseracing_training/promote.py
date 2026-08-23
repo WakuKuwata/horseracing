@@ -56,12 +56,7 @@ def _artifact_problems(row: ModelVersion, *, current_fv: str) -> list[str]:
     「ファイルが無い」「feature schema が合わない」という、切り替えた瞬間に本番の予測が
     止まる類の事故([[model-artifact-outlived-by-row]] の実例)。
     """
-    from horseracing_features.registry import (
-        is_feature_version_servable,
-        model_input_features,
-    )
-
-    from .artifacts import feature_hash
+    from .artifacts import resolve_servability
 
     problems: list[str] = []
     for label, uri in (("weights_uri", row.weights_uri), ("calibrator_uri", row.calibrator_uri)):
@@ -82,14 +77,15 @@ def _artifact_problems(row: ModelVersion, *, current_fv: str) -> list[str]:
     meta = json.loads(meta_path.read_text())
     trained_fv = meta.get("feature_version")
     trained_hash = meta.get("feature_hash")
-    current_hash = feature_hash(model_input_features())
-    if trained_hash == current_hash:
-        return problems  # serving の exact 経路
-    if is_feature_version_servable(trained_fv, trained_hash, current_fv):
-        return problems  # serving の compat 経路(pin 済み)
+    # serving と**同じ述語**を呼ぶ(artifacts.resolve_servability)。ここを書き下すと必ず
+    # ずれる: 以前は hash 一致だけで通していたので、feature_version が古い artifact が昇格を
+    # 通過し、直後に loader に蹴られて本番の予測が全件止まった(2026-07, predict 37/37 失敗)。
+    verdict = resolve_servability(trained_fv, trained_hash, current_fv=current_fv)
+    if verdict.servable:
+        return problems
     problems.append(
         f"feature schema が serving に乗らない: trained {trained_fv}/{(trained_hash or '')[:12]} "
-        f"vs current {current_fv}/{current_hash[:12]}(exact でも compat pin でもない)"
+        f"vs current {current_fv}/{verdict.current_hash[:12]}(exact でも compat pin でもない)"
     )
     return problems
 

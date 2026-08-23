@@ -15,7 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pickle
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from horseracing_db.enums import AdoptionStatus
@@ -83,6 +83,66 @@ def vocab_hash(vocab: dict[str, list[str]]) -> str:
 
 def feature_hash(feature_cols: list[str]) -> str:
     return hashlib.sha256("|".join(feature_cols).encode()).hexdigest()
+
+
+@dataclass(frozen=True)
+class Servability:
+    """Whether an artifact's feature schema may be served under the current registry.
+
+    ``exact``   — the artifact IS the current schema (fast path, no column selection needed).
+    ``servable`` — exact, or an older version explicitly pinned in
+                   ``COMPATIBLE_PRIOR_FEATURE_VERSIONS`` with a matching hash (compat path).
+    """
+
+    exact: bool
+    servable: bool
+    current_hash: str
+
+
+def resolve_servability(
+    trained_fv: str | None,
+    trained_hash: str | None,
+    *,
+    current_fv: str | None = None,
+    current_hash: str | None = None,
+    compat_table: dict[str, dict[str, str]] | None = None,
+) -> Servability:
+    """THE servability predicate. Every caller must go through this one function.
+
+    Two places used to implement this independently — the real gate in
+    ``serving.model_loader.load_serving_model`` and the preflight in
+    ``training.promote._artifact_problems`` — and they DRIFTED: the preflight accepted an
+    artifact on hash equality alone, while the loader also requires the feature_version to
+    match. An artifact with the current column names but an older ``feature_version`` therefore
+    passed promotion and was rejected by the loader seconds later, stopping every prediction
+    (2026-07: 37/37 predict jobs failed). Sharing one predicate is what keeps that closed.
+
+    Why ``exact`` needs BOTH conditions: ``feature_hash`` covers only the ordered column NAMES,
+    never their value semantics. A same-column, value-CHANGING bump (Feature 017 changed
+    class_transition/track_type values; Feature 098 canonicalises race_class) leaves the hash
+    identical, so hash equality alone would feed an old model inputs it was never trained on.
+
+    Why a same-version hash MISMATCH stays closed: a ``drop_features`` ablation build carries the
+    current ``feature_version`` but a subset column set. ``is_feature_version_servable``
+    deliberately does not special-case ``trained_fv == current_fv`` (see its docstring), so such
+    an artifact is not servable — and this function must not soften that.
+    """
+    from horseracing_features.registry import (
+        FEATURE_VERSION,
+        is_feature_version_servable,
+        model_input_features,
+    )
+
+    # 「現在の世界」は 3 つとも注入できる。serving は自分の module 名前空間の値を渡す:
+    # そこを registry から直に読むと、loader の名前を差し替えるテストや将来の間接化を
+    # 素通りしてしまい、共有したはずの述語が呼び出し元と違う世界を見ることになる。
+    fv = FEATURE_VERSION if current_fv is None else current_fv
+    chash = feature_hash(model_input_features()) if current_hash is None else current_hash
+    exact = trained_hash == chash and trained_fv == fv
+    servable = exact or is_feature_version_servable(
+        trained_fv or "", trained_hash, fv, compat_table=compat_table
+    )
+    return Servability(exact=exact, servable=servable, current_hash=chash)
 
 
 def _write_model(predictor: LightGBMPredictor, path: Path) -> None:
