@@ -116,10 +116,10 @@ quickstart §5 の形と一致。
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T031 [P] memory: `feature-health-audit-2026-08-22` に 098 の結論を追記、新規 `feature-098-race-class-spelling-result`(verdict・機構=表現の版バインディング・codex 採否・教訓)を作成し `MEMORY.md` に 1 行
-- [ ] T032 [P] CLAUDE.md の current-plan 要約を実測結果で更新(SPECKIT 区間は Edit で手動・agent-context hook は使わない)
-- [ ] T033 全パッケージのテストと lint: `features`・`training`・`serving`・`eval` の pytest 緑、`ruff check` クリーン(scripts 含む)。serving の既存 compat テスト(`test_lgbm063_compat.py`)が allowlist 変更で赤くならないことを確認(旧版の compat は `raw` 強制で従来どおり)
-- [ ] T034 コミット(spec 一式 + 実装 + evidence)。REJECT 分岐なら revert 後の状態で 1 コミット、ADOPT 分岐なら bump を含む 1 コミット。コミットメッセージに verdict と主要数値を書く
+- [X] T031 [P] memory: `feature-health-audit-2026-08-22` に 098 の結論を追記、新規 `feature-098-race-class-spelling-result`(verdict・機構=表現の版バインディング・codex 採否・教訓)を作成し `MEMORY.md` に 1 行
+- [X] T032 [P] CLAUDE.md の current-plan 要約を実測結果で更新(SPECKIT 区間は Edit で手動・agent-context hook は使わない)
+- [X] T033 全パッケージのテストと lint: `features`・`training`・`serving`・`eval` の pytest 緑、`ruff check` クリーン(scripts 含む)。serving の既存 compat テスト(`test_lgbm063_compat.py`)が allowlist 変更で赤くならないことを確認(旧版の compat は `raw` 強制で従来どおり)
+- [X] T034 コミット(spec 一式 + 実装 + evidence)。REJECT 分岐なら revert 後の状態で 1 コミット、ADOPT 分岐なら bump を含む 1 コミット。コミットメッセージに verdict と主要数値を書く
 
 ---
 
