@@ -12,7 +12,7 @@ import json
 
 import pytest
 
-from horseracing_scrape.models import ParseError
+from horseracing_scrape.models import NotYetPublished, ParseError
 from horseracing_scrape.parse.exotic_quotes import parse_exotic_quotes
 from tests.conftest import real_fixture
 
@@ -119,3 +119,56 @@ def test_unsold_pool_is_a_parse_error_not_a_silent_empty():
                           "data": {"official_datetime": None, "odds": {}}})
     with pytest.raises(ParseError, match="missing data.odds"):
         parse_exotic_quotes(payload, RID, "quinella")
+
+
+# --- 「まだ発売前」と「壊れた」の区別 -------------------------------------------------------------
+#
+# ここが潰れていると、netkeiba がキー名を変えた瞬間に exotic 取得が「未発売」を返し続けて静かに
+# 引退し、失敗ジョブが 1 件も出ない。NotYetPublished は ParseError の派生なので、区別を知らない
+# 呼び出し元は従来どおり fail-closed のまま。
+
+def test_absent_group_is_not_yet_published_not_breakage():
+    """封筒は無事で、この券種のグリッドが無いだけ = 発売前の正常な状態。"""
+    payload = json.dumps({"status": "NG", "reason": "history odds empty",
+                          "data": {"official_datetime": None, "odds": {}}})
+    with pytest.raises(NotYetPublished):
+        parse_exotic_quotes(payload, RID, "quinella")
+
+
+def test_a_missing_envelope_is_breakage_not_not_yet():
+    """netkeiba は必ず data.odds を返す。無いなら形が変わった(または別物が返ってきた)。"""
+    for payload in (json.dumps({"status": "result", "data": {}}),
+                    json.dumps({"status": "result"}),
+                    json.dumps({"data": {"odds": []}}),
+                    json.dumps([1, 2, 3])):
+        with pytest.raises(ParseError) as e:
+            parse_exotic_quotes(payload, RID, "quinella")
+        assert not isinstance(e.value, NotYetPublished), payload
+
+
+def test_rows_present_but_unpriced_is_not_yet_published():
+    """プールは開いたがまだ金が入っていない — 形は読めている。"""
+    with pytest.raises(NotYetPublished, match="unpriced"):
+        parse_exotic_quotes(_payload("4", {"0102": ["---.-", "0.0", ""],
+                                           "0103": ["---.-", "0.0", ""]}), RID, "quinella")
+
+
+def test_rows_we_cannot_read_at_all_are_breakage():
+    """1 行も形が読めないなら、それは未発売ではなく足元で形式が変わったということ。"""
+    with pytest.raises(ParseError) as e:
+        parse_exotic_quotes(_payload("4", {"0102": {"odds": "5.0"}}), RID, "quinella")
+    assert not isinstance(e.value, NotYetPublished)
+    assert "unreadable" in str(e.value)
+
+
+def test_a_readable_row_still_wins_over_stray_keys():
+    """メタデータ的なキーが混ざっていても、読める組み合わせが 1 つでもあれば成功のまま。"""
+    q = parse_exotic_quotes(_payload("4", {"updated": "1", "0102": ["5.0", "0.0", "1"]}),
+                            RID, "quinella")
+    assert list(q.quotes) == [(1, 2)]
+
+
+def test_not_yet_published_is_still_a_parse_error():
+    """区別を知らない呼び出し元は従来どおり fail-closed。"""
+    assert issubclass(NotYetPublished, ParseError)
+

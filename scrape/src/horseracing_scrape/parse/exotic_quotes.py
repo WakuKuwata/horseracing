@@ -27,7 +27,7 @@ import json
 
 from horseracing_db.selection import canonical_selection
 
-from ..models import ParseError, ScrapedExoticQuotes
+from ..models import NotYetPublished, ParseError, ScrapedExoticQuotes
 from ..urls import EXOTIC_ODDS_TYPES
 
 #: netkeiba's official_datetime is wall-clock JST with no offset.
@@ -82,19 +82,36 @@ def parse_exotic_quotes(payload: str, race_id: str, bet_type: str) -> ScrapedExo
     except (json.JSONDecodeError, TypeError) as e:
         raise ParseError(f"exotic odds payload is not valid JSON: {e}") from e
 
+    # Two different absences, and collapsing them is how a layout change disappears silently.
+    #
+    # NOT ON SALE: the envelope is intact and simply has no grid for this type. Two days out the
+    # API answers status="NG" with `odds: {}` while type=1 already carries win prices — the normal
+    # state for most of a race's life, and the only thing the caller may treat as routine.
+    #
+    # BROKEN: the envelope itself is unrecognisable. netkeiba always returns `data.odds`, so its
+    # absence means the shape changed (or we were served something else entirely), and answering
+    # "not on sale yet" to that would retire the whole exotic capture without a single failed job.
     data = doc.get("data") if isinstance(doc, dict) else None
     odds = data.get("odds") if isinstance(data, dict) else None
-    grid = odds.get(group) if isinstance(odds, dict) else None
+    if not isinstance(odds, dict):
+        raise ParseError("exotic odds JSON has no data.odds envelope")
+    grid = odds.get(group)
     if not isinstance(grid, dict) or not grid:
-        raise ParseError(f"missing data.odds[{group!r}] ({bet_type}) in exotic odds JSON")
+        raise NotYetPublished(
+            f"missing data.odds[{group!r}] ({bet_type}) in exotic odds JSON — not on sale yet"
+        )
 
     quotes: dict[tuple[int, ...], tuple[float, float | None, int | None]] = {}
+    unreadable = 0   # rows whose SHAPE we could not read — evidence the format moved
+    unpriced = 0     # rows shaped correctly that simply carry no price yet
     for key, vals in grid.items():
         combo = _split_key(str(key), size)
         if combo is None or not isinstance(vals, list) or not vals:
+            unreadable += 1
             continue
         low = _to_float(vals[0])
         if low is None:
+            unpriced += 1
             continue                       # not yet priced — omit rather than store a zero
         high = _to_float(vals[1]) if len(vals) > 1 else None
         pop = _to_int(vals[2]) if len(vals) > 2 else None
@@ -107,7 +124,18 @@ def parse_exotic_quotes(payload: str, race_id: str, bet_type: str) -> ScrapedExo
         quotes[tuple(canonical_selection(bet_type, combo))] = (low, high, pop)
 
     if not quotes:
-        raise ParseError(f"no usable {bet_type} combinations in exotic odds JSON")
+        # Same split again, one level down: a grid full of correctly-shaped but unpriced rows is a
+        # pool that has opened without money in it (routine). A grid whose rows we could not read
+        # at all is the format having moved under us, and must not be filed as "not yet".
+        if unreadable:
+            raise ParseError(
+                f"no usable {bet_type} combinations in exotic odds JSON "
+                f"({unreadable} unreadable row(s) — the payload shape may have changed)"
+            )
+        raise NotYetPublished(
+            f"no usable {bet_type} combinations in exotic odds JSON "
+            f"({unpriced} row(s) present but unpriced) — not on sale yet"
+        )
 
     raw_dt = data.get("official_datetime") if isinstance(data, dict) else None
     official_at = None
