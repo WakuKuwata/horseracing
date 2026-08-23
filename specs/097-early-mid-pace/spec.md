@@ -189,3 +189,35 @@ serving 継続できる。
   効かないことは失敗ではない — guard が守るのは非劣化のみ)
 - 現 active は lgbm-094-cap900(arm E + rounds 900 + 091 体重マスク)。確認評価のアームは
   これと同レシピを基準にする
+
+
+## 実測結果(2026-08-22・verdict = **REJECT**)
+
+`specs/097-early-mid-pace/verdict.json`(artifact_kind=counterfactual_supply_simulation・
+gate-config hash `6f76bf15…`・contract v4)。**run 1 は無効**(両アームが同一モデル=arm E + drop の
+潜在バグ・`evidence-gate-run1-invalid.md`)、以下は修正後の run 2(3.5h・全窓で 100% のレースに
+非ゼロ差)。
+
+| 成分 | 値 |
+|---|---|
+| primary pooled(3 窓・n=10,366・323 開催日) | point **-0.002409** / 標本 CI [-0.004612, -0.000103] / **総 CI(再学習分散込み) [-0.005422, +0.000680]** |
+| gate | effect_beats_delta=**True**(−0.0024 < −0.002)・ci_upper_below_zero=**False**(+0.00068)・recent/top2/top3/ECE=PASS → adopted=False |
+| guard 1(full-info・標本 CI) | +0.000094 CI [-0.002225, +0.002352] → PASS(期待どおり ≈0) |
+| guard 2(実 2025-10-11〜2026-08-22・標本 CI) | +0.001131 CI [-0.002708, +0.005236] → PASS(害の証拠なし) |
+| 付随 | top2 -0.000150 / top3 -0.000263 / ECE 候補 0.003726 vs 現行 0.003301 |
+
+**読み**: 定常状態シミュレーションでの点推定 −0.0024 は最小効果 δ を越え、標本 CI はゼロを
+切る。しかし v4 が判定に畳み込む再学習分散(sd_fold 0.001816・n_folds=3)を入れると上限が
++0.00068 となりゼロを跨ぐ。**事前登録式どおり REJECT**(088/070 と同型の「点推定有利・判定区間が
+ゼロ跨ぎ」)。期待値(−0.005 前後)の半分で、D2 で開示した近線形冗長(`_avg` ≈ rel_time_avg −
+rel_last3f_avg)と整合する — 再学習すれば既存 2 列が軸の大半を担い、新列の増分は単一分割
+アクセスと `_best` の分だけに縮む。
+
+後始末(US3 REJECT 分岐): FEATURE_VERSION を features-021 へ revert・registry/materialize/compat
+pin/表示ラベル/版ピンテストを 097 以前に戻し、`early_mid_pace_features.py` + 単体・リークテスト
+(21 件)を非結線で保全。revert 後の serving は同一 DB 状態で 022 compat run と **14 頭バイト一致**
+(SC-005)。parquet は features-021 で再 materialize。
+
+限界(D10 再掲): 推定対象は定常状態(washout 98.1%)・単一 seed・実 2025-2026 の移行期の便益は
+これより小さい可能性。REJECT は「この 2 列の束」についてであり、テン3F 軸の価値(−0.0163)自体は
+否定されない — 1200m 導出(ecf0c69)は本番で生き続ける。

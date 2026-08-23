@@ -1,0 +1,224 @@
+{
+  "artifact_kind": "counterfactual_supply_simulation",
+  "eligible_for_verdict": false,
+  "feature_adoption_eligible": true,
+  "evidence_regime": "masked_pseudo_supply_death",
+  "model_training_regime": "real_unmasked",
+  "evaluation_contract_version": "v4",
+  "gate_config_hash": "6f76bf156de7ac3d96d0108d45c10be734a11d6363a8d58fc4022c9da01ba10c",
+  "reported_as": "counterfactual robustness \u2014 NOT reconstructed historical predictions",
+  "elapsed_s": 12747,
+  "capacity": {
+    "rounds": 900,
+    "n_oof_blocks": 8,
+    "b": 2000
+  },
+  "primary": {
+    "windows": [
+      {
+        "window": [
+          "2020-01-01",
+          "2020-12-31"
+        ],
+        "mask_cutoff": "2019-01-01",
+        "masked_rows": 246050,
+        "provenance_hash": "e878a5ff2f8cfbe5fbc09ded4046f53c958fca46e6c8defb2dccaba0b85d3fe0",
+        "n_races": 3456,
+        "n_days": 109,
+        "race_id_set_hash": "01388f087d25cd8340a205f233b28a73c97ded091bd30018e246d6f558e6dcc2",
+        "candidate_recipe_hash": "0e34623bff229dee5a4b1d46cf3512f4dad9ea7c280616a78fb4627838f731f7",
+        "active_recipe_hash": "cad25c068a6276e4ef44f43df55616758010d9706e9539f46e99c21dcdb788de"
+      },
+      {
+        "window": [
+          "2022-01-01",
+          "2022-12-31"
+        ],
+        "mask_cutoff": "2021-01-01",
+        "masked_rows": 173325,
+        "provenance_hash": "cb7fed33c278b43af67b25046a4eab5329decc30623022158fcfda116657ee1c",
+        "n_races": 3456,
+        "n_days": 108,
+        "race_id_set_hash": "21d11819f557847615236c343d4244ffadb399c699125e9673cbeb720ae7cdf0",
+        "candidate_recipe_hash": "0e34623bff229dee5a4b1d46cf3512f4dad9ea7c280616a78fb4627838f731f7",
+        "active_recipe_hash": "cad25c068a6276e4ef44f43df55616758010d9706e9539f46e99c21dcdb788de"
+      },
+      {
+        "window": [
+          "2024-01-01",
+          "2024-12-31"
+        ],
+        "mask_cutoff": "2023-01-01",
+        "masked_rows": 101305,
+        "provenance_hash": "356ef6df0964393447d7d894db3504fb457b17dc0733fd77974826ffeb6117f0",
+        "n_races": 3454,
+        "n_days": 106,
+        "race_id_set_hash": "b2f3d6e2ea19add6e927b3c5b2ad9f079fc3ec9d9f173d5f4e459bf91a0f8a99",
+        "candidate_recipe_hash": "0e34623bff229dee5a4b1d46cf3512f4dad9ea7c280616a78fb4627838f731f7",
+        "active_recipe_hash": "cad25c068a6276e4ef44f43df55616758010d9706e9539f46e99c21dcdb788de"
+      }
+    ],
+    "pooled_n_races": 10366,
+    "pooled_n_days": 323,
+    "sufficient": true,
+    "min_eval_days": 300,
+    "point": -0.002408548363604706,
+    "sample_ci": {
+      "point": -0.002408548363604706,
+      "ci_low": -0.004612489344404876,
+      "ci_high": -0.00010279959158542204,
+      "b": 2000,
+      "seed": 20260822,
+      "block": "race_day",
+      "n_days": 323,
+      "no_decision": false
+    },
+    "total_ci": {
+      "point": -0.002408548363604706,
+      "ci_low": -0.0054218879042213005,
+      "ci_high": 0.0006800333076258684,
+      "b": 2000,
+      "seed": 20260822,
+      "block": "race_day",
+      "n_days": 323,
+      "no_decision": false
+    },
+    "pooled_aux": {
+      "top2_diff": -0.00015038825048880689,
+      "top3_diff": -0.0002629549573877778,
+      "cand_ece": 0.0037264853933708713,
+      "act_ece": 0.0033010184222253304
+    },
+    "recent": {
+      "pass": true,
+      "mode": "non_inferiority",
+      "margin": 0.005,
+      "windows": {
+        "recent_3y": {
+          "diff": -0.002728775440568932,
+          "ci_low": -0.005469333111823032,
+          "ci_high": -2.6498470200442868e-05,
+          "n_races": 6900,
+          "n_days": 214,
+          "decision": "PASS",
+          "point_estimate_degraded": false,
+          "residual_risk": null
+        },
+        "recent_5y": {
+          "diff": -0.002408548363604706,
+          "ci_low": -0.004612489344404876,
+          "ci_high": -0.00010279959158542204,
+          "n_races": 10347,
+          "n_days": 323,
+          "decision": "PASS",
+          "point_estimate_degraded": false,
+          "residual_risk": null
+        }
+      }
+    },
+    "gate": {
+      "sub_gates": {
+        "effect_beats_delta": true,
+        "ci_upper_below_zero": false,
+        "recent_no_evidence_of_harm": true,
+        "top2_noninferior": true,
+        "top3_noninferior": true,
+        "calibration_noninferior": true,
+        "calibration_not_emergency": true
+      },
+      "adopted": false
+    },
+    "per_window_decisions_reference_only": [
+      "NO_DECISION",
+      "NO_DECISION",
+      "NO_DECISION"
+    ]
+  },
+  "guard_full_info": {
+    "windows": [
+      {
+        "window": [
+          "2020-01-01",
+          "2020-12-31"
+        ],
+        "mask_cutoff": null,
+        "provenance_hash": "5ec4426fe28af1bed68e56ceae46274bb6ead042a2ad8c09e7086be7bfcb624a",
+        "n_races": 3456,
+        "n_days": 109,
+        "race_id_set_hash": "01388f087d25cd8340a205f233b28a73c97ded091bd30018e246d6f558e6dcc2",
+        "candidate_recipe_hash": "0e34623bff229dee5a4b1d46cf3512f4dad9ea7c280616a78fb4627838f731f7",
+        "active_recipe_hash": "cad25c068a6276e4ef44f43df55616758010d9706e9539f46e99c21dcdb788de"
+      },
+      {
+        "window": [
+          "2022-01-01",
+          "2022-12-31"
+        ],
+        "mask_cutoff": null,
+        "provenance_hash": "5ec4426fe28af1bed68e56ceae46274bb6ead042a2ad8c09e7086be7bfcb624a",
+        "n_races": 3456,
+        "n_days": 108,
+        "race_id_set_hash": "21d11819f557847615236c343d4244ffadb399c699125e9673cbeb720ae7cdf0",
+        "candidate_recipe_hash": "0e34623bff229dee5a4b1d46cf3512f4dad9ea7c280616a78fb4627838f731f7",
+        "active_recipe_hash": "cad25c068a6276e4ef44f43df55616758010d9706e9539f46e99c21dcdb788de"
+      },
+      {
+        "window": [
+          "2024-01-01",
+          "2024-12-31"
+        ],
+        "mask_cutoff": null,
+        "provenance_hash": "5ec4426fe28af1bed68e56ceae46274bb6ead042a2ad8c09e7086be7bfcb624a",
+        "n_races": 3454,
+        "n_days": 106,
+        "race_id_set_hash": "b2f3d6e2ea19add6e927b3c5b2ad9f079fc3ec9d9f173d5f4e459bf91a0f8a99",
+        "candidate_recipe_hash": "0e34623bff229dee5a4b1d46cf3512f4dad9ea7c280616a78fb4627838f731f7",
+        "active_recipe_hash": "cad25c068a6276e4ef44f43df55616758010d9706e9539f46e99c21dcdb788de"
+      }
+    ],
+    "ci": {
+      "point": 9.441724224491289e-05,
+      "ci_low": -0.0022253775452522424,
+      "ci_high": 0.002351841898350461,
+      "b": 2000,
+      "seed": 20260822,
+      "block": "race_day",
+      "n_days": 323,
+      "no_decision": false
+    },
+    "decision": "PASS",
+    "margin": 0.003,
+    "pass": true
+  },
+  "guard_real_direction": {
+    "window_from": "2025-10-11",
+    "window_to": "2026-08-22",
+    "race_id_set_hash": "d38f2e367cf0f356a0a8b7a579a1261cf7e2bf35adc64f126f3a7e9f6dbfaaea",
+    "n_races": 3051,
+    "n_days": 95,
+    "ci": {
+      "point": 0.0011308897709527994,
+      "ci_low": -0.0027078087229602276,
+      "ci_high": 0.005235993473633421,
+      "b": 2000,
+      "seed": 20260822,
+      "block": "race_day",
+      "n_days": 95,
+      "no_decision": false
+    },
+    "margin": 0.005,
+    "pass": true
+  },
+  "verdict": {
+    "status": "REJECT",
+    "adopt": false,
+    "formula": "primary_pooled AND guard1 AND guard2",
+    "decision_reason": {
+      "cause": "primary_pooled AND guard1 AND guard2 not all true",
+      "sufficient": true,
+      "gate_adopted": false,
+      "guard1": true,
+      "guard2": true
+    }
+  }
+}

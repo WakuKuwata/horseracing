@@ -50,12 +50,10 @@ def test_column_order_is_deterministic():
 
 
 def test_feature_version_and_compat_pin():
-    assert FEATURE_VERSION == "features-022"
+    assert FEATURE_VERSION == "features-021"
     # 019 was burned by 070's revert and must never be reintroduced
     assert "features-019" not in COMPATIBLE_PRIOR_FEATURE_VERSIONS
     assert set(COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-021"]) == {"features-018"}
-    # Feature 097 bumped to 022 on top; 021 stays pinned there (lgbm-094 lineage)
-    assert "features-021" in COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-022"]
 
 
 def test_prev_weight_declares_pre_entry_availability():

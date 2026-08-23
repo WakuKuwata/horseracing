@@ -198,7 +198,7 @@ def test_registry_version_and_compat_pins():
         model_input_features,
     )
 
-    assert FEATURE_VERSION == "features-022"  # 097 early_mid_pace (021 = 091 prev_weight; 019/020 burned)
+    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 018 = 069 F02
     # 061's historical compat story (features-016 pinned 014/015) still holds when checked against
     # that version explicitly.
     pins = COMPATIBLE_PRIOR_FEATURE_VERSIONS["features-016"]

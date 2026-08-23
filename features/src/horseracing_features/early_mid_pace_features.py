@@ -1,5 +1,14 @@
 """Feature 097: early-mid pace — a per-horse early-pace axis that does not die with the feed.
 
+**REJECTED at the pre-registered gate (2026-08-22) — preserved UNWIRED as the documented negative
+result** (specs/097-early-mid-pace/verdict.json; same discipline as 062/070/088/090). Pooled
+pseudo-supply-death primary: −0.002409, sample CI [−0.004612, −0.000103], but the v4 decision
+interval with retraining variance folded in is [−0.005422, +0.000680] — the upper arm crosses
+zero, so `ci_upper_below_zero` failed while `effect_beats_delta` passed. Guards were fine
+(full-info +0.000094, real window +0.001131, neither confidently harmful). Not wired into
+build_asof_features; not in the registry; FEATURE_VERSION stays features-021. The unit tests call
+`build_early_mid_pace_features` directly.
+
 ``race_results.first_3f`` (per-horse first-3F time, JRA-VAN col55) stopped arriving: 2024 96.8% →
 2025 74.4% → **2026 0.0%**. netkeiba publishes per-horse finish_time and LAST 3F but never the
 first 3F, so the three first3f-derived model inputs (3.0% of split importance) decay as histories

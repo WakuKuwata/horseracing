@@ -218,7 +218,7 @@ def test_rating_is_not_in_the_default_feature_set():
         model_input_features,
     )
 
-    assert FEATURE_VERSION == "features-022"  # 097 early_mid_pace (021 = 091 prev_weight; 019/020 burned)
+    assert FEATURE_VERSION == "features-021"  # 070+088 rejected+reverted; 018 = 069 F02
     rating_cols = {
         "asof_rating", "asof_rating_recent_delta", "asof_rating_max",
         "asof_rating_starts", "asof_rating_vs_field",
