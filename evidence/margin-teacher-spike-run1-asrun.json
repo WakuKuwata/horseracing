@@ -1,0 +1,72 @@
+{
+  "preregistered": {
+    "M0": 0.2,
+    "GMIN": 0.25,
+    "rounds": 300,
+    "seed": 42,
+    "go_rule": "pooled paired winner-NLL diff <= -0.002",
+    "variants": {
+      "v1": "stages 2,3",
+      "v2": "stages 1,2,3"
+    },
+    "caveat": "spike (rounds=300, holdout isotonic); adoption needs the full v4 gate at 900"
+  },
+  "folds": {
+    "2024": {
+      "v1": {
+        "n_races": 3448,
+        "mean_diff": -0.004426441598443725,
+        "mean_diff_raw": -0.003272410170848572,
+        "nonzero": 3448
+      },
+      "v2": {
+        "n_races": 3448,
+        "mean_diff": -0.003785795087994191,
+        "mean_diff_raw": -0.0029681690320724693,
+        "nonzero": 3448
+      }
+    },
+    "2025": {
+      "v1": {
+        "n_races": 3448,
+        "mean_diff": -0.0013096955436243975,
+        "mean_diff_raw": -0.0008499879330592559,
+        "nonzero": 3448
+      },
+      "v2": {
+        "n_races": 3448,
+        "mean_diff": -0.0018252779744463944,
+        "mean_diff_raw": -0.0018823165416594133,
+        "nonzero": 3448
+      }
+    },
+    "2026": {
+      "v1": {
+        "n_races": 2296,
+        "mean_diff": -0.0032059859950406638,
+        "mean_diff_raw": -0.0022392029953539195,
+        "nonzero": 2296
+      },
+      "v2": {
+        "n_races": 2296,
+        "mean_diff": -0.0013822291686491628,
+        "mean_diff_raw": -0.001693619150044813,
+        "nonzero": 2296
+      }
+    }
+  },
+  "pooled": {
+    "v1": {
+      "n_races": 9192,
+      "mean_diff": -0.00295247440279202,
+      "mean_diff_raw": -0.0021056613076160563,
+      "go": true
+    },
+    "v2": {
+      "n_races": 9192,
+      "mean_diff": -0.0024500193745119253,
+      "mean_diff_raw": -0.0022424960647008723,
+      "go": true
+    }
+  }
+}
