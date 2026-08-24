@@ -216,3 +216,36 @@ ON 時にステージ限定で勾配が変わる、レシピ hash が OFF で不
 - active への昇格 — candidate 止まり。昇格は prospective を含む別段の判断
 - binary / cond_logit(top-1)への変調適用 — pl_topk のみ
 - 特徴量・スキーマ・API・serving・betting・front の変更 — 一切なし
+
+
+## 実測結果(2026-08-25・T020 confirmatory・凍結 gate hash d8c479dea834…)
+
+**verdict = REJECT(cause=gate_hard_fail・harness v4 組込み式・事後読み替えなし)**
+
+| 項目 | 値 |
+|---|---|
+| 窓 / 規模 | 2019-01-01..2026-08-23・26,482 レース・825 開催日・8 fold |
+| pooled winner NLL 差(candidate−active) | **+0.000501**(候補が悪い) |
+| 標本 CI | [−0.001155, +0.002190] |
+| **総 CI(v4・seed_noise 込み)** | **[−0.001579, +0.002607]**(ゼロ跨ぎ) |
+| fold 窓別 | recent_3y +0.000245 / recent_5y +0.000949(いずれも非劣性 PASS・margin 0.005) |
+| top2 / top3 差 | +0.000298(PASS)/ **+0.000634(FAIL・許容 0.0005)= hard fail** |
+| 校正(ECE) | 非劣性 PASS・緊急停止なし |
+| critical subgroups | recent_year_only / nk / recent_year_nk **全 PASS(full assurance)** — 害はどこにも無い |
+| 構造 assert | 実行前(アーム同一性・実効 recipe 照合)・実行後(非ゼロ差・変調統計)全通過 = 正当な測定 |
+
+**解釈(事前登録の範囲内)**: spike(rounds=300・holdout isotonic・直近 3 fold)の
+pooled −0.00337 は、**本番構成(arm E OOF isotonic + rounds 900 + 全期間)で再現しなかった**
+— 点推定は符号ごと反転した。spec の Assumptions が事前に認めた「rounds=900 との相互作用は
+未測定」「spike は複製経路であり production 経路での再現保証はない」がそのまま現実化した形。
+候補は有害ではない(subgroup 全 PASS)が優れてもおらず、top3 の教師信号を弱めた分だけ
+top3 導出が僅かに劣化した(hard fail の実体)。**null-is-success**: この軸(着差による
+ステージ減衰 V1)は本番構成で数値つきで閉じる。V2 は spike で棄却済み。別の変調形は
+別 spec の再事前登録のみ。
+
+**後始末(FR-012)**: 結線(dataset aux 列生成・recipe field・CLI mteach セグメント・
+predictor 配線)は revert。`pl_topk_objective` の `stage_scales` 引数と win_model の検証
+つき整列(いずれも None 既定=現行とビット一致)+それらの単体テストは保全。T015a
+(CalibSplitFactory への snapshot pin)と T016 の wmask=/params carriage 修正は margin と
+独立の実バグ修正なので**残す**。両系 recipe hash のスナップショットテストも将来の
+フィールド追加事故(codex P0-1 型)の常設ガードとして残す。
