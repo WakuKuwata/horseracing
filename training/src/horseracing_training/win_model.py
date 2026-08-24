@@ -39,6 +39,51 @@ DEFAULT_PARAMS: dict = {
 }
 
 
+def _group_stage_scales(margin_scales: np.ndarray, group_sizes: list[int]) -> np.ndarray:
+    """Row-aligned (n_rows, 2) stage-2/3 scales -> validated per-group (n_groups, 3), s1=1.0.
+
+    Feature 099 (INV-MT3): the scales are RACE-CONSTANT label-side aux values. Extracting the
+    group's first row is only safe after proving the constancy, so every violation raises
+    ``ValueError`` (never ``assert`` — ``-O`` strips asserts, and an unvalidated first-row read
+    would hide a single corrupted row). Range [GMIN, 1.0] and finiteness are part of the frozen
+    V1 contract; s1 is fixed at 1.0 (the winner stage is never modulated).
+    """
+    if margin_scales.ndim != 2 or margin_scales.shape[1] != 2:
+        raise ValueError(
+            f"margin_scales must have shape (n_rows, 2) for stages 2,3; got "
+            f"{margin_scales.shape} (fail-closed)"
+        )
+    n = int(np.sum(group_sizes))
+    if len(margin_scales) != n:
+        raise ValueError(
+            f"margin_scales rows ({len(margin_scales)}) != total group rows ({n}) (fail-closed)"
+        )
+    if not np.isfinite(margin_scales).all():
+        raise ValueError("margin_scales contain non-finite values (fail-closed)")
+    if margin_scales.min() < 0.25 - 1e-12 or margin_scales.max() > 1.0 + 1e-12:
+        raise ValueError(
+            f"margin_scales outside [0.25, 1.0]: min={margin_scales.min()} "
+            f"max={margin_scales.max()} (fail-closed)"
+        )
+    group_start = np.concatenate(([0], np.cumsum(group_sizes)[:-1])).astype(np.intp)
+    for col in range(2):
+        col_vals = margin_scales[:, col]
+        gmin = np.minimum.reduceat(col_vals, group_start)
+        gmax = np.maximum.reduceat(col_vals, group_start)
+        if not np.array_equal(gmin, gmax):
+            bad = int(np.nonzero(gmin != gmax)[0][0])
+            raise ValueError(
+                f"margin_scales stage {col + 2} not race-constant within group {bad} "
+                "(a single corrupted row must fail loudly, not be hidden by first-row "
+                "extraction — INV-MT3)"
+            )
+    n_groups = len(group_sizes)
+    out = np.ones((n_groups, 3), dtype=float)
+    out[:, 1] = margin_scales[group_start, 0]
+    out[:, 2] = margin_scales[group_start, 1]
+    return out
+
+
 @dataclass
 class WinModel:
     seed: int = 42
@@ -66,6 +111,7 @@ class WinModel:
         ranks=None,
         offsets=None,
         weights=None,
+        margin_scales=None,
     ) -> WinModel:
         """Fit the win model.
 
@@ -80,6 +126,11 @@ class WinModel:
         self.feature_cols_ = list(X.columns)
         if offsets is not None and self.objective not in self.SOFTMAX_OBJECTIVES:
             raise ValueError("offsets require a softmax objective (cond_logit/pl_topk)")
+        # Feature 099: margin-aware teacher scales are defined only for the staged PL objective —
+        # cond_logit has a single stage and binary has no stages, so accepting them there would
+        # be a silent no-op (the exact failure mode this feature guards against).
+        if margin_scales is not None and self.objective != "pl_topk":
+            raise ValueError("margin_scales require objective='pl_topk' (fail-closed)")
         self.offset_trained_ = offsets is not None
         y = np.asarray(y)
         # Degenerate single-class training data: a classifier is undefined, so fall
@@ -93,7 +144,7 @@ class WinModel:
         self._constant = None
         cat = [c for c in (categorical_cols or []) if c in X.columns]
         if self.objective in self.SOFTMAX_OBJECTIVES:
-            self._fit_softmax(X, y, cat, group_ids, ranks, offsets, weights)
+            self._fit_softmax(X, y, cat, group_ids, ranks, offsets, weights, margin_scales)
         else:
             clf = lgb.LGBMClassifier(
                 random_state=self.seed,
@@ -108,7 +159,9 @@ class WinModel:
             self.booster_ = clf
         return self
 
-    def _fit_softmax(self, X, y, cat, group_ids, ranks, offsets=None, weights=None) -> None:
+    def _fit_softmax(
+        self, X, y, cat, group_ids, ranks, offsets=None, weights=None, margin_scales=None
+    ) -> None:
         if group_ids is None:
             raise ValueError(f"{self.objective} objective requires group_ids (race ids)")
         if self.objective == "pl_topk" and ranks is None:
@@ -122,8 +175,18 @@ class WinModel:
         off_sorted = np.asarray(offsets, dtype=float)[order] if offsets is not None else None
         # Feature 079: sample weights sorted with the same order (row-aligned to Xs/ys).
         w_sorted = np.asarray(weights, dtype=float)[order] if weights is not None else None
+        # Feature 099: per-race stage scales (n_rows, 2) for stages 2,3 -> validated per-group
+        # (n_groups, 3) with s1=1.0. None keeps the objective construction byte-identical.
+        stage_scales = None
+        if margin_scales is not None:
+            stage_scales = _group_stage_scales(
+                np.asarray(margin_scales, dtype=float)[order], gsizes
+            )
         if self.objective == "pl_topk":
-            obj = pl_topk_objective(gsizes, np.asarray(ranks)[order], offsets=off_sorted)
+            obj = pl_topk_objective(
+                gsizes, np.asarray(ranks)[order], offsets=off_sorted,
+                stage_scales=stage_scales,
+            )
         else:
             obj = cond_logit_objective(gsizes, offsets=off_sorted)
 

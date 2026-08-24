@@ -105,17 +105,29 @@ def cond_logit_objective(group_sizes: list[int], offsets=None):
 STAGE_WEIGHTS: tuple[float, ...] = (1.0, 0.5, 0.25)
 
 
-def _pl_topk_objective_loop(group_sizes: list[int], ranks, offsets=None):
+def _pl_topk_objective_loop(group_sizes: list[int], ranks, offsets=None, stage_scales=None):
     """Reference (per-group Python loop) PL top-k objective — the correctness ORACLE.
 
     Retained for the equivalence test and for exact reproduction of models trained before the
     vectorized default (the vectorized version below differs by ~1 ulp on the softmax denominator
     — mathematically identical, not bit-identical; user decision 2026-07-06 accepted this for the
-    ~4x speedup, so the vectorized form is the default). Semantics: see ``pl_topk_objective``.
+    ~4x speedup, so the vectorized form is the default). ``stage_scales`` follows INV-MT1 and
+    INV-MT4 as documented by ``pl_topk_objective``.
     """
     ranks = np.asarray(ranks)
     if offsets is not None:
         offsets = np.asarray(offsets, dtype=float)
+        if not np.isfinite(offsets).all():
+            raise ValueError("_pl_topk_objective_loop: non-finite offsets (fail-closed)")
+    n_groups = len(group_sizes)
+    k = len(STAGE_WEIGHTS)
+    if stage_scales is not None:
+        stage_scales = np.asarray(stage_scales, dtype=float)
+        if stage_scales.shape != (n_groups, k):
+            raise ValueError(
+                "_pl_topk_objective_loop: stage_scales must have shape "
+                f"({n_groups}, {k}), got {stage_scales.shape}"
+            )
 
     def fobj(preds, dataset):
         preds = np.asarray(preds, dtype=float)
@@ -124,7 +136,7 @@ def _pl_topk_objective_loop(group_sizes: list[int], ranks, offsets=None):
         grad = np.zeros_like(preds)
         hess = np.zeros_like(preds)
         start = 0
-        for g in group_sizes:
+        for group_index, g in enumerate(group_sizes):
             sl = slice(start, start + g)
             start += g
             rk = ranks[sl]
@@ -136,6 +148,8 @@ def _pl_topk_objective_loop(group_sizes: list[int], ranks, offsets=None):
                 target = rk == j
                 if target.sum() != 1 or remaining.sum() < 2:
                     break  # keep earlier stages' gradients
+                if stage_scales is not None:
+                    w = w * stage_scales[group_index, j - 1]
                 vr = v[remaining] - v[remaining].max()
                 e = np.exp(vr)
                 p = e / e.sum()
@@ -163,7 +177,7 @@ def _pl_topk_objective_loop(group_sizes: list[int], ranks, offsets=None):
 _NEG_SENTINEL = -1e30
 
 
-def pl_topk_objective(group_sizes: list[int], ranks, offsets=None):
+def pl_topk_objective(group_sizes: list[int], ranks, offsets=None, stage_scales=None):
     """Feature 042: Plackett-Luce top-k (k=len(STAGE_WEIGHTS)) sequential objective.
 
     ``ranks``: per-row finishing rank (1..k) or 0 (others/DNF), aligned to the sorted rows.
@@ -183,6 +197,11 @@ def pl_topk_objective(group_sizes: list[int], ranks, offsets=None):
     Feature 060: ``offsets`` (row-aligned to the SORTED rows, or None) shifts every stage's
     softmax input to ``preds + offsets`` (market log-q base). ``None`` is byte-identical to
     the pre-060 path (no addition performed).
+
+    ``stage_scales`` is an optional ``(n_groups, k)`` array of per-race, per-stage
+    multipliers applied only to the corresponding stage weight. INV-MT1: ``None`` uses the
+    unmodulated arithmetic path bit-identically. INV-MT4: firing, break/neutralization rules,
+    Hessian floor, offsets, and sample-weight handling remain unchanged.
     """
     ranks = np.asarray(ranks)
     if offsets is not None:
@@ -192,11 +211,18 @@ def pl_topk_objective(group_sizes: list[int], ranks, offsets=None):
     gsize = np.asarray(group_sizes, dtype=np.int64)
     n = int(gsize.sum())
     n_groups = len(gsize)
+    k = len(STAGE_WEIGHTS)
+    if stage_scales is not None:
+        stage_scales = np.asarray(stage_scales, dtype=float)
+        if stage_scales.shape != (n_groups, k):
+            raise ValueError(
+                "pl_topk_objective: stage_scales must have shape "
+                f"({n_groups}, {k}), got {stage_scales.shape}"
+            )
     # row -> group id, and per-group start offsets for reduceat
     group_id = np.repeat(np.arange(n_groups), gsize)
     group_start = np.concatenate(([0], np.cumsum(gsize)[:-1])).astype(np.intp)
 
-    k = len(STAGE_WEIGHTS)
     # per-group count of rank==j (j=1..k)
     counts = [
         np.bincount(group_id, weights=(ranks == j), minlength=n_groups) for j in range(1, k + 1)
@@ -220,6 +246,8 @@ def pl_topk_objective(group_sizes: list[int], ranks, offsets=None):
         target = (ranks == j).astype(float)
         fire_row = fire_group[j - 1][group_id]           # this row's group fires stage j
         remaining_row = fire_row & ~placed_before        # rows still in play (get hess)
+        if stage_scales is not None:
+            w = w * stage_scales[group_id, j - 1]
         stages.append(
             (w, placed_before, target, fire_row.astype(float), remaining_row.astype(float))
         )

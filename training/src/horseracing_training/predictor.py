@@ -63,6 +63,49 @@ def _weight_mask_columns() -> tuple[str, ...]:
     return WEIGHT_MASK_COLUMNS
 
 
+def _margin_teacher_stats(
+    model_df, *, m0: float, gmin: float, variant: str, build_audit: dict | None
+) -> dict:
+    """Feature 099 の監査統計 — 実際の booster fit 行(model_df)に対するレース単位の集計。
+
+    spike run 1 のステージ 3 中立バグ(SQL の window 前フィルタ)はスケール平均の印字で
+    しか発覚しなかった。「実際に変調されたか」は結果から遡れないので、fit 時に記録する。
+    scale==1.0 は「大差で cap」と「margin 未定義で中立」を混同するため、定義可否の分計は
+    dataset の build_audit(gap の定義可否が分かる唯一の場所)を転記する。
+    """
+    from .dataset import MARGIN_SCALE_S2, MARGIN_SCALE_S3, RANK_LABEL
+
+    g = model_df.groupby("race_id", sort=False)
+    sizes = g.size()
+    r1 = g[RANK_LABEL].agg(lambda x: int((x == 1).sum()))
+    r2 = g[RANK_LABEL].agg(lambda x: int((x == 2).sum()))
+    r3 = g[RANK_LABEL].agg(lambda x: int((x == 3).sum()))
+    fire1 = (r1 == 1) & (sizes >= 2)
+    fire2 = fire1 & (r2 == 1) & (sizes - 1 >= 2)
+    fire3 = fire2 & (r3 == 1) & (sizes - 2 >= 2)
+    s2 = g[MARGIN_SCALE_S2].first()
+    s3 = g[MARGIN_SCALE_S3].first()
+
+    def _stage(scale, fire):
+        fireable = scale[fire]
+        return {
+            "fireable_races": int(fire.sum()),
+            "scale_lt1_races": int((scale < 1.0).sum()),
+            "fire_and_lt1_races": int((fireable < 1.0).sum()),
+            "fireable_mean": float(fireable.mean()) if len(fireable) else None,
+        }
+
+    return {
+        "variant": variant, "m0": m0, "gmin": gmin,
+        "n_model_races": int(len(sizes)),
+        "s2": _stage(s2, fire2),
+        "s3": _stage(s3, fire3),
+        # build レベルの分計(全プール・dataset._margin_stage_scales の実測)。fit 行の
+        # scale==1.0 の内訳(cap vs 未定義)はこの転記でしか判別できない。
+        "build_audit": dict(build_audit) if build_audit else None,
+    }
+
+
 class LightGBMPredictor:
     """LightGBM training adapter.
 
@@ -99,6 +142,7 @@ class LightGBMPredictor:
         # evaluation should ask for this — see RecipeFactory.pin_snapshot for why.
         skip_fingerprint_verify: bool = False,
         market_offset: bool = False,
+        margin_teacher: str | None = None,
         calibration_split_unit: str = LEGACY_CALIBRATION_SPLIT_UNIT,
         restrict_features: tuple[str, ...] | None = None,
         ev_weight: bool = False,
@@ -149,6 +193,16 @@ class LightGBMPredictor:
         self.market_offset = market_offset
         if market_offset:
             self.is_leaky_reference = True
+
+        # Feature 099: margin-aware 教師信号(V1)。着差はラベル側のみ(finish_rank と同じ
+        # 契約)なので leaky_reference ではない — 予測経路は margin を一切読まない。
+        if margin_teacher not in (None, "v1"):
+            raise ValueError(
+                f"unknown margin_teacher: {margin_teacher!r} (expected None or 'v1')"
+            )
+        if margin_teacher is not None and objective != "pl_topk":
+            raise ValueError("margin_teacher requires objective='pl_topk' (fail-closed)")
+        self.margin_teacher = margin_teacher
 
         # Feature 079: EV-weighted training (retrospective kill-test). When on, model-fit rows
         # carry a per-race scalar weight from OOF-EV; the model is market-aware, so it is a leaky
@@ -361,12 +415,26 @@ class LightGBMPredictor:
                 "weight_min": float(np.min(model_weights)),
                 "weight_max": float(np.max(model_weights)),
             }
+        # Feature 099: margin-aware 教師信号。aux 列は行と一緒にマスク・分割済みなので、
+        # ここでのスライスがそのまま整列を保証する(D1)。統計は実際の booster fit 行=
+        # model_df に対して数える(INV-MT9: 全レース平均は fit に使われない行を混ぜる)。
+        margin_scales = None
+        margin_teacher_info: dict | None = None
+        if self.margin_teacher is not None:
+            from .dataset import MARGIN_GMIN, MARGIN_M0, MARGIN_SCALE_S2, MARGIN_SCALE_S3
+
+            margin_scales = model_df[[MARGIN_SCALE_S2, MARGIN_SCALE_S3]].to_numpy(dtype=float)
+            margin_teacher_info = _margin_teacher_stats(
+                model_df, m0=MARGIN_M0, gmin=MARGIN_GMIN, variant=self.margin_teacher,
+                build_audit=(data.build_audit or {}).get("margin_teacher"),
+            )
+
         self.win_model_ = WinModel(
             seed=self.seed, params=params, objective=self.objective
         ).fit(
             model_X, y_model, categorical_cols=cat_for_model,
             group_ids=model_groups, ranks=model_ranks, offsets=model_offsets,
-            weights=model_weights,
+            weights=model_weights, margin_scales=margin_scales,
         )
 
         if calib_mask.any():
@@ -427,6 +495,9 @@ class LightGBMPredictor:
             self.fit_info_["market_offset"] = dict(MARKET_OFFSET_METADATA)
             self.fit_info_["market_offset_excluded_races"] = offset_excluded_races
             self.fit_info_["market_offset_excluded_rows"] = offset_excluded_rows
+        # Feature 099 (INV-MT9): OFF のとき key 不在(既存 fit_info はバイト不変)。
+        if margin_teacher_info is not None:
+            self.fit_info_["margin_teacher"] = margin_teacher_info
         if self.ev_weight:
             # Feature 079 provenance: the model is market-aware via the training weight.
             self.fit_info_["ev_weight"] = ev_weight_info

@@ -13,6 +13,7 @@ target race's own odds, a leak. Construction fails closed.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from typing import ClassVar
 
 from horseracing_eval.hashing import stable_hash
 from horseracing_eval.predictor import Predictor, RaceContext
@@ -59,6 +60,8 @@ class ModelRecipe:
     #: switched off for this experiment", None records "this recipe predates the mechanism".
     weight_mask_rate: float | None = None
     weight_mask_seed: int | None = None
+    #: Feature 099: PL top-k margin-aware teacher variant. None preserves legacy training.
+    margin_teacher: str | None = None
     #: LightGBM の容量など、既定からの上書きだけを (key, value) の組で持つ。dict ではなく
     #: タプルなのは frozen dataclass を本当に不変にするため。`None`(上書きなし)は
     #: recipe_hash から省かれるので、**これ以前のレシピは 1 件もハッシュが動かない**。
@@ -66,6 +69,22 @@ class ModelRecipe:
     #: モデルは 300 本のモデルと別物であり、別の model_version であるべきである。
     params: tuple[tuple[str, float | int], ...] | None = None
     label: str = ""
+
+    # These two hash lineages deliberately retain different historical payload shapes:
+    # ModelRecipe is compact, while CalibSplitFactory hashes the full audit meta. Only defaults
+    # for newly added fields are shared, preserving byte-stability for both old lineages.
+    HASH_DEFAULT_OMISSIONS: ClassVar[dict[str, tuple[object, tuple[str, ...]]]] = {
+        "calibration_split_unit": (
+            LEGACY_CALIBRATION_SPLIT_UNIT,
+            ("calibration_split_unit",),
+        ),
+        "ev_weight": (False, ("ev_weight",)),
+        "weight_mask_rate": (None, ("weight_mask_rate", "weight_mask_seed")),
+        "params": (None, ("params",)),
+    }
+    NEW_HASH_DEFAULT_OMISSIONS: ClassVar[dict[str, tuple[object, tuple[str, ...]]]] = {
+        "margin_teacher": (None, ("margin_teacher",)),
+    }
 
     def __post_init__(self) -> None:
         # FR-019 / codex C3: fail closed — 068 never reads the target race's own odds.
@@ -82,6 +101,10 @@ class ModelRecipe:
             )
         if self.weight_mask_rate is not None and not 0.0 <= self.weight_mask_rate <= 1.0:
             raise ValueError(f"weight_mask_rate must be in [0, 1] (got {self.weight_mask_rate!r})")
+        if self.margin_teacher not in (None, "v1"):
+            raise ValueError(
+                f"unknown margin_teacher: {self.margin_teacher!r} (expected None or 'v1')"
+            )
         # Feature 073 FR-009/FR-002: fail closed on an unknown split unit.
         if self.calibration_split_unit not in CALIBRATION_SPLIT_UNITS:
             raise ValueError(
@@ -96,6 +119,29 @@ class ModelRecipe:
         """
         return asdict(self)
 
+    @staticmethod
+    def _strip_declared_hash_defaults(
+        d: dict,
+        omissions: dict[str, tuple[object, tuple[str, ...]]],
+    ) -> dict:
+        stripped = dict(d)
+        for trigger, (default, fields) in omissions.items():
+            if stripped.get(trigger) == default:
+                for field_name in fields:
+                    stripped.pop(field_name, None)
+        return stripped
+
+    @classmethod
+    def strip_new_field_defaults(cls, d: dict) -> dict:
+        """Strip hash defaults shared by both historical lineages (Feature 099+)."""
+        return cls._strip_declared_hash_defaults(d, cls.NEW_HASH_DEFAULT_OMISSIONS)
+
+    @classmethod
+    def strip_hash_defaults(cls, d: dict) -> dict:
+        """Return ModelRecipe's historical compact hash payload."""
+        stripped = cls._strip_declared_hash_defaults(d, cls.HASH_DEFAULT_OMISSIONS)
+        return cls.strip_new_field_defaults(stripped)
+
     def recipe_hash(self) -> str:
         """Content hash with Feature 073 back-compat canonicalization (D1).
 
@@ -105,21 +151,7 @@ class ModelRecipe:
         a new ``recipe_hash`` and ``model_version``. Serving prediction bytes are artifact-derived
         and independent of ``recipe_hash``, so SC-005 holds regardless of this field.
         """
-        d = self.meta()
-        if d.get("calibration_split_unit") == LEGACY_CALIBRATION_SPLIT_UNIT:
-            d = {k: v for k, v in d.items() if k != "calibration_split_unit"}
-        # Feature 079: default (off) EV-weighting is omitted so pre-079 recipes hash identically.
-        if d.get("ev_weight") is False:
-            d = {k: v for k, v in d.items() if k != "ev_weight"}
-        # Feature 091: an ABSENT weight mask (None) is omitted so pre-091 recipes hash identically.
-        # An EXPLICIT rate — including 0.0 — stays in the hash: "masking deliberately off" is a
-        # different model identity from "recipe predates masking" (provenance, not just value).
-        if d.get("weight_mask_rate") is None:
-            d = {k: v for k, v in d.items() if k not in ("weight_mask_rate", "weight_mask_seed")}
-        # 容量の上書きが無い(None)レシピは、この欄が足される前と同じハッシュになる。
-        if d.get("params") is None:
-            d = {k: v for k, v in d.items() if k != "params"}
-        return stable_hash(d)
+        return stable_hash(self.strip_hash_defaults(self.meta()))
 
     def resolved_params(self) -> dict | None:
         """LightGBM に渡す完全な params。上書きが無ければ None(= 既定のまま・挙動不変)。"""
@@ -186,6 +218,10 @@ class RecipeFactory:
 
     def fit(self, train_races: list[RaceContext], *, num_threads: int | None = None) -> Predictor:
         if self._pred is None:
+            # Feature 099's companion predictor stream adds this param; omit legacy None for now.
+            extra = {}
+            if self.recipe.margin_teacher is not None:
+                extra["margin_teacher"] = self.recipe.margin_teacher
             self._pred = LightGBMPredictor(
                 self.session,
                 seed=self.recipe.seed,
@@ -208,6 +244,7 @@ class RecipeFactory:
                 use_materialized=self.use_materialized,
                 materialized_path=self.materialized_path,
                 skip_fingerprint_verify=self.pin_snapshot,
+                **extra,
             )
         self._pred.fit(train_races)
         return self._pred

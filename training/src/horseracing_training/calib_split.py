@@ -193,6 +193,7 @@ class OofCalibratedPredictor:
         "params": "forward",             # via resolved_params(); 容量はモデル同一性の一部
         "weight_mask_rate": "forward",   # via weight_mask_spec()
         "weight_mask_seed": "forward",   # via weight_mask_spec()
+        "margin_teacher": "forward",
         "calibration": "override",       # -> "none"; the OOF calibrator is grafted on after
         "calib_frac": "override",        # -> 0.0; full-history booster is the point of the arm
         "calibration_split_unit": "override",  # no contiguous holdout exists to split
@@ -214,6 +215,10 @@ class OofCalibratedPredictor:
 
     def _make_base(self) -> LightGBMPredictor:
         self._check_recipe_fields_accounted_for()
+        # Feature 099's companion predictor stream adds this param; omit legacy None for now.
+        extra = {}
+        if self.recipe.margin_teacher is not None:
+            extra["margin_teacher"] = self.recipe.margin_teacher
         p = LightGBMPredictor(
             self.session,
             objective=self.recipe.objective,
@@ -237,6 +242,7 @@ class OofCalibratedPredictor:
             # 容量。arm E は booster が見る行が約 40% 増えるので、旧レシピで測った最適本数が
             # そのまま当てはまる保証は無い。ここを配線しないと arm E で容量を振れない。
             params=self.recipe.resolved_params(),
+            **extra,
         )
         if self._shared is not None:
             # The shared matrix is built WITHOUT any arm's column scope (it is shared precisely
@@ -505,6 +511,7 @@ class CalibSplitFactory:
 
     @property
     def recipe_meta(self) -> dict:
+        # Full audit meta is the historical arm-E identity; do not compact legacy defaults here.
         return {
             **self.recipe.meta(), "arm": f"oof_{self.method}",
             "n_oof_blocks": self.n_oof_blocks,
@@ -512,7 +519,7 @@ class CalibSplitFactory:
 
     @property
     def recipe_hash(self) -> str:
-        return stable_hash(self.recipe_meta)
+        return stable_hash(ModelRecipe.strip_new_field_defaults(self.recipe_meta))
 
     def fit(self, train_races: list[RaceContext], *, num_threads: int | None = None) -> Predictor:
         if self._shared is None:

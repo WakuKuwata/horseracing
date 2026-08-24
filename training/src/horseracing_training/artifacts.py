@@ -404,6 +404,10 @@ def save_model_version(
     # vocabulary cannot describe". Key absent for ordinary models (their metadata is unchanged).
     if info.get("calibration_protocol"):
         metadata["calibration_protocol"] = dict(info["calibration_protocol"])
+    # Feature 099 (INV-MT9): margin-aware 教師信号の監査統計。OFF は key 不在 = 既存 metadata
+    # はバイト不変(060/085 と同じ規律)。served モデルがどの教師信号で学習されたかを宣言する。
+    if info.get("margin_teacher"):
+        metadata["margin_teacher"] = dict(info["margin_teacher"])
     meta_path.write_text(json.dumps(metadata, indent=2, sort_keys=True, default=str))
 
     # 2. metrics_summary (eval shape + training meta) -> DB
@@ -444,6 +448,8 @@ def save_model_version(
         summary["training"]["market_offset"] = dict(info["market_offset"])
     if info.get("calibration_protocol"):  # Feature 085: same, for the arm E protocol
         summary["training"]["calibration_protocol"] = dict(info["calibration_protocol"])
+    if info.get("margin_teacher"):  # Feature 099: 教師信号の同一性も DB 単独で追跡可能に(V)
+        summary["training"]["margin_teacher"] = dict(info["margin_teacher"])
 
     promotion = evaluate_promotion(
         legacy=decision, verdict=verdict, register_as_candidate=register_as_candidate,

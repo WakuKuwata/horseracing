@@ -53,6 +53,8 @@ def insert_race(
                     horse_id=hid,
                     finish_order=h["finish_order"],
                     result_status=h.get("result_status", ResultStatus.FINISHED),
+                    # Feature 099: margin(隣接着差)の材料。未指定 = NULL(時計欠損)。
+                    finish_time=h.get("finish_time"),
                 )
             )
     session.commit()
