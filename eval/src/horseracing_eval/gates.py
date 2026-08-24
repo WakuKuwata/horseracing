@@ -126,6 +126,25 @@ def recent_window_guard(
     correlated — deliberately. The guard is a conjunction ("no window is confidently worse"), not
     an independent-evidence combination, so correlated windows cost nothing; what they must NOT
     do is drift apart by using different resampling units from the primary CI.
+
+    SAMPLING-ONLY ON PURPOSE. The primary CI is widened by the declared retraining variance
+    (contract v4); this guard and the subgroup ``three_way`` tests are NOT, and that asymmetry is
+    a PRE-REGISTERED choice, not an oversight. Do not "fix" it in code — 097 T023 froze it one bit
+    ahead of the run precisely because widening an evidence-of-harm interval makes FAIL less
+    likely, so choosing the estimator afterwards is the post-hoc move the pre-registration exists
+    to prevent (2026-08-24 review, re-derived and then withdrawn).
+
+    Two further reasons it cannot simply be switched on:
+      * UNITS. ``sd_fold=0.001816`` was measured on race-level winner NLL
+        (scripts/seed_variance_probe.py). The subgroup guard also tests horse-level per-horse
+        logloss at margin 0.001, where a one-fold pad of 1.96*0.001816 = 0.00356 is 3.6x the
+        margin — near-null horse subgroups could then never PASS, ``subgroup_assurance`` could
+        never be "full", and ``evaluate_promotion`` hard-requires "full", so NOTHING would ever
+        reach ACTIVE.
+      * FROZEN CONFIGS. 095/096/097/098 all carry a ``seed_noise`` block, so "absent block is a
+        no-op" does not protect them; changing shared behaviour re-judges their recorded verdicts.
+    Combining the two uncertainties here needs a seed SD measured for THIS estimand and a newly
+    frozen contract — a re-pre-registration, not a code change.
     """
     mode = recent_mode(cfg)
     margin = recent_margin(cfg)
