@@ -16,7 +16,6 @@ encoding in the MVP, so no cross-row label leakage is possible.
 from __future__ import annotations
 
 import datetime
-import math
 from dataclasses import dataclass, field
 
 import pandas as pd
@@ -25,7 +24,7 @@ from horseracing_db.models import Race, RaceHorse, RaceResult
 from horseracing_features.builder import build_feature_matrix
 from horseracing_features.race_class_canon import REPRESENTATIONS, canonicalise
 from horseracing_features.registry import model_input_features
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 #: model-input feature columns that are categorical (text identifiers / codes).
@@ -54,11 +53,6 @@ RACE_DATE = "race_date"
 #: auxiliary LABEL-SIDE column for the market-offset model. Same contract as finish_rank:
 #: never in feature_cols / feature_hash / feature_snapshots (INV-M1/M3).
 MKT_ODDS = "mkt_odds"
-#: Frozen from the <=2023 gap distribution by the 099 spike; never tunable at gate time.
-MARGIN_SCALE_S2 = "margin_scale_s2"
-MARGIN_SCALE_S3 = "margin_scale_s3"
-MARGIN_M0 = 0.2
-MARGIN_GMIN = 0.25
 
 
 @dataclass(frozen=True)
@@ -143,56 +137,6 @@ def _odds_map(session: Session) -> dict[tuple[str, str], float | None]:
     return {(r.race_id, r.horse_id): r.odds for r in rows}
 
 
-def _margin_stage_scales(
-    session: Session,
-) -> tuple[dict[str, tuple[float, float]], dict]:
-    """Return race-level stage-2/stage-3 margin scales derived from result gaps.
-
-    The window includes every finished row, even when ``finish_time`` is NULL.  Otherwise
-    a missing clock for the immediately following horse would pair the current horse with
-    the wrong later finisher.  The top-three filter stays outside the window CTE so stage 3
-    can see the fourth finisher; undefined gaps remain neutral at 1.0.
-    """
-    rows = session.execute(
-        text(
-            """
-            WITH gaps AS (
-              SELECT race_id, finish_order,
-                     extract(epoch FROM lead(finish_time) OVER (
-                       PARTITION BY race_id ORDER BY finish_order
-                     ) - finish_time) AS gap_next
-              FROM race_results
-              WHERE result_status = 'finished'
-            )
-            SELECT race_id, finish_order, gap_next
-            FROM gaps
-            WHERE finish_order <= 3
-            """
-        )
-    ).all()
-
-    scales: dict[str, tuple[float, float]] = {}
-    # INV-MT9: scale==1.0 は「大差で cap」と「margin 未定義(次馬なし/時計欠損)で中立」を
-    # 混同する。分計はここ(唯一 gap の定義可否が分かる場所)でしか数えられない。
-    audit = {"s2_defined": 0, "s2_undefined": 0, "s3_defined": 0, "s3_undefined": 0}
-    for race_id, finish_order, gap_next in rows:
-        defined = gap_next is not None and math.isfinite(float(gap_next))
-        scale = 1.0
-        if defined:
-            scale = min(max(max(float(gap_next), 0.0) / MARGIN_M0, MARGIN_GMIN), 1.0)
-
-        s2, s3 = scales.get(race_id, (1.0, 1.0))
-        if finish_order == 2:
-            s2 = scale
-            audit["s2_defined" if defined else "s2_undefined"] += 1
-        elif finish_order == 3:
-            s3 = scale
-            audit["s3_defined" if defined else "s3_undefined"] += 1
-        scales[race_id] = (s2, s3)
-    audit["races_in_map"] = len(scales)
-    return scales, audit
-
-
 def build_training_matrix(
     session: Session,
     *,
@@ -247,15 +191,6 @@ def build_training_matrix(
         errors="coerce",
     ).astype(float)
 
-    # Feature 099: race-level margin scales (label-side aux, not model features). Missing races
-    # and undefined adjacent clocks remain neutral; explicit float64 keeps NaN/object out.
-    margin_scales, margin_audit = _margin_stage_scales(session)
-    race_margin_scales = df["race_id"].map(
-        lambda race_id: margin_scales.get(race_id, (1.0, 1.0))
-    )
-    df[MARGIN_SCALE_S2] = race_margin_scales.map(lambda scale: scale[0]).astype("float64")
-    df[MARGIN_SCALE_S3] = race_margin_scales.map(lambda scale: scale[1]).astype("float64")
-
     df, race_class_audit = apply_race_class_representation(df, representation)
 
     categorical_cols = [c for c in CATEGORICAL_FEATURES if c in feature_cols]
@@ -273,5 +208,5 @@ def build_training_matrix(
         frame=df,
         feature_cols=feature_cols,
         categorical_cols=categorical_cols,
-        build_audit={"race_class": race_class_audit, "margin_teacher": margin_audit},
+        build_audit={"race_class": race_class_audit},
     )

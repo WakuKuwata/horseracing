@@ -1,20 +1,15 @@
-"""099 T002/T008: レシピ hash の back-compat と margin_teacher フィールドの契約。
+"""レシピ hash の back-compat 常設ガード(099 T002 起源・REJECT 後も保全)。
 
-このファイルの SNAPSHOT 定数は **margin_teacher フィールド追加前**(コミット 6477b7b 時点)の
-実測値である(2026-08-24 採取)。T003(hash 省略規則の一本化)と T007(フィールド追加)の
-後もこれらのテストが緑であり続けることが、「既存 hash は 1 つも変わらない」(INV-MT5)の
-証明になる。codex P0-1: CalibSplitFactory は meta() 全体を hash するため、素朴なフィールド
-追加は arm E 系の既存 hash を全て変える — それをこのスナップショットが止める。
+SNAPSHOT 定数は 2026-08-24(6477b7b 時点)の実測値。ModelRecipe に新フィールドを足す
+ときは NEW_HASH_DEFAULT_OMISSIONS に default 省略を登録しない限りこのテストが赤くなる —
+CalibSplitFactory は meta() 全体を hash するため、素朴なフィールド追加は arm E 系の既存
+hash を全て変える(099 codex P0-1 で実証・099 REJECT 後も機構と本ガードは常設)。
 """
 
 from __future__ import annotations
 
-import pytest
-
 from horseracing_training.calib_split import (
-    ArmNotServable,
     CalibSplitFactory,
-    OofCalibratedPredictor,
 )
 from horseracing_training.recipe import ModelRecipe
 
@@ -62,35 +57,3 @@ def test_calib_split_factory_hash_snapshot_is_stable():
         for method in ("isotonic", "power"):
             f = CalibSplitFactory(None, recipe, method=method, n_oof_blocks=8)
             assert f.recipe_hash == _SNAPSHOT_FACTORY_HASH[(name, method)], (name, method)
-
-
-def test_margin_teacher_v1_changes_both_lineage_hashes():
-    default = ModelRecipe()
-    margin_teacher = ModelRecipe(margin_teacher="v1")
-
-    assert margin_teacher.recipe_hash() != default.recipe_hash()
-    assert (
-        CalibSplitFactory(None, margin_teacher).recipe_hash
-        != CalibSplitFactory(None, default).recipe_hash
-    )
-
-
-@pytest.mark.parametrize("value", ["v2", "V1"])
-def test_unknown_margin_teacher_is_rejected(value):
-    with pytest.raises(ValueError, match="margin_teacher"):
-        ModelRecipe(margin_teacher=value)
-
-
-def test_margin_teacher_disposition_is_forward_and_fails_closed_when_missing(monkeypatch):
-    disposition = OofCalibratedPredictor._RECIPE_FIELD_DISPOSITION
-    assert disposition["margin_teacher"] == "forward"
-
-    monkeypatch.delitem(disposition, "margin_teacher")
-    predictor = OofCalibratedPredictor(None, ModelRecipe(), method="isotonic")
-    with pytest.raises(ArmNotServable, match="margin_teacher"):
-        predictor._check_recipe_fields_accounted_for()
-
-
-def test_recipe_meta_contains_margin_teacher():
-    assert ModelRecipe().meta()["margin_teacher"] is None
-    assert ModelRecipe(margin_teacher="v1").meta()["margin_teacher"] == "v1"

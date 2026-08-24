@@ -60,8 +60,6 @@ class ModelRecipe:
     #: switched off for this experiment", None records "this recipe predates the mechanism".
     weight_mask_rate: float | None = None
     weight_mask_seed: int | None = None
-    #: Feature 099: PL top-k margin-aware teacher variant. None preserves legacy training.
-    margin_teacher: str | None = None
     #: LightGBM の容量など、既定からの上書きだけを (key, value) の組で持つ。dict ではなく
     #: タプルなのは frozen dataclass を本当に不変にするため。`None`(上書きなし)は
     #: recipe_hash から省かれるので、**これ以前のレシピは 1 件もハッシュが動かない**。
@@ -82,9 +80,10 @@ class ModelRecipe:
         "weight_mask_rate": (None, ("weight_mask_rate", "weight_mask_seed")),
         "params": (None, ("params",)),
     }
-    NEW_HASH_DEFAULT_OMISSIONS: ClassVar[dict[str, tuple[object, tuple[str, ...]]]] = {
-        "margin_teacher": (None, ("margin_teacher",)),
-    }
+    #: 099 REJECT 後も機構は保全(空)。新フィールドを足すときは必ずここに default 省略を
+    #: 登録する — 登録しないと CalibSplitFactory(meta() 全体を hash)系の既存 hash が全て
+    #: 変わる(codex P0-1 の恒久対策。両系 hash のスナップショットテストが守る)。
+    NEW_HASH_DEFAULT_OMISSIONS: ClassVar[dict[str, tuple[object, tuple[str, ...]]]] = {}
 
     def __post_init__(self) -> None:
         # FR-019 / codex C3: fail closed — 068 never reads the target race's own odds.
@@ -101,10 +100,6 @@ class ModelRecipe:
             )
         if self.weight_mask_rate is not None and not 0.0 <= self.weight_mask_rate <= 1.0:
             raise ValueError(f"weight_mask_rate must be in [0, 1] (got {self.weight_mask_rate!r})")
-        if self.margin_teacher not in (None, "v1"):
-            raise ValueError(
-                f"unknown margin_teacher: {self.margin_teacher!r} (expected None or 'v1')"
-            )
         # Feature 073 FR-009/FR-002: fail closed on an unknown split unit.
         if self.calibration_split_unit not in CALIBRATION_SPLIT_UNITS:
             raise ValueError(
@@ -218,10 +213,6 @@ class RecipeFactory:
 
     def fit(self, train_races: list[RaceContext], *, num_threads: int | None = None) -> Predictor:
         if self._pred is None:
-            # Feature 099's companion predictor stream adds this param; omit legacy None for now.
-            extra = {}
-            if self.recipe.margin_teacher is not None:
-                extra["margin_teacher"] = self.recipe.margin_teacher
             self._pred = LightGBMPredictor(
                 self.session,
                 seed=self.recipe.seed,
@@ -244,7 +235,6 @@ class RecipeFactory:
                 use_materialized=self.use_materialized,
                 materialized_path=self.materialized_path,
                 skip_fingerprint_verify=self.pin_snapshot,
-                **extra,
             )
         self._pred.fit(train_races)
         return self._pred

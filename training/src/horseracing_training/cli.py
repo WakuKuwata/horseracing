@@ -1473,15 +1473,10 @@ def _recipe_from_spec(spec: str):
     # candidate carries it; the active arm does not (and additionally drops weight_history, since
     # the model it stands for has no prev_weight column at all).
     wmask_rate = wmask_seed = None
-    margin_teacher = None
     for seg in parts[2:]:
         if seg.startswith("drop="):
             groups = tuple(g for g in seg[len("drop="):].split(",") if g)
             drop_features = _expand_group_drops(groups)
-        elif seg.startswith("mteach="):
-            # Feature 099: margin-aware 教師信号。受理値の検証は ModelRecipe が fail-closed で
-            # 行う(mteach=v2 等はここで黙殺されず ValueError)。
-            margin_teacher = seg[len("mteach="):]
         elif seg.startswith("wmask="):
             rate_s, _, seed_s = seg[len("wmask="):].partition("/")
             if not seed_s:
@@ -1494,7 +1489,6 @@ def _recipe_from_spec(spec: str):
         objective=objective, calibration=calibration, calib_frac=calib_frac,
         drop_features=drop_features, label=spec,
         weight_mask_rate=wmask_rate, weight_mask_seed=wmask_seed,
-        margin_teacher=margin_teacher,
     )
 
 
@@ -1533,7 +1527,6 @@ def _factory_from_spec(session, spec: str, *, use_materialized: bool = False,
                 (("n_estimators", int(ov["n_estimators"])),)
                 if "n_estimators" in ov else base.params
             ),
-            margin_teacher=base.margin_teacher,
             seed=int(ov.get("seed", base.seed)),
         )
         return CalibSplitFactory(
@@ -1628,7 +1621,10 @@ def _assert_arm_identity(cand, act, gate_cfg: dict | None, *, confirmatory: bool
     if not confirmatory:
         return
     arm_identity = (gate_cfg or {}).get("arm_identity") or {}
-    if not arm_identity:
+    arms = (gate_cfg or {}).get("arms") or {}
+    # 「差は margin_teacher のみ」検査は arms がその形を宣言したゲート限定(099)。宣言の無い
+    # 将来のゲートでは hash 同一性検査のみが常設で効く。
+    if not arm_identity or "margin_teacher_candidate" not in arms:
         return
     cm, am = dict(cand.recipe_meta), dict(act.recipe_meta)
     diff = {k for k in set(cm) | set(am) if cm.get(k) != am.get(k)}
