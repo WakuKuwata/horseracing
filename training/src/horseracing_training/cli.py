@@ -1473,10 +1473,15 @@ def _recipe_from_spec(spec: str):
     # candidate carries it; the active arm does not (and additionally drops weight_history, since
     # the model it stands for has no prev_weight column at all).
     wmask_rate = wmask_seed = None
+    margin_teacher = None
     for seg in parts[2:]:
         if seg.startswith("drop="):
             groups = tuple(g for g in seg[len("drop="):].split(",") if g)
             drop_features = _expand_group_drops(groups)
+        elif seg.startswith("mteach="):
+            # Feature 099: margin-aware 教師信号。受理値の検証は ModelRecipe が fail-closed で
+            # 行う(mteach=v2 等はここで黙殺されず ValueError)。
+            margin_teacher = seg[len("mteach="):]
         elif seg.startswith("wmask="):
             rate_s, _, seed_s = seg[len("wmask="):].partition("/")
             if not seed_s:
@@ -1489,12 +1494,14 @@ def _recipe_from_spec(spec: str):
         objective=objective, calibration=calibration, calib_frac=calib_frac,
         drop_features=drop_features, label=spec,
         weight_mask_rate=wmask_rate, weight_mask_seed=wmask_seed,
+        margin_teacher=margin_teacher,
     )
 
 
 def _factory_from_spec(session, spec: str, *, use_materialized: bool = False,
                        materialized_path: str | None = None,
-                       pin_snapshot: bool = False):
+                       pin_snapshot: bool = False,
+                       arm_overrides: dict | None = None):
     """Build the right PredictorFactory for a recipe spec.
 
     ``objective:oof_power`` → 068 C/D arm (full-history booster + strict-past OOF power γ);
@@ -1508,24 +1515,164 @@ def _factory_from_spec(session, spec: str, *, use_materialized: bool = False,
     oof_method = {"oof_power": "power", "oof_isotonic": "isotonic"}.get(
         parts[1] if len(parts) > 1 else ""
     )
+    ov = arm_overrides or {}
     if oof_method is not None:
         from .calib_split import CalibSplitFactory
         from .recipe import ModelRecipe
-        # A trailing drop=<groups> (069) MUST survive into the OOF arm: the earlier form
-        # discarded it, so "pl_topk:oof_isotonic:drop=g" silently evaluated the full column set
-        # (same latent fault as the shared-matrix scope bypass fixed in feature 097).
+        # Feature 069/099: spec の後続セグメントは OOF アームに**全て**生き残らなければ
+        # ならない。069 は drop= を捨てるバグ、099 の analyze は wmask=/params が今も捨て
+        # られている穴(両アームが等しく別物の estimand を測る)を検出した — base から
+        # 明示的に運ぶ。calib_frac/calibration は arm E の定義そのもの(override)。
         base = _recipe_from_spec(spec)
+        recipe = ModelRecipe(
+            objective=parts[0], calibration="none",
+            drop_features=base.drop_features, label=spec,
+            weight_mask_rate=ov.get("weight_mask_rate", base.weight_mask_rate),
+            weight_mask_seed=ov.get("weight_mask_seed", base.weight_mask_seed),
+            params=(
+                (("n_estimators", int(ov["n_estimators"])),)
+                if "n_estimators" in ov else base.params
+            ),
+            margin_teacher=base.margin_teacher,
+            seed=int(ov.get("seed", base.seed)),
+        )
         return CalibSplitFactory(
-            session, ModelRecipe(objective=parts[0], calibration="none",
-                                 drop_features=base.drop_features, label=spec),
-            method=oof_method,
+            session, recipe, method=oof_method,
+            n_oof_blocks=int(ov.get("n_oof_blocks", 3)),
+            use_materialized=use_materialized, materialized_path=materialized_path,
+            pin_snapshot=pin_snapshot,
         )
     from .recipe import RecipeFactory
+    base = _recipe_from_spec(spec)
+    if ov:
+        import dataclasses as _dc
+        base = _dc.replace(
+            base,
+            weight_mask_rate=ov.get("weight_mask_rate", base.weight_mask_rate),
+            weight_mask_seed=ov.get("weight_mask_seed", base.weight_mask_seed),
+            params=(
+                (("n_estimators", int(ov["n_estimators"])),)
+                if "n_estimators" in ov else base.params
+            ),
+            seed=int(ov.get("seed", base.seed)),
+        )
     return RecipeFactory(
-        session, _recipe_from_spec(spec),
+        session, base,
         use_materialized=use_materialized, materialized_path=materialized_path,
         pin_snapshot=pin_snapshot,
     )
+
+
+def _gate_arm_overrides(gate_cfg: dict | None, *, confirmatory: bool) -> dict | None:
+    """Feature 099 (analyze C1): 凍結アーム構成を実行に運ぶ唯一の経路。
+
+    confirmatory は gate-config `arms` の容量/マスク/OOF blocks/seed を両アームに注入する。
+    非 confirmatory + gate-config あり = smoke: `smoke.n_estimators` の低容量を注入する
+    (paired-eval に rounds フラグは無いので、ここが唯一の適用手段)。config 無しは None。
+    """
+    if not gate_cfg:
+        return None
+    if confirmatory:
+        arms = gate_cfg.get("arms") or {}
+        ov = {k: arms[k] for k in
+              ("n_estimators", "weight_mask_rate", "weight_mask_seed", "n_oof_blocks", "seed")
+              if k in arms}
+        return ov or None
+    smoke = gate_cfg.get("smoke") or {}
+    return {"n_estimators": smoke["n_estimators"]} if "n_estimators" in smoke else None
+
+
+def _assert_gate_arms(factory, arms: dict, *, role: str) -> None:
+    """採点開始前の実効 recipe 照合(fail-closed)。
+
+    注入(_gate_arm_overrides)と照合を別々に持つのは、注入漏れ・carriage 漏れ(069 の
+    drop=、099 analyze の wmask=/params の前歴)が「両アームが等しくズレて差分検査を素通り
+    する」型だから — 凍結値との突き合わせだけがこの型を止める。
+    """
+    meta = dict(factory.recipe_meta)
+    problems: list[str] = []
+    if "n_estimators" in arms:
+        params = dict(meta.get("params") or ())
+        if params.get("n_estimators") != arms["n_estimators"]:
+            problems.append(
+                f"n_estimators={params.get('n_estimators')} != frozen {arms['n_estimators']}")
+    for key in ("weight_mask_rate", "weight_mask_seed", "seed"):
+        if key in arms and meta.get(key) != arms[key]:
+            problems.append(f"{key}={meta.get(key)} != frozen {arms[key]}")
+    if "n_oof_blocks" in arms and "n_oof_blocks" in meta \
+            and meta["n_oof_blocks"] != arms["n_oof_blocks"]:
+        problems.append(f"n_oof_blocks={meta['n_oof_blocks']} != frozen {arms['n_oof_blocks']}")
+    expected_mt = arms.get(f"margin_teacher_{role}")
+    if f"margin_teacher_{role}" in arms and meta.get("margin_teacher") != expected_mt:
+        problems.append(f"margin_teacher={meta.get('margin_teacher')} != frozen {expected_mt}")
+    if problems:
+        raise SystemExit(
+            f"paired-eval: {role} arm's EFFECTIVE recipe does not match the frozen gate-config "
+            f"arms ({'; '.join(problems)}). Refusing to score a different estimand (fail-closed)."
+        )
+
+
+def _assert_arm_identity(cand, act, gate_cfg: dict | None, *, confirmatory: bool) -> None:
+    """実行前のアーム同一性検査(Feature 099 T017・2026-08-24 監査 finding)。
+
+    同一アームは正常な見た目の全ゼロレポートを出す(097 実害)。さらに confirmatory では
+    実効 recipe の差分が margin_teacher 1 フィールド(+label)だけであることを要求する —
+    hash 不一致だけでは「hash に入るが配線で無視」の黙殺を検出できない(codex P0-3)。
+    """
+    if cand.recipe_hash == act.recipe_hash:
+        raise SystemExit(
+            "paired-eval: candidate and active have the IDENTICAL recipe_hash — the arms are "
+            "the same model and every diff would be exactly 0.000000 (a spec-segment typo like "
+            "'mteach=' misspelling does this). Refusing to run (fail-closed)."
+        )
+    if not confirmatory:
+        return
+    arm_identity = (gate_cfg or {}).get("arm_identity") or {}
+    if not arm_identity:
+        return
+    cm, am = dict(cand.recipe_meta), dict(act.recipe_meta)
+    diff = {k for k in set(cm) | set(am) if cm.get(k) != am.get(k)}
+    if "margin_teacher" not in diff or not diff <= {"margin_teacher", "label"}:
+        raise SystemExit(
+            f"paired-eval: confirmatory arms must differ EXACTLY in margin_teacher (+label); "
+            f"actual diff fields = {sorted(diff)}. A confounded arm would attribute an unrelated "
+            "setting change to the teacher signal (fail-closed)."
+        )
+
+
+def _post_run_structure_check(report, cand, gate_cfg: dict | None) -> str | None:
+    """実行後・verdict 書き出し前の構造 assert(Feature 099 T017a / FR-010)。
+
+    ①非ゼロ差レース数 ≥ arm_identity.require_nonzero_diff_races(全ゼロ = アーム同一の故障)
+    ②candidate が margin_teacher アームなら、fit_info 統計で変調が実際に効いたこと。
+    `_pred` は factory が再 fit する単一インスタンスのため②は**最終 fold の統計**に対する
+    検査(存在+変調の検査としては十分・tasks T017a 注記)。
+    """
+    need = int(((gate_cfg or {}).get("arm_identity") or {}).get("require_nonzero_diff_races", 1))
+    nonzero = sum(
+        1 for vals in report.diffs_by_day.values() for v in vals if float(v) != 0.0
+    )
+    if nonzero < need:
+        return (f"nonzero-diff races = {nonzero} < required {need} — the arms behaved "
+                "identically (broken wiring, not a result)")
+    if dict(cand.recipe_meta).get("margin_teacher") is None:
+        return None
+    pred = getattr(cand, "_pred", None)
+    info = getattr(pred, "fit_info_", None)
+    if info is None:
+        info = getattr(getattr(pred, "_base", None), "fit_info_", None)
+    mt = (info or {}).get("margin_teacher")
+    if not mt:
+        return ("candidate declares margin_teacher but the fitted predictor recorded no "
+                "margin_teacher stats — the teacher signal was silently ignored")
+    for stage in ("s2", "s3"):
+        st = mt.get(stage) or {}
+        if not st.get("scale_lt1_races"):
+            return f"margin_teacher {stage}: scale_lt1_races=0 — modulation never fired"
+        fm = st.get("fireable_mean")
+        if fm is not None and fm >= 1.0:
+            return f"margin_teacher {stage}: fireable_mean={fm} — scales are all neutral"
+    return None
 
 
 def _oof_generate(session: Session, args) -> int:
@@ -1869,8 +2016,15 @@ def _paired_eval(session: Session, args) -> int:
         getattr(args, "opportunity_races", None)
     )
     eval_races = load_eval_races(session, start_date=None, end_date=args.to)
-    cand = _factory_from_spec(session, args.candidate, **mat_kwargs)
-    act = _factory_from_spec(session, args.active, **mat_kwargs)
+    # Feature 099 (analyze C1): 凍結アーム構成の注入 + 実効 recipe 照合 + アーム同一性。
+    _confirmatory = bool(getattr(args, "confirmatory", False))
+    arm_overrides = _gate_arm_overrides(gate_cfg, confirmatory=_confirmatory)
+    cand = _factory_from_spec(session, args.candidate, **mat_kwargs, arm_overrides=arm_overrides)
+    act = _factory_from_spec(session, args.active, **mat_kwargs, arm_overrides=arm_overrides)
+    if _confirmatory and (gate_cfg or {}).get("arms"):
+        _assert_gate_arms(cand, gate_cfg["arms"], role="candidate")
+        _assert_gate_arms(act, gate_cfg["arms"], role="active")
+    _assert_arm_identity(cand, act, gate_cfg, confirmatory=_confirmatory)
 
     # Feature 091: regime-aware path. The standard paired-eval scores settled races, where the
     # same-day weight is present — the one condition under which this feature cannot help. The
@@ -1896,6 +2050,13 @@ def _paired_eval(session: Session, args) -> int:
         subgroups=_require_subgroups(args),
         compute_sensitivity=getattr(args, "compute_sensitivity", False),
     )
+    # Feature 099 (T017a): verdict を印字・書き出しする前の構造 assert。
+    structure_err = _post_run_structure_check(report, cand, gate_cfg)
+    if structure_err:
+        print(f"paired-eval STRUCTURE FAILURE: {structure_err}", file=sys.stderr)
+        print("  no verdict was written — this run is a wiring fault, not a result",
+              file=sys.stderr)
+        return 1
     g = report.gate
     print(f"paired-eval candidate={args.candidate} active={args.active} "
           f"n_races={report.n_races} n_eligible={report.n_eligible}")

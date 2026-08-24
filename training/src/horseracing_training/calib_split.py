@@ -506,6 +506,12 @@ class CalibSplitFactory:
     n_oof_blocks: int = 3
     method: str = "power"
     require_sufficient: bool = True
+    #: Feature 099 (analyze 2 周目 C1): confirmatory 評価は snapshot を固定して回す(091 D16)。
+    #: これらが無いと shared matrix は live DB から構築され、`--pin-snapshot` が OOF アームで
+    #: **黙って無効化**される — 十数時間の run 中に DB が動くと凍結 estimand が毀損する。
+    use_materialized: bool = False
+    materialized_path: str | None = None
+    pin_snapshot: bool = False
     _pred: OofCalibratedPredictor | None = field(default=None, init=False, repr=False)
     _shared: TrainingMatrix | None = field(default=None, init=False, repr=False)
 
@@ -524,7 +530,10 @@ class CalibSplitFactory:
     def fit(self, train_races: list[RaceContext], *, num_threads: int | None = None) -> Predictor:
         if self._shared is None:
             tmp = LightGBMPredictor(
-                self.session, objective=self.recipe.objective, calibration="none"
+                self.session, objective=self.recipe.objective, calibration="none",
+                use_materialized=self.use_materialized,
+                materialized_path=self.materialized_path,
+                skip_fingerprint_verify=self.pin_snapshot,
             )
             self._shared = tmp._ensure_data()
         if self._pred is None:
