@@ -384,6 +384,24 @@ FEATURE_GROUPS: dict[str, str] = {
 #: canonical representation: bumped, REJECTED at the pre-registered gate — pooled +0.0004, no
 #: measurable cost of the spelling split under retraining — and reverted; specs/098 verdict.json).
 #: Neither label may be reused for another meaning; the next bump is features-024.
+#:
+#: DELIBERATELY NOT BUMPED (2026-08-24, user decision): fixing the row-order dependence in
+#: `jockey_recent_win_rate` (352ccd4) changed 12.21% of that column's values with the column set
+#: unchanged — formally the same shape as the 017 value-changing bump above. It is recorded here
+#: so nobody re-litigates it or "corrects" it later:
+#:   * the OLD values were not well-defined. They were a function of the order `read_sql` happened
+#:     to return rows in, so there was no parity to preserve — serving could already disagree with
+#:     what training saw, on any day a row was rewritten.
+#:   * bumping would push lgbm-094-cap900 (features-021, exact) onto a dead compat path and stop
+#:     every prediction until a retrain landed. That is a real outage to protect a parity that
+#:     never existed.
+#:   * precedent: 067 made the same call for the entity-identity repair — a DATA FIX, not a
+#:     feature change, so feature_hash/feature_version stay put and serving keeps working.
+#: The honest residual: the active model trained on one arbitrary realisation of those values and
+#: now sees the canonical ones. The difference is bounded by the column's own scale and is not
+#: worth an emergency retrain, but the next scheduled retrain re-aligns it and should not be
+#: deferred indefinitely. A future VALUE change that is genuinely well-defined on both sides still
+#: requires a bump — this exception is specific to replacing an undefined value with a defined one.
 FEATURE_VERSION = "features-021"
 
 #: The value drivers pass when TRAINING under this registry version. A reader of an existing
