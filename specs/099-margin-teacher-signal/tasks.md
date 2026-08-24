@@ -196,12 +196,12 @@ smoke(事前登録外の窓)で配線確認 → 本実行。
       で candidate 登録 → adoption_status=candidate を DB で確認・`load_serving_model` で
       ロード検証・metadata に margin_teacher 統計が載っていることを確認。自動 active 化して
       いないことを確認
-- [ ] T023 [US3] REJECT の場合: 結線 revert — dataset.py の aux 列生成・recipe field・CLI
+- [x] T023 [US3] REJECT の場合: 結線 revert — dataset.py の aux 列生成・recipe field・CLI
       セグメント・predictor 配線を剥がす。**win_model の `margin_scales=None` 引数は
       objective 拡張と同様に保全**(None 既定=現行不変・analyze L3)。`pl_topk_objective` の stage_scales 引数+
       T005 単体テストは**保全**(None 既定は現行とビット一致なのでコードは残る)。revert 後:
       全スイート緑+実 DB E2E で active 予測バイト一致
-- [ ] T024 [US3] 記録: verdict と数値をメモリ(margin-teacher-spike-go.md の後継 or 追記)と
+- [x] T024 [US3] 記録: verdict と数値をメモリ(margin-teacher-spike-go.md の後継 or 追記)と
       CLAUDE.md SPECKIT 区間(手動 Edit)に反映。コミットは**変更ファイルの明示列挙**
       (共有チェックアウト・`git add -A` 禁止)
 
@@ -209,7 +209,7 @@ smoke(事前登録外の窓)で配線確認 → 本実行。
 
 ## Phase 6: Polish
 
-- [ ] T025 ruff(変更ファイル)+ training/eval/serving/features 全スイート最終確認+
+- [x] T025 ruff(変更ファイル)+ training/eval/serving/features 全スイート最終確認+
       quickstart の SC 対応表を実施結果で照合
 
 ---
