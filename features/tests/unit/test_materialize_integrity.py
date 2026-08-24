@@ -121,3 +121,61 @@ def test_code_check_also_runs_when_fingerprint_verification_is_skipped(tmp_path)
             frames, use_materialized=True, materialized_path=path,
             skip_fingerprint_verify=True,
         )
+
+
+# --- コード hash は散文を無視し、ロジックだけを見る(2026-08-24) -------------------------------
+#
+# 最初の実装はソースのバイト列を hash していた。その結果、registry.py にコメントを 18 行足した
+# だけの docs コミットが数時間後に 307MB のキャッシュを丸ごと無効化した(実際に `live refresh`
+# が MaterializationError で落ちて発覚)。散文で狼少年になる検査は迂回されるようになり、
+# 検査が無いより悪い。AST(docstring 除去済み)を hash する形に変えてある。
+
+def test_prose_does_not_invalidate_the_cache(tmp_path, monkeypatch):
+    """コメント・空行・docstring の変更では hash が動かないこと."""
+    import ast
+
+    from horseracing_features import materialize as m
+
+    src_plain = "X = 1\ndef f():\n    return X + 2\n"
+    src_prose = (
+        '"""module docstring."""\n'
+        "# 長い説明コメント\n"
+        "\n"
+        "X = 1\n"
+        "def f():\n"
+        '    """まったく違う説明。"""\n'
+        "    # さらにコメント\n"
+        "    return X + 2\n"
+    )
+    def h(src):
+        return ast.dump(m._strip_docstrings(ast.parse(src)))
+
+    assert h(src_plain) == h(src_prose)
+
+
+def test_a_logic_change_does_invalidate_the_cache():
+    """式・定数・並べ替えキーが変われば hash は動くこと(狼少年の逆で、見逃してはならない)."""
+    import ast
+
+    from horseracing_features import materialize as m
+
+    def h(src):
+        return ast.dump(m._strip_docstrings(ast.parse(src)))
+
+    assert h("def f():\n    return X + 2\n") != h("def f():\n    return X + 3\n")
+    assert h('s = ["a", "b"]\n') != h('s = ["a"]\n')
+
+
+def test_an_algo_change_is_reported_as_such(tmp_path):
+    """アルゴリズムが変わったときに「コードが変わった」と誤報しないこと."""
+    import json
+
+    _, path = _built(tmp_path)
+    mpath = tmp_path / "f.manifest.json"
+    raw = json.loads(mpath.read_text(encoding="utf-8"))
+    raw["feature_code_hash_algo"] = "byte-v0"
+    mpath.write_text(json.dumps(raw), encoding="utf-8")
+    with pytest.raises(MaterializationError, match="algo mismatch"):
+        assemble_feature_matrix(
+            make_frames(_SPECS), use_materialized=True, materialized_path=path,
+        )

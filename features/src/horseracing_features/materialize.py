@@ -17,6 +17,7 @@ CRITICAL (codex):
 
 from __future__ import annotations
 
+import ast
 import dataclasses
 import datetime
 import decimal
@@ -92,6 +93,9 @@ MANIFEST_VERSION = 1
 #: str), so equal VALUES hash equal regardless of the load window — verification can then reuse
 #: the end_date-windowed frames (+ a small delta load) instead of a second full-pool load.
 FINGERPRINT_ALGO = "fp-v2"
+#: how ``feature_code_hash`` is derived. Tagged so an algorithm change is diagnosable as such
+#: instead of surfacing as a phantom "the feature code changed".
+FEATURE_CODE_HASH_ALGO = "ast-v1"
 
 
 class MaterializationError(RuntimeError):
@@ -119,6 +123,7 @@ class Manifest:
     #: source_fingerprint covers the DB inputs only, so without this a parquet built by older
     #: feature code passes every check while serving values the current code would not produce.
     feature_code_hash: str | None = None
+    feature_code_hash_algo: str | None = None
 
     def to_json(self) -> str:
         return json.dumps(dataclasses.asdict(self), ensure_ascii=False, sort_keys=True, indent=2)
@@ -181,8 +186,26 @@ def _file_sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def _strip_docstrings(tree: ast.AST) -> ast.AST:
+    """Drop docstring statements so prose edits do not read as code changes."""
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if not isinstance(body, list) or not body:
+            continue
+        if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        first = body[0]
+        if (
+            isinstance(first, ast.Expr)
+            and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)
+        ):
+            node.body = body[1:]
+    return tree
+
+
 def _feature_code_hash() -> str:
-    """sha256 over the sources of this package — the CODE that produced the cached values.
+    """Hash of this package's CODE — what would actually change a cached value.
 
     ``source_fingerprint`` covers the DB inputs, so a parquet built by older feature code passes
     every existing check while serving values the current code would never produce. That is not
@@ -190,16 +213,24 @@ def _feature_code_hash() -> str:
     changed 12.21% of that column's values and left the on-disk parquet silently wrong, with no
     check anywhere able to notice.
 
+    Hashed over the parsed AST with docstrings removed, NOT the source bytes. The first version
+    hashed bytes and a documentation-only commit (18 lines of comment in registry.py) invalidated
+    the whole 307MB cache hours later — a check that cries wolf on prose gets bypassed, which is
+    worse than not having it. Comments never survive parsing and docstrings are stripped here, so
+    prose and reformatting are free while any change to an expression, a constant or a sort key
+    still invalidates.
+
     Whole-package rather than a dependency-precise set: enumerating exactly which modules feed
-    ``build_asof_features`` is fragile and fails open when someone adds a block. A comment-only
-    edit therefore invalidates the cache too — a few minutes of rebuild against serving values
-    that no longer match the code that is running.
+    ``build_asof_features`` is fragile and fails open when someone adds a block.
+
+    ``ast.dump`` output can shift between Python minor versions, so an interpreter upgrade
+    invalidates the cache once. That is the safe direction and is why the algorithm is tagged.
     """
     root = Path(__file__).parent
-    h = hashlib.sha256()
+    h = hashlib.sha256(FEATURE_CODE_HASH_ALGO.encode("utf-8"))
     for f in sorted(root.glob("*.py")):
         h.update(f.name.encode("utf-8"))
-        h.update(f.read_bytes())
+        h.update(ast.dump(_strip_docstrings(ast.parse(f.read_bytes()))).encode("utf-8"))
     return h.hexdigest()
 
 
@@ -398,6 +429,7 @@ def write_materialized(
         fingerprint_algo=FINGERPRINT_ALGO,
         parquet_sha256=_file_sha256(parquet_path),
         feature_code_hash=_feature_code_hash(),
+        feature_code_hash_algo=FEATURE_CODE_HASH_ALGO,
     )
     _manifest_path(parquet_path).write_text(manifest.to_json(), encoding="utf-8")
     return manifest
@@ -451,6 +483,12 @@ def assert_manifest_compatible(manifest: Manifest) -> None:
     # The CODE that produced the cache. source_fingerprint answers "did the DB inputs change";
     # this answers "would today's code still produce these values". Nothing asked that before,
     # so a feature fix left the parquet silently wrong (see _feature_code_hash).
+    if manifest.feature_code_hash_algo != FEATURE_CODE_HASH_ALGO:
+        raise MaterializationError(
+            f"feature-code hash algo mismatch: manifest={manifest.feature_code_hash_algo!r} "
+            f"now={FEATURE_CODE_HASH_ALGO!r} (the recorded value is not comparable) — re-run "
+            "`features materialize`"
+        )
     current_code = _feature_code_hash()
     if manifest.feature_code_hash != current_code:
         raise MaterializationError(
