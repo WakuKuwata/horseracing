@@ -7,6 +7,7 @@ as-of each row's own race_date (same-day excluded), so result-pending future rac
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
 import sys
 from dataclasses import dataclass
@@ -345,6 +346,11 @@ class BackfillCounts:
     error_days: int = 0       # days whose processing raised (isolated, not aborting)
     skip_no_odds: int = 0     # Feature 060: market-offset model, race lacks full odds
     weight_regime: dict | None = None  # Feature 091 T067: availability observability (or None)
+    #: (day, "ExcType: message") for every day that raised. Per-day isolation is deliberate — one
+    #: bad day must not abort a range — but DISCARDING the exception left the operator with a
+    #: number and nothing to act on. ``recommend_backfill`` already surfaces its per-race errors;
+    #: this stage did not.
+    errors: list[tuple[str, str]] = dataclasses.field(default_factory=list)
 
     def as_dict(self) -> dict:
         d = {
@@ -354,6 +360,8 @@ class BackfillCounts:
         }
         if self.weight_regime:
             d["weight_regime"] = self.weight_regime
+        if self.errors:
+            d["errors"] = [{"day": day, "error": err} for day, err in self.errors]
         return d
 
 
@@ -398,6 +406,7 @@ def run_serving_backfill(
     calib_digest = calib_act.digest12 if calib_act is not None else None
     gen = skip_exists = skip_no_started = error_days = skip_no_odds = 0
     wobs = WeightRegimeObserver()
+    errors: list[tuple[str, str]] = []
 
     day = date_from
     while day <= date_to:
@@ -449,16 +458,19 @@ def run_serving_backfill(
                         skip_no_odds += 1  # typed skip: no prediction row (INV-M4)
                         continue
                     gen += 1
-        except Exception:  # noqa: BLE001 — one day must not abort the whole range
+        except Exception as exc:  # noqa: BLE001 — one day must not abort the whole range
             session.rollback()
             error_days += 1
+            # Keep the cause. Isolation is about not aborting the range, not about hiding why a
+            # day produced nothing; a bare count is unactionable and reads like a benign skip.
+            errors.append((day.isoformat(), f"{type(exc).__name__}: {exc}"))
         day += datetime.timedelta(days=1)
 
     obs = wobs.as_dict()
     return BackfillCounts(
         generated=gen, skip_exists=skip_exists,
         skip_no_started=skip_no_started, error_days=error_days,
-        skip_no_odds=skip_no_odds,
+        skip_no_odds=skip_no_odds, errors=errors,
         weight_regime=obs if obs["races_regime_applicable"] else None,
     )
 

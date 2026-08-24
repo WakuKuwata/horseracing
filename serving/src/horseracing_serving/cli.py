@@ -93,7 +93,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"predict-backfill {args.from_}..{args.to}")
         print(f"  generated={c['generated']} skip_exists={c['skip_exists']} "
               f"skip_no_started={c['skip_no_started']} error_days={c['error_days']}")
-        return 0
+        for e in c.get("errors", []):
+            print(f"  error {e['day']}: {e['error']}")
+        # A range where every day raised used to print its counts and exit 0. A scheduler reads
+        # the exit code, so "no predictions were written" was indistinguishable from success.
+        return 1 if c["error_days"] else 0
     if args.command == "predict":
         if (args.race_id is None) == (args.date is None):
             parser.error("exactly one of --race-id or --date is required")

@@ -321,6 +321,22 @@ class RefreshReport:
     recommend: dict | None          # betting recommend_backfill counts; None = stage crashed
     recommend_error: str | None
 
+    @property
+    def ok(self) -> bool:
+        """True only if both stages ran AND neither reported an isolated failure.
+
+        A stage crash was the only thing the exit code used to look at, but both stages isolate
+        failures INTERNALLY and return normally: a range in which every day raised comes back as
+        counts with ``error_days=N`` and no exception. The ops refresh job maps the exit code to
+        SUCCEEDED/FAILED, so that surfaced in the UI as a successful update that wrote nothing.
+        Keeping the judgement here means the CLI and any other caller cannot disagree about it.
+        """
+        if self.predict_error is not None or self.recommend_error is not None:
+            return False
+        if (self.predict or {}).get("error_days"):
+            return False
+        return not (self.recommend or {}).get("error")
+
 
 def _preflight_manifest(session: Session, *, calib_mode: str, manifest_path: str | None) -> None:
     """Feature 076 (T018): fail-closed ONCE, before either stage runs.

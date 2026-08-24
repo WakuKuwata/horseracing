@@ -344,7 +344,9 @@ def _cmd_refresh(session: Session, args) -> int:
               f"error={r['error']}")
     else:
         print(f"  recommend: FAILED — {rep.recommend_error}")
-    return 0 if (rep.predict_error is None and rep.recommend_error is None) else 1
+    for e in (rep.predict or {}).get("errors", []):
+        print(f"  predict error {e['day']}: {e['error']}")
+    return 0 if rep.ok else 1
 
 
 def main(argv: list[str] | None = None) -> int:
