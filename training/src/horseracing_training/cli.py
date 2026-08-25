@@ -1098,6 +1098,10 @@ def main(argv: list[str] | None = None) -> int:
     ae.add_argument("--weight-mask-rate", type=float, default=None,
                     help="091 fit-scope mask rate; must match the recipe being reproduced")
     ae.add_argument("--weight-mask-seed", type=int, default=None)
+    ae.add_argument("--no-weight-mask", action="store_true",
+                    help="state deliberately that this build predates 091 masking; without it, "
+                         "omitting --weight-mask-rate is refused (a silent unmasked build would "
+                         "be registered under an arm-E name)")
     ae.add_argument("--n-estimators", type=int, default=None,
                     help="094: booster の本数。確認で通した値を渡す(未指定=既定 300)")
     ae.add_argument("--num-threads", type=int, default=None)
@@ -2275,6 +2279,7 @@ def _register_arm_e(session: Session, args) -> int:
         weight_mask_rate=args.weight_mask_rate, weight_mask_seed=args.weight_mask_seed,
         n_estimators=args.n_estimators,
         num_threads=args.num_threads,
+        allow_unmasked=args.no_weight_mask,
     )
     print(f"register-arm-e {payload['model_version']}  races={payload['n_races']}  "
           f"oof_rows={payload['n_oof_rows']}")
