@@ -143,6 +143,21 @@ def _terminal(*, entries_failed: bool, any_failed: bool, errors: int, written: i
     return JobStatus.SUCCEEDED
 
 
+def _has_corner_orders(session: Session, race_id: str) -> bool:
+    """True if this race now carries a passing order for at least one horse.
+
+    Read AFTER the results sub-step, so it answers the only question a 通過順 patch-up exists to
+    answer: did the visit achieve anything? A run that writes nothing is legitimate (the source
+    publishes the column about a day late) but indistinguishable, from the outside, from this whole
+    path having silently stopped working — which is exactly how the gap went unnoticed before."""
+    return session.scalars(
+        select(RaceResult.race_id)
+        .where(RaceResult.race_id == race_id)
+        .where(RaceResult.corner_orders.is_not(None))
+        .limit(1)
+    ).first() is not None
+
+
 def _has_active_prediction(session: Session, race_id: str) -> bool:
     """True if ``race_id`` already has a prediction_run for the currently ACTIVE model — the same
     run the read API (014 select_prediction_run) would surface. Used to precompute predictions
@@ -164,7 +179,9 @@ def _has_active_prediction(session: Session, race_id: str) -> bool:
 
 
 def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:
-    """Full refresh of one race: entries + results + odds. Sets terminal status/counts, commits.
+    """Refresh one race: entries + results + odds (results only for a 通過順 patch-up, below).
+
+    Sets terminal status/counts, commits.
 
     All three run regardless of result-pending state — the scrape-layer safety rules keep it sound
     (results INSERT-only, odds fill-null-on-finished / overwrite-on-pending). A not-yet-run race has
@@ -175,7 +192,17 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     didn't fail AND the ACTIVE model has no run yet (so repeated odds refreshes don't re-predict);
     predict itself is odds-independent for the default model (a market-offset model just typed-skips
     until odds exist). Follow-up job (not in-job chaining) so enqueue_predict's in-flight dedup
-    converges with a concurrent manual 予測生成. The predict job then chains recommend as usual."""
+    converges with a concurrent manual 予測生成. The predict job then chains recommend as usual.
+
+    EXCEPT for ``corner_backfill``: that origin exists to collect ONE column (通過順) that netkeiba
+    publishes about a day after the race, and its races are settled by construction (the selector
+    requires a result row). Entries, win odds and the exotic price grid are all either unavailable
+    or already final for such a race, so asking for them spends 3 requests where 1 does the job —
+    and at the operator's 1-request-per-minute budget that is the difference between clearing a
+    weekend's gaps and never catching up. So this origin fetches the result page and nothing else,
+    and the result fetch takes over the load-bearing role entries has in a normal pass: if it fails,
+    the job FAILED (it had exactly one thing to do), and a page that simply has no passing order yet
+    writes nothing and lands on SKIPPED — the same meaning those statuses already carry."""
     fetcher = fetcher or make_fetcher()
     race_id = job.scope_value or ""
     refresh_origin = (job.summary or {}).get("refresh_origin")
@@ -189,12 +216,21 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     # 1-request-per-minute budget a debut-heavy race could spend ~20 minutes on enrichment before
     # the pre-race odds and exotic price grid were even requested. Those two cannot be recovered
     # once the race runs.
-    entries = scrape_entries(session, urls=[entries_url(race_id)], fetcher=fetcher,
-                             scope_value=race_id, complete_profiles_after=False)
+    # 通過順だけを取りに来た patch-up は結果ページ 1 本で完結する(docstring 参照)。entries を
+    # 走らせないので `entries` は None のまま — 以降の分岐はすべてこれを見て判断する。
+    corners_only = refresh_origin == "corner_backfill"
+
+    entries = None
+    if not corners_only:
+        entries = scrape_entries(session, urls=[entries_url(race_id)], fetcher=fetcher,
+                                 scope_value=race_id, complete_profiles_after=False)
     results = scrape_results(session, urls=[result_url(race_id)], fetcher=fetcher,
                              scope_value=race_id)
-    odds = scrape_odds(session, urls=[win_odds_url(race_id)], fetcher=fetcher, scope_value=race_id)
-    summaries = [entries, results, odds]
+    summaries = [results] if corners_only else [entries, results]
+    if not corners_only:
+        odds = scrape_odds(session, urls=[win_odds_url(race_id)], fetcher=fetcher,
+                           scope_value=race_id)
+        summaries.append(odds)
 
     # PRE-RACE exotic price grid, only while the race is still pending. These prices are the only
     # thing that can drive combination selection — `exotic_odds` holds the dividend, which exists
@@ -206,7 +242,7 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     # on a bulk day full of finished races. Each bet type is one more request per race, so the list
     # is configuration (OPS_EXOTIC_QUOTE_BET_TYPES; empty disables).
     bet_types = list(CONFIG.exotic_quote_bet_types)
-    if bet_types and is_result_pending(session, race_id):
+    if bet_types and not corners_only and is_result_pending(session, race_id):
         quotes = scrape_exotic_quotes(session, race_ids=[race_id], bet_types=bet_types,
                                       fetcher=fetcher, scope_value=race_id)
         summaries.append(quotes)
@@ -222,13 +258,20 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     # signal. It is reported in the summary instead, because the previous code discarded the
     # result entirely — which is how a failing enrichment could go unnoticed indefinitely.
     profiles = None
-    if entries.status != JobStatus.FAILED:
+    if entries is not None and entries.status != JobStatus.FAILED:
         profiles = complete_profiles(session, fetcher=fetcher, race_id=race_id)
 
     written = sum(s.written for s in summaries)
     errors = sum(s.errors for s in summaries)
+    # 「土台の sub-step が落ちた」= FAILED の意味は origin ごとに担い手が違う。通常の refresh では
+    # 出走馬集合を作る entries、patch-up ではただ一つの仕事である results。ここを entries 固定に
+    # すると、結果ページを拒否された patch-up が「一部成功」を名乗る PARTIAL に化けて、運用画面で
+    # 本物の故障が見えなくなる(何も出来ていないのだから FAILED が正しい)。
     job.status = _terminal(
-        entries_failed=(entries.status == JobStatus.FAILED),
+        entries_failed=(
+            results.status == JobStatus.FAILED if corners_only
+            else (entries is not None and entries.status == JobStatus.FAILED)
+        ),
         any_failed=any(s.status == JobStatus.FAILED for s in summaries),
         errors=errors, written=written,
     )
@@ -237,11 +280,19 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     job.error_count = errors
     job.completed_at = _now()
     summary = {
-        "kind": "entries+results+odds",
+        # 何を取りに行った refresh なのかを記録から判別できるようにする(運用画面と事後監査用)。
+        "kind": "results" if corners_only else "entries+results+odds",
         "written": written,
         "calls": [{"job_type": s.job_type, "status": s.status, "written": s.written,
                    "skipped": s.skipped, "errors": s.errors} for s in summaries],
     }
+    if corners_only:
+        # 「何も書かなかった」の理由は記録しないと運用側から見分けがつかない — 通過順がまだ
+        # 公開されていないのか、別ジョブが先に埋めたのか、この経路が黙って止まったのか。
+        # 追加リクエストはゼロ(取得済みのページを保存した後の DB 読み 1 回)。
+        summary["corner_state"] = "filled" if _has_corner_orders(session, race_id) \
+            else "still_missing"
+
     if profiles is not None:
         summary["profiles"] = {
             "status": profiles.status, "written": profiles.written,
@@ -250,7 +301,10 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     # precompute predictions once entries exist (see docstring). enqueue in THIS transaction, then
     # assign summary ONCE (a later in-place mutation of a flushed dict is invisible to JSONB change
     # tracking — same pattern as run_predict's recommend follow-up).
-    if entries.status != JobStatus.FAILED and not _has_active_prediction(session, race_id):
+    # patch-up は確定済みレースの 1 列を埋めるだけなので予測の先回りは要らない(そのレースの
+    # 予測はとうに存在し、通過順は「その馬の次走の as-of 特徴」に効く=このレースの再予測ではない)。
+    if (entries is not None and entries.status != JobStatus.FAILED
+            and not _has_active_prediction(session, race_id)):
         followup, reused = enqueue_predict(
             session,
             race_id,
