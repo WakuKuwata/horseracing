@@ -124,3 +124,74 @@ def test_save_model_version_writes_representation_and_vocab_metadata(tmp_path, t
         "canonical-v1"
     )
     assert session.committed
+
+
+def test_the_db_summary_records_the_input_regime_and_capacity(tmp_path, tiny_booster):
+    """Feature 091/094 (V): `weight_mask` and `params` reached metadata.json but NOT the DB, so
+    an audit run against `model_versions` alone read the active model as unmasked and of unknown
+    capacity — which is how a review of arm E nearly reported a masked, 900-round production
+    model as maskless. "What was this model trained for, and how big is it" must be answerable
+    from the DB row.
+    """
+    feature_cols = ["numeric", "race_class"]
+    predictor = LightGBMPredictor(session=None)
+    predictor.feature_cols_ = feature_cols
+    predictor.win_model_ = WinModel(booster_=tiny_booster, feature_cols_=feature_cols)
+    mask = {"rate": 0.5, "seed": 20260810, "unit": "race", "columns": ["weight"]}
+    params = {"n_estimators": 900, "learning_rate": 0.05}
+    predictor.fit_info_ = {
+        "feature_cols": feature_cols,
+        "categorical_cols": ["race_class"],
+        "model_degenerate": False,
+        "weight_mask": mask,
+        "params": params,
+    }
+    session = _FakeSession()
+
+    art_dir = save_model_version(
+        session,
+        model_version="lgbm-mask-test",
+        predictor=predictor,
+        eval_result=_StubEval(),
+        decision=AdoptionDecision(adopted=False, reasons={}),
+        gate=AdoptionGate(ece_threshold=0.1),
+        artifacts_root=tmp_path,
+        feature_version="features-023",
+    )
+
+    training = session.params["metrics_summary"]["training"]
+    assert training["weight_mask"] == mask
+    assert training["params"] == params
+    # the on-disk record must keep saying the same thing (one truth, two places)
+    metadata = json.loads((art_dir / "metadata.json").read_text())
+    assert metadata["weight_mask"] == mask
+    assert metadata["params"] == params
+
+
+def test_an_unmasked_model_records_null_rather_than_omitting_the_key(tmp_path, tiny_booster):
+    """`None` means "this model predates/declines masking" and must be stated, not left absent —
+    an absent key is indistinguishable from an old row written before this field existed."""
+    feature_cols = ["numeric", "race_class"]
+    predictor = LightGBMPredictor(session=None)
+    predictor.feature_cols_ = feature_cols
+    predictor.win_model_ = WinModel(booster_=tiny_booster, feature_cols_=feature_cols)
+    predictor.fit_info_ = {
+        "feature_cols": feature_cols,
+        "categorical_cols": ["race_class"],
+        "model_degenerate": False,
+    }
+    session = _FakeSession()
+
+    save_model_version(
+        session,
+        model_version="lgbm-nomask-test",
+        predictor=predictor,
+        eval_result=_StubEval(),
+        decision=AdoptionDecision(adopted=False, reasons={}),
+        gate=AdoptionGate(ece_threshold=0.1),
+        artifacts_root=tmp_path,
+        feature_version="features-023",
+    )
+
+    training = session.params["metrics_summary"]["training"]
+    assert "weight_mask" in training and training["weight_mask"] is None

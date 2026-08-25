@@ -443,6 +443,13 @@ def save_model_version(
         "calib_through": str(info["calib_through"]) if info.get("calib_through") else None,
         # Feature 073 US2 (FR-009): the calibration split unit is visible from model_versions alone.
         "calibration_split_unit": info.get("calibration_split_unit"),
+        # Feature 091 / 094: the input regime the booster was trained for, and its capacity. Both
+        # were already in metadata.json but NOT here, so an audit run against the DB alone read
+        # the active model as "no weight mask, unknown capacity" — which is how an arm-E review
+        # came within one step of reporting a masked, 900-round production model as unmasked.
+        # `params` is the resolved dict actually handed to LightGBM (not just the overrides).
+        "weight_mask": info.get("weight_mask"),
+        "params": info.get("params"),
     }
     if info.get("market_offset"):  # Feature 060: visible from model_versions alone (V)
         summary["training"]["market_offset"] = dict(info["market_offset"])
