@@ -216,6 +216,24 @@ def seed_noise_sd(sd_fold: float, *, n_folds: int, k_seeds: int = 1) -> float:
 
     The fold-independence assumption is NOT measured — it is the reason this is a declared,
     frozen input rather than something the harness infers.
+
+    ``k_seeds`` MODELS REPEATING THE WHOLE COMPARISON. IT IS NOT AN ENSEMBLE TERM.
+    -----------------------------------------------------------------------------
+    Dividing by ``sqrt(k)`` assumes the k draws are independent. Re-running the comparison end to
+    end with a different seed satisfies that; averaging k boosters inside one shipped model does
+    NOT, because those members share a training set. For a within-member correlation ``rho`` the
+    variance of the average is
+
+        Var(mean) = sigma^2 * (rho + (1 - rho) / k)
+
+    and the ``rho * sigma^2`` part survives however large ``k`` gets. Feeding an ensemble's k into
+    this function reports a shrinkage that was never achieved, in the direction that makes the
+    interval too narrow — i.e. the failure mode nobody notices, because a narrower interval reads
+    as a better result.
+
+    So a k-seed ensemble (feature 100 US3) must NOT reach this function. Its shrinkage has to be
+    measured from independent k-seed bundles compared bundle against bundle, or not claimed at all
+    (FR-026b). ``eval/tests/unit/test_seed_noise_contract.py`` pins this.
     """
     if sd_fold <= 0 or n_folds < 1 or k_seeds < 1:
         return 0.0

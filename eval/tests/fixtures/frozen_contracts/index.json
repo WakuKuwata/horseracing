@@ -1,0 +1,32 @@
+{
+  "094-booster-capacity": {
+    "expected_gate_config_hash": "95cb8fd562c742d2fe072b71608b1f1d925fec7d52e34e48301bbd945d1ef024",
+    "source_gate_config": "specs/094-booster-capacity/gate-config.json"
+  },
+  "095-current-baseline-v4": {
+    "expected_gate_config_hash": "a30d0b0207a7e42c6c96e7eb49c3dd73b59852ac91f71629da1a52bca2772d82",
+    "source_gate_config": "specs/095-current-baseline-v4/gate-config.json"
+  },
+  "096-colsample-confirm": {
+    "expected_gate_config_hash": "7656a4c7d9dfd8cbb4c2f0ac6dfe17f81f014ab37887ac9cbb0d76d46fb99584",
+    "source_gate_config": "specs/096-colsample-confirm/gate-config.json"
+  },
+  "097-early-mid-pace": {
+    "expected_gate_config_hash": "6f76bf156de7ac3d96d0108d45c10be734a11d6363a8d58fc4022c9da01ba10c",
+    "source_gate_config": "specs/097-early-mid-pace/gate-config.json",
+    "verdict_keys": "097-early-mid-pace.verdict-keys.json",
+    "source_verdict": "specs/097-early-mid-pace/verdict.json"
+  },
+  "098-race-class-spelling": {
+    "expected_gate_config_hash": "ecfb8305b1669bec6a3ccf1d5b67128170025b887cb8824bbb868257eec4060a",
+    "source_gate_config": "specs/098-race-class-spelling/gate-config.json",
+    "verdict_keys": "098-race-class-spelling.verdict-keys.json",
+    "source_verdict": "specs/098-race-class-spelling/verdict.json"
+  },
+  "099-margin-teacher-signal": {
+    "expected_gate_config_hash": "d8c479dea834a22e4b27030d4558e9b1cc2e120639fbb29c32a8955331d098b7",
+    "source_gate_config": "specs/099-margin-teacher-signal/gate-config.json",
+    "verdict_keys": "099-margin-teacher-signal.verdict-keys.json",
+    "source_verdict": "specs/099-margin-teacher-signal/verdict.json"
+  }
+}

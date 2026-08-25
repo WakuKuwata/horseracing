@@ -1,0 +1,19 @@
+{
+  "artifact_kind": "counterfactual_spelling_simulation",
+  "eligible_for_verdict": false,
+  "evaluation_contract_version": "v4",
+  "gate_config_hash": "ecfb8305b1669bec6a3ccf1d5b67128170025b887cb8824bbb868257eec4060a",
+  "verdict": {
+    "status": "REJECT",
+    "adopt": false,
+    "formula": "primary_pooled AND guard_real_direction AND transportable",
+    "decision_reason": {
+      "cause": "primary_pooled AND guard_real_direction not both true",
+      "runnable": true,
+      "sufficient": true,
+      "primary_pooled": false,
+      "guard_real_direction": true,
+      "transportability": false
+    }
+  }
+}

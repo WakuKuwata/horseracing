@@ -1,0 +1,161 @@
+{
+  "_comment": "097 early-mid pace 採否ゲート。**実行前凍結**。primary は擬似供給停止シミュレーション(定常状態 estimand)。詳細は contracts/adoption-gate.md。",
+  "_pre_registered_at": "2026-08-22",
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "primary_regime": "simulated_supply_death",
+  "simulation": {
+    "cutoffs": [
+      "2019-01-01",
+      "2021-01-01",
+      "2023-01-01"
+    ],
+    "mask": "race_results.first_3f = NULL WHERE race_date >= cutoff AND distance <> 1200",
+    "mask_rationale": "1200m 導出は本番で生きている(ecf0c69)ためマスクしない = 定常状態の忠実な再現",
+    "scored_windows": [
+      [
+        "2020-01-01",
+        "2020-12-31"
+      ],
+      [
+        "2022-01-01",
+        "2022-12-31"
+      ],
+      [
+        "2024-01-01",
+        "2024-12-31"
+      ]
+    ],
+    "washout_years": 1,
+    "washout_measured": "cutoff+1y 時点で直近5完走の 98.1% が cutoff 後 (n=42,621)",
+    "estimand": "steady_state",
+    "train_masking": "fold 内で両アームともマスク済みデータから再学習(学習非マスク+採点マスクは禁止)",
+    "symmetry_assert": "マスク前後で採点レース集合・started 集合・winner が不変であることを実行時 assert",
+    "mask_provenance_assert": "codex tasks レビュー Q2: マスク後、各アームの loader 境界(features の Frames)で (race_id, horse_id, race_date, distance, first_3f) の決定論 hash を取り両アーム一致を assert。かつ cutoff 以降∧距離≠1200m の first_3f 非 NULL が 0 行であることを Frames 上で assert。両アームとも use_materialized=False(parquet は非マスク世界の凍結物)を assert。"
+  },
+  "arms": {
+    "candidate": "features-022 全列",
+    "active": "同一マスク環境で drop=early_mid_pace",
+    "recipe": {
+      "objective": "pl_topk",
+      "kind": "oof_isotonic",
+      "n_oof_blocks": 8,
+      "params": {
+        "n_estimators": 900
+      },
+      "weight_mask_rate": 0.5,
+      "weight_mask_seed": 20260810,
+      "seed": 42
+    }
+  },
+  "min_effect_delta": 0.002,
+  "seed_noise": {
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "n_folds": 3,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)"
+  },
+  "guards": {
+    "full_info": {
+      "mode": "evidence_of_harm",
+      "margin": 0.003,
+      "windows": "primary と同一の採点 3 窓・マスク無し",
+      "rationale": "実測 first3f が生きた世界で新列が害にならないこと。効果ゼロは PASS(期待どおり)"
+    },
+    "real_degraded_direction": {
+      "mode": "evidence_of_harm",
+      "margin": 0.005,
+      "window_from": "2025-10-11",
+      "rationale": "実劣化窓は MDE 0.0094 で検出力不足のため成立は要求しない。方向不一致の安全弁",
+      "window_to": "実行時の DB 最新 race_date(verdict.json に window_to と race_set_hash を記録=analyze C11)"
+    }
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2024-12-31",
+    "min_eval_days": 300,
+    "_comment": "assert_confirmatory に渡す envelope。scored_windows ⊂ envelope を driver で assert。guard 2(2025-10-11+)は envelope 外だが設計どおり(実レジームの方向一致 guard)。",
+    "_min_eval_days_note": "pooled 3 窓の開催日は実測 2020=109 / 2022=108 / 2024=106 = 323 日。400 では満たせないため 300 に凍結(analyze 2 周目 C1)。driver は pooled n_days >= min_eval_days を sufficiency として適用し、未満なら NO_DECISION。窓ごとの PairedReport.decision は参考値で転記しない。"
+  },
+  "power": {
+    "expected_n_races": 10350,
+    "expected_se": 0.0017,
+    "mde_80": 0.0048,
+    "target_effect": -0.005,
+    "note": "kill-test の -0.0095(流し込み)と 1200m 復元 -0.0041 の間を見込む。見込みであって登録値ではない"
+  },
+  "bootstrap": {
+    "b": 2000,
+    "seed": 20260822,
+    "block": "race_day",
+    "alpha": 0.05
+  },
+  "determinism": {
+    "tolerance": 1e-09,
+    "num_threads": 1
+  },
+  "verdict": {
+    "formula": "primary_pooled AND guard_full_info AND guard_real_direction",
+    "no_decision": "評価実行不能の場合のみ。個別カットオフの事後選別禁止(pooled が正本)",
+    "on_adopt": "列の採用のみ。モデル昇格は標準窓非劣化+本 verdict+prospective の 3 点セットで別途",
+    "output_discipline": "codex tasks レビュー Q1(b): primary・guard1・guard2 の全成分を計算し終えるまで一切の効果数値を出力しない。guard の途中結果で primary の計算を中断・変更しない(verdict は全成分計算後に 1 回だけ評価)。",
+    "allowed": [
+      "ADOPT",
+      "REJECT",
+      "NO_DECISION(評価実行不能の場合のみ)"
+    ]
+  },
+  "artifact_isolation": {
+    "_comment": "codex tasks レビュー Q1(d): 本 verdict は『マスクした擬似供給停止』環境での列採用の証拠であって、実データで学習した登録モデルの標準窓 verdict ではない。full_walk_forward にすると training の evaluate_promotion がこれで ACTIVE 昇格を通してしまう(構造的な穴)。専用種別にして、昇格ゲート(full_walk_forward のみ受理)から構造的に弾く。",
+    "verdict_kind": "counterfactual_supply_simulation",
+    "feature_adoption_eligible_kinds": [
+      "counterfactual_supply_simulation"
+    ],
+    "model_promotion_eligible_kinds": [
+      "full_walk_forward"
+    ],
+    "kinds": [
+      "counterfactual_supply_simulation",
+      "full_walk_forward",
+      "screening",
+      "smoke",
+      "remeasurement"
+    ]
+  },
+  "smoke": {
+    "_comment": "codex tasks レビュー Q1(a): smoke は確認データの中間閲覧になりうる。事前登録外のカットオフを使い、効果の数値は stdout/JSON に出さない(配線・対称性・JSON 形のみ検証)。",
+    "cutoff": "2016-01-01",
+    "scored_window": [
+      "2017-01-01",
+      "2017-12-31"
+    ],
+    "redact_effect_numbers": true,
+    "artifact_kind": "smoke",
+    "eligible_for_verdict": false
+  },
+  "recent_guard": {
+    "_comment": "pooled した互いに素な 3 窓(2020/2022/2024)を暦日で扱う。max_date=2024-12-31 基準で 3y 窓は 2022/2024 の採点日、5y 窓は 3 窓すべてを含む。疑似世界を跨ぐ pooled 上の evidence-of-harm 検査であり、現行レジームの証拠ではない。",
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005,
+    "max_date": "2024-12-31"
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "pooling": {
+    "_comment": "analyze 2 周目 C7: PairedReport は窓ごとのスカラしか露出しない。sub-gate に使う付随指標の集約規則を凍結。",
+    "winner_nll": "per-day diffs の union(互いに素)→ race-day cluster bootstrap → seed inflate(n_folds=3)",
+    "top2_top3_diff": "n_races 加重平均(厳密)",
+    "ece": "n_races 加重平均(equal-mass bin 境界が窓ごとに異なるため近似。ECE sub-gate は幅 0.001 の非劣性なので近似誤差は保守側に働かない点を開示)"
+  }
+}
