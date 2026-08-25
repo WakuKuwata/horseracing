@@ -157,6 +157,9 @@ class OofCalibratedPredictor:
         # (used by tests and by exploratory runs).
         self.require_sufficient = require_sufficient
         self._base: LightGBMPredictor | None = None
+        # Feature 091 predict-scope regime (None = full information, the default). Held here so a
+        # regime requested before/between fits survives the factory rebuilding the booster.
+        self._predict_mask = None
         self._reset_calibration_state()
 
     def _reset_calibration_state(self) -> None:
@@ -183,6 +186,9 @@ class OofCalibratedPredictor:
     #:   "forward" = passed straight through to the booster
     #:   "override" = arm E deliberately differs (this IS the arm: full-history booster, no
     #:                calibration holdout, calibration fitted out-of-fold instead)
+    #:   "reject" = changes the booster but is NOT wired here, so a non-default value must fail
+    #:              closed rather than be silently ignored ("not-applicable" would be a lie: the
+    #:              field does mean something to the booster, this builder just cannot honour it)
     #:   "not-applicable" = carries no meaning for the booster itself
     _RECIPE_FIELD_DISPOSITION = {
         "objective": "forward",
@@ -196,10 +202,18 @@ class OofCalibratedPredictor:
         "calibration": "override",       # -> "none"; the OOF calibrator is grafted on after
         "calib_frac": "override",        # -> 0.0; full-history booster is the point of the arm
         "calibration_split_unit": "override",  # no contiguous holdout exists to split
-        "market_offset": "not-applicable",     # arm E is defined on the non-offset recipe
-        "ev_weight": "not-applicable",         # kill-test-only, never active
+        # ModelRecipe.__post_init__ already refuses market_offset=True (FR-019), so this can only
+        # ever be False here; declaring it "reject" keeps the vocabulary honest either way.
+        "market_offset": "reject",
+        # ev_weight DOES change the booster (per-race fit weights), but its frozen OOF-p source is
+        # fit-scope and reaches LightGBMPredictor by a route this builder has no access to. Only
+        # ever used by the 079 kill-test with RecipeFactory; refuse instead of ignoring.
+        "ev_weight": "reject",
         "label": "not-applicable",             # provenance string
     }
+
+    #: recipe fields whose non-default value this builder cannot honour (see "reject" above).
+    _REJECTED_FIELD_DEFAULTS = {"market_offset": False, "ev_weight": False}
 
     def _check_recipe_fields_accounted_for(self) -> None:
         known = set(self._RECIPE_FIELD_DISPOSITION)
@@ -212,8 +226,19 @@ class OofCalibratedPredictor:
                 "Failing closed here beats registering a model that quietly ignores the recipe."
             )
 
+    def _check_no_rejected_fields(self) -> None:
+        for name, default in self._REJECTED_FIELD_DEFAULTS.items():
+            value = getattr(self.recipe, name)
+            if value != default:
+                raise ArmNotServable(
+                    f"arm E cannot honour {name}={value!r}: it changes the booster but is not "
+                    "wired into this builder. Refusing beats training a model that silently "
+                    "ignores part of its own recipe."
+                )
+
     def _make_base(self) -> LightGBMPredictor:
         self._check_recipe_fields_accounted_for()
+        self._check_no_rejected_fields()
         # Feature 099's companion predictor stream adds this param; omit legacy None for now.
         p = LightGBMPredictor(
             self.session,
@@ -269,6 +294,11 @@ class OofCalibratedPredictor:
                         "OOF power calibration produced no samples (fail-closed; pass "
                         "require_sufficient=False to allow the identity fallback)"
                     )
+        # A predict regime requested before this (re)fit must survive it: the factory rebuilds
+        # `_base` every outer fold, so a mask set once up front would otherwise be lost. Applied
+        # AFTER the OOF fit above, which deliberately keeps its own (full-information) regime.
+        if self._predict_mask is not None:
+            self._base.set_predict_weight_mask(self._predict_mask)
         return self
 
     # --- arm E: strict-past OOF isotonic -------------------------------------
@@ -467,6 +497,37 @@ class OofCalibratedPredictor:
         params = self.calibrator_.params_dict() if self.calibrator_ else None
         payload = json.dumps(params, sort_keys=True, separators=(",", ":"), default=str)
         return hashlib.sha256(payload.encode()).hexdigest()
+
+    def set_predict_weight_mask(self, spec) -> None:
+        """Feature 091 predict-regime hook — what lets arm E be scored under the SERVING regime.
+
+        Without this method ``eval.foldfit.predict_over_folds_multi`` fails closed
+        (``RegimeUnsupported``) for every non-default regime, so arm E could never be measured on
+        the input path serving actually takes (~97% of live races publish no same-day weight).
+        Failing closed was right — it never mislabelled a full-information run as "serving" — but
+        it left the question unmeasurable. Delegating to the fitted booster is byte-identical when
+        the spec is ``None`` (the default), so every existing fit is unaffected.
+
+        This deliberately does NOT touch the OOF calibration sample. ``_oof_isotonic_rows`` still
+        scores its blocks under full information, so the isotonic's input domain — the open
+        question this hook exists to MEASURE — is unchanged. Changing it here would redefine the
+        arm and orphan the models already registered under it; that is a pre-registered
+        measurement decision, not a silent code change.
+        """
+        self._predict_mask = spec
+        if self._base is not None:
+            self._base.set_predict_weight_mask(spec)
+
+    def raw_win_probs(self, race: RaceContext) -> tuple[list[str], np.ndarray]:
+        """UNCALIBRATED race-softmax for one race, under whatever predict regime is set.
+
+        Feature 091 requires this as the calibration-reversal diagnostic: if a candidate wins on
+        raw scores but loses after calibration, the calibrator produced the result, not the
+        change under test. ``predict_over_folds_multi`` detects it by ``hasattr``, so its absence
+        made the diagnostic silently unavailable for arm E.
+        """
+        assert self._base is not None
+        return self._base.raw_win_probs(race)
 
     def predict_race(self, race: RaceContext) -> dict:
         assert self._base is not None

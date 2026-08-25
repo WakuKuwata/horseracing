@@ -101,6 +101,15 @@ def _parity_check(servable, *, artifacts_dir: str, model_version: str) -> tuple[
     cb = np.asarray(calibrator.transform(probe), dtype=float)
     calib_diff = float(np.max(np.abs(ca - cb)))
 
+    # NaN must fail, and `max()` does not deliver that: `max(0.0, float("nan"))` returns 0.0
+    # (Python compares left-to-right and NaN comparisons are False), so a calibrator emitting
+    # NaN would sail through a `worst != 0` check — a fail-OPEN in the one guard that exists to
+    # fail closed. Test finiteness explicitly before comparing.
+    if not (np.isfinite(booster_diff) and np.isfinite(calib_diff)):
+        raise ArmERegisterError(
+            f"round-trip parity produced a non-finite difference (booster {booster_diff!r}, "
+            f"calibrator {calib_diff!r}); a NaN here means the reloaded artifact emits NaN"
+        )
     worst = max(booster_diff, calib_diff)
     if worst != PARITY_TOLERANCE:
         raise ArmERegisterError(
@@ -121,7 +130,21 @@ def run(
     weight_mask_seed: int | None = None,
     n_estimators: int | None = None,
     num_threads: int | None = None,
+    allow_unmasked: bool = False,
 ) -> dict[str, Any]:
+    # The mask is OPTIONAL in the signature but not optional in practice: since feature 091 every
+    # production recipe carries one, and omitting the two arguments silently builds a pre-091
+    # booster — which trains fine, scores fine on the full-information window, and is blind to the
+    # serving path. Nothing downstream catches it (the artifact simply records weight_mask=null),
+    # so `lgbm-093-armE-wmask` could have been registered with no mask at all. Require an explicit
+    # decision instead of inferring one from a default.
+    if weight_mask_rate is None and not allow_unmasked:
+        raise ArmERegisterError(
+            "no weight mask given: pass --weight-mask-rate/--weight-mask-seed to reproduce the "
+            "production recipe, or --no-weight-mask to state deliberately that this build "
+            "predates the 091 mechanism. Defaulting to 'unmasked' would register a pre-091 "
+            "booster under an arm-E name."
+        )
     races = load_eval_races(session)
     if not races:
         raise ArmERegisterError("no eligible races — refusing to build")
