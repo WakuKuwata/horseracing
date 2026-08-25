@@ -1,0 +1,71 @@
+{
+  "method": "multiple_testing_budget",
+  "judgments_per_year": 8,
+  "acceptable_net_harm_prob": 0.05,
+  "sd_total": 0.001576,
+  "harm_fraction": 0.5,
+  "ci_alpha": 0.05,
+  "per_judgment_fp_budget": 0.012782301909090021,
+  "derived_delta": 0.0035188338580500285,
+  "frozen_at": "2026-08-25",
+  "notes": "δ は sd_fold に依存しない。入力は年間判定回数・許容 net-harm 確率・total SE・有害割合のみ(FR-029/030)。",
+  "_comment": "feature 100 US4 / FR-030。**実行前に凍結**した入力から δ を導出したもの。",
+  "inputs_frozen_before_derivation": true,
+  "assumed_effect_distribution": "最悪ケース: 真に有害な候補の効果はちょうど 0(帰無の境界)。ここで偽陽性率が最大になる。",
+  "sd_total_source": "097 の実 verdict の total 腕(ci_high − point = 0.003089)を z=1.96 で割った 0.001576。**内訳(sampling/seed)は使っていない** — 使うと sd_fold への依存が復活する(FR-029)。",
+  "rejected_derivations": {
+    "measurement_noise": {
+      "value_it_would_give": 0.001816,
+      "why_rejected": "現行 δ=0.002 の実質的な由来。推定量のノイズと実務価値の取り違えで、US3 が sd_fold を動かすと δ がひとりでに動く(自己参照)。"
+    },
+    "compute_cost": {
+      "why_rejected": "自前の計算予算という恣意的な量に閾値を紐付けることになる。"
+    },
+    "one_over_n_of_past_levers": {
+      "value_it_would_give": 0.002,
+      "why_rejected": "−0.0067/3.35≈0.002 で今の値をほぼ再現するが**循環**。さらに小さい改善の compounding を構造的に禁止する(この 1 年に落ちた候補の点推定の単純和は 約 −0.0087 で arm E に匹敵する)。"
+    },
+    "monetary_value": {
+      "why_rejected": "精度は ROI レバーではないと実証済み(最良精度モデルでも odds-cap 天井 ×0.816 は動かない)ため紐付け不能。"
+    }
+  },
+  "finding_delta_is_currently_slack": {
+    "claim": "δ は現行の CI 条件の下で一度も縛っていない(構造的に非拘束)。",
+    "algebra": {
+      "ci_upper_below_zero_implies_point_below": -0.003088903239635124,
+      "delta_requires_point_below": -0.002,
+      "binding_constraint": "CI(-0.00309 は -0.002 より厳しい)",
+      "sampling_only_floor": -0.002306877609803643,
+      "note": "seed 成分を完全に消しても sampling だけで point < -0.00231 が要る。**分散削減の上限まで行っても δ=0.002 は縛らない。**"
+    },
+    "empirical_check": {
+      "verdicts_examined": [
+        "094",
+        "096",
+        "097",
+        "098",
+        "099",
+        "073-B",
+        "073-CD",
+        "085"
+      ],
+      "cases_where_delta_bound": 0,
+      "detail": "δ が落として CI が通した verdict は 1 件も無い。097 は δ 通過・CI 不通過、098/099/096 は両方不通過、094/085/073-CD は両方通過。",
+      "delta_range_that_changes_no_recorded_verdict": [
+        0.0,
+        0.0035
+      ]
+    }
+  },
+  "free_input_requiring_a_human_decision": {
+    "name": "acceptable_net_harm_prob (alpha_year)",
+    "chosen": 0.05,
+    "sensitivity": {
+      "alpha_year>=0.095": "δ=0(95% CI 条件だけで予算を満たす)",
+      "alpha_year=0.05": 0.00352,
+      "alpha_year=0.02": 0.00405,
+      "alpha_year=0.01": 0.00442
+    },
+    "note": "δ=0.002 を出す alpha_year は存在しない(0 と 0.0031 の間に不連続がある)。現行値はこの導出では到達できない。ただし δ はいま非拘束なので、どの値でも記録済みの verdict は 1 件も変わらない。"
+  }
+}
