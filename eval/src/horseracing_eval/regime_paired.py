@@ -28,6 +28,8 @@ from .bootstrap import (
     race_day_cluster_bootstrap_sensitivity_v2,
 )
 from .decision import ADOPT, REJECT, final_decision
+from .evidence import build_rows, race_covariates
+from .evidence import diffs_by_day as evidence_diffs_by_day
 from .foldfit import predict_over_folds_multi
 from .gates import evaluate_core_gate, recent_window_guard
 from .hashing import race_set_hash
@@ -101,6 +103,11 @@ class RegimeReport:
     #: Per-day paired winner-NLL differences, kept so any later CI question is answerable from the
     #: artifact rather than from another multi-hour re-fit.
     diffs_by_day: dict = field(default_factory=dict)
+    #: Feature 100 US1 (FR-009): per-regime per-race evidence rows (race_id, race day, BOTH arms'
+    #: winner NLL, signed diff, record-only covariates). A multi-window driver must not reduce a
+    #: multi-hour judgement to summary numbers — 097's verdict.json kept no raw diff at all, so no
+    #: later question about it could be answered without re-running the whole thing.
+    evidence_by_regime: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -160,9 +167,16 @@ def _uncalibrated_diagnostic(valid_races, cand_raw, act_raw, boot) -> dict:
     return out
 
 
-def _paired_diff(valid_races, cand_preds, act_preds) -> tuple[dict, int]:
-    """Per-race paired winner-NLL diff (candidate − active), grouped by race day."""
-    diffs_by_day: dict[str, list[float]] = {}
+def _paired_diff(valid_races, cand_preds, act_preds) -> tuple[dict, int, tuple]:
+    """Per-race paired winner-NLL diff (candidate − active), grouped by race day.
+
+    Feature 100 US1 (FR-009): also returns the per-race evidence rows. A multi-regime driver used
+    to keep only the day-grouped dict, so its verdict carried no race_id and no per-arm loss —
+    097's verdict.json has not one raw diff in it. The day dict is now DERIVED from the rows, so
+    the two cannot disagree.
+    """
+    entries: list[tuple[str, str, float, float]] = []
+    covariates: dict[str, dict] = {}
     n = 0
     cand_wp = _winner_probs(valid_races, cand_preds, arm="")
     act_wp = _winner_probs(valid_races, act_preds, arm="")
@@ -170,10 +184,14 @@ def _paired_diff(valid_races, cand_preds, act_preds) -> tuple[dict, int]:
         if cp is None or ap is None:
             continue
         n += 1
-        diffs_by_day.setdefault(er.context.race_date.isoformat(), []).append(
-            _clip_nll(cp) - _clip_nll(ap)
+        day = er.context.race_date.isoformat()
+        rid = er.context.race_id
+        entries.append((rid, day, _clip_nll(cp), _clip_nll(ap)))
+        covariates[rid] = race_covariates(
+            rid, field_size=len(er.context.started_horses), race_day=day
         )
-    return diffs_by_day, n
+    rows = build_rows(entries, covariates=covariates)
+    return evidence_diffs_by_day(rows), n, rows
 
 
 def _count_masked(preds_by_race: dict, spec: Any) -> int:
@@ -241,16 +259,18 @@ def evaluate_regimes(
 
     scored: dict[str, RegimeScores] = {}
     day_diffs: dict[str, dict[str, list[float]]] = {}
+    regime_evidence: dict[str, list[dict]] = {}
     sn = (gate_config.get("seed_noise") or {})
     n_folds = len({er.context.race_date.year for er in cand_valid})
     for name in (SERVING, FULL_INFO):
         spec = regimes[name]
         cand_preds, act_preds = cand_by_regime[name], act_by_regime[name]
-        diffs_by_day, n_races = _paired_diff(cand_valid, cand_preds, act_preds)
+        diffs_by_day, n_races, evidence_rows = _paired_diff(cand_valid, cand_preds, act_preds)
         # Keep the per-day paired differences. They are the input to every CI variant, so storing
         # them makes any later re-bucketing question (block width, sensitivity, a different alpha)
         # answerable from the artifact instead of costing another multi-hour re-fit.
         day_diffs[name] = diffs_by_day
+        regime_evidence[name] = [r.to_dict() for r in evidence_rows]
         ci = race_day_cluster_bootstrap_ci_v1(
             diffs_by_day,
             b=boot.get("b", 2000),
@@ -472,4 +492,5 @@ def evaluate_regimes(
             for name, diffs in day_diffs.items()
         },
         diffs_by_day=day_diffs,
+        evidence_by_regime=regime_evidence,
     )

@@ -23,6 +23,8 @@ from .decision import (
     final_decision,
     gate_config_hash,
 )
+from .evidence import PairedEvidenceArtifact, build_rows, race_covariates
+from .evidence import diffs_by_day as evidence_diffs_by_day
 from .foldfit import PredictorFactory, predict_over_folds
 from .gates import evaluate_core_gate, recent_window_guard
 from .metrics import (
@@ -117,10 +119,21 @@ class PairedReport:
     #: disjoint pseudo-worlds can POOL them into one race-day cluster bootstrap instead of
     #: subtracting two per-window intervals (which has no interval). Purely additive: every
     #: pre-097 key of ``to_dict()`` is unchanged.
+    #:
+    #: Feature 100 US1: this is now DERIVED from ``evidence`` rather than built alongside it, so
+    #: the saved evidence and the judged numbers have a single construction and cannot drift.
     diffs_by_day: dict = field(default_factory=dict)
+    #: Feature 100 US1 (FR-006): the per-race evidence this report was computed from — race_id,
+    #: race-day, BOTH arms' winner NLL, the signed diff, and record-only covariates. Populated on
+    #: every run; ``evidence.recompute()`` reproduces ``bootstrap_ci``/``total_ci`` from it alone
+    #: (INV-A1). Not optional: making it opt-in would recreate exactly the state this fixed —
+    #: a 2-4 hour judgement whose raw diffs were thrown away.
+    evidence: PairedEvidenceArtifact | None = None
 
     def to_dict(self) -> dict:
         d = asdict(self)
+        if self.evidence is not None:
+            d["evidence"] = self.evidence.to_dict()
         return d
 
 
@@ -391,8 +404,11 @@ def paired_eval(
     cand_scores = _score_arm(valid_races, cand_preds, band_edges=band_edges)
     act_scores = _score_arm(valid_races, act_preds, band_edges=band_edges)
 
-    # per-race paired winner-NLL diff, grouped by race-day for the block bootstrap (FR-004).
-    diffs_by_day: dict = {}
+    # per-race paired winner-NLL diff (FR-004). Feature 100 US1: the per-race rows ARE the
+    # evidence artifact — the day-grouped dict the bootstrap consumes is derived FROM them, so the
+    # saved evidence and the judged numbers cannot drift apart (there is only one construction).
+    entries: list[tuple[str, str, float, float]] = []
+    covariates: dict[str, dict] = {}
     n_eligible = 0
     cand_wp = _winner_probs(valid_races, cand_preds, arm="")
     act_wp = _winner_probs(valid_races, act_preds, arm="")
@@ -401,7 +417,13 @@ def paired_eval(
             continue
         n_eligible += 1
         day = er.context.race_date.isoformat()
-        diffs_by_day.setdefault(day, []).append(_clip_nll(cp) - _clip_nll(ap))
+        rid = er.context.race_id
+        entries.append((rid, day, _clip_nll(cp), _clip_nll(ap)))
+        covariates[rid] = race_covariates(
+            rid, field_size=len(er.context.started_horses), race_day=day
+        )
+    evidence_rows = build_rows(entries, covariates=covariates)
+    diffs_by_day: dict = evidence_diffs_by_day(evidence_rows)
     boot_cfg = cfg.get("bootstrap", {})
     # The gate-config's alpha was previously read by nobody (only b/seed were passed), so a
     # config declaring a non-default alpha silently got 0.05 (2026-07 multi-codex review).
@@ -510,4 +532,24 @@ def paired_eval(
         bootstrap_sensitivity=bootstrap_sensitivity,
         target_year=target_year,
         diffs_by_day=diffs_by_day,
+        evidence=PairedEvidenceArtifact(
+            rows=evidence_rows,
+            bootstrap={
+                "b": int(boot_cfg.get("b", bootstrap_b)),
+                "seed": int(boot_cfg.get("seed", bootstrap_seed)),
+                "alpha": boot_alpha,
+                "block": "race_day",
+            },
+            seed_noise=dict(seed_noise_info or {}),
+            evaluation_contract_version=EVALUATION_CONTRACT_VERSION,
+            gate_config_hash=gate_config_hash(cfg),
+            race_id_set_hash=race_hash,
+            candidate_recipe_hash=candidate.recipe_hash,
+            active_recipe_hash=active.recipe_hash,
+            window={
+                "from": (valid_from.isoformat() if hasattr(valid_from, "isoformat")
+                         else valid_from),
+                "to": max_date.isoformat(),
+            },
+        ),
     )

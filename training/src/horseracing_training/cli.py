@@ -1066,6 +1066,12 @@ def main(argv: list[str] | None = None) -> int:
     pe.add_argument("--compute-sensitivity", action="store_true",
                     help="073: also compute diagnostic block-width bootstrap sensitivities")
     pe.add_argument("--json", dest="json_out", default=None, help="write PairedReport JSON here")
+    pe.add_argument(
+        "--evidence", dest="evidence_out", default=None,
+        help=("write the per-race paired evidence here (feature 100 US1). append-only: an "
+              "existing path is refused rather than overwritten, so a re-run cannot erase the "
+              "raw diffs of an earlier judgement"),
+    )
     pe.add_argument("--database-url", default=None)
 
     # Feature 068 US2: A/B/C/D calibration-split driver (screening + confirmation, disjoint).
@@ -2116,6 +2122,14 @@ def _paired_eval(session: Session, args) -> int:
         with open(args.json_out, "w") as fh:
             json.dump(report.to_dict(), fh, indent=2, default=str)
         print(f"  wrote {args.json_out}")
+    # Feature 100 US1: the per-race evidence rides inside the report JSON too, but a separate
+    # append-only file is what makes a past judgement re-analysable without hunting through a
+    # driver's summary. Refusing to overwrite is the point (INV-A2).
+    if getattr(args, "evidence_out", None):
+        from horseracing_eval.evidence import write as write_evidence
+        write_evidence(report.evidence, args.evidence_out)
+        n = len(report.evidence.rows)
+        print(f"  wrote {args.evidence_out} ({n} races, sign={report.evidence.sign_convention})")
     return 0
 
 
