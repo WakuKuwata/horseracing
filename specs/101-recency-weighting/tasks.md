@@ -79,20 +79,20 @@ spec 側も検証を規定している(FR-002/003/006a/014)。
 
 ### テスト
 
-- [ ] T015 [P] [US1] `training/tests/unit/test_recency_wiring.py` を追加し、**重み無効時に現行とビット一致**することを検証する(SC-001・FR-001)
-- [ ] T016 [P] [US1] `training/tests/unit/test_recency_recipe_field.py` を追加し、`ModelRecipe` の新フィールドが arm E builder の `_RECIPE_FIELD_DISPOSITION` に **"forward" として登録**されていることを検証する。未登録だと `_check_recipe_fields_accounted_for` が fail-closed になることも確認する(FR-005・research D8)
-- [ ] T017 [P] [US1] `training/tests/unit/test_recency_scope_declared.py` を追加し、**重みの適用範囲が明示的に宣言されていない場合に fail-closed** になることを検証する(INV-S2)。US2 未実装の段階では「booster 限定」を明示宣言する
+- [X] T015 [P] [US1] `training/tests/unit/test_recency_wiring.py` を追加し、**重み無効時に現行とビット一致**することを検証する(SC-001・FR-001)
+- [X] T016 [P] [US1] `training/tests/unit/test_recency_recipe_field.py` を追加し、`ModelRecipe` の新フィールドが arm E builder の `_RECIPE_FIELD_DISPOSITION` に **"forward" として登録**されていることを検証する。未登録だと `_check_recipe_fields_accounted_for` が fail-closed になることも確認する(FR-005・research D8)
+- [X] T017 [P] [US1] `training/tests/unit/test_recency_scope_declared.py` を追加し、**重みの適用範囲が明示的に宣言されていない場合に fail-closed** になることを検証する(INV-S2)。US2 未実装の段階では「booster 限定」を明示宣言する
 
 ### 実装
 
-- [ ] T018 [US1] `training/src/horseracing_training/recipe.py` の `ModelRecipe` に半減期フィールドを追加し、**`NEW_HASH_DEFAULT_OMISSIONS` に default 省略として登録する**(099 の恒久成果・codex P0-1 対策)。登録しないと **arm E 系 = 現 active(lgbm-094-cap900 系譜)の既存 recipe_hash が全滅する**。受入条件に**両系 hash スナップショットテストが緑**であることを含める(analyze D1)
-- [ ] T019 [US1] `training/src/horseracing_training/calib_split.py` の `_RECIPE_FIELD_DISPOSITION` に新フィールドを **"forward"** で登録し、`_make_base` に渡す。`ev_weight` が "reject" である理由(重み源が fit-scope で届かない)が**当てはまらない**ことをコメントで明記する
-- [ ] T020 [US1] `training/src/horseracing_training/predictor.py` の fit 経路(079 の `model_weights` の seam)で recency 重みを構築して渡す。`assert_race_constant` を通す。**適用範囲は booster 限定であることを明示宣言**して `fit_info_` に記録する
-- [ ] T021 [US1] `WeightAudit` を `fit_info_` に記録する。**cutoff を必ず含める**(再学習日が動けば全重みが動くため・INV-A1)
+- [X] T018 [US1] `training/src/horseracing_training/recipe.py` の `ModelRecipe` に半減期フィールドを追加し、**`NEW_HASH_DEFAULT_OMISSIONS` に default 省略として登録する**(099 の恒久成果・codex P0-1 対策)。登録しないと **arm E 系 = 現 active(lgbm-094-cap900 系譜)の既存 recipe_hash が全滅する**。受入条件に**両系 hash スナップショットテストが緑**であることを含める(analyze D1)
+- [X] T019 [US1] `training/src/horseracing_training/calib_split.py` の `_RECIPE_FIELD_DISPOSITION` に新フィールドを **"forward"** で登録し、`_make_base` に渡す。`ev_weight` が "reject" である理由(重み源が fit-scope で届かない)が**当てはまらない**ことをコメントで明記する
+- [X] T020 [US1] `training/src/horseracing_training/predictor.py` の fit 経路(079 の `model_weights` の seam)で recency 重みを構築して渡す。`assert_race_constant` を通す。**適用範囲は booster 限定であることを明示宣言**して `fit_info_` に記録する
+- [X] T021 [US1] `WeightAudit` を `fit_info_` に記録する。**cutoff を必ず含める**(再学習日が動けば全重みが動くため・INV-A1)
 
 ### 判定
 
-- [ ] T022 [US1] `scripts/recency_gate.py` を作り、凍結 `gate-config.json` の hash を照合してから 2 アーム(重みあり/なし)を回す。**両アームの recipe が凍結 pin と一致することを照合**し、**差が時間重みのみであることを実行前後の構造 assert で担保し、差がゼロでないことも確認する**(FR-011/012a・SC-003)
+- [X] T022 [US1] `scripts/recency_gate.py` を作り、凍結 `gate-config.json` の hash を照合してから 2 アーム(重みあり/なし)を回す。**両アームの recipe が凍結 pin と一致することを照合**し、**差が時間重みのみであることを実行前後の構造 assert で担保し、差がゼロでないことも確認する**(FR-011/012a・SC-003)
 - [ ] T023 [US1] `specs/101-recency-weighting/evidence/` を作成し、判定を実行して結果を `evidence/recency-gate.json` に保存する。**評価は無重み**(FR-011a)。feature 100 の per-race 証拠(`--evidence`)も併せて残す
 - [ ] T024 [US1] 事前登録式から ADOPT / REJECT / NO_DECISION を機械的に決め、判定を artifact に記録する。**判定を記録してから**内訳(fold 別・カテゴリ別)を読む(SC-004)
 
