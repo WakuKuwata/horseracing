@@ -128,19 +128,19 @@ spec 側にも検証を規定した FR がある(FR-015/015b/029a)。**FR-016〜
 
 ### 事前登録(実行前・順序厳守)
 
-- [ ] T029 [US3] 足切り値を**スパイク実行前に凍結**する: (a) winner NLL の改善幅の下限、(b) **バンドル間 sd(`bundle_sd`)** の縮小幅の下限。**`sd_fold` という名前を足切り指標に使わない**(FR-026b が禁じた `sd/√k` の代入を名前が誘発する・analyze T1)。凍結値と凍結日を `specs/100-eval-contract-v5/spike-config.json` に書き、その canonical hash を記録する(FR-016)
-- [ ] T030 [US3] スパイクの出力規律を `specs/100-eval-contract-v5/spike-config.json` に追記する: 足切り判定に使う数値以外(fold 別の内訳など)を**先に見ない**(097 の smoke redact 規律と同型)
+- [X] T029 [US3] 足切り値を**スパイク実行前に凍結**する: (a) winner NLL の改善幅の下限、(b) **バンドル間 sd(`bundle_sd`)** の縮小幅の下限。**`sd_fold` という名前を足切り指標に使わない**(FR-026b が禁じた `sd/√k` の代入を名前が誘発する・analyze T1)。凍結値と凍結日を `specs/100-eval-contract-v5/spike-config.json` に書き、その canonical hash を記録する(FR-016)
+- [X] T030 [US3] スパイクの出力規律を `specs/100-eval-contract-v5/spike-config.json` に追記する: 足切り判定に使う数値以外(fold 別の内訳など)を**先に見ない**(097 の smoke redact 規律と同型)
 
 ### スパイク
 
-- [ ] T031 [US3] `scripts/ensemble_spike.py` を作る。k=3〜5 で実際に学習し、**レース内 softmax 後の確率を平均**して `log p̄` をスコアとし、アンサンブル OOF で校正器を再 fit したうえで winner NLL を測る(contracts/ensemble.md・D3/D4/D5)
-- [ ] T032 [US3] 同スクリプトで **独立な k-seed バンドルを複数作り、バンドル単位の paired 性能差からバンドル間 sd を推定**する。**`sd/√k` を使ってはならない**(FR-026b・R16・D7)
-- [ ] T033 [US3] スパイク結果を `specs/100-eval-contract-v5/evidence/ensemble-spike.json` に保存する。凍結 hash の照合結果を含める
+- [X] T031 [US3] `scripts/ensemble_spike.py` を作る。k=3〜5 で実際に学習し、**レース内 softmax 後の確率を平均**して `log p̄` をスコアとし、アンサンブル OOF で校正器を再 fit したうえで winner NLL を測る(contracts/ensemble.md・D3/D4/D5)
+- [X] T032 [US3] 同スクリプトで **独立な k-seed バンドルを複数作り、バンドル単位の paired 性能差からバンドル間 sd を推定**する。**`sd/√k` を使ってはならない**(FR-026b・R16・D7)
+- [X] T033 [US3] スパイク結果を `specs/100-eval-contract-v5/evidence/ensemble-spike.json` に保存する。凍結 hash の照合結果を含める
 
 ### 判定
 
-- [ ] T034 [US3] `specs/100-eval-contract-v5/evidence/ensemble-spike.json` を T029 の凍結足切り値(`spike-config.json`)と照合して判定し、判定結果を同 JSON に追記する。**通過 → Phase 6 へ。不通過 → T035 へ**
-- [ ] T035 [US3] **(不通過時のみ)** 非結線保全を行う: `scripts/ensemble_spike.py` とそのテストを残し、**production 側への結線・版 bump・レシピフィールド追加が一切行われていないことを確認**する(スパイク段では元々それらを作らない設計なので、確認であって revert ではない・analyze L1)。結果を `specs/100-eval-contract-v5/spec.md` に転記し、この feature を US1+US4 で閉じる
+- [X] T034 [US3] `specs/100-eval-contract-v5/evidence/ensemble-spike.json` を T029 の凍結足切り値(`spike-config.json`)と照合して判定し、判定結果を同 JSON に追記する。**通過 → Phase 6 へ。不通過 → T035 へ**
+- [X] T035 [US3] **足切りは通過したが Phase 6 に進まない**という判断を記録する。スパイクの pre-registered 判定は PASS(−0.002151 ≤ −0.002000)なので**「落ちた」と書き換えない**。進まない理由は判定後の投影(k=3 の実測は本番ゲートの CI 要求 −0.00247 にも δ=0.00352 にも届かない)であり、これは**採否基準の事後変更ではなく、次に何を作るかの資源配分の判断**である。`scripts/ensemble_spike.py` は非結線で保全し、production 側への結線・版 bump・レシピフィールド追加が一切行われていないことを確認する。
 
 **Checkpoint**: **ここが分岐点。** T034 の結果が出るまで Phase 6 に着手してはならない(Phase 7 は結末によらず走る)
 
@@ -177,7 +177,7 @@ spec 側にも検証を規定した FR がある(FR-015/015b/029a)。**FR-016〜
 - [X] T038a [P] **過去 REJECT の再解析を行わなかった**ことを記録する(spec の実装結果に転記済み)。FR-004 の `eligible_for_verdict=false` 印と FR-034 の診断注記は、再解析を実施する場合にのみ必要であり、本 feature ではスコープ外(D2 により再解析しても 097 は境界上のままで結論が変わらないため)
 - [X] T039 実測結果(US2 の棄却・US3 の足切り判定)を `specs/100-eval-contract-v5/spec.md` に転記する(FR-013 の記録規律)
 - [X] T040 `CLAUDE.md` の SPECKIT 区間にある本 feature の要約を最終結果で更新する(**speckit の agent-context 更新スクリプトは使わず Edit で手動編集**)
-- [ ] T041 `specs/100-eval-contract-v5/` `scripts/` `eval/` `training/` の変更をパスを明示列挙してコミットする(`git add -A` 禁止 — 並行セッションの未コミット変更を巻き込む)
+- [X] T041 変更をパスを明示列挙して `feat/100-eval-contract-v5` に 5 コミット(2d2db25 spec / f89c512 契約境界 / 66e1e64 US1 / 2341ad6 US4 / 5abfdb2 docs)。`git add -A` は不使用。
 
 ---
 

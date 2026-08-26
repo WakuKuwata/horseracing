@@ -1,0 +1,71 @@
+{
+  "artifact_kind": "spike",
+  "eligible_for_verdict": false,
+  "spike_config_hash": "c3a2cd2697c850cc37de2b8dfe44311d32e4726d96fbb7bb336a92fd61dce22f",
+  "window": {
+    "from": "2025-01-01",
+    "to": "2025-12-31"
+  },
+  "n_train_races": 62171,
+  "n_score_races": 3454,
+  "elapsed_s": 7578.0,
+  "primary": {
+    "metric": "winner_nll_improvement",
+    "value": -0.0021512207034461994,
+    "threshold": -0.002,
+    "passes": true
+  },
+  "secondary_reported_not_gating": {
+    "sd_seed": 0.002089585411729544,
+    "sd_bundle": 0.0014615205544740656,
+    "ratio_bundle_over_seed": 0.6994308757469594,
+    "sqrt_k_prediction": 0.5773502691896258,
+    "note": "sd/√k との乖離が seed 間相関 ρ の効き(FR-026b)"
+  },
+  "detail_read_after_decision": {
+    "seed_winner_nll": {
+      "42": 2.029678764066175,
+      "7": 2.027176981981689,
+      "101": 2.0320289277087173,
+      "2026": 2.03364578629688,
+      "31337": 2.0337340729479894,
+      "999": 2.0295078665026005,
+      "20260826": 2.0304165260966527,
+      "512": 2.031448189052431,
+      "8191": 2.0303889411595732
+    },
+    "bundle_winner_nll": [
+      2.027973281074527,
+      2.03042593432105,
+      2.0278224744316553
+    ]
+  },
+  "decision": {
+    "recorded_at": "2026-08-26",
+    "rule": "primary(winner NLL 改善) <= 凍結足切り。secondary は報告のみで判定に使わない。",
+    "primary_value": -0.0021512207034461994,
+    "primary_threshold": -0.002,
+    "result": "PASS",
+    "margin": 0.00015122070344619938,
+    "note": "事前登録どおりの点比較で通過。ただし余裕は 0.000151 で、バンドル 3 個の sd(0.001462)から見た測定自体のノイズより小さい。**通過したが薄い**という事実を判定と同じ場所に残す。"
+  },
+  "post_decision_projection": {
+    "_comment": "判定(T034)を記録した後に行った解析。事前登録の一部ではなく、次に何をするかの材料。",
+    "implied_seed_correlation_rho": 0.23380532492223782,
+    "k3_sd_ratio_measured": 0.6994308757469594,
+    "k3_sd_ratio_if_independent": 0.5773502691896258,
+    "r16_confirmed": "独立なら sd/√3=0.577 に落ちるはずが 0.699 で止まった。k→∞ の床は √ρ=0.484 で、48% が消えずに残る。",
+    "production_gate_projection": {
+      "measured_at_k3": -0.0021512207034461994,
+      "ci_requires_point_below_at_k3": -0.002468263593613496,
+      "delta_requires_point_below": -0.0035188338580500285,
+      "verdict_at_k3": "CI にも δ にも届かない",
+      "extrapolation_note": "改善が除去分散に比例すると仮定した外挿(k=3 の 1 点からの推定)",
+      "extrapolated": {
+        "5": -0.0025814648441354394,
+        "9": -0.0028682942712615987,
+        "15": -0.003011708984824679
+      }
+    }
+  }
+}
