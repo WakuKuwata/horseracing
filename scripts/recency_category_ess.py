@@ -1,7 +1,9 @@
 """主要カテゴリ別の ESS（ラベル非参照）。TE 対象の jockey/trainer と venue を見る。"""
-import datetime, os, numpy as np
+import os
+import numpy as np
 from sqlalchemy import create_engine, text
-import sys; sys.path.insert(0, "training/src")
+import sys
+sys.path.insert(0, "training/src")
 from horseracing_training.recency import (RecencyWeightSpec, build_recency_weights,
                                           effective_sample_size)
 DB = os.environ.get("DATABASE_URL", "postgresql+psycopg://aiuma:aiuma@localhost:15432/horseracing")
@@ -11,7 +13,8 @@ with eng.connect() as c:
         SELECT r.race_id, r.race_date, r.venue_code, rh.jockey_id, rh.trainer_id
         FROM races r JOIN race_horses rh ON rh.race_id=r.race_id AND rh.entry_status='started'
         ORDER BY r.race_date, r.race_id""")))
-rids = [x[0] for x in rows]; dates = [x[1] for x in rows]
+rids = [x[0] for x in rows]
+dates = [x[1] for x in rows]
 cats = {"venue_code": [x[2] for x in rows], "jockey_id": [x[3] for x in rows],
         "trainer_id": [x[4] for x in rows]}
 cutoff = max(dates)

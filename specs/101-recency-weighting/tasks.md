@@ -93,10 +93,10 @@ spec 側も検証を規定している(FR-002/003/006a/014)。
 ### 判定
 
 - [X] T022 [US1] `scripts/recency_gate.py` を作り、凍結 `gate-config.json` の hash を照合してから 2 アーム(重みあり/なし)を回す。**両アームの recipe が凍結 pin と一致することを照合**し、**差が時間重みのみであることを実行前後の構造 assert で担保し、差がゼロでないことも確認する**(FR-011/012a・SC-003)
-- [ ] T023 [US1] `specs/101-recency-weighting/evidence/` を作成し、判定を実行して結果を `evidence/recency-gate.json` に保存する。**評価は無重み**(FR-011a)。feature 100 の per-race 証拠(`--evidence`)も併せて残す
-- [ ] T024 [US1] 事前登録式から ADOPT / REJECT / NO_DECISION を機械的に決め、判定を artifact に記録する。**判定を記録してから**内訳(fold 別・カテゴリ別)を読む(SC-004)
+- [X] T023 [US1] `specs/101-recency-weighting/evidence/` を作成し、判定を実行して結果を `evidence/recency-gate.json` に保存する。**評価は無重み**(FR-011a)。feature 100 の per-race 証拠(`--evidence`)も併せて残す
+- [X] T024 [US1] 事前登録式から ADOPT / REJECT / NO_DECISION を機械的に決め、判定を artifact に記録する。**判定を記録してから**内訳(fold 別・カテゴリ別)を読む(SC-004)
 
-- [ ] T024a [US1] **T024 が正の場合のみ**: `/speckit-tasks` を再実行して Phase 4/5 を詳細化する。Phase 4/5 の必須項目は下記に列挙してあるので、再生成がそれを落としていないか照合する(analyze E3)
+- [X] T024a [US1] **T024 が REJECT だったので Phase 4/5 は詳細化しない**(FR-019: US1 が REJECT なら US3 の問い自体が消える。US2 も booster 単体で有意に悪化している以上、一貫適用が符号を反転させる筋は考えにくい)
 
 **Checkpoint**: **ここが分岐点。** T024 の結果が出るまで Phase 4/5 に着手してはならない
 
@@ -136,11 +136,11 @@ spec 側も検証を規定している(FR-002/003/006a/014)。
 
 ## Phase 6: Polish(Phase 3 の結末が出てから)
 
-- [ ] T025 [P] training / eval の既存スイートが緑であることを確認する
-- [ ] T026 [P] 変更した `training/src/` と `scripts/` に対して ruff クリーンを確認する
-- [ ] T027 [P] `db/` の migration head が不変、`api/` `front/` `betting/` `probability/` `serving/` `features/` に差分ゼロ、**FEATURE_VERSION が不変**であることを `git diff --stat` で確認する(FR-004・SC-007)
-- [ ] T028 **REJECT の場合**: 結線・レシピフィールドを revert し、`recency.py` とテストを**非結線で保全**する。production 側に結線が残っていないことを確認する(FR-020・062/070/090/100-US3 同型)
-- [ ] T029 実測結果を `specs/101-recency-weighting/spec.md` に転記する。**ADOPT でも REJECT でも、実効標本数と消失カテゴリの実測値を残す**(FR-021)
+- [X] T025 [P] training / eval の既存スイートが緑であることを確認する
+- [X] T026 [P] 変更した `training/src/` と `scripts/` に対して ruff クリーンを確認する
+- [X] T027 [P] `db/` の migration head が不変、`api/` `front/` `betting/` `probability/` `serving/` `features/` に差分ゼロ、**FEATURE_VERSION が不変**であることを `git diff --stat` で確認する(FR-004・SC-007)
+- [X] T028 **REJECT の場合**: 結線・レシピフィールドを revert し、`recency.py` とテストを**非結線で保全**する。production 側に結線が残っていないことを確認する(FR-020・062/070/090/100-US3 同型)
+- [X] T029 実測結果を `specs/101-recency-weighting/spec.md` に転記する。**ADOPT でも REJECT でも、実効標本数と消失カテゴリの実測値を残す**(FR-021)
 - [ ] T030 `CLAUDE.md` の SPECKIT 区間を最終結果で更新する(**speckit の agent-context 更新スクリプトは使わず Edit で手動編集**)
 - [ ] T031 変更をパスを明示列挙してコミットする(`git add -A` 禁止 — 並行セッションの未コミット変更を巻き込む)
 

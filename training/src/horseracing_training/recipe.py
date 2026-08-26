@@ -70,7 +70,9 @@ class ModelRecipe:
     #: 容量はモデルの同一性そのものなので fit-scope ではなく recipe に置く: 900 本の木の
     #: モデルは 300 本のモデルと別物であり、別の model_version であるべきである。
     params: tuple[tuple[str, float | int], ...] | None = None
-    #: Feature 101: 学習の時間重み(recency weighting)の半減期(日)。`None` = 無効で、
+    #: Feature 101(**REJECT**: +0.005760 で有意に悪化)。フィールドは残すが fit 経路は
+    #: 非結線。既定 None のとき recipe_hash は現行と不変なので、残しても既存モデルの
+    #: 同一性は動かない。半減期(日)。`None` = 無効で、
     #: そのとき重みは `WinModel.fit(weights=None)` = 現行とビット一致になる。
     #:
     #: 重みは `(race_date, cutoff)` の**純関数**なのでリーク面はゼロであり、レース内で定数なので

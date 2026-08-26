@@ -1538,6 +1538,11 @@ def _factory_from_spec(session, spec: str, *, use_materialized: bool = False,
                 if "n_estimators" in ov else base.params
             ),
             seed=int(ov.get("seed", base.seed)),
+            # Feature 101: 時間重み。純関数なので arm E builder へ forward できる。
+            recency_half_life_days=ov.get(
+                "recency_half_life_days", base.recency_half_life_days
+            ),
+            weight_scope=ov.get("weight_scope", base.weight_scope),
         )
         return CalibSplitFactory(
             session, recipe, method=oof_method,
@@ -1558,6 +1563,10 @@ def _factory_from_spec(session, spec: str, *, use_materialized: bool = False,
                 if "n_estimators" in ov else base.params
             ),
             seed=int(ov.get("seed", base.seed)),
+            recency_half_life_days=ov.get(
+                "recency_half_life_days", base.recency_half_life_days
+            ),
+            weight_scope=ov.get("weight_scope", base.weight_scope),
         )
     return RecipeFactory(
         session, base,

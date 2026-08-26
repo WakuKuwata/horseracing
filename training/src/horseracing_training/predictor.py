@@ -373,37 +373,10 @@ class LightGBMPredictor:
                 "weight_min": float(np.min(model_weights)),
                 "weight_max": float(np.max(model_weights)),
             }
-        # Feature 101: 学習の時間重み。ev_weight と同じ seam に載るが、重み源が
-        # `(race_date, cutoff)` の純関数である点が違う(だから arm E builder からも forward できる)。
-        # **cutoff はその fit で利用可能な最終ラベル日**とする — 再学習日が動けば全ての重みが
-        # 動くので、監査に必ず残す。
+        # Feature 101 は REJECT(2026-08-27・+0.005760 で有意に悪化)。**結線を外して非結線
+        # 保全**する(062/070/090/100-US3 同型)。`recency.py` とその単体テストは残っており、
+        # 直接呼び出しで緑。ここを繋ぎ直すのは、時間重みを別の形で再事前登録するとき。
         recency_info: dict | None = None
-        if self.recency_half_life_days is not None:
-            from .recency import RecencyWeightSpec, build_audit, build_recency_weights
-
-            m_rid = model_df["race_id"].to_numpy()
-            m_date = model_df[RACE_DATE]
-            # **cutoff は fit 全体で 1 つ**であって「booster が見た行の最終日」ではない。
-            # 校正 holdout を切ると model_df の最終日は全体より前になるので、booster だけ
-            # そちらを使うと booster と校正器で「今」がずれる — FR-008 が名指しで禁じた
-            # 「cutoff がコンポーネント間でずれる」そのものになる(codex R7)。
-            # arm E は calib_frac=0.0 なので両者は一致するが、A/B 経路ではずれる。
-            cutoff = max(train_df[RACE_DATE])
-            spec = RecencyWeightSpec(half_life_days=float(self.recency_half_life_days))
-            rec_w = build_recency_weights(m_rid, list(m_date), cutoff=cutoff, spec=spec)
-            audit = build_audit(
-                m_rid, list(m_date), rec_w, cutoff=cutoff, spec=spec,
-                scope={"declared": self.weight_scope},
-            )
-            recency_info = audit.to_dict()
-            if model_weights is None:
-                model_weights = rec_w
-            else:
-                # ev_weight と併用する場合は積を取り、レース定数性を再確認する(両方ともレース
-                # 定数なので積もレース定数)。既定では ev_weight は False なのでこの枝は通らない。
-                model_weights = np.asarray(model_weights, dtype=float) * rec_w
-                assert_race_constant(m_rid, model_weights)
-
         self.win_model_ = WinModel(
             seed=self.seed, params=params, objective=self.objective
         ).fit(

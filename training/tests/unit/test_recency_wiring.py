@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import pytest
 from horseracing_eval.predictor import HorseEntry, RaceContext
 
 from horseracing_training.calibration import Calibrator
@@ -19,6 +20,22 @@ from horseracing_training.dataset import (
 from horseracing_training.predictor import LightGBMPredictor
 from horseracing_training.target_encoding import TargetEncoder
 from horseracing_training.win_model import WinModel
+
+# --- feature 101 は REJECT(2026-08-27)。fit 経路は非結線保全 ---------------------------------
+#
+# 判定は winner NLL の paired 差 **+0.005760**(sample CI [+0.003056, +0.008308] /
+# total CI [+0.002778, +0.008601])で、CI がゼロを跨がず**有意に悪化**した。半減期 730 日は
+# 実効標本数を 958,011 → 409,831(42.8%)に落とすので、学習行を捨てた損失が直近を重くした
+# 利得を上回ったと読める。
+#
+# 「fit 経路に重みが届くこと」を検証する本ファイルは、結線を外した以上そのままでは成立しない。
+# **削除せず skip で残す** — 時間重みを別の形で再事前登録するときに、何を検証すべきだったかが
+# そのまま使えるからである(062/070/090/100-US3 と同じ非結線保全の規律)。重み計算そのもの
+# (`recency.py`)の単体テストは**結線と無関係に緑**のまま残っている。
+pytestmark = pytest.mark.skip(
+    reason="feature 101 REJECT: fit 経路を非結線保全したため(spec の実測結果を参照)"
+)
+
 
 
 def _matrix() -> TrainingMatrix:
