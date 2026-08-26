@@ -58,7 +58,25 @@ def _strip_comments(obj):
 
 
 def gate_config_hash(cfg: dict) -> str:
-    """Canonical content hash of a gate-config, ignoring ``_comment``/``_``-prefixed keys."""
+    """Canonical content hash of a gate-config, ignoring ``_comment``/``_``-prefixed keys.
+
+    HASH THE CONFIG AS WRITTEN. NEVER FILL IN DEFAULTS FIRST (feature 100, FR-002a).
+    ---------------------------------------------------------------------------------
+    Only two transforms are permitted between the frozen file and the digest: dropping
+    ``_``-prefixed annotation keys (so re-wording a comment does not invalidate a freeze), and
+    the canonical JSON encoding in ``stable_hash``. Anything else — normalising, filling in a
+    new contract's defaults, reordering by a schema — silently changes the digest of every
+    config ever frozen, and the freeze is the only thing standing between a pre-registration and
+    a post-hoc edit.
+
+    Six configs (094-099) are pinned against their recorded digests in
+    ``eval/tests/unit/test_frozen_contract_parity.py``, including a mutation that injects
+    defaults and shows the digest move.
+
+    Reading a config is a separate concern from hashing it: version-specific requirements belong
+    in ``assert_confirmatory`` (read the declared version, then apply that version's checks),
+    never in this function.
+    """
     return stable_hash(_strip_comments(cfg or {}))
 
 
@@ -217,6 +235,27 @@ def assert_confirmatory(
     comparison — leaving only "a config exists and says v3". A pre-registration whose enforcement
     depends on the operator remembering three flags is not an enforcement (2026-08 multi-codex
     review).
+
+    CONTRACT VERSION IS COMPARED BY EQUALITY HERE, DELIBERATELY (feature 100, FR-002b).
+    ------------------------------------------------------------------------------------
+    This is the OPPOSITE of ``adoption.evaluate_promotion``, which compares as a lower bound —
+    and the difference is load-bearing, not an oversight:
+
+    - the promotion floor asks "is this evidence at least as strong as we require?", so newer
+      contracts must pass. Making it an equality once killed every promotion silently.
+    - THIS check asks "were these numbers judged under the rules this code implements?".
+      Re-judging a config frozen under older rules would break the immutability of the verdict
+      it recorded, so an older contract MUST fail closed.
+
+    Do NOT relax this to a lower bound to make a version bump go through. Bumping
+    ``EVALUATION_CONTRACT_VERSION`` orphans every config frozen under the old one — that already
+    happened once (094 declares v3 and has been outside this gate since v4 landed), and bumping
+    to v5 would do the same to 095-099. The rule is: **bump only when the judging rules actually
+    change.** Feature 100's US1 (evidence artifact) and US4 (delta provenance) change no judging
+    rule and therefore do not bump; only US3 (which changes the estimand and the seed term) does,
+    and it is gated behind a spike (FR-002c).
+
+    ``eval/tests/unit/test_frozen_contract_parity.py`` pins both directions.
     """
     if not cfg:
         raise ConfirmatoryContractError("confirmatory mode requires a gate-config (missing)")

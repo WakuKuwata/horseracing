@@ -1,0 +1,55 @@
+{
+  "_comment": "feature 100 Phase C(US3 スパイク)の足切り。**測定を 1 回も走らせる前に凍結した**(FR-016)。結果を見てから閾値を動かすことは、過去 verdict の規約と同じく禁止。",
+  "_pre_registered_at": "2026-08-26",
+  "_why_a_cutoff_exists": "US2 は『未着手だから削れるはず』という理屈のまま spec に書かれ、測定(R²=0.029)で棄却された。US3 だけ『理屈で効くはず』で通すのは二重基準になる。加えて 099 では spike −0.00337(3 fold 全負)が本番条件で +0.0005 に符号反転した前例がある。",
+
+  "artifact_kind": "spike",
+  "eligible_for_verdict": false,
+
+  "design": {
+    "n_seeds": 9,
+    "bundle_size_k": 3,
+    "n_bundles": 3,
+    "_note": "9 個の seed を 3 つの互いに素なバンドルに分ける。同じ 9 fit から (a) seed 単体の winner NLL 9 個 (b) バンドル(k=3 アンサンブル)の winner NLL 3 個 の両方が出る。単一 seed の分散を k で割る近道は使わない(FR-026b)。",
+    "aggregation": "race_prob_mean",
+    "score_definition": "log_p_bar",
+    "calibrator": "アンサンブル OOF で再 fit(単一 seed 版の流用は禁止・D5)"
+  },
+
+  "primary_cutoff": {
+    "metric": "winner_nll_improvement",
+    "definition": "mean(バンドルの winner NLL) − mean(seed 単体の winner NLL)。負が改善。",
+    "threshold": -0.002,
+    "rule": "この値以下(より負)でなければ US3 は採用しない",
+    "_rationale": "本番の採用ゲートは CI 上限<0 のために point < −1.96×SE = −0.00309 を要求する。スパイクは k を絞った楽観寄りの点推定なので、そこで −0.002 にすら届かないなら本番ゲートに届く筋が無い。"
+  },
+
+  "secondary_reported_not_gating": {
+    "metric": "bundle_sd_vs_seed_sd",
+    "definition": "sd(バンドル 3 個の winner NLL) と sd(seed 単体 9 個の winner NLL) の比",
+    "_why_not_gating": "codex R16 により『アンサンブルは CI を狭める』という測定上の正当化は既に大きく減価している(Var(平均)=σ²(ρ+(1−ρ)/k) の ρσ² が k→∞ でも残る)。弱いと分かっている主張を足切りに使うと、US3 を誤った理由で殺すことになる。**US3 は製品の改善としてのみ立つ**ので、足切りは primary 一本に置く。この値は報告し、`sd/√k` との乖離を記録する。"
+  },
+
+  "output_discipline": {
+    "_comment": "097 の smoke redact 規律と同型。",
+    "before_decision": "足切り判定に使う 2 つの数値(primary の改善幅・secondary の sd 比)以外は先に見ない。fold 別の内訳・seed 別のばらつき・レース単位の分布は、T034 の判定を記録した**後**に読む。",
+    "reason": "内訳を先に見ると『この fold を除けば効く』の形で事後に基準が動く。"
+  },
+
+  "run_conditions": {
+    "_comment": "codex C の Q2(spike と本番の符号を保存する条件)に従い、**目的関数・容量・校正方式は本番と一致させる**。安価化してよいのは評価する窓と fold 数だけ。",
+    "objective": "pl_topk",
+    "arm": "oof_isotonic",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "must_match_production": ["objective", "arm", "n_estimators", "n_oof_blocks", "weight_mask_rate"],
+    "may_be_reduced": ["eval_window", "n_folds"]
+  },
+
+  "seeds": [42, 7, 101, 2026, 31337, 999, 20260826, 512, 8191],
+  "bundles": [[42, 7, 101], [2026, 31337, 999], [20260826, 512, 8191]],
+
+  "on_fail": "US3 は採用しない。scripts/ensemble_spike.py とテストは非結線で保全し、production 側への結線・版 bump・レシピフィールド追加が一切行われていないことを確認して、本 feature を US1+US4 で閉じる(T035)。"
+}

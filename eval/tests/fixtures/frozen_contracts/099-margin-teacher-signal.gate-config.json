@@ -1,0 +1,97 @@
+{
+  "_comment": "099: margin-aware 教師信号 V1 の採用ゲート(evaluation contract v4)。OOS 実行前凍結。変調形と定数(V1・M0=0.2s・GMIN=0.25)は spike(scripts/margin_teacher_spike.py c823b73・evidence/margin-teacher-spike-*.json)で事前選択済みで、この config では再定義しない — アームの識別子 margin_teacher=v1 が実装内の凍結定数を指す。",
+  "_pre_registered_at": "2026-08-24",
+  "_spike_reference": "V1 pooled winner NLL -0.00337 (raw -0.00442), folds -0.0033/-0.0015/-0.0062, rounds=300。spike は de-risk であり採用証拠ではない。",
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "primary_regime": "standard",
+  "arms": {
+    "_comment": "差は教師信号のみ。両アームとも現行本番構成(arm E + rounds 900 + 091 weight mask)。fold ごと再学習・保存 booster 不使用・snapshot pin。",
+    "candidate_spec": "pl_topk:oof_isotonic:mteach=v1",
+    "active_spec": "pl_topk:oof_isotonic",
+    "candidate_kind": "oof_isotonic",
+    "active_kind": "oof_isotonic",
+    "n_oof_blocks": 8,
+    "n_estimators": 900,
+    "objective": "pl_topk",
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "margin_teacher_candidate": "v1",
+    "margin_teacher_active": null
+  },
+  "arm_identity": {
+    "_comment": "同一アームは正常な見た目の全ゼロレポートを出す(2026-08-24 監査 finding)。mteach= セグメントの綴りミスは両アームを同一レシピにするので、recipe_hash 一致を実行前エラーにする。",
+    "require_distinct_recipe_hash": true,
+    "require_nonzero_diff_races": 1
+  },
+  "min_effect_delta": 0.002,
+  "eval_window": {
+    "_comment": "標準の全期間窓。to は凍結時点の DB 最新確定日。",
+    "from": "2019-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "seed_noise": {
+    "_comment": "v4 必須。ゲートが読む区間はこの成分を合成した総 CI。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds, pl_topk:isotonic:0.3, 2026 fold)",
+    "assume_fold_independent": true
+  },
+  "power": {
+    "_comment": "spike 点推定 -0.00337(rounds=300)。総 CI 半幅 ~0.0024 想定で上限 ≈ -0.001 の際どいライン。097 型(点は良いが総 CI ゼロ跨ぎ)の REJECT はあり得ると事前に認める。rounds=900 との相互作用は未測定の上振れ要因であり前提にしない。",
+    "expected_effect": -0.0034,
+    "expected_total_ci_halfwidth": 0.0024,
+    "honest_outlook": "borderline"
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [3, 5],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "_comment": "v3 意味論(FAIL のみ veto・NOT_PROVEN は開示)。安定名を使う(年スタンプ名は窓から導出)。",
+    "critical_subgroups": ["recent_year_only", "nk", "recent_year_nk"],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "no_decision_min_days": 400
+  },
+  "bootstrap": {
+    "b": 2000,
+    "seed": 20260824,
+    "block": "race_day",
+    "alpha": 0.05
+  },
+  "determinism": {
+    "tolerance": 1e-09,
+    "num_threads": 1
+  },
+  "verdict": {
+    "formula": "harness final_decision(v4) が正本(ADOPT/REJECT/NO_DECISION)。個別 fold・個別 subgroup の事後読み替え禁止",
+    "on_adopt": "candidate 登録のみ。active 昇格は標準窓非劣化+本 verdict+prospective の別段判断",
+    "on_reject": "結線 revert・objective 拡張+単体テストは保全(None 既定は現行とビット一致)・数値を spec 転記",
+    "output_discipline": "smoke は事前登録外の窓で効果数値非表示。本実行は全成分が揃ってから verdict を 1 回だけ評価"
+  },
+  "artifact_isolation": {
+    "verdict_kind": "full_walk_forward",
+    "kinds": ["full_walk_forward", "smoke"],
+    "eligible_kinds": ["full_walk_forward"]
+  },
+  "smoke": {
+    "_comment": "配線確認のみ。事前登録外の窓・低容量・効果数値は redact(構造 = 非ゼロ差の存在とスケール統計は出す)。",
+    "eval_from": "2016-01-01",
+    "eval_to": "2017-12-31",
+    "n_estimators": 50,
+    "redact_effect_numbers": true
+  }
+}

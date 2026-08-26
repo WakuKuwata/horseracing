@@ -1,0 +1,23 @@
+{
+  "_comment": "feature 100 US4: δ を多重検定予算から導出し直した gate-config(FR-030/031)。**過去 verdict の再読み替えには使わない** — 過去は当時の δ で判断されており、今の δ で読み直すと採否の意味が変わる(FR-031a)。",
+  "_pre_registered_at": "2026-08-25",
+  "_delta_is_currently_slack": "この δ は現行の CI 条件の下で拘束しない。CI 上限<0 は point < -1.96*SE = -0.00309 を要求し、これは δ より厳しい。seed 成分を完全に消しても sampling だけで -0.00231 が要る。記録された 8 件の verdict で δ が縛った例は 0 件。それでも δ を持つのは、分散がさらに縮んだ将来に備えた backstop としてである。",
+
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+
+  "min_effect_delta": 0.0035188338580500285,
+  "delta_derivation_ref": "specs/100-eval-contract-v5/delta-derivation.json",
+
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+
+  "bootstrap": { "b": 2000, "seed": 20260825, "alpha": 0.05 },
+
+  "eval_window": { "from": "2019-01-01", "to": "2026-08-16", "min_eval_days": 400 }
+}

@@ -1,0 +1,51 @@
+{
+  "artifact_kind": "counterfactual_supply_simulation",
+  "eligible_for_verdict": false,
+  "evaluation_contract_version": "v4",
+  "gate_config_hash": "6f76bf156de7ac3d96d0108d45c10be734a11d6363a8d58fc4022c9da01ba10c",
+  "verdict": {
+    "status": "REJECT",
+    "adopt": false,
+    "formula": "primary_pooled AND guard1 AND guard2",
+    "decision_reason": {
+      "cause": "primary_pooled AND guard1 AND guard2 not all true",
+      "sufficient": true,
+      "gate_adopted": false,
+      "guard1": true,
+      "guard2": true
+    }
+  },
+  "primary_point": -0.002408548363604706,
+  "primary_sample_ci": {
+    "point": -0.002408548363604706,
+    "ci_low": -0.004612489344404876,
+    "ci_high": -0.00010279959158542204,
+    "b": 2000,
+    "seed": 20260822,
+    "block": "race_day",
+    "n_days": 323,
+    "no_decision": false
+  },
+  "primary_total_ci": {
+    "point": -0.002408548363604706,
+    "ci_low": -0.0054218879042213005,
+    "ci_high": 0.0006800333076258684,
+    "b": 2000,
+    "seed": 20260822,
+    "block": "race_day",
+    "n_days": 323,
+    "no_decision": false
+  },
+  "primary_gate": {
+    "sub_gates": {
+      "effect_beats_delta": true,
+      "ci_upper_below_zero": false,
+      "recent_no_evidence_of_harm": true,
+      "top2_noninferior": true,
+      "top3_noninferior": true,
+      "calibration_noninferior": true,
+      "calibration_not_emergency": true
+    },
+    "adopted": false
+  }
+}

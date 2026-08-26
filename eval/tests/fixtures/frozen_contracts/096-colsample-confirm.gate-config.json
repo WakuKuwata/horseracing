@@ -1,0 +1,93 @@
+{
+  "_comment": "096: colsample_bytree 0.7 の確認。**探索と disjoint な窓で測る。** screening は 2025-2026 で行ったので、ここでは 2019-2024 だけを採点する。",
+
+  "_screening_record": {
+    "window": "2025-2026 (first_valid_year=2025, 177 開催日)",
+    "baseline": "base(300 rounds / 31 leaves / lr 0.05)",
+    "colsample_0.7": { "diff": -0.003651, "ci_low": -0.007034, "ci_high": -0.000516 },
+    "note": "screening は **300 ラウンド**の基準に対する値。本番は 094 で 900 ラウンドになったので、正則化の効き方が変わりうる。したがってここでは 900+colsample vs 900 を測る — screening と同じ問いではない。"
+  },
+
+  "_multiplicity_disclosure": "2019-2024 窓での確認は**これが 2 回目**(1 回目は 094 の rounds 300->900)。候補ごとに同じ窓で検定を重ねると family-wise の第一種過誤が上がる。2 回で名目 α=2.5% ×2 → 最大 5%。窓を使い切る前に、通らなかった候補で打ち止めにすること。",
+
+  "_power_disclosure": "094 の同窓・同構成での実測 CI 半幅は 0.0019(点推定 -0.0067)。seed 分散を畳むと半幅 ~0.0012 相当。screening の点推定 -0.0037 が真値なら検出力は 7 割前後で、**外れても『効果が無い』ではなく『この窓では分離できない』**。事前にそう読むと決めておく。",
+
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "primary_regime": "standard",
+
+  "arms": {
+    "_comment": "両アームとも arm E(全履歴 booster + strict-past OOF isotonic) + 900 ラウンド + 091 体重マスク。差は colsample_bytree だけ。",
+    "candidate_kind": "oof_isotonic",
+    "candidate_params": { "n_estimators": 900, "colsample_bytree": 0.7 },
+    "active_kind": "oof_isotonic",
+    "active_params": { "n_estimators": 900 },
+    "n_oof_blocks": 8,
+    "objective": "pl_topk",
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810
+  },
+
+  "min_effect_delta": 0.002,
+
+  "eval_window": {
+    "_comment": "screening(2025-2026)と重ならない範囲だけを採点する。学習側は年単位で伸びる。",
+    "from": "2019-01-01",
+    "to": "2024-12-31",
+    "min_eval_days": 400
+  },
+
+  "seed_noise": {
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds, pl_topk:isotonic:0.3, 2026 fold)",
+    "assume_fold_independent": true
+  },
+
+  "power": {
+    "expected_se": 0.0012,
+    "mde_80": 0.0034,
+    "target_effect": -0.0037,
+    "power_at_target": 0.7
+  },
+
+  "recent_guard": {
+    "_comment": "窓が 2024 で終わるので『直近』はこの窓の中の直近。現行レジームの証拠にはならない — 採用するなら別途 prospective が要る。",
+    "mode": "non_inferiority",
+    "windows_years": [3, 5],
+    "non_inferior_margin": 0.005
+  },
+
+  "top_noninferior": { "top2": 0.0005, "top3": 0.0005 },
+
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+
+  "subgroup_guard": {
+    "_comment": "窓に 2026 が無いので 2026 系の部分集団は構造的に空になる。critical に入れると必ず MISSING で落ちるため、この窓で意味を持つものだけを critical にする。",
+    "critical_subgroups": ["nk"],
+    "rationale": "eval window ends 2024; 2026-scoped subgroups are structurally empty here",
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "no_decision_min_days": 400
+  },
+
+  "bootstrap": { "b": 2000, "seed": 20260820, "block": "race_day", "alpha": 0.05 },
+  "determinism": { "tolerance": 1e-09, "num_threads": 1 },
+
+  "verdict": {
+    "formula": "gate.adopted AND subgroups.subgroup_guard",
+    "no_decision": "評価が実行不能な場合のみ。ボーダーの数値を理由に NO_DECISION と読み替えない",
+    "on_adopt": "現行レジーム(2025-2026)の証拠がこの窓には無いので、昇格は別途 prospective を経る"
+  },
+
+  "artifact_isolation": {
+    "verdict_kind": "full_walk_forward",
+    "kinds": ["full_walk_forward", "screening", "remeasurement"],
+    "eligible_kinds": ["full_walk_forward"]
+  }
+}

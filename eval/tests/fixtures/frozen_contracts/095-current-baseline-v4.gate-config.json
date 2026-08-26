@@ -1,0 +1,86 @@
+{
+  "_comment": "095: 現行本番の再測定(evaluation contract v4)。**採用判定ではない** — 本番は既に稼働しており、この実行で何かを昇格させることはない。目的は『いま我々が本番について話すときに使える、現行ハーネスでの数値』を 1 つ作ること。今日までの数値はすべて旧契約下のもので、arm E は v2・2008-2026、容量は v3・2019-2024 と、別々の契約・別々の窓でしか測られていない。両者を合わせた効果は一度も測られていない。",
+  "_pre_registered_at": "2026-08-18",
+  "_not_an_adoption_gate": "artifact_kind は remeasurement。verdict loader は full_walk_forward しか受け付けないので、この成果物で昇格はできない。",
+
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "primary_regime": "standard",
+
+  "arms": {
+    "_comment": "候補 = いま本番で動いているもの(arm E + rounds 900 + 091 の体重マスク)。現行 = 今日の 2 つの昇格より前の構成(calib holdout 0.3 + rounds 300)。差は『今日 1 日で本番が得たもの』になる。",
+    "candidate_kind": "oof_isotonic",
+    "candidate_n_estimators": 900,
+    "candidate_n_oof_blocks": 8,
+    "active_kind": "holdout",
+    "active_calib_frac": 0.3,
+    "active_n_estimators": 300,
+    "objective": "pl_topk",
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810
+  },
+
+  "min_effect_delta": 0.002,
+
+  "eval_window": {
+    "_comment": "標準窓。現行レジーム(2025-2026)を含む — 再測定なので選択の心配が無く、含めない理由が無い。",
+    "from": "2019-01-01",
+    "to": "2026-08-16",
+    "min_eval_days": 400
+  },
+
+  "seed_noise": {
+    "_comment": "v4 の必須項目。判定に使う区間はこの成分を合成したものになる。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds, pl_topk:isotonic:0.3, 2026 fold)",
+    "assume_fold_independent": true
+  },
+
+  "power": {
+    "_comment": "期待効果は arm E(-0.0128) と容量(-0.0067) の合成で、単純加算なら -0.019 前後。ただし両者は同じ『学習量の不足』を別経路で埋めている可能性があり、加算より小さく出るのが自然。合成 SE 込みでも桁違いに検出できる。",
+    "expected_se": 0.001076,
+    "mde_80": 0.0030,
+    "target_effect": -0.019,
+    "power_at_target": 1.0
+  },
+
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [3, 5],
+    "non_inferior_margin": 0.005
+  },
+
+  "top_noninferior": { "top2": 0.0005, "top3": 0.0005 },
+
+  "calibration": {
+    "_comment": "候補は arm E(OOF isotonic)・現行は holdout isotonic で校正器が違う。ECE の差はその違いも含む。",
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+
+  "subgroup_guard": {
+    "_comment": "再測定なので veto の出番は無いが、現行レジーム(2026)と nk コホートでの内訳は見たい。critical を空にして report のみ出す。",
+    "critical_subgroups": [],
+    "rationale": "remeasurement_not_adoption",
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001,
+    "no_decision_min_days": 400
+  },
+
+  "bootstrap": { "b": 2000, "seed": 20260818, "block": "race_day", "alpha": 0.05 },
+  "determinism": { "tolerance": 1e-09, "num_threads": 1 },
+
+  "verdict": {
+    "formula": "N/A — remeasurement",
+    "no_decision": "この実行で採否は決めない"
+  },
+
+  "artifact_isolation": {
+    "verdict_kind": "full_walk_forward",
+    "kinds": ["full_walk_forward", "remeasurement"],
+    "eligible_kinds": ["full_walk_forward"]
+  }
+}

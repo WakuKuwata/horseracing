@@ -1,0 +1,27 @@
+# T020/T021 実 DB 検証(2026-08-26)
+# 判定: paired-eval --candidate binary:isotonic:0.3 --active binary:none
+#       --from 2025-01-01 --to 2025-03-31 --first-valid-year 2025 --bootstrap-b 300
+#       --use-materialized --materialized-path artifacts/features.parquet
+
+証拠 862 行 / verdict n_eligible=862 n_races=864 n_days=28
+assert_contract(INV-E1..E5): OK
+
+## SC-001 証拠だけからの再計算
+  point      再計算=0.0007794916352952724
+             verdict=0.0007794916352952724  -> True
+  sample_ci  ビット一致 = True
+  total_ci   ビット一致 = True
+  行順反転でも同一(INV-E6) = True
+  report JSON にも同梱(FR-009) = 862 行
+
+## SC-002 凍結 config の後方互換
+  現行契約版 = v4
+  094-booster-capacity         hash=一致 declared=v3 confirmatory=fail-closed(旧版宣言・意図どおり)
+  095-current-baseline-v4      hash=一致 declared=v4 confirmatory=PASS
+  096-colsample-confirm        hash=一致 declared=v4 confirmatory=PASS
+  097-early-mid-pace           hash=一致 declared=v4 confirmatory=PASS
+  098-race-class-spelling      hash=一致 declared=v4 confirmatory=PASS
+  099-margin-teacher-signal    hash=一致 declared=v4 confirmatory=PASS
+
+094 の fail-closed は v3→v4 の bump による既存の状態で、feature 100 が作ったものではない。
+SC-001 PASS / SC-002 PASS
