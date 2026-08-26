@@ -102,6 +102,8 @@ class LightGBMPredictor:
         calibration_split_unit: str = LEGACY_CALIBRATION_SPLIT_UNIT,
         restrict_features: tuple[str, ...] | None = None,
         ev_weight: bool = False,
+        recency_half_life_days: float | None = None,
+        weight_scope: str | None = None,
         oof_p: dict | None = None,
     ) -> None:
         self.session = session
@@ -156,6 +158,15 @@ class LightGBMPredictor:
         # reference (never active/default). oof_p is REQUIRED when ev_weight is on (fail-closed).
         # Default off keeps every existing path byte-identical (weights=None in WinModel).
         self.ev_weight = ev_weight
+        # Feature 101: 学習の時間重み。None = 無効で、WinModel には weights=None が渡り
+        # 現行とビット一致になる。重みは (race_date, cutoff) の純関数なのでリーク面ゼロ。
+        self.recency_half_life_days = recency_half_life_days
+        self.weight_scope = weight_scope
+        if recency_half_life_days is not None and weight_scope is None:
+            raise ValueError(
+                "recency_half_life_days を使うなら weight_scope の宣言が必須です "
+                "(feature 101 FR-013: 『booster だけに効く』を暗黙の既定にしない)"
+            )
         self.oof_p = oof_p
         if ev_weight:
             if oof_p is None:
@@ -362,6 +373,10 @@ class LightGBMPredictor:
                 "weight_min": float(np.min(model_weights)),
                 "weight_max": float(np.max(model_weights)),
             }
+        # Feature 101 は REJECT(2026-08-27・+0.005760 で有意に悪化)。**結線を外して非結線
+        # 保全**する(062/070/090/100-US3 同型)。`recency.py` とその単体テストは残っており、
+        # 直接呼び出しで緑。ここを繋ぎ直すのは、時間重みを別の形で再事前登録するとき。
+        recency_info: dict | None = None
         self.win_model_ = WinModel(
             seed=self.seed, params=params, objective=self.objective
         ).fit(
@@ -428,6 +443,8 @@ class LightGBMPredictor:
             self.fit_info_["market_offset"] = dict(MARKET_OFFSET_METADATA)
             self.fit_info_["market_offset_excluded_races"] = offset_excluded_races
             self.fit_info_["market_offset_excluded_rows"] = offset_excluded_rows
+        if recency_info is not None:
+            self.fit_info_["recency"] = recency_info
         if self.ev_weight:
             # Feature 079 provenance: the model is market-aware via the training weight.
             self.fit_info_["ev_weight"] = ev_weight_info

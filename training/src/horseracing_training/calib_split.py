@@ -209,6 +209,11 @@ class OofCalibratedPredictor:
         # fit-scope and reaches LightGBMPredictor by a route this builder has no access to. Only
         # ever used by the 079 kill-test with RecipeFactory; refuse instead of ignoring.
         "ev_weight": "reject",
+        # Feature 101: recency 重みは `(race_date, cutoff)` の**純関数**なので、`ev_weight` が
+        # "reject" である理由(重み源が fit-scope でこの builder から届かない)が当てはまらない。
+        # builder 内で計算できるので "forward" が正しい。
+        "recency_half_life_days": "forward",
+        "weight_scope": "forward",
         "label": "not-applicable",             # provenance string
     }
 
@@ -260,6 +265,9 @@ class OofCalibratedPredictor:
             # (97% of live races have no same-day weight). Omitting it here recorded a
             # pre-091 model as "arm E of this recipe".
             fit_weight_mask=self.recipe.weight_mask_spec(),
+            # Feature 101: 時間重み。None = 無効で、そのとき arm E の挙動は現行とビット一致。
+            recency_half_life_days=self.recipe.recency_half_life_days,
+            weight_scope=self.recipe.weight_scope,
             # 容量。arm E は booster が見る行が約 40% 増えるので、旧レシピで測った最適本数が
             # そのまま当てはまる保証は無い。ここを配線しないと arm E で容量を振れない。
             params=self.recipe.resolved_params(),

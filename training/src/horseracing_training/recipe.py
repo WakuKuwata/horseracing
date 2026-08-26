@@ -32,6 +32,10 @@ class MarketOffsetForbidden(ValueError):
     """Raised when a 068 recipe requests market_offset (leak vector, FR-019)."""
 
 
+#: Feature 101: 時間重みをどこに適用したか。US1 は booster 限定、US2 で一貫適用を測る。
+WEIGHT_SCOPES: tuple[str, ...] = ("booster_only", "booster_te_calibrator")
+
+
 @dataclass(frozen=True)
 class ModelRecipe:
     objective: str = "pl_topk"
@@ -66,6 +70,25 @@ class ModelRecipe:
     #: 容量はモデルの同一性そのものなので fit-scope ではなく recipe に置く: 900 本の木の
     #: モデルは 300 本のモデルと別物であり、別の model_version であるべきである。
     params: tuple[tuple[str, float | int], ...] | None = None
+    #: Feature 101(**REJECT**: +0.005760 で有意に悪化)。フィールドは残すが fit 経路は
+    #: 非結線。既定 None のとき recipe_hash は現行と不変なので、残しても既存モデルの
+    #: 同一性は動かない。半減期(日)。`None` = 無効で、
+    #: そのとき重みは `WinModel.fit(weights=None)` = 現行とビット一致になる。
+    #:
+    #: 重みは `(race_date, cutoff)` の**純関数**なのでリーク面はゼロであり、レース内で定数なので
+    #: PL 損失は valid な weighted likelihood `L_r' = α_r·L_r` のままである。079 の `ev_weight` は
+    #: 重み源が fit-scope で arm E builder から届かないため "reject" 扱いだが、こちらは純関数
+    #: なのでその問題を持たず "forward" できる。
+    #:
+    #: 容量(`params`)と同じく**モデルの同一性そのもの**なので recipe に置く: 直近を 2 倍重く
+    #: 学習したモデルは一様に学習したモデルと別物であり、別の model_version であるべきである。
+    recency_half_life_days: float | None = None
+    #: Feature 101: 時間重みを**どこに適用したか**の明示宣言。`None` = 未宣言。
+    #: recency を有効にするなら宣言が必須で、未宣言は fail-closed(`__post_init__`)。
+    #: 「booster にだけ渡して他は素通り」を暗黙の既定にしないためである — booster が
+    #: 「直近が重い世界」を学ぶ一方で target encoder と校正器が「一様な世界」を見る不整合は、
+    #: テストでは捕まらないまま booster の変化を相殺しうる。
+    weight_scope: str | None = None
     label: str = ""
 
     # These two hash lineages deliberately retain different historical payload shapes:
@@ -83,7 +106,12 @@ class ModelRecipe:
     #: 099 REJECT 後も機構は保全(空)。新フィールドを足すときは必ずここに default 省略を
     #: 登録する — 登録しないと CalibSplitFactory(meta() 全体を hash)系の既存 hash が全て
     #: 変わる(codex P0-1 の恒久対策。両系 hash のスナップショットテストが守る)。
-    NEW_HASH_DEFAULT_OMISSIONS: ClassVar[dict[str, tuple[object, tuple[str, ...]]]] = {}
+    NEW_HASH_DEFAULT_OMISSIONS: ClassVar[dict[str, tuple[object, tuple[str, ...]]]] = {
+        # Feature 101: 既定(無効)は hash から省く。**登録を外すと CalibSplitFactory 系
+        # (meta() 全体を hash する)の既存 hash が全て変わる** = 現 active の lgbm-094-cap900
+        # 系譜(arm E)のモデル同一性が壊れる。099 が残した機構がここで初めて使われる。
+        "recency_half_life_days": (None, ("recency_half_life_days", "weight_scope")),
+    }
 
     def __post_init__(self) -> None:
         # FR-019 / codex C3: fail closed — 068 never reads the target race's own odds.
@@ -91,6 +119,21 @@ class ModelRecipe:
             raise MarketOffsetForbidden(
                 "068 recipes must set market_offset=False (reading the target race's own "
                 "odds is a leak, FR-019)"
+            )
+        # Feature 101: recency を有効にするなら**適用範囲の宣言が必須**。未宣言のまま通すと
+        # 「booster にだけ効いていて encoder と校正器は素通り」が暗黙の既定になり、静かな
+        # 不整合が入る(booster は『直近が重い世界』を学ぶのに encoder と校正器は『一様な世界』を
+        # 見る)。宣言を強制すれば、後から scope を変えたとき recipe_hash が動く = 別のモデル
+        # 同一性になることも保証される。
+        if self.recency_half_life_days is not None and self.weight_scope is None:
+            raise ValueError(
+                "recency_half_life_days を指定するなら weight_scope の宣言が必須です "
+                "(例 'booster_only')。暗黙の既定を持たせない(feature 101 FR-013)"
+            )
+        if self.weight_scope is not None and self.weight_scope not in WEIGHT_SCOPES:
+            raise ValueError(
+                f"weight_scope は {WEIGHT_SCOPES} のいずれかでなければなりません: "
+                f"{self.weight_scope!r}"
             )
         # Feature 091: rate and seed travel together — a rate without a seed is not reproducible.
         if (self.weight_mask_rate is None) != (self.weight_mask_seed is None):
