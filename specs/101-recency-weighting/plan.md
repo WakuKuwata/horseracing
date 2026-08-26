@@ -1,6 +1,6 @@
 # Implementation Plan: recency weighting — 学習の時間重み
 
-**Branch**: `main`(直接コミット運用) | **Date**: 2026-08-26 | **Spec**: [spec.md](./spec.md)
+**Branch**: `feat/101-recency-weighting`(spec と揃える。100 の成果物と混ざらないよう切る) | **Date**: 2026-08-26 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `specs/101-recency-weighting/spec.md`
 
@@ -73,9 +73,18 @@ OOF 8 = 9 fit ≈ 20 分)。
   結果・オッズ・未来のレースを一切参照しない(FR-002)。leak-guard テストで固定する。
   **重みは「どれだけ数えるか」であって「何を見てよいか」ではない** — target encoding の as-of
   時間境界は動かさない(FR-016)。
-- [x] **III. 評価先行 (NON-NEGOTIABLE)**: **PASS**。事前登録ゲートで walk-forward OOS 判定。
+- [x] **III. 評価先行 (NON-NEGOTIABLE)**: **PASS**。判定式・両アーム構成・要求水準は
+  [contracts/adoption-gate.md](./contracts/adoption-gate.md) に凍結する。憲法が要求する
+  **baseline 比較と ECE 確認**は harness 組込のゲート一式で満たす: `effect_beats_delta` /
+  `ci_upper_below_zero` / `recent_no_evidence_of_harm` / `top2_noninferior` /
+  `top3_noninferior` / `calibration_noninferior` / `calibration_not_emergency`、加えて
+  **subgroup_guard**(直近年 / netkeiba 由来 ID 層 / その積)。verdict の正本は単一式
+  `gate.adopted AND subgroup_guard` で、harness 組込 `report.decision` と食い違ったら本式が正本
+  (088 の前例)。**099 は top3 非劣性で REJECT された**ので導出層のガードは飾りではない。
+  本 feature が追加で凍結するのは**両アームの recipe pin**(FR-012a)と**評価が無重みである
+  こと**(FR-011a)、および半減期・ε・`ess_floor`・主要カテゴリ集合である。
   **半減期はラベルも winner NLL も使わず日付だけで事前登録**するので選択リークが構造的に
-  起こりえない(FR-007)。**評価は無重みで行う**(FR-011a)。
+  起こりえない(FR-007)。
 - [x] **IV. 確率整合性**: **PASS**。重みは損失の係数であって確率の導出を変えない。Σ=1 も
   取消除外も不変。
 - [x] **V. 再現性・監査**: **PASS**。cutoff・半減期・ε・ESS(粒度別)・重み分布・消失カテゴリを
@@ -101,7 +110,8 @@ specs/101-recency-weighting/
 ├── data-model.md      # Phase 1
 ├── contracts/
 │   ├── recency-weight.md    # 重みの定義・正規化・日付衛生
-│   └── weight-scope.md      # 重みをどこに適用するか(US2)
+│   ├── weight-scope.md      # 重みをどこに適用するか(US2)
+│   └── adoption-gate.md     # 判定式・両アーム pin・要求水準
 ├── quickstart.md      # Phase 1
 ├── codex-review.md    # 完了(採用 10 / 部分採用 1 / 不採用 1)
 ├── gate-config.json   # Phase B で凍結
@@ -120,6 +130,7 @@ training/src/horseracing_training/
 └── calibration.py      # US2: fit_calibrator に重みを通す
 
 scripts/
+├── recency_halflife.py # 半減期を日付だけから決める(**ラベルを読まない**)
 └── recency_gate.py     # 判定 driver(凍結 gate-config を読んで両アームを回す)
 
 tests/                  # training/tests/unit・integration
@@ -163,8 +174,10 @@ US1 が REJECT なら丸ごと不要になる。feature 100 で「理屈のま�
 ## 主要な設計判断(research.md に詳細)
 
 1. **正規化は非交渉**(FR-006a)。重み総量が LightGBM の正則化(`lambda`・leaf 条件・Hessian
-   閾値・early stopping)を動かすので、レース平均 1 に正規化しないと「時間重み」と「容量変更」が
-   区別できない。このリポジトリは容量だけで −0.0067 を出しているので実際に起こりうる。
+   閾値・early stopping)を動かすので、正規化しないと「時間重み」と「容量変更」が区別できない。
+   このリポジトリは容量だけで −0.0067 を出しているので実際に起こりうる。**基底は「行重み総和 =
+   行数」**であってレース平均ではない(analyze A1: 頭数が年代と相関しているためレース平均正規化
+   では総量が 0.6〜1.5% ずれる)。
 2. **半減期は日付だけで事前登録**(FR-007)。nested 選択は採らない — estimand が変わり、かつ
    nested の結果から固定すると同じ outer 結果を根拠に使えなくなる。
 3. **評価は無重み**(FR-011a)。目的は「将来レース当たり平均 winner NLL」。

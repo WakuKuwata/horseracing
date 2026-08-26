@@ -31,7 +31,7 @@ spec 側も検証を規定している(FR-002/003/006a/014)。
 ラベルにも winner NLL にも触れない。**
 
 - [ ] T001 [P] `training/src/horseracing_training/recency.py` を新規作成し、`RecencyWeightSpec`(scheme / half_life_days / floor / normalize / selection_basis)を定義する(data-model.md §1)
-- [ ] T002 [P] `training/tests/unit/test_recency_weight.py` の骨格を作り、契約 [recency-weight.md](./contracts/recency-weight.md) の必須テスト一覧を空のテストとして並べる(何を守るかを先に固定する)
+- [ ] T002 [P] `training/tests/unit/` に契約 [recency-weight.md](./contracts/recency-weight.md) の必須テスト一覧を、ファイルを分けた空のテストとして並べる(`test_recency_normalization.py` / `test_recency_race_constant.py` / `test_recency_leak_guard.py` / `test_recency_date_hygiene.py` / `test_recency_shape.py`)。何を守るかを先に固定する
 
 ---
 
@@ -47,24 +47,24 @@ spec 側も検証を規定している(FR-002/003/006a/014)。
 
 ### テスト(先に書く)
 
-- [ ] T003 [P] `training/tests/unit/test_recency_weight.py` に**正規化**の検証を書く: レース単位の平均が厳密に 1(INV-W3)。**正規化を外す変異でテストが落ちる**ことを確認する(FR-006a・codex C1)
-- [ ] T004 [P] `training/tests/unit/test_recency_weight.py` に**レース内定数**の検証を書く: `assert_race_constant` を通ること、per-horse 項を足した重みが fail-closed になること(INV-W2・FR-003)
+- [ ] T003 [P] `training/tests/unit/test_recency_normalization.py` を追加し、**`Σ_rows w == N`**(行重み総和が行数)を検証する(INV-W3)。**正規化を外す変異**と、**レース平均正規化に差し替える変異**の両方で落ちることを確認する(FR-006a・analyze A1)
+- [ ] T004 [P] `training/tests/unit/test_recency_race_constant.py` を追加し、**レース内定数**を検証する: `assert_race_constant` を通ること、per-horse 項を足した重みが fail-closed になること(INV-W2・FR-003)
 - [ ] T005 [P] `training/tests/unit/test_recency_leak_guard.py` を追加し、**重みが純関数である**ことを挙動で固定する: 着順・オッズ・未来のレースを変えても重みが 1 ビットも動かない(INV-W1・FR-002・憲法 II)
-- [ ] T006 [P] `training/tests/unit/test_recency_date_hygiene.py` を追加し、未来 cutoff・負の経過日数・`race_date` 欠損・年月の単位取り違えが**すべて例外**になることを検証する(FR-002a・codex R9)
-- [ ] T007 [P] `training/tests/unit/test_recency_weight.py` に単調非増加(INV-W5)・下限 `floor > 0`(INV-W4)・同日同一重み・**fold 間で重みの意味が変わらない**(同じ age なら同じ重み)を追加する(FR-008)
+- [ ] T006 [P] `training/tests/unit/test_recency_date_hygiene.py` を追加し、未来 cutoff・負の経過日数・`race_date` 欠損・**半減期の範囲外(`30 <= half_life_days <= 7300`)**が**すべて例外**になることを検証する。**タイムゾーンは扱わない**(naive date)ことも固定する(FR-002a・codex R9・analyze B1)
+- [ ] T007 [P] `training/tests/unit/test_recency_shape.py` を追加し、単調非増加(INV-W5)・下限 `floor > 0`(INV-W4)・同日同一重み・**fold 間で重みの意味が変わらない**(同じ age なら同じ重み)を検証する(FR-008)
 
 ### 実装
 
-- [ ] T008 `training/src/horseracing_training/recency.py` に `build_recency_weights(race_ids, race_dates, *, cutoff, half_life_days, floor)` を実装する。`α̃ = ε + (1−ε)·0.5^(age_days/half_life)` を計算し、**レース単位の平均が 1 になるよう正規化**して返す(contracts/recency-weight.md)
+- [ ] T008 `training/src/horseracing_training/recency.py` に `build_recency_weights(race_ids, race_dates, *, cutoff, half_life_days, floor)` を実装する。`α̃ = ε + (1−ε)·0.5^(age_days/half_life)` を計算し、**行重みの総和が行数に等しくなるよう正規化**して返す `α = α̃·N/Σ_rows α̃`(contracts/recency-weight.md・analyze A1)
 - [ ] T009 `training/src/horseracing_training/recency.py` に日付衛生の fail-closed 検査を実装する(T006 が要求する 4 種)
-- [ ] T010 `training/src/horseracing_training/recency.py` に `effective_sample_size(weights) = (Σw)²/Σw²` と、**粒度別 ESS** を返す関数を実装する(カテゴリ別・供給元別・頭数帯別・特徴の有効値/欠損別)(FR-009/010・codex R4)
-- [ ] T011 `training/src/horseracing_training/recency.py` に `WeightAudit`(cutoff / 半減期 / floor / ESS 全体と粒度別 / 重み分布 / 新レジーム質量 / 消失カテゴリ)を実装する(data-model.md §3)
+- [ ] T010 `training/src/horseracing_training/recency.py` に `effective_sample_size(weights) = (Σw)²/Σw²` と、**粒度別 ESS** を返す関数を実装する(カテゴリ別・供給元別・頭数帯別・特徴の有効値/欠損別・校正スコア帯別)。**校正スコア帯別は US2 で校正器に重みを通したときに意味を持つので US1 段階では空でよい**が、その旨を artifact に記録する(FR-009/010・codex R4・analyze F2)
+- [ ] T011 `training/src/horseracing_training/recency.py` に `WeightAudit`(cutoff / 半減期 / floor / ESS 全体と粒度別 / 重み分布 / 新レジーム質量 / 消失カテゴリ)を実装し、**`ess_total` と主要カテゴリ別 ESS が凍結 `ess_floor` を割ったら fail-closed** にする(data-model.md §3・INV-A3・analyze E1)
 
 ### 半減期の決定と凍結(**ここでもラベルを見ない**)
 
 - [ ] T012 `scripts/recency_halflife.py` を作り、**実データの日付分布だけ**から半減期の候補ごとに「新レジームの重み質量」「主要カテゴリの ESS」を算出する。**ラベル・着順・winner NLL を一切読まないことをスクリプト冒頭の契約として明記し、import でも保証する**
-- [ ] T013 T012 の出力から、事前登録した日付基準(新レジーム質量 20〜35% かつ主要カテゴリの ESS が下限以上)を満たす半減期を**単一値に決める**。決めた値・基準・その実測値を `specs/101-recency-weighting/gate-config.json` に凍結し、canonical hash を `gate-config.hash.txt` に記録する(FR-007)
-- [ ] T014 `specs/101-recency-weighting/gate-config.json` に判定式を凍結する。**評価は無重み**であること(FR-011a)、δ の `derivation_ref`(feature 100 の `delta-derivation.json`)、seed_noise、bootstrap、eval_window を含める。`delta_provenance.assert_delta_provenance` を通ることを確認する
+- [ ] T013 T012 の出力から、事前登録した日付基準を満たす半減期を**単一値に決める**。`specs/101-recency-weighting/gate-config.json` に次を **literal で凍結**する: 半減期・`floor`(ε)・**`ess_floor`(全体と主要カテゴリ別)**・**`major_categories` の集合**(「主要カテゴリ」を未定義のままにしない)・基準とその実測値。canonical hash を `gate-config.hash.txt` に記録する(FR-007/009・analyze E1/G4)
+- [ ] T014 `specs/101-recency-weighting/gate-config.json` に [contracts/adoption-gate.md](./contracts/adoption-gate.md) の内容を凍結する: **両アームの recipe を literal で pin**(objective / arm=oof_isotonic / n_estimators=900 / n_oof_blocks=8 / weight_mask_rate=0.5 / weight_mask_seed=20260810・差は recency のみ)・**`evaluation_contract_version: "v4"`(bump しない)**・**評価は無重み**(FR-011a)・δ の `delta_derivation_ref`(100 の `delta-derivation.json`)・seed_noise・bootstrap・eval_window。`delta_provenance.assert_delta_provenance` を通ることを確認する(FR-012/012a/012b・analyze C1/C2/F1)
 
 **Checkpoint**: 重みが計算でき、半減期が**ラベルを見ずに**凍結された。ここまでで選択リーク無しが確定
 
@@ -85,16 +85,18 @@ spec 側も検証を規定している(FR-002/003/006a/014)。
 
 ### 実装
 
-- [ ] T018 [US1] `training/src/horseracing_training/recipe.py` の `ModelRecipe` に半減期フィールドを追加する。既定は無効(None)で、無効時の `recipe_hash` が現行と不変であることをテストで固定する
+- [ ] T018 [US1] `training/src/horseracing_training/recipe.py` の `ModelRecipe` に半減期フィールドを追加し、**`NEW_HASH_DEFAULT_OMISSIONS` に default 省略として登録する**(099 の恒久成果・codex P0-1 対策)。登録しないと **arm E 系 = 現 active(lgbm-094-cap900 系譜)の既存 recipe_hash が全滅する**。受入条件に**両系 hash スナップショットテストが緑**であることを含める(analyze D1)
 - [ ] T019 [US1] `training/src/horseracing_training/calib_split.py` の `_RECIPE_FIELD_DISPOSITION` に新フィールドを **"forward"** で登録し、`_make_base` に渡す。`ev_weight` が "reject" である理由(重み源が fit-scope で届かない)が**当てはまらない**ことをコメントで明記する
 - [ ] T020 [US1] `training/src/horseracing_training/predictor.py` の fit 経路(079 の `model_weights` の seam)で recency 重みを構築して渡す。`assert_race_constant` を通す。**適用範囲は booster 限定であることを明示宣言**して `fit_info_` に記録する
 - [ ] T021 [US1] `WeightAudit` を `fit_info_` に記録する。**cutoff を必ず含める**(再学習日が動けば全重みが動くため・INV-A1)
 
 ### 判定
 
-- [ ] T022 [US1] `scripts/recency_gate.py` を作り、凍結 `gate-config.json` の hash を照合してから 2 アーム(重みあり/なし)を回す。**差が時間重みのみであることを実行前後の構造 assert で担保し、差がゼロでないことも確認する**(FR-011・SC-003)
-- [ ] T023 [US1] 判定を実行し、結果を `specs/101-recency-weighting/evidence/recency-gate.json` に保存する。**評価は無重み**(FR-011a)。feature 100 の per-race 証拠(`--evidence`)も併せて残す
+- [ ] T022 [US1] `scripts/recency_gate.py` を作り、凍結 `gate-config.json` の hash を照合してから 2 アーム(重みあり/なし)を回す。**両アームの recipe が凍結 pin と一致することを照合**し、**差が時間重みのみであることを実行前後の構造 assert で担保し、差がゼロでないことも確認する**(FR-011/012a・SC-003)
+- [ ] T023 [US1] `specs/101-recency-weighting/evidence/` を作成し、判定を実行して結果を `evidence/recency-gate.json` に保存する。**評価は無重み**(FR-011a)。feature 100 の per-race 証拠(`--evidence`)も併せて残す
 - [ ] T024 [US1] 事前登録式から ADOPT / REJECT / NO_DECISION を機械的に決め、判定を artifact に記録する。**判定を記録してから**内訳(fold 別・カテゴリ別)を読む(SC-004)
+
+- [ ] T024a [US1] **T024 が正の場合のみ**: `/speckit-tasks` を再実行して Phase 4/5 を詳細化する。Phase 4/5 の必須項目は下記に列挙してあるので、再生成がそれを落としていないか照合する(analyze E3)
 
 **Checkpoint**: **ここが分岐点。** T024 の結果が出るまで Phase 4/5 に着手してはならない
 
@@ -115,6 +117,7 @@ spec 側も検証を規定している(FR-002/003/006a/014)。
 - 校正器の **bin 別 ESS** 監視と不足時の fallback を事前規定
 - 各消費者で **per_race / per_horse_row** を明示(INV-S5・多頭数レースの再増幅を防ぐ)
 - **TE の as-of 時間境界を動かさない**(INV-S3)
+- **booster / TE / 校正器が同一 cutoff を使うことの実行時検証**(FR-008・codex R7 が「最も起きやすい静かな不整合」と名指し・analyze E2)
 - **booster 限定と一貫適用の両方を測り、測定で決める**(FR-015)
 
 ---
@@ -165,9 +168,9 @@ Phase 3 (US1: 配線と判定) ★中断点★
 ## Parallel Execution
 
 ### Phase 2(テストは全て並列可)
-T003 / T004 / T005 / T006 / T007 は別ファイルまたは独立した検証なので同時に着手できる。
+T003 / T004 / T005 / T006 / T007 は**それぞれ別ファイル**なので同時に着手できる(analyze F3 でファイルを分割した)。
 実装は T008 → T009 → T010 → T011 が直列(同一モジュールを育てる)。
-T012 は T008 の後、T013 → T014 は直列。
+T012 は **T010 の後**(主要カテゴリの ESS を使うため)、T013 → T014 は直列。
 
 ### Phase 3(US1)
 テスト T015 / T016 / T017 は並列可。
@@ -195,6 +198,7 @@ US1 だけで「学習の時間重みは効くのか」に決着がつく。**�
 Phase 2 が終わった時点で、**ラベルを一度も見ずに半減期が凍結されている**ことが構造的に
 確定する — これは事前登録として最も強い形である。
 
-要求水準は隠していない: 採用には点推定 **−0.0025 かつ δ=0.00352 超**が要り、これは過去に
-効いたレバー(−0.0067 / −0.0128 / −0.014)の帯である。**小さい効果では通らない。**
+要求水準は隠していない: CI 上限<0 は `point < −0.00309` を要求し、**δ=0.00352 がそれより厳しいので
+実質の拘束は δ**。これは過去に効いたレバー(−0.0067 / −0.0128 / −0.014)の帯である。
+**小さい効果では通らない。**
 成功条件は「効くこと」ではなく「**一度で決着させること**」である。
