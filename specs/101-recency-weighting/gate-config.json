@@ -1,0 +1,73 @@
+{
+  "_comment": "feature 101 US1 の採否ゲート。**ラベルを一度も見ずに凍結した**(FR-007)。判定式・両アーム pin・要求水準は contracts/adoption-gate.md が正本。",
+  "_pre_registered_at": "2026-08-26",
+  "_frozen_before_any_label_was_read": "半減期は scripts/recency_halflife.py の出力(日付と出走頭数だけ)から決めた。着順・勝敗・winner NLL・払戻・オッズを一度も読んでいない。したがって選択リークは構造的に起こりえない。",
+
+  "evaluation_contract_version": "v4",
+  "_contract_version_note": "**bump しない**。本 feature は判定ルールを変えない(100 の C1 の教訓: 版を上げると凍結済み config が confirmatory 経路から一斉に締め出される)。",
+
+  "primary_metric": "winner_nll",
+  "evaluation_weighting": "unweighted",
+  "_evaluation_weighting_note": "訓練に時間重みを入れても**評価は無重み**。目的は『将来レース当たりの平均 winner NLL』であり、重み付きで評価すると estimand がすり替わる(FR-011a・codex R3)。",
+
+  "recency": {
+    "scheme": "recency-v1",
+    "half_life_days": 730,
+    "floor": 0.05,
+    "normalize": "row_sum_equals_n",
+    "_normalize_note": "基底は**行重み総和 = 行数**。レース平均 1 では総量が N からずれる(実測 corr(年,平均頭数)=-0.809 で 0.6〜1.5%)ので、FR-006a が防ぐと宣言した『時間重み vs 正則化』の混同が残る(analyze A1)。",
+    "selection_basis": {
+      "criterion_1_new_regime_mass": "2025-07-01 以降の重み質量が 20〜35% に入ること",
+      "criterion_1_measured": "25.76%",
+      "criterion_2_category_ess": "主要カテゴリの ESS が下限以上",
+      "criterion_2_outcome": "**判別しなかった**。jockey_id / trainer_id の ESS 最小値は半減期 365/730/1095 のいずれでも 1.0(1 回しか騎乗していない騎手が存在するため)で、中央値も 76→83 / 13→14 としか動かない。この基準は候補を絞れなかったので、選択は criterion_1 と下の構造的理由で行った。**基準が効かなかったことを隠さず記録する。**",
+      "criterion_1_candidates": {
+        "365": "新レジーム 34.41% / ESS 33.20%",
+        "730": "新レジーム 25.76% / ESS 42.78%",
+        "1095": "新レジーム 20.10% / ESS 53.35%"
+      },
+      "structural_reason": "帯の中央を採る。365 日は帯の上端で ESS が 33% まで落ち、1095 日は下端で新レジームが 20% 程度にしか上がらない。730 日(2 年)は年間開催サイクルを 2 巡残しつつ、新レジームの質量を現行 13.2% から 25.8% へ約 2 倍にする。codex の独立した推奨(H=2 年・ε=0.05)とも一致した。",
+      "ess_by_category_measured": {
+        "venue_code": "min 15,387 / median 41,796",
+        "jockey_id": "min 1.0 / median 79",
+        "trainer_id": "min 1.0 / median 13"
+      }
+    }
+  },
+
+  "ess_floor": {
+    "_comment": "実行時に割ったら fail-closed(INV-A3)。**カテゴリ別の最小値には下限を置かない** — 1 回しか出走していないエンティティが常に 1.0 になるので、下限を置くと必ず落ちる。守るのは全体 ESS と主要カテゴリの中央値。",
+    "total": 300000,
+    "median_by_category": { "jockey_id": 40, "trainer_id": 8, "venue_code": 20000 },
+    "major_categories": ["jockey_id", "trainer_id", "venue_code"]
+  },
+
+  "arms": {
+    "_comment": "両アームの土台は**現行本番と同じ**。差は recency 重みのみ(FR-012a)。",
+    "objective": "pl_topk",
+    "arm": "oof_isotonic",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "active_recency": null,
+    "candidate_recency_half_life_days": 730,
+    "weight_scope": "booster_only",
+    "_weight_scope_note": "US1 は booster 限定を**明示宣言**する。TE と校正器への適用(US2)は US1 の判定が正のときに測る(FR-013/015)。"
+  },
+
+  "min_effect_delta": 0.0035188338580500285,
+  "delta_derivation_ref": "specs/100-eval-contract-v5/delta-derivation.json",
+  "_delta_note": "100 US4 で多重検定予算から導出した値。100 では『δ は現行 CI の下で非拘束』だったが、CI 上限<0 が要求する -0.00309 より δ の方が厳しいので、**本 feature では δ が実質の拘束**になる。",
+
+  "seed_noise": {
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+
+  "bootstrap": { "b": 2000, "seed": 20260826, "alpha": 0.05 },
+
+  "eval_window": { "from": "2019-01-01", "to": "2026-08-16", "min_eval_days": 400 }
+}
