@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { PROFIT_LANGUAGE } from "../lib/forbiddenPhrases";
 
 import { RaceDispersionPanel } from "./RaceDispersionPanel";
 import { RaceChaosPanel } from "./RaceChaosPanel";
@@ -100,7 +101,7 @@ describe("RaceDispersionPanel", () => {
 
   it("uses NO profit/edge/value wording and NO P&L colour, no sorting", () => {
     const { container } = render(<RaceDispersionPanel dispersion={AVAILABLE} />);
-    expect(container.textContent).not.toMatch(/妙味|危険|儲|回収率|edge|買うべき|勝てる|お得/);
+    expect(container.textContent).not.toMatch(PROFIT_LANGUAGE);
     expect(container.querySelector(".good, .bad, .danger, .success, .profit")).toBeNull();
     expect(container.querySelector("button, [role='button']")).toBeNull(); // no sort controls
   });

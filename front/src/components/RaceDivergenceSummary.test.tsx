@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { PROFIT_LANGUAGE } from "../lib/forbiddenPhrases";
 
 import { RaceDivergenceSummary } from "./RaceDivergenceSummary";
 import type { RaceDivergence } from "../api/types";
@@ -32,7 +33,7 @@ describe("RaceDivergenceSummary", () => {
 
   it("uses NO buy/edge/value wording and NO P&L colour or sorting", () => {
     const { container } = render(<RaceDivergenceSummary divergence={AVAILABLE} />);
-    expect(container.textContent).not.toMatch(/妙味|危険|儲|回収率|edge|買うべき|勝てる|おすすめ/);
+    expect(container.textContent).not.toMatch(PROFIT_LANGUAGE);
     expect(container.querySelector(".good, .bad, .danger, .success, .profit")).toBeNull();
     expect(container.querySelector("button, [role='button']")).toBeNull();
     // explicitly states it is not a verdict / not a buy recommendation

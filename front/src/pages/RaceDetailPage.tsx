@@ -8,6 +8,8 @@ import { ImportanceChart } from "../components/ImportanceChart";
 import { JointPanel } from "../components/JointPanel";
 import { ModelSelector } from "../components/ModelSelector";
 import { OddsPanel } from "../components/OddsPanel";
+import { ModelMarketStanding } from "../components/ModelMarketStanding";
+import { OddsFreshness } from "../components/OddsFreshness";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
 import { RaceChaosPanel } from "../components/RaceChaosPanel";
 import { RaceDispersionPanel } from "../components/RaceDispersionPanel";
@@ -133,6 +135,18 @@ export function RaceDetailPage() {
                   モデル勝率と市場評価の母集団が一致しないため、「市場との差」は表示しません(比較不可)。
                 </p>
               )}
+              {/* Feature 103 US1: モデルと市場の関係を出走表の**直上**に常時開示する。
+                  旧注記は表の下にあり、内部 feature 番号「(020)」を画面に出しており、
+                  しかも帰属が誤っていた(全セグメント比較は 047)。ここで置き換える。 */}
+              <ModelMarketStanding canonicalConsistent={pred?.canonical_consistent} />
+              {/* Feature 103 US2: 見ているオッズがいつのもので、何がそれに依存しているか。
+                  予測実行の中央値は発走 6.7 時間前で、EV も疑似 ROI もこの値で計算される。
+                  odds_as_of は PredictionResponse、post_time/has_results は RaceDetail 由来。 */}
+              <OddsFreshness
+                oddsAsOf={pred?.odds_as_of}
+                postTime={r.post_time}
+                hasResults={r.has_results}
+              />
               <HorseEntriesTable
                 entries={r.horses}
                 predictions={pred?.horses ?? []}
@@ -145,8 +159,9 @@ export function RaceDetailPage() {
               </p>
               {hasPreds && (
                 <>
-                  <p className="table-hint" data-testid="market-superiority-note">
-                    ※ 市場評価は実データでモデル勝率より win 予測が上手いことが確認されています(020)。
+                  {/* Feature 103 US1: 旧「市場優位」注記はここから ModelMarketStanding へ移した。
+                      色の凡例だけは表の直後に残す(表を読んだ位置で意味が引ける)。 */}
+                  <p className="table-hint" data-testid="divergence-legend">
                     「市場との差」は見解の相違（<span className="diff--model_higher">青=モデルが高い</span>
                     ・<span className="diff--market_higher">紫=市場が高い</span>）であり、
                     買い目の推奨ではありません。
