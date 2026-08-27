@@ -1,0 +1,31 @@
+/Users/kuwatawaku/workspace/horseracing/features/src/horseracing_features/builder.py:122: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  fm["prize_rel"] = (fm["prize_money_log"] - fm["asof_prize_avg"]).astype("float64")
+/Users/kuwatawaku/workspace/horseracing/features/src/horseracing_features/builder.py:122: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  fm["prize_rel"] = (fm["prize_money_log"] - fm["asof_prize_avg"]).astype("float64")
+active = lgbm-094-cap900
+booster の学習終端 = 2026-08-16
+
+=== 重要度×低下 の上位 25 ===
+                                   split_share  充足_学習窓(~2024)  充足_2026       低下       影響
+asof_rel_first3f_best                   0.0113         0.8848   0.5826   0.3021   0.0034
+asof_rel_first3f_avg                    0.0106         0.8848   0.5826   0.3021   0.0032
+asof_pace_balance_avg                   0.0079         0.8848   0.5826   0.3021   0.0024
+venue_place_rate                        0.0027         0.1256   0.1079   0.0178   0.0000
+venue_win_rate                          0.0025         0.1256   0.1079   0.0178   0.0000
+sire_dist_band_win_rate                 0.0108         0.9484   0.9463   0.0021   0.0000
+damsire_avg_finish                      0.0111         0.9863   0.9849   0.0015   0.0000
+damsire_win_rate                        0.0101         0.9863   0.9849   0.0015   0.0000
+lowhist_x_sire_dist_band_win_rate       0.0029         0.9872   0.9838   0.0033   0.0000
+lowhist_x_sire_win_rate                 0.0026         0.9981   0.9981   0.0001   0.0000
+
+=== 参考: 現行レジームで充足率 <50% の列(重要度順) ===
+                      split_share  充足_学習窓(~2024)  充足_2026       低下       影響
+dist_band_place_rate       0.0059         0.3900   0.3940  -0.0040   0.0000
+venue_place_rate           0.0027         0.1256   0.1079   0.0178   0.0000
+venue_win_rate             0.0025         0.1256   0.1079   0.0178   0.0000
+
+=== materialize 対象外の入力(25 列)を投影ビルドで測る ===
+  標本: 学習窓 600 レース/8378 行 ・ 2026 600 レース/8453 行
+              split_share  充足_学習窓(~2024)  充足_2026       低下       影響
+sire_line          0.0037         1.0000   0.9057   0.0943   0.0003
+damsire_line       0.0023         1.0000   0.8985   0.1015   0.0002
