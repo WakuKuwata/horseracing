@@ -1,0 +1,51 @@
+{
+  "screening_only": true,
+  "can_adopt": false,
+  "arm": "armE",
+  "rounds": 900,
+  "seed": 42,
+  "n_oof_blocks": 3,
+  "first_valid_year": 2025,
+  "to": "2026-08-16",
+  "salt": "screen_data_scaling/v1",
+  "fractions": [
+    1.0,
+    0.75,
+    0.5,
+    0.25
+  ],
+  "results": [
+    {
+      "fraction": 0.75,
+      "n_train_races": 49215,
+      "diff": 0.004195787226918874,
+      "ci_low": 8.2535601085088e-05,
+      "ci_high": 0.007996739010563142,
+      "n_days": 177,
+      "n_differing_predictions": 78484
+    },
+    {
+      "fraction": 0.5,
+      "n_train_races": 32812,
+      "diff": 0.014120922830234538,
+      "ci_low": 0.008985298975140662,
+      "ci_high": 0.01917879317396176,
+      "n_days": 177,
+      "n_differing_predictions": 78484
+    },
+    {
+      "fraction": 0.25,
+      "n_train_races": 16410,
+      "diff": 0.029027841683313762,
+      "ci_low": 0.021916543664300552,
+      "ci_high": 0.036261408306086304,
+      "n_days": 177,
+      "n_differing_predictions": 78484
+    }
+  ],
+  "b_global": 0.020617918258113873,
+  "b_local": 0.019521764074988894,
+  "ceiling_double_global": -0.014291251909627049,
+  "ceiling_double_local": -0.01353145572813498,
+  "verdict": "go_measure_rho"
+}

@@ -8,12 +8,22 @@ use it rather than re-implementing the date comparison.
 from __future__ import annotations
 
 import datetime
+import os
 import re
 
 _RACE_ID_RE = re.compile(r"^[0-9]{12}$")
 
 #: First in-scope race date. 2006 and earlier use a different ID scheme.
 INGEST_SCOPE_START = datetime.date(2007, 1, 1)
+
+#: 特徴プールの下限。通常は INGEST_SCOPE_START と同一で、既定の挙動はバイト不変。
+#: `HORSERACING_FEATURE_POOL_START` で上書きできるのは **screening のため**で、
+#: ingest の境界とは別concern: ingest ゲートを下げると通常の前向き取込が古いファイルを
+#: **master 更新付き upsert** で受け入れてしまう(後方 backfill では既存マスタを更新しては
+#: ならない)。広げたプールで作った parquet は manifest の data_from で自己識別できる。
+FEATURE_POOL_START = datetime.date.fromisoformat(
+    os.environ.get("HORSERACING_FEATURE_POOL_START", INGEST_SCOPE_START.isoformat())
+)
 
 
 def is_valid_race_id(race_id: str) -> bool:

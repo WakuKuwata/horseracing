@@ -1,0 +1,15 @@
+{
+  "screening_only": true,
+  "can_adopt": false,
+  "rounds": 900,
+  "seed": 42,
+  "n_oof_blocks": 3,
+  "first_valid_year": 2025,
+  "to": "2026-08-16",
+  "n_differing_predictions": 78484,
+  "diff": 0.013492364833702497,
+  "ci_low": 0.007393917704130338,
+  "ci_high": 0.01889426708637366,
+  "n_days": 177,
+  "verdict": "needs_partial_pooling"
+}
