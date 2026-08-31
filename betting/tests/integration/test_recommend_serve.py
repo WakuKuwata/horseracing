@@ -69,29 +69,49 @@ def _win_recs(session, run_id):
 
 
 def test_recommend_serve_policy_aware_idempotency_legacy_win_plus_cap(session, tmp_path, capsys):
-    """Feature 064: a cap policy can be added to a legacy (cap-off) win run without duplicating,
-    and re-running the SAME cap policy skips."""
+    """Feature 064 T029 (contract FLIP, codex-reviewed): with the cap DEFAULT-ON, a run that
+    already carries a DIFFERENT win policy is a CONFLICT — generation skips instead of topping
+    up a second policy group (the read API has no policy filter; two groups double-display).
+    Pre-T029 this very test asserted the top-up; the coexistence it verified became the trap."""
     run_id = _setup_positive_edge(session, tmp_path)
-    # 1) legacy generation (cap-off): win recs have no ;oddscap= fragment
-    _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE))
+    # 1) legacy generation (explicit opt-out): win recs have no ;oddscap= fragment
+    _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE, no_win_odds_cap=True))
     capsys.readouterr()
     legacy_win = _win_recs(session, run_id)
     assert legacy_win and all(";oddscap=" not in w.logic_version for w in legacy_win)
 
-    # 2) same run, cap=21 policy → win group for THIS policy is absent → tops up a new win group
-    rc = _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE, win_odds_cap=21.0))
+    # 2) same run, DEFAULT (cap=21) → different policy already present → conflict skip, no rows
+    rc = _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE))
     assert rc == 0
-    all_win = _win_recs(session, run_id)
-    cap_win = [w for w in all_win if ";oddscap=21.0" in w.logic_version]
-    assert cap_win, "cap policy should be added to the legacy win run"
-    assert len(all_win) > len(legacy_win)                       # topped up, legacy not removed
-    # capped win recs never carry an over-cap odds (21+) selection
-    assert all(w.market_odds_used is None or float(w.market_odds_used) < 21.0 for w in cap_win)
+    assert "win_policy_conflict" in capsys.readouterr().out
+    assert len(_win_recs(session, run_id)) == len(legacy_win)   # nothing added
 
-    # 3) re-run the SAME cap policy → skip (no new rows)
-    n_before = len(all_win)
-    _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE, win_odds_cap=21.0))
-    assert len(_win_recs(session, run_id)) == n_before
+    # 3) re-run the SAME (legacy) policy → plain idempotent skip (no new rows, no conflict)
+    _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE, no_win_odds_cap=True))
+    assert "win_policy_conflict" not in capsys.readouterr().out
+    assert len(_win_recs(session, run_id)) == len(legacy_win)
+
+
+def test_recommend_serve_default_is_capped_and_conflict_is_bidirectional(
+        session, tmp_path, capsys):
+    """T029: unspecified args produce the CAPPED policy (;oddscap=21.0 in logic_version), and the
+    guard is bidirectional — an explicit opt-out onto a capped run also conflicts (codex)."""
+    run_id = _setup_positive_edge(session, tmp_path)
+    _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE))
+    capsys.readouterr()
+    win = _win_recs(session, run_id)
+    assert win and all(";oddscap=21.0" in w.logic_version for w in win)
+    assert all(w.market_odds_used is None or float(w.market_odds_used) < 21.0 for w in win)
+
+    # uncapped onto capped → conflict skip (reverse direction)
+    _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE, no_win_odds_cap=True))
+    assert "win_policy_conflict" in capsys.readouterr().out
+    assert len(_win_recs(session, run_id)) == len(win)
+
+    # different cap value onto capped → also conflict
+    _cmd_recommend_serve(session, argparse.Namespace(race_id=_RACE, win_odds_cap=15.0))
+    assert "win_policy_conflict" in capsys.readouterr().out
+    assert len(_win_recs(session, run_id)) == len(win)
 
 
 def test_recommend_serve_skips_when_no_run(session, capsys):

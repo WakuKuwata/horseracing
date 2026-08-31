@@ -25,6 +25,15 @@ from .kelly_types import KellyConfig
 DEFAULT_THRESHOLD = 1.0
 DEFAULT_STAKE = 100.0
 
+#: Feature 064 T029 (2026-08-31): the win odds cap is DEFAULT-ON. The pre-registered condition
+#: ("既定 ON は production pl_topk ゲート合格後") was met on the production-faithful arm E
+#: walk-forward OOF (26,366 races / 2019-2026): paired(ev_cap21 − ev_all) = +0.0696
+#: CI[+0.0292, +0.1093], every year 2019-2026 improved. This is BLEED REDUCTION, not profit —
+#: every policy stays below 1.0 (roi-ceiling is structural). Evidence:
+#: specs/064-odds-cap-betting-policy/evidence/policy-gate-pl-topk.json (gate run 2026-08-31,
+#: script scripts/policy_gate_pl_topk.py). The cap bound is EXCLUSIVE: odds < 21.0 are bettable.
+DEFAULT_WIN_ODDS_CAP = 21.0
+
 
 def default_logic_version(
     threshold: float, stake: float, *, cfg: KellyConfig | None = None,
