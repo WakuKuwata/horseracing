@@ -1,0 +1,62 @@
+{
+  "screening_only": true,
+  "can_adopt": false,
+  "dump": "../out/104_active.parquet",
+  "profit_grade_nll": 0.047,
+  "exotic_grade_nll": 0.0044,
+  "results": [
+    {
+      "axis": "G  d \u306e\u30b0\u30ed\u30fc\u30d0\u30eb\u50be\u304d",
+      "delta": -8.602693298920272e-05,
+      "null_min": -1.612241614412646e-05,
+      "null_median": 5.982592624587113e-05,
+      "K": 1
+    },
+    {
+      "axis": "N  d \u4e94\u5206\u4f4d\u306e\u50be\u304d (G \u306e\u4e0a)",
+      "delta": -7.11276360658708e-05,
+      "null_min": -1.4553968561648034e-05,
+      "null_median": 2.471621437816207e-05,
+      "K": 6
+    },
+    {
+      "axis": "Q  q\u5e2f\u00d7d (G+N \u306e\u4e0a)",
+      "delta": 4.9759487532385904e-05,
+      "null_min": -2.732431189311768e-05,
+      "null_median": 5.031098899332953e-05,
+      "K": 9
+    },
+    {
+      "axis": "S  \u7b26\u53f7\u5225 (G+N \u306e\u4e0a)",
+      "delta": -3.345828947232121e-06,
+      "null_min": -8.12441751119053e-06,
+      "null_median": 1.3310064276295108e-06,
+      "K": 8
+    },
+    {
+      "axis": "ALL G+N+Q+S (\u5e02\u5834\u306e\u307f\u306e\u4e0a)",
+      "delta": -0.00011473008169060606,
+      "null_min": 2.604757060131746e-05,
+      "null_median": 0.00011116677523337337,
+      "K": 11
+    }
+  ],
+  "tq_table": {
+    "fav|0": 0.99,
+    "fav|1": 1.027,
+    "fav|2": 1.0157,
+    "fav|3": 1.0415,
+    "fav|4": 1.1121,
+    "long|0": 0.7985,
+    "long|1": 1.0003,
+    "long|2": 0.987,
+    "long|3": 0.9571,
+    "long|4": 1.0352,
+    "mid|0": 0.9902,
+    "mid|1": 0.9923,
+    "mid|2": 0.9951,
+    "mid|3": 0.9802,
+    "mid|4": 0.9389
+  },
+  "profitable_cells": []
+}
