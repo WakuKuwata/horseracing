@@ -66,8 +66,10 @@ def _cmd_collect_prospective(session: Session, args) -> int:
     mode, path = mp
     ids = list_pending(session, date=args.date)
     try:
+        from horseracing_betting.cli import _resolve_win_odds_cap
         rep = collect_prospective(
-            session, race_ids=ids, scrape_fn=_default_scrape_fn, win_odds_cap=args.win_odds_cap,
+            session, race_ids=ids, scrape_fn=_default_scrape_fn,
+            win_odds_cap=_resolve_win_odds_cap(args),  # T029: 本番既定に追随(shadow は本番の影)
             calib_manifest=path, calib_mode=mode,
         )
     except (ActivationError, ManifestError) as exc:  # Feature 076: fail-closed before the loop
@@ -390,7 +392,10 @@ def main(argv: list[str] | None = None) -> int:
                              "for pending races on a date (fills the shadow-log)")
     cp.add_argument("--date", type=_parse_date, required=True)
     cp.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
-                    help="064: optional win odds cap policy for the prospective bets")
+                    help="064 T029: unspecified = production default (21.0)")
+    cp.add_argument("--no-win-odds-cap", dest="no_win_odds_cap", action="store_true",
+                    help="T029: legacy uncapped policy — a CONTROL lane, no longer the shadow of "
+                         "production (codex: 波及させないなら明示 control として扱う)")
     from horseracing_betting.cli import _add_calib_manifest_args as _acm
     _acm(cp)  # Feature 076: manifest two-gamma for prospective recommendations
     cp.add_argument("--database-url", default=None)

@@ -1,0 +1,11 @@
+{
+  "arm": "candidate",
+  "pool_start": "1986-01-01",
+  "materialized": "../artifacts/features_1986.parquet",
+  "manifest_data_from": "1986-01-05",
+  "manifest_rows": 1868171,
+  "recipe_hash": "81aad29a44800ba04051b064f7f46cad8357d49b4e61d4de65e848cafaebee99",
+  "gate_config_hash_file": "specs/104-historical-data-backfill/gate-config.hash.txt",
+  "n_valid_races": 26410,
+  "n_rows": 362762
+}

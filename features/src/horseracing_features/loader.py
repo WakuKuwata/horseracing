@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 from horseracing_db.models import Horse, Race, RaceHorse, RaceResult
-from horseracing_db.validation import INGEST_SCOPE_START
+from horseracing_db.validation import FEATURE_POOL_START
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -55,7 +55,7 @@ def load_frames(
             Race.track_type, Race.going, Race.weather, Race.race_class, Race.race_number,
             Race.prize_money,  # Feature 056: pre-published race condition (race_level group)
         )
-        .where(Race.race_date >= INGEST_SCOPE_START)
+        .where(Race.race_date >= FEATURE_POOL_START)
         .order_by(Race.race_date, Race.race_id)
     )
     if end_date is not None:
@@ -76,7 +76,7 @@ def load_frames(
             RaceHorse.odds,  # Feature 069 (F02): past market SUPPORT (q=1/O) — as-of ONLY, never R
         )
         .join(Race, Race.race_id == RaceHorse.race_id)
-        .where(Race.race_date >= INGEST_SCOPE_START)
+        .where(Race.race_date >= FEATURE_POOL_START)
     )
     rr_stmt = (
         select(
@@ -87,7 +87,7 @@ def load_frames(
             RaceResult.first_3f,  # Feature 056: テン3F — as-of only, same discipline as last_3f
         )
         .join(Race, Race.race_id == RaceResult.race_id)
-        .where(Race.race_date >= INGEST_SCOPE_START)
+        .where(Race.race_date >= FEATURE_POOL_START)
     )
     if end_date is not None:
         rh_stmt = rh_stmt.where(Race.race_date <= end_date)

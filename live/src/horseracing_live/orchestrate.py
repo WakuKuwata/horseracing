@@ -101,6 +101,7 @@ def collect_prospective(
     across runs, (7) WIN prospective generation. Never uses the exotic Kelly path.
     """
     from horseracing_betting.cli import (
+    _conflicting_win_policy_group,
         _active_model_version,
         _has_win_group,
         _resolve_active_run,
@@ -158,7 +159,10 @@ def collect_prospective(
             # session's connection to the pool -- so locking and unlocking through `session`
             # can land on two different connections: the unlock frees nothing and the original
             # connection sits idle in the pool holding the lock forever.
-            lock_key = f"prospective:{rid}:{win_odds_cap}"
+            # T029 (codex): the lock key must NOT include the policy — two different policies
+            # would take different locks, both pass the conflict check, and interleave a mixed
+            # prospective lane for the race. One lock per race serialises the lane.
+            lock_key = f"prospective:{rid}"
             lock_conn = session.get_bind().connect()
             lock_conn.execute(text("SELECT pg_advisory_lock(hashtext(:k))"), {"k": lock_key})
             lock_conn.commit()
@@ -166,6 +170,13 @@ def collect_prospective(
                 run_id = _resolve_active_run(session, rid)
                 if run_id is None:
                     _skip(rid, "skip_no_run", "no_run")
+                    continue
+                if _conflicting_win_policy_group(session, run_id, win_odds_cap,
+                                                 prospective=True, race_id=rid):
+                    # T029: the race's prospective lane already runs a DIFFERENT policy (started
+                    # before the default flip). Keep the existing series — logic_version marks the
+                    # policy regime; never mix two policies within one race's shadow-log.
+                    _skip(rid, "skip_exists", "policy_conflict")
                     continue
                 if _has_win_group(session, run_id, win_odds_cap, prospective=True, race_id=rid):
                     _skip(rid, "skip_exists", "exists")

@@ -1,0 +1,42 @@
+{
+  "gate_config_hash": "343d99d842453faf099eb27429c8e02ba25f8860326e997a4843d39639491bac",
+  "adopted": false,
+  "sub_gates": {
+    "effect_beats_delta": false,
+    "ci_upper_below_zero": false,
+    "top2_noninferior": false,
+    "top3_noninferior": true
+  },
+  "primary": {
+    "point": 0.0026746443463005827,
+    "sample_ci": {
+      "point": 0.0026746443463005827,
+      "ci_low": 6.91553953871699e-05,
+      "ci_high": 0.005114575359697876,
+      "b": 2000,
+      "seed": 20260828,
+      "block": "race_day",
+      "n_days": 823,
+      "no_decision": false
+    },
+    "total_ci": {
+      "point": 0.0026746443463005827,
+      "ci_low": -0.0017363816901121375,
+      "ci_high": 0.00698994750722879,
+      "b": 2000,
+      "seed": 20260828,
+      "block": "race_day",
+      "n_days": 823,
+      "no_decision": false
+    }
+  },
+  "non_inferiority": {
+    "top2_diff": 0.0010347859737285957,
+    "top3_diff": -1.026051033866479e-05
+  },
+  "n_races": 26366,
+  "n_skipped": 44,
+  "min_effect_delta": 0.0035188338580500285,
+  "evidence_ref": "evidence/104-per-race.json",
+  "_note": "証拠だけから点推定・sample CI・total CI を再計算できる(100 US1 の PairedEvidenceArtifact)。符号規約は candidate − active(負 = candidate が良い)。"
+}

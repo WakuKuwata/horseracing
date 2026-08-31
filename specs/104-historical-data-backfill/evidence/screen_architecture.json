@@ -1,0 +1,82 @@
+{
+  "screening_only": true,
+  "can_adopt": false,
+  "dump": "../out/arme_oof.parquet",
+  "offset": "calibrated_p",
+  "split": "race_day_walk_forward",
+  "null": "conditional_parametric",
+  "min_rides": 30,
+  "ridge_grid": [
+    0.0,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "results": [
+    {
+      "axis": "A1 \u9a0e\u624b",
+      "real": -0.0038942590261656918,
+      "null_min": 2.8075867295918044e-05,
+      "null_median": 8.614667552953037e-05,
+      "K": 137,
+      "ridge": 100.0
+    },
+    {
+      "axis": "A2 \u8abf\u6559\u5e2b",
+      "real": 0.010668730290748218,
+      "null_min": -8.252662419172552e-05,
+      "null_median": 0.00029507075815216055,
+      "K": 193,
+      "ridge": 10.0
+    },
+    {
+      "axis": "A3 \u8abf\u6559\u5e2b (A1 \u306e\u4e0a\u30fb\u52a0\u6cd5)",
+      "real": 0.00044063483151512983,
+      "null_min": -8.279328028049093e-05,
+      "null_median": 3.0094764739363455e-05,
+      "K": 330,
+      "ridge": 100.0
+    },
+    {
+      "axis": "B  \u6e29\u5ea6\u00d7\u30b9\u30b3\u30a2\u6587\u8108 (\u5168\u4f53\u6e29\u5ea6\u306e\u4e0a)",
+      "real": -0.00021499263228852428,
+      "null_min": 8.667994304101256e-06,
+      "null_median": 0.00014539149433723253,
+      "K": 10,
+      "ridge": 1000.0
+    },
+    {
+      "axis": "C  +\u76f8\u624b\u69cb\u6210 (B \u306e\u4e0a)",
+      "real": -4.512882004092944e-06,
+      "null_min": -0.0003901814525688607,
+      "null_median": 1.3502514994545578e-05,
+      "K": 14,
+      "ridge": 1000.0
+    },
+    {
+      "axis": "C' \u76f8\u624b\u69cb\u6210 (\u5168\u4f53\u6e29\u5ea6\u306e\u4e0a)",
+      "real": -0.00014294587466778808,
+      "null_min": -0.00036364083664652824,
+      "null_median": 7.177379977618692e-05,
+      "K": 5,
+      "ridge": 1000.0
+    },
+    {
+      "axis": "B' +\u30b9\u30b3\u30a2\u6587\u8108 (C' \u306e\u4e0a)",
+      "real": -7.655963962482915e-05,
+      "null_min": -0.00019050918519214477,
+      "null_median": 0.00011530565911721524,
+      "K": 14,
+      "ridge": 1000.0
+    },
+    {
+      "axis": "B0 \u5168\u4f53\u6e29\u5ea6",
+      "real": 0.0002563904666348371,
+      "null_min": -0.00045632041403420587,
+      "null_median": -7.938919197814087e-06,
+      "K": 1,
+      "ridge": 0.0
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "screening_only": true,
+  "can_adopt": false,
+  "n_races": 2569,
+  "n_days": 177,
+  "quote_vs_dividend_ratio_median": 1.0,
+  "results": [
+    {
+      "selector": "model",
+      "policy": "top1",
+      "bets": 2569,
+      "hits": 29,
+      "roi": 0.7365511872323861,
+      "ci_low": 0.3062242524075654,
+      "ci_high": 1.2389454426954423,
+      "verdict": "NO_DECISION"
+    },
+    {
+      "selector": "model",
+      "policy": "top3",
+      "bets": 7707,
+      "hits": 82,
+      "roi": 0.6525755806409756,
+      "ci_low": 0.36695330027202283,
+      "ci_high": 1.0024064352182889,
+      "verdict": "NO_DECISION"
+    },
+    {
+      "selector": "model",
+      "policy": "top5",
+      "bets": 12845,
+      "hits": 146,
+      "roi": 0.6404982483456598,
+      "ci_low": 0.40376020687707864,
+      "ci_high": 0.9132432429130005,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "model",
+      "policy": "ev1",
+      "bets": 74268,
+      "hits": 569,
+      "roi": 0.6439650993698497,
+      "ci_low": 0.517293828412394,
+      "ci_high": 0.7968637820835368,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "market",
+      "policy": "top1",
+      "bets": 2569,
+      "hits": 79,
+      "roi": 0.712300506033476,
+      "ci_low": 0.41710998540759675,
+      "ci_high": 1.0702909709537682,
+      "verdict": "NO_DECISION"
+    },
+    {
+      "selector": "market",
+      "policy": "top3",
+      "bets": 7707,
+      "hits": 258,
+      "roi": 0.6184896847022188,
+      "ci_low": 0.4679369068466718,
+      "ci_high": 0.7915734819793194,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "market",
+      "policy": "top5",
+      "bets": 12845,
+      "hits": 407,
+      "roi": 0.6727364733359283,
+      "ci_low": 0.4918543573908198,
+      "ci_high": 0.9109483466893871,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "market",
+      "policy": "ev1",
+      "bets": 21938,
+      "hits": 375,
+      "roi": 0.713811651016501,
+      "ci_low": 0.5187460771522742,
+      "ci_high": 0.9318695559380352,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "fav",
+      "policy": "top1",
+      "bets": 2569,
+      "hits": 431,
+      "roi": 0.7755936161930712,
+      "ci_low": 0.7044316712166138,
+      "ci_high": 0.8519953909941727,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "fav",
+      "policy": "top3",
+      "bets": 7707,
+      "hits": 914,
+      "roi": 0.7782146100947189,
+      "ci_low": 0.7326990165469461,
+      "ci_high": 0.8224423872259786,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "fav",
+      "policy": "top5",
+      "bets": 12845,
+      "hits": 1223,
+      "roi": 0.7997508758271701,
+      "ci_low": 0.7655077929375136,
+      "ci_high": 0.8356547590965568,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "fav",
+      "policy": "ev1",
+      "bets": 0
+    },
+    {
+      "selector": "random",
+      "policy": "top1",
+      "bets": 2569,
+      "hits": 45,
+      "roi": 0.5216426625145971,
+      "ci_low": 0.3074006429303499,
+      "ci_high": 0.8126682550835049,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "random",
+      "policy": "top3",
+      "bets": 7707,
+      "hits": 108,
+      "roi": 0.4497988841313092,
+      "ci_low": 0.2584309751862704,
+      "ci_high": 0.7145562839363065,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "random",
+      "policy": "top5",
+      "bets": 12845,
+      "hits": 192,
+      "roi": 0.49134293499416115,
+      "ci_low": 0.3404421389135276,
+      "ci_high": 0.6895618385709237,
+      "verdict": "\u4e0d\u63a1\u7b97\u78ba\u5b9a"
+    },
+    {
+      "selector": "random",
+      "policy": "ev1",
+      "bets": 0
+    }
+  ]
+}

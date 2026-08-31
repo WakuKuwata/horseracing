@@ -1,0 +1,26 @@
+{
+  "screening_only": true,
+  "can_adopt": false,
+  "rounds": 900,
+  "seed": 42,
+  "n_oof_blocks": 3,
+  "first_valid_year": 2025,
+  "to": "2026-08-16",
+  "b_info": {
+    "tau2": 0.014771753699739152,
+    "lambda": 67.69676913971688,
+    "n_entities": 281,
+    "b_sd": 0.08239593139783069,
+    "b_absmax": 0.2972851079969208,
+    "converged": true,
+    "n_oof_rows": 607658,
+    "n_oof_races": 43465,
+    "n_jockeys": 280,
+    "min_rides": 30
+  },
+  "n_differing_predictions": 78484,
+  "diff": -0.0020141511424727125,
+  "ci_low": -0.004721611410385635,
+  "ci_high": 0.0008146961995496435,
+  "verdict": "ambiguous"
+}

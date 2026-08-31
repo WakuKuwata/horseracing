@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 from horseracing_db.enums import EntryStatus
-from horseracing_db.validation import INGEST_SCOPE_START
+from horseracing_db.validation import FEATURE_POOL_START
 from sqlalchemy.orm import Session
 
 from .loader import Frames, load_frames
@@ -72,7 +72,7 @@ def _asof_block(
 def assemble_feature_matrix(
     frames: Frames,
     *,
-    start_date: datetime.date = INGEST_SCOPE_START,
+    start_date: datetime.date = FEATURE_POOL_START,
     end_date: datetime.date | None = None,
     low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
     materialized_path: Path | None = None,
@@ -204,7 +204,7 @@ def verify_materialized(session: Session, materialized_path: str | Path | None) 
 def build_feature_matrix(
     session: Session,
     *,
-    start_date: datetime.date = INGEST_SCOPE_START,
+    start_date: datetime.date = FEATURE_POOL_START,
     end_date: datetime.date | None = None,
     low_history_max: int = DEFAULT_LOW_HISTORY_MAX,
     materialized_path: Path | None = None,

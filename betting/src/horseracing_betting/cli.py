@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import math
 import os
 
 from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus
@@ -16,7 +17,7 @@ from horseracing_db.models import (
 from horseracing_db.session import create_db_engine
 from horseracing_probability.calib_activation import ActivationError
 from horseracing_probability.calib_manifest import ManifestError
-from sqlalchemy import case, func, select, text
+from sqlalchemy import case, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from .backtest import run_backtest
@@ -33,7 +34,12 @@ from .exotic_types import ALL_EXOTIC
 from .kelly_backtest import run_bankroll_backtest
 from .kelly_recommend import generate_kelly_recommendations
 from .kelly_types import KellyConfig
-from .recommend import DEFAULT_STAKE, DEFAULT_THRESHOLD, generate_recommendations
+from .recommend import (
+    DEFAULT_STAKE,
+    DEFAULT_THRESHOLD,
+    DEFAULT_WIN_ODDS_CAP,
+    generate_recommendations,
+)
 
 _DOUBLE_PSEUDO = "二重疑似(モデル確率 × 推定市場オッズ / PL 外挿)"
 _EXOTIC_GATE_TAKEOUT = {
@@ -120,6 +126,49 @@ def _has_group(session: Session, run_id, bet_types, *, calib_digest: str | None 
     return session.scalars(q).first() is not None
 
 
+def _cap_token_filter(q, win_odds_cap: float | None):
+    """Feature 064 T029: EXACT-token cap-policy filter (codex: substring ``contains`` would let
+    ``;oddscap=21.0`` match ``;oddscap=21.05``). The token is either followed by ``;`` or ends
+    the string (both forms exist historically), so match both boundaries explicitly."""
+    if win_odds_cap is not None:
+        tok = f";oddscap={float(win_odds_cap)}"
+        return q.where(or_(Recommendation.logic_version.contains(tok + ";"),
+                           Recommendation.logic_version.endswith(tok)))
+    return q.where(~Recommendation.logic_version.contains(";oddscap="))
+
+
+def _conflicting_win_policy_group(
+    session: Session, run_id, win_odds_cap: float | None,
+    *, prospective: bool = False, race_id: str | None = None,
+) -> bool:
+    """Feature 064 T029 (default-ON rollout guard, 076 ``_conflicting_calib_group`` 同型).
+
+    The read API returns EVERY recommendation of a run with no policy filter, so one run holding
+    both a capped and an uncapped win group (or two different caps) double-displays mutually
+    inconsistent bets. Generation SKIPS instead of silently creating that state (codex: the guard
+    must be BIDIRECTIONAL — capped-onto-uncapped, uncapped-onto-capped, and cap-A-onto-cap-B all
+    conflict). Existing runs keep their policy: that is the rollout boundary, not a missed
+    application — the new default applies to runs with no win group yet.
+    """
+    q = select(Recommendation.recommendation_id).where(Recommendation.bet_type == BetType.WIN)
+    if prospective:
+        q = (q.join(PredictionRun,
+                    PredictionRun.prediction_run_id == Recommendation.prediction_run_id)
+             .where(PredictionRun.race_id == race_id)
+             .where(Recommendation.logic_version.contains(";prospective=1")))
+    else:
+        q = (q.where(Recommendation.prediction_run_id == run_id)
+             .where(~Recommendation.logic_version.contains(";prospective=1")))
+    if win_odds_cap is not None:
+        tok = f";oddscap={float(win_odds_cap)}"
+        q = q.where(or_(~Recommendation.logic_version.contains(";oddscap="),
+                        ~or_(Recommendation.logic_version.contains(tok + ";"),
+                             Recommendation.logic_version.endswith(tok))))
+    else:
+        q = q.where(Recommendation.logic_version.contains(";oddscap="))
+    return session.scalars(q).first() is not None
+
+
 def _has_win_group(
     session: Session, run_id, win_odds_cap: float | None,
     *, prospective: bool = False, race_id: str | None = None, calib_digest: str | None = None,
@@ -147,10 +196,7 @@ def _has_win_group(
             q.where(Recommendation.prediction_run_id == run_id)
             .where(~Recommendation.logic_version.contains(";prospective=1"))
         )
-    if win_odds_cap is not None:
-        q = q.where(Recommendation.logic_version.contains(f";oddscap={win_odds_cap}"))
-    else:
-        q = q.where(~Recommendation.logic_version.contains(";oddscap="))
+    q = _cap_token_filter(q, win_odds_cap)
     if calib_digest is not None:  # Feature 076: manifest-activation dimension (orthogonal, bounded)
         q = q.where(Recommendation.logic_version.contains(f";calib={calib_digest};"))
     else:
@@ -293,6 +339,28 @@ def _load_manifest_activation(session: Session, *, run_id, target_date, manifest
     )
 
 
+def _resolve_win_odds_cap(args) -> float | None:
+    """Feature 064 T029: the cap is DEFAULT-ON (gate passed 2026-08-31 — see
+    ``recommend.DEFAULT_WIN_ODDS_CAP``). Resolution, codex-reviewed:
+
+      unspecified            -> DEFAULT_WIN_ODDS_CAP (21.0)
+      --win-odds-cap <v>     -> v (validated: finite, > 0)
+      --no-win-odds-cap      -> None (byte-reproduces the pre-T029 uncapped policy)
+      both flags             -> usage error (never resolved by precedence)
+    """
+    explicit = getattr(args, "win_odds_cap", None)
+    no_cap = getattr(args, "no_win_odds_cap", False)
+    if no_cap and explicit is not None:
+        raise SystemExit("--win-odds-cap and --no-win-odds-cap are mutually exclusive")
+    if no_cap:
+        return None
+    if explicit is None:
+        return DEFAULT_WIN_ODDS_CAP
+    if not math.isfinite(explicit) or explicit <= 0:
+        raise SystemExit(f"--win-odds-cap must be a positive finite number, got {explicit}")
+    return float(explicit)
+
+
 def _generate_product_set(
     session: Session, run_id, *, p_calibrator=None, stage_discount=None, win_odds_cap=None,
     calib_digest: str | None = None,
@@ -312,6 +380,11 @@ def _generate_product_set(
     # Feature 064/076: policy- and manifest-digest-aware win idempotency
     if _has_win_group(session, run_id, win_odds_cap, calib_digest=calib_digest):
         skipped.append("win")
+    elif _conflicting_win_policy_group(session, run_id, win_odds_cap):
+        # T029 rollout boundary: the run already carries a DIFFERENT win policy; adding a second
+        # one would double-display (the read API has no policy filter). Distinct skip name so the
+        # ops summary / operator can see this is a policy conflict, not plain idempotency.
+        skipped.append("win_policy_conflict")
     else:
         n_win = len(generate_recommendations(
             session, prediction_run_id=run_id, cfg=cfg, p_calibrator=p_calibrator,
@@ -335,6 +408,7 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 2
+    win_odds_cap = _resolve_win_odds_cap(args)  # T029: validate args BEFORE any DB work
     race_id = args.race_id
     run_id = _resolve_active_run(session, race_id)
     if run_id is None:
@@ -347,7 +421,6 @@ def _cmd_recommend_serve(session: Session, args) -> int:
     # an xact lock between the groups. Released automatically when this CLI process disconnects.
     session.execute(text("SELECT pg_advisory_lock(hashtext(:k))"),
                     {"k": f"recommend-run:{run_id}"})
-    win_odds_cap = getattr(args, "win_odds_cap", None)  # Feature 064 (None = current behaviour)
     from horseracing_db.models import Race
     race = session.get(Race, race_id)
     has_date = race is not None and race.race_date is not None
@@ -526,7 +599,11 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
 
 def recommend_backfill(
     session: Session, *, date_from, date_to, stage_discount: bool = False,
-    win_odds_cap: float | None = None,
+    # T029 rollout hole (found in production 30 min after the flip): live/orchestrate calls this
+    # CORE directly, so a CLI-layer default never reached it — the first post-flip backfill
+    # generated 238 UNCAPPED win groups. The default belongs at the core boundary; ``None`` now
+    # means an EXPLICIT opt-out (only the CLI --no-win-odds-cap resolution passes it).
+    win_odds_cap: float | None = DEFAULT_WIN_ODDS_CAP,
     calib_mode: str = "legacy-runtime", manifest_path: str | None = None,
 ) -> dict:
     """Feature 043 US3 core (extracted in 050 for the live refresh pipeline): idempotently
@@ -625,7 +702,7 @@ def _cmd_recommend_backfill(session: Session, args) -> int:
     try:
         counts = recommend_backfill(session, date_from=args.from_, date_to=args.to,
                                     stage_discount=getattr(args, "stage_discount", False),
-                                    win_odds_cap=getattr(args, "win_odds_cap", None),
+                                    win_odds_cap=_resolve_win_odds_cap(args),
                                     calib_mode=mode, manifest_path=path)
     except (ActivationError, ManifestError) as exc:  # Feature 076: pre-loop fail-closed (FR-022)
         print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
@@ -870,8 +947,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="049: apply top2/top3 Benter discount to exotic P_model (OPT-IN; default "
                          "OFF — exotic trio pseudo-ROI MUST gate failed)")
     rs.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
-                    help="064: win upper odds cap (e.g. 21); over-cap horses excluded from win "
-                         "bets (still in prob denominator). OPT-IN; default None = current")
+                    help="064: win upper odds cap (EXCLUSIVE bound: odds < cap bettable). "
+                         "T029: unspecified = DEFAULT 21.0")
+    rs.add_argument("--no-win-odds-cap", dest="no_win_odds_cap", action="store_true",
+                    help="T029: explicitly disable the cap (byte-reproduces the pre-T029 policy)")
     _add_calib_manifest_args(rs)
     rs.add_argument("--database-url", default=None)
 
@@ -882,7 +961,9 @@ def main(argv: list[str] | None = None) -> int:
     rb.add_argument("--stage-discount", dest="stage_discount", action="store_true",
                     help="049: apply top2/top3 discount to exotic P_model (OPT-IN; default OFF)")
     rb.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
-                    help="064: win upper odds cap (e.g. 21); OPT-IN; default None = current")
+                    help="064: win upper odds cap (EXCLUSIVE). T029: unspecified = DEFAULT 21.0")
+    rb.add_argument("--no-win-odds-cap", dest="no_win_odds_cap", action="store_true",
+                    help="T029: explicitly disable the cap")
     _add_calib_manifest_args(rb)
     rb.add_argument("--database-url", default=None)
 

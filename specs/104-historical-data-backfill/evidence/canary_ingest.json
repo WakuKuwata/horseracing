@@ -1,0 +1,21 @@
+{
+  "phase": "canary_ingest_2002_2006",
+  "years": [
+    2002,
+    2003,
+    2004,
+    2005,
+    2006
+  ],
+  "rows": 243488,
+  "races": 17254,
+  "errors": 0,
+  "horses_before": 98466,
+  "horses_after": 119956,
+  "new_horses": 21490,
+  "races_before": 67924,
+  "races_after": 85178,
+  "existing_master_checksum_unchanged": true,
+  "master_upsert_policy": "on_conflict_do_nothing (後方 backfill 安全)",
+  "rollback": "delete from race_results/race_horses/races where race_date between '2002-01-01' and '2006-12-31'; 新規 master 行は created_at >= '2026-08-28 06:22:14+00' で識別"
+}
