@@ -29,3 +29,19 @@ accuracy-to-roi-bridge 測定で閉じている)。
 ## リリース前監査
 既存の混在 run は **1 件**(race 202610020412・064 の E2E 残骸・win 8 行中 3 行 capped)。
 append-only のため残置。新ガードにより今後は構造的に発生しない。
+
+## 追記(2026-08-31): 出荷 30 分後に見つかった rollout の穴
+
+8 月の被覆穴埋め(`live refresh 08-01..08-30`)で **238 レースが旧 policy(uncapped)で生成された**。
+原因 = `live/orchestrate.refresh_range` は betting CLI ではなく**コア関数 `recommend_backfill`
+を直接呼ぶ**ため、CLI 層に置いた既定が届かなかった(codex が警告した「フラグなし backfill の
+意味」の変種・091 の「入口ごとに policy がずれる」型)。「ops/live refresh は無変更で新既定を
+拾う」という当初の主張は **ops の recommend ジョブ(subprocess)にだけ正しく、live refresh には
+誤りだった**。
+
+是正: **既定をコア境界に移した**(`recommend_backfill(win_odds_cap=DEFAULT_WIN_ODDS_CAP)`。
+`None` は CLI の `--no-win-odds-cap` 解決だけが渡す明示 opt-out)。回帰テスト 2 本
+(コア署名の既定値 pin / refresh_range が明示引数で上書きしていないことの source guard)。
+
+238 レースの扱い = **残置**(append-only・確定済みレースの回顧表示・logic_version が正確に
+記録)。混在ガードにより該当レースは uncapped policy に固定される(rollout 境界)。

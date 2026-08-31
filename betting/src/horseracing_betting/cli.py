@@ -599,7 +599,11 @@ def _cmd_kelly_recommend(session: Session, args) -> int:
 
 def recommend_backfill(
     session: Session, *, date_from, date_to, stage_discount: bool = False,
-    win_odds_cap: float | None = None,
+    # T029 rollout hole (found in production 30 min after the flip): live/orchestrate calls this
+    # CORE directly, so a CLI-layer default never reached it — the first post-flip backfill
+    # generated 238 UNCAPPED win groups. The default belongs at the core boundary; ``None`` now
+    # means an EXPLICIT opt-out (only the CLI --no-win-odds-cap resolution passes it).
+    win_odds_cap: float | None = DEFAULT_WIN_ODDS_CAP,
     calib_mode: str = "legacy-runtime", manifest_path: str | None = None,
 ) -> dict:
     """Feature 043 US3 core (extracted in 050 for the live refresh pipeline): idempotently
