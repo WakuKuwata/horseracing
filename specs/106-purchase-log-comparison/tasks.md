@@ -1,6 +1,6 @@
 # Tasks: 実購入記録と三者比較 (106)
 
-**Input**: [spec.md](spec.md) / [plan.md](plan.md) / [research.md](research.md) /
+**Input**: [spec.md](spec.md)(ファイル配置は本 tasks が正本 — plan の Project Structure は概略・L2) / [plan.md](plan.md) / [research.md](research.md) /
 [data-model.md](data-model.md) / [contracts/](contracts/recording-and-comparison.md)
 
 **組織**: user story 単位(各フェーズが独立に検証可能な増分)。US1(記録)→US2(比較)が MVP。
@@ -40,10 +40,11 @@
 - [ ] T009 [US1] ops 書き込み endpoint: `ops/src/horseracing_ops/routers/purchase.py` —
   POST /ops/v1/purchase-records。検証(race 存在・kind 列挙・INV-P4・correction 対象存在・
   run_id と race_id の整合=INV-P7)・result-pending 判定(D5: 観測事実として保存)・
-  冪等(D8: 同一 id+同一 hash=200 リプレイ / 不一致=409)・typed 422。schemas は明示 DTO
+  冪等(D8: 同一 id+同一 hash=200 リプレイ / 不一致=409)・**二重記録拒否**(有効記録ありレースへの
+  非 correction 行は 422 `already_recorded`・U1)・typed 422。schemas は明示 DTO
 - [ ] T010 [US1] ops endpoint の統合テスト: `ops/tests/integration/test_purchase_records.py` —
   正常系 3 種(as_presented/modified/skipped_presented)+ freeform + correction + 冪等リプレイ +
-  409 + 422 各種 + result_pending_at_record の両値
+  409 + 422 各種(already_recorded 含む)+ result_pending_at_record の両値
 - [ ] T011 [US1] api 読み出し: `api/src/horseracing_api/queries.py` + routers に
   GET /api/v1/purchase-records(有効記録+履歴・settled_estimated は is_estimated=true 必須)。
   openapi snapshot 再生成 + front drift-check 更新
@@ -54,7 +55,8 @@
 - [ ] T014 [US1] 記録 UI: `front/src/components/PurchaseActions.tsx` — BetSlip 直下に
   「そのまま購入/変更して購入/見送り」3 ボタン(見送りも同格・賭博助長導線なし)。
   変更時は金額編集+行の除外。presented_snapshot は**描画に使った提示をそのまま**送信
-  (prediction_run_id 含む・INV-P7)。client_request_id 生成。エラー/成功の 3 状態表示
+  (prediction_run_id 含む・INV-P7)。client_request_id 生成。**記録済みレースでは 3 ボタンが「訂正として記録」に変わり
+  kind=correction を送る**(U1)。エラー/成功の 3 状態表示
 - [ ] T015 [US1] PurchaseActions テスト: `front/src/components/PurchaseActions.test.tsx` —
   3 操作・snapshot 送信内容・提示ゼロ時は skipped_presented でなく no_recommendation・
   提示取得失敗時は presentation_unavailable(codex Q2 の 3 区分)
@@ -77,7 +79,8 @@
   include_post_hoc 切替)
 - [ ] T020 [US2] 比較ページ: `front/src/pages/PurchaseComparisonPage.tsx` + ルート —
   3 本の累積・常設注記(反実仮想/税引前/券種非対称/記録率の基準)・「うち推定精算 N 件・M 円」
-  別掲(二重疑似バッジ)・単勝のみビュー切替・事後入力切替。**利益語・損益色・ソート禁止**
+  別掲(二重疑似バッジ)・**累積差 2 本(実購入−政策 / 実購入−賭けない・符号つき)の表示**(A1・
+  SC-004/005)・訂正件数(G1)・単勝のみビュー切替・事後入力切替。**利益語・損益色・ソート禁止**
   (forbiddenPhrases 規律)+ テスト(禁止語・バッジ coverage・値表示)
 
 ## Phase 5: US3 — 記録の正直さ (P2)

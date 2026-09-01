@@ -20,7 +20,9 @@
 
 - **INV-P1 (append-only)**: UPDATE/DELETE は DB トリガで拒否(084 前例)。訂正は correction 行
 - **INV-P2 (有効状態の導出)**: レースの現在の記録 = そのレースの行を recorded_at 順に畳んだ結果
-  (correction は対象を置換・void は無効化)。導出は読み取り側の純関数 1 箇所
+  (correction は対象を置換・void は無効化・**void は bets=[]**)。導出は読み取り側の純関数 1 箇所。
+  **同一レースへの 2 本目の非 correction 行は書き込み時に 422 で拒否**(U1: 暗黙の置換を
+  畳み込みに持ち込まない — 置換は必ず明示の correction)
 - **INV-P3 (観測事実の恒久性)**: result_pending_at_record / pending_basis_at は保存後不変
 - **INV-P6 (冪等)**: client_request_id 一意。同一 id+同一 payload_hash の再送はリプレイ・不一致は 409
 - **INV-P7 (run 整合)**: prediction_run_id はクライアント送信値をそのまま保存(サーバは race_id との整合のみ検証・「最新」の推測代入はしない)
@@ -37,7 +39,8 @@
 - 状態: pending(未確定) / settled_real(公式配当) / settled_estimated(推定オッズ精算・二重疑似) /
   refunded(返還) 
 - 的中判定は公式結果のみ(011 規約)。払戻: win=race_horses.odds(公式)、exotic=exotic_odds を
-  第一・欠落時は 010 推定オッズ(clarify Q2=B)
+  第一・欠落時は 010 推定オッズ(clarify Q2=B)。**win はオッズ欠落時 pending(精算不能・
+  件数開示)** — 010 推定は win オッズ由来なので win 自身の欠落は推定でも埋められない(U4)
 - 実配当が後から取り込まれたら settled_estimated → settled_real に自動遷移(読み取り時計算なので
   状態保存なし)
 
@@ -50,6 +53,7 @@
 - 賭けない線 = 0
 - 対称ビュー: 実購入線を単勝のみに絞った切替(clarify Q1)
 - 事後入力を含む/除くの切替(既定=含む・件数明示)
+- 訂正件数 n_corrections を応答に含める(US3・G1)
 
 ### 記録率 (CoverageRate)
 期間内の全開催レース数を分母、**correction/void を畳んだ後の有効記録**があるレース数を分子

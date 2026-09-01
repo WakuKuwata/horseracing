@@ -17,7 +17,7 @@
 手計算(公式配当 × 記録金額)と一致。
 
 ## 4. 事後入力の区別(US3)
-確定済みレースで購入を記録 → recorded_pre_race=false・バッジ表示・集計切替が機能(SC-003)。
+確定済みレースで購入を記録 → result_pending_at_record=false(「結果取込後に記録」バッジ)・集計切替が機能(SC-003)。
 
 ## 5. 推定精算(clarify Q2)
 exotic_odds に配当が無いレースの的中 exotic を記録 → settled_estimated(二重疑似バッジ)で算入・
