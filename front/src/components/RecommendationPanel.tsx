@@ -51,6 +51,7 @@ export function RecommendationPanel({
       <h2>買い目推奨(永続データ・推奨は生成しない)</h2>
       {/* Feature 064 (FR-007): always-on neutral disclosure — no profit language, no coloring. */}
       <p className="note" data-testid="no-edge-note">
+        勝ちは約束しません。実測と算出値は区別して表示します。
         このモデルは市場に対する再現可能な優位を持ちません。買い目は損失を抑えるための判断材料であり、
         将来の的中・利益を示すものではありません。過去実績は closing オッズによる事後・in-sample の
         参考値です。

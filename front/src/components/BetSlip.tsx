@@ -18,6 +18,21 @@ const WIN_POLICY_MESSAGE: Record<string, string> = {
   no_win_selected: "単勝は見送りです(policy が条件を満たす買い目を選定しませんでした)。",
 };
 
+const NoBetFirstCard = () => (
+  /* 見送り第一選択(2026-08-31 方針・codex Q2/Q1 文言): 賭けないことを買い目より先に、
+     選択肢として中立に提示する。比較の主張は出所つき注記に分離(説教調の回避)。
+     ×1.00 の表記は答え合わせ view の基準行と統一。 */
+  <div className="betslip__skip-card" data-testid="no-bet-first-card">
+    <p className="betslip__skip-title">
+      見送る(賭けない)ことも選べます。賭けない場合の基準は ×1.00(資金を減らさない)です。
+    </p>
+    <p className="note">
+      推奨生成時に固定したオッズを使う反実仮想評価では、検証対象の全方針が回収率 1.00
+      未満でした(締切時オッズによる実績ではありません)。
+    </p>
+  </div>
+);
+
 export function BetSlip({
   items,
   budget,
@@ -36,6 +51,7 @@ export function BetSlip({
     const msg = WIN_POLICY_MESSAGE[winPolicyStatus];
     return (
       <div className="betslip">
+        <NoBetFirstCard />
         {msg ? (
           <div className="betslip__skip-card" data-testid="win-skip-reason">
             <p className="betslip__skip-title">{msg}</p>
@@ -69,6 +85,7 @@ export function BetSlip({
 
   return (
     <div className="betslip">
+      <NoBetFirstCard />
       {showHistoricalNote ? (
         <p className="note" data-testid="historical-note">
           金額は現在の予算による換算であり、購入履歴ではありません。
@@ -101,6 +118,11 @@ export function BetSlip({
         </div>
       ) : null}
 
+      {/* 2026-08-31 方針: Kelly は「利益を狙う配分」ではない(市場優位の不在が実測済み)。 */}
+      <p className="note" data-testid="allocation-meaning-note">
+        以下は、賭ける場合の金額の目安です。Kelly 比率を縮小し上限を適用して予算から
+        算出しています。市場優位や損失の上限を示すものではありません。
+      </p>
       {groups.map((g) => (
         <section key={g.betType}>
           <h3 className="betslip__group-title">{betTypeLabel(g.betType)}</h3>

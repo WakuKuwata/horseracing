@@ -211,3 +211,35 @@ describe("BetSlip — skip / empty states (FR-030/031)", () => {
     expect(screen.getByTestId("bet-slip-card-q1")).toBeInTheDocument();
   });
 });
+
+describe("no-bet-first policy (2026-08-31)", () => {
+  it("renders the no-bet card FIRST even when there are bet cards", () => {
+    render(<BetSlip items={[makeRow({ recommendation_id: "a", stake_fraction: 0.05 })]}
+                    budget={10000} winPolicyStatus="generated" />);
+    const slip = screen.getByTestId("no-bet-first-card");
+    expect(slip).toHaveTextContent("見送る(賭けない)ことも選べます");
+    expect(slip).toHaveTextContent("×1.00");
+    // 出所つき注記(codex Q1): 反実仮想であることの明示
+    expect(slip).toHaveTextContent("反実仮想評価");
+    expect(slip).toHaveTextContent("締切時オッズによる実績ではありません");
+    // カードは DOM 順で買い目より先に現れる(第一選択)
+    const all = document.querySelector(".betslip")!;
+    const first = all.querySelector('[data-testid="no-bet-first-card"]');
+    const group = all.querySelector(".betslip__group-title");
+    expect(first!.compareDocumentPosition(group!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("renders the no-bet card on the empty-response path too", () => {
+    render(<BetSlip items={[]} budget={null} winPolicyStatus="no_win_selected" />);
+    expect(screen.getByTestId("no-bet-first-card")).toBeInTheDocument();
+    expect(screen.getByTestId("win-skip-reason")).toBeInTheDocument();
+  });
+
+  it("reframes the Kelly amounts as a stake guide, not a profit allocation (codex Q3)", () => {
+    render(<BetSlip items={[makeRow({ recommendation_id: "a", stake_fraction: 0.05 })]}
+                    budget={10000} winPolicyStatus="generated" />);
+    const note = screen.getByTestId("allocation-meaning-note");
+    expect(note).toHaveTextContent("賭ける場合の金額の目安");
+    expect(note).toHaveTextContent("市場優位や損失の上限を示すものではありません");
+  });
+});
