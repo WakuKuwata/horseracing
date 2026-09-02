@@ -1,7 +1,7 @@
 # Tasks: 騎手の時変切片 — confirmatory 測定と採否
 
 **Input**: Design documents from `/specs/107-jockey-tv-intercept/`
-**Prerequisites**: plan.md, research.md (D1-D10), data-model.md (INV-J1..J6), contracts/, gate-config.json(凍結済み hash `e700a7f8…`)
+**Prerequisites**: plan.md, research.md (D1-D10), data-model.md (INV-J1..J6), contracts/, gate-config.json(凍結済み・2026-09-02 に analyze C1+H2 で再凍結・hash `c872172a…`)
 
 **組織**: US1(confirmatory 測定)が MVP。US2/US3 は verdict の**排他分岐**(両方は実行されない)。
 
@@ -10,7 +10,7 @@
 - [ ] T001 実行前提の確認: postgres 稼働・materialized parquet が 2024-12-31 を被覆
   (manifest の data_through ≥ 2024-12-31・feature_version=features-021)・
   `specs/107-jockey-tv-intercept/gate-config.json` の hash が quickstart 記載値
-  `e700a7f8274d74ed74c7c9c457e37d547045689200276bcf2dcc45aa8b02b531` と一致することを
+  `c872172a57be8a052a7ecd9e4b6492574fcd852e1f8c2845e4736e3cddac8eaa` と一致することを
   eval の `gate_config_hash` で再計算して確認
 
 ## Phase 2: Foundational(US1 の前提・blocking)
@@ -29,10 +29,15 @@
   (a) driver 定数 == gate-config 凍結値 == `scripts/jockey_timevarying_spike.py` の定数
   (INV-J4・三点一致) (b) 窓 to≥2025-01-01 の config で fail-closed (c) gate-config hash
   不一致で fail-closed (d) 縮退(全予測一致の合成 preds)で abort し数値を出力しない
-  (INV-J3)。scripts/ を import できる形は spike のテスト前例に従う
-- [ ] T004 [P] スモーク実行(構造のみ・効果数値は見ない): rounds 30・first_valid_year 2024・
-  to 2024-03-01 相当の縮小 config(別ファイル・凍結 config は触らない)で driver が
-  preflight→評価→verdict.json まで完走することを確認。出力規律: 効果数値を要約に書かない
+  (INV-J3) (e) 凍結 config のキーが decision/paired の**実際に読むキー**と一致
+  (`critical_subgroups(cfg)==[]`・`_min_eval_days(cfg)==300` を生関数で検査 —
+  analyze H2 の「縛っているつもりの死にキー」再発防止)。
+  scripts/ を import できる形は spike のテスト前例に従う
+- [ ] T004 [P] スモーク実行(構造のみ): rounds 30・**first_valid_year 2021・to 2021-03-01**
+  の縮小 config(別ファイル・凍結 config は触らない・**凍結採点窓 2022-2024 と互いに素**=
+  analyze H3)で driver が preflight→評価→verdict.json まで完走することを確認。
+  driver に `--smoke` モードを実装し、smoke では point/CI を verdict.json からも redact
+  (構造フィールドのみ出力)— 「効果数値を要約に書かない」を規律でなく機構にする
 
 **Checkpoint**: driver とテストが緑 = US1 実行可能
 
@@ -93,7 +98,8 @@
 
 ## Phase 6: Polish & 記録(両分岐共通)
 
-- [ ] T019 spec.md に実測結果を転記(FR-014/SC-006): 点推定・total CI・verdict・
+- [ ] T019 spec.md に実測結果を転記(FR-014/FR-016/SC-006): 点推定・total CI・verdict・
+  ラベル二重使用の限界注記(FR-016)・
   preflight 要旨・閉鎖範囲(設計族限定)または採用範囲・screening 履歴との一続きの表
 - [ ] T020 [P] memory 更新: `jockey-identity-residual.md` に confirmatory の結末を追記
   (verdict・数値・次に測るなら何が必要か)+ MEMORY.md の行を更新

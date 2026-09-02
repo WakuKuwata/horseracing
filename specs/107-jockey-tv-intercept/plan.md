@@ -40,7 +40,8 @@ confirmatory は 3 outer fold ×2 アーム ≈ 60 分(095 の教訓=実績比�
 **Constraints**: 評価窓に 2025-01-01 以降を含めない(構造 assert)・
 `load_eval_races(start_date=FEATURE_POOL_START)` 必須・凍結定数の事後変更禁止
 
-**Scale/Scope**: 採点 約 10,300 レース / 約 960 開催日(2022-2024)・騎手 約 170 人/fold
+**Scale/Scope**: 採点 約 10,300 レース / **約 321 開催日**(2022-2024・JRA は年 106〜109
+開催日=097 実測。当初の 960 は 320 日/年の誤算で analyze C1 が検出)・騎手 約 170 人/fold
 
 ## Constitution Check
 

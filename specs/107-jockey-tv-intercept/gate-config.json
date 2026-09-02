@@ -19,9 +19,11 @@
 
   "bootstrap": { "b": 2000, "seed": 20260902, "alpha": 0.05 },
 
-  "eval_window": { "from": "2022-01-01", "to": "2024-12-31", "min_eval_days": 900 },
+  "_min_eval_days_note": "JRA の開催日は年 106〜109 日(097 gate-config の実測: 2020=109/2022=108/2024=106)。2022-2024 の 3 年で約 321 日なので 300 に設定。当初の 900 は 320 日/年という誤算の伝播で、そのままだと final_decision が常に insufficient_eval_days の NO_DECISION になる(analyze C1・097 C1 と同型)。",
+  "_repreg_note": "2026-09-02 再凍結(analyze C1+H2)。OOS 実行前・効果数値は一切未見なので選択リークなし。変更は min_eval_days 900→300 と critical_subgroups のキー位置(トップレベル→subgroup_guard 配下=decision.py/paired.py が実際に読む場所)のみ。",
+  "eval_window": { "from": "2022-01-01", "to": "2024-12-31", "min_eval_days": 300 },
 
-  "critical_subgroups": [],
+  "subgroup_guard": { "critical_subgroups": [] },
 
   "arms": {
     "active": { "kind": "arm_e", "objective": "pl_topk", "calibration": "oof_isotonic",

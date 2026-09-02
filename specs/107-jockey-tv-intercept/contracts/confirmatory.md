@@ -9,7 +9,8 @@
 ## fail-closed(すべて実行前)
 1. `assert_confirmatory(cfg, expected_hash, eval_window)` — 契約版 v4 等値・hash 一致・
    窓一致・seed_noise.sd_fold 存在
-2. `assert_delta_provenance(cfg)` — δ の導出参照が解決でき、測定ノイズ由来でない
+2. `assert_delta_provenance(cfg, root=<リポジトリルート>)` — δ の導出参照が解決でき、
+   測定ノイズ由来でない(ref はルート相対なので root 明示が必須・analyze M1)
 3. `eval_window.to < 2025-01-01` — screening 窓(選択済み)の再利用を構造的に禁止
 4. `load_eval_races(start_date=FEATURE_POOL_START, end_date=eval_window.to)` — pre-2007 除外
 5. 定数一致: driver の W/MIN_RIDES/λ クランプ == gate-config の凍結値
@@ -27,6 +28,11 @@
   preflight_ref, evidence_ref, computed_at}
 - `paired-evidence.json`: 公式 evidence artifact(再計算ビット一致が受入)
 - `preflight.json`: fold 別診断(λ raw/clamped・騎手数・window 行数・nk: 件数・カバレッジ)
+
+## smoke モード(analyze H3)
+- `--smoke` 指定時: 縮小 config を受け、verdict.json から point/sample_ci/total_ci を
+  redact(構造フィールドのみ)。smoke の採点窓は凍結窓 2022-2024 と互いに素であること
+  を driver が assert する
 
 ## 禁止
 - 判定式のオーバーレイ(final_decision の三値が正本)

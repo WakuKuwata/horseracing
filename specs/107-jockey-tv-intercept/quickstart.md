@@ -4,7 +4,8 @@
 
 - postgres 稼働(`scripts/stack.sh status`)・materialized parquet が 2024-12-31 を被覆
   (現行: data_through 2026-08-23・features-021)
-- gate-config 凍結済み・**hash = `e700a7f8274d74ed74c7c9c457e37d547045689200276bcf2dcc45aa8b02b531`**
+- gate-config 凍結済み(2026-09-02 再凍結=analyze C1+H2・効果数値未見)・
+  **hash = `c872172a57be8a052a7ecd9e4b6492574fcd852e1f8c2845e4736e3cddac8eaa`**
   (実行時にこの値を `--gate-config-hash` へ渡す。config を触ると照合で落ちる=意図どおり)
 
 ## 実行(US1)
@@ -12,7 +13,7 @@
 ```bash
 cd training && nohup uv run python ../scripts/jockey_tv_confirmatory.py \
   --gate-config ../specs/107-jockey-tv-intercept/gate-config.json \
-  --gate-config-hash e700a7f8274d74ed74c7c9c457e37d547045689200276bcf2dcc45aa8b02b531 \
+  --gate-config-hash c872172a57be8a052a7ecd9e4b6492574fcd852e1f8c2845e4736e3cddac8eaa \
   --out-dir ../specs/107-jockey-tv-intercept/evidence \
   > ../out/jtv_confirmatory.log 2>&1 &
 ```
@@ -32,7 +33,7 @@ cd training && nohup uv run python ../scripts/jockey_tv_confirmatory.py \
 
 ## 判定後
 
-- **ADOPT** → tasks の Phase C(条件付き): training モジュール化・artifact 凍結・serving
+- **ADOPT** → tasks の Phase 4(条件付き): training モジュール化・artifact 凍結・serving
   外部加算・候補登録・昇格ゲート([contracts/adoption.md](contracts/adoption.md))
-- **REJECT / NO_DECISION** → tasks の Phase D: spec 転記・閉鎖範囲の明記・memory 更新。
+- **REJECT / NO_DECISION** → tasks の Phase 5: spec 転記・閉鎖範囲の明記・memory 更新。
   結線差分ゼロなので revert 作業なし

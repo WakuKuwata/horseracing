@@ -6,8 +6,8 @@
 2025-01-01 以降は採点に含めず、driver が `eval_window.to < 2025-01-01` を構造 assert する。
 
 **Rationale**: 選択リークの排除が唯一の必須条件。年単位 outer fold は spike と同じ
-`predict_over_folds` の自然な形で、約 10,300 レース / 約 960 開催日 = spike(5,680)より
-検出力が高い。窓の選定にラベル・効果数値は使っていない(「2025 未満で最も新しい 3 年」
+`predict_over_folds` の自然な形で、約 10,300 レース / 約 321 開催日(JRA は年 106〜109
+開催日)= spike(5,680 レース)より検出力が高い。窓の選定にラベル・効果数値は使っていない(「2025 未満で最も新しい 3 年」
 という日付だけの規則)。
 
 **Alternatives considered**: (a) 2019-2024 の 6 年 — 検出力は上がるが実行時間 2 倍・
@@ -54,7 +54,9 @@ confirmatory の estimand ではない。
 `assert_delta_provenance` を driver で実行)・`seed_noise.sd_fold: 0.001816`
 (scripts/seed_variance_probe.py 2026-08-18 の実測を再掲・k_seeds=1)・
 bootstrap b=2000 / seed=20260902 / alpha=0.05・`eval_window {from: 2022-01-01,
-to: 2024-12-31, min_eval_days: 900}`・`critical_subgroups: []`。
+to: 2024-12-31, min_eval_days: 300}`(開催日は年 106〜109・3 年で約 321 日 — 当初の 900 は
+誤算で analyze C1 が検出・097 C1 と同型)・`subgroup_guard.critical_subgroups: []`
+(トップレベルに置くと誰にも読まれない死にキーになる — analyze H2)。
 **verdict の正本 = `final_decision` の三値**(独自式のオーバーレイなし)。
 
 **Rationale**: δ を測定ノイズから導き直さない(100 US4 の fail-closed)。critical

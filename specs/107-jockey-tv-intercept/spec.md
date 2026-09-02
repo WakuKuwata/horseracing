@@ -27,7 +27,10 @@ production モデルの騎手情報は OOF target encoding が識別子を勝率
 ADOPT / REJECT を決着させる。
 
 **null も成功**である。screening の生存マージンは +0.00028 で再学習ノイズ SD(fold 水準
-0.001816)より小さく、confirmatory は際どい勝負になることを実行前から明示する。REJECT の
+0.001816)より小さい。さらに **screening の点推定 −0.00328 は confirmatory の δ=0.00352 に
+届いていない** — スパイクの数値がそのまま再現しても primary は FAIL であり、採用には
+screening を上回る効果が別窓で出る必要がある。confirmatory が際どいどころか不利寄りで
+あることを実行前から明示する。REJECT の
 場合、騎手軸は「加法切片・730 日窓・30 騎乗ゲート・年次更新・isotonic 再 fit という
 **この設計族**」について閉じる(騎手情報の統計的全否定ではない — 時変効果の別表現・
 交互作用は kill されないが、優先度は screening 3 段の履歴に基づき大きく下がる)。
@@ -134,7 +137,9 @@ verdict が REJECT の場合、結線だけを revert し、測定モジュー�
   不一致を fail-closed で拒否する
 - **FR-003**: 採用判定は評価契約 v4 の既定ゲート一式に従う: paired winner NLL・
   開催日クラスタ bootstrap・**再学習 seed 分散込み total CI**・δ(導出 provenance 必須・
-  測定ノイズからの導出は fail-closed)・実効バー(点推定 ≤ −0.0031 かつ total CI 上限<0)
+  測定ノイズからの導出は fail-closed)。実効バーは **点推定 < −δ(δ=0.00352・凍結
+  gate-config が正本)かつ total CI 上限 < 0**(−0.0031 は CI 条件が課す下限であって
+  δ の方が厳しい — analyze H1 で是正)
 - **FR-004**: verdict の正本は事前登録した**単一の式**とし、gate-config 凍結後の
   読み替え・個別数値の事後選別を禁止する。三値(ADOPT/REJECT/NO_DECISION)で記録する
 - **FR-005**: 証拠 artifact は 100 US1 契約に従う: per-race 差の生値を保存し、
@@ -206,7 +211,8 @@ verdict が REJECT の場合、結線だけを revert し、測定モジュー�
 - screening spike のハーネス(`scripts/jockey_timevarying_spike.py`)は confirmatory の
   実装土台として流用できる。ただし判定・凍結・証拠保存は v4 契約の正規機構
   (paired-eval driver・gate-config hash 照合)に載せ替える
-- 再学習 seed 分散は複数 seed バンドルの実測で見積もる(`sd/√k` の機械適用は禁止・
-  100 R16)。計算資源の都合で seed 数は plan で確定する
+- 再学習 seed 分散は実測済みの sd_fold(2026-08-18・6 seed の probe)の再掲で織り込む
+  (v4 標準・単一 seed 実行)。新規バンドル実測はしない — seed を増やして CI を縮める
+  操作は 100 R9 の型であり、やるなら 100 US3 の再事前登録が筋(plan D7)
 - 騎手 ID の分裂修復(067 の残余)はスコープ外。分裂は b を過小推定する方向に働くので、
   本測定の結果は保守側に倒れる

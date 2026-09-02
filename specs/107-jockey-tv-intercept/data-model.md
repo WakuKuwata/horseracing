@@ -30,7 +30,9 @@ DB スキーマ変更なし・migration なし。以下はすべてファイル 
 100 の v4 形式。キー: `evaluation_contract_version: "v4"` / `primary_metric: winner_nll` /
 `min_effect_delta`(=100 導出値・`delta_derivation_ref` 必須)/ `seed_noise.sd_fold=0.001816`
 / `bootstrap {b:2000, seed:20260902, alpha:0.05}` / `eval_window {from:2022-01-01,
-to:2024-12-31, min_eval_days:900}` / `critical_subgroups: []`(理由コメント付き)/
+to:2024-12-31, min_eval_days:300}`(JRA は年 106〜109 開催日=3 年で約 321 日・
+analyze C1 で 900→300 に再凍結)/ `subgroup_guard.critical_subgroups: []`
+(**decision/paired が実際に読むキー位置**・analyze H2 で移動・理由コメント付き)/
 `arms`(A=arm E rounds900 seed42 / candidate=+jockey_tv_intercept W730)。
 `_` 前置キーは hash から除外される(canonical hash 契約)。
 
