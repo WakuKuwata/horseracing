@@ -51,6 +51,9 @@ describe("openapi snapshot", () => {
         "/api/v1/diagnostics/segment-edge",
         // Feature 083: 082 segment-accuracy verification instrument (read-only, admin SPA)
         "/api/v1/diagnostics/segment-accuracy",
+        // Feature 106: purchase records + triple comparison (read-only; writes go via ops)
+        "/api/v1/purchase-records",
+        "/api/v1/purchase-comparison",
         // Feature 029: horse + jockey profile + paged history (read-only)
         "/api/v1/horses/{horse_id}",
         "/api/v1/horses/{horse_id}/history",

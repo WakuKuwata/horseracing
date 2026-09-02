@@ -148,6 +148,43 @@
         "title": "BatchAccepted",
         "type": "object"
       },
+      "BetIn": {
+        "properties": {
+          "amount_yen": {
+            "title": "Amount Yen",
+            "type": "integer"
+          },
+          "bet_type": {
+            "title": "Bet Type",
+            "type": "string"
+          },
+          "odds_used": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Used"
+          },
+          "selection": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Selection",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bet_type",
+          "selection",
+          "amount_yen"
+        ],
+        "title": "BetIn",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -406,6 +443,188 @@
         "title": "JobAccepted",
         "type": "object"
       },
+      "PurchaseError": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/PurchaseErrorDetail"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "PurchaseError",
+        "type": "object"
+      },
+      "PurchaseErrorDetail": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "PurchaseErrorDetail",
+        "type": "object"
+      },
+      "PurchaseRecordIn": {
+        "properties": {
+          "bets": {
+            "items": {
+              "$ref": "#/components/schemas/BetIn"
+            },
+            "title": "Bets",
+            "type": "array"
+          },
+          "client_request_id": {
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "corrects_record_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrects Record Id"
+          },
+          "kind": {
+            "enum": [
+              "as_presented",
+              "modified",
+              "skipped_presented",
+              "no_recommendation",
+              "presentation_unavailable",
+              "freeform",
+              "correction",
+              "void"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "prediction_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prediction Run Id"
+          },
+          "presented_snapshot": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Presented Snapshot"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "race_id",
+          "kind",
+          "bets",
+          "client_request_id"
+        ],
+        "title": "PurchaseRecordIn",
+        "type": "object"
+      },
+      "PurchaseRecordOut": {
+        "properties": {
+          "bets": {
+            "items": {
+              "$ref": "#/components/schemas/BetIn"
+            },
+            "title": "Bets",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "as_presented",
+              "modified",
+              "skipped_presented",
+              "no_recommendation",
+              "presentation_unavailable",
+              "freeform",
+              "correction",
+              "void"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "pending_basis_at": {
+            "format": "date-time",
+            "title": "Pending Basis At",
+            "type": "string"
+          },
+          "purchase_record_id": {
+            "format": "uuid",
+            "title": "Purchase Record Id",
+            "type": "string"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "result_pending_at_record": {
+            "title": "Result Pending At Record",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "purchase_record_id",
+          "race_id",
+          "kind",
+          "bets",
+          "result_pending_at_record",
+          "pending_basis_at",
+          "recorded_at",
+          "replayed"
+        ],
+        "title": "PurchaseRecordOut",
+        "type": "object"
+      },
       "RefreshRangeRequest": {
         "properties": {
           "date_from": {
@@ -660,6 +879,77 @@
         "summary": "Get Job",
         "tags": [
           "jobs"
+        ]
+      }
+    },
+    "/ops/v1/purchase-records": {
+      "post": {
+        "operationId": "create_purchase_record_ops_v1_purchase_records_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRecordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRecordOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Create Purchase Record",
+        "tags": [
+          "purchase"
         ]
       }
     },

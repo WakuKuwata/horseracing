@@ -1,10 +1,15 @@
 import { useState } from "react";
 
-import { useRecommendations } from "../api/queries";
-import type { HorseEntry } from "../api/types";
-import { useBudget } from "../lib/budget";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { submitPurchaseRecord } from "../api/opsClient";
+import { usePurchaseRecords, useRecommendations } from "../api/queries";
+import type { HorseEntry, RecommendationResponse } from "../api/types";
+import { computeAmount, useBudget } from "../lib/budget";
 import { BetSlip } from "./BetSlip";
 import { BudgetInput } from "./BudgetInput";
+import { FreeformPurchaseForm, type FreeformPayload } from "./FreeformPurchaseForm";
+import { PurchaseActions, type PresentedBet, type PurchaseRecordPayload } from "./PurchaseActions";
 import { RecommendationResults } from "./RecommendationResults";
 import { QueryStateView } from "./StateView";
 
@@ -22,15 +27,50 @@ import { QueryStateView } from "./StateView";
 
 type View = "slip" | "results";
 
+/** The slip exactly as this render presents it (Feature 106: frozen into the record). */
+function presentedBetsOf(
+  data: RecommendationResponse | undefined,
+  budget: number | null,
+): PresentedBet[] {
+  if (!data) return [];
+  return data.items.map((item) => {
+    const amount = budget !== null ? computeAmount(item.stake_fraction, budget) : null;
+    return {
+      betType: item.bet_type,
+      selection: [...item.selection],
+      amountYen: amount !== null && amount.kind === "amount" ? amount.yen : null,
+      oddsUsed: item.market_odds_used ?? item.estimated_market_odds_used ?? null,
+    };
+  });
+}
+
 export function RecommendationPanel({
   raceId,
+  raceDate,
   entries,
 }: {
   raceId: string;
+  raceDate?: string;
   entries?: HorseEntry[];
 }) {
   const query = useRecommendations(raceId);
   const { budget, setBudget } = useBudget();
+  const queryClient = useQueryClient();
+
+  // Feature 106: has this race already been recorded? (effective record after fold — a voided
+  // race legitimately comes back recordable). Range = the race's own day.
+  const recordsQuery = usePurchaseRecords(
+    { from: raceDate ?? "", to: raceDate ?? "" },
+    { enabled: !!raceDate },
+  );
+  const existingView = recordsQuery.data?.records.find((r) => r.race_id === raceId) ?? null;
+
+  async function submitPurchase(payload: PurchaseRecordPayload) {
+    const result = await submitPurchaseRecord(payload);
+    await queryClient.invalidateQueries({ queryKey: ["purchase-records"] });
+    await queryClient.invalidateQueries({ queryKey: ["purchase-comparison"] });
+    return { record_id: result.purchase_record_id };
+  }
 
   // View override survives toggling but NOT a race change (codex D7/H8): the effective view is
   // derived every render, so the async response flipping hasSettled updates the default view.
@@ -97,6 +137,35 @@ export function RecommendationPanel({
             ) : (
               <RecommendationResults items={data.items} data={data} />
             )}
+
+            {/* Feature 106: record the ACTUAL purchase (append-only via ops). Mounted under
+                the slip so the frozen snapshot is exactly what this panel presented. */}
+            <PurchaseActions
+              raceId={raceId}
+              presentedBets={presentedBetsOf(data, budget)}
+              predictionRunId={data.items[0]?.prediction_run_id ?? null}
+              winPolicy={data.win_policy_status}
+              presentationAvailable
+              hasResults={hasSettled}
+              submit={submitPurchase}
+              existingRecord={
+                existingView
+                  ? { kind: existingView.kind, recordId: existingView.record_id }
+                  : null
+              }
+            />
+
+            {/* Feature 106 US4: manual entry for a purchase the slip never presented.
+                Disabled once an effective record exists (corrections go through the
+                editor above; a voided race becomes recordable again). */}
+            <FreeformPurchaseForm
+              raceId={raceId}
+              horseNumbers={(entries ?? [])
+                .map((h) => h.horse_number)
+                .filter((n): n is number => typeof n === "number")}
+              submit={(payload: FreeformPayload) => submitPurchase(payload)}
+              disabled={existingView !== null}
+            />
           </>
         )}
       </QueryStateView>

@@ -98,3 +98,82 @@ export async function getBatch(traceId: string): Promise<Batch> {
     }),
   );
 }
+
+// --- Feature 106: purchase recording (append-only write path) --------------------------------
+
+type PurchaseWireBet = {
+  bet_type: string;
+  selection: number[];
+  amount_yen: number;
+  odds_used: number | null;
+};
+
+export type PurchaseRecordCreated =
+  S["/ops/v1/purchase-records"]["post"]["responses"][201]["content"]["application/json"];
+type PurchaseRecordRequest =
+  S["/ops/v1/purchase-records"]["post"]["requestBody"]["content"]["application/json"];
+
+/** camelCase editor bet -> snake_case wire bet (drops rows without an amount). */
+function toWireBet(bet: {
+  betType: string;
+  selection: number[];
+  amountYen: number | null;
+  oddsUsed: number | null;
+}): PurchaseWireBet | null {
+  if (bet.amountYen == null) return null;
+  return {
+    bet_type: bet.betType,
+    selection: [...bet.selection],
+    amount_yen: bet.amountYen,
+    odds_used: bet.oddsUsed,
+  };
+}
+
+/**
+ * Submit one purchase record. Converts the component payload (camelCase, snapshot-embedded
+ * run id) to the ops wire shape (snake_case bets + top-level prediction_run_id). The server
+ * replays an identical retry (200) — both 200 and 201 resolve here.
+ */
+export async function submitPurchaseRecord(payload: {
+  race_id: string;
+  kind: string;
+  bets: { betType: string; selection: number[]; amountYen: number | null; oddsUsed: number | null }[];
+  presented_snapshot: {
+    bets: { betType: string; selection: number[]; amountYen: number | null; oddsUsed: number | null }[];
+    win_policy: string;
+    prediction_run_id: string | null;
+    snapshot_schema_version: 1;
+  } | null;
+  client_request_id: string;
+  corrects_record_id?: string;
+}): Promise<PurchaseRecordCreated> {
+  const snapshot = payload.presented_snapshot;
+  const body: PurchaseRecordRequest = {
+    race_id: payload.race_id,
+    kind: payload.kind as PurchaseRecordRequest["kind"],
+    bets: payload.bets.map(toWireBet).filter((b): b is PurchaseWireBet => b !== null),
+    client_request_id: payload.client_request_id,
+    prediction_run_id: snapshot?.prediction_run_id ?? null,
+    presented_snapshot: snapshot
+      ? {
+          // freeze the slip AS PRESENTED — a bet whose amount is unconvertible (no budget set)
+          // stays in the snapshot with amount_yen null, so the policy line reads "not
+          // computable" instead of a false verified-zero (dropping it would claim nothing
+          // was presented).
+          bets: snapshot.bets.map((b) => ({
+            bet_type: b.betType,
+            selection: [...b.selection],
+            amount_yen: b.amountYen,
+            odds_used: b.oddsUsed,
+          })),
+          win_policy: snapshot.win_policy,
+          prediction_run_id: snapshot.prediction_run_id,
+          snapshot_schema_version: snapshot.snapshot_schema_version,
+        }
+      : null,
+    corrects_record_id: payload.corrects_record_id ?? null,
+  };
+  return unwrap(
+    await opsApi.POST("/ops/v1/purchase-records", { body }),
+  );
+}

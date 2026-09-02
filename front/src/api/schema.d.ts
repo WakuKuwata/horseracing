@@ -222,6 +222,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/purchase-comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchase Comparison */
+        get: operations["purchase_comparison_api_v1_purchase_comparison_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchase Records */
+        get: operations["purchase_records_api_v1_purchase_records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/races": {
         parameters: {
             query?: never;
@@ -453,6 +487,70 @@ export interface components {
             snapshot_id: string;
             /** Source */
             source: string;
+        };
+        /** ComparisonCoverage */
+        ComparisonCoverage: {
+            /** N All Races */
+            n_all_races: number;
+            /** N Recorded Races */
+            n_recorded_races: number;
+            /** Overall */
+            overall?: number | null;
+            /** Post Ingestion */
+            post_ingestion?: number | null;
+            /** Pre Ingestion */
+            pre_ingestion?: number | null;
+        };
+        /** ComparisonCumulative */
+        ComparisonCumulative: {
+            /** Actual */
+            actual: number;
+            /** Diff Actual Vs No Bet */
+            diff_actual_vs_no_bet: number;
+            /** Diff Actual Vs Policy */
+            diff_actual_vs_policy?: number | null;
+            /**
+             * No Bet
+             * @default 0
+             */
+            no_bet: number;
+            /** Policy */
+            policy: number;
+        };
+        /** ComparisonPending */
+        ComparisonPending: {
+            /** Amount Yen */
+            amount_yen: number;
+            /** N Bets */
+            n_bets: number;
+            /** N Races */
+            n_races: number;
+        };
+        /** ComparisonPoint */
+        ComparisonPoint: {
+            /** Cumulative Net Yen */
+            cumulative_net_yen?: number | null;
+            /** Net Yen */
+            net_yen?: number | null;
+            /**
+             * Race Date
+             * Format: date
+             */
+            race_date: string;
+            /** Race Id */
+            race_id: string;
+        };
+        /** ComparisonSeries */
+        ComparisonSeries: {
+            /** Actual */
+            actual: components["schemas"]["ComparisonPoint"][];
+            /**
+             * No Bet
+             * @default 0
+             */
+            no_bet: number;
+            /** Policy */
+            policy: components["schemas"]["ComparisonPoint"][];
         };
         /**
          * CoverageDay
@@ -1074,6 +1172,96 @@ export interface components {
             /** Race Id */
             race_id: string;
             run?: components["schemas"]["RunAudit"] | null;
+        };
+        /** PurchaseBetView */
+        PurchaseBetView: {
+            /** Amount Yen */
+            amount_yen: number;
+            /** Bet Type */
+            bet_type: string;
+            /** Hit */
+            hit?: boolean | null;
+            /** Is Estimated */
+            is_estimated: boolean;
+            /** Payout Yen */
+            payout_yen?: number | null;
+            /** Selection */
+            selection: number[];
+            /** Status */
+            status: string;
+        };
+        /**
+         * PurchaseComparisonResponse
+         * @description Feature 106 US2: 実購入 / cap 政策の反実仮想 / 賭けない の三者比較(読み取り時計算).
+         */
+        PurchaseComparisonResponse: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            coverage_rate: components["schemas"]["ComparisonCoverage"];
+            cumulative: components["schemas"]["ComparisonCumulative"];
+            /** Estimated Amount Yen */
+            estimated_amount_yen: number;
+            /** Estimator Provenance */
+            estimator_provenance: string;
+            /** Include Post Hoc */
+            include_post_hoc: boolean;
+            /** N Corrections */
+            n_corrections: number;
+            /** N Estimated Settlements */
+            n_estimated_settlements: number;
+            /** N Post Hoc */
+            n_post_hoc: number;
+            /** N Presentation Unavailable */
+            n_presentation_unavailable: number;
+            /** N Races */
+            n_races: number;
+            /** Notes */
+            notes: string[];
+            pending: components["schemas"]["ComparisonPending"];
+            /** Scope */
+            scope: string;
+            series: components["schemas"]["ComparisonSeries"];
+        };
+        /** PurchaseRecordView */
+        PurchaseRecordView: {
+            /** Anomalies */
+            anomalies: string[];
+            /** Bets */
+            bets: components["schemas"]["PurchaseBetView"][];
+            /** Kind */
+            kind: string;
+            /** N Corrections */
+            n_corrections: number;
+            /** Note */
+            note?: string | null;
+            /**
+             * Race Date
+             * Format: date
+             */
+            race_date: string;
+            /** Race Id */
+            race_id: string;
+            /** Record Id */
+            record_id: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Result Pending At Record */
+            result_pending_at_record: boolean;
+            /** Was Voided */
+            was_voided: boolean;
+        };
+        /** PurchaseRecordsResponse */
+        PurchaseRecordsResponse: {
+            /** N Races Recorded */
+            n_races_recorded: number;
+            /** Records */
+            records: components["schemas"]["PurchaseRecordView"][];
         };
         /**
          * RaceChaosAvailable
@@ -2263,6 +2451,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchase_comparison_api_v1_purchase_comparison_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                scope?: string;
+                include_post_hoc?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseComparisonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchase_records_api_v1_purchase_records_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRecordsResponse"];
                 };
             };
             /** @description Validation Error */

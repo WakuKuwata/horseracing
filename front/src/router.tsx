@@ -4,6 +4,8 @@ import App from "./App";
 import { HorseDetailPage } from "./pages/HorseDetailPage";
 import { JockeyDetailPage } from "./pages/JockeyDetailPage";
 import { RaceDetailPage } from "./pages/RaceDetailPage";
+import { PurchaseComparisonPage } from "./pages/PurchaseComparisonPage";
+import { PurchaseListPage } from "./pages/PurchaseListPage";
 import { RaceListPage } from "./pages/RaceListPage";
 import { ShadowLogPage } from "./pages/ShadowLogPage";
 
@@ -17,6 +19,8 @@ export const routes = [
       { path: "horses/:horseId", element: <HorseDetailPage /> },
       { path: "jockeys/:jockeyId", element: <JockeyDetailPage /> },
       { path: "shadow-log", element: <ShadowLogPage /> },
+      { path: "purchases", element: <PurchaseListPage /> },
+      { path: "purchase-comparison", element: <PurchaseComparisonPage /> },
     ],
   },
 ];

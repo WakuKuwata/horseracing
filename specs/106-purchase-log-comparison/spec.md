@@ -216,3 +216,36 @@
 - **通知・リマインダはスコープ外**(記録忘れの防止は記録率の可視化で代替)
 - **賭博助長の回避**: 記録機能は購入を促す導線を持たない(見送りも同格の 1 操作。
   連続記録の演出・達成バッジ等は置かない)
+
+## 実装結果 (2026-09-02・27/27 タスク完了)
+
+**出荷物**: migration 0017(`purchase_records` 新テーブル・append-only を行トリガ+TRUNCATE 文トリガで DB 強制)/
+ops `POST /ops/v1/purchase-records`(client_request_id+payload_hash 冪等: 同一再送=200 リプレイ・別内容=409・
+二重記録=422 `already_recorded`)/api `GET /purchase-records`・`GET /purchase-comparison`(読み取り時計算:
+fold→011 規約 `is_hit`→公式配当優先・欠落時 010+049 推定=製品の推定オッズ表示と同一推定器・`is_estimated` 必携)/
+front 記録 UI(`PurchaseActions` を BetSlip 直下・3 ボタン+訂正モード自動切替)・`FreeformPurchaseForm`(US4)・
+`/purchases` 一覧・`/purchase-comparison` 三者比較(常設注記 4 種+未確定別掲+記録率 pre/post 分割+推定精算の
+二重疑似バッジ)。openapi 4 snapshot 純追加・front/admin byte 一致・drift 緑。
+
+**実装中に検出・修正した実欠陥 3 件**(いずれもテスト緑のまま実画面/実 DB で発覚):
+1. **ops 二重記録ガードの畳み込み簡略再実装**: void の対象集合を base 行だけで見ており、
+   base→correction→void の連鎖(訂正が有効 id を動かすので void は訂正行を指す)で
+   レースが恒久に記録不能化。実ブラウザの記録操作で発覚。api-fold と同一のリプレイに修正+回帰テスト。
+   「同じ契約の二重実装」型(training-path-audit と同型)。
+2. **スナップショットの偽ゼロ化**: 予算未設定時、送信アダプタが金額 null の提示買い目を snapshot からも
+   落とし「単勝提示ゼロ=検証済みゼロ(政策線 0)」に化けていた。提示のまま凍結(amount_yen null)に修正 →
+   政策線は正しく「算出不能(null)」。null≠0 の規律(codex Q2)が snapshot 経路にも必要だった。
+3. **freeform フォームの常駐 alert**: 空エディタ(正常な初期状態)で `role="alert"` が常時出て
+   既存テストの alert 一意性も破壊 → 案内文に降格。
+
+**実 DB E2E**: `202607030406`(実配当あり)+`202604020212`(配当なし)で記録→リプレイ→拒否→訂正→
+一覧(settled_real 実配当 23.7 倍/settled_estimated 二重疑似 ¥100→¥100,655=28 倍・72.9 倍を含む波乱への
+PL 外挿で桁は妥当)→三者比較(凍結オッズ 1.9 の政策線)→void 後始末。UI 経由でも見送り記録→一覧→比較
+(記録率 1/288・0.3%)→void まで実画面確認。プロダクト DB は 0017 適用済み・テスト記録は全件 void 済み。
+
+**回帰**: db 73 / ops 157 / api 205(+purchase 6・perf の chaos p95 は既知の 106 無関係失敗)/
+features leak-guard 3 / front 226 / admin 42 全緑。eslint/ruff/tsc/build/openapi drift 緑。
+
+**codex 並列実装**: A=settlement/fold 純関数(trio/quinella 境界同着を親が是正)・B=ops endpoint・
+C=PurchaseActions・D=一覧ページ(was_voided 文言を親が是正)・E=比較ページ・F=freeform(alert 常駐を親が是正)。
+配線(app 登録・router/nav・opsClient アダプタ・RecommendationPanel 結線)と api 読み出しは親が実装。

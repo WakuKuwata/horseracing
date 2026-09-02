@@ -290,6 +290,194 @@
         "title": "ChaosSnapshotProvenance",
         "type": "object"
       },
+      "ComparisonCoverage": {
+        "additionalProperties": false,
+        "properties": {
+          "n_all_races": {
+            "title": "N All Races",
+            "type": "integer"
+          },
+          "n_recorded_races": {
+            "title": "N Recorded Races",
+            "type": "integer"
+          },
+          "overall": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall"
+          },
+          "post_ingestion": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Ingestion"
+          },
+          "pre_ingestion": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pre Ingestion"
+          }
+        },
+        "required": [
+          "n_all_races",
+          "n_recorded_races"
+        ],
+        "title": "ComparisonCoverage",
+        "type": "object"
+      },
+      "ComparisonCumulative": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "title": "Actual",
+            "type": "number"
+          },
+          "diff_actual_vs_no_bet": {
+            "title": "Diff Actual Vs No Bet",
+            "type": "number"
+          },
+          "diff_actual_vs_policy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diff Actual Vs Policy"
+          },
+          "no_bet": {
+            "default": 0,
+            "title": "No Bet",
+            "type": "number"
+          },
+          "policy": {
+            "title": "Policy",
+            "type": "number"
+          }
+        },
+        "required": [
+          "actual",
+          "policy",
+          "diff_actual_vs_no_bet"
+        ],
+        "title": "ComparisonCumulative",
+        "type": "object"
+      },
+      "ComparisonPending": {
+        "additionalProperties": false,
+        "properties": {
+          "amount_yen": {
+            "title": "Amount Yen",
+            "type": "integer"
+          },
+          "n_bets": {
+            "title": "N Bets",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n_races",
+          "n_bets",
+          "amount_yen"
+        ],
+        "title": "ComparisonPending",
+        "type": "object"
+      },
+      "ComparisonPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "cumulative_net_yen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cumulative Net Yen"
+          },
+          "net_yen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Yen"
+          },
+          "race_date": {
+            "format": "date",
+            "title": "Race Date",
+            "type": "string"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "race_id",
+          "race_date"
+        ],
+        "title": "ComparisonPoint",
+        "type": "object"
+      },
+      "ComparisonSeries": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonPoint"
+            },
+            "title": "Actual",
+            "type": "array"
+          },
+          "no_bet": {
+            "default": 0,
+            "title": "No Bet",
+            "type": "number"
+          },
+          "policy": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonPoint"
+            },
+            "title": "Policy",
+            "type": "array"
+          }
+        },
+        "required": [
+          "actual",
+          "policy"
+        ],
+        "title": "ComparisonSeries",
+        "type": "object"
+      },
       "CoverageDay": {
         "description": "One race day's product coverage. n_predicted_active uses the ACTIVE model only (044\nidempotency semantics); 0 when no model is active.",
         "properties": {
@@ -2334,6 +2522,250 @@
           "race_id"
         ],
         "title": "PredictionResponse",
+        "type": "object"
+      },
+      "PurchaseBetView": {
+        "additionalProperties": false,
+        "properties": {
+          "amount_yen": {
+            "title": "Amount Yen",
+            "type": "integer"
+          },
+          "bet_type": {
+            "title": "Bet Type",
+            "type": "string"
+          },
+          "hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit"
+          },
+          "is_estimated": {
+            "title": "Is Estimated",
+            "type": "boolean"
+          },
+          "payout_yen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payout Yen"
+          },
+          "selection": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Selection",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bet_type",
+          "selection",
+          "amount_yen",
+          "status",
+          "is_estimated"
+        ],
+        "title": "PurchaseBetView",
+        "type": "object"
+      },
+      "PurchaseComparisonResponse": {
+        "additionalProperties": false,
+        "description": "Feature 106 US2: 実購入 / cap 政策の反実仮想 / 賭けない の三者比較(読み取り時計算).",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "coverage_rate": {
+            "$ref": "#/components/schemas/ComparisonCoverage"
+          },
+          "cumulative": {
+            "$ref": "#/components/schemas/ComparisonCumulative"
+          },
+          "estimated_amount_yen": {
+            "title": "Estimated Amount Yen",
+            "type": "integer"
+          },
+          "estimator_provenance": {
+            "title": "Estimator Provenance",
+            "type": "string"
+          },
+          "include_post_hoc": {
+            "title": "Include Post Hoc",
+            "type": "boolean"
+          },
+          "n_corrections": {
+            "title": "N Corrections",
+            "type": "integer"
+          },
+          "n_estimated_settlements": {
+            "title": "N Estimated Settlements",
+            "type": "integer"
+          },
+          "n_post_hoc": {
+            "title": "N Post Hoc",
+            "type": "integer"
+          },
+          "n_presentation_unavailable": {
+            "title": "N Presentation Unavailable",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "pending": {
+            "$ref": "#/components/schemas/ComparisonPending"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          },
+          "series": {
+            "$ref": "#/components/schemas/ComparisonSeries"
+          }
+        },
+        "required": [
+          "as_of",
+          "scope",
+          "include_post_hoc",
+          "series",
+          "cumulative",
+          "pending",
+          "coverage_rate",
+          "n_races",
+          "n_estimated_settlements",
+          "estimated_amount_yen",
+          "estimator_provenance",
+          "n_post_hoc",
+          "n_corrections",
+          "n_presentation_unavailable",
+          "notes"
+        ],
+        "title": "PurchaseComparisonResponse",
+        "type": "object"
+      },
+      "PurchaseRecordView": {
+        "additionalProperties": false,
+        "properties": {
+          "anomalies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Anomalies",
+            "type": "array"
+          },
+          "bets": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseBetView"
+            },
+            "title": "Bets",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "n_corrections": {
+            "title": "N Corrections",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "race_date": {
+            "format": "date",
+            "title": "Race Date",
+            "type": "string"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "result_pending_at_record": {
+            "title": "Result Pending At Record",
+            "type": "boolean"
+          },
+          "was_voided": {
+            "title": "Was Voided",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "race_id",
+          "race_date",
+          "record_id",
+          "kind",
+          "result_pending_at_record",
+          "recorded_at",
+          "n_corrections",
+          "was_voided",
+          "bets",
+          "anomalies"
+        ],
+        "title": "PurchaseRecordView",
+        "type": "object"
+      },
+      "PurchaseRecordsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "n_races_recorded": {
+            "title": "N Races Recorded",
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseRecordView"
+            },
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "records",
+          "n_races_recorded"
+        ],
+        "title": "PurchaseRecordsResponse",
         "type": "object"
       },
       "RaceChaosAvailable": {
@@ -5123,6 +5555,133 @@
         "summary": "Importance",
         "tags": [
           "importance"
+        ]
+      }
+    },
+    "/api/v1/purchase-comparison": {
+      "get": {
+        "operationId": "purchase_comparison_api_v1_purchase_comparison_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "pattern": "^(all|win_only)$",
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_post_hoc",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Post Hoc",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseComparisonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Purchase Comparison",
+        "tags": [
+          "purchase"
+        ]
+      }
+    },
+    "/api/v1/purchase-records": {
+      "get": {
+        "operationId": "purchase_records_api_v1_purchase_records_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRecordsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Purchase Records",
+        "tags": [
+          "purchase"
         ]
       }
     },

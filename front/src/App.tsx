@@ -10,6 +10,8 @@ export default function App() {
         <nav className="app__nav">
           <Link to="/">レース</Link>
           <Link to="/shadow-log">前向き実績(shadow-log)</Link>
+          <Link to="/purchases">購入記録</Link>
+          <Link to="/purchase-comparison">三者比較</Link>
         </nav>
         <p>競馬予測サーバ(014 API)の読み取り専用ビュー — 推定/疑似値は必ずバッジ表示</p>
       </header>

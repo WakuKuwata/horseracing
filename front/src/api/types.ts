@@ -37,3 +37,12 @@ export type Explanation = S["Explanation"];
 export type ExplanationItem = S["ExplanationItem"];
 export type ImportanceResponse = S["ImportanceResponse"];
 export type ImportanceValue = S["ImportanceValue"];
+
+// Feature 106: purchase records & triple comparison (read-only api side)
+export type PurchaseRecordsResponse =
+  components["schemas"]["PurchaseRecordsResponse"];
+export type PurchaseRecordView = components["schemas"]["PurchaseRecordView"];
+export type PurchaseBetView = components["schemas"]["PurchaseBetView"];
+export type PurchaseComparisonResponse =
+  components["schemas"]["PurchaseComparisonResponse"];
+export type ComparisonPoint = components["schemas"]["ComparisonPoint"];

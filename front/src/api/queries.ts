@@ -10,6 +10,8 @@ import type {
   JockeyProfile,
   OddsResponse,
   PredictionResponse,
+  PurchaseComparisonResponse,
+  PurchaseRecordsResponse,
   RaceDetail,
   RacePage,
   RecommendationResponse,
@@ -201,6 +203,41 @@ export function useJockeyHistory(
       unwrap(
         await api.GET("/api/v1/jockeys/{jockey_id}/history", {
           params: { path: { jockey_id: jockeyId }, query: params },
+        }),
+      ),
+  });
+}
+
+// Feature 106: purchase records (US1) + triple comparison (US2). Read-only GETs; the write
+// path goes through opsClient.submitPurchaseRecord.
+export function usePurchaseRecords(
+  params: { from: string; to: string },
+  options?: { enabled?: boolean },
+) {
+  return useQuery<PurchaseRecordsResponse, ErrorInfo>({
+    queryKey: ["purchase-records", params],
+    enabled: options?.enabled ?? true,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/purchase-records", {
+          params: { query: params },
+        }),
+      ),
+  });
+}
+
+export function usePurchaseComparison(params: {
+  from: string;
+  to: string;
+  scope?: "all" | "win_only";
+  include_post_hoc?: boolean;
+}) {
+  return useQuery<PurchaseComparisonResponse, ErrorInfo>({
+    queryKey: ["purchase-comparison", params],
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/purchase-comparison", {
+          params: { query: params },
         }),
       ),
   });

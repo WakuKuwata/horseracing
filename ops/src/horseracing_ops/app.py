@@ -17,7 +17,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import API_PREFIX, API_VERSION
 from .deps import create_ops_engine
-from .routers import jobs, predict, recommend, refresh, refresh_range
+from .routers import jobs, predict, purchase, recommend, refresh, refresh_range
 
 
 @asynccontextmanager
@@ -60,3 +60,4 @@ app.include_router(predict.router, prefix=API_PREFIX)
 app.include_router(recommend.router, prefix=API_PREFIX)
 app.include_router(refresh_range.router, prefix=API_PREFIX)
 app.include_router(jobs.router, prefix=API_PREFIX)
+app.include_router(purchase.router, prefix=API_PREFIX)

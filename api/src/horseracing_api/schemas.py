@@ -847,3 +847,101 @@ class SegmentAccuracyResponse(BaseModel):
     date_to: datetime.date | None = None
     logic_version: str
     payload: SegmentAccuracyPayloadV1
+
+
+# --- Feature 106: purchase records & triple comparison (explicit DTOs, no splat-null) -------
+
+
+class PurchaseBetView(BaseModel):
+    model_config = {"extra": "forbid"}
+    bet_type: str
+    selection: list[int]
+    amount_yen: int
+    # pending / settled_real / settled_estimated / refunded / unsettleable
+    status: str
+    hit: bool | None = None
+    payout_yen: float | None = None
+    # True only for settled_estimated (double-pseudo; front badges it)
+    is_estimated: bool
+
+
+class PurchaseRecordView(BaseModel):
+    model_config = {"extra": "forbid"}
+    race_id: str
+    race_date: datetime.date
+    record_id: str
+    kind: str                          # base kind of the effective chain
+    result_pending_at_record: bool     # 記録時に結果取込前だった(観測事実 — 発走前の主張ではない)
+    recorded_at: datetime.datetime
+    n_corrections: int
+    was_voided: bool
+    bets: list[PurchaseBetView]
+    anomalies: list[str]
+    note: str | None = None
+
+
+class PurchaseRecordsResponse(BaseModel):
+    model_config = {"extra": "forbid"}
+    records: list[PurchaseRecordView]  # chronological by race
+    n_races_recorded: int
+
+
+class ComparisonPoint(BaseModel):
+    model_config = {"extra": "forbid"}
+    race_id: str
+    race_date: datetime.date
+    net_yen: float | None = None            # None = この点は算出不能(政策線: snapshot 無し等)
+    cumulative_net_yen: float | None = None  # 算出可能点のみの累積
+
+
+class ComparisonPending(BaseModel):
+    model_config = {"extra": "forbid"}
+    n_races: int
+    n_bets: int
+    amount_yen: int
+
+
+class ComparisonCumulative(BaseModel):
+    model_config = {"extra": "forbid"}
+    actual: float
+    policy: float
+    no_bet: float = 0.0
+    diff_actual_vs_policy: float | None = None   # None = 政策線が 1 点も算出できない期間
+    diff_actual_vs_no_bet: float
+
+
+class ComparisonCoverage(BaseModel):
+    model_config = {"extra": "forbid"}
+    overall: float | None = None        # None = 期間内に開催レースが無い(0 除算を偽装しない)
+    pre_ingestion: float | None = None
+    post_ingestion: float | None = None
+    n_all_races: int
+    n_recorded_races: int
+
+
+class ComparisonSeries(BaseModel):
+    model_config = {"extra": "forbid"}
+    actual: list[ComparisonPoint]
+    policy: list[ComparisonPoint]
+    no_bet: float = 0.0
+
+
+class PurchaseComparisonResponse(BaseModel):
+    """Feature 106 US2: 実購入 / cap 政策の反実仮想 / 賭けない の三者比較(読み取り時計算)."""
+
+    model_config = {"extra": "forbid"}
+    as_of: datetime.datetime
+    scope: str                          # all / win_only
+    include_post_hoc: bool
+    series: ComparisonSeries
+    cumulative: ComparisonCumulative
+    pending: ComparisonPending
+    coverage_rate: ComparisonCoverage
+    n_races: int
+    n_estimated_settlements: int
+    estimated_amount_yen: int
+    estimator_provenance: str
+    n_post_hoc: int
+    n_corrections: int
+    n_presentation_unavailable: int
+    notes: list[str]

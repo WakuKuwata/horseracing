@@ -73,6 +73,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ops/v1/purchase-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Purchase Record */
+        post: operations["create_purchase_record_ops_v1_purchase_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ops/v1/races/{race_id}/predict": {
         parameters: {
             query?: never;
@@ -221,6 +238,17 @@ export interface components {
             /** Trace Id */
             trace_id: string;
         };
+        /** BetIn */
+        BetIn: {
+            /** Amount Yen */
+            amount_yen: number;
+            /** Bet Type */
+            bet_type: string;
+            /** Odds Used */
+            odds_used?: number | null;
+            /** Selection */
+            selection: number[];
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -303,6 +331,72 @@ export interface components {
              * @enum {string}
              */
             status: "queued" | "running" | "succeeded" | "partial" | "failed" | "skipped";
+        };
+        /** PurchaseError */
+        PurchaseError: {
+            detail: components["schemas"]["PurchaseErrorDetail"];
+        };
+        /** PurchaseErrorDetail */
+        PurchaseErrorDetail: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        /** PurchaseRecordIn */
+        PurchaseRecordIn: {
+            /** Bets */
+            bets: components["schemas"]["BetIn"][];
+            /** Client Request Id */
+            client_request_id: string;
+            /** Corrects Record Id */
+            corrects_record_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "as_presented" | "modified" | "skipped_presented" | "no_recommendation" | "presentation_unavailable" | "freeform" | "correction" | "void";
+            /** Note */
+            note?: string | null;
+            /** Prediction Run Id */
+            prediction_run_id?: string | null;
+            /** Presented Snapshot */
+            presented_snapshot?: {
+                [key: string]: unknown;
+            } | null;
+            /** Race Id */
+            race_id: string;
+        };
+        /** PurchaseRecordOut */
+        PurchaseRecordOut: {
+            /** Bets */
+            bets: components["schemas"]["BetIn"][];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "as_presented" | "modified" | "skipped_presented" | "no_recommendation" | "presentation_unavailable" | "freeform" | "correction" | "void";
+            /**
+             * Pending Basis At
+             * Format: date-time
+             */
+            pending_basis_at: string;
+            /**
+             * Purchase Record Id
+             * Format: uuid
+             */
+            purchase_record_id: string;
+            /** Race Id */
+            race_id: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Replayed */
+            replayed: boolean;
+            /** Result Pending At Record */
+            result_pending_at_record: boolean;
         };
         /** RefreshRangeRequest */
         RefreshRangeRequest: {
@@ -467,6 +561,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_purchase_record_ops_v1_purchase_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseRecordIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRecordOut"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRecordOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseError"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseError"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseError"];
                 };
             };
         };

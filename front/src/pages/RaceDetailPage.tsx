@@ -202,7 +202,11 @@ export function RaceDetailPage() {
           (RaceDetail.horses: HorseEntry[]) — the prediction response's horses are
           HorsePrediction[] and carry neither horse_name nor frame. */}
       {tab === "recs" && (
-        <RecommendationPanel raceId={raceId} entries={raceQuery.data?.horses} />
+        <RecommendationPanel
+          raceId={raceId}
+          raceDate={raceQuery.data?.race_date ?? undefined}
+          entries={raceQuery.data?.horses}
+        />
       )}
       {tab === "odds" && <OddsPanel raceId={raceId} />}
       {tab === "model" && (
