@@ -1,0 +1,60 @@
+{
+  "by_fold": [
+    {
+      "tau2": 0.023190974941316767,
+      "lambda": 43.12022252322009,
+      "lambda_raw": 43.12022252322009,
+      "n_entities": 154,
+      "b_sd": 0.0914296367885783,
+      "b_absmax": 0.40147782145656075,
+      "converged": true,
+      "n_oof_rows_total": 485280,
+      "n_oof_rows_window": 95667,
+      "n_oof_races_window": 6912,
+      "n_jockeys": 153,
+      "min_rides": 30,
+      "window_days": 730,
+      "train_end": "2021-12-28"
+    },
+    {
+      "tau2": 0.03204038912215061,
+      "lambda": 31.2106072178963,
+      "lambda_raw": 31.2106072178963,
+      "n_entities": 156,
+      "b_sd": 0.11346276923338877,
+      "b_absmax": 0.40416628501212604,
+      "converged": true,
+      "n_oof_rows_total": 514904,
+      "n_oof_rows_window": 94595,
+      "n_oof_races_window": 6912,
+      "n_jockeys": 155,
+      "min_rides": 30,
+      "window_days": 730,
+      "train_end": "2022-12-28"
+    },
+    {
+      "tau2": 0.028624786623215544,
+      "lambda": 34.934758227646334,
+      "lambda_raw": 34.934758227646334,
+      "n_entities": 162,
+      "b_sd": 0.1064552129239521,
+      "b_absmax": 0.3529624900647211,
+      "converged": true,
+      "n_oof_rows_total": 546414,
+      "n_oof_rows_window": 94766,
+      "n_oof_races_window": 6936,
+      "n_jockeys": 161,
+      "min_rides": 30,
+      "window_days": 730,
+      "train_end": "2023-12-28",
+      "n_nk_jockeys_with_b": 0
+    }
+  ],
+  "eval_mount_coverage": {
+    "mounts": 141339,
+    "with_b": 132510,
+    "fraction": 0.9375331649438584
+  },
+  "n_eval_races": 10366,
+  "elapsed_seconds": 2691.9
+}

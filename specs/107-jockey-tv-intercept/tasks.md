@@ -7,7 +7,7 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 実行前提の確認: postgres 稼働・materialized parquet が 2024-12-31 を被覆
+- [X] T001 実行前提の確認: postgres 稼働・materialized parquet が 2024-12-31 を被覆
   (manifest の data_through ≥ 2024-12-31・feature_version=features-021)・
   `specs/107-jockey-tv-intercept/gate-config.json` の hash が quickstart 記載値
   `c872172a57be8a052a7ecd9e4b6492574fcd852e1f8c2845e4736e3cddac8eaa` と一致することを
@@ -15,7 +15,7 @@
 
 ## Phase 2: Foundational(US1 の前提・blocking)
 
-- [ ] T002 confirmatory driver を作成: `scripts/jockey_tv_confirmatory.py` —
+- [X] T002 confirmatory driver を作成: `scripts/jockey_tv_confirmatory.py` —
   contracts/confirmatory.md の全 fail-closed(assert_confirmatory + assert_delta_provenance +
   窓 to<2025-01-01 assert + `load_eval_races(start_date=FEATURE_POOL_START)` + 定数一致検査)
   → preflight 監査(fold 別 λ raw/clamped・騎手数・window 行数・nk: 騎手 ID 件数・
@@ -25,7 +25,7 @@
   `evidence/paired-evidence.json`(append-only)+ `evidence/preflight.json`。
   候補 factory は spike と同一定義(W=730/MIN_RIDES=30/λ クランプ[10,500]/露出加重中心化/
   isotonic 全 OOF 行)を driver 内に持つ
-- [ ] T003 [P] driver の構造テスト: `eval/tests/unit/test_jockey_tv_confirmatory.py` —
+- [X] T003 [P] driver の構造テスト: `eval/tests/unit/test_jockey_tv_confirmatory.py` —
   (a) driver 定数 == gate-config 凍結値 == `scripts/jockey_timevarying_spike.py` の定数
   (INV-J4・三点一致) (b) 窓 to≥2025-01-01 の config で fail-closed (c) gate-config hash
   不一致で fail-closed (d) 縮退(全予測一致の合成 preds)で abort し数値を出力しない
@@ -33,7 +33,7 @@
   (`critical_subgroups(cfg)==[]`・`_min_eval_days(cfg)==300` を生関数で検査 —
   analyze H2 の「縛っているつもりの死にキー」再発防止)。
   scripts/ を import できる形は spike のテスト前例に従う
-- [ ] T004 [P] スモーク実行(構造のみ): rounds 30・**first_valid_year 2021・to 2021-03-01**
+- [X] T004 [P] スモーク実行(構造のみ): rounds 30・**first_valid_year 2021・to 2021-03-01**
   の縮小 config(別ファイル・凍結 config は触らない・**凍結採点窓 2022-2024 と互いに素**=
   analyze H3)で driver が preflight→評価→verdict.json まで完走することを確認。
   driver に `--smoke` モードを実装し、smoke では point/CI を verdict.json からも redact
@@ -46,23 +46,23 @@
 **Goal**: 凍結 gate-config の下で一度だけ測定し三値 verdict を得る
 **Independent Test**: evidence/ 一式が生成され、証拠からの再計算が判定値とビット一致
 
-- [ ] T005 [US1] 本番実行: quickstart のコマンド(凍結 config + hash)で nohup 実行
+- [X] T005 [US1] 本番実行: quickstart のコマンド(凍結 config + hash)で nohup 実行
   (推定 ~60 分)。完走後 `evidence/` に verdict.json / paired-evidence.json /
   preflight.json が揃うこと
-- [ ] T006 [US1] 証拠検証(SC-001): 公式 `evidence.recompute` で paired-evidence.json から
+- [X] T006 [US1] 証拠検証(SC-001): 公式 `evidence.recompute` で paired-evidence.json から
   点推定・sample_ci・total_ci を再計算し verdict.json の値とビット一致を確認。
   窓検証(SC-002): 証拠の全レース日 ≤ 2024-12-31
-- [ ] T007 [US1] preflight 監査のレビュー(SC-003): fold 別 λ がクランプ域内か・
+- [X] T007 [US1] preflight 監査のレビュー(SC-003): fold 別 λ がクランプ域内か・
   b カバレッジ・nk: 件数を確認し異常があれば verdict を NO_DECISION 扱いにする根拠として
   記録(数値の読み替えはしない — 実行妥当性の検査のみ)
-- [ ] T008 [US1] 実 DB E2E(SC-004): active モデルの任意 1 レース予測が測定前後で
+- [X] T008 [US1] 実 DB E2E(SC-004): active モデルの任意 1 レース予測が測定前後で
   バイト一致(測定は persist しない=構造的成立の確認)
-- [ ] T009 [US1] verdict を確定し、以降のフェーズを分岐: ADOPT → Phase 4 /
+- [X] T009 [US1] verdict を確定し、以降のフェーズを分岐: ADOPT → Phase 4 /
   REJECT・NO_DECISION → Phase 5(もう一方のフェーズは「非該当」とマークして閉じる)
 
 **Checkpoint**: 三値 verdict 確定 — ここが本 feature の中断点
 
-## Phase 4: User Story 2 — ADOPT 時の serving 統合 (P2・verdict=ADOPT のときのみ)
+## Phase 4: User Story 2 — ADOPT 時の serving 統合 (P2) — **非該当(verdict=REJECT・2026-09-02)**
 
 **Goal**: 騎手切片を本番予測経路に opt-in で組み込み、候補モデルとして登録する
 **Independent Test**: 候補 artifact の b で serving 予測が confirmatory 候補アームの手続きと
@@ -91,21 +91,21 @@
 **Goal**: 負の結果を保全し、騎手軸をこの設計族について閉じる
 **Independent Test**: 全スイート緑・保全スクリプトが残る・閉鎖記録が spec で読める
 
-- [ ] T017 [US3] 結線差分ゼロの確認: `git status` で training/serving/eval に測定由来の
+- [X] T017 [US3] 結線差分ゼロの確認: `git status` で training/serving/eval に測定由来の
   差分が無いこと(driver とテストは保全対象として残す)+ 全スイート回帰
   (eval/training 緑)
-- [ ] T018 [US3] contracts/adoption.md に「不発効」注記を追加
+- [X] T018 [US3] contracts/adoption.md に「不発効」注記を追加
 
 ## Phase 6: Polish & 記録(両分岐共通)
 
-- [ ] T019 spec.md に実測結果を転記(FR-014/FR-016/SC-006): 点推定・total CI・verdict・
+- [X] T019 spec.md に実測結果を転記(FR-014/FR-016/SC-006): 点推定・total CI・verdict・
   ラベル二重使用の限界注記(FR-016)・
   preflight 要旨・閉鎖範囲(設計族限定)または採用範囲・screening 履歴との一続きの表
-- [ ] T020 [P] memory 更新: `jockey-identity-residual.md` に confirmatory の結末を追記
+- [X] T020 [P] memory 更新: `jockey-identity-residual.md` に confirmatory の結末を追記
   (verdict・数値・次に測るなら何が必要か)+ MEMORY.md の行を更新
-- [ ] T021 [P] CLAUDE.md の SPECKIT 区間を手動 Edit で完了ステータスに更新
+- [X] T021 [P] CLAUDE.md の SPECKIT 区間を手動 Edit で完了ステータスに更新
   (agent-context スクリプトは実行禁止)
-- [ ] T022 コミット(driver・テスト・specs/107 一式・evidence)
+- [X] T022 コミット(driver・テスト・specs/107 一式・evidence)
 
 ## Dependencies
 

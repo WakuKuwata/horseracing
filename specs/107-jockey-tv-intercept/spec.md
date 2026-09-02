@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-02
 
-**Status**: Draft
+**Status**: 完了・REJECT(2026-09-02)
 
 **Input**: User description: "騎手の時変切片(年次更新 730 日窓の部分プーリング b)の confirmatory 測定と採否 — 騎手軸 screening 生存(2026-09-02)の一度きりの決着。"
 
@@ -216,3 +216,53 @@ verdict が REJECT の場合、結線だけを revert し、測定モジュー�
   操作は 100 R9 の型であり、やるなら 100 US3 の再事前登録が筋(plan D7)
 - 騎手 ID の分裂修復(067 の残余)はスコープ外。分裂は b を過小推定する方向に働くので、
   本測定の結果は保守側に倒れる
+
+## 実測結果 (2026-09-02・confirmatory 完了・REJECT)
+
+**判定 = REJECT(gate_hard_fail・`final_decision` の三値・事前登録どおり)**
+
+| 測定 | 値 |
+|---|---|
+| 窓 | 2022-01-05..2024-12-28(採点 10,366 レース・適格 10,353・**321 開催日**) |
+| **diff(候補−arm E)** | **−0.001902** |
+| 標本 CI | [−0.004260, +0.000486] |
+| **total CI(seed 膨張込み)** | **[−0.005029, +0.001248] — ゼロ跨ぎ** |
+| gate | primary FAIL(点推定が −δ=−0.00352 に未達)・stat_guard FAIL・top2/top3 非劣性 FAIL・recent PASS・calibration PASS |
+| 実行時間 | 2,692 秒(見積 60 分に対し 45 分) |
+
+**screening との一続きの表(FR-014)**:
+
+| 段 | 窓 | 効果 |
+|---|---|---|
+| 分割オラクル | 2025-26(選択) | −0.0039 |
+| 静的 b spike | 2025-26(選択) | −0.0020 CI 跨ぎ |
+| 時変 b spike | 2025-26(選択) | −0.00328 CI[−0.00602, −0.00029] 生存 |
+| **confirmatory** | **2022-24(独立)** | **−0.0019 CI 跨ぎ → REJECT** |
+
+**機構の読み**: screening の −0.00328 は独立窓に**輸送されず**、静的 b の screening 値
+(−0.0020)と同水準に回帰した。鮮度増分(screening C−B=−0.0009)は窓固有のゆらぎだった
+公算が高い。スパイク実行前に明示した「生存マージン +0.00028 < 再学習ノイズ SD 0.0018」の
+懸念がそのまま実現した形であり、**margin-teacher(099)の「spike GO ≠ 本番 GO」の再演**。
+
+**実行妥当性(T007・preflight)**: 3 fold とも λ=31〜43 でクランプ非発動・騎手 153〜161 人・
+window 行 ~95k/fold・評価騎乗の b カバレッジ 93.75%・nk: 騎手 0(2022-24 窓の想定どおり)。
+NO_DECISION に相当する実行異常はなく、REJECT は実力での判定。
+
+**証拠(SC-001/002)**: `evidence/paired-evidence.json`(10,353 行・append-only)からの
+公式 `evidence.recompute` が点推定・標本 CI・total CI を**ビット一致**で再現。全レース日が
+2022-01-05..2024-12-28 に収まることを確認(2025+ 混入ゼロ)。active モデルの予測は
+測定前後で md5 一致(SC-004)。
+
+**閉鎖の範囲(FR-014)**: 騎手軸は「**加法切片・730 日窓・30 騎乗ゲート・年次更新・
+isotonic 再 fit という設計族**」について閉じた。騎手情報の統計的全否定ではない —
+時変効果の別表現・交互作用は kill されていないが、screening 4 段+confirmatory の履歴に
+基づき優先度は大きく下がる。再開には新規の事前登録が必要。
+
+**既知の限界(FR-016)**: b と isotonic は同じ内側 OOF ラベルを見る(cross-fit しない)。
+両アーム同一手続きなので paired 比較の妥当性は保たれ、評価窓は非汚染。2026/nk 時代への
+可搬性は本測定の死角だったが、REJECT により moot。
+
+**保全**: `scripts/jockey_timevarying_spike.py`(screening)・`scripts/jockey_tv_confirmatory.py`
+(driver・公式 paired_eval 直結)・`eval/tests/unit/test_jockey_tv_confirmatory.py`(9 テスト)・
+gate-config(凍結 hash `c872172a…`)・evidence 一式を保全。結線差分ゼロ
+(training/serving/eval/features のソース不変・eval 503+31 / training 487 緑)。
