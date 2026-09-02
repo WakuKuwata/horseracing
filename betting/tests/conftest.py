@@ -64,6 +64,10 @@ def _truncate_between_tests(request):
     if engine is None:
         return
     with engine.begin() as conn:
+        # purchase_records (migration 0017) は append-only トリガが TRUNCATE を拒否する。
+        # replica モードはこのトランザクションに限りトリガを素通しする(SET LOCAL 必須 —
+        # 素の SET はプール接続に残留し後続テストのトリガまで無効化する。106 で実証)。
+        conn.execute(text("SET LOCAL session_replication_role = replica"))
         conn.execute(
             text(
                 """
