@@ -68,6 +68,12 @@ def _truncate_between_tests(request):
     if engine is None:
         return
     with engine.begin() as conn:
+        # Feature 106: purchase_records rejects TRUNCATE by trigger (append-only). The test
+        # container's superuser cleanup legitimately bypasses it via transaction-scoped replica mode (SET LOCAL —
+        # a plain SET would leak onto the pooled connection and disable triggers in later tests);
+        # production
+        # code paths never set this.
+        conn.execute(text("SET LOCAL session_replication_role = replica"))
         conn.execute(
             text(
                 """

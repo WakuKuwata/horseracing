@@ -23,7 +23,7 @@ pytestmark = pytest.mark.integration
 DB_DIR = Path(__file__).resolve().parents[2]
 _REVISION_0012 = "0012_chaos_readout"
 #: created at 0013 or later — all of them disappear when we downgrade to 0012.
-_TABLES_ADDED_AFTER_0012 = {"fetch_throttle_state", "exotic_quotes"}
+_TABLES_ADDED_AFTER_0012 = {"fetch_throttle_state", "exotic_quotes", "purchase_records"}
 _QUARANTINE_TABLE = "chaos_snapshots_quarantine"
 _READOUT_QUARANTINE_TABLE = "chaos_readouts_quarantine"
 _SNAPSHOT_COLUMNS_0012 = {

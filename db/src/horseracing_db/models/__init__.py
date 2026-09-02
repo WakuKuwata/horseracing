@@ -14,9 +14,12 @@ from .prediction import (
     RacePrediction,
     Recommendation,
 )
+from .purchase import PURCHASE_KINDS, PurchaseRecord
 
 __all__ = [
     "ChaosReadout",
+    "PURCHASE_KINDS",
+    "PurchaseRecord",
     "ChaosSnapshot",
     "FetchThrottleState",
     "DiagnosticRun",
