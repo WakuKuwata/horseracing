@@ -1,0 +1,223 @@
+# Feature Specification: arm E 系モデルの OOF attestation 対応
+
+**Feature Branch**: `108-arm-e-attestation`
+
+**Created**: 2026-09-02
+
+**Status**: Draft
+
+**Input**: User description: "arm E 系モデルの OOF attestation 対応 — 074/076/078 の校正 manifest スタックを現行世代で活性化する。"
+
+## 背景と期待値(先に正直に)
+
+**期待できる効果は小さい。** この feature は精度・回収率を動かさない:
+
+- win 予測はバイト不変(two-gamma は推薦経路のみ・stage 割引は top2/top3 表示のみ)
+- 買い目の EV・Kelly・確率導出(009)は不変
+- 実効果は「画面に出る連対率・複勝率の校正が、実行時 fit の値から**凍結された OOF 由来の値**に変わる」こと。
+  lgbm-063 の実測では λ2=0.818/λ3=0.690 で、実行時 fit の値との差はこの程度の帯
+
+にもかかわらずやる理由は **基盤が恒久に不活性だから**である。074(immutable manifest)・
+076(activation 結線・31/31 完了)・078(実 manifest 生成 CLI)は既に実装済みで、lgbm-063 では
+決定的 verdict まで出ている(two_gamma=REJECT/identity 出荷・stage-λ=ADOPT で top2 ECE 4 倍・
+top3 ECE 6 倍改善・18 held-out fold)。しかし生成済み manifest は `base_model_version=lgbm-063` に
+世代束縛されており、active が arm E 系(lgbm-094-cap900)に交代した現在、activation loader は
+正しくこれを拒否する。結果として本番は今も実行時 fit(legacy-runtime)で動いている。
+
+**根本原因は attestation が arm E を表現できないこと**。実コードで確認した構造的ブロッカ:
+
+| # | 実装の現状 | arm E の実態 | 帰結 |
+|---|---|---|---|
+| 1 | `internal_calibration.calib_frac` は `0 < x < 1` を要求 | booster は何も holdout しない(`booster_calib_frac=0.0`) | 検証で即 reject |
+| 2 | `calibration_split_unit` は非空文字列必須 | `null`(内部 split を使わない) | 検証で即 reject |
+| 3 | `internal_calibration` は 3 フィールド固定(未知フィールド拒否) | `n_oof_blocks=8`・weight mask 設定を持つ | 表現する場所がない |
+| 4 | 再構成の仕組みは単純構成の予測器しか組めない | OOF 校正つきの合成された予測器 | 再構成しても別物 |
+
+この 4 点を直さない限り、**今後生成されるどのモデル世代でも 074/076/078 は永久に眠ったまま**になる。
+本 feature はその一点を解く。
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - arm E 構成を証明可能な形で記録・再構成する (Priority: P1)
+
+運用者として、現行世代のモデル(全史 booster + 厳密過去 OOF 校正 + 重み mask)の学習手続きを
+attestation として記録し、そこから**同じ手続きを忠実に再構成**できるようにしたい。改竄・
+世代取り違えは今と同じく検出されなければならない。
+
+**Why this priority**: US2/US3 の前提。ここが通らなければ manifest は生成すらできない。
+
+**Independent Test**: 現行 active のモデルディレクトリから attestation を作り、そこから再構成した
+手続きが元の学習構成(目的関数・校正方式・OOF ブロック数・重み mask・解決済みパラメータ・
+特徴列順)と一致すること。旧世代(lgbm-063)の attestation とその digest は不変であること。
+
+**Acceptance Scenarios**:
+
+1. **Given** 現行 active のモデルディレクトリ、**When** attestation を生成、**Then** 成功し、
+   arm E 固有の構成(OOF 校正方式・OOF ブロック数・重み mask・booster が holdout を持たないこと)が
+   payload に含まれる
+2. **Given** 旧世代(lgbm-063)のモデルディレクトリ、**When** attestation を生成、**Then**
+   payload と digest が本 feature 導入前とバイト単位で一致する(既存 manifest・過去 verdict を
+   壊さない)
+3. **Given** 生成した attestation の内容を 1 バイト改竄、**When** 検証、**Then** digest 不一致で
+   拒否される(改竄検出は緩めない)
+4. **Given** モデルディレクトリの中身が別モデルに差し替わった状態、**When** 再計算照合、
+   **Then** 不一致で拒否される(同名上書き耐性を維持)
+5. **Given** 構成が矛盾する attestation(例: OOF 校正を宣言しながら OOF ブロック数がない)、
+   **When** 検証、**Then** 型付きエラーで拒否される(黙って既定値に落ちない)
+
+---
+
+### User Story 2 - 現行世代の校正 manifest を生成する (Priority: P2)
+
+運用者として、現行 active の手続きで OOF 予測を再生成し、そこから校正 verdict を測って
+production スコープの manifest を作りたい。**verdict は測定結果であって選ぶものではない** —
+two_gamma・stage 割引のどちらが REJECT / NO_DECISION になっても、この feature としては成功。
+
+**Why this priority**: US1 の直後に来る価値の実体。ただし US1 単独でも「基盤が現行世代を
+表現できる」という価値は独立に成立する。
+
+**Independent Test**: 生成された manifest が production スコープ・現行 active に世代束縛され・
+検証を通ること。校正パラメータが凍結され、同じ入力から同じ digest が再現できること。
+
+**Acceptance Scenarios**:
+
+1. **Given** US1 の attestation と現行 active、**When** OOF 予測の再生成と校正測定を実行、
+   **Then** 三値 verdict(採用/不採用/判定不能)と production スコープの manifest が得られる
+2. **Given** 同一の入力、**When** 再実行、**Then** 同一の digest が再現される(決定論)
+3. **Given** 作業ツリーが未コミット状態、**When** manifest 生成、**Then** production スコープでは
+   作られない(スコープ降格または拒否)
+4. **Given** 生成済みの旧世代 manifest、**When** 本 feature の全作業後に確認、**Then**
+   内容・digest とも書き換わっていない(append-only)
+
+---
+
+### User Story 3 - 現行世代の manifest で本番経路を活性化する (Priority: P3)
+
+運用者として、生成した manifest を使って予測・推薦の各経路が凍結校正を読むことを実データで
+確認し、運用環境への設定手順を残したい。既定は現行動作のままで、明示的に有効化したときだけ
+manifest 由来になること。
+
+**Why this priority**: US2 の manifest が無ければ検証対象が存在しない。
+
+**Independent Test**: 既定設定では予測がバイト不変。明示有効化すると監査記録に manifest の
+識別子が現れ、世代・時間・スコープの不整合はすべて拒否される。
+
+**Acceptance Scenarios**:
+
+1. **Given** 既定設定(現行動作)、**When** 予測・推薦を実行、**Then** 出力は本 feature 導入前と
+   バイト一致
+2. **Given** 明示有効化 + 有効な manifest、**When** 予測・推薦を実行、**Then** 監査記録に
+   manifest 識別子が含まれ、表示用の連対率・複勝率が凍結値由来になる
+3. **Given** 明示有効化 + 別世代の manifest、**When** 実行、**Then** 実行前に拒否され 1 行も
+   書かれない(黙って現行動作に落ちない)
+4. **Given** 明示有効化 + manifest の学習終端より前の対象日、**When** 実行、**Then** 拒否される
+   (未来の情報で過去を予測しない)
+
+---
+
+### Edge Cases
+
+- **記録された構成と実際に出荷された校正器の不一致**: 現行 active のメタデータには
+  「校正器は退化(identity)」と記録されている一方、保存された校正器パラメータには実データに
+  基づく写像が入っている。どちらが真かを実装時に判定し、**不一致なら記録側の欠陥として
+  修正するか、attestation が事実の側を参照する**。矛盾したまま attestation を作ると
+  再構成が不忠実になる(この feature の目的そのものを損なう)
+- **OOF 再生成の実行コスト**: arm E は 1 fold あたり複数回の学習を要するため、旧世代
+  (単純構成・実測 ~17 分)より大幅に長くなる見込み。数時間規模になりうるため、
+  **本実行の前に 1 fold の実測で所要時間を確定**し、非現実的なら実行方式を再設計してから進む
+- **重み mask の再現**: 学習時の重み mask(対象列・率・seed・単位)が OOF 再生成で再現されないと、
+  生成された OOF 予測は「その手続きが出したはずの値」ではなくなる。再現できないなら
+  fail-closed(黙って mask なしで走らせない)
+- **旧世代 attestation の互換**: 既存の旧世代経路は「同一であること」が要件であって
+  「動くこと」ではない。payload の構造が additive に変わっても、旧世代の digest は一致し続けること
+- **verdict が両方とも非採用**: その場合 manifest は恒等(何もしない)校正を出荷する。
+  活性化しても表示値は変わらないが、**「実行時 fit をやめて凍結値を読む」という監査上の
+  意味は達成される**(これも成功)
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+**US1: attestation の arm E 対応**
+
+- **FR-001**: attestation は arm E 系の構成(OOF 校正方式・OOF ブロック数・重み mask 設定・
+  booster が内部 holdout を持たないこと)を表現できなければならない
+- **FR-002**: 構成の拡張は **additive** とし、旧世代(lgbm-063)の attestation payload と
+  digest はバイト単位で不変でなければならない
+- **FR-003**: 再構成された手続きは、記録された構成(目的関数・校正方式・OOF ブロック数・
+  重み mask・解決済みパラメータ・特徴列順・seed・スレッド数)と一致しなければならない。
+  不一致は型付きエラーで拒否する
+- **FR-004**: 既存の改竄検出(内容の digest 照合)と世代取り違え検出(モデルディレクトリからの
+  再計算照合)は**緩めてはならない**
+- **FR-005**: 構成が矛盾する attestation(宣言と必須項目の欠落)は、既定値に落とさず
+  型付きエラーで拒否する
+
+**US2: 現行世代 manifest の生成**
+
+- **FR-006**: 現行 active の attestation から OOF 予測を再生成できること。再生成は学習時と
+  同じ重み mask を適用し、再現できない場合は fail-closed とする
+- **FR-007**: 校正の判定基準は既存の凍結された設定を流用し、**探索・調整をしてはならない**
+  (グリッド探索禁止・実行後の基準変更禁止)
+- **FR-008**: 生成される manifest は現行 active に世代束縛され、production スコープであり、
+  既存の検証を通ること。同一入力から同一 digest が再現できること
+- **FR-009**: 既存の旧世代 manifest と過去の verdict は一切書き換えない(append-only)
+- **FR-010**: 校正 verdict(採用/不採用/判定不能)は測定結果として記録し、いずれの結果でも
+  feature は完了とする
+
+**US3: 活性化の検証と運用手順**
+
+- **FR-011**: 既定設定では、予測・推薦の出力が本 feature 導入前とバイト一致すること
+- **FR-012**: 明示有効化時、監査記録に manifest 識別子が含まれること
+- **FR-013**: 世代不一致・スコープ不一致・対象日が学習終端以前の場合は、実行前に拒否され
+  1 行も書かれないこと(部分適用や暗黙の現行動作フォールバックを起こさない)
+- **FR-014**: 運用環境で有効化する手順(設定箇所・確認方法・元に戻す方法)を文書化すること
+- **FR-015**: 既定を有効化に切り替えるかどうかは**本 feature のスコープ外**とし、手順の記録と
+  検証までに留める
+
+**共通**
+
+- **FR-016**: スキーマ変更・データ移行を行わない。特徴定義の版・API 契約は不変
+- **FR-017**: win 予測はバイト不変であること(この feature が触るのは推薦時の確率校正と
+  表示用の連対率・複勝率のみ)
+- **FR-018**: 実行コストが見積りを大きく超える場合に備え、本実行の前に小規模実測で所要時間を
+  確定する中断点を設けること
+
+### Key Entities
+
+- **attestation**: あるモデルがどの手続きで学習されたかの完全な記録。内容から導かれる識別子を
+  持ち、1 バイトでも変われば識別子が変わる
+- **OOF 予測束**: その手続きを厳密に過去だけで再学習しながら得た、各レースの予測。校正の測定に
+  使う(本番の予測記録は汚さない)
+- **校正 manifest**: 測定で確定した校正パラメータの凍結記録。世代・スコープ・学習終端を持ち、
+  読み込み時に検証される
+- **校正 verdict**: 採用 / 不採用 / 判定不能 の三値。測定結果であり選択の対象ではない
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: 現行 active から attestation が生成でき、そこから再構成した手続きが記録された
+  構成と一致する(不一致ゼロ)
+- **SC-002**: 旧世代の attestation payload と digest が本 feature の前後で完全一致する
+- **SC-003**: 改竄・世代取り違え・構成矛盾の 3 種すべてで拒否が発生する(見逃しゼロ)
+- **SC-004**: 現行 active に束縛された production スコープの manifest が 1 つ生成され、
+  検証を通り、同一入力から同一識別子が再現される
+- **SC-005**: 既定設定での予測が本 feature 導入前とバイト一致する
+- **SC-006**: 明示有効化時、監査記録に manifest 識別子が現れ、世代・スコープ・時間の
+  不整合 3 種すべてが実行前に拒否される
+- **SC-007**: 既存の旧世代 manifest と過去 verdict が 1 件も書き換わっていない
+- **SC-008**: 運用手順(有効化・確認・復旧)が文書化され、記載どおりに実行して動作する
+
+## Assumptions
+
+- 対象は「arm E 系」= 全史 booster + 厳密過去 OOF 校正の構成を持つモデル一般とする。検証は
+  現行 active(lgbm-094-cap900)で行うが、設計は特定バージョンに固定しない
+- 校正の判定基準は 074 で凍結済みの設定をそのまま使う。本 feature で基準を作り直さない
+- 活性化は opt-in のまま維持する(既定の切り替えは別判断・FR-015)。理由は、既定を変える判断は
+  「凍結値と実行時 fit のどちらが運用上望ましいか」の別問題であり、基盤の活性化とは分けて
+  扱うべきだから
+- OOF 再生成の所要時間は旧世代の実測(~17 分)より大幅に長い。1 fold 実測で確定してから本実行に
+  進む(FR-018 の中断点)
+- 現行 active のメタデータに見られる「校正器は退化」の記録と実際の校正器パラメータの不一致は、
+  実装時に事実を確認して解消する。これが記録側の欠陥であれば本 feature の範囲で是正する
+- 効果は表示の校正正統化が主であり、精度・回収率の改善は期待していない(背景節に明示済み)
