@@ -18,6 +18,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from horseracing_db.validation import FEATURE_POOL_START
 from horseracing_eval.dataset import load_eval_races
 from horseracing_eval.hashing import stable_hash
 from horseracing_eval.splits import expanding_folds
@@ -105,7 +106,17 @@ def generate_oof_bundle(
     elif attestation_digest is None:
         attestation_digest = "injected-factory"
 
-    eval_races = load_eval_races(session, start_date=date_from, end_date=date_to)
+    # The DB still holds ~71.5k pre-2007 races from an old data-volume experiment, and the
+    # feature pool deliberately starts at FEATURE_POOL_START. Loading the raw pool means an
+    # expanding fold's earlier block can be entirely pre-2007 — every row featureless — and the
+    # inner OOF fit dies with "no training rows". Callers that happened to pass --from 2007-01-01
+    # never saw it; one that passes only --to does. Default to the feature pool's own start so
+    # the failure cannot depend on which flags the operator remembered (same trap feature 107 hit).
+    eval_races = load_eval_races(
+        session,
+        start_date=date_from if date_from is not None else FEATURE_POOL_START,
+        end_date=date_to,
+    )
 
     predictions: dict[str, dict[str, dict[str, float]]] = {}
     per_fold: list[dict] = []

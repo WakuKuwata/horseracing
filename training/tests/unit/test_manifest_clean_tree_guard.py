@@ -89,3 +89,21 @@ def test_oof_generate_requires_a_caller_supplied_feature_expectation():
     assert 'attestation["feature_version"]' not in src, (
         "expectation must not be derived from the attestation being validated"
     )
+
+
+def test_oof_generation_defaults_to_the_feature_pool_start():
+    """The DB carries pre-2007 races the feature pool deliberately excludes.
+
+    Loading the raw eval pool lets an expanding fold's earlier block be entirely featureless,
+    and the inner OOF fit dies with "no training rows". Callers that passed --from 2007-01-01
+    never saw it; one that passed only --to did (measured, feature 108). The default must not
+    depend on which flag the operator remembered — feature 107 hit the same trap.
+    """
+    import inspect
+
+    from horseracing_db.validation import FEATURE_POOL_START
+    from horseracing_training import oof_generate
+
+    src = inspect.getsource(oof_generate.generate_oof_bundle)
+    assert "FEATURE_POOL_START" in src
+    assert FEATURE_POOL_START.year >= 2007

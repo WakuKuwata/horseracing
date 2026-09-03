@@ -1,0 +1,21 @@
+{
+  "measured_at": "2026-09-02",
+  "probe": {
+    "first_valid_year": 2026,
+    "folds": [
+      "2026"
+    ],
+    "n_races": 2370,
+    "elapsed_seconds": 948.745,
+    "bundle_digest": "9432d2648464489f9341d9d11259f3581190871709c9321183d4207f26bc3671"
+  },
+  "extrapolation": {
+    "formula_frozen_before_run": "ETA = measured * 19 * 0.6",
+    "eta_seconds": 10815.7,
+    "eta_hours": 3.0,
+    "undiscounted_hours": 5.01
+  },
+  "stop_threshold_hours": 12,
+  "decision": "PROCEED",
+  "note": "研究 D5 の見積は 5〜8 時間。実測外挿は上振れしたが停止閾値 12 時間の内側。1 fold の実測は最終年(最も高価)なので係数 0.6 で割り引いている。"
+}
