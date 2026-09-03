@@ -14,15 +14,35 @@
 
 ## 2. コスト実測の中断点(US2 前半・FR-018)
 
-OOF 再生成を **1 fold だけ**実行して所要時間を測る。
-**ETA が見積(3〜5 時間)の 2 倍を超えたら本実行に進まない** — 実行方式を見直してから再判断する。
+OOF 再生成を **最終年 1 fold だけ**実行して所要時間を測る(`--smoke` は 3 fold になるので使わない):
+
+```bash
+cd training && uv run python -m horseracing_training oof-generate \
+  --base-model-version <現行 active> --active-dir ../artifacts/model_versions/<現行 active> \
+  --first-valid-year 2026 --to 2026-12-31 --out ../artifacts/oof
+```
+
+**外挿式は事前固定**: `ETA = 実測秒 × 19 × 0.6`(最終年 fold が最も高価なので係数で割り引く)。
+**ETA > 12 時間なら本実行に進まない** — 実行方式を見直してから再判断する。
 実測値は `evidence/oof-eta.json` に記録する。
 
 ## 3. OOF 再生成 + manifest 生成(US2 本体・数時間)
 
-全史(2008-2026)で OOF 束を生成し、074 の凍結 gate-config で校正 verdict を測って
-production スコープの manifest を作る。nohup でバックグラウンド実行し、完了後に
-`evidence/` へ bundle digest・verdict・manifest digest を記録する。
+**先に本 feature のコード変更をコミットする**(production manifest はそれを生んだコードの SHA で
+刻印されるため・憲法 V)。その後、全史(2008-2026)で OOF 束を生成し、074 の凍結 gate-config で
+校正 verdict を測って production スコープの manifest を作る:
+
+```bash
+cd training && nohup uv run python -m horseracing_training oof-generate \
+  --base-model-version <現行 active> --active-dir ../artifacts/model_versions/<現行 active> \
+  --from 2007-01-01 --to 2026-12-31 --out ../artifacts/oof > ../out/oof.log 2>&1 &
+# 完了後
+uv run python -m horseracing_training generate-manifest \
+  --bundle <bundle path> --model-dir ../artifacts/model_versions/<現行 active> \
+  --out-root ../artifacts
+```
+
+完了後に `evidence/` へ bundle digest・verdict・manifest digest を記録する。
 
 **verdict は測定結果**。two_gamma / stage 割引のどちらが非採用でも次に進む。
 

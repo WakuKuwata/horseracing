@@ -37,11 +37,27 @@
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification
 
+## analyze 後の再検証(2026-09-02)
+
+- [x] **背景記述が実測と一致**(analyze I1 で「即 reject」が誤りと判明 → 「捏造して通る
+  silent fail-open」に全面訂正・実行して確認済み)
+- [x] **設計が実装可能**(analyze U1 で当初の再構成設計が `ModelRecipe(split_unit=None)` の
+  fail-closed により構築不能と判明 → 出荷ビューと構成ブロックの分離に是正)
+- [x] **変更範囲が正確**(analyze G1 で `oof_generate` の旧世代強制が判明 → plan の
+  「1 ファイルに集中」を 4 ファイルに是正・T011a を新設)
+- [x] **保証の主張が過大でない**(登録 recipe hash 未保存のため「識別子の同一性」を撤回し
+  「挙動的一致」+ 保証境界の明記に是正・codex 指摘 3)
+- [x] **見積の算術が整合**(171 × 112 秒 = 5.32h → 「5〜8 時間」・停止閾値 12 時間に再導出)
+- [x] codex 設計レビュー取得成功(採用 6 / 部分採用 1 / 不採用 1)
+
 ## Notes
 
 - **null verdict も成功**(FR-010): 校正 verdict は測定結果であり、両 stage 非採用でも
   「実行時 fit をやめて凍結値を読む」という監査上の達成は残る
 - **中断点が要件に入っている**(FR-018): OOF 再生成の実コストを 1 fold 実測で確定してから
   本実行に進む。plan でこの中断点をフェーズ境界に置くこと
-- Edge case「記録と実物の不一致」(メタデータの退化フラグ vs 保存済み校正器パラメータ)は
-  実装時に事実確認が必要。plan の research で決着させる
+- Edge case「記録と実物の不一致」は research D4 で**決着済み**(出荷関数が 1 フィールドを
+  上書きし忘れた残留値・真値は構造的に非退化)
+- **analyze が CRITICAL 3 件を検出し、いずれも「着手すれば必ず止まる」種類だった**
+  (G1: 旧世代強制で例外 / U1: recipe が構築不能 / I1: 根本原因の記述が事実と逆)。
+  実装前に回した価値が最も出た回

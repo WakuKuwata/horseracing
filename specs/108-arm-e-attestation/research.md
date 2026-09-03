@@ -19,37 +19,86 @@
 
 **検証**: 実装前に lgbm-063 の現 digest を測って golden fixture に固定し、実装後の一致を assert。
 
-## D2: `internal_calibration` 検証の方式別分岐
+## D2: 現状は「拒否」ではなく「捏造して通る」 — silent fail-open の封鎖(**2026-09-02 訂正**)
 
-**Decision**: 校正方式で分岐する。OOF 方式(`isotonic_strict_past_oof`)のときは
-**`calib_frac == 0.0` を要求**し **`calibration_split_unit` は null 必須**、加えて
-`n_oof_blocks`(正の整数)を必須とする。legacy 方式のときは現行の検証
-(`0 < calib_frac < 1`・split_unit 非空)をそのまま維持する。
+**当初の記述は誤りだった**。実測(`attestation_from_model_dir` を現行 active に実行)の結果:
 
-**Rationale**: 現行検証(`legacy_attest.py:311-322`)は arm E を構造的に弾く —
-booster は何も holdout しないので `booster_calib_frac=0.0`、内部 split を使わないので
-`calibration_split_unit=null`(`calib_split.py:477-479` が意図的に null を書いている:
-「値を書くと 70/30 split モデルに見えてしまう」)。これは**緩和ではなく方式別の厳格化**で、
-OOF 方式なのに split_unit が入っている payload は逆に拒否される(取り違え防止)。
+```
+RESULT: SUCCEEDED (not rejected)
+  internal_calibration = {"method": "isotonic_strict_past_oof",
+                          "calib_frac": 0.3, "calibration_split_unit": "race_count_v1"}
+```
 
-**Alternatives considered**: `0 <= calib_frac < 1` に緩める — legacy モデルの
-「holdout ゼロなのに legacy を名乗る」不正形を通してしまう(fail-open)。不採用。
+metadata の `calib_frac` は欠落・`split_unit` は null だが、`build_attestation` が
+`DEFAULT_CALIB_FRAC`(0.3)と `LEGACY_CALIBRATION_SPLIT_UNIT`(race_count_v1)で**補完する**
+(`legacy_attest.py:410-417`)。よって検証は通り、**arm E モデルの証明書が 70/30 旧世代モデルだと
+主張する**。重み mask は payload に場所がないので**黙って落ちる**。
 
-## D3: 再構成の分岐と必須記録項目
+**Decision**: 欠落値の既定補完を arm E 経路で禁止し、必須項目が読めなければ型付きエラーにする。
+検証は校正方式で 3 分岐(既知 legacy / arm E / **未知は拒否**)。
+`_INTERNAL_CALIBRATION_FIELDS` は missing と unexpected の両方に使われる単一集合なので、
+**許可フィールド集合そのものを方式別にする**(legacy 集合は現行のまま不変)。
 
-**Decision**: 再構成も校正方式で分岐し、OOF 方式なら arm E factory(`CalibSplitFactory` 系)を
-組む。attestation の必須項目に **`n_oof_blocks`** と **weight mask 設定(rate/seed)** を含める。
+**既知の校正方式名(実測)**: `artifacts/model_versions/` 全 11 件は `isotonic`(8 件・legacy)と
+`isotonic_strict_past_oof`(3 件・arm E)の 2 値のみ。この 2 値を許可集合とし、他は拒否。
 
-**Rationale**: **`n_oof_blocks` のコード既定は 3(`calib_split.py:144,570`)だが実モデルは 8**
-(`calibration_protocol.n_oof_blocks=8`)。記録しなければ再構成は黙って別モデルになる。
-mask は `ModelRecipe.weight_mask_rate/seed` が既に存在し(`recipe.py:65-66`)、
-`weight_mask_spec()` が `MaskSpec(rate, seed, unit="race")` を組む(columns は features 層で
-固定・unit はハードコード)ので、**rate と seed だけで mask は一意に決まる**。
-`CalibSplitFactory.meta()` は既に `n_oof_blocks` を含む(`calib_split.py:587`)= factory 同一性の
-一部として扱われている。
+## D3: 出荷ビューと構成の分離(**2026-09-02 全面訂正**)
 
-**この feature の実装量が小さい理由**: recipe 層は arm E を既に完全表現できている。
-欠けているのは attestation 層の表現と分岐だけ。
+**当初の設計は出荷ビューを recipe と取り違えていた**。実測で判明した実際の構成
+(`arm_e_register.py:160-173`):
+
+```python
+recipe = ModelRecipe(objective="pl_topk", calibration="isotonic", calib_frac=0.3, seed=42,
+                     weight_mask_rate=0.5, weight_mask_seed=..., params=(("n_estimators", 900),))
+predictor = OofCalibratedPredictor(recipe, n_oof_blocks=8, method="isotonic")
+```
+
+対して metadata が持つのは **出荷ビュー**(`to_servable()` が書く): `calibration` は
+`isotonic_strict_past_oof`・`calib_frac` は欠落・`split_unit` は null。
+
+**実測した重要な性質**:
+- `ModelRecipe(calibration_split_unit=None)` は **構築不能**(`ValueError: unknown
+  calibration_split_unit: None`)。当初設計の「payload の null から recipe を組む」は実装不能だった
+- **`recipe.calib_frac` は arm E では挙動に効かない** — `_make_base` が `calib_frac=0.0` を
+  ハードコードする(`calib_split.py:256`)。recipe hash にだけ効く
+- **容量は `recipe.params` 経由**(`_RECIPE_FIELD_DISPOSITION["params"]="forward"`)。
+  現行 active は `n_estimators=900`。記録しないと既定容量で走り**静かに別モデル**になる
+  (`n_oof_blocks` と同型の失敗)
+- **登録時の recipe hash はどこにも保存されていない**(metadata にも `model_versions` にも)
+
+**Decision**: attestation は (a) 出荷ビューを**出荷ビューとして**記録し、
+(b) arm E の**構成**を別ブロックで記録する(プロトコル名・`n_oof_blocks`・mask rate/seed・
+解決済みパラメータ)。再構成は構成ブロックから
+`ModelRecipe(calibration="isotonic", calib_frac=<既定・挙動に不影響>, split_unit=<既定>,
+params=<容量>, weight_mask_*)` + `CalibSplitFactory(method="isotonic", n_oof_blocks=N)` を組む。
+**保証は挙動的一致まで**(登録 hash が無いため識別子照合は原理的に不可能)。
+
+## D3a: 既存の再構成入口は旧世代を強制する(**新規**)
+
+**実測**: `oof-generate` が使う `factory_from_attestation` は `enforce_legacy=True` 既定で
+`base_model_version == "lgbm-063"` を強制する → 現行 active では
+`AttestationError: legacy base_model_version differs from expectation` で**例外**。
+
+**Decision**: `oof_generate.generate_oof_bundle` を非 legacy 対応にする
+(`general_factory_from_attestation` へ切り替え、期待 model/feature version を**必須引数**で
+受けて fail-closed にする)。`cli.py` の既定値(`--base-model-version lgbm-063` /
+`--active-dir .../lgbm-063`)と help も現行世代を指せるようにする。
+**plan の「変更は legacy_attest.py に集中」は誤りだった** — `oof_generate.py` と `cli.py` も変更対象。
+
+## D3b: 共有消費者への影響(**新規**)
+
+attestation の消費者は本 feature だけではない: `ev_weight_run`(079)と
+`segment_accuracy_run`(082)。**082 は現行 active に対してこの経路を使う**。
+
+**実測した 082 の現状**: attestation 生成は成功し捏造値を返す →
+`general_factory_from_attestation` も成功し `AttestedRecipeFactory`(plain・**mask は None に
+落ちる**)を返す → だが `recipe.calibration = "isotonic_strict_past_oof"` は
+`CALIBRATION_METHODS = ("platt","isotonic","none","identity")` に無いため、
+**学習時に `fit_calibrator` が fail-closed で落ちる**。
+
+→ **静かに誤った読み出しが出回ることはないが、082 は現行世代で使用不能**。
+これは本 feature が発見した既存欠陥で、どの artifact にも記録がなかった。
+本 feature の回帰対象に 079/082 の両経路を含める。
 
 ## D4: `calibrator_degenerate: true` の矛盾 — 原因判明・報告バグ
 
@@ -78,11 +127,16 @@ mask は `ModelRecipe.weight_mask_rate/seed` が既に存在し(`recipe.py:65-66
 (**校正後**の win/top2/top3)をそのまま保存する。よって fold ごとの fit は arm E の
 内部 OOF isotonic(8 ブロック)を含まねばならず、**1 outer fold あたり 1+8=9 回の booster 学習**。
 
-**見積**: 19 fold × 9 = **171 回**。107 の confirmatory 実測(3 fold × 2 arm × 4 fit = 24 fit で
-2,692 秒 ≈ 112 秒/fit)から **3〜5 時間**。旧世代(単純構成・19 fit)の実測 ~17 分とは桁が違う。
+**見積(算術を是正)**: 19 fold × 9 = **171 回**。107 の confirmatory 実測
+(3 fold × 2 arm × 4 fit = 24 fit で 2,692 秒 ≈ 112 秒/fit)から
+**171 × 112 秒 = 5.32 時間**。arm E は後年の fold ほど学習データが増えて高価になるため、
+保守的には **5〜8 時間**。旧世代(単純構成・19 fit)の実測 ~17 分とは桁が違う。
+(当初の「3〜5 時間」は自身の数値と矛盾していた・analyze U5)
 
-**Decision**: FR-018 の中断点を **1 fold の実測**として Phase 境界に置く。ETA が見積の
-2 倍を超えたら本実行に進まず、実行方式(並列度・スレッド数)を見直してから再判断する。
+**Decision**: FR-018 の中断点を **1 fold の実測**として Phase 境界に置く。
+**外挿規則を事前に固定する**: 最終年 1 fold(`--first-valid-year 2026`)を測り、
+`ETA = 実測 × 19 × 0.6`(後年 fold が最も高価なので係数で割り引く)。
+**ETA > 12 時間なら本実行に進まない**。
 **近道(束が保存する量を raw に変える・fold を減らす)は採らない** — 前者は 076 の activation が
 消費する量と食い違い、後者は D6 に抵触する。
 
@@ -105,47 +159,43 @@ mask は `ModelRecipe.weight_mask_rate/seed` が既に存在し(`recipe.py:65-66
 | `fold_boundaries`(active) | `[]` | arm E は outer fold を持たない(全史 booster)。attestation には不要 |
 | 旧世代 manifest | `d9f45bb0…`(scope=production・eligible=True・fit_through 2026-07-18) | 不変であることを検証する対象 |
 
-## D8: codex 品質ゲート — unavailable、セルフレビューで代替(実質的な穴を 1 件検出)
+## D8: codex 設計レビュー — 取得成功(採用 6 / 部分採用 1 / 不採用 1)
 
-**codex unavailable**: `codex exec` が本 feature で 2 回とも
-`failed to initialize in-process app-server client: Operation not permitted (os error 1)` で起動不能
-(`UV_CACHE_DIR` 回避を含む)。本日の別タスク(107 T003)では成功しているため**断続的な環境障害**。
-規律どおり再試行は 1 回で打ち切り、復旧は別タスク化済み。代替のセルフレビューを 4 観点で実施:
+本 feature の 1 回目は初期化エラーだったが、analyze の指摘を受けた 2 回目
+(是正案そのもののレビュー)で**取得に成功**した。指摘と採否:
 
-### 観点 1: D1 の「条件付き挿入」に穴はないか
+### 採用
 
-- **省略と欠落の区別**(実質的論点): arm E モデルで mask が「設定されていない」のと
-  「記録し忘れた」のが payload 上で同じ「キー無し」になる。→ **対策を採用**: metadata に
-  `weight_mask` キーが存在するのに rate/seed が読めない場合は型付きエラー(黙って省略しない)。
-  T005/T006 に明示する
-- **省略の悪用**: payload から arm E キーを削って legacy を名乗る改竄は、
-  (a) `method` が OOF のままなら D2 の方式別検証が弾き、(b) `method` も書き換えるなら
-  モデルディレクトリからの再計算照合(INV-A3)が弾く。**二重に守られている**
-- **将来の保守性**: 省略軸を「arm E か否か」の 1 軸に限定し、新しい省略軸を増やさないことを
-  contract に明記する
+1. **`calib_frac` は除外せず `requested` / `effective` を分けて記録する**(私の案「既定値を使う」より良い)。
+   `requested=0.3`(recipe 宣言値)・`effective=0.0`(実際に booster が使った値)・
+   「この protocol version では非挙動項目」を区別する。**将来 `calib_frac` が効くようになったとき、
+   protocol version の更新を強制することで検知できる**。挙動同値性の比較は非挙動項目を除いた
+   別規則で行う
+2. **protocol version で意味を固定する**。同じ version のまま意味が変わることを拒否する
+   (現行の `strict_past_oof_isotonic_v1` を必須項目とし、未知 version は拒否)
+3. **保証境界を明記する**: digest が保証するのは payload の改竄検出であり、
+   **内容が登録時の真実だったことまでは遡及証明できない**。FR-003 の限界記述をこの表現に是正
+4. **相互整合検証**: 出荷ビューが OOF を名乗るのに構成ブロックが無い / 重複する主張が矛盾する /
+   未知の組合せ は**すべて拒否**。edge case でなく FR に格上げする
+5. **出荷ビューで欠落を 0.0 に正規化しない**。欠落は欠落として記録し、実効値は別に持つ
+6. **legacy と arm E の検証経路を完全分離**する。arm E を legacy として解釈できないようにしつつ、
+   legacy の payload bytes・digest・検証規則は一切変更しない
 
-### 観点 2: D2 に fail-open の芽はないか — **穴を検出**
+### 部分採用
 
-**検出**: 現行検証は `method` を `_nonempty_string` で見るだけで**値域を検証していない**
-(`legacy_attest.py:312`)。方式別分岐を「OOF なら arm E 検証・それ以外は legacy 検証」と
-書くと、**未知の method 文字列(将来の第 3 の方式・typo)が legacy 扱いで素通り**する。
-これは `fit_calibrator` が未知 method を fail-closed にした 085 の教訓
-(「typo が別の校正器を静かに学習し、実験が別物になった」)と同型。
+7. **OOF 分割規則・行順・mask アルゴリズム・依存実装が protocol で固定されているか不明**
+   → 再生成差の入口になる。実際には `day_block_partition` と `MaskSpec` がコード側で固定され、
+   payload には `code_sha` が既にあるため部分的に担保される。**完全な固定ではないことを
+   限界として記録**し、protocol version + code_sha の組で縛る旨を contract に書く
 
-**対策(採用)**: `method` の値域を既知の集合に限定し、**未知は型付きエラーで拒否**する。
-分岐は「OOF → arm E 検証 / 既知 legacy → 現行検証 / それ以外 → 拒否」の 3 分岐にする。
-T006 と contracts/attestation.md に反映済み。
+### 不採用
 
-### 観点 3: D5 の近道は本当に無いか
+8. **再生成予測と出荷済みモデルの予測照合による強い保証** — codex 自身が
+   「データ・実行条件の再現コストが高く、比較可能性も提示事実からは確定できない」と留保。
+   本 feature の目的(基盤の活性化)に対してコストが見合わない。**限界として記録**するに留める
 
-- **束の保存量を raw に変える**: 不採用。束の win は arm E の内部 isotonic 適用後 =
-  two_gamma の入力そのもの。078 の verdict が見る「raw ECE」は two_gamma 適用前の意味であり、
-  束の保存形式と整合している。raw に変えると activation の消費側と食い違う
-- **fold を減らす**: 不採用(D6)。078 の実績が「窓が短いと verdict が変わる」ことを示している
-- **結論**: 近道なし。中断点(T012)でコストを実測してから進むのが唯一の緩和
+### 前回(1 回目)のセルフレビューで検出した穴
 
-### 観点 4: 優先度の見立て
-
-**低い**。精度も回収率も動かず、実体は表示 top2/top3 の校正正統化のみ。
-正当化は「基盤が今後の全世代で恒久不活性になる」の一点に限られる。
-この評価は spec 冒頭で開示済みであり、着手判断はユーザーが行った。
+codex 取得前に実施したセルフレビューで、**未知の校正方式名が legacy 扱いで素通りする
+fail-open** を検出済み(085 と同型)。codex の指摘 6(経路の完全分離)と同じ方向であり、
+3 分岐(既知 legacy / arm E / 未知は拒否)として既に反映済み。

@@ -15,8 +15,16 @@ DB スキーマ変更なし・migration なし。以下は attestation payload(c
 
 | 方式 | `method` | `calib_frac` | `calibration_split_unit` | 追加キー |
 |---|---|---|---|---|
-| legacy(70/30) | `isotonic` 等 | `0 < x < 1` **必須** | 非空文字列 **必須** | なし |
-| arm E(OOF) | `isotonic_strict_past_oof` | **`0.0` 必須** | **`null` 必須** | `n_oof_blocks`(正整数・必須) |
+| legacy(70/30) | `isotonic` | `0 < x < 1` **必須** | 非空文字列 **必須** | なし |
+| arm E(OOF) | `isotonic_strict_past_oof` | `{requested, effective}` **必須** | **欠落を既定で埋めない** | `protocol_version`・`n_oof_blocks`(正整数)**必須** |
+
+**arm E の `calib_frac` は宣言値と実効値を分けて持つ**(codex 指摘 1): `requested` は recipe が
+宣言した値・`effective` は booster が実際に使った値(0.0)。**この protocol version では
+`requested` は非挙動項目**であり、挙動一致の比較から除く。将来効くようになったら
+protocol version を上げることで検知する(FR-005d)。
+
+**未知の `method` / 未知の `protocol_version` は拒否**(既定値へのフォールバック禁止)。
+既知の method は実測どおり `isotonic`(legacy)と `isotonic_strict_past_oof`(arm E)の 2 値。
 
 ### arm E 固有の追加キー(payload トップレベル・**arm E のときだけ存在**)
 
