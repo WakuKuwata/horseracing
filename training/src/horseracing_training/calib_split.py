@@ -474,6 +474,14 @@ class OofCalibratedPredictor:
         base.calibrator_ = self.calibrator_
         info = dict(base.fit_info_ or {})
         info["calibration"] = "isotonic_strict_past_oof"
+        # Feature 108 (D4): the base predictor is built with calibration="none", so ITS
+        # fit_info carries calibrator_degenerate=True for its own (identity) calibrator. That
+        # value survived the copy above and was shipped as if it described the OOF isotonic —
+        # every arm E model on disk records "degenerate" next to a fitted isotonic map. The
+        # authoritative value lives in oof_info_ (set where the isotonic is actually fitted);
+        # transcribe it rather than hardcoding False, so a future require_sufficient=False
+        # path cannot make this line lie.
+        info["calibrator_degenerate"] = self.oof_info_.get("calibrator_degenerate")
         # arm E has NO contiguous calibration holdout, so the window/split vocabulary does not
         # apply. Writing a value here would make it look like a 70/30 split model.
         info["calibration_split_unit"] = None

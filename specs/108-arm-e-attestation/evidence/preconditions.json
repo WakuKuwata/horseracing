@@ -1,0 +1,37 @@
+{
+  "recorded_at": "2026-09-02",
+  "active_model_version": "lgbm-094-cap900",
+  "model_dir": "artifacts/model_versions/lgbm-094-cap900",
+  "feature_version": "features-021",
+  "shipping_view": {
+    "calibration": "isotonic_strict_past_oof",
+    "calib_frac_present_in_metadata": false,
+    "calibration_split_unit": null,
+    "calibrator_degenerate_reported": true
+  },
+  "construction": {
+    "protocol": "strict_past_oof_isotonic_v1",
+    "n_oof_blocks": 8,
+    "booster_calib_frac": 0.0,
+    "weight_mask": {
+      "columns": [
+        "weight",
+        "weight_diff",
+        "carried_weight_ratio"
+      ],
+      "rate": 0.5,
+      "seed": 20260810,
+      "unit": "race"
+    },
+    "seed": 42,
+    "n_estimators": 900,
+    "objective": "pl_topk",
+    "postprocess": "group_softmax",
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "notes": "T001. calibration_protocol.n_oof_blocks と weight_mask の存在を確認(FR-001 の前提)"
+}

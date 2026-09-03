@@ -1255,8 +1255,17 @@ def main(argv: list[str] | None = None) -> int:
     # Feature 074 US1: generate a recipe-faithful OOF prediction bundle (content-addressed disk).
     og = sub.add_parser("oof-generate",
                         help="074: generate OOF prediction bundle from a base model recipe")
-    og.add_argument("--base-model-version", default="lgbm-063")
-    og.add_argument("--active-dir", default="artifacts/model_versions/lgbm-063",
+    og.add_argument("--base-model-version", required=True,
+                    help="expected model version (must match metadata.json)")
+    # The expectation must come from OUTSIDE the attestation. Deriving it from the attestation
+    # being validated makes the guard vacuous (it can never fire), which is exactly the
+    # fail-open shape 074 added this check to prevent. It is NOT the running FEATURE_VERSION
+    # either: 074 deliberately rebuilds an older model's OOF on the current schema by
+    # restricting to the attested columns (lgbm-063 is features-017 while the code is at 021).
+    og.add_argument("--expect-feature-version", required=True,
+                    help="feature version the operator expects this model dir to declare "
+                         "(e.g. features-017 for lgbm-063); a mismatch fails closed")
+    og.add_argument("--active-dir", required=True,
                     help="directory holding the base model's metadata.json (+073 freeze)")
     og.add_argument("--from", dest="from_", type=_parse_date, default=None)
     og.add_argument("--to", dest="to", type=_parse_date, default=None)
@@ -1286,7 +1295,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="078: generate a REAL OOF calibration manifest (two-gamma + stage-λ)")
     gm.add_argument("--bundle", required=True, help="path to OOF bundle dir or bundle.json")
     gm.add_argument("--model-dir", required=True,
-                    help="lgbm-063 model dir (metadata.json) for the recipe attestation")
+                    help="base model dir (metadata.json) for the recipe attestation")
     gm.add_argument("--out-root", required=True, help="artifact root (manifests written under it)")
     gm.add_argument("--gate-config",
                     default="specs/074-oof-faithful-calibration/gate-config.json")
@@ -1692,12 +1701,17 @@ def _post_run_structure_check(report, cand, gate_cfg: dict | None) -> str | None
 
 def _oof_generate(session: Session, args) -> int:
     """Feature 074 US1: generate + publish a recipe-faithful OOF bundle (content-addressed disk)."""
-    from .oof_generate import generate_oof_bundle
+    from .legacy_attest import attestation_from_model_dir
+    from .oof_generate import code_sha, generate_oof_bundle
 
     first_valid = 2024 if getattr(args, "smoke", False) else args.first_valid_year
+    attestation = attestation_from_model_dir(args.active_dir, code_sha=code_sha())
     path, payload = generate_oof_bundle(
         session,
+        expected_model_version=args.base_model_version,
+        expected_feature_version=args.expect_feature_version,
         active_dir=args.active_dir,
+        attestation=attestation,
         out_root=args.out,
         date_from=args.from_,
         date_to=args.to,
@@ -1748,12 +1762,14 @@ def _generate_manifest(session: Session, args) -> int:
     from horseracing_probability.oof_bundle import read_bundle
 
     from .legacy_attest import attestation_from_model_dir
-    from .oof_generate import code_sha
+    from .oof_generate import code_sha, git_tree_is_clean
     from .oof_manifest import build_oof_manifest
 
     sha = code_sha()
-    # D7: a dirty tree / unknown code SHA is not reproducible → refuse a production artifact.
-    if not args.allow_dirty and ("dirty" in sha or sha == "unknown"):
+    # D7: rev-parse returns only a 40-char commit SHA, so searching it for "dirty" was dead code.
+    # Ask git for the worktree state separately; inability to prove cleanliness also fails closed.
+    clean = git_tree_is_clean()
+    if not args.allow_dirty and (sha == "unknown" or not clean):
         print(f"ERROR: refusing to build a production manifest at code_sha={sha!r} "
               f"(pass --allow-dirty to override for a NON-production build)")
         return 2

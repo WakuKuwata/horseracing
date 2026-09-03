@@ -3,13 +3,14 @@
 Reuses the eval fold machinery (``expanding_folds`` + a per-fold fresh fit) — the same primitive
 ``foldfit.predict_over_folds`` uses (codex C1: the saved booster is never applied to past races).
 Each expanding fold is fit on its outer-train rows only (strict-past) from the recipe-faithful
-factory built from the lgbm-063 legacy attestation, and predicts its valid races. The resulting
-per-race OOF predictions are serialized into a content-addressed bundle (``oof_bundle``) — NOT a
-DB PredictionRun, so the API / serving / model-selector are never polluted (FR-005/FR-017).
+factory built from the caller-expected model attestation, and predicts its valid races. The
+resulting per-race OOF predictions are serialized into a content-addressed bundle
+(``oof_bundle``) — NOT a DB PredictionRun, so the API / serving / model-selector are never
+polluted (FR-005/FR-017).
 
 Determinism (research D8): ``num_threads=1`` by default for byte-reproducible OOF (FR-006). The
-attestation records lgbm-063's declared num_threads; a difference is an explicit fallback the
-caller records in the manifest.
+attestation records the selected model's declared num_threads; a difference is an explicit
+fallback the caller records in the manifest.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from horseracing_probability import oof_bundle
 from horseracing_probability.oof_bundle import race_set_hash
 from sqlalchemy.orm import Session
 
-from .legacy_attest import attestation_from_model_dir, factory_from_attestation
+from .legacy_attest import attestation_from_model_dir, general_factory_from_attestation
 from .recipe import RecipeFactory
 
 
@@ -39,9 +40,22 @@ def code_sha() -> str:
         return "unknown"
 
 
+def git_tree_is_clean() -> bool:
+    """Return whether git can prove that the working tree has no changes."""
+    try:
+        out = subprocess.run(
+            ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    return not out.stdout.strip()
+
+
 def generate_oof_bundle(
     session: Session,
     *,
+    expected_model_version: str | None = None,
+    expected_feature_version: str | None = None,
     active_dir: Path | str | None = None,
     out_root: Path | str,
     date_from=None,
@@ -57,17 +71,36 @@ def generate_oof_bundle(
     Returns ``(bundle_path, payload)``. Idempotent: re-generating identical content re-publishes
     the same content-addressed artifact.
 
-    Normal use builds the factory from the base model's legacy attestation (``active_dir`` or an
-    explicit ``attestation``). Tests may inject a pre-built ``factory`` + ``attestation_digest`` to
-    exercise the OOF *mechanism* (strict-past / determinism / result-invariance) with a fast recipe,
-    independent of the base model's exact feature version.
+    Normal use builds the factory from the base model's attestation (``active_dir`` or an explicit
+    ``attestation``). Both expected versions are then conditionally required so a stale artifact
+    cannot silently select the OOF recipe. Tests may inject a pre-built ``factory`` +
+    ``attestation_digest`` without version expectations to exercise the OOF *mechanism*
+    (strict-past / determinism / result-invariance) with a fast recipe, independent of the base
+    model's exact feature version.
     """
     if factory is None:
+        missing_expectations = [
+            name
+            for name, value in (
+                ("expected_model_version", expected_model_version),
+                ("expected_feature_version", expected_feature_version),
+            )
+            if not isinstance(value, str) or not value
+        ]
+        if missing_expectations:
+            raise TypeError(
+                "factory construction requires non-empty " + ", ".join(missing_expectations)
+            )
         att = attestation or attestation_from_model_dir(active_dir, code_sha=code_sha())
-        # Feature 074 (D9): recipe-faithful factory — applies resolved params AND restricts the fit
-        # to the attested (features-017) ordered columns, so OOF on the current features-018 schema
-        # reproduces lgbm-063 byte-faithfully (069 additive parity).
-        factory = factory_from_attestation(session, att)
+        # Recipe-faithful factory: apply resolved params AND restrict the fit to the attested
+        # ordered columns. The general validator removes only the version pin; for lgbm-063 its
+        # factory inputs and therefore bundle bytes remain identical to the legacy path.
+        factory = general_factory_from_attestation(
+            session,
+            att,
+            expected_model_version=expected_model_version,
+            expected_feature_version=expected_feature_version,
+        )
         attestation_digest = att["attestation_digest"]
     elif attestation_digest is None:
         attestation_digest = "injected-factory"

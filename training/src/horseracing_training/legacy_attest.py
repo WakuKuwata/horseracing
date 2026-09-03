@@ -59,6 +59,34 @@ _ATTESTATION_FIELDS = _PAYLOAD_FIELDS | {"attestation_digest"}
 _INTERNAL_CALIBRATION_FIELDS = frozenset(
     {"method", "calib_frac", "calibration_split_unit"}
 )
+
+# --- Feature 108: arm E (full-history booster + strict-past OOF isotonic) -------------------
+#
+# Why this exists at all: `build_attestation` used to fill a MISSING `calib_frac` with
+# DEFAULT_CALIB_FRAC and a null `calibration_split_unit` with LEGACY_CALIBRATION_SPLIT_UNIT.
+# For an arm E model — which holds NOTHING out and uses no internal split — that turned the
+# attestation into a claim that the model is a 70/30 legacy model, and the OOF block count and
+# the weight mask were dropped entirely because the payload had nowhere to put them. The
+# certificate lied, and nothing failed. Feature 108 closes that.
+#
+# The calibration method vocabulary is CLOSED. Branching on "OOF or else legacy" would let an
+# unknown method (a typo, a future third arm) fall through to the legacy rules — the same
+# failure `fit_calibrator` fixed in 085, where an unrouted arm name silently trained a
+# different calibrator and the run merely looked plausible.
+ARM_E_CALIBRATION_METHOD = "isotonic_strict_past_oof"
+LEGACY_CALIBRATION_METHODS = frozenset({"isotonic"})
+KNOWN_CALIBRATION_METHODS = LEGACY_CALIBRATION_METHODS | {ARM_E_CALIBRATION_METHOD}
+#: protocol names this code knows how to reconstruct. An unknown version is rejected rather
+#: than assumed compatible: if the meaning of a recorded field ever changes, the version must
+#: change with it, and this set is what forces that (codex review, feature 108).
+KNOWN_OOF_PROTOCOLS = frozenset({"strict_past_oof_isotonic_v1"})
+#: the recipe field arm E declares but never uses — `_make_base` hardcodes calib_frac=0.0, so
+#: the declared value moves the recipe hash and nothing else. It is recorded (so a future
+#: version where it DOES bite is detectable) but excluded from behavioural comparison.
+_ARM_E_NON_BEHAVIOURAL = ("calib_frac_requested",)
+_ARM_E_INTERNAL_FIELDS = frozenset(
+    {"method", "calib_frac", "calibration_split_unit", "n_oof_blocks", "protocol_version"}
+)
 _MODEL_NUM_THREADS_RE = re.compile(r"^\[num_threads:\s*(\d+)\]\s*$", re.MULTILINE)
 
 
@@ -254,6 +282,90 @@ def _resolve_split_unit(
     return resolved if resolved is not None else LEGACY_CALIBRATION_SPLIT_UNIT
 
 
+def _internal_calibration_block(
+    metadata: Mapping[str, Any],
+    frozen_split_freeze: Mapping[str, Any] | None,
+    *,
+    model_version: str,
+) -> dict[str, Any]:
+    """The `internal_calibration` block, shaped by the calibration method (feature 108).
+
+    Legacy keeps the historical three fields with their historical default-filling (lgbm-063
+    predates explicit split metadata, and 073 froze that behaviour — removing the fallback
+    would change its digest).
+
+    arm E records the SHIPPING VIEW as it actually is, with no default-filling, plus the
+    construction facts needed to rebuild it. The shipping view is what `to_servable` wrote:
+    the booster held nothing out (effective calib_frac 0.0) and no internal split was used
+    (split unit null). Filling those in with legacy defaults is precisely the lie this feature
+    exists to stop.
+    """
+    method = _required(metadata, "calibration")
+    if method != ARM_E_CALIBRATION_METHOD:
+        return {
+            "method": method,
+            "calib_frac": (
+                metadata["calib_frac"]
+                if metadata.get("calib_frac") is not None
+                else DEFAULT_CALIB_FRAC
+            ),
+            "calibration_split_unit": _resolve_split_unit(
+                metadata, frozen_split_freeze, model_version=model_version
+            ),
+        }
+
+    protocol = metadata.get("calibration_protocol")
+    if not isinstance(protocol, Mapping):
+        raise AttestationError(
+            f"{ARM_E_CALIBRATION_METHOD!r} requires metadata.calibration_protocol "
+            "(without it the OOF block count and the booster's holdout are unknown, and "
+            "filling them from defaults would attest a model that was never trained)"
+        )
+    if metadata.get("calibration_split_unit") is not None:
+        raise AttestationError(
+            "arm E declares calibration_split_unit=null (it uses no internal split); "
+            f"got {metadata['calibration_split_unit']!r} — refusing to attest a shape that "
+            "would read as a 70/30 split model"
+        )
+    return {
+        "method": method,
+        # requested = what the recipe declared (inert for this protocol version);
+        # effective = what the booster actually did. Recording both is what makes a future
+        # version where the declared value DOES bite detectable (codex review).
+        "calib_frac": {
+            "requested": metadata.get("calib_frac"),
+            "effective": _required(protocol, "booster_calib_frac"),
+        },
+        "calibration_split_unit": None,
+        "n_oof_blocks": _required(protocol, "n_oof_blocks"),
+        "protocol_version": _required(protocol, "protocol"),
+    }
+
+
+def _weight_mask_block(metadata: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The 091 training-time feature mask, or None when the model declares none.
+
+    Absent key => the model was trained without a mask => no key in the payload (D1).
+    Present but unreadable => AttestationError. "Not configured" and "we failed to read it"
+    must never collapse into the same silent omission: 091 established that the mask is the
+    mechanism, not a garnish, so an OOF regeneration that quietly drops it would produce
+    predictions the attested procedure never made.
+    """
+    raw = metadata.get("weight_mask")
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise AttestationError("metadata.weight_mask must be a mapping when present")
+    rate, seed = raw.get("rate"), raw.get("seed")
+    if rate is None or seed is None:
+        raise AttestationError(
+            "metadata.weight_mask is present but incomplete "
+            f"(rate={rate!r}, seed={seed!r}); refusing to omit it silently"
+        )
+    return {"rate": _finite_number(rate, field_name="weight_mask.rate"),
+            "seed": _int_value(seed, field_name="weight_mask.seed")}
+
+
 def _resolve_num_threads(
     active_dir: Path, metadata: Mapping[str, Any], params: Mapping[str, Any]
 ) -> int:
@@ -269,9 +381,59 @@ def _resolve_num_threads(
     return EXPECTED_NUM_THREADS if resolved is None else resolved
 
 
+def _validate_arm_e_internal(internal: Mapping[str, Any]) -> None:
+    """arm E's internal_calibration shape (feature 108).
+
+    Every violation is typed; nothing is defaulted."""
+    protocol = internal["protocol_version"]
+    _nonempty_string(protocol, field_name="internal_calibration.protocol_version")
+    if protocol not in KNOWN_OOF_PROTOCOLS:
+        raise AttestationError(
+            f"unknown OOF protocol_version: {protocol!r} "
+            f"(expected one of {sorted(KNOWN_OOF_PROTOCOLS)}). A protocol this code cannot "
+            "reconstruct must not be attested as if it could."
+        )
+    _int_value(internal["n_oof_blocks"], field_name="internal_calibration.n_oof_blocks",
+               positive=True)
+    if internal["calibration_split_unit"] is not None:
+        raise AttestationError(
+            "arm E must record calibration_split_unit=None (it carves no internal split); "
+            f"got {internal['calibration_split_unit']!r}"
+        )
+    frac = internal["calib_frac"]
+    if not isinstance(frac, Mapping) or set(frac) != {"requested", "effective"}:
+        raise AttestationError(
+            "arm E calib_frac must be {'requested': …, 'effective': …} — the declared value and "
+            "what the booster actually did are different facts and are recorded separately"
+        )
+    effective = _finite_number(frac["effective"], field_name="calib_frac.effective")
+    if effective != 0.0:
+        raise AttestationError(
+            "arm E booster holds nothing out, so calib_frac.effective must be 0.0; "
+            f"got {effective!r}"
+        )
+    if frac["requested"] is not None:
+        _finite_number(frac["requested"], field_name="calib_frac.requested")
+
+
+def _validate_weight_mask(mask: Any) -> None:
+    if mask is None:
+        return
+    if not isinstance(mask, Mapping) or set(mask) != {"rate", "seed"}:
+        raise AttestationError("weight_mask must be {'rate': …, 'seed': …} when present")
+    rate = _finite_number(mask["rate"], field_name="weight_mask.rate")
+    if not 0.0 <= rate <= 1.0:
+        raise AttestationError(f"weight_mask.rate must be within [0, 1]; got {rate!r}")
+    _int_value(mask["seed"], field_name="weight_mask.seed")
+
+
 def _validate_payload(payload: Mapping[str, Any], *, enforce_legacy: bool) -> None:
+    # Feature 108: `weight_mask` is an arm-E-only top-level key. It is allowed (not "unexpected")
+    # but never required — a legacy payload that grew one would be a contradiction, and the
+    # cross-consistency check below rejects it.
+    allowed = _PAYLOAD_FIELDS | {"weight_mask"}
     missing = _PAYLOAD_FIELDS - set(payload)
-    unexpected = set(payload) - _PAYLOAD_FIELDS
+    unexpected = set(payload) - allowed
     if missing:
         raise AttestationError(f"attestation payload missing required fields: {sorted(missing)}")
     if unexpected:
@@ -298,8 +460,19 @@ def _validate_payload(payload: Mapping[str, Any], *, enforce_legacy: bool) -> No
     internal = payload["internal_calibration"]
     if not isinstance(internal, Mapping):
         raise AttestationError("internal_calibration must be a mapping")
-    missing_internal = _INTERNAL_CALIBRATION_FIELDS - set(internal)
-    unexpected_internal = set(internal) - _INTERNAL_CALIBRATION_FIELDS
+    method = internal.get("method")
+    _nonempty_string(method, field_name="internal_calibration.method")
+    # CLOSED vocabulary (feature 108). Two branches plus "everything else is legacy" would let a
+    # typo or a future arm be validated by rules that do not describe it — 085's failure mode.
+    if method not in KNOWN_CALIBRATION_METHODS:
+        raise AttestationError(
+            f"unknown calibration method: {method!r} "
+            f"(expected one of {sorted(KNOWN_CALIBRATION_METHODS)})"
+        )
+    is_arm_e = method == ARM_E_CALIBRATION_METHOD
+    expected_fields = _ARM_E_INTERNAL_FIELDS if is_arm_e else _INTERNAL_CALIBRATION_FIELDS
+    missing_internal = expected_fields - set(internal)
+    unexpected_internal = set(internal) - expected_fields
     if missing_internal:
         raise AttestationError(
             "internal_calibration missing required fields: " f"{sorted(missing_internal)}"
@@ -308,16 +481,28 @@ def _validate_payload(payload: Mapping[str, Any], *, enforce_legacy: bool) -> No
         raise AttestationError(
             "internal_calibration has unexpected fields: " f"{sorted(unexpected_internal)}"
         )
-    _nonempty_string(internal["method"], field_name="internal_calibration.method")
-    calib_frac = _finite_number(
-        internal["calib_frac"], field_name="internal_calibration.calib_frac"
-    )
-    if not 0 < calib_frac < 1:
-        raise AttestationError("internal_calibration.calib_frac must be between zero and one")
-    _nonempty_string(
-        internal["calibration_split_unit"],
-        field_name="internal_calibration.calibration_split_unit",
-    )
+
+    if is_arm_e:
+        _validate_arm_e_internal(internal)
+        # cross-consistency: the shipping view says OOF, so the construction facts must be there
+        # and the mask (when the model declares one) must be well-formed. A payload that claims
+        # the protocol without carrying what the protocol needs is rejected, not defaulted.
+        _validate_weight_mask(payload.get("weight_mask"))
+    else:
+        calib_frac = _finite_number(
+            internal["calib_frac"], field_name="internal_calibration.calib_frac"
+        )
+        if not 0 < calib_frac < 1:
+            raise AttestationError("internal_calibration.calib_frac must be between zero and one")
+        _nonempty_string(
+            internal["calibration_split_unit"],
+            field_name="internal_calibration.calibration_split_unit",
+        )
+        if "weight_mask" in payload:
+            raise AttestationError(
+                f"weight_mask is only meaningful for {ARM_E_CALIBRATION_METHOD!r}; "
+                f"got it alongside method={method!r}"
+            )
 
     _int_value(payload["seed"], field_name="seed")
     _int_value(payload["num_threads"], field_name="num_threads", positive=True)
@@ -405,17 +590,9 @@ def build_attestation(
         "feature_version": _resolve_shared_value(metadata, preprocessor, "feature_version"),
         "target_encode_cols": target_encode_cols,
         "te_smoothing": te_smoothing,
-        "internal_calibration": {
-            "method": _required(metadata, "calibration"),
-            "calib_frac": (
-                metadata["calib_frac"]
-                if metadata.get("calib_frac") is not None
-                else DEFAULT_CALIB_FRAC
-            ),
-            "calibration_split_unit": _resolve_split_unit(
-                metadata, frozen_split_freeze, model_version=model_version
-            ),
-        },
+        "internal_calibration": _internal_calibration_block(
+            metadata, frozen_split_freeze, model_version=model_version
+        ),
         "seed": _required(metadata, "seed"),
         "num_threads": _resolve_num_threads(active_path, metadata, params),
         "drop_features": drop_features,
@@ -423,6 +600,15 @@ def build_attestation(
         "materialized_hash": metadata.get("materialized_hash"),
         "code_sha": code_sha,
     }
+    # Feature 108 (D1): arm E keys are inserted ONLY for arm E. A legacy payload keeps exactly
+    # the keys it had before this feature, so its canonical JSON — and therefore its digest —
+    # is byte-identical. That is load-bearing: the published production manifest records
+    # attestation_digest=ef9c5441…, and 076's activation loader recomputes and compares it.
+    # An unconditional key with a default would have silently orphaned that manifest.
+    mask = _weight_mask_block(metadata)
+    if mask is not None:
+        payload["weight_mask"] = mask
+
     _validate_payload(payload, enforce_legacy=False)
     return {**payload, "attestation_digest": stable_hash(payload)}
 
@@ -453,8 +639,12 @@ def attestation_from_model_dir(active_dir: Path | str, *, code_sha: str) -> dict
 def _validated_payload(att: dict, *, enforce_legacy: bool = True) -> dict:
     if not isinstance(att, Mapping):
         raise AttestationError("attestation must be a mapping")
+    # feature 108: `weight_mask` is arm-E-only, so it is allowed here and its
+    # method-consistency is enforced in _validate_payload (a legacy payload carrying one is
+    # rejected there, not silently tolerated).
+    allowed = _ATTESTATION_FIELDS | {"weight_mask"}
     missing = _ATTESTATION_FIELDS - set(att)
-    unexpected = set(att) - _ATTESTATION_FIELDS
+    unexpected = set(att) - allowed
     if missing:
         raise AttestationError(f"attestation missing required fields: {sorted(missing)}")
     if unexpected:
@@ -462,6 +652,8 @@ def _validated_payload(att: dict, *, enforce_legacy: bool = True) -> dict:
 
     digest = _nonempty_string(att["attestation_digest"], field_name="attestation_digest")
     payload = {key: copy.deepcopy(att[key]) for key in _PAYLOAD_FIELDS}
+    if "weight_mask" in att:
+        payload["weight_mask"] = copy.deepcopy(att["weight_mask"])
     _validate_payload(payload, enforce_legacy=enforce_legacy)
     expected_digest = stable_hash(payload)
     if digest != expected_digest:
@@ -471,8 +663,45 @@ def _validated_payload(att: dict, *, enforce_legacy: bool = True) -> dict:
     return payload
 
 
+def _recipe_params_override(payload: Mapping[str, Any]) -> tuple[tuple[str, Any], ...] | None:
+    """Capacity (and any other resolved knob a recipe must carry) as a ModelRecipe override.
+
+    `resolved_lgbm_params` is the FULL resolved dict (it even carries objective="binary");
+    `ModelRecipe.params` is an override tuple layered over the code defaults. Only the knobs a
+    recipe actually forwards belong here. `n_estimators` is the one that bites: the code default
+    is 300 and the live arm E model is 900, so dropping it would rebuild a quietly different
+    model — the same failure mode as defaulting n_oof_blocks to 3.
+    """
+    params = payload["resolved_lgbm_params"]
+    out = [(key, params[key]) for key in ("n_estimators",) if key in params]
+    return tuple(out) if out else None
+
+
 def _recipe_from_payload(payload: Mapping[str, Any]) -> ModelRecipe:
     internal = payload["internal_calibration"]
+    if internal["method"] == ARM_E_CALIBRATION_METHOD:
+        # The shipping view is NOT a recipe. `to_servable` writes calib_frac.effective=0.0 and
+        # split_unit=None to describe what arm E did; ModelRecipe cannot even be constructed
+        # from the latter (split_unit=None raises). The recipe arm E was actually built from
+        # declares the ORDINARY isotonic settings — the OOF-ness lives in the predictor that
+        # wraps it, not in the recipe. Rebuild that recipe, and let the caller wrap it.
+        mask = payload.get("weight_mask") or {}
+        return ModelRecipe(
+            objective=payload["objective"],
+            calibration="isotonic",
+            # inert for this protocol version (see _ARM_E_NON_BEHAVIOURAL); the declared value
+            # only moves the recipe hash, and the registered hash was never persisted anywhere,
+            # so there is nothing to match it against.
+            calib_frac=DEFAULT_CALIB_FRAC,
+            calibration_split_unit=LEGACY_CALIBRATION_SPLIT_UNIT,
+            target_encode_cols=tuple(payload["target_encode_cols"]),
+            te_smoothing=float(payload["te_smoothing"]),
+            seed=payload["seed"],
+            drop_features=tuple(payload["drop_features"]),
+            weight_mask_rate=mask.get("rate"),
+            weight_mask_seed=mask.get("seed"),
+            params=_recipe_params_override(payload),
+        )
     return ModelRecipe(
         objective=payload["objective"],
         calibration=internal["method"],
@@ -539,13 +768,95 @@ class AttestedRecipeFactory(RecipeFactory):
 def factory_from_attestation(session: Session, att: dict) -> AttestedRecipeFactory:
     """Build a recipe-faithful factory that retains attested params and feature ordering."""
     payload = _validated_payload(att)
-    return AttestedRecipeFactory(
+    return _factory_for_payload(session, payload)
+
+
+def _factory_for_payload(session: Session, payload: Mapping[str, Any]) -> RecipeFactory:
+    """Build the factory the attested method actually describes (feature 108).
+
+    Legacy => the historical `AttestedRecipeFactory` (a plain booster with an internal split),
+    unchanged. arm E => an OOF-calibrated factory built from the CONSTRUCTION facts, never from
+    the code defaults: `n_oof_blocks` defaults to 3 while the live model used 8, so a default
+    here would rebuild a different model and report success.
+    """
+    if payload["internal_calibration"]["method"] != ARM_E_CALIBRATION_METHOD:
+        return AttestedRecipeFactory(
+            session=session,
+            recipe=_recipe_from_payload(payload),
+            resolved_lgbm_params=copy.deepcopy(dict(payload["resolved_lgbm_params"])),
+            ordered_feature_columns=tuple(payload["ordered_feature_columns"]),
+            num_threads=payload["num_threads"],
+        )
+
+    from .calib_split import CalibSplitFactory  # local: avoids an import cycle at module load
+
+    class _AttestedCalibSplitFactory(CalibSplitFactory):
+        """CalibSplitFactory + the attested-num_threads agreement check (feature 108, T011c).
+
+        NO path in this codebase propagates num_threads into LightGBM — not even the legacy
+        `AttestedRecipeFactory`, which uses the attested value purely as an agreement check
+        (a caller asking for a different thread count is refused rather than silently served).
+        Determinism therefore does NOT come from this argument, and the contract says so; what
+        the attestation gives you is the guarantee that nobody ran the recipe under a thread
+        count that contradicts the record. arm E previously accepted `num_threads` and dropped
+        it on the floor, so the guarantee simply did not exist there. This restores parity with
+        the legacy path instead of inventing a third behaviour.
+        """
+
+        attested_num_threads: int = 1
+
+        def fit(self, train_races, *, num_threads=None):
+            if num_threads is not None and num_threads != self.attested_num_threads:
+                raise AttestationError(
+                    f"requested num_threads={num_threads} differs from attested "
+                    f"{self.attested_num_threads}"
+                )
+            return super().fit(train_races, num_threads=num_threads)
+
+    internal = payload["internal_calibration"]
+    factory = _AttestedCalibSplitFactory(
         session=session,
         recipe=_recipe_from_payload(payload),
-        resolved_lgbm_params=copy.deepcopy(dict(payload["resolved_lgbm_params"])),
-        ordered_feature_columns=tuple(payload["ordered_feature_columns"]),
-        num_threads=payload["num_threads"],
+        n_oof_blocks=_int_value(
+            internal["n_oof_blocks"], field_name="internal_calibration.n_oof_blocks",
+            positive=True,
+        ),
+        method="isotonic",
+        # An insufficient OOF sample must abort, never fall back to an identity calibrator that
+        # would then be attested under the protocol's name (the same fail-closed arm E's own
+        # registration uses).
+        require_sufficient=True,
     )
+    factory.attested_num_threads = _int_value(
+        payload["num_threads"], field_name="num_threads", positive=True
+    )
+    return factory
+
+
+def attested_construction(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """The behavioural facts a reconstruction must reproduce (feature 108, FR-003).
+
+    Deliberately EXCLUDES the declared `calib_frac` for arm E: it is inert under this protocol
+    version, and the registered recipe hash was never persisted, so identity of the hash is not
+    something this feature can honestly claim. What it can claim — and this is what the caller
+    compares — is that the rebuilt procedure carries the same behavioural configuration.
+    """
+    internal = payload["internal_calibration"]
+    out: dict[str, Any] = {
+        "objective": payload["objective"],
+        "calibration_method": internal["method"],
+        "seed": payload["seed"],
+        "te_smoothing": payload["te_smoothing"],
+        "target_encode_cols": tuple(payload["target_encode_cols"]),
+        "drop_features": tuple(payload["drop_features"]),
+        "ordered_feature_columns": tuple(payload["ordered_feature_columns"]),
+        "resolved_lgbm_params": dict(payload["resolved_lgbm_params"]),
+    }
+    if internal["method"] == ARM_E_CALIBRATION_METHOD:
+        out["protocol_version"] = internal["protocol_version"]
+        out["n_oof_blocks"] = internal["n_oof_blocks"]
+        out["weight_mask"] = payload.get("weight_mask")
+    return out
 
 
 def general_factory_from_attestation(
@@ -574,10 +885,8 @@ def general_factory_from_attestation(
             "attested feature_version differs from expectation: "
             f"{payload['feature_version']!r} != {expected_feature_version!r}"
         )
-    return AttestedRecipeFactory(
-        session=session,
-        recipe=_recipe_from_payload(payload),
-        resolved_lgbm_params=copy.deepcopy(dict(payload["resolved_lgbm_params"])),
-        ordered_feature_columns=tuple(payload["ordered_feature_columns"]),
-        num_threads=payload["num_threads"],
-    )
+    # feature 108: this is the entry non-legacy callers (074 OOF generation, 082 readout) use,
+    # so it is the one that must route arm E to an OOF-calibrated factory. Returning the plain
+    # factory here is what made 082 unusable on the current generation: the reconstruction was
+    # a 70/30 booster whose calibration method name was not even in fit_calibrator's vocabulary.
+    return _factory_for_payload(session, payload)

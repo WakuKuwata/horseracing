@@ -376,3 +376,45 @@ def test_oof_span_covers_the_predicted_blocks_not_the_fitting_days():
         info["oof_pred_through"]
     )
     assert hasattr(OofCalibratedPredictor, "to_servable")
+
+
+def test_to_servable_reports_the_oof_calibrator_not_the_bases(monkeypatch):
+    """Feature 108 (T004/D4): `calibrator_degenerate` must describe the OOF isotonic.
+
+    `_make_base` builds the booster with calibration="none", so the base's fit_info records
+    `calibrator_degenerate=True` for ITS identity calibrator. `to_servable` copies that dict and
+    overwrites the calibration fields — but this one field was missed, so every arm E model on
+    disk shipped "degenerate" next to a fitted isotonic map (lgbm-094-cap900's metadata.json
+    still shows it). The value is transcribed from `oof_info_`, which is where the isotonic is
+    actually fitted, rather than hardcoded — a future `require_sufficient=False` path that ships
+    an identity calibrator must be able to say so truthfully.
+    """
+    from horseracing_training.calib_split import OofCalibratedPredictor
+
+    class _Cal:
+        identity = False
+
+        def params_dict(self):
+            return {"thresholds": [0.1, 0.5], "values": [0.2, 0.7]}
+
+    class _Base:
+        # the base's OWN calibrator is identity because calibration="none" — this True is the
+        # stale value that used to survive into the shipped metadata.
+        fit_info_ = {"calibration": "none", "calibrator_degenerate": True,
+                     "calibration_split_unit": "race_count_v1", "n_calib_rows": 0}
+        calibrator_ = None
+
+    p = OofCalibratedPredictor.__new__(OofCalibratedPredictor)
+    p.method, p._base, p.calibrator_ = "isotonic", _Base(), _Cal()
+    p.n_oof, p.n_oof_samples_ = 8, 12345
+    p.oof_info_ = {"sufficient": True, "n_oof_rows": 12345, "n_oof_races": 900,
+                   "n_positives": 900, "n_distinct_scores": 5000,
+                   "calibrator_degenerate": False}
+
+    info = p.to_servable().fit_info_
+    assert info["calibrator_degenerate"] is False, "base's stale True must not survive"
+    # the rest of the shipping view is unchanged by this fix
+    assert info["calibration"] == "isotonic_strict_past_oof"
+    assert info["calibration_split_unit"] is None
+    assert info["calibration_protocol"]["protocol"] == "strict_past_oof_isotonic_v1"
+    assert info["calibration_protocol"]["n_oof_blocks"] == 8
