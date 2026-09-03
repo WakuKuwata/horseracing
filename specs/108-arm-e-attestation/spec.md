@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-02
 
-**Status**: Draft
+**Status**: US1 完了・US2 測定完了・US3 非該当(2026-09-02)
 
 **Input**: User description: "arm E 系モデルの OOF attestation 対応 — 074/076/078 の校正 manifest スタックを現行世代で活性化する。"
 
@@ -279,3 +279,67 @@ manifest 由来になること。
 - 現行 active の metadata にある「校正器は退化」の記録は、出荷関数が 1 フィールドを上書きし
   忘れた**残留値**であることを実装調査で確認済み(真値は構造的に非退化)。attestation は
   この値を読まない
+
+## 実装結果 (2026-09-02・US1 完了 / US2 測定完了 / US3 非該当)
+
+### 達成したこと
+
+**US1(attestation の arm E 対応)= 完了**。現行世代の学習手続きが証明可能な形で記録され、
+そこから忠実に再構成できるようになった。旧世代の payload と digest は**バイト単位で不変**
+(`ef9c5441…` が既存 production manifest の記録値と一致し続けている)。
+
+**修正した実欠陥 6 件**(すべて実測で確認):
+
+| # | 欠陥 | 実態 |
+|---|---|---|
+| 1 | attestation の silent fail-open | 欠落値を legacy 既定で補完し `calib_frac=0.3`/`split_unit=race_count_v1` を**捏造**、`n_oof_blocks` と weight mask を黙って落としていた |
+| 2 | `calibrator_degenerate` の残留値 | 全 arm E モデルが「校正器は退化」と嘘を記録(真値は構造的に非退化) |
+| 3 | **082 が現行世代で使用不能** | 再構成が捏造 recipe を返し、校正方式名が許可値外で fit 時に落ちていた → 解消 |
+| 4 | `oof_generate` の旧世代強制 | 現行世代では着手時点で例外 |
+| 5 | clean-tree ガードが**決して発火しない** | `"dirty" in sha` 判定だが `rev-parse` は 40 桁 hex(憲法 V の穴) |
+| 6 | 恒真検査 | `expected_feature_version` を検証対象の attestation 自身から取得していた |
+
+さらに **pre-2007 残存レースの混入**(107 と同型の罠)を `oof_generate` でも本修正した。
+
+### 測定結果(US2)
+
+現行 active(lgbm-094-cap900)で全史 OOF 束を生成(19 fold・64,542 レース・**2.6 時間**・
+T012 の外挿 ETA 3.0 時間とほぼ一致)し、074 の凍結 gate-config で校正 verdict を測定:
+
+| stage | verdict | 値 |
+|---|---|---|
+| two_gamma | **NO_DECISION** | identity 出荷 |
+| stage 割引 | **ADOPT** | λ2=0.8793・λ3=0.7499(旧世代 0.818/0.690 と同じ帯) |
+
+bundle `8bdde268…` / manifest `b1c59eaa…` / attestation `b8b11a6a…`。
+
+### US3 が非該当になった理由(当初計画の前提が崩れた)
+
+1. **`activation_eligible=False`** — 事前登録の eligibility 方針(078 D6: どちらかの stage が
+   NO_DECISION なら昇格を止める)が two_gamma の NO_DECISION により作動。**方針どおりの挙動**で
+   あって欠陥ではない
+2. **manifest 層に 2 つ目の世代固定** — `probability/calib_manifest.py` の
+   `BASE_MODEL_VERSION = "lgbm-063"` がハードコードで、書き込みにも検証にも使われる。
+   よって arm E の束から作った manifest が `base_model_version=lgbm-063` と**嘘を記録**し、
+   076 loader の世代照合でも弾かれる。**research はこれを見落としていた**
+
+つまり **「attestation を直せば活性化できる」という当初の前提は不完全だった**。
+活性化には (a) manifest 層の世代固定の解消 (b) two_gamma が決定的 verdict を出すこと の
+両方が要る。(b) は測定結果であり操作できない。
+
+### 残った限界(正直に)
+
+- **本番は今も legacy-runtime**(実行時 fit)のまま。この feature は活性化を達成していない
+- 生成した manifest は `base_model_version` が誤り(上記 2 の欠陥による)。**活性化には使えない**
+- 再構成の保証は**挙動的一致まで**(登録 recipe hash が未保存のため識別子照合は原理的に不可能)。
+  digest が保証するのは payload の改竄検出であって、記録内容が登録時の真実だったことの
+  遡及証明ではない
+
+### それでも残る価値
+
+- **証明書が嘘をつかなくなった**(欠陥 1・2)。次に arm E 世代で attestation を作る誰もが
+  真の構成を得る
+- **082(セグメント精度読み出し)が現行世代で使えるようになった**(欠陥 3)
+- 憲法 V の穴(欠陥 5)と恒真検査(欠陥 6)を塞いだ
+- 現行世代の OOF 束(2.6 時間分の計算)と校正 verdict が artifact として残った。
+  manifest 層の世代固定を解消する後続 feature は**この束を再利用できる**

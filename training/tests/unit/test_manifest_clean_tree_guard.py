@@ -102,6 +102,7 @@ def test_oof_generation_defaults_to_the_feature_pool_start():
     import inspect
 
     from horseracing_db.validation import FEATURE_POOL_START
+
     from horseracing_training import oof_generate
 
     src = inspect.getsource(oof_generate.generate_oof_bundle)

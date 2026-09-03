@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-09-02",
+  "manifest_path": "artifacts/artifacts/oof/8bdde26857f62c5571ef45b02954836dacae7e4a2ea9174c12eb0c9209fb691f/manifests/b1c59eaa4f63e84ed2e8edbd60d3e732b04141a0a2d310e0ac2ad7309ad65602/manifest.json",
+  "manifest_digest": "b1c59eaa4f63e84ed2e8edbd60d3e732b04141a0a2d310e0ac2ad7309ad65602",
+  "code_sha": "2b78b1d32272536dfa4a0ddd5a809d03ce462399",
+  "bundle_digest": "8bdde26857f62c5571ef45b02954836dacae7e4a2ea9174c12eb0c9209fb691f",
+  "attestation_digest": "b8b11a6a81b77f25d1d0b9de7b84416ae7d06e237b86ab65e5dab83789aca16c",
+  "intended_base_model": "lgbm-094-cap900",
+  "recorded_base_model_version": "lgbm-063",
+  "verdicts": {
+    "stage_discount_topk": {
+      "verdict": "ADOPT",
+      "identity": false
+    },
+    "two_gamma_win": {
+      "verdict": "NO_DECISION",
+      "identity": true
+    }
+  },
+  "full_precision_params": {
+    "stage_lambdas": {
+      "top2": 0.8792903735545429,
+      "top3": 0.7498762992275929
+    },
+    "two_gamma": {
+      "gamma_hi": 1.0,
+      "gamma_lo": 1.0,
+      "pivot": 0.15
+    }
+  },
+  "artifact_scope": "production",
+  "activation_eligible": false,
+  "fit_through": "2026-08-30",
+  "blockers_found": [
+    {
+      "id": "B1",
+      "kind": "measurement outcome (not a defect)",
+      "detail": "two_gamma=NO_DECISION のため事前登録の eligibility 方針(078 D6: どちらかが NO_DECISION なら昇格を止める)により activation_eligible=False。方針どおりの挙動"
+    },
+    {
+      "id": "B2",
+      "kind": "defect — 2 つ目の世代固定",
+      "detail": "probability/calib_manifest.py の BASE_MODEL_VERSION='lgbm-063' がハードコードで、書き込みにも verify にも使われる。よって arm E の束から作った manifest が base_model_version=lgbm-063 と**嘘を記録**し、076 loader の世代照合でも弾かれる。research では attestation 層の固定しか見つけておらず、これは未発見だった"
+    }
+  ],
+  "reference_lgbm063": {
+    "stage_lambdas": {
+      "top2": 0.81812,
+      "top3": 0.69047
+    },
+    "note": "078 の旧世代実測。arm E の λ(0.879/0.750)は同じ帯"
+  }
+}

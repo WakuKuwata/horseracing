@@ -110,7 +110,7 @@ US3(活性化検証)は US2 依存。
 **Goal**: 現行 active の手続きで OOF を再生成し、校正 verdict を測って production manifest を作る
 **Independent Test**: 生成 manifest が production scope・現行 active 束縛・検証通過・digest 再現
 
-- [ ] T012 [US2] **★中断点★ 1 fold のコスト実測**(FR-018): **`--first-valid-year 2026` で
+- [X] T012 [US2] **★中断点★ 1 fold のコスト実測**(FR-018): **`--first-valid-year 2026` で
   最終年 1 fold のみ**を実行し所要時間を測る(`--smoke` は `first_valid_year=2024` = 3 fold に
   なるので使わない・analyze M1)。**外挿式を事前固定**: `ETA = 実測秒 × 19 × 0.6`
   (最終年 fold が最も高価なので係数で割り引く)。結果を
@@ -120,26 +120,30 @@ US3(活性化検証)は US2 依存。
   の manifest 生成は `"dirty" in sha or sha == "unknown"` で未コミットを検出しようとするが、
   `code_sha()` は `git rev-parse HEAD` の 40 桁 hex を返すため**この判定は決して発火しない**。
   `git status --porcelain` が空かどうかで判定するよう是正し、テストで固定
-- [ ] T012b [US2] **attestation 変更をコミットする**(憲法 V・順序が重要): T014 の manifest 生成
+- [X] T012b [US2] **attestation 変更をコミットする**(憲法 V・順序が重要): T014 の manifest 生成
   より**前**に本 feature のコード変更をコミットする。production manifest はその manifest を生んだ
   コードの SHA で刻印されなければならない(未コミット状態で生成すると刻印が嘘になる)
-- [ ] T013 [US2] OOF 束の生成(数時間・nohup): 現行 active の attestation で全史(2008-2026)の
+- [X] T013 [US2] OOF 束の生成(数時間・nohup): 現行 active の attestation で全史(2008-2026)の
   OOF bundle を生成。**weight mask が再現されていることを実行前に確認**(再現できないなら
   fail-closed で停止・FR-006)。完了後 bundle digest と fold 数を
   `specs/108-arm-e-attestation/evidence/oof-bundle.json` に記録
-- [ ] T014 [US2] manifest 生成(`training generate-manifest`): 074 の凍結 gate-config で校正 verdict を
+- [X] T014 [US2] manifest 生成(`training generate-manifest`): 074 の凍結 gate-config で校正 verdict を
   測り production scope の manifest を生成。**探索・調整・窓の選び直しをしない**(FR-007)。
   作業ツリーが dirty なら production scope にならない仕様を確認(FR-008・SC-004)
-- [ ] T015 [US2] 生成物の検証: `training verify-manifest` が通ること・`base_model_version` が現行 active
+- [X] T015 [US2] 生成物の検証: `training verify-manifest` が通ること・`base_model_version` が現行 active
   と一致(INV-M1)・同一入力から同一 digest が再現(INV-M3)。verdict(三値 ×2 stage)を
   `specs/108-arm-e-attestation/evidence/manifest-verdict.json` に記録。
   **どの verdict でも次に進む**(FR-010)
-- [ ] T016 [P] [US2] 旧世代 artifact の不変確認(SC-007): 既存 manifest(`d9f45bb0…`)の内容と
+- [X] T016 [P] [US2] 旧世代 artifact の不変確認(SC-007): 既存 manifest(`d9f45bb0…`)の内容と
   digest、および過去 verdict が 1 件も書き換わっていないことを確認(INV-M2)
 
 **Checkpoint**: 現行世代に束縛された production manifest が存在する
 
-## Phase 5: User Story 3 — 活性化の検証と運用手順 (P3)
+## Phase 5: User Story 3 — 活性化の検証と運用手順 (P3) — **非該当(2026-09-02)**
+
+**理由**: 測定の結果 two_gamma=NO_DECISION となり、事前登録の eligibility 方針(078 D6: どちらかの stage が NO_DECISION なら昇格を止める)により
+`activation_eligible=False`。さらに manifest 層に 2 つ目の世代固定(`BASE_MODEL_VERSION='lgbm-063'` のハードコード)が見つかった。
+**活性化は今回のデータでは起こらない**ため US3 は実行せず、限界として記録する(US1 の価値は独立に確定済み)。
 
 **Goal**: 生成 manifest で全経路が凍結校正を読むことを実データで確認し、運用手順を残す
 **Independent Test**: 既定 OFF でバイト不変・有効化で監査記録に識別子・不整合 3 種が実行前に拒否
@@ -151,7 +155,7 @@ US3(活性化検証)は US2 依存。
   監査記録(logic_version)に manifest 識別子が現れること・表示用 top2/top3 が凍結値由来に
   変わること(win はバイト不変・FR-017)を確認し、同じく
   `specs/108-arm-e-attestation/evidence/activation-parity.json` に追記
-- [ ] T019 [P] [US3] fail-closed 3 種の実地確認(SC-006): (a)旧世代 manifest を指定 → 世代不一致で
+- [X] T019 [P] [US3] fail-closed 3 種の実地確認(SC-006): (a)旧世代 manifest を指定 → 世代不一致で
   実行前拒否・0 行 (b)`fit_through` 以前の対象日 → 拒否 (c)fixture scope の manifest を production で
   → 拒否。**いずれも黙って現行動作にフォールバックしない**(FR-013)
 - [ ] T020 [US3] 運用手順の文書化(FR-014): `specs/108-arm-e-attestation/quickstart.md` に
@@ -163,16 +167,16 @@ US3(活性化検証)は US2 依存。
 
 ## Phase 6: Polish & 記録
 
-- [ ] T021 全体回帰: `training` / `probability` / `serving` / `betting` / `eval` の各スイート緑・
+- [X] T021 全体回帰: `training` / `probability` / `serving` / `betting` / `eval` の各スイート緑・
   ruff クリーン。**db/front/admin/features/api に差分が無いこと**を `git status` で確認。
   **attestation の共有消費者 2 経路(`ev_weight_run`=079・`segment_accuracy_run`=082)の
   回帰も確認**し、082 の現行世代での使用可否が改善したか・変わらないかを記録する(analyze G5)
-- [ ] T022 [P] spec.md に実測結果を転記: 校正 verdict(三値 ×2 stage)・生成 digest・
+- [X] T022 [P] spec.md に実測結果を転記: 校正 verdict(三値 ×2 stage)・生成 digest・
   OOF 再生成の実所要時間・活性化検証の結果。**verdict が非採用でも「基盤が活性化した」という
   達成を明記**(FR-010)
-- [ ] T023 [P] memory 更新: `calibration-leak-fixes-status.md` を「現行世代で活性化済み」に更新
+- [X] T023 [P] memory 更新: `calibration-leak-fixes-status.md` を「現行世代で活性化済み」に更新
   (または verdict に応じた正確な状態へ)+ MEMORY.md の行を更新
-- [ ] T024 [P] CLAUDE.md の SPECKIT 区間を手動 Edit で完了ステータスに更新
+- [X] T024 [P] CLAUDE.md の SPECKIT 区間を手動 Edit で完了ステータスに更新
   (agent-context スクリプトは実行禁止)
 - [ ] T025 コミット(attestation 拡張・テスト・evidence・spec 転記)
 
