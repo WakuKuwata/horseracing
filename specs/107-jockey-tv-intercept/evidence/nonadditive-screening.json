@@ -1,0 +1,57 @@
+{
+  "screening_only": true,
+  "can_adopt": false,
+  "bundle": "artifacts/oof/8bdde26857f62c5571ef45b02954836dacae7e4a2ea9174c12eb0c9209fb691f/bundle.json",
+  "n_races": 64459,
+  "n_rows": 909114,
+  "min_rides": 30,
+  "kill_threshold": -0.00704,
+  "kill_threshold_rationale": "δ=0.00352 × オラクルの過大評価係数 2(107 実測)",
+  "results": {
+    "additive_only": {
+      "increment": 0.0015343963280356476,
+      "null_min": -5.0711006533532554e-05,
+      "null_median": 2.2601675919720066e-05,
+      "n_params": 277,
+      "ridge": 100.0,
+      "note": "107 の再現(参考値)"
+    },
+    "surface": {
+      "increment": 0.0009783252912280993,
+      "null_min": 2.2192256884601136e-05,
+      "null_median": 5.202201004372853e-05,
+      "n_params": 891,
+      "ridge": 100.0
+    },
+    "distance_band": {
+      "increment": 0.0007711258688276601,
+      "null_min": 1.9454074332347915e-05,
+      "null_median": 6.070870004060147e-05,
+      "n_params": 1370,
+      "ridge": 100.0
+    },
+    "venue": {
+      "increment": 0.0008448049100997501,
+      "null_min": -4.446773266231219e-05,
+      "null_median": -3.1009286238781186e-06,
+      "n_params": 2499,
+      "ridge": 100.0
+    },
+    "going": {
+      "increment": 0.0013844990028188953,
+      "null_min": 2.251136466124848e-05,
+      "null_median": 7.116178350785596e-05,
+      "n_params": 1371,
+      "ridge": 100.0
+    },
+    "field_size_band": {
+      "increment": 0.0011357683175745592,
+      "null_min": -1.2935369232192073e-05,
+      "null_median": 7.401449404986771e-05,
+      "n_params": 1073,
+      "ridge": 100.0
+    }
+  },
+  "survivors": [],
+  "verdict": "axis_closed"
+}
