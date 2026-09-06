@@ -1188,7 +1188,8 @@ def conclusion_ja(
                 f" 自己検証で測った 80% 検出可能な最小効果は回収率 +{min(mdes):.3f}〜"
                 f"+{max(mdes):.3f} で、これより小さい真の利益は検出できない"
                 + (
-                    f"(代表 {n_curves} 曲線のうち {n_unreached} 本は +0.15 でも 80% に届かない)。"
+                    f"(代表 {n_curves} 曲線のうち 80% に届いたのは {n_curves - n_unreached} 本。"
+                    "届かない曲線には常時降格の最小パターンと実現不能な形を含む)。"
                     if n_unreached
                     else "。"
                 )
