@@ -145,3 +145,29 @@ place 0.225 / trifecta 0.000 = 実配当は勝ち組合せのみ保存の構造�
   この診断は「最初の判定券種と診断の有望券種が一致している」という追い風にとどめる
 - 過去の関連実測との整合: [[cross-pool-place-result]](複勝の人気側に構造は実在するが
   相対 +7% で必要 +25% に桁不足)— 本診断の +10% は同じ帯であり、**絶対 ROI>1.0 とは別問題**
+
+---
+
+## 測定記録 2(2026-09-06・週末 9/5-6 込み・append-only)
+
+**window = 2026-07-23..2026-09-06(主系列=prospective)・lv は実行出力に完全記録**
+(seed=20260723・b=2000・alpha=0.05・baseline=lowest_oest・n_min/控除率=本文書の凍結値)
+
+**主判定: 全券種 NO_DECISION**(券種別 n_min 未達・全体ゲート 14 開催日は通過)
+
+| 券種 | n(scored bets) | n_min | 判定 | 前回比 |
+|---|---|---|---|---|
+| place | **493** | 500 | NO_DECISION | +70 |
+| quinella | **498** | 500 | NO_DECISION | +72 |
+| wide | **499** | 500 | NO_DECISION | +71 |
+| exacta | 499 | 700 | NO_DECISION | +72 |
+| trio | 499 | 1000 | NO_DECISION | +72 |
+| trifecta | 499 | 1500 | NO_DECISION | +72 |
+
+- **place/quinella/wide は n_min まで 1〜7 bet**。9/6 に 36 レース中 29 レースで買い目が出なかった
+  (refresh が単勝発売前に走り `no win odds` で recommend が skip・オッズ自体は夕方の結果ページ経由で
+  今は全レース保持)ため、本来なら今週末で 3 券種とも n_min を越えていた。**前向き買い目は閉鎖
+  オッズで遡及生成できない**(065 の楽観バイアス)ので、この 29 レース分は恒久損失
+- 点推定は NO_DECISION のため**解釈しない**(§5・§11)。次の開催日 1 日分で place/quinella/wide は
+  n_min を越える見込み
+- 手続き注記: 計器は `betting exotic-gate --from 2026-07-23 --to <日付>`・窓の終端は測定実行日
