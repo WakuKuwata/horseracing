@@ -1,0 +1,60 @@
+{
+  "_comment": "feature 109 買い目パターン採否ゲート 凍結設定。freeze が patterns_hash / code_sha / windows.confirmatory[1] を転記した時点で凍結。以後の変更は新しい feature。",
+  "_delta_note": "ruled_out_delta=0.02 は futility 検定(帰無 ROI>=1.02)専用。ADOPT の帰無は ROI<=1.00。",
+  "_selftest_note": "自己検証は本番と同じ decide() を analysis_versions の 3 版で回す。サイズ検定の内側 bootstrap は主判定と同じ 20,000。外側反復は計算量のため 2,000(サイズ)/1,000(検出力)= codex plan #10 の部分採用(research D11)。",
+  "feature": "109-buy-pattern-gate",
+  "evaluation_contract_version": "roi-v1",
+  "bet_type": "win",
+  "stake_yen": 100,
+  "payout_rule": "odds_x_stake_if_won",
+  "dead_heat": {"primary": "exclude_race", "sensitivities": ["equal_split", "half_odds"], "half_odds_rule": "odds / max(2, n_winners)"},
+  "population_rule": {
+    "bundle_digest": "8bdde26857f62c5571ef45b02954836dacae7e4a2ea9174c12eb0c9209fb691f",
+    "track_types": ["芝", "ダ"],
+    "require_odds_all_started": true,
+    "require_p_all_started": true,
+    "exactly_one_winner": true
+  },
+  "field_size_definition": "entered",
+  "past_quantile": "strict_past_expanding",
+  "past_quantile_warmup_through": "2008-12-31",
+  "windows": {
+    "discovery": ["2008-01-01", "2013-12-31"],
+    "qualification": ["2014-01-01", "2018-12-31"],
+    "confirmatory": ["2019-01-01", ""]
+  },
+  "expected_races_per_year": {
+    "_source": "DB 実測 2026-09-05(races 表・2026 は部分年)", "_policy": "record_only",
+    "2008": 3452, "2009": 3453, "2010": 3454, "2011": 3453, "2012": 3454, "2013": 3454,
+    "2014": 3451, "2015": 3454, "2016": 3454, "2017": 3455, "2018": 3454, "2019": 3452,
+    "2020": 3456, "2021": 3456, "2022": 3456, "2023": 3456, "2024": 3454, "2025": 3455, "2026": null
+  },
+  "bootstrap": {
+    "block": "race_day", "b": 20000, "seed": 20260905, "alpha_two_sided": 0.05,
+    "sensitivity_blocks": ["iso_week", "calendar_month"], "block_kind": "fixed_cluster"
+  },
+  "mde_80": {"formula": "(z_{1-alpha/m} + z_{0.80}) * sd(replicates)", "alpha_one_sided": 0.025, "m_screening": 1, "m_confirmatory": "n_survivors"},
+  "selftest": {
+    "b_inner_size": 20000, "b_inner_power": 5000,
+    "reps_size_per_config": 2000, "reps_power": 1000,
+    "analysis_versions": ["race_day", "iso_week", "calendar_month"],
+    "boundary_null": "target_1.00_others_le_1.00", "partial_null_other_edge": 1.10,
+    "rho_grid": [1.0, 1.025, 1.05, 1.075, 1.10, 1.15], "rho_negative_control": 0.796,
+    "edge_shapes": ["klmin_roi_tilt", "long_odds_top20pct", "days_10pct"],
+    "edge_shape_sensitivity": "odds_neutral",
+    "size_alpha_one_sided": 0.025, "size_pass_rule": "binomial_one_sided_95_lower_bound_le_alpha",
+    "checkpoint_per_target": true
+  },
+  "test": {
+    "profit_null": "roi_le_1", "futility_null": "roi_ge_1.02",
+    "p_value": "basic_bootstrap_one_sided_plus_one", "holm_alpha_one_sided": 0.025,
+    "synchronized_block_draws": true
+  },
+  "demotion": {"min_hits": 20, "max_single_hit_share": 0.5, "min_days": 200},
+  "survivor_rule": {"point_min": 1.0, "rank_key": "min_lcb", "max_survivors": 5, "merge_identical": true, "jaccard_max": 0.9},
+  "ruled_out_delta": 0.02,
+  "controls": ["no_bet", "favorite", "cap11_all", "cap21_all"],
+  "control_aliases": {"ev1_all": "X.ev_ge_1"},
+  "patterns_hash": "",
+  "code_sha": ""
+}

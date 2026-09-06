@@ -1,0 +1,8 @@
+{
+  "checked_at": "2026-09-06T12:51:12.738700+00:00",
+  "bundle_digest": "8bdde26857f62c5571ef45b02954836dacae7e4a2ea9174c12eb0c9209fb691f",
+  "recorded_in_108": "8bdde26857f62c5571ef45b02954836dacae7e4a2ea9174c12eb0c9209fb691f",
+  "bundle_digest_matches": true,
+  "db_reachable": true,
+  "db": "localhost:15432/horseracing"
+}
