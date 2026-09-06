@@ -1,0 +1,11 @@
+{
+  "gate_config_hash": "10e89939821278715817a54087788d653726fc3a7d46bd41aa3039e3f3f20171",
+  "patterns_hash": "a06e895d115f8a167ae229c4ff7c7fb9473deadf058b9c49e6da0682da2e25e5",
+  "n_patterns": 393,
+  "code_sha": "255208ef653edcee9514e2185047b30a9eb83e4d",
+  "confirmatory_end": "2026-09-06",
+  "smoke": false,
+  "run_code_sha": "255208ef653edcee9514e2185047b30a9eb83e4d",
+  "run_tree_dirty": true,
+  "run_at": "2026-09-06T12:52:09.612050+00:00"
+}
