@@ -1,0 +1,121 @@
+{
+  "feature": "109-buy-pattern-gate",
+  "created_at": "2026-09-06T16:21:19.513475+00:00",
+  "gate_config_hash": "10e89939821278715817a54087788d653726fc3a7d46bd41aa3039e3f3f20171",
+  "patterns_hash": "a06e895d115f8a167ae229c4ff7c7fb9473deadf058b9c49e6da0682da2e25e5",
+  "population_hash": "28a1c644d81c52ceda432b6353fc4ea32de1aaa1bc97463ec15fba8621712dfa",
+  "survivors_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "bundle_digest": "8bdde26857f62c5571ef45b02954836dacae7e4a2ea9174c12eb0c9209fb691f",
+  "code_sha": "255208ef653edcee9514e2185047b30a9eb83e4d",
+  "run_code_sha": "ad88f60e5416fa096d981d2bd529664abe0b5011",
+  "run_tree_dirty": false,
+  "windows": {
+    "discovery": [
+      "2008-01-01",
+      "2013-12-31"
+    ],
+    "qualification": [
+      "2014-01-01",
+      "2018-12-31"
+    ],
+    "confirmatory": [
+      "2019-01-01",
+      "2026-09-06"
+    ]
+  },
+  "evidence_refs": [
+    {
+      "window": "confirmatory",
+      "path": "artifacts/109/confirmatory-bets.parquet",
+      "sha256": "8f0d4cf263a86aaa2ffa561dc0d26bba9203eadc2996fc30caecc6d3cad6d06f"
+    },
+    {
+      "window": "confirmatory",
+      "path": "specs/109-buy-pattern-gate/evidence/confirmatory-bets.parquet",
+      "sha256": "8f0d4cf263a86aaa2ffa561dc0d26bba9203eadc2996fc30caecc6d3cad6d06f"
+    },
+    {
+      "window": "confirmatory",
+      "path": "artifacts/109/rows-confirmatory.parquet",
+      "sha256": "46b3d1ea773a48eae00e14e40df325032d725fc56c439352e323185803e25726"
+    },
+    {
+      "window": "selftest",
+      "path": "specs/109-buy-pattern-gate/evidence/selftest.json",
+      "sha256": "4f941b4ba3a4de799e9bd0cf66534a771d81efb3513a627c7bbac511c3f83b80"
+    }
+  ],
+  "controls": {
+    "no_bet": {
+      "accounting_sentinel": 1.0,
+      "roi": null
+    },
+    "favorite": {
+      "roi": 0.7944781434665207,
+      "ci": [
+        0.7800961493115866,
+        0.8088324633820867
+      ],
+      "n_bets": 25553,
+      "n_hits": 8471
+    },
+    "cap11_all": {
+      "roi": 0.7943175850641944,
+      "ci": [
+        0.7868557825649725,
+        0.8017522091842737
+      ],
+      "n_bets": 110446,
+      "n_hits": 20180
+    },
+    "cap21_all": {
+      "roi": 0.8079283029001075,
+      "ci": [
+        0.7999029504601427,
+        0.8159067366432429
+      ],
+      "n_bets": 163856,
+      "n_hits": 23157
+    },
+    "ev1_all": {
+      "alias_of": "X.ev_ge_1"
+    }
+  },
+  "states": {
+    "SCREENED_OUT": 393,
+    "NO_DECISION": 0,
+    "ADOPT_CLOSE": 0,
+    "RULED_OUT": 0,
+    "NOT_ADOPTED": 0
+  },
+  "screened_out_reasons": {
+    "discovery": 389,
+    "qualification": 4,
+    "rank": 0,
+    "duplicate": 0,
+    "not_fired": 0
+  },
+  "per_survivor": [],
+  "limitations": [
+    "closing_price_leak",
+    "payout_approximation",
+    "dead_heat_handling",
+    "no_correction_history",
+    "win_only"
+  ],
+  "limitation_notes": {
+    "closing_price_leak": "選定価格と精算価格がともに closing オッズ。closing-line oracle であり発注可能性は評価しない。",
+    "payout_approximation": "公式払戻ではなくオッズ×100 円の近似。",
+    "dead_heat_handling": "同着は主判定で除外し感度(等分 / odds/max(2,勝者数))で確認。",
+    "no_correction_history": "過去走由来の述語と頭数は現在の DB 値で作り訂正履歴が無い。",
+    "win_only": "単勝のみ。複勝・組合せは発走前価格の蓄積が 2025 年以降で screening 不能。"
+  },
+  "resume_conditions": [
+    "発走前の時点固定価格が前向きに蓄積されたら(選定価格の価格リークを塞げる)",
+    "控除率・リベート・税制の変更(必要 t/q の閾値が動く)",
+    "市場が持たない新情報源(調教・当日情報)が使えるようになったら"
+  ],
+  "conclusion_ja": "凍結した探索(screening 2008〜2018 → 確認窓 2019〜2026-09-06)で、closing オッズ条件つき回収率が 1 を超える候補を確認できなかった。 内訳: ADOPT_CLOSE 0 / NOT_ADOPTED 0(利益を示せず δ=0.02 超も排除できない) / RULED_OUT 0(δ 超の利益を否定) / NO_DECISION 0 / SCREENED_OUT 393(確認未実施であり否定ではない)。 自己検証で測った 80% 検出可能な最小効果は回収率 +0.048〜+0.110 で、これより小さい真の利益は検出できない(代表 20 曲線のうち 80% に届いたのは 6 本。届かない曲線には常時降格の最小パターンと実現不能な形を含む)。",
+  "smoke": false,
+  "elapsed_seconds": 1.061352252960205
+}

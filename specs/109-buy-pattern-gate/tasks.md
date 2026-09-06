@@ -109,7 +109,7 @@
 
 - [X] T037 [US3] `scripts/buy_pattern_gate.py` に `confirm` を実装: 非 smoke は clean tree 必須 → 4 hash 照合 → `artifacts/109/rows-confirmatory.parquet` を読み `rows_hash` 照合(DB を再読しない)→ **対照 4 本を常に集計** → 生存者ごとに T023(利益・futility・max-T)→ T025 感度 4 種 → Holm(m=生存者数)→ T024 → `evidence/confirmatory-{bets.parquet,summary.json}` → `verdict.json`(data-model §7。`evidence_refs` に窓・パス・sha256、`per_survivor` に `available_at` / `historical_close_signal`、`run_code_sha` / `run_tree_dirty`。既存パスは拒否・`--force` なし。生存者 0 本なら `SCREENED_OUT=非生存者数`(理由別内訳つき)と対照値と結論のみ)。`per_survivor` の列名は summary と同じ `p_profit_one_sided` / `p_futility_one_sided`
 - [X] T038 [US3] `buy_pattern_gate.py` に結論生成 `conclusion_ja(states, cfg, selftest)` を実装(禁止表現「全パターン REJECT」「効果なし」「利益パターンは存在しない」・`limitations` 固定 5 項(closing_price_leak / payout_approximation / dead_heat_handling / no_correction_history / win_only)・`resume_conditions` 3 項・80% MDE の実力を含む)
-- [ ] T039 [US3] `confirm` を実行し `verdict.json` を生成。`recompute --window confirmatory` の一致、対照の既知帯(cap21_all 0.80〜0.83 / favorite 0.76〜0.80 / no_bet sentinel 1.00。cap11_all と EV 別名は記録のみ)、状態の優先順位を確認
+- [X] T039 [US3] `confirm` を実行し `verdict.json` を生成。`recompute --window confirmatory` の一致、対照の既知帯(cap21_all 0.80〜0.83 / favorite 0.76〜0.80 / no_bet sentinel 1.00。cap11_all と EV 別名は記録のみ)、状態の優先順位を確認
 
 ### テスト
 
@@ -120,10 +120,10 @@
 
 ## Phase 6: Polish & 後始末
 
-- [ ] T042 spec.md 冒頭に実測結果を転記(状態件数・生存者・対照値・80% MDE・サイズ検定・所要時間・限界)。ADOPT_CLOSE が出た場合は FR-019 の下に後続 feature への引き継ぎ条件(106 実購入記録 / 065 凍結オッズ)を記録
-- [ ] T043 [P] `ruff check eval scripts/buy_pattern_gate.py scripts/tests` と `cd eval && uv run pytest -q`(pandas 非依存で緑)と `cd training && uv run pytest ../scripts/tests -q` の緑。`git diff --stat -- db api front betting probability serving features ops admin training/src` が空(SC-007)
-- [ ] T044 [P] memory 更新(`/Users/kuwatawaku/.claude/projects/-Users-kuwatawaku-workspace-horseracing/memory/` に 109 の結果を 1 ファイル + MEMORY.md 1 行)。CLAUDE.md の 109 要約を「完了」に更新
-- [ ] T045 最終コミット(path 明示列挙・`git add -A` 禁止): `specs/109-buy-pattern-gate/`(verdict.json・evidence/confirmatory-summary.json・生存者と対照の確認窓 bets `evidence/confirmatory-bets.parquet`・spec.md・quickstart の実測欄)、`CLAUDE.md`、memory。`artifacts/109/` の全賭け行と行スナップショットはコミットせず `evidence_refs` の sha256 で参照
+- [X] T042 spec.md 冒頭に実測結果を転記(状態件数・生存者・対照値・80% MDE・サイズ検定・所要時間・限界)。ADOPT_CLOSE が出た場合は FR-019 の下に後続 feature への引き継ぎ条件(106 実購入記録 / 065 凍結オッズ)を記録
+- [X] T043 [P] `ruff check eval scripts/buy_pattern_gate.py scripts/tests` と `cd eval && uv run pytest -q`(pandas 非依存で緑)と `cd training && uv run pytest ../scripts/tests -q` の緑。`git diff --stat -- db api front betting probability serving features ops admin training/src` が空(SC-007)
+- [X] T044 [P] memory 更新(`/Users/kuwatawaku/.claude/projects/-Users-kuwatawaku-workspace-horseracing/memory/` に 109 の結果を 1 ファイル + MEMORY.md 1 行)。CLAUDE.md の 109 要約を「完了」に更新
+- [X] T045 最終コミット(path 明示列挙・`git add -A` 禁止): `specs/109-buy-pattern-gate/`(verdict.json・evidence/confirmatory-summary.json・生存者と対照の確認窓 bets `evidence/confirmatory-bets.parquet`・spec.md・quickstart の実測欄)、`CLAUDE.md`、memory。`artifacts/109/` の全賭け行と行スナップショットはコミットせず `evidence_refs` の sha256 で参照
 
 ---
 
