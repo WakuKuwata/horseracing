@@ -94,8 +94,8 @@
 
 - [X] T034 [US2] `scripts/buy_pattern_gate.py` に `screen` を実装: 非 smoke は clean tree 必須 → gate-config hash 照合 → `selftest.passed` 確認 → 行構築・母集団固定 → 行スナップショットを `artifacts/109/rows-{discovery,qualification,confirmatory}.parquet` に固定(`rows_hash`)→ 全パターンの `selection_hash` が selftest の記録と一致することを照合 → `population.json`(`rows_hash`・窓ごとの `day_universe`・年別件数・流れ図)→ 発見期で 393 本 + 対照を T022/T023 → 点推定 ≥1 かつ非降格を資格期で再評価 → 点推定 ≥1 かつ非降格 → `min(LCB)` 降順 → 同一 `selection_hash` 統合 → 発見期∪資格期の賭け集合で Jaccard>0.9 の下位除去 → 上限 5 → `evidence/screening-{discovery,qualification}-summary.json` と `artifacts/109/screening-*-bets.parquet`(sha256 を summary に)と `evidence/survivors.json`(既存なら拒否)。SCREENED_OUT 理由別件数(discovery / qualification / rank / duplicate / **not_fired**)。smoke では `selftest.smoke=true` を通過扱い。証拠と `population.json` に `run_code_sha` を記録
 - [X] T035 [US2] `scripts/buy_pattern_gate.py` に `recompute --window <w>` を実装(bets parquet と `population.json` の `day_universe` だけから T023 と同じ関数で主判定と感度 4 版を再計算し summary とビット一致。不一致は exit 1)
-- [ ] T036 [US2] `screen` を実行。`population.json`、対照の参考値、`survivors.json`(0〜5 本)を確認し、`recompute` を discovery / qualification で一致確認
-- [ ] T036a [US2] コミット(path 明示): `specs/109-buy-pattern-gate/{population.json,evidence/screening-*-summary.json,evidence/survivors.json}`(生存者集合を git に固定してから `confirm` を走らせる=`confirm` は clean tree 必須)
+- [X] T036 [US2] `screen` を実行。`population.json`、対照の参考値、`survivors.json`(0〜5 本)を確認し、`recompute` を discovery / qualification で一致確認
+- [X] T036a [US2] コミット(path 明示): `specs/109-buy-pattern-gate/{population.json,evidence/screening-*-summary.json,evidence/survivors.json}`(生存者集合を git に固定してから `confirm` を走らせる=`confirm` は clean tree 必須)
 
 **Checkpoint**: 生存者 0 本でも Phase 5 の `confirm` は実行する(対照の確認窓集計と verdict の記録のため)。
 

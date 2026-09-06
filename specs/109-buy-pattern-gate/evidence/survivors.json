@@ -1,0 +1,19 @@
+{
+  "survivors": [],
+  "ranked": [],
+  "screened_out_counts": {
+    "discovery": 389,
+    "qualification": 4,
+    "rank": 0,
+    "duplicate": 0,
+    "not_fired": 0
+  },
+  "n_patterns": 393,
+  "patterns_hash": "a06e895d115f8a167ae229c4ff7c7fb9473deadf058b9c49e6da0682da2e25e5",
+  "population_hash": "28a1c644d81c52ceda432b6353fc4ea32de1aaa1bc97463ec15fba8621712dfa",
+  "gate_config_hash": "10e89939821278715817a54087788d653726fc3a7d46bd41aa3039e3f3f20171",
+  "survivors_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "run_code_sha": "271636810e064aa970304767278e17662770004c",
+  "run_tree_dirty": true,
+  "run_at": "2026-09-06T16:18:56.157138+00:00"
+}
