@@ -79,8 +79,8 @@
 
 - [X] T031 [P] [US1] `eval/tests/unit/test_buy_pattern_gate.py`: p 値 +1 補正と向き / futility の向き / Holm が降格を棄却せず **かつ降格 1 本が他の棄却を妨げない**(m 維持) / 優先順位(両検定棄却で ADOPT_CLOSE)/ NOT_ADOPTED 到達 / 感度分割で NO_DECISION / 分母ゼロ反復で NO_DECISION かつ m 不変 / `mde_80` の式
 - [X] T032 [P] [US1] `eval/tests/unit/test_buy_pattern_gate.py`: 注入がレース内で勝者ちょうど 1 頭 / 周辺 ρ の再現(u 込み ±0.005)/ 形 3 種で選択外の π が q に一致 / オッズ中立の `infeasible` / 境界帰無の制約違反が無効報告
-- [ ] T033 [US1] まず `selftest --extrapolate`(外側 20 反復)で総所要時間を外挿して quickstart に記録し、日単位なら checkpoint 再開を使って本実行。`evidence/selftest.json` を生成。サイズの下側限界 ≤ 2.5% なら Phase 4 へ。超過なら **判定統計と注入(T023/T027/T028)のみ**修正して再実行(列挙と導出列は不可・修正内容を research D6 に追記)。実測所要時間を quickstart に記録。検出力曲線と 80% MDE は実力として記録し合否にしない
-- [ ] T033a [US1] コミット(path 明示): `specs/109-buy-pattern-gate/evidence/selftest.json` と partial(`screen` は clean tree 必須)
+- [X] T033 [US1] まず `selftest --extrapolate`(外側 20 反復)で総所要時間を外挿して quickstart に記録し、日単位なら checkpoint 再開を使って本実行。`evidence/selftest.json` を生成。サイズの下側限界 ≤ 2.5% なら Phase 4 へ。超過なら **判定統計と注入(T023/T027/T028)のみ**修正して再実行(列挙と導出列は不可・修正内容を research D6 に追記)。実測所要時間を quickstart に記録。検出力曲線と 80% MDE は実力として記録し合否にしない
+- [X] T033a [US1] コミット(path 明示): `specs/109-buy-pattern-gate/evidence/selftest.json` と partial(`screen` は clean tree 必須)
 
 **Checkpoint ★中断点**: `evidence/selftest.json` の `passed=true` をコミット済み。実データの結果はまだ判定に使っていない。
 

@@ -1,0 +1,167 @@
+{
+  "curve": [
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.8993251416077328e-10,
+        "sim_roi_mean": 0.9929390281556958,
+        "sim_roi_se": 0.004455750908387817,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0026488407274882775
+      ],
+      "n": 1000,
+      "adopt": 1,
+      "rate": 0.001,
+      "lower_95": 5.129197890901785e-05,
+      "upper_95": 0.004734993575499777,
+      "demoted_rate": 0.024,
+      "seconds": 66.60112810134888,
+      "seconds_per_rep": 0.06660112810134888,
+      "rho": 1.0
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.2713357033788952e-09,
+        "sim_roi_mean": 1.0194773152704604,
+        "sim_roi_se": 0.004236101644470439,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0028852362993347924
+      ],
+      "n": 1000,
+      "adopt": 28,
+      "rate": 0.028,
+      "lower_95": 0.019971978586155525,
+      "upper_95": 0.038188865025176225,
+      "demoted_rate": 0.022,
+      "seconds": 66.62997770309448,
+      "seconds_per_rep": 0.06662997770309448,
+      "rho": 1.025
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.4174630358354534e-09,
+        "sim_roi_mean": 1.0412058559601691,
+        "sim_roi_se": 0.00463676877504524,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.003102746031800052
+      ],
+      "n": 1000,
+      "adopt": 152,
+      "rate": 0.152,
+      "lower_95": 0.133602631071189,
+      "upper_95": 0.17193302466269564,
+      "demoted_rate": 0.059,
+      "seconds": 66.70016574859619,
+      "seconds_per_rep": 0.06670016574859619,
+      "rho": 1.05
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 2.26420082682921e-09,
+        "sim_roi_mean": 1.0658542354155813,
+        "sim_roi_se": 0.004784931909302446,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0033039952359104063
+      ],
+      "n": 1000,
+      "adopt": 441,
+      "rate": 0.441,
+      "lower_95": 0.414828083228368,
+      "upper_95": 0.46742994086412576,
+      "demoted_rate": 0.106,
+      "seconds": 66.82156538963318,
+      "seconds_per_rep": 0.06682156538963317,
+      "rho": 1.075
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 4,
+        "max_violation": 0.00012046454025771425,
+        "sim_roi_mean": 1.09204900712094,
+        "sim_roi_se": 0.004406112998411914,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        -0.0001445349244022509,
+        0.0035081552232441027
+      ],
+      "n": 1000,
+      "adopt": 752,
+      "rate": 0.752,
+      "lower_95": 0.7285021934234971,
+      "upper_95": 0.7743918384976396,
+      "demoted_rate": 0.08,
+      "seconds": 66.62227892875671,
+      "seconds_per_rep": 0.06662227892875672,
+      "rho": 1.1
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 4,
+        "max_violation": 0.0002987535242873207,
+        "sim_roi_mean": 1.1411608193905711,
+        "sim_roi_se": 0.004676731038994448,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        -0.0004179377810942242,
+        0.003875487036566483
+      ],
+      "n": 1000,
+      "adopt": 993,
+      "rate": 0.993,
+      "lower_95": 0.9868922845834067,
+      "upper_95": 0.9967102125993462,
+      "demoted_rate": 0.003,
+      "seconds": 66.67235493659973,
+      "seconds_per_rep": 0.06667235493659973,
+      "rho": 1.15
+    }
+  ],
+  "mde_80_from_curve": 0.10995850622406644
+}

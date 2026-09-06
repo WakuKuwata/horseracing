@@ -1,0 +1,167 @@
+{
+  "curve": [
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.1209477790430356e-11,
+        "sim_roi_mean": 0.9933417481855474,
+        "sim_roi_se": 0.007086462652558519,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0066865645749203395,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "n": 1000,
+      "adopt": 0,
+      "rate": 0.0,
+      "lower_95": 0.0,
+      "upper_95": 0.002991249545095295,
+      "demoted_rate": 0.027,
+      "seconds": 66.50838828086853,
+      "seconds_per_rep": 0.06650838828086852,
+      "rho": 1.0
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.1626832829847444e-10,
+        "sim_roi_mean": 1.0176938045650574,
+        "sim_roi_se": 0.007355434579735394,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.010279172802256653,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "n": 1000,
+      "adopt": 13,
+      "rate": 0.013,
+      "lower_95": 0.007706232724005366,
+      "upper_95": 0.020589286529908307,
+      "demoted_rate": 0.016,
+      "seconds": 66.47657799720764,
+      "seconds_per_rep": 0.06647657799720764,
+      "rho": 1.025
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.0498668601144345e-10,
+        "sim_roi_mean": 1.043111391606185,
+        "sim_roi_se": 0.00742308090735723,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.013799019634461729,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "n": 1000,
+      "adopt": 58,
+      "rate": 0.058,
+      "lower_95": 0.04632357873204235,
+      "upper_95": 0.07166041043370713,
+      "demoted_rate": 0.025,
+      "seconds": 66.42820000648499,
+      "seconds_per_rep": 0.06642820000648499,
+      "rho": 1.05
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.0230238878250475e-10,
+        "sim_roi_mean": 1.068793520563795,
+        "sim_roi_se": 0.007743551601166477,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.017249657703359844,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "n": 1000,
+      "adopt": 152,
+      "rate": 0.152,
+      "lower_95": 0.133602631071189,
+      "upper_95": 0.17193302466269564,
+      "demoted_rate": 0.065,
+      "seconds": 66.36793613433838,
+      "seconds_per_rep": 0.06636793613433838,
+      "rho": 1.075
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 1.6993073614912646e-12,
+        "sim_roi_mean": 1.0950257704849058,
+        "sim_roi_se": 0.007581435873356813,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.020634394113585586,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "n": 1000,
+      "adopt": 302,
+      "rate": 0.302,
+      "lower_95": 0.27807332903631243,
+      "upper_95": 0.3267942491081006,
+      "demoted_rate": 0.087,
+      "seconds": 66.480220079422,
+      "seconds_per_rep": 0.066480220079422,
+      "rho": 1.1
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 3.606070997363986e-11,
+        "sim_roi_mean": 1.1432428736720313,
+        "sim_roi_se": 0.007347082005429611,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.027218292034376645,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "n": 1000,
+      "adopt": 762,
+      "rate": 0.762,
+      "lower_95": 0.7387910679337077,
+      "upper_95": 0.7840586387761495,
+      "demoted_rate": 0.052,
+      "seconds": 66.46540904045105,
+      "seconds_per_rep": 0.06646540904045105,
+      "rho": 1.15
+    }
+  ],
+  "mde_80_from_curve": NaN
+}

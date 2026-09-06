@@ -1,0 +1,131 @@
+{
+  "curve": [
+    {
+      "infeasible": true,
+      "fit": {
+        "sweeps": 1,
+        "max_violation": 0.1851823423323361,
+        "lambdas": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sim_roi_mean": 0.8116045600433495,
+        "sim_roi_se": 0.0022882241715861734,
+        "sim_ok": false,
+        "feasible": false
+      },
+      "n": 0,
+      "adopt": 0,
+      "rho": 1.0
+    },
+    {
+      "infeasible": true,
+      "fit": {
+        "sweeps": 1,
+        "max_violation": 0.21018234233233601,
+        "lambdas": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sim_roi_mean": 0.8116045600433495,
+        "sim_roi_se": 0.0022882241715861734,
+        "sim_ok": false,
+        "feasible": false
+      },
+      "n": 0,
+      "adopt": 0,
+      "rho": 1.025
+    },
+    {
+      "infeasible": true,
+      "fit": {
+        "sweeps": 1,
+        "max_violation": 0.23518234233233615,
+        "lambdas": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sim_roi_mean": 0.8116045600433495,
+        "sim_roi_se": 0.0022882241715861734,
+        "sim_ok": false,
+        "feasible": false
+      },
+      "n": 0,
+      "adopt": 0,
+      "rho": 1.05
+    },
+    {
+      "infeasible": true,
+      "fit": {
+        "sweeps": 1,
+        "max_violation": 0.26018234233233606,
+        "lambdas": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sim_roi_mean": 0.8116045600433495,
+        "sim_roi_se": 0.0022882241715861734,
+        "sim_ok": false,
+        "feasible": false
+      },
+      "n": 0,
+      "adopt": 0,
+      "rho": 1.075
+    },
+    {
+      "infeasible": true,
+      "fit": {
+        "sweeps": 1,
+        "max_violation": 0.2851823423323362,
+        "lambdas": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sim_roi_mean": 0.8116045600433495,
+        "sim_roi_se": 0.0022882241715861734,
+        "sim_ok": false,
+        "feasible": false
+      },
+      "n": 0,
+      "adopt": 0,
+      "rho": 1.1
+    },
+    {
+      "infeasible": true,
+      "fit": {
+        "sweeps": 1,
+        "max_violation": 0.335182342332336,
+        "lambdas": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "sim_roi_mean": 0.8116045600433495,
+        "sim_roi_se": 0.0022882241715861734,
+        "sim_ok": false,
+        "feasible": false
+      },
+      "n": 0,
+      "adopt": 0,
+      "rho": 1.15
+    }
+  ],
+  "mde_80_from_curve": NaN
+}

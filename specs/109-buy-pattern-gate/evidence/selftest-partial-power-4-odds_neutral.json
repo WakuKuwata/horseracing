@@ -1,0 +1,167 @@
+{
+  "curve": [
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 6.631584170690985e-12,
+        "sim_roi_mean": 0.9907192101352785,
+        "sim_roi_se": 0.003873169916456592,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.394560948243452
+      ],
+      "n": 1000,
+      "adopt": 1,
+      "rate": 0.001,
+      "lower_95": 5.129197890901785e-05,
+      "upper_95": 0.004734993575499777,
+      "demoted_rate": 0.046,
+      "seconds": 66.8754358291626,
+      "seconds_per_rep": 0.0668754358291626,
+      "rho": 1.0
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 2.524647157997606e-13,
+        "sim_roi_mean": 1.0175607161465872,
+        "sim_roi_se": 0.004121954453147271,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.44938267239558627
+      ],
+      "n": 1000,
+      "adopt": 41,
+      "rate": 0.041,
+      "lower_95": 0.031206861020981535,
+      "upper_95": 0.0528711150540179,
+      "demoted_rate": 0.026,
+      "seconds": 66.93629813194275,
+      "seconds_per_rep": 0.06693629813194275,
+      "rho": 1.025
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 7.66142704833328e-12,
+        "sim_roi_mean": 1.0405306089465254,
+        "sim_roi_se": 0.003614385383336559,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.5040427149469906
+      ],
+      "n": 1000,
+      "adopt": 364,
+      "rate": 0.364,
+      "lower_95": 0.3387939400075284,
+      "upper_95": 0.38980127637148715,
+      "demoted_rate": 0.091,
+      "seconds": 66.78360795974731,
+      "seconds_per_rep": 0.06678360795974732,
+      "rho": 1.05
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 2,
+        "max_violation": 0.0007288388508583932,
+        "sim_roi_mean": 1.066801462783921,
+        "sim_roi_se": 0.003341330787528892,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.5585913094000716
+      ],
+      "n": 1000,
+      "adopt": 838,
+      "rate": 0.838,
+      "lower_95": 0.8176003516344134,
+      "upper_95": 0.8569093521685762,
+      "demoted_rate": 0.051,
+      "seconds": 66.73418974876404,
+      "seconds_per_rep": 0.06673418974876404,
+      "rho": 1.075
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 4,
+        "max_violation": 0.00015582241939982033,
+        "sim_roi_mean": 1.090704664312318,
+        "sim_roi_se": 0.0036063693914895165,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        -0.0002747233975242125,
+        0.6188366046808369
+      ],
+      "n": 1000,
+      "adopt": 985,
+      "rate": 0.985,
+      "lower_95": 0.9769964511490499,
+      "upper_95": 0.9907315690194783,
+      "demoted_rate": 0.004,
+      "seconds": 66.91939806938171,
+      "seconds_per_rep": 0.06691939806938171,
+      "rho": 1.1
+    },
+    {
+      "infeasible": false,
+      "fit": {
+        "sweeps": 4,
+        "max_violation": 0.00041435798468958396,
+        "sim_roi_mean": 1.1430190904880448,
+        "sim_roi_se": 0.004801228980829488,
+        "sim_ok": true,
+        "feasible": true
+      },
+      "lambdas": [
+        0.0,
+        0.0,
+        0.0,
+        -0.0008047566825553076,
+        0.738810153943632
+      ],
+      "n": 1000,
+      "adopt": 1000,
+      "rate": 1.0,
+      "lower_95": 0.9970087504549047,
+      "upper_95": 1.0,
+      "demoted_rate": 0.0,
+      "seconds": 66.91746187210083,
+      "seconds_per_rep": 0.06691746187210083,
+      "rho": 1.15
+    }
+  ],
+  "mde_80_from_curve": 0.07299578059071732
+}

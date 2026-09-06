@@ -20,7 +20,7 @@ cd training && uv run python ../scripts/buy_pattern_gate.py freeze
 ```bash
 cd training && uv run python ../scripts/buy_pattern_gate.py selftest --gate-config-hash <H>
 ```
-期待(SC-001): `evidence/selftest.json` に 境界帰無(代表 5 本・全体境界と部分帰無の 2 構成)の誤採用率(点推定と二項片側 95% 下側限界 ≤ 2.5%)、代表 5 パターンの検出力曲線・80% MDE(概算 0.075〜0.08 帯)・降格率(KL 最小傾き / 高オッズ集中 / 開催日集中 + オッズ中立感度)、ρ=0.796 陰性対照、実測所要時間(見込み 4 時間級。外側 20 反復の外挿: **187 分**(0.09 秒/反復・2026-09-06)/ 実測: ＿＿分)。**ここで exit 2 なら screen に進まない**。
+期待(SC-001): `evidence/selftest.json` に 境界帰無(代表 5 本・全体境界と部分帰無の 2 構成)の誤採用率(点推定と二項片側 95% 下側限界 ≤ 2.5%)、代表 5 パターンの検出力曲線・80% MDE(概算 0.075〜0.08 帯)・降格率(KL 最小傾き / 高オッズ集中 / 開催日集中 + オッズ中立感度)、ρ=0.796 陰性対照、実測所要時間(見込み 4 時間級。外側 20 反復の外挿: **187 分**(0.09 秒/反復・2026-09-06)/ 実測: **161 分**(2026-09-06〜07・サイズ 10 構成 + 検出力 5 本 × 4 形 × 6 点))。**ここで exit 2 なら screen に進まない**。
 
 ```bash
 cd training && uv run python ../scripts/buy_pattern_gate.py screen --gate-config-hash <H>
