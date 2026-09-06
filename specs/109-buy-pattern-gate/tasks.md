@@ -49,9 +49,9 @@
 - [X] T016 [P] `eval/tests/unit/test_buy_patterns.py`: 結果並べ替え不変(SC-006)/ 欠損述語は False / 同率一意化 / 手計算 fixture で C×EV と M×X の各 1 本が正しい馬を選ぶ
 - [X] T017 `specs/109-buy-pattern-gate/gate-config.json` を contracts/gate-config.md の形で作成(`patterns_hash` / `code_sha` / `windows.confirmatory[1]` は空。`expected_races_per_year` を DB 実測から記入・出所を `_source` に注記)
 - [X] T018 `scripts/buy_pattern_gate.py` に `freeze` を実装: `git status --porcelain` 非空なら拒否 → `enumerate()` → `patterns.json` 書き出し → `patterns_hash` / `code_sha=HEAD`(=列挙コードの SHA)/ `windows.confirmatory[1]`(DB の最終確定レース日)を gate-config に転記 → hash 表示。既存 `patterns.json` は拒否。`--smoke` かつ非既定 `--spec-dir` のときのみ dirty-tree 検査を免除。freeze 後に tree が dirty になること(生成物)と、以降のサブコマンドは dirty を検査せず `run_code_sha` を記録することを docstring に明記
-- [ ] T019 コミット(freeze の clean tree 条件のため・path 明示列挙): `eval/src/horseracing_eval/{buy_pattern_gate.py,buy_patterns.py,bootstrap.py}`、`eval/tests/unit/test_buy_*`、`eval/tests/unit/test_bootstrap_block.py`、`scripts/tests/`、`scripts/buy_pattern_gate.py`、`specs/109-buy-pattern-gate/`(gate-config.json 含む)、`CLAUDE.md`、`.specify/feature.json`
-- [ ] T020 `freeze` を実行して `patterns.json`(393 本)と転記済み `gate-config.json` を生成し、hash を `evidence/freeze.json` に記録
-- [ ] T021 凍結物をコミット(path 明示): `specs/109-buy-pattern-gate/{patterns.json,gate-config.json,evidence/freeze.json}`。以後の変更は禁止(変更は新しい feature)
+- [X] T019 コミット(freeze の clean tree 条件のため・path 明示列挙): `eval/src/horseracing_eval/{buy_pattern_gate.py,buy_patterns.py,bootstrap.py}`、`eval/tests/unit/test_buy_*`、`eval/tests/unit/test_bootstrap_block.py`、`scripts/tests/`、`scripts/buy_pattern_gate.py`、`specs/109-buy-pattern-gate/`(gate-config.json 含む)、`CLAUDE.md`、`.specify/feature.json`
+- [X] T020 `freeze` を実行して `patterns.json`(393 本)と転記済み `gate-config.json` を生成し、hash を `evidence/freeze.json` に記録
+- [X] T021 凍結物をコミット(path 明示): `specs/109-buy-pattern-gate/{patterns.json,gate-config.json,evidence/freeze.json}`。以後の変更は禁止(変更は新しい feature)
 
 **Checkpoint**: 賭け候補行・母集団 hash・393 本の凍結族・gate-config hash が揃い、テスト緑。
 

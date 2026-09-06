@@ -708,6 +708,19 @@ class TiltSpec:
     feasible: bool = True
 
 
+# Day random effect scale.
+# The first self-test run (2026-09-06) applied u_day to the ODDS-scaled tilt s = b·d, as written
+# in codex plan #9. With tau = 0.022 and odds up to 300 that puts ±6.6 in the exponent of a
+# 300x horse on some days; the 5-node Gauss-Hermite marginal then bore no relation to the
+# simulated one (a "boundary null" of ROI 1.00 realised 1.33-1.40 and the gate rightly adopted
+# it 27% of the time). The day effect therefore multiplies the SELECTION indicator b (a uniform
+# log-probability shift of the pattern's horses on that day), which keeps the marginal solve
+# well-conditioned; tau is estimated on the same scale and fit_tilts verifies the marginal by
+# simulation. Research D6 records the correction.
+def day_effect_weights(mask: np.ndarray) -> np.ndarray:
+    return np.asarray(mask, dtype=float)
+
+
 def _marginal_roi(
     rs: RaceStructure, specs: list[TiltSpec], j: int, tau: float, target_idx: int
 ) -> float:
@@ -718,8 +731,9 @@ def _marginal_roi(
         pi = race_probs(rs, base)
         return expected_roi(pi, specs[j].mask, rs.d)
     acc = 0.0
+    de = day_effect_weights(specs[target_idx].mask)
     for x, w in zip(_GH_X, _GH_W, strict=True):
-        pi = race_probs(rs, base + tau * x * specs[target_idx].s)
+        pi = race_probs(rs, base + tau * x * de)
         acc += w * expected_roi(pi, specs[j].mask, rs.d)
     return acc
 
@@ -753,6 +767,7 @@ def fit_tilts(
     target_idx: int,
     sweeps: int = 6,
     tol: float = 1e-3,
+    sim_check_draws: int = 30,
 ) -> dict:
     """Coordinate-wise KL-min tilts: equality targets by bisection, ``<= 1`` constraints only
     when violated. The target's lambda is re-solved LAST with the day effect integrated out."""
@@ -793,8 +808,19 @@ def fit_tilts(
         else:
             viol = max(viol, abs(roi - sp.target))
     info["max_violation"] = float(viol)
-    info["feasible"] = bool(all(sp.feasible for sp in specs) and viol <= 5e-3)
     info["lambdas"] = [float(sp.lam) for sp in specs]
+    # simulation check of the marginal: the quadrature must agree with actual draws
+    sim_rng = np.random.default_rng(20260906)
+    sims = []
+    for _ in range(sim_check_draws):
+        won = synth_outcomes(rs, specs, target_idx, tau, sim_rng)
+        sims.append(expected_roi(won.astype(float), specs[target_idx].mask, rs.d))
+    tgt = float(specs[target_idx].target)
+    info["sim_roi_mean"] = float(np.mean(sims))
+    info["sim_roi_se"] = float(np.std(sims) / max(np.sqrt(len(sims)), 1.0))
+    sim_ok = abs(info["sim_roi_mean"] - tgt) <= max(0.02, 3.0 * info["sim_roi_se"])
+    info["sim_ok"] = bool(sim_ok)
+    info["feasible"] = bool(all(sp.feasible for sp in specs) and viol <= 5e-3 and sim_ok)
     return info
 
 
@@ -845,7 +871,7 @@ def synth_outcomes(
         expo += sp.lam * sp.s
     if tau > 0:
         u = rng.normal(0.0, tau, size=rs.n_days)
-        expo = expo + u[rs.day_idx] * specs[target_idx].s
+        expo = expo + u[rs.day_idx] * day_effect_weights(specs[target_idx].mask)
     pi = race_probs(rs, expo)
     return draw_winners(rs, pi, rng)
 
@@ -898,6 +924,7 @@ def estimate_day_effect(
             "observed_var": obs_var,
             "categorical_var": base_var,
             "matched_var": sim_var(0.0),
+            "scale": "selection_indicator",
         }
     lo, hi = 0.0, 1.0
     if sim_var(hi) < obs_var:
@@ -914,6 +941,7 @@ def estimate_day_effect(
         "observed_var": obs_var,
         "categorical_var": base_var,
         "matched_var": sim_var(tau),
+        "scale": "selection_indicator",
     }
 
 
@@ -1040,7 +1068,7 @@ def selftest(
         demoted = 0
         n = 0
         t_start = time.time()
-        for r in range(reps):
+        for _ in range(reps):
             won = synth_outcomes(rs, specs, target_i, tau, rng)
             sv = _score_versions(arr_s, rep_masks, rep_ids, days, cfg_run, won, versions)
             dec = decide(sv, alpha=alpha, primary="race_day")
