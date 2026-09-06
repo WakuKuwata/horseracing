@@ -532,6 +532,7 @@ def cmd_screen(args) -> int:
         raise SystemExit("screen: selftest.json was produced under a different gate-config")
     if (spec_dir / "evidence" / "survivors.json").exists():
         raise SystemExit("screen: survivors.json already exists (append-only)")
+    meta0 = run_meta()  # taken BEFORE this run writes anything (its own outputs dirty the tree)
     fam, _ = load_family(spec_dir, cfg)
     preds = load_bundle()
     t0 = time.time()
@@ -578,7 +579,7 @@ def cmd_screen(args) -> int:
         summ = _summary(scores, dm, cfg, fam)
         summ["evidence_refs"] = [evidence_ref(w, bets_path), evidence_ref(w, rows_snapshot_path(w))]
         summ["window"] = w
-        summ.update(run_meta())
+        summ.update(meta0)
         write_json(spec_dir / "evidence" / f"screening-{w}-summary.json", summ)
         results[w] = {s.pattern_id: s for s in scores}
         print(f"  [{time.time() - t0:6.0f}s] scored {w}: {len(scores)} series")
@@ -665,7 +666,7 @@ def cmd_screen(args) -> int:
         "gate_config_hash": gate_config_hash(cfg),
     }
     surv_payload["survivors_hash"] = stable_hash(surv_payload["survivors"])
-    surv_payload.update(run_meta())
+    surv_payload.update(meta0)
     write_json(spec_dir / "evidence" / "survivors.json", surv_payload, append_only=True)
     if cfg.get("smoke"):
         print(
@@ -719,6 +720,7 @@ def cmd_confirm(args) -> int:
         "survivors", surv["survivors"], args.survivors_hash or surv["survivors_hash"]
     )
     selftest = json.loads((spec_dir / "evidence" / "selftest.json").read_text())
+    meta0 = run_meta()  # BEFORE this run writes evidence (its own outputs dirty the tree)
     t0 = time.time()
     wrep = population["windows"]["confirmatory"]
     arr = load_rows_snapshot("confirmatory", wrep["rows_hash"])
@@ -833,9 +835,9 @@ def cmd_confirm(args) -> int:
         evidence_ref("confirmatory", rows_snapshot_path("confirmatory")),
     ]
     summ["evidence_refs"] = refs
-    summ.update(run_meta())
+    summ.update(meta0)
     write_json(spec_dir / "evidence" / "confirmatory-summary.json", summ)
-    meta = run_meta()
+    meta = meta0
     verdict = gate.build_verdict(
         cfg=cfg,
         gate_config_hash=gate_config_hash(cfg),
