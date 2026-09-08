@@ -1,0 +1,21 @@
+{
+  "artifact_kind": "extra_feature_screen_summary",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "run_freeze_sha256": "78366c5c8598aca0b913f3efc0f0b3cf2a5f78c8900d0ac15a7338f90f442402",
+  "reports": {
+    "f04": {
+      "sha256": "b26aab1e8f6b5e3e74940d9d7bea63696eea2dc36245b68e817302f6b342efa7",
+      "progression": "QUALITY_REVIEW_REQUIRED"
+    },
+    "finish_decomp": {
+      "sha256": "2f02d077feea381297613a1ddf13801777b53ed79ab4d47b747127947e71bd8d",
+      "progression": "DEFER"
+    },
+    "weight_deviation": {
+      "sha256": "56cc1eba2b1a8e32a3cd02102f9d83d8bed46c76328a6c5e49a3a56e64b520c3",
+      "progression": "DEFER"
+    }
+  },
+  "note": "Three independent2018 raw-model screens. ADVANCE retains only a full-quality research candidate; no selection winner, production, gap or ensemble increment claim."
+}

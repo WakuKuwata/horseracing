@@ -1,0 +1,75 @@
+{
+  "artifact_kind": "gap_seed_cost_plan",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "recorded_at": "2026-09-08T00:51:48.979510+00:00",
+  "new_jobs": 30,
+  "max_workers": 2,
+  "threads_per_model": 1,
+  "source_15_fit_sum_seconds": 12148.799046209082,
+  "estimated_new_30_fit_sum_seconds": 24297.598092418164,
+  "estimated_training_wall_hours": 3.374666401724745,
+  "source_receipts": [
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/ef7d92d66920e37d3e7ded3788b1318207307c0bc7d47bde138a2724f1aafd0a.json",
+      "sha256": "f34110b71f69486df589f7333439abaeaadc91d21b27d1866cdde71dcf675e13"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/08330eb0c3de4dffa5f8f730b690f895e35ae05a6240bc4eaa5e29c443d781a3.json",
+      "sha256": "d53859897b285c8c761cb8a40a1078f4f3a89d83a33258bddca0acfe2a5b7ca0"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/87ec1df2cc990aac89f54aa8dcac6ea8a22f032c632dd6541172e5ce284b3f77.json",
+      "sha256": "5b8ddb75b173a33ec5cfa6bf7beb887f4fa6752c8e832eb9037e5e70f57824ad"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/e1c612d465240a8c446b5bfe3a9c3b24e81b1c9c37769b229359c33f1b166c87.json",
+      "sha256": "e03874e831133233ca042c2258129579790102abf179ed83ac6f5d1b57ff93eb"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/cc72144927e66d82c82004d62ca07f15466df044363d8744c968d9bb96b3ff57.json",
+      "sha256": "ec0ac649a6e00cdbb96255ad70af6742c5aecad61409e34ae3b2aebe2a517b60"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/504eae48988104a5da02e1d7de2aeb11df32151763fe1a667b902de8d28ac779.json",
+      "sha256": "819f8ef4fcf3a533aa8a1cbafccc538b2b9115a5166317435c87af3dde05f680"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/a3d1287149c2a1e918e5ce0a71d4442beee6b29ec3feb16d5dcaba96bea94dd8.json",
+      "sha256": "009af5791da4899929e56e07ab31c13e4892a42d387056964909036e0d3b9fd8"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/f1e2e1565f12c962db2f8feff060296d65937df633c5cde62c2a9d5319230ce8.json",
+      "sha256": "5517566b47138ae7a226c93856e56c7f902c7e26d6ca67a420d405c77073240c"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/f62b86a76f0a35ccdaad886892c61c78471845e3553c31cf7a1827c00836a8d1.json",
+      "sha256": "6767f5bb3898564278de767ab19ea55d05b1862a97ae8ee66de02993e3d21f6e"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/ba6e80a52a062d625ce806534a2577e9feb46a3a806b2421d496c5bd12842e45.json",
+      "sha256": "447f41c11db9cbe2fcad6b5d56e454abf2eac19964f43729a1ea96de6229f87f"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/e9f2d430996605ff216f083992fc04c7266e04d16c8f6a1780b5457acbd2118e.json",
+      "sha256": "db9d05feaded6f8ee4e08d4747a7e4cdcbd38a0eed1bb65f925933f6a5f6ba24"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/24f0c77a5448679a520acf8343cf14b8847cfcc8233e326ff5395257d9a853aa.json",
+      "sha256": "46f7353e7ec93cae39ab261438f56e560d5180730ffc77c6d48134dd751c6d9a"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/f8b50b2ba36be79ab1326f5767e599a6b7719a4da6a454973c9e68367a961bed.json",
+      "sha256": "0243861832bca78bff69f99a3f55f674e01a80b285f51f925dc7c4343119a56b"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/c192f8d1be7497d38071e0c5af9aae5500fcee7f00e0ffe2fe69338b7e9011e0.json",
+      "sha256": "b38334a81f1af0cc8f8d5b0b6238f97939a8563b7b39dab5de69ef26134863c1"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/e3c2060810ee4083e00a305b1d5cbb7d4a5bed66d0e8783301f5e0867cfb6052.json",
+      "sha256": "ae155ff8c733f16b242b3dbba08184dad74a394a0a60da48a9819eecbedab9de"
+    }
+  ],
+  "note": "Estimate from original anchor2020-2026/pruning2019-2026 elapsed fit durations, which already include OOF fits. New runtime may vary. Historical work excluded from actual current cost."
+}

@@ -1,0 +1,54 @@
+{
+  "artifact_kind": "gap_season_residual_screen_config",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "candidate_ids": [
+    "current_gap_shape",
+    "gap_log",
+    "seasonal_sex"
+  ],
+  "candidate_definitions": {
+    "current_gap_shape": [
+      "log1p(days_since_last)",
+      "max(0,14-days_since_last)",
+      "max(0,days_since_last-70)"
+    ],
+    "gap_log": [
+      "log1p(days_since_last)"
+    ],
+    "seasonal_sex": [
+      "1[sex=牝]*sin(2*pi*(day_of_year-1)/days_in_year)",
+      "1[sex=牝]*cos(2*pi*(day_of_year-1)/days_in_year)"
+    ]
+  },
+  "warmup_year": 2019,
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23"
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "anchor": "113 certified 110 anchor138, seed42, 900 trees; prior-year OOF/calibration",
+  "gap_history_scope": "Current 111 snapshot days_since_last from strict-past started-horse history. Function shapes match 081; historical population may include starts excluded by 081 turf/dirt-only SQL. This is a current-feature residual hypothesis, not an exact 081 reproduction.",
+  "missing_policy": "NaN h contributes zero exponent offset, not unchanged final probability after race normalization.",
+  "numerical_checks": {
+    "finite_gamma_and_delta": true,
+    "regularized_fit_objective_max": 1e-08,
+    "gradient_infinity_norm_max": 1e-05,
+    "ridge": 1e-06,
+    "auto_retune": false
+  },
+  "selection_policy": "All three prespecified candidates reported; no best-value posthoc selection or additive gain claim.",
+  "limitations": [
+    "Historical development full-information inputs, not unused holdout or preweight evidence.",
+    "Only winner NLL measured; no top2/top3/ECE/recent/subgroup assurance or formal RETAIN/ADOPT.",
+    "Race-day sample CI excludes training seed noise and coefficient-estimation uncertainty; not total CI or confirmatory evidence.",
+    "2019 is initial coefficient-fit population, excluded from primary sample count and delta.",
+    "Residual tilt gain does not establish booster feature-addition gain."
+  ],
+  "seasonal_definition_scope": "Explicit new registration follows current folklore_candidates.sql leap-safe (DOY-1)/(365 or 366). Old 081 pre-registration text also mentions 365.24; no exact historical-registration reproduction claim."
+}

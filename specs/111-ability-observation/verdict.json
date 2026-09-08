@@ -1,0 +1,68 @@
+{
+  "status": "COMPLETE",
+  "conclusion": "No feature addition adopted in this round",
+  "can_adopt": false,
+  "active_model": "lgbm-094-cap900",
+  "active_change_performed": false,
+  "study_config_hash": "18e36a2afbfba4eb15d6bcea19c9772788c3fc3fa74d74ff8c4698575d1a9176",
+  "screen_window": {
+    "from": "2018-01-01",
+    "to": "2018-12-31",
+    "min_eval_days": 100
+  },
+  "full_window": {
+    "from": "2019-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "rows": [
+    {
+      "candidate": {
+        "id": "observation_age",
+        "add_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days"
+        ],
+        "drop_features": [
+          "asof_spdfig_sd"
+        ]
+      },
+      "screen_diff": -9.333269913680553e-05,
+      "screen_progression": "ADVANCE",
+      "screen_ref": "specs/111-ability-observation/evidence/screen-observation_age.json",
+      "screen_sha256": "6014bec4511489572e9d8186198aa57f9d87b146c612bf7af6a9d4dd060ec241",
+      "full_gate_readout": "REJECT",
+      "full_diff": -0.00135832616738929,
+      "full_ref": "specs/111-ability-observation/evidence/full-observation_age.json",
+      "full_sha256": "eba767319434440b957c8201c1bb689bf6e9e2de798248c7e4893c96a6c69a2c"
+    },
+    {
+      "candidate": {
+        "id": "observation_sd",
+        "add_features": [
+          "asof_spdfig_sd"
+        ],
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days"
+        ]
+      },
+      "screen_diff": 0.0007653902675293089,
+      "screen_progression": "DEFER",
+      "screen_ref": "specs/111-ability-observation/evidence/screen-observation_sd.json",
+      "screen_sha256": "581110f251f634667a4d70044444ceb837fd6a38a2541bea53fcb62b5d89fe18",
+      "full_gate_readout": null,
+      "full_diff": null,
+      "full_ref": null,
+      "full_sha256": null
+    }
+  ],
+  "notes": [
+    "Age2fullREJECT means adoption effect size and statistical criteria not met, not absence of a smaller benefit.",
+    "SD1was screened only in2018 and deferred; no full-window efficacy claim.",
+    "Historical full-information evaluation; pre-weight-publication serving performance not evaluated.",
+    "All baseline inputs/recipes/folds exactly matched110; fresh2018baseline predictions and OOF metadata exactly matched before importing8fullbaseline caches.",
+    "Imported metadata type normalization repaired and independently verified; source payloads unchanged.",
+    "Future data remain necessary to establish prospective performance; no automatic promotion."
+  ]
+}

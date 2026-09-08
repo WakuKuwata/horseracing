@@ -1,0 +1,22 @@
+{
+  "artifact_kind": "measured_recheck_cost",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "new_booster_fits": 0,
+  "new_booster_fit_seconds": 0.0,
+  "paired_evaluation_seconds": {
+    "seed-44-retained": 17.558449917007238,
+    "seed-43-anchor": 15.830979375052266,
+    "seed-43-retained": 18.063458416960202,
+    "seed-42-anchor": 18.156443707994185,
+    "seed-42-retained": 21.42009904095903,
+    "seed-44-anchor": 15.571657249936834
+  },
+  "paired_evaluation_seconds_sum": 106.60108770790976,
+  "notes": [
+    "Evaluation timers exclude prepare, input reconstruction, source verification outside the timed paired evaluation, independent audit, and documentation; total end-to-end wall time was not recorded.",
+    "119 fits 21 small three-component correction vectors on existing predictions;120 performs no correction fit. These are not new boosted-tree fits."
+  ],
+  "run_freeze_sha256": "a18b3ca626551c756b210591497ad9844168078c59347d30e52c885b7f2b614a",
+  "summary_sha256": "556becbc2bd628c679f77a67d7a402204d60aa4b140162fee4c958ddf5f68c8c"
+}

@@ -1,0 +1,122 @@
+{
+  "artifact_kind": "market_feature_full_quality_actual_cost",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "run_freeze_sha256": "77af06e543d00ee01d83b79864ff0b2f17255735f9a66edd37d55732700c13ba",
+  "selected_candidates": [
+    "colsample_07"
+  ],
+  "seed": 42,
+  "new_full_outer_jobs": 7,
+  "new_full_booster_fits": 56,
+  "new_full_baseline_fits": 0,
+  "smoke_outer_jobs": 2,
+  "smoke_booster_fits": 4,
+  "smoke_n_estimators": 5,
+  "all_new_booster_fits_including_smoke": 60,
+  "smoke_sha256": "aafeafb4b424a322bc5c5c06753460a94198c51429e05d80984ee5d81fb0059a",
+  "records": [
+    {
+      "candidate": "colsample_07",
+      "year": 2020,
+      "outer_jobs": 1,
+      "booster_fits": 8,
+      "outer_fit_seconds": 700.2072017500177,
+      "peak_rss_bytes": 6663618560,
+      "receipt_sha256": "ba94da7cd5535233c221b048946e86df12abc122e9b09bc39a9ee4aa4a8228d1",
+      "cache_sha256": "40a05a780154b900d8653eefe631ed8ff902af7fde0d829a754af8a498a83d81",
+      "job_key": "17ec120475fc6a739f5c7af64123306811b835a5f73b18c7570407f6d5dd949b"
+    },
+    {
+      "candidate": "colsample_07",
+      "year": 2021,
+      "outer_jobs": 1,
+      "booster_fits": 8,
+      "outer_fit_seconds": 753.4621190000325,
+      "peak_rss_bytes": 5500829696,
+      "receipt_sha256": "d9549e5502e269baa91f3bbcf5cd60a0df01ee048205a258623126dff25097b2",
+      "cache_sha256": "3d1d15c314dce497f1b9e2773222beeee8af2c984e5df18520c190ac0fa47370",
+      "job_key": "bc93d9224c335e0e343c0cb3194198cadd0b40f7880f35d3bd0f3a1961c52bd3"
+    },
+    {
+      "candidate": "colsample_07",
+      "year": 2022,
+      "outer_jobs": 1,
+      "booster_fits": 8,
+      "outer_fit_seconds": 790.8063196250005,
+      "peak_rss_bytes": 6758449152,
+      "receipt_sha256": "97226f7e96f01f0e0372f419b70e1d9a94d2effc24d117e889ed183da89c8f27",
+      "cache_sha256": "ba2dd7586741752015ef107d575e3eb679da0db2d5813e729171ea504f31de06",
+      "job_key": "7d4aad8dd7105dcd28a8fa32aa3675573e21c342fc59980bee39f9a43f30eecc"
+    },
+    {
+      "candidate": "colsample_07",
+      "year": 2023,
+      "outer_jobs": 1,
+      "booster_fits": 8,
+      "outer_fit_seconds": 789.9542855839245,
+      "peak_rss_bytes": 9105866752,
+      "receipt_sha256": "3cc27afacafabf8d3369c1f3cf2f902b89e21ca1208d9d99c9a5441cf0e7d814",
+      "cache_sha256": "d05e86e59efbe6dddab91b8844a66d18d361e3d46b6662b09db5789aa04b7dd9",
+      "job_key": "3cbbbadd2505efcc8220140b8519d638257b7accf87b14f43bc509690464cf4f"
+    },
+    {
+      "candidate": "colsample_07",
+      "year": 2024,
+      "outer_jobs": 1,
+      "booster_fits": 8,
+      "outer_fit_seconds": 893.8888742909767,
+      "peak_rss_bytes": 6651641856,
+      "receipt_sha256": "9149a4ea09a9a081be6e7f8411a9244f37b547aa99d6fea78fb6916e0104efb2",
+      "cache_sha256": "9570cf85a55e550bb5eaff106979486ab1209ad7741e90d3bdfd3acd61d30251",
+      "job_key": "49efe607b88b71dd624d3a1e0f9c8ba0acf513f806983cbf2bc33492fc5f4c8c"
+    },
+    {
+      "candidate": "colsample_07",
+      "year": 2025,
+      "outer_jobs": 1,
+      "booster_fits": 8,
+      "outer_fit_seconds": 953.2808138749097,
+      "peak_rss_bytes": 7102480384,
+      "receipt_sha256": "43eb645e122305e0207d886c6f8d86bc0d5ab0dde34513e9385dc6c24a6e493a",
+      "cache_sha256": "abed57462eef1d40458f2c4bbbce9c1bff59a1ab91fbc8440c96904d65ce34f1",
+      "job_key": "4767d6fa8cdd27949a4439d232e503e3c182e6a318b8c8627d162f4a1d594907"
+    },
+    {
+      "candidate": "colsample_07",
+      "year": 2026,
+      "outer_jobs": 1,
+      "booster_fits": 8,
+      "outer_fit_seconds": 993.832676207996,
+      "peak_rss_bytes": 6827687936,
+      "receipt_sha256": "ed158ec6828371b342a2ba2e6afd0ab0dc0631d4d21a17be8d8ca70cb897aabf",
+      "cache_sha256": "56113c0c7c4a901aa6650c48537d8be3f6719ce92964ebf81c9937b8bba560fc",
+      "job_key": "f11edb95061838d03400fbb329d12e2fa731198a395ba60b1adda07a1374fa99"
+    }
+  ],
+  "sum_outer_fit_seconds": 5875.4322903328575,
+  "sum_outer_fit_minutes": 97.92387150554762,
+  "peak_worker_rss_bytes": 9105866752,
+  "peak_worker_rss_gib": 8.480499267578125,
+  "max_workers": 2,
+  "model_threads": 1,
+  "timer_scope": "Per-cache elapsed_seconds starts immediately before CalibSplitFactory.fit and ends during cache metadata construction, after seven inner OOF fits, final fit, calibration, fitted column/parameter checks and prediction generation. Payload validation, dtype metadata, cache serialization and completion receipt/source verification after timer capture are excluded.",
+  "excluded_from_fit_timer": [
+    "matrix/input load before fit",
+    "prepare and baseline proof",
+    "smoke",
+    "cache serialization",
+    "cache payload validation and dtype metadata after elapsed capture",
+    "post-fit source verification and receipt writes",
+    "paired evaluation and bootstrap",
+    "summary",
+    "independent audits",
+    "documentation"
+  ],
+  "training_wall_seconds": null,
+  "evaluation_total_wall_seconds": null,
+  "whole_study_wall_seconds": null,
+  "smoke_elapsed_seconds": null,
+  "rss_scope": "Maximum resident set size of each full-training worker process over its lifetime; not the simultaneous combined memory of both workers.",
+  "note": "Receipt timer sums are observed cumulative fit time, not end-to-end wall time. Inner OOF is already included; do not multiply runtime by eight."
+}

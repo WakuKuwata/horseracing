@@ -1,0 +1,19 @@
+{
+  "method": "multiple_testing_budget",
+  "adoption_policy": "small-gains-v1",
+  "judgments_per_year": 8,
+  "acceptable_net_harm_prob": 0.05,
+  "harm_fraction": 1.0,
+  "ci_alpha": 0.0125,
+  "per_judgment_fp_budget": 0.00625,
+  "derived_delta": 0.0,
+  "frozen_at": "2026-09-07",
+  "inputs_frozen_before_derivation": true,
+  "derivation": "Each fixed-bundle confirmation uses one-sided alpha=0.05/8=0.00625 (two-sided bootstrap alpha=0.0125). The union bound over at most 8 submissions is 0.05, without an additional point-effect floor. Independence between submissions is not required; valid intervals and prospective selection are required.",
+  "notes": [
+    "The zero floor follows from allocating the error budget directly to confirmation intervals, not fitting a threshold to observed gains.",
+    "The annual bound is nominal and conditional on interval calibration, retraining-noise assumptions, prospective selection and complete accounting.",
+    "Exploratory feature checks are not production submissions.",
+    "No refunds or ledger resets; historical verdicts remain unchanged."
+  ]
+}

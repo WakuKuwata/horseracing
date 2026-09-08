@@ -1,0 +1,2992 @@
+{
+  "artifact_kind": "historical_small_gain_audit",
+  "review_date": "2026-09-07",
+  "policy": "small-gains-v1",
+  "active_model_readonly_db": "lgbm-094-cap900",
+  "eligible_for_verdict": false,
+  "can_adopt": false,
+  "limitations": [
+    "Available local specs, research notes, out/ and selected artifacts; missing historical evidence is not proof of failure.",
+    "Manual audit states are distinct from formal v4 research dispositions.",
+    "Different model generations, windows and metrics are not interchangeable.",
+    "No training, activation, or confirmation reservation performed."
+  ],
+  "records": [
+    {
+      "id": "110-relative",
+      "name": "相対能力13列削除",
+      "review_status": "RETAIN_UNCERTAIN",
+      "priority": 1,
+      "primary_delta": -0.0022728446777042777,
+      "ci": {
+        "point": -0.002272844677704009,
+        "ci_low": -0.005305908032584232,
+        "ci_high": 0.0007024208951813796,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 825,
+        "no_decision": false
+      },
+      "note": "現行構成で確認済み、CIはゼロを跨ぐ。",
+      "source": "specs/110-feature-pruning/evidence/full-relative_ability.json",
+      "source_sha256": "6b32ab7882f538f80d1d9df3eda673de90539d30271fc3b20339ecc891b268f7",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "v4",
+      "original_gate": {
+        "primary": false,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0022728446777042777,
+          "min_effect_delta": 0.0035188338580500285,
+          "opportunity": null,
+          "ci_low": -0.005305908032584232,
+          "ci_high": 0.0007024208951813796,
+          "top2_diff": -0.0002353346420808644,
+          "top3_diff": -0.00024960388629774455,
+          "cand_ece": 0.0013056950376957078,
+          "act_ece": 0.001377318106000855,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.0025717164186894207,
+                "ci_low": -0.006635647636881618,
+                "ci_high": 0.0012789626578165094,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.002385094700923532,
+                "ci_low": -0.005668314927132691,
+                "ci_high": 0.0007568810403235596,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": false,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": 0.00481883481858535,
+              "ci_low": -0.004615542903040539,
+              "ci_high": 0.014196873942382272,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5465095598490239,
+            "residual_risk": 0.014196873942382272
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": 0.00481883481858535,
+              "ci_low": -0.004615542903040539,
+              "ci_high": 0.014196873942382272,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5465095598490239,
+            "residual_risk": 0.014196873942382272
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.005001821689671533,
+              "ci_low": -0.006859718110941832,
+              "ci_high": 0.0173136487745222,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5877282074288598,
+            "residual_risk": 0.0173136487745222
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.005001821689671533,
+              "ci_low": -0.006859718110941832,
+              "ci_high": 0.0173136487745222,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5877282074288598,
+            "residual_risk": 0.0173136487745222
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.00022867743370785307,
+              "ci_low": -0.0004566659522800635,
+              "ci_high": -4.194992775672095e-06,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 825,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 825,
+            "cand_minus_uniform": -0.04404482859230699,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": 0.00038867903858886795,
+              "ci_low": -0.0005076943625056716,
+              "ci_high": 0.0013185928771176547,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.047271279167339204,
+            "residual_risk": 0.0013185928771176547
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": 0.0006157349952374802,
+              "ci_low": -0.000351516783833898,
+              "ci_high": 0.0016815808427759107,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04875965368302753,
+            "residual_risk": 0.0016815808427759107
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": 0.0006157349952374802,
+              "ci_low": -0.000351516783833898,
+              "ci_high": 0.0016815808427759107,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04875965368302753,
+            "residual_risk": 0.0016815808427759107
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": false,
+        "subgroup_guard_status": "NOT_PROVEN",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "NO_DECISION",
+          "recent_year_only": "INCONCLUSIVE_LOW_PRECISION"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": 0.0013185928771176547,
+          "recent_year_only": 0.014196873942382272
+        }
+      }
+    },
+    {
+      "id": "111-age",
+      "name": "能力観測の経過日数2列",
+      "review_status": "RETAIN_UNCERTAIN",
+      "priority": 2,
+      "primary_delta": -0.00135832616738929,
+      "ci": {
+        "point": -0.0013583261673890152,
+        "ci_low": -0.0035321912053273676,
+        "ci_high": 0.0008352322825003866,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 825,
+        "no_decision": false
+      },
+      "note": "現行構成で確認済み、110との組合せは未測定。",
+      "source": "specs/111-ability-observation/evidence/full-observation_age.json",
+      "source_sha256": "eba767319434440b957c8201c1bb689bf6e9e2de798248c7e4893c96a6c69a2c",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "v4",
+      "original_gate": {
+        "primary": false,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.00135832616738929,
+          "min_effect_delta": 0.0035188338580500285,
+          "opportunity": null,
+          "ci_low": -0.0035321912053273676,
+          "ci_high": 0.0008352322825003866,
+          "top2_diff": -0.00015182001702546133,
+          "top3_diff": -0.0001237107252570202,
+          "cand_ece": 0.0014774772122295786,
+          "act_ece": 0.001377318106000855,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.0008834186790474443,
+                "ci_low": -0.0032766091464359027,
+                "ci_high": 0.0015252659501179433,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.0011775775679195351,
+                "ci_low": -0.0031286297807288153,
+                "ci_high": 0.0007902799753594771,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": false,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.00012726658430867437,
+              "ci_low": -0.00787907356465871,
+              "ci_high": 0.007973743666355393,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5926027625342226,
+            "residual_risk": 0.007973743666355393
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.00012726658430867437,
+              "ci_low": -0.00787907356465871,
+              "ci_high": 0.007973743666355393,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5926027625342226,
+            "residual_risk": 0.007973743666355393
+          },
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": 0.00034629519720781333,
+              "ci_low": -0.005699665879773233,
+              "ci_high": 0.006215809853624215,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5509820994704016,
+            "residual_risk": 0.006215809853624215
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": 0.00034629519720781333,
+              "ci_low": -0.005699665879773233,
+              "ci_high": 0.006215809853624215,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5509820994704016,
+            "residual_risk": 0.006215809853624215
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.00012120062699024749,
+              "ci_low": -0.00026185015950145105,
+              "ci_high": 2.3483789483032658e-05,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 825,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 825,
+            "cand_minus_uniform": -0.043937351785589385,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": -4.020386067892888e-05,
+              "ci_low": -0.0005912108487865992,
+              "ci_high": 0.0005181646255006108,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.04770016206660701,
+            "residual_risk": null
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": 0.00014147789994596206,
+              "ci_low": -0.00047503770413300227,
+              "ci_high": 0.0007284151223260799,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04923391077831905,
+            "residual_risk": null
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": 0.00014147789994596206,
+              "ci_low": -0.00047503770413300227,
+              "ci_high": 0.0007284151223260799,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04923391077831905,
+            "residual_risk": null
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": false,
+        "subgroup_guard_status": "NOT_PROVEN",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "INCONCLUSIVE_LOW_PRECISION"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": 0.006215809853624215
+        }
+      }
+    },
+    {
+      "id": "100-ensemble",
+      "name": "3 seed確率アンサンブル",
+      "review_status": "EVIDENCE_COMPLETION",
+      "priority": 5,
+      "primary_delta": -0.0021512207034461994,
+      "ci": null,
+      "note": "2025単年。3つの確率平均モデルの平均NLL対9単独seedの平均NLL。固定active seed42との差ではない。旧spike PASS後、最終δ/CI投影とコストで中断。品質一式・対応CI・現行anchor比較が必要。",
+      "source": "specs/100-eval-contract-v5/evidence/ensemble-spike.json",
+      "source_sha256": "e0fb1471ee6a267e5491360c7bed3a2f88940da149ed27d699e39527d36cdb5c",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "081-tataki_2",
+      "name": "tataki_2",
+      "review_status": "LOW_PRIORITY_SCREEN",
+      "priority": null,
+      "primary_delta": -0.000297,
+      "ci": {
+        "ci_low": -0.0006330095151902207,
+        "ci_high": 3.8614555129555077e-05,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "tataki_2",
+        "family": "PRE_ENTRY",
+        "k": 1,
+        "n_races": 26006,
+        "coverage": 0.786,
+        "mean_score_U": [
+          -0.008445
+        ],
+        "point_delta_nll": -0.000297,
+        "ci_low": -0.0006330095151902207,
+        "ci_high": 3.8614555129555077e-05,
+        "n_days": 703,
+        "passes_screen": false,
+        "screen_reason": "below loose screen (point -0.00030 vs <= -0.001, ci_high +0.00004 vs <= 0.005)",
+        "gammas_by_fold": [
+          [
+            -0.071586
+          ],
+          [
+            -0.095358
+          ],
+          [
+            -0.086022
+          ],
+          [
+            -0.078819
+          ],
+          [
+            -0.074701
+          ],
+          [
+            -0.071089
+          ],
+          [
+            -0.075501
+          ]
+        ],
+        "gamma_sign_stable": true
+      }
+    },
+    {
+      "id": "081-prior_gap_log",
+      "name": "prior_gap_log",
+      "review_status": "SCREEN_REOPEN",
+      "priority": 3,
+      "primary_delta": -0.001145,
+      "ci": {
+        "ci_low": -0.0018343722775728476,
+        "ci_high": -0.0004339534911872433,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "prior_gap_log",
+        "family": "PRE_ENTRY",
+        "k": 1,
+        "n_races": 26006,
+        "coverage": 0.8755,
+        "mean_score_U": [
+          -0.046871
+        ],
+        "point_delta_nll": -0.001145,
+        "ci_low": -0.0018343722775728476,
+        "ci_high": -0.0004339534911872433,
+        "n_days": 703,
+        "passes_screen": true,
+        "screen_reason": "PASS loose screen -> Phase 1 candidate",
+        "gammas_by_fold": [
+          [
+            -0.051209
+          ],
+          [
+            -0.065797
+          ],
+          [
+            -0.057965
+          ],
+          [
+            -0.053819
+          ],
+          [
+            -0.053187
+          ],
+          [
+            -0.055045
+          ],
+          [
+            -0.054375
+          ]
+        ],
+        "gamma_sign_stable": true
+      }
+    },
+    {
+      "id": "081-seasonal_sex",
+      "name": "seasonal_sex",
+      "review_status": "SCREEN_REOPEN",
+      "priority": 4,
+      "primary_delta": -0.0009,
+      "ci": {
+        "ci_low": -0.0015536070078615953,
+        "ci_high": -0.0002457965508868821,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "seasonal_sex",
+        "family": "PRE_ENTRY",
+        "k": 2,
+        "n_races": 26006,
+        "coverage": 0.7449,
+        "mean_score_U": [
+          -0.003921,
+          -0.010808
+        ],
+        "point_delta_nll": -0.0009,
+        "ci_low": -0.0015536070078615953,
+        "ci_high": -0.0002457965508868821,
+        "n_days": 703,
+        "passes_screen": false,
+        "screen_reason": "below loose screen (point -0.00090 vs <= -0.001, ci_high -0.00025 vs <= 0.005)",
+        "gammas_by_fold": [
+          [
+            -0.112562,
+            -0.244748
+          ],
+          [
+            -0.073093,
+            -0.182464
+          ],
+          [
+            -0.064647,
+            -0.175798
+          ],
+          [
+            -0.062061,
+            -0.177446
+          ],
+          [
+            -0.085537,
+            -0.189505
+          ],
+          [
+            -0.071459,
+            -0.189992
+          ],
+          [
+            -0.064046,
+            -0.194081
+          ]
+        ],
+        "gamma_sign_stable": true
+      }
+    },
+    {
+      "id": "081-current_gap_shape",
+      "name": "current_gap_shape",
+      "review_status": "SCREEN_REOPEN",
+      "priority": 3,
+      "primary_delta": -0.002881,
+      "ci": {
+        "ci_low": -0.003934855205460365,
+        "ci_high": -0.0018518570883545372,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "current_gap_shape",
+        "family": "PRE_ENTRY",
+        "k": 3,
+        "n_races": 26006,
+        "coverage": 0.8792,
+        "mean_score_U": [
+          0.049045,
+          -0.020787,
+          1.4401
+        ],
+        "point_delta_nll": -0.002881,
+        "ci_low": -0.003934855205460365,
+        "ci_high": -0.0018518570883545372,
+        "n_days": 703,
+        "passes_screen": true,
+        "screen_reason": "PASS loose screen -> Phase 1 candidate",
+        "gammas_by_fold": [
+          [
+            0.073964,
+            -0.005804,
+            0.000688
+          ],
+          [
+            0.108378,
+            0.004898,
+            0.000154
+          ],
+          [
+            0.115609,
+            0.006556,
+            -8e-06
+          ],
+          [
+            0.130456,
+            0.004661,
+            -0.000111
+          ],
+          [
+            0.127858,
+            0.008488,
+            1.7e-05
+          ],
+          [
+            0.120124,
+            0.002146,
+            -1.5e-05
+          ],
+          [
+            0.124846,
+            0.0019,
+            -9.6e-05
+          ]
+        ],
+        "gamma_sign_stable": false
+      }
+    },
+    {
+      "id": "081-prev_finish_reversion",
+      "name": "prev_finish_reversion",
+      "review_status": "LOW_PRIORITY_SCREEN",
+      "priority": null,
+      "primary_delta": -0.000244,
+      "ci": {
+        "ci_low": -0.0007532184232865372,
+        "ci_high": 0.00027922078250281585,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "prev_finish_reversion",
+        "family": "PRE_ENTRY",
+        "k": 2,
+        "n_races": 26006,
+        "coverage": 0.8766,
+        "mean_score_U": [
+          -0.011248,
+          0.003346
+        ],
+        "point_delta_nll": -0.000244,
+        "ci_low": -0.0007532184232865372,
+        "ci_high": 0.00027922078250281585,
+        "n_days": 703,
+        "passes_screen": false,
+        "screen_reason": "below loose screen (point -0.00024 vs <= -0.001, ci_high +0.00028 vs <= 0.005)",
+        "gammas_by_fold": [
+          [
+            -0.077776,
+            0.068175
+          ],
+          [
+            -0.088087,
+            0.054455
+          ],
+          [
+            -0.094552,
+            0.030721
+          ],
+          [
+            -0.088037,
+            0.029877
+          ],
+          [
+            -0.092384,
+            0.006178
+          ],
+          [
+            -0.083958,
+            0.005371
+          ],
+          [
+            -0.075793,
+            -0.000254
+          ]
+        ],
+        "gamma_sign_stable": false
+      }
+    },
+    {
+      "id": "081-draw_venue",
+      "name": "draw_venue",
+      "review_status": "LOW_PRIORITY_SCREEN",
+      "priority": null,
+      "primary_delta": -3.1e-05,
+      "ci": {
+        "ci_low": -0.0012033608976951427,
+        "ci_high": 0.001099759170033877,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "draw_venue",
+        "family": "PRE_ENTRY",
+        "k": 20,
+        "n_races": 26006,
+        "coverage": 0.9638,
+        "mean_score_U": [
+          0.000718,
+          -3e-06,
+          2.4e-05,
+          -0.000252,
+          0.000143,
+          -0.000558,
+          0.000843,
+          0.001862,
+          0.001578,
+          0.000307,
+          0.002459,
+          -0.001342,
+          -0.000613,
+          -0.001546,
+          0.00023,
+          0.000993,
+          0.002287,
+          -0.001406,
+          -6e-05,
+          0.001215
+        ],
+        "point_delta_nll": -3.1e-05,
+        "ci_low": -0.0012033608976951427,
+        "ci_high": 0.001099759170033877,
+        "n_days": 703,
+        "passes_screen": false,
+        "screen_reason": "below loose screen (point -0.00003 vs <= -0.001, ci_high +0.00110 vs <= 0.005)",
+        "gammas_by_fold": [
+          [
+            -0.082268,
+            -0.132875,
+            -0.460141,
+            0.193181,
+            0.751653,
+            0.299686,
+            0.271701,
+            0.490044,
+            0.234057,
+            -0.340284,
+            0.208273,
+            -0.01377,
+            -0.346321,
+            -0.696678,
+            -0.919532,
+            0.2171,
+            0.840511,
+            -0.066134,
+            -0.145242,
+            0.025374
+          ],
+          [
+            0.464404,
+            -0.206893,
+            -0.063728,
+            -0.120508,
+            0.235423,
+            0.451413,
+            0.057296,
+            0.444545,
+            0.288093,
+            -0.150119,
+            0.137118,
+            -0.014596,
+            -0.295732,
+            -0.297137,
+            -0.574494,
+            0.239406,
+            0.570207,
+            -0.357236,
+            -0.208733,
+            0.067523
+          ],
+          [
+            0.534243,
+            -0.073504,
+            0.023934,
+            0.002657,
+            0.04039,
+            0.220485,
+            0.055406,
+            0.328696,
+            0.271099,
+            0.004114,
+            0.12475,
+            -0.115083,
+            -0.18523,
+            -0.350286,
+            -0.574447,
+            0.239386,
+            0.479236,
+            -0.359213,
+            -0.271327,
+            0.286888
+          ],
+          [
+            0.533319,
+            -0.01451,
+            -0.053598,
+            -0.041105,
+            -0.078555,
+            0.129978,
+            0.216124,
+            0.352699,
+            0.233927,
+            0.021,
+            0.23507,
+            -0.111084,
+            -0.087608,
+            -0.593593,
+            -0.574401,
+            0.239366,
+            0.344218,
+            -0.293789,
+            -0.092373,
+            0.311542
+          ],
+          [
+            0.562675,
+            -0.087587,
+            -0.112471,
+            0.039896,
+            -0.166185,
+            0.054468,
+            0.230864,
+            0.348304,
+            0.259219,
+            0.097887,
+            0.263006,
+            -0.190924,
+            -0.027535,
+            -0.453749,
+            -0.358016,
+            0.290172,
+            0.370388,
+            -0.289003,
+            -0.076011,
+            0.406772
+          ],
+          [
+            0.530569,
+            -0.073226,
+            -0.065276,
+            0.000544,
+            -0.087818,
+            -0.139611,
+            0.190121,
+            0.389061,
+            0.283423,
+            0.112864,
+            0.340759,
+            -0.270725,
+            -0.032621,
+            -0.421436,
+            -0.14415,
+            0.236679,
+            0.374843,
+            -0.258946,
+            -0.056545,
+            0.406449
+          ],
+          [
+            0.446634,
+            -0.001081,
+            0.046916,
+            -0.105078,
+            0.046042,
+            -0.234613,
+            0.193718,
+            0.47417,
+            0.24387,
+            0.064163,
+            0.358367,
+            -0.274768,
+            -0.121501,
+            -0.368506,
+            -0.003946,
+            0.270032,
+            0.360525,
+            -0.240062,
+            -0.029633,
+            0.333114
+          ]
+        ],
+        "gamma_sign_stable": false
+      }
+    },
+    {
+      "id": "081-body_mass_going",
+      "name": "body_mass_going",
+      "review_status": "LOW_PRIORITY_SCREEN",
+      "priority": null,
+      "primary_delta": -0.000191,
+      "ci": {
+        "ci_low": -0.000525877166350512,
+        "ci_high": 0.00014667975849682878,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "body_mass_going",
+        "family": "POST_WEIGHT",
+        "k": 3,
+        "n_races": 26006,
+        "coverage": 0.6855,
+        "mean_score_U": [
+          -0.002924,
+          -0.00242,
+          0.000801
+        ],
+        "point_delta_nll": -0.000191,
+        "ci_low": -0.000525877166350512,
+        "ci_high": 0.00014667975849682878,
+        "n_days": 703,
+        "passes_screen": false,
+        "screen_reason": "below loose screen (point -0.00019 vs <= -0.001, ci_high +0.00015 vs <= 0.005)",
+        "gammas_by_fold": [
+          [
+            -0.244356,
+            0.003541,
+            -0.078661
+          ],
+          [
+            -0.201754,
+            0.018013,
+            -0.020613
+          ],
+          [
+            -0.173802,
+            0.018411,
+            0.030509
+          ],
+          [
+            -0.146226,
+            0.009234,
+            0.071019
+          ],
+          [
+            -0.129427,
+            0.002161,
+            0.048336
+          ],
+          [
+            -0.11962,
+            -0.025546,
+            0.048927
+          ],
+          [
+            -0.129697,
+            -0.041469,
+            0.060323
+          ]
+        ],
+        "gamma_sign_stable": false
+      }
+    },
+    {
+      "id": "081-weight_gain",
+      "name": "weight_gain",
+      "review_status": "LOW_PRIORITY_SCREEN",
+      "priority": null,
+      "primary_delta": -0.000337,
+      "ci": {
+        "ci_low": -0.0007431780957374456,
+        "ci_high": 0.00010514540984298106,
+        "kind": "probe race-day bootstrap; not retraining-noise total CI"
+      },
+      "note": "旧lgbm-065残差補正のスクリーニング。top2/3/ECE未検証。current/prior gapは同一軸として扱い改善を加算しない。POST_WEIGHTは馬体重公表後限定。",
+      "source": "specs/081-folklore-residual-probe/evidence/phase0-probe-report.json",
+      "source_sha256": "88f5cea2209d16e0a5e1de23148a637fc1a094fb73534fa599044f66b6d87ffd",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "probe": {
+        "candidate_id": "weight_gain",
+        "family": "POST_WEIGHT",
+        "k": 1,
+        "n_races": 26006,
+        "coverage": 0.4455,
+        "mean_score_U": [
+          0.005169
+        ],
+        "point_delta_nll": -0.000337,
+        "ci_low": -0.0007431780957374456,
+        "ci_high": 0.00010514540984298106,
+        "n_days": 703,
+        "passes_screen": false,
+        "screen_reason": "below loose screen (point -0.00034 vs <= -0.001, ci_high +0.00011 vs <= 0.005)",
+        "gammas_by_fold": [
+          [
+            0.167293
+          ],
+          [
+            0.208884
+          ],
+          [
+            0.169711
+          ],
+          [
+            0.15936
+          ],
+          [
+            0.176331
+          ],
+          [
+            0.167037
+          ],
+          [
+            0.154194
+          ]
+        ],
+        "gamma_sign_stable": true
+      }
+    },
+    {
+      "id": "070-f03",
+      "name": "過去市場順位のpercentile置換",
+      "review_status": "LEGACY_RECHECK",
+      "priority": 6,
+      "primary_delta": -0.0023433417417257907,
+      "ci": {
+        "point": -0.0023433417417258262,
+        "ci_low": -0.005193852675099269,
+        "ci_high": 0.0003888392724795971,
+        "b": 2000,
+        "seed": 20260714,
+        "block": "race_day",
+        "n_days": 703,
+        "no_decision": false
+      },
+      "note": "旧基準モデル。total CI無し。F04/088は旧recentガード不通過、新v4の害検出ガードは未計算。正式RETAINとはしない。",
+      "source": "out/f03.json",
+      "source_sha256": "a49736b7f5f8c6affa05dce2f25bf7b5588cfa1df7ad536ab643b0f470bdc8ac",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "legacy-unspecified",
+      "original_gate": {
+        "primary": true,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0023433417417257907,
+          "ci_high": 0.0003888392724795971,
+          "top2_diff": 2.8263028026997983e-05,
+          "top3_diff": -6.360057432613919e-05,
+          "cand_ece": 0.0012519192468309023,
+          "act_ece": 0.00189522164844917,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.0022887714263468695,
+                "degraded": false
+              },
+              "recent_5y": {
+                "diff": -0.0015676656693566215,
+                "degraded": false
+              }
+            }
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "isotonic",
+        "calib_frac": 0.3,
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_pm_rankpct_last",
+          "asof_pm_rankpct_mean5",
+          "asof_pm_favorite_rate5",
+          "asof_pm_top3fav_rate5",
+          "asof_pm_rank_obs_count",
+          "asof_pm_finish_resid_mean5",
+          "asof_pm_finish_resid_career",
+          "asof_pm_win_resid_mean10",
+          "asof_pm_win_resid_career",
+          "asof_pm_resid_sd5",
+          "asof_pm_result_obs_count",
+          "asof_pm_support_surface",
+          "asof_pm_support_distband",
+          "asof_pm_support_venue",
+          "asof_pm_support_cond_count_surface",
+          "asof_pm_support_cond_count_distband",
+          "asof_pm_support_cond_count_venue",
+          "asof_pm_finish_resid_surface",
+          "asof_pm_finish_resid_surface_count"
+        ],
+        "market_offset": false,
+        "label": "pl_topk:isotonic:0.3:drop=pm_rank_robust,pm_expectation_residual,pm_conditioned_support,pm_conditioned_residual"
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.006210329894336569,
+              "ci_low": -0.01537027722024945,
+              "ci_high": 0.002977967424211513,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.5887887894573022
+          },
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": -0.004683536020515337,
+              "ci_low": -0.011873818880363667,
+              "ci_high": 0.00239008660422115,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.5330425215494606
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.0001955185653302253,
+              "ci_low": -0.000425508675212244,
+              "ci_high": 3.0672679231082336e-05,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 703,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 703,
+            "cand_minus_uniform": -0.04094307672156958
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": -0.00012664803831107562,
+              "ci_low": -0.0009276612921692014,
+              "ci_high": 0.0005922926952757455,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 84,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 84,
+            "cand_minus_uniform": -0.04268761197246408
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": -0.0001486382249881172,
+              "ci_low": -0.0009618921007467218,
+              "ci_high": 0.000711805850678938,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.04416115123067706
+          }
+        },
+        "critical": [
+          "2026_only",
+          "nk",
+          "2026_nk"
+        ],
+        "subgroup_guard": true,
+        "subgroup_decisions": {
+          "2026_only": "PASS",
+          "nk": "PASS",
+          "2026_nk": "PASS"
+        }
+      }
+    },
+    {
+      "id": "070-f05",
+      "name": "条件別の過去市場支持率",
+      "review_status": "LEGACY_RECHECK",
+      "priority": 7,
+      "primary_delta": -0.0015878364638548526,
+      "ci": {
+        "point": -0.0015878364638545347,
+        "ci_low": -0.004375374250714034,
+        "ci_high": 0.001042210643053269,
+        "b": 2000,
+        "seed": 20260714,
+        "block": "race_day",
+        "n_days": 703,
+        "no_decision": false
+      },
+      "note": "旧基準モデル。total CI無し。F04/088は旧recentガード不通過、新v4の害検出ガードは未計算。正式RETAINとはしない。",
+      "source": "out/f05_support.json",
+      "source_sha256": "b9658f8ffbd5a1076bd1a4660444049ca6bfa86084693871ad0976aa09db548a",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "legacy-unspecified",
+      "original_gate": {
+        "primary": true,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0015878364638548526,
+          "ci_high": 0.001042210643053269,
+          "top2_diff": -9.194382381255695e-05,
+          "top3_diff": 3.979063949655082e-05,
+          "cand_ece": 0.0013525088927799195,
+          "act_ece": 0.00189522164844917,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.0006251508435926034,
+                "degraded": false
+              },
+              "recent_5y": {
+                "diff": -0.0006880253164656125,
+                "degraded": false
+              }
+            }
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "isotonic",
+        "calib_frac": 0.3,
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_pm_rankpct_last",
+          "asof_pm_rankpct_mean5",
+          "asof_pm_favorite_rate5",
+          "asof_pm_top3fav_rate5",
+          "asof_pm_rank_obs_count",
+          "asof_pm_finish_resid_mean5",
+          "asof_pm_finish_resid_career",
+          "asof_pm_win_resid_mean10",
+          "asof_pm_win_resid_career",
+          "asof_pm_resid_sd5",
+          "asof_pm_result_obs_count",
+          "asof_pm_support_surface",
+          "asof_pm_support_distband",
+          "asof_pm_support_venue",
+          "asof_pm_support_cond_count_surface",
+          "asof_pm_support_cond_count_distband",
+          "asof_pm_support_cond_count_venue",
+          "asof_pm_finish_resid_surface",
+          "asof_pm_finish_resid_surface_count"
+        ],
+        "market_offset": false,
+        "label": "pl_topk:isotonic:0.3:drop=pm_rank_robust,pm_expectation_residual,pm_conditioned_support,pm_conditioned_residual"
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": -0.0044225951981199775,
+              "ci_low": -0.011275486962375897,
+              "ci_high": 0.002602943036120059,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.5327815807270653
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.010911897583734405,
+              "ci_low": -0.01878116898451364,
+              "ci_high": -0.003342192767439737,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.5934903571467
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.00013252050723340576,
+              "ci_low": -0.00036534509541907834,
+              "ci_high": 8.7103633464642e-05,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 703,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 703,
+            "cand_minus_uniform": -0.040880078663472756
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": -0.000768292026481012,
+              "ci_low": -0.001535761036539168,
+              "ci_high": 5.865392459285688e-05,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 84,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 84,
+            "cand_minus_uniform": -0.04332925596063402
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": -0.000847757693499612,
+              "ci_low": -0.0016781093120454163,
+              "ci_high": -6.434901768700483e-05,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.04486027069918856
+          }
+        },
+        "critical": [
+          "2026_only",
+          "nk",
+          "2026_nk"
+        ],
+        "subgroup_guard": true,
+        "subgroup_decisions": {
+          "2026_only": "PASS",
+          "nk": "PASS",
+          "2026_nk": "PASS"
+        }
+      }
+    },
+    {
+      "id": "070-f04",
+      "name": "市場期待からの残差特徴",
+      "review_status": "LEGACY_RECHECK",
+      "priority": null,
+      "primary_delta": -0.0014762472768219403,
+      "ci": {
+        "point": -0.0014762472768218196,
+        "ci_low": -0.004539361702689505,
+        "ci_high": 0.0014258126789168742,
+        "b": 2000,
+        "seed": 20260714,
+        "block": "race_day",
+        "n_days": 703,
+        "no_decision": false
+      },
+      "note": "旧基準モデル。total CI無し。F04/088は旧recentガード不通過、新v4の害検出ガードは未計算。正式RETAINとはしない。",
+      "source": "out/f04.json",
+      "source_sha256": "1f2fcd74ef707eb101b432e81f14f0fc82809379a187738c30f7390b633358c5",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "legacy-unspecified",
+      "original_gate": {
+        "primary": true,
+        "stat_guard": false,
+        "recent_guard": false,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0014762472768219403,
+          "ci_high": 0.0014258126789168742,
+          "top2_diff": -0.00016663128175697928,
+          "top3_diff": -0.0006065305317123904,
+          "cand_ece": 0.002026223163193027,
+          "act_ece": 0.00189522164844917,
+          "emergency_stop": false,
+          "recent": {
+            "pass": false,
+            "windows": {
+              "recent_3y": {
+                "diff": 0.0007540034710351584,
+                "degraded": true
+              },
+              "recent_5y": {
+                "diff": 0.0007925761498550621,
+                "degraded": true
+              }
+            }
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "isotonic",
+        "calib_frac": 0.3,
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_pm_rankpct_last",
+          "asof_pm_rankpct_mean5",
+          "asof_pm_favorite_rate5",
+          "asof_pm_top3fav_rate5",
+          "asof_pm_rank_obs_count",
+          "asof_pm_finish_resid_mean5",
+          "asof_pm_finish_resid_career",
+          "asof_pm_win_resid_mean10",
+          "asof_pm_win_resid_career",
+          "asof_pm_resid_sd5",
+          "asof_pm_result_obs_count",
+          "asof_pm_support_surface",
+          "asof_pm_support_distband",
+          "asof_pm_support_venue",
+          "asof_pm_support_cond_count_surface",
+          "asof_pm_support_cond_count_distband",
+          "asof_pm_support_cond_count_venue",
+          "asof_pm_finish_resid_surface",
+          "asof_pm_finish_resid_surface_count"
+        ],
+        "market_offset": false,
+        "label": "pl_topk:isotonic:0.3:drop=pm_rank_robust,pm_expectation_residual,pm_conditioned_support,pm_conditioned_residual"
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": -0.0065519667829491346,
+              "ci_low": -0.012662657621914786,
+              "ci_high": -0.00029529060211824803,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.5349109523118944
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.013180153189362054,
+              "ci_low": -0.02241167341520827,
+              "ci_high": -0.004166590149159024,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.5957586127523277
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -7.09709806253824e-05,
+              "ci_low": -0.00032177372938058774,
+              "ci_high": 0.00017690031244627143,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 703,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 703,
+            "cand_minus_uniform": -0.040818529136864734
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": -0.0009253341681449187,
+              "ci_low": -0.0017577948556944639,
+              "ci_high": -0.00014125127230460902,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 84,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 84,
+            "cand_minus_uniform": -0.04348629810229793
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": -0.0010063713902530654,
+              "ci_low": -0.001987709410068811,
+              "ci_high": -9.219057452758051e-05,
+              "b": 2000,
+              "seed": 20260714,
+              "block": "race_day",
+              "n_days": 58,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 58,
+            "cand_minus_uniform": -0.04501888439594202
+          }
+        },
+        "critical": [
+          "2026_only",
+          "nk",
+          "2026_nk"
+        ],
+        "subgroup_guard": true,
+        "subgroup_decisions": {
+          "2026_only": "PASS",
+          "nk": "PASS",
+          "2026_nk": "PASS"
+        }
+      }
+    },
+    {
+      "id": "088",
+      "name": "着順正規化・ラグ分解",
+      "review_status": "LEGACY_RECHECK",
+      "priority": null,
+      "primary_delta": -0.0005507082514655259,
+      "ci": {
+        "point": -0.000550708251465201,
+        "ci_low": -0.0022141502215346632,
+        "ci_high": 0.001170555818467798,
+        "b": 2000,
+        "seed": 20260713,
+        "block": "race_day",
+        "n_days": 821,
+        "no_decision": false
+      },
+      "note": "旧基準モデル。total CI無し。F04/088は旧recentガード不通過、新v4の害検出ガードは未計算。正式RETAINとはしない。",
+      "source": "artifacts/088_paired_report.json",
+      "source_sha256": "d3a69727e356a0a586dcaf85e7d414f73866f6355c98d726085e0fb333a14ea2",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "v2",
+      "original_gate": {
+        "primary": true,
+        "stat_guard": false,
+        "recent_guard": false,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0005507082514655259,
+          "ci_high": 0.001170555818467798,
+          "top2_diff": -0.00021421125154463816,
+          "top3_diff": -0.00020955370631708936,
+          "cand_ece": 0.0010199339158476091,
+          "act_ece": 0.0007736808620005686,
+          "emergency_stop": false,
+          "recent": {
+            "pass": false,
+            "windows": {
+              "recent_3y": {
+                "diff": 0.0009136956283879449,
+                "degraded": true
+              },
+              "recent_5y": {
+                "diff": -0.00023757519868494725,
+                "degraded": false
+              }
+            }
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "isotonic",
+        "calib_frac": 0.3,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "prev_finish_pct",
+          "prev2_finish",
+          "prev3_finish",
+          "prev2_finish_pct",
+          "prev3_finish_pct",
+          "avg_last3_finish_pct",
+          "avg_last5_finish",
+          "avg_last5_finish_pct",
+          "best_finish_pct",
+          "finish_trend5"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "label": "pl_topk:isotonic:0.3:drop=finish_decomp"
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": 0.001129314821212904,
+              "ci_low": -0.006026776773036256,
+              "ci_high": 0.00826142262776002,
+              "b": 2000,
+              "seed": 20260713,
+              "block": "race_day",
+              "n_days": 66,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "n_days": 66,
+            "cand_minus_uniform": -0.5206633732794508
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.005787550256885422,
+              "ci_low": -0.002403433454372967,
+              "ci_high": 0.013781817602218149,
+              "b": 2000,
+              "seed": 20260713,
+              "block": "race_day",
+              "n_days": 66,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "n_days": 66,
+            "cand_minus_uniform": -0.5566472121825612
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -5.7405886494909906e-05,
+              "ci_low": -0.0001912511323722811,
+              "ci_high": 8.998395369040641e-05,
+              "b": 2000,
+              "seed": 20260713,
+              "block": "race_day",
+              "n_days": 821,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "n_days": 821,
+            "cand_minus_uniform": -0.04239337169180897
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": 0.0002889407671090327,
+              "ci_low": -0.0005039430804860885,
+              "ci_high": 0.0010103242660963613,
+              "b": 2000,
+              "seed": 20260713,
+              "block": "race_day",
+              "n_days": 92,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "n_days": 92,
+            "cand_minus_uniform": -0.04299051260491193
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": 0.00025162964759847166,
+              "ci_low": -0.0006144724993642412,
+              "ci_high": 0.0011082348312774267,
+              "b": 2000,
+              "seed": 20260713,
+              "block": "race_day",
+              "n_days": 66,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "n_days": 66,
+            "cand_minus_uniform": -0.044676666423882266
+          }
+        },
+        "critical": [
+          "2026_only",
+          "nk",
+          "2026_nk"
+        ],
+        "subgroup_guard": false,
+        "subgroup_decisions": {
+          "2026_only": "NO_DECISION",
+          "nk": "NO_DECISION",
+          "2026_nk": "NO_DECISION"
+        }
+      }
+    },
+    {
+      "id": "096",
+      "name": "列サンプリング0.7",
+      "review_status": "EVIDENCE_COMPLETION",
+      "priority": 8,
+      "primary_delta": -0.0007399049970699956,
+      "ci": {
+        "point": -0.0007399049970703014,
+        "ci_low": -0.0030994437270517937,
+        "ci_high": 0.0017034949198240982,
+        "b": 2000,
+        "seed": 20260820,
+        "block": "race_day",
+        "n_days": 646,
+        "no_decision": false
+      },
+      "note": "品質3ガード通過だがcritical nk欠損。機械分類BLOCKED。対象群を補完して現行構成で再比較。",
+      "source": "specs/096-colsample-confirm/result.json",
+      "source_sha256": "4e31eae15874dd2e118b575d6351676fc5fd98e1fe40851010ce794d439b08cc",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "v4",
+      "original_gate": {
+        "primary": false,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0007399049970699956,
+          "min_effect_delta": 0.002,
+          "opportunity": null,
+          "ci_low": -0.0030994437270517937,
+          "ci_high": 0.0017034949198240982,
+          "top2_diff": -5.391680757249606e-06,
+          "top3_diff": 2.4982122556360675e-05,
+          "cand_ece": 0.0014930394654591992,
+          "act_ece": 0.0014608277377327322,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -3.21073869875116e-05,
+                "ci_low": -0.0027421164864720625,
+                "ci_high": 0.0028595463549398814,
+                "n_races": 10377,
+                "n_days": 322,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.001024167314073859,
+                "ci_low": -0.003214396868516113,
+                "ci_high": 0.0011901755481020153,
+                "n_races": 17271,
+                "n_days": 537,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": false,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "label": "096:active",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2024_only": {
+            "bootstrap_ci": {
+              "point": -0.0014388501219344697,
+              "ci_low": -0.005796656462256098,
+              "ci_high": 0.0027360495023352055,
+              "b": 2000,
+              "seed": 20260820,
+              "block": "race_day",
+              "n_days": 106,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 106,
+            "cand_minus_uniform": -0.5832765759553346,
+            "residual_risk": null
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": -0.0014388501219344697,
+              "ci_low": -0.005796656462256098,
+              "ci_high": 0.0027360495023352055,
+              "b": 2000,
+              "seed": 20260820,
+              "block": "race_day",
+              "n_days": 106,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 106,
+            "cand_minus_uniform": -0.5832765759553346,
+            "residual_risk": null
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -3.9894529213873876e-05,
+              "ci_low": -0.00019680549367982137,
+              "ci_high": 0.0001251685073401808,
+              "b": 2000,
+              "seed": 20260820,
+              "block": "race_day",
+              "n_days": 646,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 646,
+            "cand_minus_uniform": -0.04390353691238501,
+            "residual_risk": null
+          }
+        },
+        "critical": [
+          "nk"
+        ],
+        "subgroup_guard": false,
+        "subgroup_guard_status": "MISSING",
+        "target_year": 2024,
+        "subgroup_decisions": {
+          "nk": "MISSING"
+        },
+        "critical_residual_risk": {
+          "nk": null
+        }
+      }
+    },
+    {
+      "id": "107",
+      "name": "時変騎手切片",
+      "review_status": "QUALITY_BLOCKED",
+      "priority": null,
+      "primary_delta": -0.0019016862606719975,
+      "ci": {
+        "point": -0.00190168626067232,
+        "ci_low": -0.005029347840826506,
+        "ci_high": 0.0012482604237716956,
+        "b": 2000,
+        "seed": 20260902,
+        "block": "race_day",
+        "n_days": 321,
+        "no_decision": false
+      },
+      "note": "top3 +0.001222408が許容幅を超えるため復帰不可。",
+      "source": "specs/107-jockey-tv-intercept/evidence/verdict.json",
+      "source_sha256": "c70bf11ac3af00a52e3d3885582bfaaef67ab5e219e91974026364db47f37377",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "v4",
+      "original_gate": {
+        "primary": false,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": false,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0019016862606719975,
+          "min_effect_delta": 0.0035188338580500285,
+          "opportunity": null,
+          "ci_low": -0.005029347840826506,
+          "ci_high": 0.0012482604237716956,
+          "top2_diff": 0.0003980183532713566,
+          "top3_diff": 0.0012224084651175637,
+          "cand_ece": 0.0013565988312691474,
+          "act_ece": 0.002093632517913892,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.00190168626067232,
+                "ci_low": -0.004259525869250386,
+                "ci_high": 0.0004856354132222635,
+                "n_races": 10353,
+                "n_days": 321,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.00190168626067232,
+                "ci_low": -0.004259525869250386,
+                "ci_high": 0.0004856354132222635,
+                "n_races": 10353,
+                "n_days": 321,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": false,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": false,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": null,
+        "weight_mask_seed": null,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "jtv-confirmatory:active",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 3
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2024_only": {
+            "bootstrap_ci": {
+              "point": 0.00024032126419256964,
+              "ci_low": -0.0035949181688521713,
+              "ci_high": 0.003979540476544259,
+              "b": 2000,
+              "seed": 20260902,
+              "block": "race_day",
+              "n_days": 106,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 106,
+            "cand_minus_uniform": -0.5829015695600072,
+            "residual_risk": null
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": 0.00024032126419256964,
+              "ci_low": -0.0035949181688521713,
+              "ci_high": 0.003979540476544259,
+              "b": 2000,
+              "seed": 20260902,
+              "block": "race_day",
+              "n_days": 106,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 106,
+            "cand_minus_uniform": -0.5829015695600072,
+            "residual_risk": null
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.00017290568097695083,
+              "ci_low": -0.00038349195108509384,
+              "ci_high": 3.967154329976045e-05,
+              "b": 2000,
+              "seed": 20260902,
+              "block": "race_day",
+              "n_days": 321,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 321,
+            "cand_minus_uniform": -0.04596222464004699,
+            "residual_risk": null
+          }
+        },
+        "critical": [],
+        "subgroup_guard": true,
+        "subgroup_guard_status": "PASS",
+        "target_year": 2024,
+        "subgroup_decisions": {},
+        "critical_residual_risk": {}
+      }
+    },
+    {
+      "id": "099",
+      "name": "着差教師信号",
+      "review_status": "QUALITY_BLOCKED",
+      "priority": null,
+      "primary_delta": 0.0005008186230148759,
+      "ci": {
+        "point": 0.0005008186230146411,
+        "ci_low": -0.0015789069486570968,
+        "ci_high": 0.0026072627513106985,
+        "b": 2000,
+        "seed": 20260824,
+        "block": "race_day",
+        "n_days": 825,
+        "no_decision": false
+      },
+      "note": "主指標悪化、top3も許容幅超過。",
+      "source": "specs/099-margin-teacher-signal/verdict.json",
+      "source_sha256": "8dc8c1ed997508355862e3f7a22d91121b342681f4d0357f5146013e90b12cca",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "original_contract": "v4",
+      "original_gate": {
+        "primary": false,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": false,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": 0.0005008186230148759,
+          "min_effect_delta": 0.002,
+          "opportunity": null,
+          "ci_low": -0.0015789069486570968,
+          "ci_high": 0.0026072627513106985,
+          "top2_diff": 0.0002979690414087188,
+          "top3_diff": 0.000633936320821038,
+          "cand_ece": 0.0012511930063319142,
+          "act_ece": 0.0014150911689772218,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": 0.0002451183210083321,
+                "ci_low": -0.0023761841895740105,
+                "ci_high": 0.00283363630902468,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": true,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": 0.0009488273556681185,
+                "ci_low": -0.0011468125097713008,
+                "ci_high": 0.0030253458104942898,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": true,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": false,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": false,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "baseline_recipe": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.3,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "margin_teacher": null,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "label": "pl_topk:oof_isotonic",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": -0.005772423760837151,
+              "ci_low": -0.011377745239050009,
+              "ci_high": -0.00042915830019335874,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.554482609178424,
+            "residual_risk": null
+          },
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": -0.005772423760837151,
+              "ci_low": -0.011377745239050009,
+              "ci_high": -0.00042915830019335874,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.554482609178424,
+            "residual_risk": null
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.007099860731510982,
+              "ci_low": -0.014974225873018897,
+              "ci_high": 0.000625455185441655,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5982589347825875,
+            "residual_risk": null
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.007099860731510982,
+              "ci_low": -0.014974225873018897,
+              "ci_high": 0.000625455185441655,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5982589347825875,
+            "residual_risk": null
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": 7.212278840666385e-05,
+              "ci_low": -7.368257218701298e-05,
+              "ci_high": 0.00022088821917602493,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 825,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 825,
+            "cand_minus_uniform": -0.04386633052433234,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": -0.0001023302649984866,
+              "ci_low": -0.0008501805520229045,
+              "ci_high": 0.000655966405061538,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.04796280763272636,
+            "residual_risk": null
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": -9.14583585061003e-05,
+              "ci_low": -0.0009181133002691183,
+              "ci_high": 0.0007051504321386659,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04945861947413378,
+            "residual_risk": null
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": -9.14583585061003e-05,
+              "ci_low": -0.0009181133002691183,
+              "ci_high": 0.0007051504321386659,
+              "b": 2000,
+              "seed": 20260824,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04945861947413378,
+            "residual_risk": null
+          }
+        },
+        "critical": [
+          "recent_year_only",
+          "nk",
+          "recent_year_nk"
+        ],
+        "subgroup_guard": true,
+        "subgroup_guard_status": "PASS",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "recent_year_only": "PASS",
+          "nk": "PASS",
+          "recent_year_nk": "PASS"
+        },
+        "critical_residual_risk": {
+          "recent_year_only": null,
+          "nk": null,
+          "recent_year_nk": null
+        }
+      }
+    },
+    {
+      "id": "101",
+      "name": "時間減衰730日",
+      "review_status": "QUALITY_BLOCKED",
+      "priority": null,
+      "primary_delta": 0.005760242644679386,
+      "ci": {
+        "point": 0.005760242644679386,
+        "ci_low": 0.002777860048285132,
+        "ci_high": 0.00860143503054076,
+        "b": 2000,
+        "seed": 20260826,
+        "block": "race_day",
+        "n_days": 823,
+        "no_decision": false
+      },
+      "note": "主指標悪化、上位着順品質ガードも不通過。",
+      "source": "specs/101-recency-weighting/evidence/recency-gate.json",
+      "source_sha256": "b0f589e9a109f3232641461deec5069497eac1a48a1e68b9cc0546bbe7a422ee",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "104",
+      "name": "1986年以降の全史投入",
+      "review_status": "QUALITY_BLOCKED",
+      "priority": null,
+      "primary_delta": 0.0026746443463005827,
+      "ci": {
+        "point": 0.0026746443463005827,
+        "ci_low": -0.0017363816901121375,
+        "ci_high": 0.00698994750722879,
+        "b": 2000,
+        "seed": 20260828,
+        "block": "race_day",
+        "n_days": 823,
+        "no_decision": false
+      },
+      "note": "主指標悪化、上位着順品質ガードも不通過。",
+      "source": "specs/104-historical-data-backfill/verdict.json",
+      "source_sha256": "bc6f7aa7baf6f9a55c490fe87bb77aa6935e2d1ea101acf67c4781dcbf1ff3fe",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "090",
+      "name": "ニックス交互作用",
+      "review_status": "DEFER",
+      "priority": null,
+      "primary_delta": 0.000827,
+      "ci": {
+        "ci_low": -0.000153,
+        "ci_high": 0.001856,
+        "kind": "rounded historical sample CI"
+      },
+      "note": "元090-paired.json未発見。文書記録では点推定悪化。",
+      "source": "specs/090-nicks-cross-features/research.md",
+      "source_sha256": "10a5001f95973102a940ec725dff9b7282db2d15c74bc6a9140ff6f8fee68fd6",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "062",
+      "name": "Elo能力レーティング",
+      "review_status": "DEFER",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "binaryでは微改善だがpl_topkの2025/2026で馬単位win LogLoss +.00037/+.00036。winner NLLとの差に変換しない。",
+      "source": "CLAUDE.md",
+      "source_sha256": "48f884df7de635a8c3189ccca0d8151d13725cd68124c6aedbbf9075f3252dc4",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "097",
+      "name": "テン・中盤ペース2列",
+      "review_status": "REGIME_CONDITIONAL",
+      "priority": null,
+      "primary_delta": -0.002408548363604706,
+      "ci": {
+        "point": -0.002408548363604706,
+        "ci_low": -0.0054218879042213005,
+        "ci_high": 0.0006800333076258684,
+        "b": 2000,
+        "seed": 20260822,
+        "block": "race_day",
+        "n_days": 323,
+        "no_decision": false
+      },
+      "note": "反実仮想供給断のみ改善。実運用窓は+.001130890。適用条件での再確認が必要。",
+      "source": "specs/097-early-mid-pace/verdict.json",
+      "source_sha256": "85db8b0877cc8fc9d84d902356654eeb21500001f2d71ec8570e08ec0d7fda54",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "real_regime_delta": 0.0011308897709527994
+    },
+    {
+      "id": "098",
+      "name": "race_class表記統一",
+      "review_status": "DEFER",
+      "priority": null,
+      "primary_delta": 0.0004428430314460883,
+      "ci": {
+        "point": 0.0004428430314460883,
+        "ci_low": -0.0025705023234248374,
+        "ci_high": 0.003363600280594924,
+        "b": 2000,
+        "seed": 20260822,
+        "block": "race_day",
+        "n_days": 321,
+        "no_decision": false
+      },
+      "note": "シミュレーション点推定悪化、transportabilityも不通過。",
+      "source": "specs/098-race-class-spelling/verdict.json",
+      "source_sha256": "4bd7fc7a4a49e76877a5c4272a88b7180ac2e2fe887d9424748fe86ddab8f771",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "102",
+      "name": "供給レジーム別補正",
+      "review_status": "SCREEN_REOPEN",
+      "priority": null,
+      "primary_delta": -0.000847,
+      "ci": null,
+      "note": "post×S×B分割オラクル診断のみ。旧閾値による軸全体の閉鎖根拠は再検討可能だが、実装モデルの増分未測定。",
+      "source": "specs/102-explicit-regime-handling/spec.md",
+      "source_sha256": "1a373a9b6aa580026a9730835fdfdc8075edcb241afb852212cf4d3f2310bfb6",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "screen-capacity-screen.json",
+      "name": "capacity-screen.json",
+      "review_status": "SCREEN_REVIEW",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "診断のまま保持。旧基準対の改善を現行モデルへの増分として加算しない。品質ガード未計測。",
+      "source": "out/capacity-screen.json",
+      "source_sha256": "ed384c361157ec56e68ab1efe72034aa4573636e59b442becaeb6d0d41aa2d2f",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "screen-capacity-screen-armE.json",
+      "name": "capacity-screen-armE.json",
+      "review_status": "SCREEN_REVIEW",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "診断のまま保持。旧基準対の改善を現行モデルへの増分として加算しない。品質ガード未計測。",
+      "source": "out/capacity-screen-armE.json",
+      "source_sha256": "8735f5d905863e26f270203f5a1b03e1331a83208086c5b18c7b47bb138758d2",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "screen-screen_architecture.json",
+      "name": "screen_architecture.json",
+      "review_status": "SCREEN_REVIEW",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "診断のまま保持。旧基準対の改善を現行モデルへの増分として加算しない。品質ガード未計測。",
+      "source": "out/screen_architecture.json",
+      "source_sha256": "bc974eb0d0d415ea803baef2cdbc629bc63ff34747495d8bdf1afdfd708c24ba",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "screen-jockey_pooling_spike.json",
+      "name": "jockey_pooling_spike.json",
+      "review_status": "SCREEN_REVIEW",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "診断のまま保持。旧基準対の改善を現行モデルへの増分として加算しない。品質ガード未計測。",
+      "source": "out/jockey_pooling_spike.json",
+      "source_sha256": "d655e8cf75c79011a173b1dd930a6f3a174342aeadb343118c9d6b00e595c400",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "screen-screen_jockey_context.json",
+      "name": "screen_jockey_context.json",
+      "review_status": "SCREEN_REVIEW",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "診断のまま保持。旧基準対の改善を現行モデルへの増分として加算しない。品質ガード未計測。",
+      "source": "out/screen_jockey_context.json",
+      "source_sha256": "c5e506001207725e87639a5b8027498cbe50dbdc713b2802be30176b7c81f72e",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "screen-jockey_cat_spike.json",
+      "name": "jockey_cat_spike.json",
+      "review_status": "SCREEN_REVIEW",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "診断のまま保持。旧基準対の改善を現行モデルへの増分として加算しない。品質ガード未計測。",
+      "source": "out/jockey_cat_spike.json",
+      "source_sha256": "b19459d6c08795e6b27c42b330966e6f0e48199fe7912873db996265cd4658b7",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "079",
+      "name": "EV重み付き学習",
+      "review_status": "DEFER",
+      "priority": null,
+      "primary_delta": 0.0007088578510261456,
+      "ci": null,
+      "note": "元判定はROI。精度面でもwinner NLLは悪化。",
+      "source": "specs/079-ev-weighted-training/evidence.json",
+      "source_sha256": "6d8c60eaf172bf17b6fe8b0fc09dbba8fe3ffa3b2b4f7a6b2418c0ddac7f31e4",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "108",
+      "name": "top2/top3段階割引",
+      "review_status": "ALREADY_ADOPTED_ACTIVATION_BLOCKED",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "段階割引は既ADOPT。two_gamma未確定とmanifest世代不一致で未活性化。winnerNLL小幅改善の再判定とは別。",
+      "source": "specs/108-arm-e-attestation/evidence/manifest-verdict.json",
+      "source_sha256": "fe2733e971a6f3827a3b4fc70a3dc026bc50739a0185ec6bc8ee48d6f3592521",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "030",
+      "name": "既存構成の履歴 030",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/030-low-cost-features/research.md",
+      "source_sha256": "1f1c75434a60ae8dc788041d00527206f9d1f7c7590a81c7e54524d4af9e99e1",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "031",
+      "name": "既存構成の履歴 031",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/031-pace-scenario-features/research.md",
+      "source_sha256": "583a8d4aba6890e549a47175bf0734cbb1917078d5d39fec6aee39f4412a5840",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "032",
+      "name": "既存構成の履歴 032",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/032-debut-pedigree-interaction/spec.md",
+      "source_sha256": "66d49dba533e3c96f6ac1c273bd40658948e7598a068f19d97a08f89294a5e6b",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "033",
+      "name": "既存構成の履歴 033",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/033-condition-change-ability/spec.md",
+      "source_sha256": "0fac1bfdceff3816b6a2cbfa9cbfbb99dbe2aa0ddfc4a0042887f8fe0e409581",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "036",
+      "name": "既存構成の履歴 036",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/036-oof-target-encoding/spec.md",
+      "source_sha256": "3ee2a586923251f996dc87a5faad33fa259054ec1833839039e1a930e61391bc",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "041",
+      "name": "既存構成の履歴 041",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/041-corner-trajectory/research.md",
+      "source_sha256": "2d3d8cab53a14c6de6496c97cf0698c6003b1baa69dfd6fa4574a94b566d2d16",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "042",
+      "name": "既存構成の履歴 042",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/042-pl-topk-objective/research.md",
+      "source_sha256": "c529e90672c119cc39638ccf09e53f19b3382c6a33def3295f38b3d7177c4372",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "056",
+      "name": "既存構成の履歴 056",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/056-raw-column-features/spec.md",
+      "source_sha256": "646385c4539be02b39f9f8dff6c1ef667aa26c3f516250d16c283aca5e20e2c4",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "058",
+      "name": "既存構成の履歴 058",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/058-market-history-features/spec.md",
+      "source_sha256": "4899d2a56ab22672b2e2cc629865c761a7b3c38ee7dfaf4ea6ece2151f77d719",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "059",
+      "name": "既存構成の履歴 059",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/059-relative-ability-features/spec.md",
+      "source_sha256": "a8d952014196ac778190864db22d272aae2de4dd12987f18d341cf2b4f06bb68",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "061",
+      "name": "既存構成の履歴 061",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/061-speed-figure-features/spec.md",
+      "source_sha256": "0f0c129bdf03baf8c1f42294ac9214e377f69d93f3d837a9791b32b62ad9be1a",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "069",
+      "name": "既存構成の履歴 069",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/069-past-odds-features/f02_verdict.json",
+      "source_sha256": "18d7f335ebd7be042e5a1a5fb7a609d5456faf302f69b1f531a175121ec3dba5",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "085",
+      "name": "既存構成の履歴 085",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/085-oof-isotonic-arm/spec.md",
+      "source_sha256": "ea3bd57d2adcd797c06f63afb092b41867a6318ada7c0eed831ff81f443bc892",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "091",
+      "name": "既存構成の履歴 091",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/091-serving-weight-imputation/evidence/confirmatory.json",
+      "source_sha256": "020ebccc44577d700058dc0b6c94b30c09bd802a7ca6c0a07f0ea0335451e2d6",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "094",
+      "name": "既存構成の履歴 094",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/094-booster-capacity/spec.md",
+      "source_sha256": "bee92013f550eee4bff6d9a489485d42145a6c34c65df31eb9c422b4382342f3",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    },
+    {
+      "id": "095",
+      "name": "既存構成の履歴 095",
+      "review_status": "EXISTING_LINEAGE",
+      "priority": null,
+      "primary_delta": null,
+      "ci": null,
+      "note": "既採用/後継へ継承/現行構成の再測定。旧採否を変更せず、今回の新規改善として再加算しない。",
+      "source": "specs/095-current-baseline-v4/result.json",
+      "source_sha256": "d1c86ed72dd12d86d3b656a322d3295c3e07f6cfde2de956d068fb0a9153134a",
+      "eligible_for_verdict": false,
+      "can_adopt": false
+    }
+  ],
+  "independent_review": "Completed; 091 citation corrected from wiring acceptance to confirmatory evidence."
+}

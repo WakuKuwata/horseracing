@@ -1,0 +1,133 @@
+{
+  "artifact_kind": "extra_residual_quality_actual_cost",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "new_booster_fits": 0,
+  "new_coefficient_fits": 0,
+  "full_comparisons": 12,
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "candidates": [
+    "prior_gap",
+    "global_temperature"
+  ],
+  "run_freeze_sha256": "db4311125ca75f2444d6681a43e8c020ea77fd29feafaf552ad151f2871ee340",
+  "records": [
+    {
+      "candidate": "prior_gap",
+      "seed": 42,
+      "contrast": "anchor",
+      "reported_comparison_seconds": 34.60462375008501,
+      "report_sha256": "70767dffb0650774b9bd6edf803ed754895009ead31ac29bd29ef521b2231da0",
+      "evidence_sha256": "fef08a81e8bc839e91a33dce7787b96edd970f46cadb3f3d42c043ed9e8859f7"
+    },
+    {
+      "candidate": "prior_gap",
+      "seed": 43,
+      "contrast": "anchor",
+      "reported_comparison_seconds": 30.365484749898314,
+      "report_sha256": "f1420d846f35b91a89bf5b45649f73518e830ecaddbd4ac60e53290df3f47f6e",
+      "evidence_sha256": "1915d86ca94e03351289c6590af1a442541c0ecb3c08ce301ab2b2bd117db8fd"
+    },
+    {
+      "candidate": "prior_gap",
+      "seed": 44,
+      "contrast": "anchor",
+      "reported_comparison_seconds": 31.08872366603464,
+      "report_sha256": "616d018a0c6fe1f4f681bdf46cf9f05c9959db8331e497075b90522b05f1ccb4",
+      "evidence_sha256": "873a9a320cd9ed666640d75d3b9689f75f259203be0225f1a2ead4975dbff9cc"
+    },
+    {
+      "candidate": "prior_gap",
+      "seed": 42,
+      "contrast": "retained",
+      "reported_comparison_seconds": 38.93321049993392,
+      "report_sha256": "92bafe5ac07319d7bad03f5b650c058e84b43a7d969f880ac6015de42e01ca9e",
+      "evidence_sha256": "56af2c57ab2cd4c60c44414c3aadc76bacbf2d765517a1d57cf5052c8c844ec3"
+    },
+    {
+      "candidate": "prior_gap",
+      "seed": 43,
+      "contrast": "retained",
+      "reported_comparison_seconds": 32.81777279207017,
+      "report_sha256": "6ac08beea6b38fa197384969600ded8ba7a0467e6b877c187c75283da3d9fedc",
+      "evidence_sha256": "f771bf881b561d50255d427f90eb27400a45a08fc16aa44ea5b86ccdf56302ba"
+    },
+    {
+      "candidate": "prior_gap",
+      "seed": 44,
+      "contrast": "retained",
+      "reported_comparison_seconds": 32.05804725002963,
+      "report_sha256": "991520274441a1635bed990b5497de8012e081a2a54cbece1915b46a866b8a33",
+      "evidence_sha256": "4da0f7f72044a16ca9a88fe8b8c87a5863f8c70103c1d4aadd0e2b86030e32d8"
+    },
+    {
+      "candidate": "global_temperature",
+      "seed": 42,
+      "contrast": "anchor",
+      "reported_comparison_seconds": 32.175793417030945,
+      "report_sha256": "204beca8d4c746e30c882cdebbca310bc97bc15701d79e4a085c06031f017eb1",
+      "evidence_sha256": "0b45c9456e98410164638e4a4f00175faf02d05c4620cac7a932e35ca6fee21d"
+    },
+    {
+      "candidate": "global_temperature",
+      "seed": 43,
+      "contrast": "anchor",
+      "reported_comparison_seconds": 29.821452167001553,
+      "report_sha256": "9dfb6e25574a7a1af947ae40b351cd2ad15217ea522296b6604686d174336d60",
+      "evidence_sha256": "31030944f7818871b9f53d945db901da827ed202803e7ed8c5e019c5fe19be12"
+    },
+    {
+      "candidate": "global_temperature",
+      "seed": 44,
+      "contrast": "anchor",
+      "reported_comparison_seconds": 29.97219783300534,
+      "report_sha256": "5f0ecf360f36412c53568abdbb7b066f09327ca75bbc2c737e5b356470ba5caa",
+      "evidence_sha256": "357f079e11fb5bf2dfcc9c49ae194f03560229f32824ee087d408caf856f0e0d"
+    },
+    {
+      "candidate": "global_temperature",
+      "seed": 42,
+      "contrast": "retained",
+      "reported_comparison_seconds": 35.67780420894269,
+      "report_sha256": "633924fc94bf9df6f81ed13483ada5d884dbf586cf769a713600ec70b761f1e5",
+      "evidence_sha256": "d7f8ea8b39153de27289614d7a1fb28a76c894163643c1981970f243fe182dfe"
+    },
+    {
+      "candidate": "global_temperature",
+      "seed": 43,
+      "contrast": "retained",
+      "reported_comparison_seconds": 31.815533040906303,
+      "report_sha256": "4ef7ee5b97102d40224d5b936e9f8812c9c057f854485305f33d6e6969bc379d",
+      "evidence_sha256": "6f151e5715b602779f873b318b15d26fbe7167591b940f07c906abb575d2cfaf"
+    },
+    {
+      "candidate": "global_temperature",
+      "seed": 44,
+      "contrast": "retained",
+      "reported_comparison_seconds": 32.31457404093817,
+      "report_sha256": "bad98a432f3fc5df5db2ec83473eac27c12ed035664b46a900486209a1c98ddc",
+      "evidence_sha256": "a51185e854f9fe457396ffcf1577b3ab1913fec57f7c9ea05a98c01ea5f7907f"
+    }
+  ],
+  "sum_reported_comparison_seconds": 391.6452174158767,
+  "sum_reported_comparison_minutes": 6.527420290264612,
+  "sum_reported_seconds_by_candidate": {
+    "prior_gap": 199.8678627080517,
+    "global_temperature": 191.777354707825
+  },
+  "timer_scope": "Each saved timer starts immediately before paired_eval and ends during report metadata construction after saved121/116 row and provenance validation. Includes cache replay, prediction assembly, scoring, bootstrap and these validations.",
+  "excluded_scope": [
+    "prepare and baseline parity certification",
+    "source verification performed after timer capture",
+    "artifact writes",
+    "summary recomputation",
+    "independent numerical audit",
+    "documentation and final integrity"
+  ],
+  "total_wall_seconds": null,
+  "note": "The sum of saved comparison timers is not total study wall time or new model training time."
+}

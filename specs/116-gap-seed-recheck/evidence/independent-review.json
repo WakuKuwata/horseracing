@@ -1,0 +1,200 @@
+{
+  "artifact_kind": "gap_seed_independent_review",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "method_sha256": "aea7cd8a599c78988317535f84319575da890927efd01f1ad6cb4b14fbad3b38",
+  "run_freeze_sha256": "487d4f62963639e0dcad7d9edcf22df05fe47ec2362dad5dcea96c04cb032d4d",
+  "summary_sha256": "2d95beaa2cd5fdf5bb46db62f7e5e0920c1c842d8bf76ba825a4e04683438956",
+  "report_hashes": {
+    "42": {
+      "increment": "de49b41a40f93c358549efdc856059a227c47af6fcf0bbe4158b5153c6e64ee5",
+      "anchor": "d80251d2e2740e817656ff0d320f8b0db631671253a3eb011d1dd158dbb85c73"
+    },
+    "43": {
+      "increment": "d80eb8eddf4a2447072e74e87d17dbe3c2fc213a2a3ea1c9d6f52bc7f8bc5073",
+      "anchor": "0599dc85466dfc73b7d1dbc5893a4d22178389dcd579779d7f8ffd696324466b"
+    },
+    "44": {
+      "increment": "1bffa40f9e0aad65916c97317977777340bcaa8c25f1379e7f19812f5db12315",
+      "anchor": "d6500738cb515ca1f5231b46fb9909b5e0b410a214ba722a5729e8e357f53887"
+    }
+  },
+  "new_cache_receipts_verified": 30,
+  "population": {
+    "eligible_races": 22990,
+    "all_races": 23030,
+    "race_days": 715,
+    "six_reports_same_ordered_race_id_and_day": true,
+    "race_id_set_hash": "19a7e560aa247c5412da7207bea8a7f0f1d2875fdd8035bd6144fb8e88d40dab"
+  },
+  "seeds": [
+    {
+      "seed": 42,
+      "races": 23030,
+      "eligible": 22990,
+      "max_per_race_nll_error": 0.0,
+      "below_legacy_clip_horses": 401,
+      "max_assembly_rounding": 3.3306690738754696e-16,
+      "coefficient_checks": [
+        {
+          "year": 2020,
+          "gamma": 0.08389382209355345,
+          "objective": -0.0015030743753989596,
+          "gradient_norm": 3.963611267337693e-18
+        },
+        {
+          "year": 2021,
+          "gamma": 0.09208503585528176,
+          "objective": -0.0018067808027895508,
+          "gradient_norm": 2.844310167100339e-18
+        },
+        {
+          "year": 2022,
+          "gamma": 0.09064720760057897,
+          "objective": -0.0017568399685664862,
+          "gradient_norm": 8.796423922346108e-18
+        },
+        {
+          "year": 2023,
+          "gamma": 0.09859662908392983,
+          "objective": -0.002089440030123489,
+          "gradient_norm": 3.57265129913165e-17
+        },
+        {
+          "year": 2024,
+          "gamma": 0.09605581098873225,
+          "objective": -0.0019934764693956037,
+          "gradient_norm": 4.021553614885808e-19
+        },
+        {
+          "year": 2025,
+          "gamma": 0.08812402742413318,
+          "objective": -0.0016792795515968152,
+          "gradient_norm": 2.8686226596644974e-18
+        },
+        {
+          "year": 2026,
+          "gamma": 0.08905677350691546,
+          "objective": -0.001715709223072068,
+          "gradient_norm": 6.137031635543224e-18
+        }
+      ],
+      "primary_top2_top3_ece_and_total_ci_match": true
+    },
+    {
+      "seed": 43,
+      "races": 23030,
+      "eligible": 22990,
+      "max_per_race_nll_error": 0.0,
+      "below_legacy_clip_horses": 380,
+      "max_assembly_rounding": 2.220446049250313e-16,
+      "coefficient_checks": [
+        {
+          "year": 2020,
+          "gamma": 0.08354640569954608,
+          "objective": -0.0014948142559779829,
+          "gradient_norm": 4.268314164755687e-17
+        },
+        {
+          "year": 2021,
+          "gamma": 0.09053954345899753,
+          "objective": -0.0017460576514009244,
+          "gradient_norm": 7.154252030746634e-18
+        },
+        {
+          "year": 2022,
+          "gamma": 0.08909515276131018,
+          "objective": -0.0016966183398767949,
+          "gradient_norm": 2.1521121956261644e-17
+        },
+        {
+          "year": 2023,
+          "gamma": 0.09773241485411335,
+          "objective": -0.002051677549547142,
+          "gradient_norm": 2.1063353587829898e-17
+        },
+        {
+          "year": 2024,
+          "gamma": 0.09494791920775206,
+          "objective": -0.0019488547079316498,
+          "gradient_norm": 7.925052012748048e-18
+        },
+        {
+          "year": 2025,
+          "gamma": 0.08703723354479884,
+          "objective": -0.0016403347879394704,
+          "gradient_norm": 1.136576601894402e-17
+        },
+        {
+          "year": 2026,
+          "gamma": 0.08849422801091855,
+          "objective": -0.001697379962679946,
+          "gradient_norm": 6.7382132698569634e-18
+        }
+      ],
+      "primary_top2_top3_ece_and_total_ci_match": true
+    },
+    {
+      "seed": 44,
+      "races": 23030,
+      "eligible": 22990,
+      "max_per_race_nll_error": 0.0,
+      "below_legacy_clip_horses": 377,
+      "max_assembly_rounding": 2.220446049250313e-16,
+      "coefficient_checks": [
+        {
+          "year": 2020,
+          "gamma": 0.08414387345773239,
+          "objective": -0.0015130693853096114,
+          "gradient_norm": 9.482229442046473e-18
+        },
+        {
+          "year": 2021,
+          "gamma": 0.09236571081407503,
+          "objective": -0.0018159735311891628,
+          "gradient_norm": 3.44847891604213e-17
+        },
+        {
+          "year": 2022,
+          "gamma": 0.09189143381808976,
+          "objective": -0.0018060273441315247,
+          "gradient_norm": 6.507321352858302e-17
+        },
+        {
+          "year": 2023,
+          "gamma": 0.09978773197689525,
+          "objective": -0.0021424563578308475,
+          "gradient_norm": 4.940902000011944e-17
+        },
+        {
+          "year": 2024,
+          "gamma": 0.09739636116752177,
+          "objective": -0.0020519009965351753,
+          "gradient_norm": 3.345793376544287e-18
+        },
+        {
+          "year": 2025,
+          "gamma": 0.08956154832443675,
+          "objective": -0.0017369716995618485,
+          "gradient_norm": 2.7529894274744846e-19
+        },
+        {
+          "year": 2026,
+          "gamma": 0.0906288795408184,
+          "objective": -0.0017779771715883443,
+          "gradient_norm": 4.681312871458103e-18
+        }
+      ],
+      "primary_top2_top3_ece_and_total_ci_match": true
+    }
+  ],
+  "research_decision": "SEED_MEAN_IMPROVEMENT_RETAINED",
+  "additional_fits": 0,
+  "notes": [
+    "All saved gamma coefficients evaluated without refitting.",
+    "NLL from original cached probabilities and labels; top2/top3 use the registered Harville assembly.",
+    "Bootstrap independently recomputed using sampled day sums and counts; 7-fold transferred noise is unchanged.",
+    "Per-seed recent/subgroup records remain uncertain where declared; no mean CI or production verdict."
+  ]
+}

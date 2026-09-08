@@ -1,0 +1,102 @@
+{
+  "status": "PASS",
+  "artifact_kind": "independent_fixed_mixture_review",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "92c79a493e7f75b25393c9fad94ee409c86b1b0881c37a1f4984ad28701f5cdf",
+  "helper_method_sha256": "e3f0e5d0c8b53b3ef4f2d32eacdf987448d830028ebceb4c79f04c04492018b6",
+  "run_freeze_sha256": "a5fc047187caca275db0bc310b4f2acba8c521d7fd92cbe0a36ca19c3ee5b57f",
+  "summary_sha256": "20455958e6169e7c8ef8628043ceb8dba31a932cca9293e9c6a14c66ff3b4f47",
+  "report_hashes": {
+    "pruning3_vs_retained42": {
+      "report_sha256": "e1c096deb21cde6e649ee68cfd4d2558e78ce154460ba8ffe4c6626fa145f7a6",
+      "evidence_sha256": "503555f5befc82140d00ee0070ee9cccf5bd2e4b4005593f09c71e90c5e770eb"
+    },
+    "pruning3_vs_anchor42": {
+      "report_sha256": "07e1a48ebd886864a71e6eb741a2ecd9ed80ef6e514a4095359faf18d15909c5",
+      "evidence_sha256": "bf8962fbcba8f3fe1c6b79abbdce8d674e656fc6f597626dc9a169db93bf3011"
+    },
+    "anchor3_vs_retained42": {
+      "report_sha256": "7d70456e6c215f626e4bf0f88c55477a307bf99b88d77fae9e70c32ebabcff8e",
+      "evidence_sha256": "52e918cde717cacff7007a84e0cf348798748ead79a53eb0cb4a36598498bf9c"
+    },
+    "anchor3_vs_anchor42": {
+      "report_sha256": "273a5d235a40c8c6fa0fff4af367ac401c6ca7b4aa237e614caa2ffbf0767fe1",
+      "evidence_sha256": "7e311ea0bb2f00344cf28e7d99640aae694a1032ecebc19af9a5e6078be527aa"
+    },
+    "mixed6_vs_retained42": {
+      "report_sha256": "63a0aa032f12486fab5c06edd1b8c9f23a9eac60e3b3bdeac8c05dde25d2aaf0",
+      "evidence_sha256": "410c746885c5fc3d5d26cb83baa0a3dfffcef64dc13715230e4f057c275fcc83"
+    },
+    "mixed6_vs_anchor42": {
+      "report_sha256": "1b092482d69809d1a29ce438cc3dccf1593d71395960e6a513cd8a427b501fcb",
+      "evidence_sha256": "c4ffa073ac93ee61b8666343fb295688e772fd44344d8904490a9b0e310494af"
+    },
+    "anchor3_vs_pruning3": {
+      "report_sha256": "090ca41651b0368dcf1e1d092e06c0af6084d9675a44c60850bddcf8c0d8787a",
+      "evidence_sha256": "d59d8369464694b886e79edf60e6a7c1f18d0a395094d31c2f3be4a3c176966c"
+    },
+    "mixed6_vs_pruning3": {
+      "report_sha256": "b3f0e8d60bc61cc9f83e8704c118de2b3ebbc8ec236dc725a851ec112fd5c1e2",
+      "evidence_sha256": "f5e8a814e407a7ae0544b6fda086fb143fd9016e4f6754de382c6493456c360e"
+    }
+  },
+  "population": {
+    "n_races": 23030,
+    "n_eligible": 22990,
+    "n_days": 715,
+    "same_ordered_population": true,
+    "old_single_seed_baselines_exact": true,
+    "mixture_identity_across_comparisons_exact": true
+  },
+  "member_reconstruction": "independent scalar exp/fsum, registered eps0 Harville",
+  "mixture_reconstruction": "independent scalar math.fsum for all three heads; no postprocess",
+  "checks": 1017362,
+  "max_numeric_error": 1.7763568394002505e-15,
+  "max_race_nll_error": 1.7763568394002505e-15,
+  "max_jensen_excess": {
+    "pruning3": -2.4121882269412254e-09,
+    "anchor3": -1.4979916418411676e-08,
+    "mixed6": -9.529575599742657e-07
+  },
+  "full_quality_recent_and_primary_cis_match": true,
+  "fixed_diagnostics": {
+    "2026_all": {
+      "pruning3_vs_retained42": -0.0043416725654153165,
+      "pruning3_vs_anchor42": 0.0003301285254427756,
+      "anchor3_vs_retained42": -0.008749724113852215,
+      "anchor3_vs_anchor42": -0.004077923022994123,
+      "mixed6_vs_retained42": -0.009191128359247224,
+      "mixed6_vs_anchor42": -0.004519327268389131,
+      "anchor3_vs_pruning3": -0.004408051548436899,
+      "mixed6_vs_pruning3": -0.004849455793831907
+    },
+    "2026_nakayama": {
+      "pruning3_vs_retained42": -0.006680579511869477,
+      "pruning3_vs_anchor42": 0.03611302982432618,
+      "anchor3_vs_retained42": -0.031852641675628464,
+      "anchor3_vs_anchor42": 0.010940967660567189,
+      "mixed6_vs_retained42": -0.021721530140934697,
+      "mixed6_vs_anchor42": 0.02107207919526096,
+      "anchor3_vs_pruning3": -0.02517206216375899,
+      "mixed6_vs_pruning3": -0.015040950629065221
+    },
+    "2026_partial_relative": {
+      "pruning3_vs_retained42": -0.005192664692291053,
+      "pruning3_vs_anchor42": 0.006592145005566488,
+      "anchor3_vs_retained42": -0.015806193397126335,
+      "anchor3_vs_anchor42": -0.0040213836992687955,
+      "mixed6_vs_retained42": -0.013284221747384799,
+      "mixed6_vs_anchor42": -0.0014994120495272593,
+      "anchor3_vs_pruning3": -0.010613528704835283,
+      "mixed6_vs_pruning3": -0.008091557055093746
+    }
+  },
+  "retained_candidates": [
+    "pruning3",
+    "anchor3",
+    "mixed6"
+  ],
+  "preferred_research_configuration": "mixed6"
+}

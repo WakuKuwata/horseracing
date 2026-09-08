@@ -1,0 +1,47 @@
+{
+  "checked_at_utc": "2026-09-08T04:29:46.822431+00:00",
+  "source_hash": "5f847f8667380afb285887ec9dc1350c09b621a847567d7ca1b0b4e53f7bca77",
+  "config_hash": "06fa5bd77ad18340e3b1a4f6d8f35d690de53443615b7686aba6d65799f1daaf",
+  "run_freeze_sha256": "487d4f62963639e0dcad7d9edcf22df05fe47ec2362dad5dcea96c04cb032d4d",
+  "frozen_source_runtime_upstream_match": true,
+  "completed_jobs": 30,
+  "training_lock_absent": true,
+  "verified_reports": [
+    {
+      "seed": 42,
+      "contrast": "increment",
+      "valid": true
+    },
+    {
+      "seed": 42,
+      "contrast": "anchor",
+      "valid": true
+    },
+    {
+      "seed": 43,
+      "contrast": "increment",
+      "valid": true
+    },
+    {
+      "seed": 43,
+      "contrast": "anchor",
+      "valid": true
+    },
+    {
+      "seed": 44,
+      "contrast": "increment",
+      "valid": true
+    },
+    {
+      "seed": 44,
+      "contrast": "anchor",
+      "valid": true
+    }
+  ],
+  "verdict_sha256": "2d95beaa2cd5fdf5bb46db62f7e5e0920c1c842d8bf76ba825a4e04683438956",
+  "active_model_read_only_observation": [
+    "lgbm-094-cap900"
+  ],
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

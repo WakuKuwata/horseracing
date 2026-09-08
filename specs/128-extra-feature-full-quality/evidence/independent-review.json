@@ -1,0 +1,106 @@
+{
+  "artifact_kind": "extra_feature_full_quality_independent_review",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "5b59bcb02631f9615c415cfd282f8617e9856ff3668ba5df631c1084306c8fbd",
+  "helper_method_sha256": "bc0b56e6724f77310a1671ca4112b5127b3da972b63fa7a0f9a08f0f302f8cd4",
+  "reference126_method_sha256": "59babf4b501dc9ec6dc1a31e43a40c8ee9bfcaac77b25488432f9ed4e3f94582",
+  "selected_candidates": [],
+  "new_outer_jobs": 0,
+  "run_freeze_sha256": "59b355c45fbc35ce2f9678baa3901134a0b8dd2fcb20bbaf15c2e04861d64799",
+  "summary_sha256": "d7eb91e9dcc2738aee790b046095d18b3dca3d181719ae1a093c7b1b404c3338",
+  "report_hashes": {},
+  "cache_hashes": {
+    "baseline:2020": "65d37f5f6c0eadf0ebe38d410ca789559cc25bcf4c23e0f5fdc29ad62ca60c2d",
+    "baseline:2021": "fe747f33f42fa0b0f36a69733c707d56d773615041c2af2ee161b948a97396f7",
+    "baseline:2022": "4d3a1ce7b55fdbae3f83012878fbc40dfb5bc6b83afb6b090763ba26306c6ba0",
+    "baseline:2023": "4490d348cadd35440f2ba7a4b6c7c4f21a76016274842dcdd4ce674ef979862d",
+    "baseline:2024": "8a13c12b8b25b6e66d0e8628220c9331ec29a147b5c2cb2d04b0797851151303",
+    "baseline:2025": "0b087eb90fc3f6214e3afb4a31182e196601b3f1e851c6f2a516091f838f64bb",
+    "baseline:2026": "1cc63ce415e46630084a9beed8e110e29fbe3ebfe476d121a1d447af91a2a7d3"
+  },
+  "source_hashes_start_end_equal": true,
+  "cache_records": [
+    {
+      "arm": "baseline",
+      "year": 2020,
+      "key": "87ec1df2cc990aac89f54aa8dcac6ea8a22f032c632dd6541172e5ce284b3f77",
+      "cache_sha256": "65d37f5f6c0eadf0ebe38d410ca789559cc25bcf4c23e0f5fdc29ad62ca60c2d",
+      "receipt_sha256": "5b8ddb75b173a33ec5cfa6bf7beb887f4fa6752c8e832eb9037e5e70f57824ad",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2021,
+      "key": "cc72144927e66d82c82004d62ca07f15466df044363d8744c968d9bb96b3ff57",
+      "cache_sha256": "fe747f33f42fa0b0f36a69733c707d56d773615041c2af2ee161b948a97396f7",
+      "receipt_sha256": "ec0ac649a6e00cdbb96255ad70af6742c5aecad61409e34ae3b2aebe2a517b60",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2022,
+      "key": "a3d1287149c2a1e918e5ce0a71d4442beee6b29ec3feb16d5dcaba96bea94dd8",
+      "cache_sha256": "4d3a1ce7b55fdbae3f83012878fbc40dfb5bc6b83afb6b090763ba26306c6ba0",
+      "receipt_sha256": "009af5791da4899929e56e07ab31c13e4892a42d387056964909036e0d3b9fd8",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2023,
+      "key": "f62b86a76f0a35ccdaad886892c61c78471845e3553c31cf7a1827c00836a8d1",
+      "cache_sha256": "4490d348cadd35440f2ba7a4b6c7c4f21a76016274842dcdd4ce674ef979862d",
+      "receipt_sha256": "6767f5bb3898564278de767ab19ea55d05b1862a97ae8ee66de02993e3d21f6e",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2024,
+      "key": "e9f2d430996605ff216f083992fc04c7266e04d16c8f6a1780b5457acbd2118e",
+      "cache_sha256": "8a13c12b8b25b6e66d0e8628220c9331ec29a147b5c2cb2d04b0797851151303",
+      "receipt_sha256": "db9d05feaded6f8ee4e08d4747a7e4cdcbd38a0eed1bb65f925933f6a5f6ba24",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2025,
+      "key": "f8b50b2ba36be79ab1326f5767e599a6b7719a4da6a454973c9e68367a961bed",
+      "cache_sha256": "0b087eb90fc3f6214e3afb4a31182e196601b3f1e851c6f2a516091f838f64bb",
+      "receipt_sha256": "0243861832bca78bff69f99a3f55f674e01a80b285f51f925dc7c4343119a56b",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2026,
+      "key": "e3c2060810ee4083e00a305b1d5cbb7d4a5bed66d0e8783301f5e0867cfb6052",
+      "cache_sha256": "1cc63ce415e46630084a9beed8e110e29fbe3ebfe476d121a1d447af91a2a7d3",
+      "receipt_sha256": "ae155ff8c733f16b242b3dbba08184dad74a394a0a60da48a9819eecbedab9de",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    }
+  ],
+  "comparisons": {},
+  "population": {
+    "n_races": 23030,
+    "n_eligible": 22990,
+    "n_days": 715,
+    "complete_started_horses": 316410,
+    "incomplete_races": 1
+  },
+  "checks": 22992,
+  "max_numeric_error": 3.0357660829594124e-18,
+  "limitations": [
+    "Cached seven-fold seed42 forecasts audited; no independent model retraining.",
+    "Primary CI uses seven-fold/k1 transferred noise; recent and subgroup CIs remain conditional sample CIs.",
+    "Horse subgroup losses include all started horses under the frozen contract, including incomplete-result races.",
+    "Research only; no gap, ensemble, unused-holdout or production improvement claim."
+  ]
+}

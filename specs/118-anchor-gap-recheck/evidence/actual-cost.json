@@ -1,0 +1,47 @@
+{
+  "artifact_kind": "anchor_gap_recheck_actual_cost",
+  "new_full_fit_jobs": 2,
+  "new_full_fit_seconds_sum": 1362.973241916974,
+  "wall_to_last_receipt_seconds": 718.4038150310516,
+  "run_started_at_utc": "2026-09-08T05:53:12.277929+00:00",
+  "last_receipt_mtime_utc": "2026-09-08T06:05:10.681744+00:00",
+  "max_single_worker_peak_rss_bytes": 5148508160,
+  "workers": 2,
+  "model_threads_each": 1,
+  "paired_eval_elapsed_seconds_sum": 113.67944629199337,
+  "notes": [
+    "Fit sums include OOF work and exclude historical reused fits.",
+    "Wall time uses run timestamp to last full-fit receipt, not summed parallel fit time.",
+    "Two small smoke fits, preparation, gamma estimation and review are excluded from full fit and paired-evaluation sums.",
+    "RSS is the maximum single-worker peak, not measured simultaneous total RSS."
+  ],
+  "run_manifest": {
+    "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/prefill/20260908T055312277929Z-run.json",
+    "sha256": "3e781db80f958eb11721de35e43b71cf4b5494abede26c87112924e771a21d9c"
+  },
+  "run_freeze_sha256": "d8718e64f6d61a9bb541c6bbfe8f40ec0ef023c46c97781729e3cb511527cfb6",
+  "receipts": [
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/prefill/6db766fe5021125208b69692c223bba0a4453e4a578fcdfd61467a482bbfd423.json",
+      "sha256": "a5acc7637cf44eae6f58f48543fb9da0e33a7d2c7056b8acc135e335ae7225b1",
+      "job": {
+        "key": "6db766fe5021125208b69692c223bba0a4453e4a578fcdfd61467a482bbfd423",
+        "train_hash": "49bae58d77c54ab63563db758c8422405508a2844fd02980ff439ad97b37a04b",
+        "year": 2019,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/prefill/c1e76ee6c8d51f1235de46f12d766f3b1ff0a359277884b4ba2e2a10d5628777.json",
+      "sha256": "75a75ac9a7c045ce02862255d53f076ffc12139fdebac63921973c45b02ab64d",
+      "job": {
+        "key": "c1e76ee6c8d51f1235de46f12d766f3b1ff0a359277884b4ba2e2a10d5628777",
+        "train_hash": "49bae58d77c54ab63563db758c8422405508a2844fd02980ff439ad97b37a04b",
+        "year": 2019,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    }
+  ]
+}

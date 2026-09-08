@@ -1,0 +1,15 @@
+{
+  "checked_at_utc": "2026-09-08T05:29:17.459374+00:00",
+  "frozen_source_config_runtime_upstream_match": true,
+  "active_models_read_only": [
+    "lgbm-094-cap900"
+  ],
+  "new_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "method_sha256": "22b405fbbe49baf597c36813f8c02bea7d24ecfa49c4a9a385e30c1e08489fbc",
+  "run_freeze_sha256": "15cb4b573f0f88e3cd54cc0a1690e61a4b452a348a15e9ec847eeb35a95a89eb",
+  "diagnostic_sha256": "deb9943f3de9c42c012d799c99d201864fc008327c3a8e1bcb6072bbdd77666d",
+  "independent_review_sha256": "f22eb7f9c2e51fc7dc09825a8be140a32952043d9de508c2ec5a54cf2ea3b151",
+  "feature_integrity_review_sha256": "e67c4529cd55dd0e332bc65203ec78188948decf8588f00e2f420ec6b569fe75"
+}

@@ -1,0 +1,113 @@
+{
+  "status": "PASS",
+  "method_path": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_import_review.py",
+  "method_sha256": "7deb81a57cc1f359b5f44c211c497905e8eafd87fbfe925bf9d3b9d4057f3fb7",
+  "certificate_sha256": "b684531067406acab2251cebf44f444e6c43c7ce5c1e02c7eb8728d91f6aae79",
+  "manifest_sha256": "58a7443e7b0dbd2af9772996577c9bfd49bd743fbba4772e3579c4a3be1c461a",
+  "n_imports": 8,
+  "checks": [
+    {
+      "year": 2019,
+      "original_sha256": "2301d8311eb3048619796502cbfe915b78366d0100144f6620eaf42cfaa86749",
+      "imported_sha256": "3f75e00ec435a4bbe55e20d3813c619ea7dad43c2f06fbab8e626e881aec79f5",
+      "receipt_sha256": "bfdf8af6ac5bf7622f8e327e1bc92b801376f6f0fee982c616ad5f1aba34ebeb",
+      "n_races": 3452,
+      "n_horse_appearances": 47272,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 644.7293707499048
+    },
+    {
+      "year": 2020,
+      "original_sha256": "3092bb603f19ae9cb647eb88e965ae5781e4d635ef46ebdfbbd5d759ba3baf82",
+      "imported_sha256": "3c0b4683beb49081d675656faef308d23afb084f5a21474415df07790b4f5585",
+      "receipt_sha256": "9fe9228a7a1bded259a29b378f78282b36918683a174b4443538c0b40088bbb5",
+      "n_races": 3456,
+      "n_horse_appearances": 48058,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 700.7445034170523
+    },
+    {
+      "year": 2021,
+      "original_sha256": "4927951b4e2fe241b86f5917021199c6d86bcf37b012f9fd578bd4019feaa775",
+      "imported_sha256": "20daefffaae34fc643bca6bb8b9e8238826b4758819c964428124239a7e10dd3",
+      "receipt_sha256": "1bcce676417a1f2e6e53f85166dfbdbd142da2555805d62ee77d30b96fd2304a",
+      "n_races": 3456,
+      "n_horse_appearances": 47609,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 768.845320124994
+    },
+    {
+      "year": 2022,
+      "original_sha256": "31c633dfb708860887057005f69f4b963f40c3011b3c5de4b193bbe6165a4437",
+      "imported_sha256": "158c086775679749abee311d8cc1fb209cafa26b516877422bc195a7b8e330a7",
+      "receipt_sha256": "c1d39edad54f1dafb49546a2318ca8b85f34fdd27b9b11d1f4d9a0440e1e736d",
+      "n_races": 3456,
+      "n_horse_appearances": 46986,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 799.0765512919752
+    },
+    {
+      "year": 2023,
+      "original_sha256": "5fef41c2d4652559b1b7b89bb534ba30618d81ab8c37ed08995f699ca1e07059",
+      "imported_sha256": "80d67039973b21ee5ec5f678b638aa46d45ec15480a4c8fbb9c16d3b1bfc7e21",
+      "receipt_sha256": "802ae60b32377ba27f69c197eb3ac635240744df297c448dc89e570fb7e12956",
+      "n_races": 3456,
+      "n_horse_appearances": 47432,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 845.2341789590428
+    },
+    {
+      "year": 2024,
+      "original_sha256": "f35483331319d598b5c34e6bda00cb96ed25ffa2e8c7437a85944329df23fc64",
+      "imported_sha256": "53d7c0221cd405c83b3e73df3135988f1861a3c07ed5c5bb88ec1623a2bbfe5d",
+      "receipt_sha256": "107eb2d2e7bf05a6d4046022715132491afc24122e33e9609f15bf1b89adfa94",
+      "n_races": 3454,
+      "n_horse_appearances": 46921,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 904.3351620000321
+    },
+    {
+      "year": 2025,
+      "original_sha256": "a9fadbfa63929ce75cebd8715696daf1d4efe3e5c4bab5b67db445362e6566ac",
+      "imported_sha256": "cd7bdb91bc46107b1c2c6d47f3f8bda2faf1e7f13ebdf672a51477bfc58a8a76",
+      "receipt_sha256": "6d38f30a0838926a7429dc786e532ec5955d99948022c20fef8645fa7e2e01bd",
+      "n_races": 3454,
+      "n_horse_appearances": 47655,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 957.223320415942
+    },
+    {
+      "year": 2026,
+      "original_sha256": "1277b541e743989caef87f441ef60b4fc9a34fb031ab19f6724563b8eb405404",
+      "imported_sha256": "4d96f6c5c5ac515302bd691bc2f78d3e5397e6271e9cba56529f66a0aa5109d1",
+      "receipt_sha256": "fadb5c7010fdef5bd81a162766b180658fe2ee026076a5b4af342b299b66571a",
+      "n_races": 2298,
+      "n_horse_appearances": 31765,
+      "payload_exact": true,
+      "wrapper_recipe_and_receipt_valid": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 954.4650848329766
+    }
+  ],
+  "current_fit_seconds": 0.0,
+  "historical_fit_seconds": 6574.65349179192,
+  "notes": [
+    "Independent direct comparison of original and imported prediction, OOF, train-hash and feature-column payloads.",
+    "Original cache bytes remain unchanged. No large training matrix is loaded.",
+    "Historical fit time is provenance, not current training time or a controlled speedup benchmark."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "artifact_kind": "gap_seed_recheck_smoke",
+  "structure": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "configurations": [
+    {
+      "seed": 43,
+      "arm": "anchor"
+    },
+    {
+      "seed": 43,
+      "arm": "pruning"
+    },
+    {
+      "seed": 44,
+      "arm": "anchor"
+    },
+    {
+      "seed": 44,
+      "arm": "pruning"
+    }
+  ],
+  "n_estimators": 5,
+  "n_oof_blocks": 2,
+  "gamma": 0.0,
+  "run_freeze_sha256": "487d4f62963639e0dcad7d9edcf22df05fe47ec2362dad5dcea96c04cb032d4d"
+}

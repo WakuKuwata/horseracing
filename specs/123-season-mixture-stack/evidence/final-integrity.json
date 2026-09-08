@@ -1,0 +1,39 @@
+{
+  "checked_at_utc": "2026-09-08T07:37:28.001653+00:00",
+  "source_hash": "1a1c13d4c2db90d42fa07bbb6c8501382f2573a440bb7a6b39a1bc26aa1a2b46",
+  "config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b",
+  "run_freeze_sha256": "8958bef94881ab9de54aa20acf9ae7e9b48327287189fd4c136a2841244195f7",
+  "frozen_source_runtime_upstream_match": true,
+  "verified_reports": [
+    {
+      "comparison": "joint_pruning3_vs_pruning3",
+      "valid": true
+    },
+    {
+      "comparison": "joint_pruning3_vs_mixed6",
+      "valid": true
+    },
+    {
+      "comparison": "joint_pruning3_vs_anchor42",
+      "valid": true
+    },
+    {
+      "comparison": "joint_mixed6_vs_pruning3",
+      "valid": true
+    },
+    {
+      "comparison": "joint_mixed6_vs_mixed6",
+      "valid": true
+    },
+    {
+      "comparison": "joint_mixed6_vs_anchor42",
+      "valid": true
+    }
+  ],
+  "verdict_sha256": "28d197bac8f09dde1c4601845f869b53ae9448feb16aa9f6882d33e2aa43e073",
+  "independent_review_sha256": "db36999ddc723f94872f6af8c990a97d04df850052e3865f39ff230235e9246f",
+  "new_booster_fits": 0,
+  "new_coefficient_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

@@ -1,0 +1,12 @@
+{
+  "artifact_kind": "gap_log_quality_research_summary",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "selected_arm": "pruning",
+  "research_decision": "CORRECTION_RETAINED",
+  "report_sha256": {
+    "increment": "de49b41a40f93c358549efdc856059a227c47af6fcf0bbe4158b5153c6e64ee5",
+    "anchor": "d80251d2e2740e817656ff0d320f8b0db631671253a3eb011d1dd158dbb85c73"
+  },
+  "run_freeze_sha256": "00659ed39c0d59a69ba723d6f8f475cebafafa2895638bdbfbe7182ff5b1a96a"
+}

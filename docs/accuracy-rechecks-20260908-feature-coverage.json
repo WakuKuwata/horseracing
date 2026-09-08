@@ -1,0 +1,206 @@
+{
+  "status": "PASS",
+  "analysis_kind": "post_hoc_feature_coverage_diagnostic",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "matrix_sha256": "57bc4f48f8fb4f3529f1c96b3c8998e47e098553de840b2b4c5804f7d04c68eb",
+  "run_freeze_sha256": "78366c5c8598aca0b913f3efc0f0b3cf2a5f78c8900d0ac15a7338f90f442402",
+  "method": "Group all matrix horse rows by pandas.to_datetime(race_date).dt.year; for each added column count notna, mean(isna), and mean(eq(0)). Match every mapped row date exactly to saved EvalRace date. Matrix SHA equals before and after.",
+  "includes_all_matrix_horses_in_year_not_only_eligible_races": true,
+  "unmapped_matrix_population": {
+    "races": 1,
+    "horse_rows": 14,
+    "year": 2025,
+    "reason": "No race_results rows; EvalRace excludes races without FINISHED labels. Independently diagnosed from frozen111 Frames and eval/dataset.py.",
+    "affects_2018_or_2026": false
+  },
+  "records": {
+    "2018": {
+      "horse_rows": 48376,
+      "races": 3454,
+      "columns": {
+        "asof_pm_finish_resid_mean5": {
+          "observed": 35262,
+          "missing_fraction": 0.2710848354555978,
+          "zero_fraction": 0.0020671407309409626
+        },
+        "asof_pm_finish_resid_career": {
+          "observed": 35262,
+          "missing_fraction": 0.2710848354555978,
+          "zero_fraction": 0.0011369274020175293
+        },
+        "asof_pm_win_resid_mean10": {
+          "observed": 35272,
+          "missing_fraction": 0.2708781213825037,
+          "zero_fraction": 0.0
+        },
+        "asof_pm_win_resid_career": {
+          "observed": 35272,
+          "missing_fraction": 0.2708781213825037,
+          "zero_fraction": 0.0
+        },
+        "asof_pm_resid_sd5": {
+          "observed": 39228,
+          "missing_fraction": 0.18910203406647924,
+          "zero_fraction": 0.0
+        },
+        "asof_pm_result_obs_count": {
+          "observed": 48376,
+          "missing_fraction": 0.0,
+          "zero_fraction": 0.0979204564246734
+        },
+        "prev_finish_pct": {
+          "observed": 43632,
+          "missing_fraction": 0.09806515627583925,
+          "zero_fraction": 0.07110964114436912
+        },
+        "prev2_finish": {
+          "observed": 39218,
+          "missing_fraction": 0.18930874813957335,
+          "zero_fraction": 0.0
+        },
+        "prev3_finish": {
+          "observed": 35262,
+          "missing_fraction": 0.2710848354555978,
+          "zero_fraction": 0.0
+        },
+        "prev2_finish_pct": {
+          "observed": 39218,
+          "missing_fraction": 0.18930874813957335,
+          "zero_fraction": 0.06782288738217297
+        },
+        "prev3_finish_pct": {
+          "observed": 35262,
+          "missing_fraction": 0.2710848354555978,
+          "zero_fraction": 0.06455680502728625
+        },
+        "avg_last3_finish_pct": {
+          "observed": 35262,
+          "missing_fraction": 0.2710848354555978,
+          "zero_fraction": 0.0012196130312551678
+        },
+        "avg_last5_finish": {
+          "observed": 28708,
+          "missing_fraction": 0.4065652389614685,
+          "zero_fraction": 0.0
+        },
+        "avg_last5_finish_pct": {
+          "observed": 28708,
+          "missing_fraction": 0.4065652389614685,
+          "zero_fraction": 0.00014469985116586737
+        },
+        "best_finish_pct": {
+          "observed": 43632,
+          "missing_fraction": 0.09806515627583925,
+          "zero_fraction": 0.5048577807177113
+        },
+        "finish_trend5": {
+          "observed": 28708,
+          "missing_fraction": 0.4065652389614685,
+          "zero_fraction": 0.0017363982139904084
+        },
+        "asof_weight_deviation": {
+          "observed": 31775,
+          "missing_fraction": 0.34316603274350915,
+          "zero_fraction": 0.008454605589548537
+        }
+      }
+    },
+    "2026": {
+      "horse_rows": 31765,
+      "races": 2298,
+      "columns": {
+        "asof_pm_finish_resid_mean5": {
+          "observed": 23525,
+          "missing_fraction": 0.25940500550920825,
+          "zero_fraction": 0.0016370218794270423
+        },
+        "asof_pm_finish_resid_career": {
+          "observed": 23525,
+          "missing_fraction": 0.25940500550920825,
+          "zero_fraction": 0.0009759168896584291
+        },
+        "asof_pm_win_resid_mean10": {
+          "observed": 23540,
+          "missing_fraction": 0.2589327876593735,
+          "zero_fraction": 0.0
+        },
+        "asof_pm_win_resid_career": {
+          "observed": 23540,
+          "missing_fraction": 0.2589327876593735,
+          "zero_fraction": 0.0
+        },
+        "asof_pm_resid_sd5": {
+          "observed": 26402,
+          "missing_fraction": 0.16883362191090823,
+          "zero_fraction": 0.0
+        },
+        "asof_pm_result_obs_count": {
+          "observed": 31765,
+          "missing_fraction": 0.0,
+          "zero_fraction": 0.08200849992129702
+        },
+        "prev_finish_pct": {
+          "observed": 29154,
+          "missing_fraction": 0.08219738706123092,
+          "zero_fraction": 0.06762159609633245
+        },
+        "prev2_finish": {
+          "observed": 26390,
+          "missing_fraction": 0.16921139619077602,
+          "zero_fraction": 0.0
+        },
+        "prev3_finish": {
+          "observed": 23525,
+          "missing_fraction": 0.25940500550920825,
+          "zero_fraction": 0.0
+        },
+        "prev2_finish_pct": {
+          "observed": 26390,
+          "missing_fraction": 0.16921139619077602,
+          "zero_fraction": 0.06589013064693845
+        },
+        "prev3_finish_pct": {
+          "observed": 23525,
+          "missing_fraction": 0.25940500550920825,
+          "zero_fraction": 0.06453643947741225
+        },
+        "avg_last3_finish_pct": {
+          "observed": 23525,
+          "missing_fraction": 0.25940500550920825,
+          "zero_fraction": 0.0006925861797575948
+        },
+        "avg_last5_finish": {
+          "observed": 18408,
+          "missing_fraction": 0.42049425468282703,
+          "zero_fraction": 0.0
+        },
+        "avg_last5_finish_pct": {
+          "observed": 18408,
+          "missing_fraction": 0.42049425468282703,
+          "zero_fraction": 3.1481189988981584e-05
+        },
+        "best_finish_pct": {
+          "observed": 29154,
+          "missing_fraction": 0.08219738706123092,
+          "zero_fraction": 0.47376042814418384
+        },
+        "finish_trend5": {
+          "observed": 18408,
+          "missing_fraction": 0.42049425468282703,
+          "zero_fraction": 0.0014166535495041713
+        },
+        "asof_weight_deviation": {
+          "observed": 20831,
+          "missing_fraction": 0.34421533133952464,
+          "zero_fraction": 0.009003620336848733
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Post-hoc availability only: does not explain the cause of prediction differences.",
+    "2018 and partial2026 differ in population and duration; diagnostic has no progression gate."
+  ]
+}

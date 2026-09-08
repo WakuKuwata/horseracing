@@ -1,0 +1,11 @@
+# 実行前レビュー
+
+2026-09-08。独立設計・実装レビュー完了、親と独立担当で82 tests PASS。config d9bf7f514c38cc695295f13f70551f89f002a10baa3b8628b110a68d17d035bb、source 8cc2fe8c99c8c39d10c750e9580b827ea709a0c2ebedf54d44f8d43fb3efc835 を固定する。
+
+raw125 baseline、F03置換126列、F05支持率131列、colsample=.7の125列を2018だけで一次screenする。旧F02を維持しF05残差2列を入れない。将来日追加に対する特徴量prefix一致、実効学習パラメータと列差、同じtrain/race/全started確率/旧品質までを検証する。
+
+native baseline cacheは元125とanchor両方のSHAと旧report/evidenceを結合し、新証明として再利用する。旧receiptは捏造しない。期待cacheが不在の場合だけbaseline追加fitを許容し、hash・runtime・数値・recipe不一致は診断のため停止する。
+
+3 outer jobs（不在時4）、各OOF8込み、最大2workers×1thread。OOF込み元1job543.35秒を参考に2波約18分＋feature準備・検証を見込むが、実測を保存する。smokeを通してから親がtrain/evaluateを行う。
+
+少しでもNLL改善かつtop2/top3/ECE品質を保つ候補は次の期間比較対象とする。2018ではnk群・近年品質を証明できず、全期間保持や本番採用とはしない。source/config編集を停止する。

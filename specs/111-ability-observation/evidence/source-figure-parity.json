@@ -1,0 +1,30 @@
+{
+  "source_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/source-frames.pkl",
+  "source_sha256": "7dc539c4224fe4132c3892099f2c62790b47d1f3136fe8b79bbaeadd5c02ef11",
+  "method_path": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_source_parity.py",
+  "method_sha256": "3b7fe3770a4b63b9f9072938e7c8c55fd060b78abb323314a1dc3075b25ca2d6",
+  "source_and_method_unchanged": true,
+  "comparison": "Existing _figure_runs(raw Frames) versus identical Frames with normalized race dates and canonical race/result ordering used by observation builder",
+  "n_source_appearances": 957996,
+  "n_valid_original": 740386,
+  "n_valid_canonical": 740386,
+  "valid_mask_mismatch": 0,
+  "valid_key_mismatch": 0,
+  "z_exact_mismatch": 1059,
+  "z_max_abs_difference": 3.169908779909747e-12,
+  "source_latest_best_date_mismatch": 0,
+  "n_target_appearances": 963019,
+  "asof_age_mismatch": {
+    "best_age": 0,
+    "last_age": 0
+  },
+  "rounding_tolerance": 1e-10,
+  "acceptable": true,
+  "can_adopt": false,
+  "predictive_effect_measured": false,
+  "notes": [
+    "Every target horse lookup excludes the whole target day.",
+    "1e-10 is a numerical parity tolerance, not a prediction-quality threshold.",
+    "No original driver, feature builder, source frame, or training matrix is modified."
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "checked_on": "2026-09-07",
+  "window": [
+    "2019-01-01",
+    "2026-08-23"
+  ],
+  "can_adopt": false,
+  "predictive_effect_measured": false,
+  "source_pool_start": "2007-01-06 00:00:00",
+  "input_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/readiness-inputs.pkl",
+  "input_sha256": "b22c10cebd2270b68069c1b90ffcfa71daca5e596d75c2c4fa452b72b955cb75",
+  "driver_sha256": "6e1c8358e580d7585d0e436fd73070e27302fd78221b9f1a9928b08c0c966b4a",
+  "definitions": {
+    "last_valid_age": "Days since latest valid past clipped speed figure",
+    "best_age": "Days since latest attainment of highest past clipped speed figure; ties use latest date",
+    "speed_sd": "Expanding population standard deviation (ddof=0), at least 2 prior valid speed figures",
+    "weight_deviation": "Previous valid body weight minus mean of at least 3 valid observations BEFORE that previous measurement; started and 200..800kg"
+  },
+  "summaries": {
+    "all": {
+      "last_valid_age": {
+        "n": 363712,
+        "n_valid": 324640,
+        "missing_rate": 0.10742565546366356,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 14.0,
+          "0.5": 42.0,
+          "0.9": 132.0,
+          "1.0": 2211.0
+        }
+      },
+      "best_age": {
+        "n": 363712,
+        "n_valid": 324640,
+        "missing_rate": 0.10742565546366356,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 21.0,
+          "0.5": 125.0,
+          "0.9": 561.0,
+          "1.0": 2910.0
+        }
+      },
+      "speed_sd": {
+        "n": 363712,
+        "n_valid": 288164,
+        "missing_rate": 0.20771379553052965,
+        "quantiles": {
+          "0.0": 0.0,
+          "0.1": 0.33733257644483117,
+          "0.5": 0.7126972111069936,
+          "0.9": 1.1050569288521044,
+          "1.0": 3.299300477554225
+        }
+      },
+      "weight_deviation": {
+        "n": 363712,
+        "n_valid": 234112,
+        "missing_rate": 0.3563258842160831,
+        "quantiles": {
+          "0.0": -32.93333333333328,
+          "0.1": -5.5,
+          "0.5": 4.399999999999977,
+          "0.9": 15.428571428571445,
+          "1.0": 63.45454545454544
+        }
+      }
+    },
+    "canonical": {
+      "last_valid_age": {
+        "n": 348683,
+        "n_valid": 313928,
+        "missing_rate": 0.0996750630228603,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 14.0,
+          "0.5": 42.0,
+          "0.9": 133.0,
+          "1.0": 2211.0
+        }
+      },
+      "best_age": {
+        "n": 348683,
+        "n_valid": 313928,
+        "missing_rate": 0.0996750630228603,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 21.0,
+          "0.5": 127.0,
+          "0.9": 574.0,
+          "1.0": 2910.0
+        }
+      },
+      "speed_sd": {
+        "n": 348683,
+        "n_valid": 280809,
+        "missing_rate": 0.19465818522841663,
+        "quantiles": {
+          "0.0": 0.0,
+          "0.1": 0.3476738914326271,
+          "0.5": 0.7165283147065881,
+          "0.9": 1.1070362818000494,
+          "1.0": 3.299300477554225
+        }
+      },
+      "weight_deviation": {
+        "n": 348683,
+        "n_valid": 231049,
+        "missing_rate": 0.33736660519727085,
+        "quantiles": {
+          "0.0": -32.93333333333328,
+          "0.1": -5.428571428571445,
+          "0.5": 4.5,
+          "0.9": 15.5,
+          "1.0": 63.45454545454544
+        }
+      }
+    },
+    "nk": {
+      "last_valid_age": {
+        "n": 15029,
+        "n_valid": 10712,
+        "missing_rate": 0.2872446603233748,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 14.0,
+          "0.5": 35.0,
+          "0.9": 92.0,
+          "1.0": 272.0
+        }
+      },
+      "best_age": {
+        "n": 15029,
+        "n_valid": 10712,
+        "missing_rate": 0.2872446603233748,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 14.0,
+          "0.5": 56.0,
+          "0.9": 140.0,
+          "1.0": 314.0
+        }
+      },
+      "speed_sd": {
+        "n": 15029,
+        "n_valid": 7355,
+        "missing_rate": 0.5106128152239005,
+        "quantiles": {
+          "0.0": 4.754407741214273e-05,
+          "0.1": 0.15011175055529144,
+          "0.5": 0.5050493480746009,
+          "0.9": 0.9875064219629716,
+          "1.0": 2.7537425023370083
+        }
+      },
+      "weight_deviation": {
+        "n": 15029,
+        "n_valid": 3063,
+        "missing_rate": 0.796194024885222,
+        "quantiles": {
+          "0.0": -25.200000000000045,
+          "0.1": -8.5,
+          "0.5": -1.0,
+          "0.9": 7.0,
+          "1.0": 31.333333333333314
+        }
+      }
+    },
+    "2019_2024": {
+      "last_valid_age": {
+        "n": 284278,
+        "n_valid": 253042,
+        "missing_rate": 0.10987835850822082,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 14.0,
+          "0.5": 42.0,
+          "0.9": 133.0,
+          "1.0": 2211.0
+        }
+      },
+      "best_age": {
+        "n": 284278,
+        "n_valid": 253042,
+        "missing_rate": 0.10987835850822082,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 21.0,
+          "0.5": 125.0,
+          "0.9": 567.0,
+          "1.0": 2910.0
+        }
+      },
+      "speed_sd": {
+        "n": 284278,
+        "n_valid": 224156,
+        "missing_rate": 0.2114901610395458,
+        "quantiles": {
+          "0.0": 0.0,
+          "0.1": 0.3403994542109269,
+          "0.5": 0.7152873628419343,
+          "0.9": 1.1053975254787698,
+          "1.0": 3.0401241298630115
+        }
+      },
+      "weight_deviation": {
+        "n": 284278,
+        "n_valid": 183080,
+        "missing_rate": 0.35598252414889653,
+        "quantiles": {
+          "0.0": -32.93333333333328,
+          "0.1": -5.571428571428555,
+          "0.5": 4.399999999999977,
+          "0.9": 15.40740740740739,
+          "1.0": 63.45454545454544
+        }
+      }
+    },
+    "2025_plus": {
+      "last_valid_age": {
+        "n": 79434,
+        "n_valid": 71598,
+        "missing_rate": 0.09864793413399804,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 14.0,
+          "0.5": 43.0,
+          "0.9": 120.0,
+          "1.0": 1982.0
+        }
+      },
+      "best_age": {
+        "n": 79434,
+        "n_valid": 71598,
+        "missing_rate": 0.09864793413399804,
+        "quantiles": {
+          "0.0": 5.0,
+          "0.1": 21.0,
+          "0.5": 125.0,
+          "0.9": 553.0,
+          "1.0": 2694.0
+        }
+      },
+      "speed_sd": {
+        "n": 79434,
+        "n_valid": 64008,
+        "missing_rate": 0.1941989576251983,
+        "quantiles": {
+          "0.0": 0.0,
+          "0.1": 0.32846752314184957,
+          "0.5": 0.7031938728257774,
+          "0.9": 1.1033637029026415,
+          "1.0": 3.299300477554225
+        }
+      },
+      "weight_deviation": {
+        "n": 79434,
+        "n_valid": 51032,
+        "missing_rate": 0.35755469949895513,
+        "quantiles": {
+          "0.0": -32.80000000000001,
+          "0.1": -5.156390977443585,
+          "0.5": 4.53333333333336,
+          "0.9": 15.46666666666664,
+          "1.0": 52.0
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "last_valid_age_vs_days_since_last": {
+      "n_both_valid": 324640,
+      "n_different": 27635,
+      "equal_rate": 0.9148749383932971
+    },
+    "best_age_vs_days_since_last": {
+      "n_both_valid": 324640,
+      "n_different": 212574,
+      "equal_rate": 0.3452008378511582
+    }
+  },
+  "notes": [
+    "All lookups exclude the target day. No current-race result is a candidate input.",
+    "Different values do not prove independent information or accuracy improvement.",
+    "Speed SD also reflects changing race conditions; it is not an estimator standard error.",
+    "This read-only audit uses a separate live DB snapshot from the feature-pruning experiment.",
+    "Canonical/nk and time strata describe coverage, not causal biology or predictive effects."
+  ]
+}

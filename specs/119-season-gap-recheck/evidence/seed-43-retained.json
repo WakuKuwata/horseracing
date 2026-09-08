@@ -1,0 +1,823 @@
+{
+  "candidate_recipe_meta": {
+    "base_recipe": {
+      "objective": "pl_topk",
+      "calibration": "none",
+      "calib_frac": 0.0,
+      "calibration_split_unit": "race_count_v1",
+      "target_encode_cols": [
+        "jockey_id",
+        "trainer_id"
+      ],
+      "te_smoothing": 10.0,
+      "seed": 43,
+      "drop_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days",
+        "asof_spdfig_sd",
+        "win_rate_vs_field",
+        "recent_win_rate_vs_field",
+        "place_rate_vs_field",
+        "show_rate_vs_field",
+        "dist_band_win_rate_vs_field",
+        "surface_win_rate_vs_field",
+        "rel_time_avg_vs_field",
+        "rel_last3f_avg_vs_field",
+        "finish_diff_best_vs_field",
+        "jockey_win_rate_vs_field",
+        "trainer_win_rate_vs_field",
+        "win_rate_field_rank",
+        "rel_time_avg_field_rank"
+      ],
+      "market_offset": false,
+      "ev_weight": false,
+      "weight_mask_rate": 0.5,
+      "weight_mask_seed": 20260810,
+      "params": [
+        [
+          "n_estimators",
+          900
+        ]
+      ],
+      "recency_half_life_days": null,
+      "weight_scope": null,
+      "label": "",
+      "arm": "oof_isotonic",
+      "n_oof_blocks": 8
+    },
+    "correction": {
+      "kind": "joint_gap_season_sex_strict_prior_year",
+      "coefficient_order": [
+        "gap_log",
+        "female_sin",
+        "female_cos"
+      ],
+      "missing_component_exponent": 0.0,
+      "warmup_year": 2019,
+      "ridge": 1e-06,
+      "max_iter": 50,
+      "tol": 1e-09,
+      "assembly_eps": 0.0,
+      "topk": "Harville",
+      "coefficient_hash": "9e7afcb41e459c3b4c533d7c3c508dd4b87f2dd55a0f1f312c843067bd82e42c"
+    }
+  },
+  "active_recipe_meta": {
+    "base_recipe": {
+      "objective": "pl_topk",
+      "calibration": "none",
+      "calib_frac": 0.0,
+      "calibration_split_unit": "race_count_v1",
+      "target_encode_cols": [
+        "jockey_id",
+        "trainer_id"
+      ],
+      "te_smoothing": 10.0,
+      "seed": 43,
+      "drop_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days",
+        "asof_spdfig_sd",
+        "win_rate_vs_field",
+        "recent_win_rate_vs_field",
+        "place_rate_vs_field",
+        "show_rate_vs_field",
+        "dist_band_win_rate_vs_field",
+        "surface_win_rate_vs_field",
+        "rel_time_avg_vs_field",
+        "rel_last3f_avg_vs_field",
+        "finish_diff_best_vs_field",
+        "jockey_win_rate_vs_field",
+        "trainer_win_rate_vs_field",
+        "win_rate_field_rank",
+        "rel_time_avg_field_rank"
+      ],
+      "market_offset": false,
+      "ev_weight": false,
+      "weight_mask_rate": 0.5,
+      "weight_mask_seed": 20260810,
+      "params": [
+        [
+          "n_estimators",
+          900
+        ]
+      ],
+      "recency_half_life_days": null,
+      "weight_scope": null,
+      "label": "",
+      "arm": "oof_isotonic",
+      "n_oof_blocks": 8
+    },
+    "correction": {
+      "kind": "strict_prior_year_gap_log_probability_tilt",
+      "h": "log1p(days_since_last)",
+      "missing_exponent_offset": 0.0,
+      "warmup_year": 2019,
+      "ridge": 1e-06,
+      "max_iter": 50,
+      "tol": 1e-09,
+      "assembly_eps": 0.0,
+      "topk": "Harville from normalized corrected win",
+      "coefficient_hash": "3fdc3e9419c428766a14175056498fa5637f29792777e5cbc7f173a66f8cacb4"
+    }
+  },
+  "candidate_recipe_hash": "ed06ae7598357beae4677b3e101728cdd13467e966b98a5f0a7c9f8da67b9f06",
+  "active_recipe_hash": "7e997844cc5bf7fb06e121a633f1b23fb7dc4ce41e395b7ae56965e7dafedca4",
+  "race_id_set_hash": "19a7e560aa247c5412da7207bea8a7f0f1d2875fdd8035bd6144fb8e88d40dab",
+  "n_races": 23030,
+  "n_eligible": 22990,
+  "uniform_baseline_winner_nll": 2.5950255945714846,
+  "periods": {
+    "all": {
+      "candidate": 2.0445923377944815,
+      "active": 2.0452345435467123,
+      "diff": -0.00064220575223084,
+      "n_races": 23030
+    },
+    "recent_3y": {
+      "candidate": 2.027413543870741,
+      "active": 2.0279722541622567,
+      "diff": -0.0005587102915156628,
+      "n_races": 10406
+    },
+    "recent_5y": {
+      "candidate": 2.033996930881123,
+      "active": 2.0347810959554145,
+      "diff": -0.0007841650742914652,
+      "n_races": 17318
+    }
+  },
+  "bootstrap_ci": {
+    "point": -0.0006422057522306719,
+    "ci_low": -0.0013212768485949072,
+    "ci_high": 0.00012316344811003186,
+    "b": 4000,
+    "seed": 20260907,
+    "block": "race_day",
+    "n_days": 715,
+    "no_decision": false
+  },
+  "gate": {
+    "primary": true,
+    "stat_guard": false,
+    "recent_guard": true,
+    "top_noninferior": true,
+    "calibration": true,
+    "adopted": false,
+    "reasons": {
+      "winner_nll_diff": -0.00064220575223084,
+      "min_effect_delta": 0.0,
+      "opportunity": null,
+      "ci_low": -0.0024861822459315316,
+      "ci_high": 0.0012352664228585252,
+      "top2_diff": -9.494512948404754e-06,
+      "top3_diff": 6.651149675329648e-05,
+      "cand_ece": 0.0018396538221303223,
+      "act_ece": 0.001882618236419189,
+      "ece_available": true,
+      "emergency_stop": false,
+      "recent": {
+        "pass": true,
+        "mode": "non_inferiority",
+        "margin": 0.005,
+        "windows": {
+          "recent_3y": {
+            "diff": -0.000558710291515602,
+            "ci_low": -0.001753885136405314,
+            "ci_high": 0.0006055568250143549,
+            "n_races": 10390,
+            "n_days": 324,
+            "decision": "PASS",
+            "point_estimate_degraded": false,
+            "residual_risk": null
+          },
+          "recent_5y": {
+            "diff": -0.0007841650742909833,
+            "ci_low": -0.0016445394374313763,
+            "ci_high": 5.5458640622176776e-05,
+            "n_races": 17294,
+            "n_days": 538,
+            "decision": "PASS",
+            "point_estimate_degraded": false,
+            "residual_risk": null
+          }
+        }
+      },
+      "sub_gates": {
+        "effect_beats_delta": true,
+        "ci_upper_below_zero": false,
+        "recent_no_evidence_of_harm": true,
+        "top2_noninferior": true,
+        "top3_noninferior": true,
+        "calibration_noninferior": true,
+        "calibration_not_emergency": true
+      }
+    }
+  },
+  "snapshot": {
+    "run_freeze_sha256": "a18b3ca626551c756b210591497ad9844168078c59347d30e52c885b7f2b614a",
+    "seed": 43,
+    "contrast": {
+      "id": "retained",
+      "baseline": "retained"
+    },
+    "coefficient_provenance": {
+      "candidate": {
+        "base_arm": "pruning125_raw",
+        "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/119-season-gap-recheck/seed-43/coefficients.json",
+        "sha256": "439e15e3f364a55f4cce0fd1eb348d1ae7fad806b90052f03acec00f128edaa9",
+        "base_recipe_hash": "cf9e90d26b2ee6a7d3dd3716365af05868a3cd740605d88b2c7ab205b12b45a1",
+        "coefficient_order": [
+          "gap_log",
+          "female_sin",
+          "female_cos"
+        ]
+      },
+      "baseline": {
+        "base_arm": "pruning125_raw",
+        "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/seed-43/coefficients.json",
+        "sha256": "36785b72dca03adf716257fc4af7506901dd049e991710918857dfa43060d281",
+        "coefficient_order": [
+          "gap_log"
+        ]
+      }
+    },
+    "evidence_regime": "historical_development_full_information"
+  },
+  "subgroups": {
+    "race_subgroups": {
+      "recent_year_field_has_nk": {
+        "bootstrap_ci": {
+          "point": 0.0032326449626601797,
+          "ci_low": -0.00020516696787381309,
+          "ci_high": 0.006791486558571136,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "NO_DECISION",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5867928965472691,
+        "residual_risk": 0.006791486558571136
+      },
+      "2026_field_has_nk": {
+        "bootstrap_ci": {
+          "point": 0.0032326449626601797,
+          "ci_low": -0.00020516696787381309,
+          "ci_high": 0.006791486558571136,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "NO_DECISION",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5867928965472691,
+        "residual_risk": 0.006791486558571136
+      },
+      "recent_year_only": {
+        "bootstrap_ci": {
+          "point": 0.0005106233565634646,
+          "ci_low": -0.0021114553262448687,
+          "ci_high": 0.0032657848608316827,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5466295330725378,
+        "residual_risk": null
+      },
+      "2026_only": {
+        "bootstrap_ci": {
+          "point": 0.0005106233565634646,
+          "ci_low": -0.0021114553262448687,
+          "ci_high": 0.0032657848608316827,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5466295330725378,
+        "residual_risk": null
+      }
+    },
+    "horse_subgroups": {
+      "canonical": {
+        "bootstrap_ci": {
+          "point": -6.21119926600628e-05,
+          "ci_low": -0.00012529192484019537,
+          "ci_high": 5.905923865989973e-06,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 715,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 715,
+        "cand_minus_uniform": -0.04430429053018072,
+        "residual_risk": null
+      },
+      "nk": {
+        "bootstrap_ci": {
+          "point": 0.00018061399193053227,
+          "ci_low": -0.00019040183669079768,
+          "ci_high": 0.0005125171575428282,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 96,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 96,
+        "cand_minus_uniform": -0.04762808664268402,
+        "residual_risk": null
+      },
+      "recent_year_nk": {
+        "bootstrap_ci": {
+          "point": 0.00030021786223723303,
+          "ci_low": -0.00011653976173590161,
+          "ci_high": 0.0006986817474327297,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 70,
+        "cand_minus_uniform": -0.0489939098036435,
+        "residual_risk": null
+      },
+      "2026_nk": {
+        "bootstrap_ci": {
+          "point": 0.00030021786223723303,
+          "ci_low": -0.00011653976173590161,
+          "ci_high": 0.0006986817474327297,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 70,
+        "cand_minus_uniform": -0.0489939098036435,
+        "residual_risk": null
+      }
+    },
+    "critical": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "subgroup_guard": true,
+    "subgroup_guard_status": "PASS",
+    "target_year": 2026,
+    "subgroup_decisions": {
+      "canonical": "PASS",
+      "nk": "PASS",
+      "recent_year_only": "PASS"
+    },
+    "critical_residual_risk": {
+      "canonical": null,
+      "nk": null,
+      "recent_year_only": null
+    }
+  },
+  "decision_reason": {
+    "cause": "stat_guard_underpowered",
+    "gate": {
+      "primary": true,
+      "stat_guard": false,
+      "recent_guard": true,
+      "top_noninferior": true,
+      "calibration": true
+    }
+  },
+  "evaluation_contract_version": "v4",
+  "gate_config_hash": "8ba93611209f147516abc40d878c5f982e56b6e7ae4bc0db97e10869db76c879",
+  "bootstrap_sensitivity": {},
+  "total_ci": {
+    "point": -0.0006422057522306719,
+    "ci_low": -0.0024861822459315316,
+    "ci_high": 0.0012352664228585252,
+    "b": 4000,
+    "seed": 20260907,
+    "block": "race_day",
+    "n_days": 715,
+    "no_decision": false
+  },
+  "seed_noise": {
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "n_folds": 7,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "applied": true
+  },
+  "opportunity": null,
+  "target_year": 2026,
+  "gate_readout": "NO_DECISION",
+  "artifact_kind": "season_gap_research_report",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "training_seed": 43,
+  "deployment_seed": 42,
+  "contrast": {
+    "id": "retained",
+    "baseline": "retained"
+  },
+  "selected_arm": "pruning125_joint_gap_season",
+  "study_config_hash": "824d3a799f2fc7a34707983b0f9879db434b07e0b70e6c52078063966086d668",
+  "seed_config_hash": "8ba93611209f147516abc40d878c5f982e56b6e7ae4bc0db97e10869db76c879",
+  "run_freeze_sha256": "a18b3ca626551c756b210591497ad9844168078c59347d30e52c885b7f2b614a",
+  "coefficient_provenance": {
+    "candidate": {
+      "base_arm": "pruning125_raw",
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/119-season-gap-recheck/seed-43/coefficients.json",
+      "sha256": "439e15e3f364a55f4cce0fd1eb348d1ae7fad806b90052f03acec00f128edaa9",
+      "base_recipe_hash": "cf9e90d26b2ee6a7d3dd3716365af05868a3cd740605d88b2c7ab205b12b45a1",
+      "coefficient_order": [
+        "gap_log",
+        "female_sin",
+        "female_cos"
+      ]
+    },
+    "baseline": {
+      "base_arm": "pruning125_raw",
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/seed-43/coefficients.json",
+      "sha256": "36785b72dca03adf716257fc4af7506901dd049e991710918857dfa43060d281",
+      "coefficient_order": [
+        "gap_log"
+      ]
+    }
+  },
+  "candidate_columns": [
+    "venue_code",
+    "distance",
+    "track_type",
+    "going",
+    "weather",
+    "race_class",
+    "race_number",
+    "age",
+    "sex",
+    "frame",
+    "horse_number",
+    "jockey_id",
+    "trainer_id",
+    "weight",
+    "weight_diff",
+    "career_starts",
+    "days_since_last",
+    "prev_finish",
+    "prev_last3f",
+    "avg_finish",
+    "win_rate",
+    "cancel_count",
+    "exclude_count",
+    "stop_count",
+    "prev_was_cancel",
+    "prev_was_exclude",
+    "prev_was_stop",
+    "has_past_race",
+    "is_debut",
+    "past_race_count",
+    "is_low_history",
+    "avg_last3_finish",
+    "recent_win_rate",
+    "dist_band_win_rate",
+    "dist_band_avg_finish",
+    "surface_win_rate",
+    "class_transition",
+    "field_size",
+    "jockey_win_rate",
+    "trainer_win_rate",
+    "rel_last3f_avg",
+    "rel_last3f_best",
+    "rel_time_avg",
+    "finish_diff_avg",
+    "finish_diff_best",
+    "rel_corner_pos_avg",
+    "front_runner_rate",
+    "closer_rate",
+    "sire_win_rate",
+    "sire_avg_finish",
+    "sire_starts",
+    "sire_dist_band_win_rate",
+    "sire_surface_win_rate",
+    "damsire_win_rate",
+    "damsire_avg_finish",
+    "carried_weight",
+    "carried_weight_ratio",
+    "carried_weight_rel",
+    "carried_weight_change",
+    "prev_weight",
+    "race_month",
+    "race_season",
+    "place_rate",
+    "show_rate",
+    "dist_band_place_rate",
+    "jockey_place_rate",
+    "trainer_place_rate",
+    "jockey_recent_win_rate",
+    "jockey_surface_win_rate",
+    "jt_combo_win_rate",
+    "jockey_change",
+    "venue_win_rate",
+    "venue_place_rate",
+    "field_front_rate_ex_self",
+    "field_closer_rate_ex_self",
+    "pace_imbalance_ex_self",
+    "front_pressure",
+    "closer_setup",
+    "style_mismatch",
+    "field_style_coverage",
+    "sire_debut_win_rate",
+    "debut_x_sire_win_rate",
+    "debut_x_sire_dist_band_win_rate",
+    "lowhist_x_sire_win_rate",
+    "lowhist_x_sire_dist_band_win_rate",
+    "dist_change",
+    "surface_switch",
+    "going_change",
+    "dist_extension",
+    "dist_shortening",
+    "dist_ext_x_closing",
+    "dist_short_x_speed",
+    "asof_late_gain_avg",
+    "asof_late_gain_best",
+    "asof_early_pos_avg",
+    "asof_mid_move_avg",
+    "asof_rel_first3f_avg",
+    "asof_rel_first3f_best",
+    "asof_pace_balance_avg",
+    "asof_owner_win_rate",
+    "asof_owner_place_rate",
+    "asof_breeder_win_rate",
+    "prize_money_log",
+    "asof_prize_avg",
+    "prize_rel",
+    "sire_line",
+    "damsire_line",
+    "asof_mkt_rank_avg",
+    "asof_mkt_rank_norm_avg",
+    "asof_mkt_rank_best",
+    "asof_beat_mkt_avg",
+    "asof_spdfig_avg",
+    "asof_spdfig_best",
+    "asof_spdfig_recent3",
+    "asof_spdfig_last",
+    "asof_spdfig_count",
+    "asof_pm_support_last",
+    "asof_pm_support_mean3",
+    "asof_pm_support_mean5",
+    "asof_pm_support_best5",
+    "asof_pm_support_career",
+    "asof_pm_support_trend",
+    "asof_pm_support_sd5",
+    "asof_pm_obs_count",
+    "asof_pm_has_obs"
+  ],
+  "baseline_columns": [
+    "venue_code",
+    "distance",
+    "track_type",
+    "going",
+    "weather",
+    "race_class",
+    "race_number",
+    "age",
+    "sex",
+    "frame",
+    "horse_number",
+    "jockey_id",
+    "trainer_id",
+    "weight",
+    "weight_diff",
+    "career_starts",
+    "days_since_last",
+    "prev_finish",
+    "prev_last3f",
+    "avg_finish",
+    "win_rate",
+    "cancel_count",
+    "exclude_count",
+    "stop_count",
+    "prev_was_cancel",
+    "prev_was_exclude",
+    "prev_was_stop",
+    "has_past_race",
+    "is_debut",
+    "past_race_count",
+    "is_low_history",
+    "avg_last3_finish",
+    "recent_win_rate",
+    "dist_band_win_rate",
+    "dist_band_avg_finish",
+    "surface_win_rate",
+    "class_transition",
+    "field_size",
+    "jockey_win_rate",
+    "trainer_win_rate",
+    "rel_last3f_avg",
+    "rel_last3f_best",
+    "rel_time_avg",
+    "finish_diff_avg",
+    "finish_diff_best",
+    "rel_corner_pos_avg",
+    "front_runner_rate",
+    "closer_rate",
+    "sire_win_rate",
+    "sire_avg_finish",
+    "sire_starts",
+    "sire_dist_band_win_rate",
+    "sire_surface_win_rate",
+    "damsire_win_rate",
+    "damsire_avg_finish",
+    "carried_weight",
+    "carried_weight_ratio",
+    "carried_weight_rel",
+    "carried_weight_change",
+    "prev_weight",
+    "race_month",
+    "race_season",
+    "place_rate",
+    "show_rate",
+    "dist_band_place_rate",
+    "jockey_place_rate",
+    "trainer_place_rate",
+    "jockey_recent_win_rate",
+    "jockey_surface_win_rate",
+    "jt_combo_win_rate",
+    "jockey_change",
+    "venue_win_rate",
+    "venue_place_rate",
+    "field_front_rate_ex_self",
+    "field_closer_rate_ex_self",
+    "pace_imbalance_ex_self",
+    "front_pressure",
+    "closer_setup",
+    "style_mismatch",
+    "field_style_coverage",
+    "sire_debut_win_rate",
+    "debut_x_sire_win_rate",
+    "debut_x_sire_dist_band_win_rate",
+    "lowhist_x_sire_win_rate",
+    "lowhist_x_sire_dist_band_win_rate",
+    "dist_change",
+    "surface_switch",
+    "going_change",
+    "dist_extension",
+    "dist_shortening",
+    "dist_ext_x_closing",
+    "dist_short_x_speed",
+    "asof_late_gain_avg",
+    "asof_late_gain_best",
+    "asof_early_pos_avg",
+    "asof_mid_move_avg",
+    "asof_rel_first3f_avg",
+    "asof_rel_first3f_best",
+    "asof_pace_balance_avg",
+    "asof_owner_win_rate",
+    "asof_owner_place_rate",
+    "asof_breeder_win_rate",
+    "prize_money_log",
+    "asof_prize_avg",
+    "prize_rel",
+    "sire_line",
+    "damsire_line",
+    "asof_mkt_rank_avg",
+    "asof_mkt_rank_norm_avg",
+    "asof_mkt_rank_best",
+    "asof_beat_mkt_avg",
+    "asof_spdfig_avg",
+    "asof_spdfig_best",
+    "asof_spdfig_recent3",
+    "asof_spdfig_last",
+    "asof_spdfig_count",
+    "asof_pm_support_last",
+    "asof_pm_support_mean3",
+    "asof_pm_support_mean5",
+    "asof_pm_support_best5",
+    "asof_pm_support_career",
+    "asof_pm_support_trend",
+    "asof_pm_support_sd5",
+    "asof_pm_obs_count",
+    "asof_pm_has_obs"
+  ],
+  "evidence_regime": "historical_development_full_information",
+  "limitations": [
+    "Historical selection-used full-information data; no unused holdout or preweight claim.",
+    "This tests joint gap-coefficient re-adjustment plus seasonal-sex terms versus old gap-only, not an isolated season effect with gap fixed.",
+    "Same-season constants cancel in all-known-female or all-known-nonfemale races; mixed fields identify the seasonal contrast. Unknown sex is a separate diagnostic group.",
+    "Each CI uses transferred sd_fold.001816/k_seeds1 and holds correction coefficients fixed; neither joint-vector refit uncertainty nor retained-side gamma uncertainty/selection is fully represented.",
+    "Equal seed means average losses, not probabilities. No all-seed/majority/mean-CI rule; deployment seed42 residual risk remains.",
+    "No additional booster fit, annual confirmation slot, or production mutation."
+  ],
+  "assembly_audit": {
+    "races": 23030,
+    "assembly_eps": 0.0,
+    "below_legacy_clip_horses": 441,
+    "max_post_assembly_win_change": 2.220446049250313e-16
+  },
+  "elapsed_seconds": 18.063458416960202,
+  "research_disposition": {
+    "artifact_kind": "small_gain_research_disposition",
+    "policy_version": "small_gain_research_v1",
+    "eligible_for_verdict": false,
+    "can_adopt": false,
+    "state": "RETAIN_UNCERTAIN",
+    "reason": "observed_improvement_interval_includes_zero",
+    "blocking_reasons": [],
+    "primary_diff": -0.00064220575223084,
+    "total_ci": {
+      "point": -0.0006422057522306719,
+      "ci_low": -0.0024861822459315316,
+      "ci_high": 0.0012352664228585252,
+      "b": 4000,
+      "seed": 20260907,
+      "block": "race_day",
+      "n_days": 715,
+      "no_decision": false
+    },
+    "quality_metrics": {
+      "top2_diff": -9.494512948404754e-06,
+      "top3_diff": 6.651149675329648e-05,
+      "cand_ece": 0.0018396538221303223,
+      "act_ece": 0.001882618236419189
+    },
+    "subgroup_evidence": {
+      "critical": [
+        "canonical",
+        "nk",
+        "recent_year_only"
+      ],
+      "states": {
+        "canonical": "PASS",
+        "nk": "PASS",
+        "recent_year_only": "PASS"
+      },
+      "status": "PASS",
+      "critical_residual_risk": {
+        "canonical": null,
+        "nk": null,
+        "recent_year_only": null
+      },
+      "assurance": "full"
+    },
+    "original_result": {
+      "evaluation_contract_version": "v4",
+      "gate_readout": "NO_DECISION",
+      "decision": null,
+      "decision_reason": {
+        "cause": "stat_guard_underpowered",
+        "gate": {
+          "primary": true,
+          "stat_guard": false,
+          "recent_guard": true,
+          "top_noninferior": true,
+          "calibration": true
+        }
+      },
+      "progression": null
+    },
+    "original_scope": {
+      "stage": null,
+      "candidate": null,
+      "n_eligible": 22990,
+      "n_days": 715,
+      "target_year": 2026,
+      "evidence_regime": "historical_development_full_information",
+      "gate_config_hash": "8ba93611209f147516abc40d878c5f982e56b6e7ae4bc0db97e10869db76c879",
+      "study_config_hash": "824d3a799f2fc7a34707983b0f9879db434b07e0b70e6c52078063966086d668"
+    },
+    "limitations": [
+      "Research retention only; original verdict is unchanged.",
+      "Neither retention state establishes fresh holdout independence or production readiness.",
+      "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+      "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+    ]
+  },
+  "evidence_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/119-season-gap-recheck/seed-43/retained-evidence.json",
+  "evidence_sha256": "3b7d305aefa2d7b3b751d13dfbb7099d9d38668e4f879587395775dcfceaa825"
+}

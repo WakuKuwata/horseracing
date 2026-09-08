@@ -1,0 +1,107 @@
+{
+  "status": "COMPLETE",
+  "conclusion": "No feature deletion adopted in this round",
+  "can_adopt": false,
+  "active_model": "lgbm-094-cap900",
+  "active_change_performed": false,
+  "study_config_hash": "93b2dbea6917545269cbecc108d40e48d0b827cc5165795050058e1ce07c5489",
+  "screen_window": {
+    "from": "2018-01-01",
+    "to": "2018-12-31",
+    "min_eval_days": 100
+  },
+  "full_window": {
+    "from": "2019-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "rows": [
+    {
+      "candidate": {
+        "id": "human_absolute",
+        "drop_features": [
+          "jockey_win_rate",
+          "trainer_win_rate"
+        ]
+      },
+      "screen_diff": 3.7478109145006044e-05,
+      "screen_progression": "DEFER",
+      "screen_ref": "specs/110-feature-pruning/evidence/screen-human_absolute.json",
+      "screen_sha256": "584f649d75143719613d577684d99b0a27207ad718b9696639f6c68b069a35b7",
+      "full_gate_readout": null,
+      "full_diff": null,
+      "full_ref": null,
+      "full_sha256": null
+    },
+    {
+      "candidate": {
+        "id": "relative_ability",
+        "drop_features": [
+          "win_rate_vs_field",
+          "recent_win_rate_vs_field",
+          "place_rate_vs_field",
+          "show_rate_vs_field",
+          "dist_band_win_rate_vs_field",
+          "surface_win_rate_vs_field",
+          "rel_time_avg_vs_field",
+          "rel_last3f_avg_vs_field",
+          "finish_diff_best_vs_field",
+          "jockey_win_rate_vs_field",
+          "trainer_win_rate_vs_field",
+          "win_rate_field_rank",
+          "rel_time_avg_field_rank"
+        ]
+      },
+      "screen_diff": -0.007062315445972356,
+      "screen_progression": "ADVANCE",
+      "screen_ref": "specs/110-feature-pruning/evidence/screen-relative_ability.json",
+      "screen_sha256": "71f06152d35cdaa4dca0b0ac59f1b4cd13c9a42888103603f0e690b449d3165e",
+      "full_gate_readout": "REJECT",
+      "full_diff": -0.0022728446777042777,
+      "full_ref": "specs/110-feature-pruning/evidence/full-relative_ability.json",
+      "full_sha256": "6b32ab7882f538f80d1d9df3eda673de90539d30271fc3b20339ecc891b268f7"
+    },
+    {
+      "candidate": {
+        "id": "course_aptitude",
+        "drop_features": [
+          "venue_win_rate",
+          "venue_place_rate"
+        ]
+      },
+      "screen_diff": 0.001330689007825292,
+      "screen_progression": "DEFER",
+      "screen_ref": "specs/110-feature-pruning/evidence/screen-course_aptitude.json",
+      "screen_sha256": "d0530292eb0750833510a90152dea8edaa5cefd58a4d84849c67edb69e89a019",
+      "full_gate_readout": null,
+      "full_diff": null,
+      "full_ref": null,
+      "full_sha256": null
+    },
+    {
+      "candidate": {
+        "id": "pedigree_interactions",
+        "drop_features": [
+          "debut_x_sire_win_rate",
+          "debut_x_sire_dist_band_win_rate",
+          "lowhist_x_sire_win_rate",
+          "lowhist_x_sire_dist_band_win_rate"
+        ]
+      },
+      "screen_diff": 0.0017549594521444334,
+      "screen_progression": "DEFER",
+      "screen_ref": "specs/110-feature-pruning/evidence/screen-pedigree_interactions.json",
+      "screen_sha256": "a1ed7ca63d1878360509ba91d39b0f331b59a752709c7d65203c76c9d5815842",
+      "full_gate_readout": null,
+      "full_diff": null,
+      "full_ref": null,
+      "full_sha256": null
+    }
+  ],
+  "notes": [
+    "DEFER arms were only screened in 2018, not rejected over the full window.",
+    "Full REJECT means adoption criteria were not met; it does not prove absence of a smaller benefit.",
+    "Evaluation used historical full-information inputs; pre-weight-publication serving performance was not measured.",
+    "Next-candidate readiness audits measured coverage and value differences, not predictive benefit."
+  ]
+}

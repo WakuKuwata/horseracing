@@ -1,0 +1,173 @@
+{
+  "source": "out/segment_edge_current.json",
+  "metric": "per-horse binary LogLoss; not winner NLL",
+  "can_adopt": false,
+  "window": [
+    "2019-01-01",
+    "2026-08-30"
+  ],
+  "n_horses": 317393,
+  "rows": [
+    {
+      "axis": "surface",
+      "segment": "その他",
+      "n": 9516,
+      "win_rate": 0.08743169398907104,
+      "logloss_p": 0.24957644820652544,
+      "logloss_q": 0.23906913372808822,
+      "gap": 0.010507314478437224,
+      "mean_p": 0.0873266078184111,
+      "mean_q": 0.0873266078184111,
+      "weighted_gap": 0.00031502775605261814
+    },
+    {
+      "axis": "surface",
+      "segment": "ダート",
+      "n": 158244,
+      "win_rate": 0.07070726220267436,
+      "logloss_p": 0.20846980064382836,
+      "logloss_q": 0.19872831505724814,
+      "gap": 0.009741485586580223,
+      "mean_p": 0.0706251105887111,
+      "mean_q": 0.0706251105887111,
+      "weighted_gap": 0.004856854578276146
+    },
+    {
+      "axis": "surface",
+      "segment": "芝",
+      "n": 149633,
+      "win_rate": 0.07431515775263478,
+      "logloss_p": 0.21927821511871204,
+      "logloss_q": 0.20920641121502856,
+      "gap": 0.01007180390368348,
+      "mean_p": 0.07414808230804702,
+      "mean_q": 0.07414808230804702,
+      "weighted_gap": 0.0047482907106327805
+    },
+    {
+      "axis": "q_band",
+      "segment": "0.05-0.15",
+      "n": 77678,
+      "win_rate": 0.0905275625016092,
+      "logloss_p": 0.31087506782903174,
+      "logloss_q": 0.29950296890830824,
+      "gap": 0.011372098920723495,
+      "mean_p": 0.09435570181310166,
+      "mean_q": 0.09084800048970869,
+      "weighted_gap": 0.002783180158239027
+    },
+    {
+      "axis": "q_band",
+      "segment": "0.15-0.30",
+      "n": 36057,
+      "win_rate": 0.21105471891726987,
+      "logloss_p": 0.5306256080070056,
+      "logloss_q": 0.5094422540671281,
+      "gap": 0.02118335393987758,
+      "mean_p": 0.1811826570985761,
+      "mean_q": 0.2080276536226689,
+      "weighted_gap": 0.00240650610760214
+    },
+    {
+      "axis": "q_band",
+      "segment": "q<0.05(穴)",
+      "n": 190477,
+      "win_rate": 0.016427180184484216,
+      "logloss_p": 0.08236039835073049,
+      "logloss_q": 0.07737036336490527,
+      "gap": 0.004990034985825217,
+      "mean_p": 0.0263532329762589,
+      "mean_q": 0.017003579965268543,
+      "weighted_gap": 0.002994668735589726
+    },
+    {
+      "axis": "q_band",
+      "segment": "q>=0.30(本命)",
+      "n": 13181,
+      "win_rate": 0.407404597526743,
+      "logloss_p": 0.6984780451930267,
+      "logloss_q": 0.6566802683710615,
+      "gap": 0.04179777682196517,
+      "mean_p": 0.32016159395642707,
+      "mean_q": 0.40250853578965023,
+      "weighted_gap": 0.001735818043530648
+    },
+    {
+      "axis": "race_class",
+      "segment": "OP系",
+      "n": 28355,
+      "win_rate": 0.07194498324810439,
+      "logloss_p": 0.22265280625077796,
+      "logloss_q": 0.21327440990674254,
+      "gap": 0.009378396344035422,
+      "mean_p": 0.07187444895080233,
+      "mean_q": 0.07187444895080233,
+      "weighted_gap": 0.0008378396131456093
+    },
+    {
+      "axis": "race_class",
+      "segment": "新馬",
+      "n": 25763,
+      "win_rate": 0.07596165042890968,
+      "logloss_p": 0.23732400573162657,
+      "logloss_q": 0.2126867613417382,
+      "gap": 0.024637244389888374,
+      "mean_p": 0.0759228350735551,
+      "mean_q": 0.0759228350735551,
+      "weighted_gap": 0.001999821442869547
+    },
+    {
+      "axis": "race_class",
+      "segment": "未勝利",
+      "n": 119584,
+      "win_rate": 0.06994246721969494,
+      "logloss_p": 0.19984601527205278,
+      "logloss_q": 0.19109983755823554,
+      "gap": 0.00874617771381725,
+      "mean_p": 0.06983375702435109,
+      "mean_q": 0.06983375702435109,
+      "weighted_gap": 0.0032952929514170823
+    },
+    {
+      "axis": "race_class",
+      "segment": "条件",
+      "n": 143691,
+      "win_rate": 0.07502209602549915,
+      "logloss_p": 0.22165227610550167,
+      "logloss_q": 0.2132868474288376,
+      "gap": 0.008365428676664066,
+      "mean_p": 0.0748620303289698,
+      "mean_q": 0.0748620303289698,
+      "weighted_gap": 0.003787219037529298
+    },
+    {
+      "axis": "debut",
+      "segment": "debut",
+      "n": 31638,
+      "win_rate": 0.06710285100195967,
+      "logloss_p": 0.21431353153566687,
+      "logloss_q": 0.1915092395169953,
+      "gap": 0.022804292018671568,
+      "mean_p": 0.0662410227455605,
+      "mean_q": 0.06685510371497992,
+      "weighted_gap": 0.0022731509229464136
+    },
+    {
+      "axis": "debut",
+      "segment": "non-debut",
+      "n": 285755,
+      "win_rate": 0.07355251876607584,
+      "logloss_p": 0.2148514296034998,
+      "logloss_q": 0.20635775042947746,
+      "gap": 0.008493679174022328,
+      "mean_p": 0.07351145744562985,
+      "mean_q": 0.073443468106124,
+      "weighted_gap": 0.007647022122015137
+    }
+  ],
+  "notes": [
+    "Segments overlap across axes; do not sum across axes.",
+    "q-band is selected by closing market probability; conditional mismatch does not imply global calibration defect.",
+    "Existing diagnostic uses an older OOF/DB snapshot; new paired evaluation will use one fresh frozen input snapshot."
+  ]
+}

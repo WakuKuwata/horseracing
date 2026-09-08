@@ -1,0 +1,257 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0,
+  "delta_derivation_ref": "specs/112-small-gain-adoption/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "arms": {
+    "objective": "pl_topk",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "candidate_universe": [
+    "f03",
+    "f05",
+    "colsample_07"
+  ],
+  "selection_rule": "All and only122 ADVANCE_TO_FULL_RESEARCH after all3 complete reports and independent audit PASS; preserve universe order",
+  "study_arms": [
+    {
+      "id": "baseline",
+      "drop_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days",
+        "asof_spdfig_sd",
+        "win_rate_vs_field",
+        "recent_win_rate_vs_field",
+        "place_rate_vs_field",
+        "show_rate_vs_field",
+        "dist_band_win_rate_vs_field",
+        "surface_win_rate_vs_field",
+        "rel_time_avg_vs_field",
+        "rel_last3f_avg_vs_field",
+        "finish_diff_best_vs_field",
+        "jockey_win_rate_vs_field",
+        "trainer_win_rate_vs_field",
+        "win_rate_field_rank",
+        "rel_time_avg_field_rank",
+        "asof_pm_rankpct_last",
+        "asof_pm_rankpct_mean5",
+        "asof_pm_favorite_rate5",
+        "asof_pm_top3fav_rate5",
+        "asof_pm_rank_obs_count",
+        "asof_pm_support_surface",
+        "asof_pm_support_distband",
+        "asof_pm_support_venue",
+        "asof_pm_support_cond_count_surface",
+        "asof_pm_support_cond_count_distband",
+        "asof_pm_support_cond_count_venue"
+      ],
+      "colsample_bytree": 1.0,
+      "columns": 125
+    },
+    {
+      "id": "f03",
+      "drop_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days",
+        "asof_spdfig_sd",
+        "win_rate_vs_field",
+        "recent_win_rate_vs_field",
+        "place_rate_vs_field",
+        "show_rate_vs_field",
+        "dist_band_win_rate_vs_field",
+        "surface_win_rate_vs_field",
+        "rel_time_avg_vs_field",
+        "rel_last3f_avg_vs_field",
+        "finish_diff_best_vs_field",
+        "jockey_win_rate_vs_field",
+        "trainer_win_rate_vs_field",
+        "win_rate_field_rank",
+        "rel_time_avg_field_rank",
+        "asof_mkt_rank_avg",
+        "asof_mkt_rank_norm_avg",
+        "asof_mkt_rank_best",
+        "asof_beat_mkt_avg",
+        "asof_pm_support_surface",
+        "asof_pm_support_distband",
+        "asof_pm_support_venue",
+        "asof_pm_support_cond_count_surface",
+        "asof_pm_support_cond_count_distband",
+        "asof_pm_support_cond_count_venue"
+      ],
+      "colsample_bytree": 1.0,
+      "columns": 126
+    },
+    {
+      "id": "f05",
+      "drop_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days",
+        "asof_spdfig_sd",
+        "win_rate_vs_field",
+        "recent_win_rate_vs_field",
+        "place_rate_vs_field",
+        "show_rate_vs_field",
+        "dist_band_win_rate_vs_field",
+        "surface_win_rate_vs_field",
+        "rel_time_avg_vs_field",
+        "rel_last3f_avg_vs_field",
+        "finish_diff_best_vs_field",
+        "jockey_win_rate_vs_field",
+        "trainer_win_rate_vs_field",
+        "win_rate_field_rank",
+        "rel_time_avg_field_rank",
+        "asof_pm_rankpct_last",
+        "asof_pm_rankpct_mean5",
+        "asof_pm_favorite_rate5",
+        "asof_pm_top3fav_rate5",
+        "asof_pm_rank_obs_count"
+      ],
+      "colsample_bytree": 1.0,
+      "columns": 131
+    },
+    {
+      "id": "colsample_07",
+      "drop_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days",
+        "asof_spdfig_sd",
+        "win_rate_vs_field",
+        "recent_win_rate_vs_field",
+        "place_rate_vs_field",
+        "show_rate_vs_field",
+        "dist_band_win_rate_vs_field",
+        "surface_win_rate_vs_field",
+        "rel_time_avg_vs_field",
+        "rel_last3f_avg_vs_field",
+        "finish_diff_best_vs_field",
+        "jockey_win_rate_vs_field",
+        "trainer_win_rate_vs_field",
+        "win_rate_field_rank",
+        "rel_time_avg_field_rank",
+        "asof_pm_rankpct_last",
+        "asof_pm_rankpct_mean5",
+        "asof_pm_favorite_rate5",
+        "asof_pm_top3fav_rate5",
+        "asof_pm_rank_obs_count",
+        "asof_pm_support_surface",
+        "asof_pm_support_distband",
+        "asof_pm_support_venue",
+        "asof_pm_support_cond_count_surface",
+        "asof_pm_support_cond_count_distband",
+        "asof_pm_support_cond_count_venue"
+      ],
+      "colsample_bytree": 0.7,
+      "columns": 125
+    }
+  ],
+  "contrasts": [
+    {
+      "id": "f03",
+      "candidate": "f03",
+      "baseline": "baseline"
+    },
+    {
+      "id": "f05",
+      "candidate": "f05",
+      "baseline": "baseline"
+    },
+    {
+      "id": "colsample_07",
+      "candidate": "colsample_07",
+      "baseline": "baseline"
+    }
+  ],
+  "year_order": [
+    2026,
+    2025,
+    2024,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "seed": 42,
+  "outer_jobs_per_candidate": 7,
+  "max_new_outer_jobs": 21,
+  "booster_fits_per_outer": 8,
+  "baseline_new_fits": 0,
+  "max_workers": 2,
+  "model_threads": 1,
+  "candidate_completion_order": "Complete seven folds and report per candidate before the next candidate",
+  "performance_early_stop": false,
+  "smoke": {
+    "eval_window": {
+      "from": "2008-01-01",
+      "to": "2008-01-31",
+      "min_eval_days": 1
+    },
+    "n_estimators": 5,
+    "n_oof_blocks": 2
+  },
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "research_policy": "small_gain_research_v1",
+  "artifact_kind": "market_feature_full_quality_config",
+  "artifact_scope": "historical_development",
+  "limitations": [
+    "All previously researched development data; no unused holdout or annual confirmation slot.",
+    "One seed42 full-quality raw-model comparison per selected candidate; no gap or ensemble increment measured.",
+    "Research retention accepts negative point improvement with CI crossing zero if existing quality/harm guards pass.",
+    "Transferred seed noise remains sd.001816/k1 and does not cover all model selection/refitting uncertainty.",
+    "All selected candidates receive seven folds, including when recent point differences are nonnegative or uncertainty remains.",
+    "No production adoption. Additional seeds/cumulative corrections require separate preregistered research."
+  ]
+}

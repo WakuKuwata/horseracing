@@ -1,0 +1,17 @@
+{
+  "artifact_kind": "anchor_gap_warmup_cost_estimate",
+  "new_full_fit_jobs": 2,
+  "workers": 2,
+  "threads_per_worker": 1,
+  "source_cache": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/148c11c1aafcd70390c1165487dd28444805604be9b3cb2a4a00399d7aa9b05a.pkl",
+  "source_cache_sha256": "2301d8311eb3048619796502cbfe915b78366d0100144f6620eaf42cfaa86749",
+  "source_seed42_anchor2019_fit_seconds": 644.7293707499048,
+  "estimated_new_fit_seconds_sum": 1289.4587414998096,
+  "estimated_parallel_fit_wall_seconds": 644.7293707499048,
+  "notes": [
+    "Estimate uses the same recipe and year from the verified original seed42 cache.",
+    "OOF work is already included; do not multiply the estimate by8 again.",
+    "Preparation, smoke, input loading, correction estimation, evaluation and review add time.",
+    "Old reused learning cost is excluded from the new fit estimate."
+  ]
+}

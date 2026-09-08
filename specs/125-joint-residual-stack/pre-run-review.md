@@ -1,0 +1,9 @@
+# 実行前レビュー
+
+2026-09-08。独立設計レビューを受け、実装者以外の担当と親が全51 tests（3条件分岐の実fit_gamma/paired_evalを含む）を実行してPASS。source/config/spec/planの編集を停止した。
+
+config 03e4ff8e52143fdcfd5161c3913598ca4d000dd38d3bcd9dce023af3df59b60d、source e93f403a80eaf3cfae5967e875dfcfabc46ef4466346ea2cbf7cf8b92b920d9e。124保持A/Bの全てだけを119季節とjointで先行年推定し、各元候補との増分と6モデル平均の実測を分ける。最大12比較、固定ridge、温度正の領域、数値失敗の保存と自動調整禁止、全source/係数/receipt/母集団・baseline各行一致を確認。
+
+個別seedの符号やCI跨ぎを新しい棄却条件にしない。単体保持と混合保持を分離し、品質のBLOCKEDはすべて表示する。2026・中山・相対部分観測の既存固定117診断を、新CI・新ゲートなしで継続する。
+
+123/124の全結果と独立監査PASSはprepareの必須条件。親がその完成後にprepare/evaluate/summaryを実行する。追加booster0、旧成果物不変、本番変更・年間確認枠予約なし。

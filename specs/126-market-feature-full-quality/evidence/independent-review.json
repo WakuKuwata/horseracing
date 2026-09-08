@@ -1,0 +1,384 @@
+{
+  "artifact_kind": "market_feature_full_quality_independent_review",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "59babf4b501dc9ec6dc1a31e43a40c8ee9bfcaac77b25488432f9ed4e3f94582",
+  "helper_method_sha256": "bc0b56e6724f77310a1671ca4112b5127b3da972b63fa7a0f9a08f0f302f8cd4",
+  "run_freeze_sha256": "77af06e543d00ee01d83b79864ff0b2f17255735f9a66edd37d55732700c13ba",
+  "summary_sha256": "2598bfb07504fa9322c203afaf6502ed727263047825e7949cb447c3395a76d3",
+  "report_hashes": {
+    "colsample_07": {
+      "report_sha256": "8b473374a091235039e3a8ba70336e7ffa528b434265e407838fe6f50bba7035",
+      "evidence_sha256": "a607fdc7d2219c65d910fccdebe1dc0e474ecc72c6544f377e56922bd15f7e2b"
+    }
+  },
+  "cache_hashes": {
+    "baseline:2020": "65d37f5f6c0eadf0ebe38d410ca789559cc25bcf4c23e0f5fdc29ad62ca60c2d",
+    "baseline:2021": "fe747f33f42fa0b0f36a69733c707d56d773615041c2af2ee161b948a97396f7",
+    "baseline:2022": "4d3a1ce7b55fdbae3f83012878fbc40dfb5bc6b83afb6b090763ba26306c6ba0",
+    "baseline:2023": "4490d348cadd35440f2ba7a4b6c7c4f21a76016274842dcdd4ce674ef979862d",
+    "baseline:2024": "8a13c12b8b25b6e66d0e8628220c9331ec29a147b5c2cb2d04b0797851151303",
+    "baseline:2025": "0b087eb90fc3f6214e3afb4a31182e196601b3f1e851c6f2a516091f838f64bb",
+    "baseline:2026": "1cc63ce415e46630084a9beed8e110e29fbe3ebfe476d121a1d447af91a2a7d3",
+    "colsample_07:2020": "40a05a780154b900d8653eefe631ed8ff902af7fde0d829a754af8a498a83d81",
+    "colsample_07:2021": "3d1d15c314dce497f1b9e2773222beeee8af2c984e5df18520c190ac0fa47370",
+    "colsample_07:2022": "ba2dd7586741752015ef107d575e3eb679da0db2d5813e729171ea504f31de06",
+    "colsample_07:2023": "d05e86e59efbe6dddab91b8844a66d18d361e3d46b6662b09db5789aa04b7dd9",
+    "colsample_07:2024": "9570cf85a55e550bb5eaff106979486ab1209ad7741e90d3bdfd3acd61d30251",
+    "colsample_07:2025": "abed57462eef1d40458f2c4bbbce9c1bff59a1ab91fbc8440c96904d65ce34f1",
+    "colsample_07:2026": "56113c0c7c4a901aa6650c48537d8be3f6719ce92964ebf81c9937b8bba560fc"
+  },
+  "source_hashes_start_end_equal": true,
+  "cache_records": [
+    {
+      "arm": "baseline",
+      "year": 2020,
+      "key": "87ec1df2cc990aac89f54aa8dcac6ea8a22f032c632dd6541172e5ce284b3f77",
+      "cache_sha256": "65d37f5f6c0eadf0ebe38d410ca789559cc25bcf4c23e0f5fdc29ad62ca60c2d",
+      "receipt_sha256": "5b8ddb75b173a33ec5cfa6bf7beb887f4fa6752c8e832eb9037e5e70f57824ad",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2021,
+      "key": "cc72144927e66d82c82004d62ca07f15466df044363d8744c968d9bb96b3ff57",
+      "cache_sha256": "fe747f33f42fa0b0f36a69733c707d56d773615041c2af2ee161b948a97396f7",
+      "receipt_sha256": "ec0ac649a6e00cdbb96255ad70af6742c5aecad61409e34ae3b2aebe2a517b60",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2022,
+      "key": "a3d1287149c2a1e918e5ce0a71d4442beee6b29ec3feb16d5dcaba96bea94dd8",
+      "cache_sha256": "4d3a1ce7b55fdbae3f83012878fbc40dfb5bc6b83afb6b090763ba26306c6ba0",
+      "receipt_sha256": "009af5791da4899929e56e07ab31c13e4892a42d387056964909036e0d3b9fd8",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2023,
+      "key": "f62b86a76f0a35ccdaad886892c61c78471845e3553c31cf7a1827c00836a8d1",
+      "cache_sha256": "4490d348cadd35440f2ba7a4b6c7c4f21a76016274842dcdd4ce674ef979862d",
+      "receipt_sha256": "6767f5bb3898564278de767ab19ea55d05b1862a97ae8ee66de02993e3d21f6e",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2024,
+      "key": "e9f2d430996605ff216f083992fc04c7266e04d16c8f6a1780b5457acbd2118e",
+      "cache_sha256": "8a13c12b8b25b6e66d0e8628220c9331ec29a147b5c2cb2d04b0797851151303",
+      "receipt_sha256": "db9d05feaded6f8ee4e08d4747a7e4cdcbd38a0eed1bb65f925933f6a5f6ba24",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2025,
+      "key": "f8b50b2ba36be79ab1326f5767e599a6b7719a4da6a454973c9e68367a961bed",
+      "cache_sha256": "0b087eb90fc3f6214e3afb4a31182e196601b3f1e851c6f2a516091f838f64bb",
+      "receipt_sha256": "0243861832bca78bff69f99a3f55f674e01a80b285f51f925dc7c4343119a56b",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "baseline",
+      "year": 2026,
+      "key": "e3c2060810ee4083e00a305b1d5cbb7d4a5bed66d0e8783301f5e0867cfb6052",
+      "cache_sha256": "1cc63ce415e46630084a9beed8e110e29fbe3ebfe476d121a1d447af91a2a7d3",
+      "receipt_sha256": "ae155ff8c733f16b242b3dbba08184dad74a394a0a60da48a9819eecbedab9de",
+      "feature_columns": 125,
+      "oof_sufficient": true
+    },
+    {
+      "arm": "colsample_07",
+      "year": 2020,
+      "key": "17ec120475fc6a739f5c7af64123306811b835a5f73b18c7570407f6d5dd949b",
+      "cache_sha256": "40a05a780154b900d8653eefe631ed8ff902af7fde0d829a754af8a498a83d81",
+      "receipt_sha256": "ba94da7cd5535233c221b048946e86df12abc122e9b09bc39a9ee4aa4a8228d1",
+      "feature_columns": 125,
+      "actual_params": {
+        "objective": "binary",
+        "n_estimators": 900,
+        "learning_rate": 0.05,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 0.7,
+        "reg_lambda": 1.0
+      },
+      "oof_sufficient": true
+    },
+    {
+      "arm": "colsample_07",
+      "year": 2021,
+      "key": "bc93d9224c335e0e343c0cb3194198cadd0b40f7880f35d3bd0f3a1961c52bd3",
+      "cache_sha256": "3d1d15c314dce497f1b9e2773222beeee8af2c984e5df18520c190ac0fa47370",
+      "receipt_sha256": "d9549e5502e269baa91f3bbcf5cd60a0df01ee048205a258623126dff25097b2",
+      "feature_columns": 125,
+      "actual_params": {
+        "objective": "binary",
+        "n_estimators": 900,
+        "learning_rate": 0.05,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 0.7,
+        "reg_lambda": 1.0
+      },
+      "oof_sufficient": true
+    },
+    {
+      "arm": "colsample_07",
+      "year": 2022,
+      "key": "7d4aad8dd7105dcd28a8fa32aa3675573e21c342fc59980bee39f9a43f30eecc",
+      "cache_sha256": "ba2dd7586741752015ef107d575e3eb679da0db2d5813e729171ea504f31de06",
+      "receipt_sha256": "97226f7e96f01f0e0372f419b70e1d9a94d2effc24d117e889ed183da89c8f27",
+      "feature_columns": 125,
+      "actual_params": {
+        "objective": "binary",
+        "n_estimators": 900,
+        "learning_rate": 0.05,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 0.7,
+        "reg_lambda": 1.0
+      },
+      "oof_sufficient": true
+    },
+    {
+      "arm": "colsample_07",
+      "year": 2023,
+      "key": "3cbbbadd2505efcc8220140b8519d638257b7accf87b14f43bc509690464cf4f",
+      "cache_sha256": "d05e86e59efbe6dddab91b8844a66d18d361e3d46b6662b09db5789aa04b7dd9",
+      "receipt_sha256": "3cc27afacafabf8d3369c1f3cf2f902b89e21ca1208d9d99c9a5441cf0e7d814",
+      "feature_columns": 125,
+      "actual_params": {
+        "objective": "binary",
+        "n_estimators": 900,
+        "learning_rate": 0.05,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 0.7,
+        "reg_lambda": 1.0
+      },
+      "oof_sufficient": true
+    },
+    {
+      "arm": "colsample_07",
+      "year": 2024,
+      "key": "49efe607b88b71dd624d3a1e0f9c8ba0acf513f806983cbf2bc33492fc5f4c8c",
+      "cache_sha256": "9570cf85a55e550bb5eaff106979486ab1209ad7741e90d3bdfd3acd61d30251",
+      "receipt_sha256": "9149a4ea09a9a081be6e7f8411a9244f37b547aa99d6fea78fb6916e0104efb2",
+      "feature_columns": 125,
+      "actual_params": {
+        "objective": "binary",
+        "n_estimators": 900,
+        "learning_rate": 0.05,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 0.7,
+        "reg_lambda": 1.0
+      },
+      "oof_sufficient": true
+    },
+    {
+      "arm": "colsample_07",
+      "year": 2025,
+      "key": "4767d6fa8cdd27949a4439d232e503e3c182e6a318b8c8627d162f4a1d594907",
+      "cache_sha256": "abed57462eef1d40458f2c4bbbce9c1bff59a1ab91fbc8440c96904d65ce34f1",
+      "receipt_sha256": "43eb645e122305e0207d886c6f8d86bc0d5ab0dde34513e9385dc6c24a6e493a",
+      "feature_columns": 125,
+      "actual_params": {
+        "objective": "binary",
+        "n_estimators": 900,
+        "learning_rate": 0.05,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 0.7,
+        "reg_lambda": 1.0
+      },
+      "oof_sufficient": true
+    },
+    {
+      "arm": "colsample_07",
+      "year": 2026,
+      "key": "f11edb95061838d03400fbb329d12e2fa731198a395ba60b1adda07a1374fa99",
+      "cache_sha256": "56113c0c7c4a901aa6650c48537d8be3f6719ce92964ebf81c9937b8bba560fc",
+      "receipt_sha256": "ed158ec6828371b342a2ba2e6afd0ab0dc0631d4d21a17be8d8ca70cb897aabf",
+      "feature_columns": 125,
+      "actual_params": {
+        "objective": "binary",
+        "n_estimators": 900,
+        "learning_rate": 0.05,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 0.7,
+        "reg_lambda": 1.0
+      },
+      "oof_sufficient": true
+    }
+  ],
+  "comparisons": {
+    "colsample_07": {
+      "nll": 2.046031128084554,
+      "diff": -0.00024260628430372577,
+      "top2_diff": -0.00015107563918986822,
+      "top3_diff": -0.00012975344709004188,
+      "candidate_ece": 0.0015911396199217711,
+      "baseline_ece": 0.0014544823053832504,
+      "primary_sample_ci": {
+        "point": -0.00024260628430358306,
+        "ci_low": -0.0025458126121554255,
+        "ci_high": 0.0022148932033739083,
+        "n_days": 715,
+        "n_items": 22990
+      },
+      "primary_total_bounds": [
+        -0.0031138205124761798,
+        0.00275379413742565
+      ],
+      "recent": {
+        "recent_3y": {
+          "ci": {
+            "point": -0.0007661204236208945,
+            "ci_low": -0.004067539893547147,
+            "ci_high": 0.002548092279629917,
+            "n_days": 324,
+            "n_items": 10390
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        },
+        "recent_5y": {
+          "ci": {
+            "point": -0.00010915214734169248,
+            "ci_low": -0.0027578511998741693,
+            "ci_high": 0.0024454210756163827,
+            "n_days": 538,
+            "n_items": 17294
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        }
+      },
+      "subgroups": {
+        "recent_year_only": {
+          "ci": {
+            "point": -0.003549298737435002,
+            "ci_low": -0.010805101947743593,
+            "ci_high": 0.004129320832448988,
+            "n_days": 70,
+            "n_items": 2296
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        },
+        "2026_only": {
+          "ci": {
+            "point": -0.003549298737435002,
+            "ci_low": -0.010805101947743593,
+            "ci_high": 0.004129320832448988,
+            "n_days": 70,
+            "n_items": 2296
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        },
+        "recent_year_field_has_nk": {
+          "ci": {
+            "point": -0.002490291733805827,
+            "ci_low": -0.01114794407694122,
+            "ci_high": 0.007103213081322213,
+            "n_days": 70,
+            "n_items": 1471
+          },
+          "decision": "INCONCLUSIVE_LOW_PRECISION",
+          "residual_risk": 0.007103213081322213
+        },
+        "2026_field_has_nk": {
+          "ci": {
+            "point": -0.002490291733805827,
+            "ci_low": -0.01114794407694122,
+            "ci_high": 0.007103213081322213,
+            "n_days": 70,
+            "n_items": 1471
+          },
+          "decision": "INCONCLUSIVE_LOW_PRECISION",
+          "residual_risk": 0.007103213081322213
+        },
+        "canonical": {
+          "ci": {
+            "point": 5.028633739360836e-06,
+            "ci_low": -0.00019581443449960613,
+            "ci_high": 0.00021926585369441465,
+            "n_days": 715,
+            "n_items": 301398
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        },
+        "nk": {
+          "ci": {
+            "point": -0.000602129176289716,
+            "ci_low": -0.0013870282136487508,
+            "ci_high": 0.00018696775457844743,
+            "n_days": 96,
+            "n_items": 15028
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        },
+        "recent_year_nk": {
+          "ci": {
+            "point": -0.00048692285046180985,
+            "ci_low": -0.0013590204504046034,
+            "ci_high": 0.00039879154093026847,
+            "n_days": 70,
+            "n_items": 12442
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        },
+        "2026_nk": {
+          "ci": {
+            "point": -0.00048692285046180985,
+            "ci_low": -0.0013590204504046034,
+            "ci_high": 0.00039879154093026847,
+            "n_days": 70,
+            "n_items": 12442
+          },
+          "decision": "PASS",
+          "residual_risk": null
+        }
+      },
+      "research_state": "RETAIN_UNCERTAIN",
+      "gate_readout_diagnostic_only": "NO_DECISION"
+    }
+  },
+  "population": {
+    "n_races": 23030,
+    "n_eligible": 22990,
+    "n_days": 715,
+    "complete_started_horses": 316410,
+    "incomplete_races": 1
+  },
+  "checks": 69029,
+  "max_numeric_error": 5.551115123125783e-17,
+  "limitations": [
+    "Cached seven-fold seed42 forecasts audited; no independent model retraining.",
+    "Primary CI uses seven-fold/k1 transferred noise; recent and subgroup CIs remain conditional sample CIs.",
+    "Horse subgroup losses include all started horses under the frozen contract, including incomplete-result races.",
+    "Research only; no gap, ensemble, unused-holdout or production improvement claim."
+  ]
+}

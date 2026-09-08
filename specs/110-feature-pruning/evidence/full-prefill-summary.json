@@ -1,0 +1,171 @@
+{
+  "all_complete": true,
+  "n_jobs": 16,
+  "workers_after_probe": 2,
+  "prefill_wall_seconds": 7322.506818,
+  "sum_fit_wall_seconds": 12793.528416958987,
+  "manifest_sha256": "b36cbf09bca915483ba980d23b4d22422b035e8450312bd1210971a7d0864dbb",
+  "rows": [
+    {
+      "year": 2026,
+      "arm": "baseline",
+      "fit_wall_seconds": 954.4650848329766,
+      "n_features": 138,
+      "validation_races": 2298,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 8428568576,
+      "cache_sha256": "1277b541e743989caef87f441ef60b4fc9a34fb031ab19f6724563b8eb405404"
+    },
+    {
+      "year": 2026,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 939.2077199589694,
+      "n_features": 125,
+      "validation_races": 2298,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 7000326144,
+      "cache_sha256": "1cc63ce415e46630084a9beed8e110e29fbe3ebfe476d121a1d447af91a2a7d3"
+    },
+    {
+      "year": 2025,
+      "arm": "baseline",
+      "fit_wall_seconds": 957.223320415942,
+      "n_features": 138,
+      "validation_races": 3454,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 7377354752,
+      "cache_sha256": "a9fadbfa63929ce75cebd8715696daf1d4efe3e5c4bab5b67db445362e6566ac"
+    },
+    {
+      "year": 2025,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 901.9975312090246,
+      "n_features": 125,
+      "validation_races": 3454,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 6232129536,
+      "cache_sha256": "0b087eb90fc3f6214e3afb4a31182e196601b3f1e851c6f2a516091f838f64bb"
+    },
+    {
+      "year": 2024,
+      "arm": "baseline",
+      "fit_wall_seconds": 904.3351620000321,
+      "n_features": 138,
+      "validation_races": 3454,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 7039827968,
+      "cache_sha256": "f35483331319d598b5c34e6bda00cb96ed25ffa2e8c7437a85944329df23fc64"
+    },
+    {
+      "year": 2024,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 846.9960891250521,
+      "n_features": 125,
+      "validation_races": 3454,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 6632521728,
+      "cache_sha256": "8a13c12b8b25b6e66d0e8628220c9331ec29a147b5c2cb2d04b0797851151303"
+    },
+    {
+      "year": 2023,
+      "arm": "baseline",
+      "fit_wall_seconds": 845.2341789590428,
+      "n_features": 138,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 7630798848,
+      "cache_sha256": "5fef41c2d4652559b1b7b89bb534ba30618d81ab8c37ed08995f699ca1e07059"
+    },
+    {
+      "year": 2023,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 805.1521512910258,
+      "n_features": 125,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 7055261696,
+      "cache_sha256": "4490d348cadd35440f2ba7a4b6c7c4f21a76016274842dcdd4ce674ef979862d"
+    },
+    {
+      "year": 2022,
+      "arm": "baseline",
+      "fit_wall_seconds": 799.0765512919752,
+      "n_features": 138,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 7033094144,
+      "cache_sha256": "31c633dfb708860887057005f69f4b963f40c3011b3c5de4b193bbe6165a4437"
+    },
+    {
+      "year": 2022,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 766.188579708105,
+      "n_features": 125,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 6424379392,
+      "cache_sha256": "4d3a1ce7b55fdbae3f83012878fbc40dfb5bc6b83afb6b090763ba26306c6ba0"
+    },
+    {
+      "year": 2021,
+      "arm": "baseline",
+      "fit_wall_seconds": 768.845320124994,
+      "n_features": 138,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 6598082560,
+      "cache_sha256": "4927951b4e2fe241b86f5917021199c6d86bcf37b012f9fd578bd4019feaa775"
+    },
+    {
+      "year": 2021,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 713.7658727499656,
+      "n_features": 125,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 6519570432,
+      "cache_sha256": "fe747f33f42fa0b0f36a69733c707d56d773615041c2af2ee161b948a97396f7"
+    },
+    {
+      "year": 2020,
+      "arm": "baseline",
+      "fit_wall_seconds": 700.7445034170523,
+      "n_features": 138,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 5633998848,
+      "cache_sha256": "3092bb603f19ae9cb647eb88e965ae5781e4d635ef46ebdfbbd5d759ba3baf82"
+    },
+    {
+      "year": 2020,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 661.5062789579388,
+      "n_features": 125,
+      "validation_races": 3456,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 6126862336,
+      "cache_sha256": "65d37f5f6c0eadf0ebe38d410ca789559cc25bcf4c23e0f5fdc29ad62ca60c2d"
+    },
+    {
+      "year": 2019,
+      "arm": "baseline",
+      "fit_wall_seconds": 644.7293707499048,
+      "n_features": 138,
+      "validation_races": 3452,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 5778800640,
+      "cache_sha256": "2301d8311eb3048619796502cbfe915b78366d0100144f6620eaf42cfaa86749"
+    },
+    {
+      "year": 2019,
+      "arm": "relative_ability",
+      "fit_wall_seconds": 584.0607021669857,
+      "n_features": 125,
+      "validation_races": 3452,
+      "oof_sufficient": true,
+      "peak_rss_bytes": 6843269120,
+      "cache_sha256": "81aea30844442df28ff0ee1cce3bde7ddec2fb00ff09d3c144c61db15204c52c"
+    }
+  ],
+  "note": "Per-job fit wall times are summed across concurrent processes, not CPU times. Original full report elapsed_seconds measures cache replay and evaluation only."
+}

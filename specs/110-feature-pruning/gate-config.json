@@ -1,0 +1,128 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0035188338580500285,
+  "delta_derivation_ref": "specs/100-eval-contract-v5/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "eval_window": {
+    "from": "2019-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "arms": {
+    "objective": "pl_topk",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "screen": {
+    "eval_window": {
+      "from": "2018-01-01",
+      "to": "2018-12-31",
+      "min_eval_days": 100
+    },
+    "progression": "diff<0 AND top2_diff<=0.0005 AND top3_diff<=0.0005 AND ece_diff<=0.001; no adoption"
+  },
+  "smoke": {
+    "eval_window": {
+      "from": "2008-01-01",
+      "to": "2008-01-31",
+      "min_eval_days": 1
+    },
+    "n_estimators": 5,
+    "n_oof_blocks": 2
+  },
+  "candidates": [
+    {
+      "id": "human_absolute",
+      "drop_features": [
+        "jockey_win_rate",
+        "trainer_win_rate"
+      ]
+    },
+    {
+      "id": "relative_ability",
+      "drop_features": [
+        "win_rate_vs_field",
+        "recent_win_rate_vs_field",
+        "place_rate_vs_field",
+        "show_rate_vs_field",
+        "dist_band_win_rate_vs_field",
+        "surface_win_rate_vs_field",
+        "rel_time_avg_vs_field",
+        "rel_last3f_avg_vs_field",
+        "finish_diff_best_vs_field",
+        "jockey_win_rate_vs_field",
+        "trainer_win_rate_vs_field",
+        "win_rate_field_rank",
+        "rel_time_avg_field_rank"
+      ]
+    },
+    {
+      "id": "course_aptitude",
+      "drop_features": [
+        "venue_win_rate",
+        "venue_place_rate"
+      ]
+    },
+    {
+      "id": "pedigree_interactions",
+      "drop_features": [
+        "debut_x_sire_win_rate",
+        "debut_x_sire_dist_band_win_rate",
+        "lowhist_x_sire_win_rate",
+        "lowhist_x_sire_dist_band_win_rate"
+      ]
+    }
+  ],
+  "multiplicity": {
+    "family_size": 4,
+    "primary_ci_method": "Bonferroni alpha=0.05/4; same alpha after screening",
+    "prior_history": "All historical windows are previously researched development data; no automatic promotion"
+  }
+}

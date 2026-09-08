@@ -1,0 +1,2243 @@
+{
+  "artifact_kind": "relative_feature_integrity_research_audit",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "state": "PASS",
+  "method_sha256": "a55deb641ba4363a763ce67ce38e3de488e3d895fe99598206045a299043ed56",
+  "source116_freeze_sha256": "487d4f62963639e0dcad7d9edcf22df05fe47ec2362dad5dcea96c04cb032d4d",
+  "source116_config_hash": "06fa5bd77ad18340e3b1a4f6d8f35d690de53443615b7686aba6d65799f1daaf",
+  "source116_source_hash": "5f847f8667380afb285887ec9dc1350c09b621a847567d7ca1b0b4e53f7bca77",
+  "source_snapshot_sha256": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+  "relative_builder_sha256": "eed723cc19ee4030d6ccef813f1891bf99fdc829932a34cf180bf442af0a19f2",
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "verification_before_and_after": true,
+  "window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23"
+  },
+  "rows": 316426,
+  "races": 23030,
+  "columns": [
+    "win_rate_vs_field",
+    "recent_win_rate_vs_field",
+    "place_rate_vs_field",
+    "show_rate_vs_field",
+    "dist_band_win_rate_vs_field",
+    "surface_win_rate_vs_field",
+    "rel_time_avg_vs_field",
+    "rel_last3f_avg_vs_field",
+    "finish_diff_best_vs_field",
+    "jockey_win_rate_vs_field",
+    "trainer_win_rate_vs_field",
+    "win_rate_field_rank",
+    "rel_time_avg_field_rank"
+  ],
+  "feature_cells_checked_per_method": 4113538,
+  "tolerance": {
+    "atol": 1e-12,
+    "rtol": 1e-12
+  },
+  "started_population_exact": true,
+  "snapshot_extra_races_excluded_from_evaluation_audit": [
+    {
+      "race_id": "202504040406",
+      "race_date": "2025-10-26",
+      "horse_rows": 14,
+      "reason": "Not in frozen EvalRace population; underlying exclusion reason not determined by this audit"
+    }
+  ],
+  "audit_population": "All23030 frozen2020..2026 EvalRaces with their entire started field; no missing evaluation race or horse mismatch",
+  "initial_attempt": "Stopped before producing JSON because whole snapshot race set included one extra non-evaluation race. Read-only diagnosis found no missing evaluation races or shared-race horse differences. Parent independent review approved explicit recorded exclusion before rerun; old source/artifacts unchanged.",
+  "checks": {
+    "win_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 38705,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 13486,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      }
+    },
+    "recent_win_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 18653,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 4425,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      }
+    },
+    "place_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 44390,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 17037,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      }
+    },
+    "show_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 50606,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 20429,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      }
+    },
+    "dist_band_win_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 253027,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 29184,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 253027,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 13012,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      }
+    },
+    "surface_win_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 265328,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 34318,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 265328,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 13800,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 2.220446049250313e-16
+      }
+    },
+    "rel_time_avg_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 48036,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 1.7763568394002505e-15
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 34031,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 1.7763568394002505e-15
+      }
+    },
+    "rel_last3f_avg_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284835,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 46343,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 8.881784197001252e-16
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284835,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 33440,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 8.881784197001252e-16
+      }
+    },
+    "finish_diff_best_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 57357,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 1.7763568394002505e-15
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 34277,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 1.7763568394002505e-15
+      }
+    },
+    "jockey_win_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 316031,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 78635,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 5.551115123125783e-17
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 316031,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 23408,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 5.551115123125783e-17
+      }
+    },
+    "trainer_win_rate_vs_field": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 316299,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 78360,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 5.551115123125783e-17
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 316299,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 19016,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 5.551115123125783e-17
+      }
+    },
+    "win_rate_field_rank": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 0,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 0.0
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 0,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 0.0
+      }
+    },
+    "rel_time_avg_field_rank": {
+      "independent_formula": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 0,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 0.0
+      },
+      "registered_builder": {
+        "rows": 316426,
+        "paired_finite": 284836,
+        "nan_pattern_mismatch": 0,
+        "stored_infinite": 0,
+        "recomputed_infinite": 0,
+        "finite_not_bitwise_equal": 0,
+        "beyond_tolerance": 0,
+        "max_absolute_error": 0.0
+      }
+    }
+  },
+  "rank_ranges": {
+    "win_rate_field_rank": {
+      "finite_count": 284836,
+      "min": 0.05555555555555555,
+      "max": 1.0,
+      "outside_open_zero_closed_one": 0
+    },
+    "rel_time_avg_field_rank": {
+      "finite_count": 284836,
+      "min": 0.05555555555555555,
+      "max": 1.0,
+      "outside_open_zero_closed_one": 0
+    }
+  },
+  "full_available_years": {
+    "2020": {
+      "horse_rows": 48058,
+      "races": 3456,
+      "days": 109,
+      "columns": {
+        "win_rate": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 9670,
+          "missing_rate": 0.2012151983020517,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 7903,
+          "missing_rate": 0.16444712638894668,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 38,
+          "missing_rate": 0.0007907112239377419,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 14,
+          "missing_rate": 0.000291314661450747,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 9674,
+          "missing_rate": 0.2012984310624662,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 7903,
+          "missing_rate": 0.16444712638894668,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 38,
+          "missing_rate": 0.0007907112239377419,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 14,
+          "missing_rate": 0.000291314661450747,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 4863,
+          "missing_rate": 0.10119022847392733,
+          "infinite": 0
+        }
+      }
+    },
+    "2021": {
+      "horse_rows": 47609,
+      "races": 3456,
+      "days": 106,
+      "columns": {
+        "win_rate": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 9417,
+          "missing_rate": 0.19779873553319752,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 7718,
+          "missing_rate": 0.1621122056753975,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 46,
+          "missing_rate": 0.0009662038690163625,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 19,
+          "missing_rate": 0.000399084206767628,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 9421,
+          "missing_rate": 0.19788275326093807,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 7718,
+          "missing_rate": 0.1621122056753975,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 46,
+          "missing_rate": 0.0009662038690163625,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 19,
+          "missing_rate": 0.000399084206767628,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 4661,
+          "missing_rate": 0.09790165724967968,
+          "infinite": 0
+        }
+      }
+    },
+    "2022": {
+      "horse_rows": 46986,
+      "races": 3456,
+      "days": 108,
+      "columns": {
+        "win_rate": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 9284,
+          "missing_rate": 0.19759077171923553,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 7613,
+          "missing_rate": 0.1620269867620142,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 75,
+          "missing_rate": 0.0015962201506831823,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 19,
+          "missing_rate": 0.0004043757715064062,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 9292,
+          "missing_rate": 0.19776103520197505,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 7614,
+          "missing_rate": 0.16204826969735667,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 75,
+          "missing_rate": 0.0015962201506831823,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 19,
+          "missing_rate": 0.0004043757715064062,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 4705,
+          "missing_rate": 0.10013621078619163,
+          "infinite": 0
+        }
+      }
+    },
+    "2023": {
+      "horse_rows": 47432,
+      "races": 3456,
+      "days": 107,
+      "columns": {
+        "win_rate": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 9591,
+          "missing_rate": 0.20220526227019733,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 7725,
+          "missing_rate": 0.1628647326699275,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 57,
+          "missing_rate": 0.0012017203575645135,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 20,
+          "missing_rate": 0.00042165626581210997,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 9597,
+          "missing_rate": 0.20233175914994098,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 7725,
+          "missing_rate": 0.1628647326699275,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 57,
+          "missing_rate": 0.0012017203575645135,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 20,
+          "missing_rate": 0.00042165626581210997,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 4811,
+          "missing_rate": 0.10142941474110305,
+          "infinite": 0
+        }
+      }
+    },
+    "2024": {
+      "horse_rows": 46921,
+      "races": 3454,
+      "days": 106,
+      "columns": {
+        "win_rate": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 9598,
+          "missing_rate": 0.20455659512798108,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 7783,
+          "missing_rate": 0.16587455510325866,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 78,
+          "missing_rate": 0.0016623686622194752,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 19,
+          "missing_rate": 0.00040493595618166703,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 9605,
+          "missing_rate": 0.2047057820592059,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 7784,
+          "missing_rate": 0.16589586752200508,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 78,
+          "missing_rate": 0.0016623686622194752,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 19,
+          "missing_rate": 0.00040493595618166703,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 4933,
+          "missing_rate": 0.10513416167600861,
+          "infinite": 0
+        }
+      }
+    },
+    "2025": {
+      "horse_rows": 47655,
+      "races": 3454,
+      "days": 109,
+      "columns": {
+        "win_rate": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 9817,
+          "missing_rate": 0.2060014688909873,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 7859,
+          "missing_rate": 0.1649144895603819,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 5007,
+          "missing_rate": 0.10506767390620082,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 71,
+          "missing_rate": 0.0014898751442660792,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 18,
+          "missing_rate": 0.00037771482530689327,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 9827,
+          "missing_rate": 0.20621131046060223,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 7859,
+          "missing_rate": 0.1649144895603819,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 5007,
+          "missing_rate": 0.10506767390620082,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 71,
+          "missing_rate": 0.0014898751442660792,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 18,
+          "missing_rate": 0.00037771482530689327,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 5006,
+          "missing_rate": 0.10504668974923932,
+          "infinite": 0
+        }
+      }
+    },
+    "2026": {
+      "horse_rows": 31765,
+      "races": 2298,
+      "days": 70,
+      "columns": {
+        "win_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5978,
+          "missing_rate": 0.1881945537541319,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4495,
+          "missing_rate": 0.14150794900047223,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 30,
+          "missing_rate": 0.0009444356996694475,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 18,
+          "missing_rate": 0.0005666614198016685,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5983,
+          "missing_rate": 0.1883519597040768,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4495,
+          "missing_rate": 0.14150794900047223,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 30,
+          "missing_rate": 0.0009444356996694475,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 18,
+          "missing_rate": 0.0005666614198016685,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        }
+      }
+    }
+  },
+  "same_period_jan01_aug23": {
+    "2020": {
+      "horse_rows": 31709,
+      "races": 2280,
+      "days": 71,
+      "columns": {
+        "win_rate": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5843,
+          "missing_rate": 0.18426945031379105,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4471,
+          "missing_rate": 0.14100097764041755,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 23,
+          "missing_rate": 0.0007253461162445993,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 9,
+          "missing_rate": 0.000283831088965278,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5845,
+          "missing_rate": 0.18433252388911667,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4471,
+          "missing_rate": 0.14100097764041755,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 23,
+          "missing_rate": 0.0007253461162445993,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 9,
+          "missing_rate": 0.000283831088965278,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2565,
+          "missing_rate": 0.08089186035510423,
+          "infinite": 0
+        }
+      }
+    },
+    "2021": {
+      "horse_rows": 31164,
+      "races": 2256,
+      "days": 68,
+      "columns": {
+        "win_rate": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5656,
+          "missing_rate": 0.18149146451033243,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4382,
+          "missing_rate": 0.14061096136567836,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 34,
+          "missing_rate": 0.0010910024387113335,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 15,
+          "missing_rate": 0.00048132460531382363,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5660,
+          "missing_rate": 0.18161981773841612,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4382,
+          "missing_rate": 0.14061096136567836,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 34,
+          "missing_rate": 0.0010910024387113335,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 15,
+          "missing_rate": 0.00048132460531382363,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2420,
+          "missing_rate": 0.07765370299063021,
+          "infinite": 0
+        }
+      }
+    },
+    "2022": {
+      "horse_rows": 30760,
+      "races": 2256,
+      "days": 69,
+      "columns": {
+        "win_rate": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5494,
+          "missing_rate": 0.17860858257477244,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4283,
+          "missing_rate": 0.13923927178153447,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 32,
+          "missing_rate": 0.0010403120936280884,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 13,
+          "missing_rate": 0.0004226267880364109,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5500,
+          "missing_rate": 0.1788036410923277,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4284,
+          "missing_rate": 0.13927178153446035,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 32,
+          "missing_rate": 0.0010403120936280884,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 13,
+          "missing_rate": 0.0004226267880364109,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2426,
+          "missing_rate": 0.07886866059817946,
+          "infinite": 0
+        }
+      }
+    },
+    "2023": {
+      "horse_rows": 31228,
+      "races": 2256,
+      "days": 68,
+      "columns": {
+        "win_rate": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5785,
+          "missing_rate": 0.18525041629307032,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4417,
+          "missing_rate": 0.1414435762776995,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 22,
+          "missing_rate": 0.0007044959651594723,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 12,
+          "missing_rate": 0.00038427052645062125,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5788,
+          "missing_rate": 0.18534648392468298,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4417,
+          "missing_rate": 0.1414435762776995,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 22,
+          "missing_rate": 0.0007044959651594723,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 12,
+          "missing_rate": 0.00038427052645062125,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2529,
+          "missing_rate": 0.08098501344946843,
+          "infinite": 0
+        }
+      }
+    },
+    "2024": {
+      "horse_rows": 30822,
+      "races": 2256,
+      "days": 67,
+      "columns": {
+        "win_rate": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5780,
+          "missing_rate": 0.1875283888131854,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4439,
+          "missing_rate": 0.14402050483420933,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 60,
+          "missing_rate": 0.0019466614755693985,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 13,
+          "missing_rate": 0.00042177665304003633,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5785,
+          "missing_rate": 0.18769061060281617,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4439,
+          "missing_rate": 0.14402050483420933,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 60,
+          "missing_rate": 0.0019466614755693985,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 13,
+          "missing_rate": 0.00042177665304003633,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2599,
+          "missing_rate": 0.08432288625008111,
+          "infinite": 0
+        }
+      }
+    },
+    "2025": {
+      "horse_rows": 31356,
+      "races": 2267,
+      "days": 69,
+      "columns": {
+        "win_rate": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5919,
+          "missing_rate": 0.18876769996172982,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4498,
+          "missing_rate": 0.14344941956882257,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 43,
+          "missing_rate": 0.0013713483862737594,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 13,
+          "missing_rate": 0.00041459369817578774,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5928,
+          "missing_rate": 0.1890547263681592,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4498,
+          "missing_rate": 0.14344941956882257,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 43,
+          "missing_rate": 0.0013713483862737594,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 13,
+          "missing_rate": 0.00041459369817578774,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2632,
+          "missing_rate": 0.08393927796912871,
+          "infinite": 0
+        }
+      }
+    },
+    "2026": {
+      "horse_rows": 31765,
+      "races": 2298,
+      "days": 70,
+      "columns": {
+        "win_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "recent_win_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "place_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "show_rate": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "dist_band_win_rate": {
+          "missing": 5978,
+          "missing_rate": 0.1881945537541319,
+          "infinite": 0
+        },
+        "surface_win_rate": {
+          "missing": 4495,
+          "missing_rate": 0.14150794900047223,
+          "infinite": 0
+        },
+        "rel_time_avg": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "rel_last3f_avg": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "finish_diff_best": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "jockey_win_rate": {
+          "missing": 30,
+          "missing_rate": 0.0009444356996694475,
+          "infinite": 0
+        },
+        "trainer_win_rate": {
+          "missing": 18,
+          "missing_rate": 0.0005666614198016685,
+          "infinite": 0
+        },
+        "win_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "recent_win_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "place_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "show_rate_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "dist_band_win_rate_vs_field": {
+          "missing": 5983,
+          "missing_rate": 0.1883519597040768,
+          "infinite": 0
+        },
+        "surface_win_rate_vs_field": {
+          "missing": 4495,
+          "missing_rate": 0.14150794900047223,
+          "infinite": 0
+        },
+        "rel_time_avg_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "rel_last3f_avg_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "finish_diff_best_vs_field": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "jockey_win_rate_vs_field": {
+          "missing": 30,
+          "missing_rate": 0.0009444356996694475,
+          "infinite": 0
+        },
+        "trainer_win_rate_vs_field": {
+          "missing": 18,
+          "missing_rate": 0.0005666614198016685,
+          "infinite": 0
+        },
+        "win_rate_field_rank": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        },
+        "rel_time_avg_field_rank": {
+          "missing": 2611,
+          "missing_rate": 0.08219738706123092,
+          "infinite": 0
+        }
+      }
+    }
+  },
+  "missingness_comparison": {
+    "win_rate_vs_field": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "recent_win_rate_vs_field": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "place_rate_vs_field": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "show_rate_vs_field": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "dist_band_win_rate_vs_field": {
+      "2026_missing_rate": 0.1883519597040768,
+      "2020_2025_same_period_min": 0.1788036410923277,
+      "2020_2025_same_period_max": 0.1890547263681592,
+      "2026_minus_2025_percentage_points": -0.07027666640823937,
+      "above_prior_same_period_max": false
+    },
+    "surface_win_rate_vs_field": {
+      "2026_missing_rate": 0.14150794900047223,
+      "2020_2025_same_period_min": 0.13927178153446035,
+      "2020_2025_same_period_max": 0.14402050483420933,
+      "2026_minus_2025_percentage_points": -0.19414705683503397,
+      "above_prior_same_period_max": false
+    },
+    "rel_time_avg_vs_field": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "rel_last3f_avg_vs_field": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "finish_diff_best_vs_field": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "jockey_win_rate_vs_field": {
+      "2026_missing_rate": 0.0009444356996694475,
+      "2020_2025_same_period_min": 0.0007044959651594723,
+      "2020_2025_same_period_max": 0.0019466614755693985,
+      "2026_minus_2025_percentage_points": -0.04269126866043119,
+      "above_prior_same_period_max": false
+    },
+    "trainer_win_rate_vs_field": {
+      "2026_missing_rate": 0.0005666614198016685,
+      "2020_2025_same_period_min": 0.000283831088965278,
+      "2020_2025_same_period_max": 0.00048132460531382363,
+      "2026_minus_2025_percentage_points": 0.015206772162588072,
+      "above_prior_same_period_max": true
+    },
+    "win_rate_field_rank": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    },
+    "rel_time_avg_field_rank": {
+      "2026_missing_rate": 0.08219738706123092,
+      "2020_2025_same_period_min": 0.07765370299063021,
+      "2020_2025_same_period_max": 0.08432288625008111,
+      "2026_minus_2025_percentage_points": -0.17418909078977945,
+      "above_prior_same_period_max": false
+    }
+  },
+  "limitations": [
+    "Stored upstream as-of values are audited as inputs, not rebuilt from raw history; strict-past upstream correctness is not newly proven.",
+    "Snapshot retains started horses only; equality is verified for the full observed started field, not hypothetical prerace scratch changes.",
+    "Full2026 endsAug23, so cross-year missingness comparison usesJan1..Aug23 for every year.",
+    "Missing-rate changes are descriptive and can reflect population mix; no outcome/NLL association, feature selection or additional fit is performed.",
+    "Sub-tolerance floating-point discrepancies between fsum and pandas grouped summation are explicitly counted, not silently called bitwise equality."
+  ]
+}

@@ -1,0 +1,2118 @@
+{
+  "artifact_kind": "season_probability_mixture_research_summary",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "retained_candidates": [
+    "joint_pruning3",
+    "joint_mixed6"
+  ],
+  "preferred_research_configuration": "joint_mixed6",
+  "bundle_replicates": 1,
+  "new_model_fits": 0,
+  "new_coefficient_fits": 0,
+  "dispositions": {
+    "joint_pruning3_vs_pruning3": {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "RETAIN_UNCERTAIN",
+      "reason": "observed_improvement_interval_includes_zero",
+      "blocking_reasons": [],
+      "primary_diff": -0.0006275389805474596,
+      "total_ci": {
+        "point": -0.0006275389805479005,
+        "ci_low": -0.0024720457599343264,
+        "ci_high": 0.001250265955846016,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -7.0359484271032e-06,
+        "top3_diff": 6.972729767990016e-05,
+        "cand_ece": 0.0019622083841726824,
+        "act_ece": 0.00202714041828699
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "NO_DECISION",
+        "decision": null,
+        "decision_reason": {
+          "cause": "stat_guard_underpowered",
+          "gate": {
+            "primary": true,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": null
+      },
+      "original_scope": {
+        "stage": null,
+        "candidate": null,
+        "n_eligible": 22990,
+        "n_days": 715,
+        "target_year": 2026,
+        "evidence_regime": null,
+        "gate_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b",
+        "study_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ]
+    },
+    "joint_pruning3_vs_mixed6": {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "BLOCKED",
+      "reason": "incomplete_invalid_or_failed_quality_evidence",
+      "blocking_reasons": [
+        "quality_guard_not_passed:top_noninferior"
+      ],
+      "primary_diff": 0.0015100149653037853,
+      "total_ci": {
+        "point": 0.0015100149653036609,
+        "ci_low": -0.0006941226266318594,
+        "ci_high": 0.0037223566878050265,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": 0.00034247649067026265,
+        "top3_diff": 0.000619156159246903,
+        "cand_ece": 0.0019622083841726824,
+        "act_ece": 0.002181511342469465
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "NO_DECISION",
+          "recent_year_only": "NO_DECISION"
+        },
+        "status": "NOT_PROVEN",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": 0.0010463896299441708,
+          "recent_year_only": 0.010051985714573304
+        },
+        "assurance": "partial_or_unspecified"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "REJECT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "gate_hard_fail",
+          "gate": {
+            "primary": false,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": false,
+            "calibration": true
+          }
+        },
+        "progression": null
+      },
+      "original_scope": {
+        "stage": null,
+        "candidate": null,
+        "n_eligible": 22990,
+        "n_days": 715,
+        "target_year": 2026,
+        "evidence_regime": null,
+        "gate_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b",
+        "study_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ]
+    },
+    "joint_pruning3_vs_anchor42": {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "RETAIN_SUPPORTED",
+      "reason": "observed_improvement_historical_interval_below_zero",
+      "blocking_reasons": [],
+      "primary_diff": -0.006614680021780561,
+      "total_ci": {
+        "point": -0.006614680021780626,
+        "ci_low": -0.010140101331148203,
+        "ci_high": -0.0031699689933339745,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -0.0007747654756565803,
+        "top3_diff": -0.0008022996095907176,
+        "cand_ece": 0.0019622083841726824,
+        "act_ece": 0.0015342413646403602
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "INCONCLUSIVE_LOW_PRECISION",
+          "recent_year_only": "INCONCLUSIVE_LOW_PRECISION"
+        },
+        "status": "NOT_PROVEN",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": 0.0010887365911906892,
+          "recent_year_only": 0.011064471489520606
+        },
+        "assurance": "partial_or_unspecified"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "ADOPT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "all_gates_pass",
+          "subgroups": {
+            "canonical": "PASS",
+            "nk": "INCONCLUSIVE_LOW_PRECISION",
+            "recent_year_only": "INCONCLUSIVE_LOW_PRECISION"
+          },
+          "gate": {
+            "primary": true,
+            "stat_guard": true,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          },
+          "subgroup_assurance": "partial",
+          "subgroup_guard_status": "NOT_PROVEN",
+          "critical_residual_risk": {
+            "canonical": null,
+            "nk": 0.0010887365911906892,
+            "recent_year_only": 0.011064471489520606
+          },
+          "claim": "candidate improves the primary metric; in at least one critical subgroup non-inferiority was NOT established — no degradation beyond the margin was detected, see critical_residual_risk for what the interval still admits"
+        },
+        "progression": null
+      },
+      "original_scope": {
+        "stage": null,
+        "candidate": null,
+        "n_eligible": 22990,
+        "n_days": 715,
+        "target_year": 2026,
+        "evidence_regime": null,
+        "gate_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b",
+        "study_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ]
+    },
+    "joint_mixed6_vs_pruning3": {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "RETAIN_SUPPORTED",
+      "reason": "observed_improvement_historical_interval_below_zero",
+      "blocking_reasons": [],
+      "primary_diff": -0.002728358801937336,
+      "total_ci": {
+        "point": -0.002728358801937569,
+        "ci_low": -0.004830261327339831,
+        "ci_high": -0.0006491348213770909,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -0.0003981258297720003,
+        "top3_diff": -0.000584385504615037,
+        "cand_ece": 0.0021442160108391013,
+        "act_ece": 0.00202714041828699
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "ADOPT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "all_gates_pass",
+          "subgroups": {
+            "canonical": "PASS",
+            "nk": "PASS",
+            "recent_year_only": "PASS"
+          },
+          "gate": {
+            "primary": true,
+            "stat_guard": true,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          },
+          "subgroup_assurance": "full",
+          "subgroup_guard_status": "PASS",
+          "critical_residual_risk": {
+            "canonical": null,
+            "nk": null,
+            "recent_year_only": null
+          },
+          "claim": "candidate improves the primary metric AND non-inferiority was established in every critical subgroup"
+        },
+        "progression": null
+      },
+      "original_scope": {
+        "stage": null,
+        "candidate": null,
+        "n_eligible": 22990,
+        "n_days": 715,
+        "target_year": 2026,
+        "evidence_regime": null,
+        "gate_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b",
+        "study_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ]
+    },
+    "joint_mixed6_vs_mixed6": {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "RETAIN_UNCERTAIN",
+      "reason": "observed_improvement_interval_includes_zero",
+      "blocking_reasons": [],
+      "primary_diff": -0.0005908048560860912,
+      "total_ci": {
+        "point": -0.0005908048560860074,
+        "ci_low": -0.002339689042300278,
+        "ci_high": 0.001167417489066728,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -4.861339067463444e-05,
+        "top3_diff": -3.495664304803414e-05,
+        "cand_ece": 0.0021442160108391013,
+        "act_ece": 0.002181511342469465
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "NO_DECISION",
+        "decision": null,
+        "decision_reason": {
+          "cause": "stat_guard_underpowered",
+          "gate": {
+            "primary": true,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": null
+      },
+      "original_scope": {
+        "stage": null,
+        "candidate": null,
+        "n_eligible": 22990,
+        "n_days": 715,
+        "target_year": 2026,
+        "evidence_regime": null,
+        "gate_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b",
+        "study_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ]
+    },
+    "joint_mixed6_vs_anchor42": {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "RETAIN_SUPPORTED",
+      "reason": "observed_improvement_historical_interval_below_zero",
+      "blocking_reasons": [],
+      "primary_diff": -0.008715499843170438,
+      "total_ci": {
+        "point": -0.008715499843170296,
+        "ci_low": -0.011491281275053035,
+        "ci_high": -0.006034682477024322,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -0.0011658553570014774,
+        "top3_diff": -0.0014564124118856547,
+        "cand_ece": 0.0021442160108391013,
+        "act_ece": 0.0015342413646403602
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "ADOPT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "all_gates_pass",
+          "subgroups": {
+            "canonical": "PASS",
+            "nk": "PASS",
+            "recent_year_only": "PASS"
+          },
+          "gate": {
+            "primary": true,
+            "stat_guard": true,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          },
+          "subgroup_assurance": "full",
+          "subgroup_guard_status": "PASS",
+          "critical_residual_risk": {
+            "canonical": null,
+            "nk": null,
+            "recent_year_only": null
+          },
+          "claim": "candidate improves the primary metric AND non-inferiority was established in every critical subgroup"
+        },
+        "progression": null
+      },
+      "original_scope": {
+        "stage": null,
+        "candidate": null,
+        "n_eligible": 22990,
+        "n_days": 715,
+        "target_year": 2026,
+        "evidence_regime": null,
+        "gate_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b",
+        "study_config_hash": "dbcffd481f25ad27d497e2a4cccd80ed57a710c6a60a07b0db878b99c2b9785b"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ]
+    }
+  },
+  "quality_by_comparison": {
+    "joint_pruning3_vs_pruning3": true,
+    "joint_pruning3_vs_mixed6": false,
+    "joint_pruning3_vs_anchor42": true,
+    "joint_mixed6_vs_pruning3": true,
+    "joint_mixed6_vs_mixed6": true,
+    "joint_mixed6_vs_anchor42": true
+  },
+  "blocked_comparisons": [
+    "joint_pruning3_vs_mixed6"
+  ],
+  "comparisons": {
+    "joint_pruning3_vs_pruning3": {
+      "periods": {
+        "all": {
+          "candidate": 2.0417112333692393,
+          "active": 2.042338772349787,
+          "diff": -0.0006275389805474596,
+          "n_races": 23030
+        },
+        "recent_3y": {
+          "candidate": 2.024232139004864,
+          "active": 2.02477506018908,
+          "diff": -0.0005429211842158388,
+          "n_races": 10406
+        },
+        "recent_5y": {
+          "candidate": 2.0308439537415683,
+          "active": 2.0316101250892586,
+          "diff": -0.0007661713476903032,
+          "n_races": 17318
+        }
+      },
+      "total_ci": {
+        "point": -0.0006275389805479005,
+        "ci_low": -0.0024720457599343264,
+        "ci_high": 0.001250265955846016,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality": {
+        "primary": true,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0006275389805474596,
+          "min_effect_delta": 0.0,
+          "opportunity": null,
+          "ci_low": -0.0024720457599343264,
+          "ci_high": 0.001250265955846016,
+          "top2_diff": -7.0359484271032e-06,
+          "top3_diff": 6.972729767990016e-05,
+          "cand_ece": 0.0019622083841726824,
+          "act_ece": 0.00202714041828699,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.0005429211842159801,
+                "ci_low": -0.0017393838754515244,
+                "ci_high": 0.0006092628745187722,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.0007661713476900446,
+                "ci_low": -0.0016186181839341382,
+                "ci_high": 7.049712620276376e-05,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": true,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": 0.0005323132494119157,
+              "ci_low": -0.0020842329152043052,
+              "ci_high": 0.003293924350849869,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5504659528927546,
+            "residual_risk": null
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.003179372657756065,
+              "ci_low": -0.0002466188505772542,
+              "ci_high": 0.006729827569236973,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5885073322572381,
+            "residual_risk": 0.006729827569236973
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": 0.0005323132494119157,
+              "ci_low": -0.0020842329152043052,
+              "ci_high": 0.003293924350849869,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5504659528927546,
+            "residual_risk": null
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.003179372657756065,
+              "ci_low": -0.0002466188505772542,
+              "ci_high": 0.006729827569236973,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5885073322572381,
+            "residual_risk": 0.006729827569236973
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -6.06914135020293e-05,
+              "ci_low": -0.00012411804552528674,
+              "ci_high": 7.55357459542532e-06,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 715,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 715,
+            "cand_minus_uniform": -0.04457480926753266,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": 0.00017661670796228224,
+              "ci_low": -0.00019750192308065113,
+              "ci_high": 0.0005103231967485983,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.047572477780128616,
+            "residual_risk": null
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": 0.0002945148486611413,
+              "ci_low": -0.00012337673010606208,
+              "ci_high": 0.000693694460933725,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.048943710512111924,
+            "residual_risk": null
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": 0.0002945148486611413,
+              "ci_low": -0.00012337673010606208,
+              "ci_high": 0.000693694460933725,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.048943710512111924,
+            "residual_risk": null
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": true,
+        "subgroup_guard_status": "PASS",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        }
+      }
+    },
+    "joint_pruning3_vs_mixed6": {
+      "periods": {
+        "all": {
+          "candidate": 2.0417112333692393,
+          "active": 2.0402012184039355,
+          "diff": 0.0015100149653037853,
+          "n_races": 23030
+        },
+        "recent_3y": {
+          "candidate": 2.024232139004864,
+          "active": 2.022658197940223,
+          "diff": 0.0015739410646409269,
+          "n_races": 10406
+        },
+        "recent_5y": {
+          "candidate": 2.0308439537415683,
+          "active": 2.0294676214519325,
+          "diff": 0.001376332289635851,
+          "n_races": 17318
+        }
+      },
+      "total_ci": {
+        "point": 0.0015100149653036609,
+        "ci_low": -0.0006941226266318594,
+        "ci_high": 0.0037223566878050265,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality": {
+        "primary": false,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": false,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": 0.0015100149653037853,
+          "min_effect_delta": 0.0,
+          "opportunity": null,
+          "ci_low": -0.0006941226266318594,
+          "ci_high": 0.0037223566878050265,
+          "top2_diff": 0.00034247649067026265,
+          "top3_diff": 0.000619156159246903,
+          "cand_ece": 0.0019622083841726824,
+          "act_ece": 0.002181511342469465,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": 0.0015739410646412773,
+                "ci_low": -0.0005034153716740821,
+                "ci_high": 0.0035523860152493264,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": true,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": 0.0013763322896359982,
+                "ci_low": -0.00017475343742443168,
+                "ci_high": 0.002887663756317367,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": true,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": false,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": false,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": 0.005381769043243822,
+              "ci_low": 0.0008925053484318626,
+              "ci_high": 0.010051985714573304,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5504659528927546,
+            "residual_risk": 0.010051985714573304
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.008073590752399322,
+              "ci_low": 0.0027985280400552788,
+              "ci_high": 0.013665074300723253,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5885073322572381,
+            "residual_risk": 0.013665074300723253
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": 0.005381769043243822,
+              "ci_low": 0.0008925053484318626,
+              "ci_high": 0.010051985714573304,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5504659528927546,
+            "residual_risk": 0.010051985714573304
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.008073590752399322,
+              "ci_low": 0.0027985280400552788,
+              "ci_high": 0.013665074300723253,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5885073322572381,
+            "residual_risk": 0.013665074300723253
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": 0.00011575001714293331,
+              "ci_low": -4.908128171172368e-06,
+              "ci_high": 0.00023804832724261144,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 715,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 715,
+            "cand_minus_uniform": -0.04457480926753266,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": 0.0005208018523362164,
+              "ci_low": -1.4210186374935573e-05,
+              "ci_high": 0.0010463896299441708,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.047572477780128616,
+            "residual_risk": 0.0010463896299441708
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": 0.0007054810168929064,
+              "ci_low": 0.00011127146200477364,
+              "ci_high": 0.0012914108054748342,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.048943710512111924,
+            "residual_risk": 0.0012914108054748342
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": 0.0007054810168929064,
+              "ci_low": 0.00011127146200477364,
+              "ci_high": 0.0012914108054748342,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "NO_DECISION",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.048943710512111924,
+            "residual_risk": 0.0012914108054748342
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": false,
+        "subgroup_guard_status": "NOT_PROVEN",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "NO_DECISION",
+          "recent_year_only": "NO_DECISION"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": 0.0010463896299441708,
+          "recent_year_only": 0.010051985714573304
+        }
+      }
+    },
+    "joint_pruning3_vs_anchor42": {
+      "periods": {
+        "all": {
+          "candidate": 2.0417112333692393,
+          "active": 2.04832591339102,
+          "diff": -0.006614680021780561,
+          "n_races": 23030
+        },
+        "recent_3y": {
+          "candidate": 2.024232139004864,
+          "active": 2.030178304221712,
+          "diff": -0.005946165216847987,
+          "n_races": 10406
+        },
+        "recent_5y": {
+          "candidate": 2.0308439537415683,
+          "active": 2.0372942971243306,
+          "diff": -0.006450343382762291,
+          "n_races": 17318
+        }
+      },
+      "total_ci": {
+        "point": -0.006614680021780626,
+        "ci_low": -0.010140101331148203,
+        "ci_high": -0.0031699689933339745,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality": {
+        "primary": true,
+        "stat_guard": true,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": true,
+        "reasons": {
+          "winner_nll_diff": -0.006614680021780561,
+          "min_effect_delta": 0.0,
+          "opportunity": null,
+          "ci_low": -0.010140101331148203,
+          "ci_high": -0.0031699689933339745,
+          "top2_diff": -0.0007747654756565803,
+          "top3_diff": -0.0008022996095907176,
+          "cand_ece": 0.0019622083841726824,
+          "act_ece": 0.0015342413646403602,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.005946165216847332,
+                "ci_low": -0.010196048246711147,
+                "ci_high": -0.0013956198509784295,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.006450343382761674,
+                "ci_low": -0.009980627529397747,
+                "ci_high": -0.003156853416459073,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": true,
+            "ci_upper_below_zero": true,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": 0.0008624417748546883,
+              "ci_low": -0.00930704524746429,
+              "ci_high": 0.011064471489520606,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5504659528927546,
+            "residual_risk": 0.011064471489520606
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.004222696861293273,
+              "ci_low": -0.007990038384930502,
+              "ci_high": 0.017106784126019556,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5885073322572381,
+            "residual_risk": 0.017106784126019556
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": 0.0008624417748546883,
+              "ci_low": -0.00930704524746429,
+              "ci_high": 0.011064471489520606,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5504659528927546,
+            "residual_risk": 0.011064471489520606
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.004222696861293273,
+              "ci_low": -0.007990038384930502,
+              "ci_high": 0.017106784126019556,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5885073322572381,
+            "residual_risk": 0.017106784126019556
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.000582376785858114,
+              "ci_low": -0.0008465836199952289,
+              "ci_high": -0.0003217073580606785,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 715,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 715,
+            "cand_minus_uniform": -0.04457480926753266,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": 8.748042579946103e-05,
+              "ci_low": -0.000904375679808377,
+              "ci_high": 0.0010887365911906892,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.047572477780128616,
+            "residual_risk": 0.0010887365911906892
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": 0.00043167816615308853,
+              "ci_low": -0.0005951911731738048,
+              "ci_high": 0.0015390582347412063,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.048943710512111924,
+            "residual_risk": 0.0015390582347412063
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": 0.00043167816615308853,
+              "ci_low": -0.0005951911731738048,
+              "ci_high": 0.0015390582347412063,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.048943710512111924,
+            "residual_risk": 0.0015390582347412063
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": false,
+        "subgroup_guard_status": "NOT_PROVEN",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "INCONCLUSIVE_LOW_PRECISION",
+          "recent_year_only": "INCONCLUSIVE_LOW_PRECISION"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": 0.0010887365911906892,
+          "recent_year_only": 0.011064471489520606
+        }
+      }
+    },
+    "joint_mixed6_vs_pruning3": {
+      "periods": {
+        "all": {
+          "candidate": 2.0396104135478494,
+          "active": 2.042338772349787,
+          "diff": -0.002728358801937336,
+          "n_races": 23030
+        },
+        "recent_3y": {
+          "candidate": 2.022147938551666,
+          "active": 2.02477506018908,
+          "diff": -0.002627121637413854,
+          "n_races": 10406
+        },
+        "recent_5y": {
+          "candidate": 2.028851936230436,
+          "active": 2.0316101250892586,
+          "diff": -0.002758188858822841,
+          "n_races": 17318
+        }
+      },
+      "total_ci": {
+        "point": -0.002728358801937569,
+        "ci_low": -0.004830261327339831,
+        "ci_high": -0.0006491348213770909,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality": {
+        "primary": true,
+        "stat_guard": true,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": true,
+        "reasons": {
+          "winner_nll_diff": -0.002728358801937336,
+          "min_effect_delta": 0.0,
+          "opportunity": null,
+          "ci_low": -0.004830261327339831,
+          "ci_high": -0.0006491348213770909,
+          "top2_diff": -0.0003981258297720003,
+          "top3_diff": -0.000584385504615037,
+          "cand_ece": 0.0021442160108391013,
+          "act_ece": 0.00202714041828699,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.0026271216374140686,
+                "ci_low": -0.004316061187273434,
+                "ci_high": -0.0009827489713046013,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.0027581888588229858,
+                "ci_low": -0.004120818825324554,
+                "ci_high": -0.0014056706692501173,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": true,
+            "ci_upper_below_zero": true,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": -0.004858418147160619,
+              "ci_low": -0.008515054730715128,
+              "ci_high": -0.0011839664238627512,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5558566842893272,
+            "residual_risk": null
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.0036223402488353923,
+              "ci_low": -0.008067092789650062,
+              "ci_high": 0.0008667563654266209,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5953090451638295,
+            "residual_risk": null
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": -0.004858418147160619,
+              "ci_low": -0.008515054730715128,
+              "ci_high": -0.0011839664238627512,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5558566842893272,
+            "residual_risk": null
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.0036223402488353923,
+              "ci_low": -0.008067092789650062,
+              "ci_high": 0.0008667563654266209,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5953090451638295,
+            "residual_risk": null
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.00023016450810238426,
+              "ci_low": -0.00033987421200581703,
+              "ci_high": -0.000128314850605194,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 715,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 715,
+            "cand_minus_uniform": -0.044744282362133014,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": -0.00028310139930000426,
+              "ci_low": -0.000692458179559309,
+              "ci_high": 0.00010010261500282563,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.048032195887390904,
+            "residual_risk": null
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": -0.00029183889200131287,
+              "ci_low": -0.000707707542810571,
+              "ci_high": 0.00012355837466379065,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04953006425277438,
+            "residual_risk": null
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": -0.00029183889200131287,
+              "ci_low": -0.000707707542810571,
+              "ci_high": 0.00012355837466379065,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04953006425277438,
+            "residual_risk": null
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": true,
+        "subgroup_guard_status": "PASS",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        }
+      }
+    },
+    "joint_mixed6_vs_mixed6": {
+      "periods": {
+        "all": {
+          "candidate": 2.0396104135478494,
+          "active": 2.0402012184039355,
+          "diff": -0.0005908048560860912,
+          "n_races": 23030
+        },
+        "recent_3y": {
+          "candidate": 2.022147938551666,
+          "active": 2.022658197940223,
+          "diff": -0.0005102593885570883,
+          "n_races": 10406
+        },
+        "recent_5y": {
+          "candidate": 2.028851936230436,
+          "active": 2.0294676214519325,
+          "diff": -0.0006156852214966868,
+          "n_races": 17318
+        }
+      },
+      "total_ci": {
+        "point": -0.0005908048560860074,
+        "ci_low": -0.002339689042300278,
+        "ci_high": 0.001167417489066728,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality": {
+        "primary": true,
+        "stat_guard": false,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": false,
+        "reasons": {
+          "winner_nll_diff": -0.0005908048560860912,
+          "min_effect_delta": 0.0,
+          "opportunity": null,
+          "ci_low": -0.002339689042300278,
+          "ci_high": 0.001167417489066728,
+          "top2_diff": -4.861339067463444e-05,
+          "top3_diff": -3.495664304803414e-05,
+          "cand_ece": 0.0021442160108391013,
+          "act_ece": 0.002181511342469465,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.0005102593885568109,
+                "ci_low": -0.0011077061288095136,
+                "ci_high": 5.854814697524567e-05,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.000615685221496943,
+                "ci_low": -0.0010491753689067605,
+                "ci_high": -0.00019641235202234482,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": true,
+            "ci_upper_below_zero": false,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": -8.962353328712242e-06,
+              "ci_low": -0.001308326182901024,
+              "ci_high": 0.001344958628650311,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5558566842893272,
+            "residual_risk": null
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.0012718778458078626,
+              "ci_low": -0.0004283278589359045,
+              "ci_high": 0.003028945486474994,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5953090451638295,
+            "residual_risk": null
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": -8.962353328712242e-06,
+              "ci_low": -0.001308326182901024,
+              "ci_high": 0.001344958628650311,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5558566842893272,
+            "residual_risk": null
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": 0.0012718778458078626,
+              "ci_low": -0.0004283278589359045,
+              "ci_high": 0.003028945486474994,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5953090451638295,
+            "residual_risk": null
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -5.372307745742169e-05,
+              "ci_low": -8.599044547799842e-05,
+              "ci_high": -1.9783292309460735e-05,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 715,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 715,
+            "cand_minus_uniform": -0.044744282362133014,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": 6.108374507392976e-05,
+              "ci_low": -0.0001212197968988664,
+              "ci_high": 0.0002260067484413966,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.048032195887390904,
+            "residual_risk": null
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": 0.00011912727623045234,
+              "ci_low": -8.926899835905261e-05,
+              "ci_high": 0.00031609422711307623,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04953006425277438,
+            "residual_risk": null
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": 0.00011912727623045234,
+              "ci_low": -8.926899835905261e-05,
+              "ci_high": 0.00031609422711307623,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04953006425277438,
+            "residual_risk": null
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": true,
+        "subgroup_guard_status": "PASS",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        }
+      }
+    },
+    "joint_mixed6_vs_anchor42": {
+      "periods": {
+        "all": {
+          "candidate": 2.0396104135478494,
+          "active": 2.04832591339102,
+          "diff": -0.008715499843170438,
+          "n_races": 23030
+        },
+        "recent_3y": {
+          "candidate": 2.022147938551666,
+          "active": 2.030178304221712,
+          "diff": -0.008030365670046002,
+          "n_races": 10406
+        },
+        "recent_5y": {
+          "candidate": 2.028851936230436,
+          "active": 2.0372942971243306,
+          "diff": -0.008442360893894829,
+          "n_races": 17318
+        }
+      },
+      "total_ci": {
+        "point": -0.008715499843170296,
+        "ci_low": -0.011491281275053035,
+        "ci_high": -0.006034682477024322,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 715,
+        "no_decision": false
+      },
+      "quality": {
+        "primary": true,
+        "stat_guard": true,
+        "recent_guard": true,
+        "top_noninferior": true,
+        "calibration": true,
+        "adopted": true,
+        "reasons": {
+          "winner_nll_diff": -0.008715499843170438,
+          "min_effect_delta": 0.0,
+          "opportunity": null,
+          "ci_low": -0.011491281275053035,
+          "ci_high": -0.006034682477024322,
+          "top2_diff": -0.0011658553570014774,
+          "top3_diff": -0.0014564124118856547,
+          "cand_ece": 0.0021442160108391013,
+          "act_ece": 0.0015342413646403602,
+          "ece_available": true,
+          "emergency_stop": false,
+          "recent": {
+            "pass": true,
+            "mode": "non_inferiority",
+            "margin": 0.005,
+            "windows": {
+              "recent_3y": {
+                "diff": -0.008030365670045421,
+                "ci_low": -0.011045210775771818,
+                "ci_high": -0.004948093245676153,
+                "n_races": 10390,
+                "n_days": 324,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              },
+              "recent_5y": {
+                "diff": -0.008442360893894616,
+                "ci_low": -0.010942763849224397,
+                "ci_high": -0.006137245015464695,
+                "n_races": 17294,
+                "n_days": 538,
+                "decision": "PASS",
+                "point_estimate_degraded": false,
+                "residual_risk": null
+              }
+            }
+          },
+          "sub_gates": {
+            "effect_beats_delta": true,
+            "ci_upper_below_zero": true,
+            "recent_no_evidence_of_harm": true,
+            "top2_noninferior": true,
+            "top3_noninferior": true,
+            "calibration_noninferior": true,
+            "calibration_not_emergency": true
+          }
+        }
+      },
+      "subgroups": {
+        "race_subgroups": {
+          "2026_only": {
+            "bootstrap_ci": {
+              "point": -0.004528289621717846,
+              "ci_low": -0.011965088540910482,
+              "ci_high": 0.0030713123436763748,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5558566842893272,
+            "residual_risk": null
+          },
+          "recent_year_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.0025790160452981853,
+              "ci_low": -0.011772050459425622,
+              "ci_high": 0.00729038047349836,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5953090451638295,
+            "residual_risk": 0.00729038047349836
+          },
+          "recent_year_only": {
+            "bootstrap_ci": {
+              "point": -0.004528289621717846,
+              "ci_low": -0.011965088540910482,
+              "ci_high": 0.0030713123436763748,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5558566842893272,
+            "residual_risk": null
+          },
+          "2026_field_has_nk": {
+            "bootstrap_ci": {
+              "point": -0.0025790160452981853,
+              "ci_low": -0.011772050459425622,
+              "ci_high": 0.00729038047349836,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "INCONCLUSIVE_LOW_PRECISION",
+            "margin": 0.005,
+            "n_days": 70,
+            "cand_minus_uniform": -0.5953090451638295,
+            "residual_risk": 0.00729038047349836
+          }
+        },
+        "horse_subgroups": {
+          "canonical": {
+            "bootstrap_ci": {
+              "point": -0.000751849880458469,
+              "ci_low": -0.000944672075354388,
+              "ci_high": -0.0005749044301074341,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 715,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 715,
+            "cand_minus_uniform": -0.044744282362133014,
+            "residual_risk": null
+          },
+          "nk": {
+            "bootstrap_ci": {
+              "point": -0.0003722376814628254,
+              "ci_low": -0.0010813289205065502,
+              "ci_high": 0.00031487109325761527,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 96,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 96,
+            "cand_minus_uniform": -0.048032195887390904,
+            "residual_risk": null
+          },
+          "recent_year_nk": {
+            "bootstrap_ci": {
+              "point": -0.00015467557450936551,
+              "ci_low": -0.0009057075798307555,
+              "ci_high": 0.000633101213420225,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04953006425277438,
+            "residual_risk": null
+          },
+          "2026_nk": {
+            "bootstrap_ci": {
+              "point": -0.00015467557450936551,
+              "ci_low": -0.0009057075798307555,
+              "ci_high": 0.000633101213420225,
+              "b": 4000,
+              "seed": 20260907,
+              "block": "race_day",
+              "n_days": 70,
+              "no_decision": false
+            },
+            "decision": "PASS",
+            "margin": 0.001,
+            "n_days": 70,
+            "cand_minus_uniform": -0.04953006425277438,
+            "residual_risk": null
+          }
+        },
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "subgroup_guard": true,
+        "subgroup_guard_status": "PASS",
+        "target_year": 2026,
+        "subgroup_decisions": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Fixed one-bundle historical research; not an estimate from independent ensemble replicates.",
+    "Completed individually calibrated/tilted predictor marginals are mixed. This is a different procedure from100 raw-softmax mean followed by ensemble-specific OOF calibration.",
+    "All three heads use the same equal weights and member order. No normalization, clipping or Harville reconstruction after averaging.",
+    "The v4 transferred-noise interval keeps k_seeds=1 and makes no ensemble variance shrinkage claim. Ensemble-specific retraining, gamma-refit and selection uncertainty is not fully measured.",
+    "Three/six members are not independent three-seed bundle replicates; six members share three learning seeds.",
+    "Eight historical exploratory intervals are not simultaneous confirmation or unused-period evidence.",
+    "No production activation, annual slot, learned ensemble weight or new calibrator. A serving candidate needs its own calibration/OOF evaluation and full procedure validation.",
+    "Conditional follow-up after119/120 on the same historical population; the observed component gains are not added together.",
+    "Only pruning members receive119 joint seasonal correction. Anchor members keep frozen118 gap-only correction.",
+    "Alternative retention for joint_pruning3 does not clear a blocked mixed6 comparison; all such failures remain explicit.",
+    "No new booster or correction-coefficient fit and no tuning of weights or members."
+  ],
+  "population": {
+    "n_races": 23030,
+    "n_eligible": 22990,
+    "n_days": 715,
+    "same_ordered_population": true,
+    "old116_and120_baselines_exact": true,
+    "mixture_identity_across_comparisons_exact": true
+  },
+  "fixed_diagnostics": {
+    "2026_all": {
+      "n_races": 2296,
+      "n_days": 70,
+      "new_ci": false,
+      "extra_gate": false,
+      "mean_diffs": {
+        "joint_pruning3_vs_pruning3": 0.0005323132494119159,
+        "joint_pruning3_vs_mixed6": 0.005381769043243822,
+        "joint_pruning3_vs_anchor42": 0.0008624417748546887,
+        "joint_mixed6_vs_pruning3": -0.0048584181471606185,
+        "joint_mixed6_vs_mixed6": -8.962353328712278e-06,
+        "joint_mixed6_vs_anchor42": -0.004528289621717846
+      }
+    },
+    "2026_nakayama": {
+      "n_races": 300,
+      "n_days": 25,
+      "new_ci": false,
+      "extra_gate": false,
+      "mean_diffs": {
+        "joint_pruning3_vs_pruning3": -0.0016946422771480674,
+        "joint_pruning3_vs_mixed6": 0.013346308351917134,
+        "joint_pruning3_vs_anchor42": 0.03441838754717809,
+        "joint_mixed6_vs_pruning3": -0.016168345413304478,
+        "joint_mixed6_vs_mixed6": -0.0011273947842392763,
+        "joint_mixed6_vs_anchor42": 0.01994468441102168
+      }
+    },
+    "2026_partial_relative": {
+      "n_races": 1538,
+      "n_days": 70,
+      "new_ci": false,
+      "extra_gate": false,
+      "mean_diffs": {
+        "joint_pruning3_vs_pruning3": 0.000827501481468925,
+        "joint_pruning3_vs_mixed6": 0.008919058536562668,
+        "joint_pruning3_vs_anchor42": 0.007419646487035412,
+        "joint_mixed6_vs_pruning3": -0.007882576173497137,
+        "joint_mixed6_vs_mixed6": 0.00020898088159660572,
+        "joint_mixed6_vs_anchor42": -0.0012904311679306506
+      }
+    }
+  },
+  "sources": {
+    "joint_pruning3_vs_pruning3": {
+      "report_sha256": "0efbde63e53bc3bcdfee46b7d0d5f74329c0f1cc5d6234eeb499b3c5c4ec06a4",
+      "evidence_sha256": "d9b7c873222cb7650dc25609b3508974b5599a43ad032fc3a6b9a1e801da0518"
+    },
+    "joint_pruning3_vs_mixed6": {
+      "report_sha256": "fdabc16983f6aacdab558d81cc3c40f03b1c48af161bd5678c63bb5fccf101c3",
+      "evidence_sha256": "ccf9933070460acbfa2023ff3710128c5551c54ffb4421a34b0e413830c78cd0"
+    },
+    "joint_pruning3_vs_anchor42": {
+      "report_sha256": "f1cff9e2a8c040b76fe21dfd080c004f68c99d3b9ff93b4d24186d693e15cdca",
+      "evidence_sha256": "9af562dbba75ab364f12056aef24262995136a6da4efe0cb38b13bbd2c360411"
+    },
+    "joint_mixed6_vs_pruning3": {
+      "report_sha256": "bbba8deddc952d5ce6eb60152bd84290bb41ee5b42d1306dba22ea1321447861",
+      "evidence_sha256": "223f31a0a5c32792060b069860eee929591039a4d10dd90459af7e120b04711d"
+    },
+    "joint_mixed6_vs_mixed6": {
+      "report_sha256": "46919b39ca7e7b735542565662e9e9b2db7cf943f1c9632162bd0128fc426938",
+      "evidence_sha256": "842580da18406b946eebc3d6b9ad102c181a0fdadc94ccb0269c10882b4a8b6a"
+    },
+    "joint_mixed6_vs_anchor42": {
+      "report_sha256": "8256cf467816afc0b4f4af9bc99c1784d0f982b7daaf5d88cdc1851901398811",
+      "evidence_sha256": "e3981fae3f638b876c12ef10c340b516c6c6397c4f22d8ccd65aa3e05afa2e85"
+    }
+  },
+  "run_freeze_sha256": "8958bef94881ab9de54aa20acf9ae7e9b48327287189fd4c136a2841244195f7",
+  "method_sha256": "71383ef679d19e75a93a53449c2277477fda4c66e1841b97252d5f5b0a0d0943"
+}

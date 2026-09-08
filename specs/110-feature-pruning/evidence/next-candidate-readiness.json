@@ -1,0 +1,30 @@
+{
+  "checked_on": "2026-09-07",
+  "purpose": "Read-only source availability audit; not an effect measurement or frozen experiment protocol",
+  "window": ["2007-01-01", "2026-08-23"],
+  "population": "race_horses.entry_status = EntryStatus.STARTED; joined to races and left joined to race_results",
+  "source": "local PostgreSQL live read-only transaction; distinct from the frozen experiment snapshot",
+  "non_null_counts": {
+    "rows": 958011,
+    "weight": 958010,
+    "weight_diff": 872021,
+    "jockey_weight": 958011,
+    "finish_time": 954786,
+    "first_3f": 891751,
+    "last_3f": 954734,
+    "corner_orders": 957938
+  },
+  "already_present_features": {
+    "body_weight": ["weight", "weight_diff", "prev_weight"],
+    "history_and_freshness": ["career_starts", "days_since_last", "recent_win_rate"],
+    "speed_figure": ["asof_spdfig_avg", "asof_spdfig_best", "asof_spdfig_recent3", "asof_spdfig_last", "asof_spdfig_count"]
+  },
+  "dedicated_schema_absent": ["workout/training observations", "track moisture", "cushion value", "trip trouble/incident observations"],
+  "notes": [
+    "Counts measure non-null storage only, not semantic validity or availability before each prediction cutoff.",
+    "Past-race results can only supply features strictly after those races; current-race results cannot be model inputs.",
+    "Current weight and weight_diff are unavailable before weight publication; full-information gains do not establish pre-publication gains.",
+    "Existing speed figure baseline mixes race classes within venue/track/distance/going cells. A condition correction would be a different hypothesis.",
+    "No external data acquisition or feature implementation was performed in this audit."
+  ]
+}

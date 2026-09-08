@@ -1,0 +1,160 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0,
+  "delta_derivation_ref": "specs/112-small-gain-adoption/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "arms": {
+    "objective": "pl_topk",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "research_policy": "small-gains-v1",
+  "artifact_scope": "historical_development",
+  "can_adopt": false,
+  "artifact_kind": "season_gap_research_config",
+  "eligible_for_verdict": false,
+  "contrasts": [
+    {
+      "id": "anchor",
+      "baseline": "anchor"
+    },
+    {
+      "id": "retained",
+      "baseline": "retained"
+    }
+  ],
+  "gamma_fit": {
+    "first_year": 2019,
+    "k": 3,
+    "ridge": 1e-06,
+    "max_iter": 50,
+    "tol": 1e-09
+  },
+  "correction": {
+    "base": "raw125 pruning same-seed probabilities",
+    "h": [
+      "log1p(days_since_last)",
+      "female*sin(2*pi*(DOY-1)/days_in_year)",
+      "female*cos(2*pi*(DOY-1)/days_in_year)"
+    ],
+    "female_encoding": "牝=1;牡/セ=0;missing=NaN",
+    "missing": "each missing h component contributes0 to exponent; other components remain; normalized p need not stay unchanged",
+    "fit": "Three coefficients fit jointly on strictly earlier calendar years, per seed,2019 warmup",
+    "assembly_eps": 0.0,
+    "topk": "Harville from normalized corrected win",
+    "old_retained_gamma": "read-only115/116 gap-only; never refit",
+    "additional_booster_fit": false
+  },
+  "limitations": [
+    "Historical selection-used full-information data; no unused holdout or preweight claim.",
+    "This tests joint gap-coefficient re-adjustment plus seasonal-sex terms versus old gap-only, not an isolated season effect with gap fixed.",
+    "Same-season constants cancel in all-known-female or all-known-nonfemale races; mixed fields identify the seasonal contrast. Unknown sex is a separate diagnostic group.",
+    "Each CI uses transferred sd_fold.001816/k_seeds1 and holds correction coefficients fixed; neither joint-vector refit uncertainty nor retained-side gamma uncertainty/selection is fully represented.",
+    "Equal seed means average losses, not probabilities. No all-seed/majority/mean-CI rule; deployment seed42 residual risk remains.",
+    "No additional booster fit, annual confirmation slot, or production mutation."
+  ],
+  "research_progression": "Retain the seasonal increment only when BOTH anchor and retained equal-seed mean NLL differences are negative with existing quality guards; no individual-seed sign or significance threshold.",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "fresh_seeds": [],
+  "deployment_seed": 42,
+  "selected_arm": "pruning",
+  "selected_columns": 125,
+  "warmup_year": 2019,
+  "seed_mean_rule": {
+    "weighting": "equal_seed_weight",
+    "require_both_mean_primary_diffs_negative": true,
+    "mean_top2_diff_max": 0.0005,
+    "mean_top3_diff_max": 0.0005,
+    "mean_candidate_ece_strict_max": 0.05,
+    "mean_ece_diff_max": 0.001,
+    "individual_BLOCKED": "REVIEW_REQUIRED when valid numerical quality evidence exists",
+    "invalid_evidence": "Missing seeds, invalid numbers, unknown flags or provenance mismatch stop aggregation",
+    "require_all_seeds_negative": false,
+    "require_majority_negative": false,
+    "require_mean_ci": false,
+    "seed_sd": "descriptive_only",
+    "deployment_seed": 42
+  },
+  "new_fit_jobs": 0,
+  "fresh_fit_years": [],
+  "coefficient_order": [
+    "gap_log",
+    "female_sin",
+    "female_cos"
+  ],
+  "numerical_checks": {
+    "regularized_fit_objective_max": 1e-08,
+    "gradient_infinity_norm_max": 1e-05,
+    "auto_retune": false
+  },
+  "diagnostics": {
+    "race_sex_groups": [
+      "no_female",
+      "mixed",
+      "all_female",
+      "missing_sex"
+    ],
+    "sex_group_periods": [
+      "all",
+      "2026"
+    ],
+    "additional_fixed_groups": "117 full2026,venue06,relative_coverage(.5,1)",
+    "changes_adoption_gate": false
+  }
+}

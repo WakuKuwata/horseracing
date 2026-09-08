@@ -1,0 +1,37 @@
+{
+  "all_complete": true,
+  "n_jobs": 3,
+  "workers": 2,
+  "manifest_sha256": "597b4ddf80a2a370a78effb595283d0c7c2bb9af682c1656ae2e40849ee6a8ee",
+  "sum_fit_wall_seconds": 1777.7186850839062,
+  "jobs": [
+    {
+      "arm": "baseline",
+      "year": 2018,
+      "feature_columns": 138,
+      "oof_sufficient": true,
+      "fit_wall_seconds": 599.0403798340121,
+      "peak_rss_bytes": 5129043968,
+      "cache_sha256": "33b9ad68463319caff0dbfbc989a1b80590dd9c40727b32816aff6ceb524b8d8"
+    },
+    {
+      "arm": "observation_age",
+      "year": 2018,
+      "feature_columns": 140,
+      "oof_sufficient": true,
+      "fit_wall_seconds": 605.6148705409141,
+      "peak_rss_bytes": 5166120960,
+      "cache_sha256": "824276578f781a288f1305ce870c6d105fc99cb435880dad633e77e6d36c7825"
+    },
+    {
+      "arm": "observation_sd",
+      "year": 2018,
+      "feature_columns": 139,
+      "oof_sufficient": true,
+      "fit_wall_seconds": 573.0634347089799,
+      "peak_rss_bytes": 6742147072,
+      "cache_sha256": "852958f488d842e864fb12aa73773063b4d0a323bc773bfbac4ba83805bc67f9"
+    }
+  ],
+  "note": "Sum of per-job elapsed times is not CPU time or total wall time."
+}

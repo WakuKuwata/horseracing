@@ -1,0 +1,117 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0035188338580500285,
+  "delta_derivation_ref": "specs/100-eval-contract-v5/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.025,
+    "block": "race_day"
+  },
+  "eval_window": {
+    "from": "2019-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "arms": {
+    "objective": "pl_topk",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "screen": {
+    "eval_window": {
+      "from": "2018-01-01",
+      "to": "2018-12-31",
+      "min_eval_days": 100
+    },
+    "progression": "diff<0 AND top2_diff<=0.0005 AND top3_diff<=0.0005 AND ece_diff<=0.001; no adoption"
+  },
+  "smoke": {
+    "eval_window": {
+      "from": "2008-01-01",
+      "to": "2008-01-31",
+      "min_eval_days": 1
+    },
+    "n_estimators": 5,
+    "n_oof_blocks": 2
+  },
+  "candidates": [
+    {
+      "id": "observation_age",
+      "add_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days"
+      ],
+      "drop_features": [
+        "asof_spdfig_sd"
+      ]
+    },
+    {
+      "id": "observation_sd",
+      "add_features": [
+        "asof_spdfig_sd"
+      ],
+      "drop_features": [
+        "asof_spdfig_last_age_days",
+        "asof_spdfig_best_age_days"
+      ]
+    }
+  ],
+  "multiplicity": {
+    "family_size": 2,
+    "primary_ci_method": "Bonferroni alpha=0.05/2; same alpha after screening; no combined arm or post-result variants",
+    "prior_history": "All historical windows are previously researched development data; no automatic promotion"
+  },
+  "baseline_drop_features": [
+    "asof_spdfig_last_age_days",
+    "asof_spdfig_best_age_days",
+    "asof_spdfig_sd"
+  ],
+  "feature_definitions": {
+    "asof_spdfig_last_age_days": "Days since latest strictly prior valid clipped speed figure; missing if none",
+    "asof_spdfig_best_age_days": "Days since latest attainment of highest strictly prior clipped speed figure; latest tie date; missing if none",
+    "asof_spdfig_sd": "Population SD (ddof=0) of all strictly prior valid clipped speed figures; missing unless at least 2; descriptive variability, not estimator uncertainty"
+  }
+}

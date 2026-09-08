@@ -1,0 +1,25 @@
+{
+  "artifact_kind": "gap_log_quality_independent_arithmetic",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "recorded_at": "2026-09-07T14:06:49.452221+00:00",
+  "selected_arm": "pruning",
+  "n_eligible": 22990,
+  "run_freeze_sha256": "00659ed39c0d59a69ba723d6f8f475cebafafa2895638bdbfbe7182ff5b1a96a",
+  "method_sha256": "98feafa02130e0eb3609544f4461a5f3cfe4c1c0716c71969c9f10576b3844ef",
+  "preregistration_sha256": "2a44810d8faeb8cd107b52553b0883d38bcf1687a26f1188b14dd8c11fb823ce",
+  "per_race_reference_and_cross_contrast_identity": "PASS, absolute tolerance 1e-12",
+  "research_decision": "CORRECTION_RETAINED",
+  "contrasts": {
+    "increment": {
+      "report_sha256": "de49b41a40f93c358549efdc856059a227c47af6fcf0bbe4158b5153c6e64ee5",
+      "delta": -0.001564844226939588,
+      "research_state": "RETAIN_UNCERTAIN"
+    },
+    "anchor": {
+      "report_sha256": "d80251d2e2740e817656ff0d320f8b0db631671253a3eb011d1dd158dbb85c73",
+      "delta": -0.0036170232491019583,
+      "research_state": "RETAIN_SUPPORTED"
+    }
+  }
+}

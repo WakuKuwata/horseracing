@@ -1,0 +1,89 @@
+{
+  "version": "small-gains-v1",
+  "status": "ACTIVE_FOR_NEW_STUDIES",
+  "replaces": "Fixed positive point-effect floor in future accuracy studies; historical v4 verdicts remain unchanged.",
+  "research": {
+    "primary_metric": "winner_nll",
+    "min_effect_delta": 0.0,
+    "require_ci_excludes_zero": false,
+    "retain_negative_point_estimate_with_quality_guards": true,
+    "comparison": "Each increment against the immediately previous challenger; final bundle against the frozen production anchor.",
+    "candidate_scores_are_not_additive": true
+  },
+  "confirmation": {
+    "min_effect_delta": 0.0,
+    "require_total_ci_upper_below_zero": true,
+    "max_submissions_per_year": 8,
+    "annual_one_sided_alpha": 0.05,
+    "bootstrap_alpha": 0.0125,
+    "bootstrap_b": 4000,
+    "required_seed_count": 3,
+    "seed_checks_apply_to": "Selected bundle; freeze seed list and deployment seed before results. Mean losses are not an ensemble.",
+    "confirmation_data": "Prospective outcomes after reservation, bundle freeze and selection; one fixed final look.",
+    "primary_regime": "Must match intended serving inputs; full-information evidence alone does not certify preweight serving.",
+    "activation": "Existing subgroup assurance, artifact and serving compatibility checks remain separate."
+  },
+  "gate_template": {
+    "evaluation_contract_version": "v4",
+    "primary_metric": "winner_nll",
+    "min_effect_delta": 0.0,
+    "delta_derivation_ref": "specs/112-small-gain-adoption/delta-derivation.json",
+    "seed_noise": {
+      "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+      "sd_fold": 0.001816,
+      "k_seeds": 1,
+      "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+      "assume_fold_independent": true
+    },
+    "bootstrap": {
+      "b": 4000,
+      "seed": 20260907,
+      "alpha": 0.0125,
+      "block": "race_day"
+    },
+    "eval_window": {
+      "from": null,
+      "to": null,
+      "min_eval_days": null
+    },
+    "arms": {
+      "objective": "pl_topk",
+      "n_estimators": 900,
+      "n_oof_blocks": 8,
+      "seed": 42,
+      "weight_mask_rate": 0.5,
+      "weight_mask_seed": 20260810,
+      "target_encode_cols": [
+        "jockey_id",
+        "trainer_id"
+      ],
+      "te_smoothing": 10.0
+    },
+    "recent_guard": {
+      "mode": "non_inferiority",
+      "windows_years": [
+        3,
+        5
+      ],
+      "non_inferior_margin": 0.005
+    },
+    "top_noninferior": {
+      "top2": 0.0005,
+      "top3": 0.0005
+    },
+    "calibration": {
+      "metric": "mean_ece",
+      "noninferior_width": 0.001,
+      "emergency_abs_ece": 0.05
+    },
+    "subgroup_guard": {
+      "critical_subgroups": [
+        "canonical",
+        "nk",
+        "recent_year_only"
+      ],
+      "non_inferior_margin_winner_nll": 0.005,
+      "non_inferior_margin_horse_logloss": 0.001
+    }
+  }
+}

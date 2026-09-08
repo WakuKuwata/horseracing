@@ -1,0 +1,49 @@
+{
+  "artifact_kind": "independent_posthoc_diagnostic_review",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "0f74037d088f9db9b24158f6d96ce792a2544f0f0d0453a6cc26aad02ff6368d",
+  "source_method_sha256": "22b405fbbe49baf597c36813f8c02bea7d24ecfa49c4a9a385e30c1e08489fbc",
+  "run_freeze_sha256": "15cb4b573f0f88e3cd54cc0a1690e61a4b452a348a15e9ec847eeb35a95a89eb",
+  "diagnostic_sha256": "deb9943f3de9c42c012d799c99d201864fc008327c3a8e1bcb6072bbdd77666d",
+  "race_rows_sha256": "72a7f4b1f45f93d8e384ef76a7f3cf063e146db11500565cf4088cd921091ed6",
+  "source_evidence_sha256": {
+    "42-anchor": "765466b2dd9b8346e24b4d0b54fa69b930e6a642965480539bfb1040a3a5a4c3",
+    "42-increment": "81990ab94db37894480db7893c684c447dcaa13a49f9a7a6bd5fa5e0abf0632d",
+    "43-anchor": "4331213ebc16068fff4f1f2a8a5855dd045a2d00c841b872b8db24cd0ba07493",
+    "43-increment": "9e839434cd9305d0c1cee2f2e10e598bbfc57bf101a3136b7a09d254cb9d5b78",
+    "44-anchor": "66c9310d0e5cba87db03481f58c68a969034e705cba5c29f11b87ba68a924c19",
+    "44-increment": "a749b0ee59d437d2cb2687568e1c5bbbba899b538c7caa9925b53dec7340b3cc"
+  },
+  "eligible_races": 22990,
+  "race_days": 715,
+  "started_horse_rows": 315883,
+  "same_season_horse_counts": {
+    "2020": 31656,
+    "2021": 31074,
+    "2022": 30720,
+    "2023": 31201,
+    "2024": 30758,
+    "2025": 31286,
+    "2026": 31733
+  },
+  "checks": 1161953,
+  "max_numerical_error": 2.220446049250313e-16,
+  "max_direct_pruning_nll_error": 0.0,
+  "all_seed_direct_loss_and_contrast_identity": true,
+  "all_annual_and_same_season_summaries": true,
+  "all_36_partitions_and_contributions": true,
+  "all_24_symmetric_decompositions_and_unmatched_mass": true,
+  "whole_day_sensitivity_and_leave_one_day_out": true,
+  "all_started_horse_ids_and_group_assignments": true,
+  "all_168_feature_year_distributions_and_24_tail_comparisons": true,
+  "frozen_source_runtime_upstream_and_receipts_before_after": true,
+  "limitations": [
+    "No new fit, CI, p-value, selection, or production decision.",
+    "Features describe eligible-race started horses; loss summaries are race weighted.",
+    "Same-season feature distributions were independently recomputed; relative-feature construction is covered by the separate integrity review.",
+    "Posthoc group concentration and descriptive composition changes do not identify a causal feature or a valid deployment rule."
+  ]
+}

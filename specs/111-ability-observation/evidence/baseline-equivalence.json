@@ -1,0 +1,373 @@
+{
+  "method_sha256": "e14c8210bab3c50a639db53021a26fca8070f7b9fdf322d400f356beb3e7c5f1",
+  "old_freeze_sha256": "61fc606a18c66064201ca1af4453fe72992653f874d43585a6b55258da66fe23",
+  "new_freeze_sha256": "4cccbeea42f5d3b300b25c79228fc3ca25301de564086c335207cc7eba58d769",
+  "full_frame_projection_exact": true,
+  "all_eval_races_and_folds_exact": true,
+  "effective_recipe_exact": true,
+  "fresh_screen_parity": {
+    "year": 2018,
+    "n_races": 3454,
+    "all_probabilities_exact": true,
+    "oof_info_exact": true,
+    "old_cache_sha256": "0d71724a7637a3f66f254be4afc01b2e1b720fb10d253912ce8314c65abea447",
+    "fresh_cache_sha256": "33b9ad68463319caff0dbfbc989a1b80590dd9c40727b32816aff6ceb524b8d8"
+  },
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "runtime_evidence": "Same configured venv; freshly refitted900tree/8OOF 2018 baseline is exactly equal in all probabilities and OOF metadata. Historical package versions were not separately captured.",
+  "records": [
+    {
+      "year": 2019,
+      "old_key": "148c11c1aafcd70390c1165487dd28444805604be9b3cb2a4a00399d7aa9b05a",
+      "new_key": "cebdffc4e8abc7ac74814357c5819c55b8d37801138c57590947b8078c5814d3",
+      "train_hash": "49bae58d77c54ab63563db758c8422405508a2844fd02980ff439ad97b37a04b",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/148c11c1aafcd70390c1165487dd28444805604be9b3cb2a4a00399d7aa9b05a.pkl",
+      "old_sha256": "2301d8311eb3048619796502cbfe915b78366d0100144f6620eaf42cfaa86749",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/148c11c1aafcd70390c1165487dd28444805604be9b3cb2a4a00399d7aa9b05a.json",
+      "old_receipt_sha256": "3c010424b3994d1f55a15d69449269e0fcae8aaf9124b07f7d3979f5be7e7ff9",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 644.7293707499048
+    },
+    {
+      "year": 2020,
+      "old_key": "08330eb0c3de4dffa5f8f730b690f895e35ae05a6240bc4eaa5e29c443d781a3",
+      "new_key": "4bf8d8c6b7538d7e02a4da1598e722501ab8ae7400fe37376fc1726366ae9dac",
+      "train_hash": "cb0aa8f58c6983fdc3bd9b720ad3486ae327f9d441b9fb349edbb5ae0b9ced3b",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/08330eb0c3de4dffa5f8f730b690f895e35ae05a6240bc4eaa5e29c443d781a3.pkl",
+      "old_sha256": "3092bb603f19ae9cb647eb88e965ae5781e4d635ef46ebdfbbd5d759ba3baf82",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/08330eb0c3de4dffa5f8f730b690f895e35ae05a6240bc4eaa5e29c443d781a3.json",
+      "old_receipt_sha256": "d53859897b285c8c761cb8a40a1078f4f3a89d83a33258bddca0acfe2a5b7ca0",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 700.7445034170523
+    },
+    {
+      "year": 2021,
+      "old_key": "e1c612d465240a8c446b5bfe3a9c3b24e81b1c9c37769b229359c33f1b166c87",
+      "new_key": "3f9444cdb23f4e36966d83a238ccd02200126b4b1a9fa323c93c305d84dd3297",
+      "train_hash": "15baeffc60bdc5e13031363ba979be8a1413084e6d828a16778073b7de77cff8",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/e1c612d465240a8c446b5bfe3a9c3b24e81b1c9c37769b229359c33f1b166c87.pkl",
+      "old_sha256": "4927951b4e2fe241b86f5917021199c6d86bcf37b012f9fd578bd4019feaa775",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/e1c612d465240a8c446b5bfe3a9c3b24e81b1c9c37769b229359c33f1b166c87.json",
+      "old_receipt_sha256": "e03874e831133233ca042c2258129579790102abf179ed83ac6f5d1b57ff93eb",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 768.845320124994
+    },
+    {
+      "year": 2022,
+      "old_key": "504eae48988104a5da02e1d7de2aeb11df32151763fe1a667b902de8d28ac779",
+      "new_key": "9290964e2a1f555858dd2708e2400cdea5290b87b0946d2f397cb34b5ee0473c",
+      "train_hash": "e109c42a26c69e35afb49c2c9825468db86f0c17bc33103628de0dcd9309d65a",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/504eae48988104a5da02e1d7de2aeb11df32151763fe1a667b902de8d28ac779.pkl",
+      "old_sha256": "31c633dfb708860887057005f69f4b963f40c3011b3c5de4b193bbe6165a4437",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/504eae48988104a5da02e1d7de2aeb11df32151763fe1a667b902de8d28ac779.json",
+      "old_receipt_sha256": "819f8ef4fcf3a533aa8a1cbafccc538b2b9115a5166317435c87af3dde05f680",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 799.0765512919752
+    },
+    {
+      "year": 2023,
+      "old_key": "f1e2e1565f12c962db2f8feff060296d65937df633c5cde62c2a9d5319230ce8",
+      "new_key": "6a7f8fc2edeed59108646e42130e1f4711ed328850d4bbfbd5f273951f6221e9",
+      "train_hash": "79f3fe6961a73afb2314be764d9d2e5fc9398eb5fe55f285b10f5e84bcfbe1d1",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/f1e2e1565f12c962db2f8feff060296d65937df633c5cde62c2a9d5319230ce8.pkl",
+      "old_sha256": "5fef41c2d4652559b1b7b89bb534ba30618d81ab8c37ed08995f699ca1e07059",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/f1e2e1565f12c962db2f8feff060296d65937df633c5cde62c2a9d5319230ce8.json",
+      "old_receipt_sha256": "5517566b47138ae7a226c93856e56c7f902c7e26d6ca67a420d405c77073240c",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 845.2341789590428
+    },
+    {
+      "year": 2024,
+      "old_key": "ba6e80a52a062d625ce806534a2577e9feb46a3a806b2421d496c5bd12842e45",
+      "new_key": "8aade617f21635b5d9615c29db61e7db933dac4fb4e4e2619cb834de51ee06bd",
+      "train_hash": "5daa7afb658cbde6622b8a30d8e2abfec6c1715e5cacd23ad16b2ab95fd74867",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/ba6e80a52a062d625ce806534a2577e9feb46a3a806b2421d496c5bd12842e45.pkl",
+      "old_sha256": "f35483331319d598b5c34e6bda00cb96ed25ffa2e8c7437a85944329df23fc64",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/ba6e80a52a062d625ce806534a2577e9feb46a3a806b2421d496c5bd12842e45.json",
+      "old_receipt_sha256": "447f41c11db9cbe2fcad6b5d56e454abf2eac19964f43729a1ea96de6229f87f",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 904.3351620000321
+    },
+    {
+      "year": 2025,
+      "old_key": "24f0c77a5448679a520acf8343cf14b8847cfcc8233e326ff5395257d9a853aa",
+      "new_key": "9e3b1803a3ef0ca5bba8fea5196c1dccf9050a1401bc6688b391e7a051041bd0",
+      "train_hash": "608523ef15efc50d83cd6a1416af4418e5744a0c6e24a1b4a7b031f0e8fb5d14",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/24f0c77a5448679a520acf8343cf14b8847cfcc8233e326ff5395257d9a853aa.pkl",
+      "old_sha256": "a9fadbfa63929ce75cebd8715696daf1d4efe3e5c4bab5b67db445362e6566ac",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/24f0c77a5448679a520acf8343cf14b8847cfcc8233e326ff5395257d9a853aa.json",
+      "old_receipt_sha256": "46f7353e7ec93cae39ab261438f56e560d5180730ffc77c6d48134dd751c6d9a",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 957.223320415942
+    },
+    {
+      "year": 2026,
+      "old_key": "c192f8d1be7497d38071e0c5af9aae5500fcee7f00e0ffe2fe69338b7e9011e0",
+      "new_key": "ec9b9c0f87e02ad1695d53761fd573962edd04e3e891f1756d7e178ac204e343",
+      "train_hash": "e9ccd5b0f6308fbad2d8232e24b4908bed82a4966e8e742b3a0ff377857a6226",
+      "old_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/c192f8d1be7497d38071e0c5af9aae5500fcee7f00e0ffe2fe69338b7e9011e0.pkl",
+      "old_sha256": "1277b541e743989caef87f441ef60b4fc9a34fb031ab19f6724563b8eb405404",
+      "old_receipt_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/c192f8d1be7497d38071e0c5af9aae5500fcee7f00e0ffe2fe69338b7e9011e0.json",
+      "old_receipt_sha256": "b38334a81f1af0cc8f8d5b0b6238f97939a8563b7b39dab5de69ef26134863c1",
+      "new_recipe_meta": {
+        "objective": "pl_topk",
+        "calibration": "none",
+        "calib_frac": 0.0,
+        "calibration_split_unit": "race_count_v1",
+        "target_encode_cols": [
+          "jockey_id",
+          "trainer_id"
+        ],
+        "te_smoothing": 10.0,
+        "seed": 42,
+        "drop_features": [
+          "asof_spdfig_last_age_days",
+          "asof_spdfig_best_age_days",
+          "asof_spdfig_sd"
+        ],
+        "market_offset": false,
+        "ev_weight": false,
+        "weight_mask_rate": 0.5,
+        "weight_mask_seed": 20260810,
+        "params": [
+          [
+            "n_estimators",
+            900
+          ]
+        ],
+        "recency_half_life_days": null,
+        "weight_scope": null,
+        "label": "",
+        "arm": "oof_isotonic",
+        "n_oof_blocks": 8
+      },
+      "historical_fit_seconds": 954.4650848329766
+    }
+  ],
+  "note": "Only exact baseline reused; candidate is freshly fit. Historical fitting durations must not be counted as current training."
+}

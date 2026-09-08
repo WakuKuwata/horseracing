@@ -1,0 +1,49 @@
+{
+  "exact_prediction_parity": true,
+  "accuracy_measured": false,
+  "can_adopt": false,
+  "method": "Each arm refitted in its own exec process with official smoke fold, recipe, snapshot and one training thread; compared every win/top2/top3 Prediction value exactly against the original smoke cache. Dedicated cache identities prevent reuse of original predictions.",
+  "smoke_window": {
+    "from": "2008-01-01",
+    "to": "2008-01-31",
+    "min_eval_days": 1
+  },
+  "snapshot_sha256": "c979d4ef1c9a74e55d3f32dc8a35873aec89cc75376bf79060b846fa7afdb8ba",
+  "source_hash": "d76e3b1da313b87670d98167d539a559c623d4bdb3f09cdc060b1b9899e10621",
+  "config_hash": "93b2dbea6917545269cbecc108d40e48d0b827cc5165795050058e1ce07c5489",
+  "script_path": "/Users/kuwatawaku/workspace/horseracing/scripts/feature_pruning_parallel_parity.py",
+  "script_sha256": "1dc84b45271b51ba3ab46365b3b9f74727d150a56d41930a8425b28f8105bee2",
+  "method_code": "\"\"\"Independent-exec smoke prediction parity; no model accuracy measurements.\"\"\"\nfrom __future__ import annotations\n\nimport argparse\nimport datetime as dt\nimport json\nfrom pathlib import Path\nimport pickle\nimport subprocess\nimport sys\n\nimport feature_pruning as p\nimport feature_pruning_prefill as prefill\nfrom horseracing_eval.splits import expanding_folds\n\nAREA = p.WORK / \"parallel-smoke-parity\"\nOUT = p.SPEC / \"evidence/parallel-smoke-parity.json\"\n\n\ndef worker(arm_id):\n    cfg, meta, frozen = prefill.verify()\n    start = dt.date.fromisoformat(cfg[\"smoke\"][\"eval_window\"][\"from\"])\n    end = dt.date.fromisoformat(cfg[\"smoke\"][\"eval_window\"][\"to\"])\n    with (p.WORK / \"snapshot.pkl\").open(\"rb\") as stream:\n        matrix, all_races = pickle.load(stream)\n    races = [er for er in all_races if er.context.race_date <= end]\n    folds = list(expanding_folds(races, start.year, valid_from=start))\n    if len(folds) != 1:\n        raise ValueError(\"Parity expects one official smoke fold\")\n    fold = folds[0]\n    train = [er.context for er in fold.train]\n    drops = [] if arm_id == \"baseline\" else next(\n        c[\"drop_features\"] for c in cfg[\"candidates\"] if c[\"id\"] == arm_id)\n    original_identity = [meta[\"snapshot_sha256\"], frozen[\"source_hash\"], \"smoke\"]\n    script_sha = p.digest(__file__)\n    identity = [*original_identity, \"independent_exec_parity\", script_sha]\n    factory = p.CachedFactory(cfg, matrix, races, identity, drops=drops,\n                              smoke=True, label=f\"parity-{arm_id}\")\n    train_hash = p.stable_hash([(rc.race_id, str(rc.race_date),\n        [h.horse_id for h in rc.started_horses]) for rc in train])\n    original_key = p.stable_hash([original_identity, factory.recipe_hash,\n                                  train_hash, fold.valid_year])\n    new_key = p.stable_hash([identity, factory.recipe_hash, train_hash, fold.valid_year])\n    original_path = p.WORK / \"cache\" / f\"{original_key}.pkl\"\n    new_path = p.WORK / \"cache\" / f\"{new_key}.pkl\"\n    if new_path.exists():\n        raise FileExistsError(\"Parity must refit; a parity cache already exists\")\n    original_sha = p.digest(original_path)\n    with original_path.open(\"rb\") as stream:\n        original = pickle.load(stream)\n    if original[\"key\"] != original_key or original[\"recipe_meta\"] != factory.recipe_meta:\n        raise ValueError(\"Original smoke recipe/key mismatch\")\n    predictor = factory.fit(train, num_threads=1)\n    new_predictions = {er.context.race_id: predictor.predict_race(er.context)\n                       for er in fold.valid}\n    if set(new_predictions) != set(original[\"predictions\"]):\n        raise ValueError(\"Original/new smoke race populations differ\")\n    mismatch = sum(new_predictions[rid] != original[\"predictions\"][rid]\n                   for rid in new_predictions)\n    prefill.verify()\n    if p.digest(original_path) != original_sha or p.digest(__file__) != script_sha:\n        raise ValueError(\"Original cache or parity code changed during fit\")\n    result = {\"arm\": arm_id, \"exact_prediction_parity\": mismatch == 0,\n        \"mismatched_races\": mismatch, \"n_races\": len(new_predictions),\n        \"n_horses\": sum(map(len, new_predictions.values())),\n        \"recipe_hash\": factory.recipe_hash, \"train_hash\": train_hash,\n        \"original_cache\": str(original_path), \"original_cache_sha256\": original_sha,\n        \"independent_cache\": str(new_path), \"independent_cache_sha256\": p.digest(new_path),\n        \"different_cache_identity\": original_key != new_key,\n        \"script_sha256\": script_sha}\n    p.write_json(AREA / f\"{arm_id}.json\", result)\n\n\ndef main():\n    if OUT.exists():\n        raise FileExistsError(\"Parity evidence already exists\")\n    cfg, meta, frozen = prefill.verify()\n    AREA.mkdir(parents=True, exist_ok=True)\n    script_sha = p.digest(__file__)\n    arms = [\"baseline\", \"human_absolute\"]\n    results = []\n    for arm in arms:\n        with (AREA / f\"{arm}.log\").open(\"x\") as log:\n            subprocess.run([sys.executable, str(Path(__file__).resolve()), \"--worker\", arm],\n                           cwd=p.ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)\n        results.append(json.loads((AREA / f\"{arm}.json\").read_text()))\n    prefill.verify()\n    if p.digest(__file__) != script_sha:\n        raise ValueError(\"Parity script changed during execution\")\n    result = {\"exact_prediction_parity\": all(r[\"exact_prediction_parity\"] for r in results),\n        \"accuracy_measured\": False, \"can_adopt\": False,\n        \"method\": \"Each arm refitted in its own exec process with official smoke fold, recipe, snapshot and one training thread; compared every win/top2/top3 Prediction value exactly against the original smoke cache. Dedicated cache identities prevent reuse of original predictions.\",\n        \"smoke_window\": cfg[\"smoke\"][\"eval_window\"],\n        \"snapshot_sha256\": meta[\"snapshot_sha256\"], \"source_hash\": frozen[\"source_hash\"],\n        \"config_hash\": p.gate_config_hash(cfg), \"script_path\": str(Path(__file__).resolve()),\n        \"script_sha256\": script_sha, \"method_code\": Path(__file__).read_text(), \"arms\": results}\n    p.write_json(OUT, result)\n    print(json.dumps({\"exact_prediction_parity\": result[\"exact_prediction_parity\"],\n                      \"arms\": [{k: r[k] for k in (\"arm\", \"exact_prediction_parity\", \"n_races\", \"n_horses\")}\n                               for r in results]}))\n    if not result[\"exact_prediction_parity\"]:\n        raise SystemExit(\"Independent-exec smoke predictions differ\")\n\n\nif __name__ == \"__main__\":\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--worker\", choices=[\"baseline\", \"human_absolute\"])\n    args = parser.parse_args()\n    worker(args.worker) if args.worker else main()\n",
+  "arms": [
+    {
+      "arm": "baseline",
+      "exact_prediction_parity": true,
+      "mismatched_races": 0,
+      "n_races": 240,
+      "n_horses": 3679,
+      "recipe_hash": "fbf2853eda8e20fe9e4e7b6b2ac6a1d0496eec6c618f2a71b2b8d48d6d384eda",
+      "train_hash": "8743f24069fc4c05b740c0d9117340ad472c451eadceb0568fb26b2f51c06b68",
+      "original_cache": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/5c0b397946632697fcdc2b183389b808efd1452c0b6f78b9b978926f15147cb8.pkl",
+      "original_cache_sha256": "bdd2f7a389d18f67996162fd91f89987b55ddcb007ccc0039cd51a8dcaca5119",
+      "independent_cache": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/877b6000f8e6a178a49465427830b1a11f3ccd519f01ef1585a4982e0a8726aa.pkl",
+      "independent_cache_sha256": "7ddd91f002a9ea5fa5cea324b349a24fde95d1962dc456dff709428990647453",
+      "different_cache_identity": true,
+      "script_sha256": "1dc84b45271b51ba3ab46365b3b9f74727d150a56d41930a8425b28f8105bee2"
+    },
+    {
+      "arm": "human_absolute",
+      "exact_prediction_parity": true,
+      "mismatched_races": 0,
+      "n_races": 240,
+      "n_horses": 3679,
+      "recipe_hash": "98868759468b9a092796271fc508ab6c752c4259eb02c86ebf8918be830f18a1",
+      "train_hash": "8743f24069fc4c05b740c0d9117340ad472c451eadceb0568fb26b2f51c06b68",
+      "original_cache": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/b8007971f40a61f9f4b5f5c53c3f1f650c87d681eabf1e8019cefd7a751732fa.pkl",
+      "original_cache_sha256": "2f15335559b8268a55e4593225cbef746958223140d049d706676310be29e0e9",
+      "independent_cache": "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/35b9e55a2f8a72abc7dce8d329024cd428001544d697f92569bb488a301b9028.pkl",
+      "independent_cache_sha256": "c852b9137e83befc5a9bf567634b0439b25424e4fd2e863b7d7252a248c1d110",
+      "different_cache_identity": true,
+      "script_sha256": "1dc84b45271b51ba3ab46365b3b9f74727d150a56d41930a8425b28f8105bee2"
+    }
+  ]
+}

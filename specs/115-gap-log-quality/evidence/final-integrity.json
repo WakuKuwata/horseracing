@@ -1,0 +1,12 @@
+{
+  "artifact_kind": "research_final_integrity",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "checked_at": "2026-09-07T14:09:49.831303+00:00",
+  "active_models_read_only": [
+    "lgbm-094-cap900"
+  ],
+  "source_config_runtime_and_upstream_artifacts": "verified",
+  "booster_training_in_115": 0,
+  "annual_confirmation_reservation_performed": false
+}

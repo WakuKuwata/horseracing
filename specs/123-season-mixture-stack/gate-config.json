@@ -1,0 +1,144 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0,
+  "delta_derivation_ref": "specs/112-small-gain-adoption/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "artifact_kind": "season_probability_mixture_research_config",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "comparisons": [
+    {
+      "id": "joint_pruning3_vs_pruning3",
+      "candidate": "joint_pruning3",
+      "baseline": "pruning3"
+    },
+    {
+      "id": "joint_pruning3_vs_mixed6",
+      "candidate": "joint_pruning3",
+      "baseline": "mixed6"
+    },
+    {
+      "id": "joint_pruning3_vs_anchor42",
+      "candidate": "joint_pruning3",
+      "baseline": "anchor42"
+    },
+    {
+      "id": "joint_mixed6_vs_pruning3",
+      "candidate": "joint_mixed6",
+      "baseline": "pruning3"
+    },
+    {
+      "id": "joint_mixed6_vs_mixed6",
+      "candidate": "joint_mixed6",
+      "baseline": "mixed6"
+    },
+    {
+      "id": "joint_mixed6_vs_anchor42",
+      "candidate": "joint_mixed6",
+      "baseline": "anchor42"
+    }
+  ],
+  "members": {
+    "joint_pruning3": [
+      [
+        "joint_pruning",
+        42
+      ],
+      [
+        "joint_pruning",
+        43
+      ],
+      [
+        "joint_pruning",
+        44
+      ]
+    ],
+    "joint_mixed6": [
+      [
+        "joint_pruning",
+        42
+      ],
+      [
+        "joint_pruning",
+        43
+      ],
+      [
+        "joint_pruning",
+        44
+      ],
+      [
+        "anchor_gap",
+        42
+      ],
+      [
+        "anchor_gap",
+        43
+      ],
+      [
+        "anchor_gap",
+        44
+      ]
+    ]
+  },
+  "aggregation": "float64_arithmetic_mean_all_three_heads_no_postprocess",
+  "research_policy": "small-gains-v1",
+  "selection_rule": "Retain joint_pruning3 against pruning3 and anchor42; prioritize only with improvement and quality against mixed6 too. Retain and prioritize joint_mixed6 with improvement against mixed6 and anchor42 plus quality on all three comparisons. Select lowest NLL among qualifying candidates, ties by registered member order; otherwise keep mixed6. Preserve blocked comparison residuals even for an alternative retained on its own branch.",
+  "limitations": [
+    "Fixed one-bundle historical research; not an estimate from independent ensemble replicates.",
+    "Completed individually calibrated/tilted predictor marginals are mixed. This is a different procedure from100 raw-softmax mean followed by ensemble-specific OOF calibration.",
+    "All three heads use the same equal weights and member order. No normalization, clipping or Harville reconstruction after averaging.",
+    "The v4 transferred-noise interval keeps k_seeds=1 and makes no ensemble variance shrinkage claim. Ensemble-specific retraining, gamma-refit and selection uncertainty is not fully measured.",
+    "Three/six members are not independent three-seed bundle replicates; six members share three learning seeds.",
+    "Eight historical exploratory intervals are not simultaneous confirmation or unused-period evidence.",
+    "No production activation, annual slot, learned ensemble weight or new calibrator. A serving candidate needs its own calibration/OOF evaluation and full procedure validation.",
+    "Conditional follow-up after119/120 on the same historical population; the observed component gains are not added together.",
+    "Only pruning members receive119 joint seasonal correction. Anchor members keep frozen118 gap-only correction.",
+    "Alternative retention for joint_pruning3 does not clear a blocked mixed6 comparison; all such failures remain explicit.",
+    "No new booster or correction-coefficient fit and no tuning of weights or members."
+  ]
+}

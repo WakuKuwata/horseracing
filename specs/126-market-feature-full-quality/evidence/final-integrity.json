@@ -1,0 +1,109 @@
+{
+  "artifact_kind": "market_feature_full_quality_final_integrity",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "source_hash": "e3f2c9d254260a2d07200b160dd6d96925c6ad06d4b7aad9e6232b2b70857d3e",
+  "config_hash": "adc117e5d38909552c0ad222c02a1333354287dce87ea7b600c7982eab853fa5",
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "independent_audit_status": "PASS",
+  "all7_training_receipts_match": true,
+  "full_report_and_receipt_match": true,
+  "inputs_unchanged_before_after": true,
+  "input_hashes": {
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/run-freeze.json": "77af06e543d00ee01d83b79864ff0b2f17255735f9a66edd37d55732700c13ba",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/verdict.json": "2598bfb07504fa9322c203afaf6502ed727263047825e7949cb447c3395a76d3",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/evidence/full-colsample_07.json": "8b473374a091235039e3a8ba70336e7ffa528b434265e407838fe6f50bba7035",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/colsample_07-evidence.json": "a607fdc7d2219c65d910fccdebe1dc0e474ecc72c6544f377e56922bd15f7e2b",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/colsample_07-receipt.json": "c6ac34dca5360983f95276697545264c774170294b6db266e5ac896d86bcc422",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/evidence/independent-review.py": "59babf4b501dc9ec6dc1a31e43a40c8ee9bfcaac77b25488432f9ed4e3f94582",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/evidence/independent-review.json": "cfdd613c074ce6440e88c8a08ec8ec5f060842d0c23a222260c9e41cfee53aae",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/gate-config.json": "3988838a1cb607d89a2664a180b9bfb2435ec85b180b94697b05d98e739d2a97",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/gate-config.hash.txt": "a6b3573abce4de71025d4c27a1084a8c8313734b43b140eaf2e0a7fedecb42ef",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/evidence/smoke.json": "aafeafb4b424a322bc5c5c06753460a94198c51429e05d80984ee5d81fb0059a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/117-pruning-2026-diagnostic/race-diagnostic.json": "72a7f4b1f45f93d8e384ef76a7f3cf063e146db11500565cf4088cd921091ed6",
+    "/Users/kuwatawaku/workspace/horseracing/specs/117-pruning-2026-diagnostic/evidence/diagnostic.json": "deb9943f3de9c42c012d799c99d201864fc008327c3a8e1bcb6072bbdd77666d",
+    "/Users/kuwatawaku/workspace/horseracing/specs/117-pruning-2026-diagnostic/evidence/independent-review.json": "f22eb7f9c2e51fc7dc09825a8be140a32952043d9de508c2ec5a54cf2ea3b151",
+    "/Users/kuwatawaku/workspace/horseracing/specs/117-pruning-2026-diagnostic/evidence/independent-review.py": "0f74037d088f9db9b24158f6d96ce792a2544f0f0d0453a6cc26aad02ff6368d",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/117-pruning-2026-diagnostic/run-freeze.json": "15cb4b573f0f88e3cd54cc0a1690e61a4b452a348a15e9ec847eeb35a95a89eb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/prefill/17ec120475fc6a739f5c7af64123306811b835a5f73b18c7570407f6d5dd949b.json": "ba94da7cd5535233c221b048946e86df12abc122e9b09bc39a9ee4aa4a8228d1",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/cache/17ec120475fc6a739f5c7af64123306811b835a5f73b18c7570407f6d5dd949b.pkl": "40a05a780154b900d8653eefe631ed8ff902af7fde0d829a754af8a498a83d81",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/prefill/bc93d9224c335e0e343c0cb3194198cadd0b40f7880f35d3bd0f3a1961c52bd3.json": "d9549e5502e269baa91f3bbcf5cd60a0df01ee048205a258623126dff25097b2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/cache/bc93d9224c335e0e343c0cb3194198cadd0b40f7880f35d3bd0f3a1961c52bd3.pkl": "3d1d15c314dce497f1b9e2773222beeee8af2c984e5df18520c190ac0fa47370",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/prefill/7d4aad8dd7105dcd28a8fa32aa3675573e21c342fc59980bee39f9a43f30eecc.json": "97226f7e96f01f0e0372f419b70e1d9a94d2effc24d117e889ed183da89c8f27",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/cache/7d4aad8dd7105dcd28a8fa32aa3675573e21c342fc59980bee39f9a43f30eecc.pkl": "ba2dd7586741752015ef107d575e3eb679da0db2d5813e729171ea504f31de06",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/prefill/3cbbbadd2505efcc8220140b8519d638257b7accf87b14f43bc509690464cf4f.json": "3cc27afacafabf8d3369c1f3cf2f902b89e21ca1208d9d99c9a5441cf0e7d814",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/cache/3cbbbadd2505efcc8220140b8519d638257b7accf87b14f43bc509690464cf4f.pkl": "d05e86e59efbe6dddab91b8844a66d18d361e3d46b6662b09db5789aa04b7dd9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/prefill/49efe607b88b71dd624d3a1e0f9c8ba0acf513f806983cbf2bc33492fc5f4c8c.json": "9149a4ea09a9a081be6e7f8411a9244f37b547aa99d6fea78fb6916e0104efb2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/cache/49efe607b88b71dd624d3a1e0f9c8ba0acf513f806983cbf2bc33492fc5f4c8c.pkl": "9570cf85a55e550bb5eaff106979486ab1209ad7741e90d3bdfd3acd61d30251",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/prefill/4767d6fa8cdd27949a4439d232e503e3c182e6a318b8c8627d162f4a1d594907.json": "43eb645e122305e0207d886c6f8d86bc0d5ab0dde34513e9385dc6c24a6e493a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/cache/4767d6fa8cdd27949a4439d232e503e3c182e6a318b8c8627d162f4a1d594907.pkl": "abed57462eef1d40458f2c4bbbce9c1bff59a1ab91fbc8440c96904d65ce34f1",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/prefill/f11edb95061838d03400fbb329d12e2fa731198a395ba60b1adda07a1374fa99.json": "ed158ec6828371b342a2ba2e6afd0ab0dc0631d4d21a17be8d8ca70cb897aabf",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/126-market-feature-full-quality/cache/f11edb95061838d03400fbb329d12e2fa731198a395ba60b1adda07a1374fa99.pkl": "56113c0c7c4a901aa6650c48537d8be3f6719ce92964ebf81c9937b8bba560fc"
+  },
+  "documentation_hashes": {
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/README.md": "6ffde3e286f339ccfc2cd7dc8227b5ba25d8bae2d3c755feeb528970bc23fbda",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/result-review.md": "be174e8e4ce28d0a960f21add5b6595137ace7ea772d2a2992af6db628129a40",
+    "/Users/kuwatawaku/workspace/horseracing/specs/126-market-feature-full-quality/evidence/actual-cost.json": "fa920dddf4717bc89fbf47fefb4928dbb0b07181850c27da06c888a5676d2d53"
+  },
+  "fixed117_diagnostics": {
+    "2026_all": {
+      "n_races": 2296,
+      "n_days": 70,
+      "candidate_nll": 2.051092991662122,
+      "raw125_nll": 2.054642290399557,
+      "raw138_nll": 2.0498234555809716,
+      "candidate_minus_raw125": -0.0035492987374350013,
+      "candidate_minus_raw138": 0.0012695360811503483,
+      "new_ci": false,
+      "extra_gate": false
+    },
+    "2026_nakayama": {
+      "n_races": 300,
+      "n_days": 25,
+      "candidate_nll": 2.0331127306230097,
+      "raw125_nll": 2.0368190802958224,
+      "raw138_nll": 2.007361410749185,
+      "candidate_minus_raw125": -0.0037063496728124944,
+      "candidate_minus_raw138": 0.02575131987382545,
+      "new_ci": false,
+      "extra_gate": false
+    },
+    "2026_partial_relative": {
+      "n_races": 1538,
+      "n_days": 70,
+      "candidate_nll": 2.0326973776521875,
+      "raw125_nll": 2.0399194634973217,
+      "raw138_nll": 2.0286677396584913,
+      "candidate_minus_raw125": -0.007222085845133742,
+      "candidate_minus_raw138": 0.00402963799369617,
+      "new_ci": false,
+      "extra_gate": false
+    }
+  },
+  "fixed117_diagnostic_provenance": {
+    "attributes_sha256": "72a7f4b1f45f93d8e384ef76a7f3cf063e146db11500565cf4088cd921091ed6",
+    "review_sha256": "f22eb7f9c2e51fc7dc09825a8be140a32952043d9de508c2ec5a54cf2ea3b151",
+    "review_method_sha256": "0f74037d088f9db9b24158f6d96ce792a2544f0f0d0453a6cc26aad02ff6368d",
+    "diagnostic_sha256": "deb9943f3de9c42c012d799c99d201864fc008327c3a8e1bcb6072bbdd77666d",
+    "freeze_sha256": "15cb4b573f0f88e3cd54cc0a1690e61a4b452a348a15e9ec847eeb35a95a89eb",
+    "all22990_ids_dates_order_exact": true,
+    "formula_raw138": "candidate_minus_raw138 = mean over the same saved rows of (126.diff + 117.pruning_42); raw138_nll = raw125_nll - 117.pruning_42 per race.",
+    "group_rules": {
+      "2026_all": "year == 2026",
+      "2026_nakayama": "year == 2026 and venue == 06",
+      "2026_partial_relative": "year == 2026 and relative_coverage == (.5,1)"
+    },
+    "new_ci": false,
+    "extra_gate": false
+  },
+  "new_fits_for_audit_and_documentation": 0
+}

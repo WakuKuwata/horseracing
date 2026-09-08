@@ -1,0 +1,18 @@
+{
+  "artifact_kind": "season_mixture_measured_cost",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "new_booster_fits": 0,
+  "new_coefficient_fits": 0,
+  "paired_evaluation_seconds": {
+    "joint_pruning3_vs_pruning3": 50.97929504211061,
+    "joint_pruning3_vs_mixed6": 74.75640587497037,
+    "joint_pruning3_vs_anchor42": 34.080383375054225,
+    "joint_mixed6_vs_pruning3": 75.49228216602933,
+    "joint_mixed6_vs_mixed6": 110.61771200003568,
+    "joint_mixed6_vs_anchor42": 65.13010125001892
+  },
+  "paired_evaluation_seconds_sum": 411.05617970821913,
+  "note": "Paired timers exclude preparation and surrounding source checks, summary and independent audit; full end-to-end wall time was not measured.",
+  "summary_sha256": "28d197bac8f09dde1c4601845f869b53ae9448feb16aa9f6882d33e2aa43e073"
+}

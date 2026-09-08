@@ -1,0 +1,15 @@
+{
+  "artifact_kind": "anchor_gap_smoke",
+  "structure": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "seeds": [
+    43,
+    44
+  ],
+  "arm": "anchor138",
+  "n_estimators": 5,
+  "n_oof_blocks": 2,
+  "gamma": 0.0,
+  "run_freeze_sha256": "d8718e64f6d61a9bb541c6bbfe8f40ec0ef023c46c97781729e3cb511527cfb6"
+}

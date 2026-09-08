@@ -1,0 +1,59 @@
+{
+  "artifact_kind": "extra_feature_scalar_reconstruction",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "de537cded6d731ea31af7d6b0cf498ba9b4baf00c4120b3f4f0c523c2d16d77b",
+  "run_freeze_sha256": "78366c5c8598aca0b913f3efc0f0b3cf2a5f78c8900d0ac15a7338f90f442402",
+  "matrix_sha256": "57bc4f48f8fb4f3529f1c96b3c8998e47e098553de840b2b4c5804f7d04c68eb",
+  "source_frames_sha256": "7dc539c4224fe4132c3892099f2c62790b47d1f3136fe8b79bbaeadd5c02ef11",
+  "horse_rows": 958011,
+  "feature_cells": 16286187,
+  "missing_cells": 4237057,
+  "max_error_by_column": {
+    "asof_pm_finish_resid_mean5": 1.1102230246251565e-16,
+    "asof_pm_finish_resid_career": 1.1102230246251565e-16,
+    "asof_pm_win_resid_mean10": 2.220446049250313e-16,
+    "asof_pm_win_resid_career": 2.220446049250313e-16,
+    "asof_pm_resid_sd5": 4.413849521338678e-13,
+    "asof_pm_result_obs_count": 0.0,
+    "prev_finish_pct": 0.0,
+    "prev2_finish": 0.0,
+    "prev3_finish": 0.0,
+    "prev2_finish_pct": 0.0,
+    "prev3_finish_pct": 0.0,
+    "avg_last3_finish_pct": 3.3306690738754696e-16,
+    "avg_last5_finish": 0.0,
+    "avg_last5_finish_pct": 2.220446049250313e-16,
+    "best_finish_pct": 0.0,
+    "finish_trend5": 5.551115123125783e-17,
+    "asof_weight_deviation": 0.0
+  },
+  "max_sd_variance_error": 4.440892098500626e-16,
+  "tolerances": {
+    "ordinary_absolute": 1e-10,
+    "sd_absolute": 1e-07,
+    "sd_variance_absolute": 1e-14
+  },
+  "source_audit": {
+    "complete_popularity_source_races": 67923,
+    "complete_odds_source_races": 67912,
+    "finished_rows": 954759,
+    "finished_not_started_rows": 0,
+    "finished_without_entry_rows": 0,
+    "finished_with_nonstarted_entry_rows": 0,
+    "finished_invalid_pct_rows": 0,
+    "weight_ambiguous_days": 0,
+    "weight_ambiguous_measurements": 0,
+    "weight_unambiguous_days": 958010
+  },
+  "strict_prior_dates": true,
+  "same_day_excluded": true,
+  "notes": [
+    "F04 separate FINISHED popularity-complete and STARTED odds-complete populations; ddof1 SD.",
+    "088 original FINISHED source order, full started denominator; windows propagate NaN, career best skips NaN.",
+    "Weight latest ambiguous day is NaN; earlier mean excludes every ambiguous day and requires three unambiguous days.",
+    "No feature builder, merge_asof, rolling, expanding or fitting used."
+  ]
+}

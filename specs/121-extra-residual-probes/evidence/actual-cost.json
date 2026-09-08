@@ -1,0 +1,12 @@
+{
+  "artifact_kind": "residual_probe_measured_cost",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "new_booster_fits": 0,
+  "new_booster_fit_seconds": 0.0,
+  "small_correction_fit_sequences": 9,
+  "annual_correction_vectors": 63,
+  "recorded_probe_run_seconds": 60.581354208057746,
+  "note": "Run timer does not include prepare, independent audit or documentation. Correction fitting is distinct from a booster fit.",
+  "report_sha256": "c76b9b601762aef632eea7130b2849da5d4264246e19296accac11c47b672b94"
+}

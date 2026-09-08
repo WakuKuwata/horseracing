@@ -1,0 +1,190 @@
+{
+  "all_complete": true,
+  "n_jobs": 16,
+  "n_fresh_fits": 8,
+  "n_imports": 8,
+  "workers": 2,
+  "manifest_sha256": "58a7443e7b0dbd2af9772996577c9bfd49bd743fbba4772e3579c4a3be1c461a",
+  "current_fit_seconds_sum": 6745.734010208864,
+  "historical_fit_seconds_sum": 6574.65349179192,
+  "wall_seconds_to_last_fresh_receipt": 3405.3492674827576,
+  "rows": [
+    {
+      "year": 2026,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 954.4650848329766,
+      "peak_rss_bytes": null,
+      "cache_sha256": "4d96f6c5c5ac515302bd691bc2f78d3e5397e6271e9cba56529f66a0aa5109d1"
+    },
+    {
+      "year": 2026,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 1010.6257983749965,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 7013924864,
+      "cache_sha256": "4a5e2e360c5792581380a9f993664bbc7ab004b8df5c2f056c7c2ff158dc3344"
+    },
+    {
+      "year": 2025,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 957.223320415942,
+      "peak_rss_bytes": null,
+      "cache_sha256": "cd7bdb91bc46107b1c2c6d47f3f8bda2faf1e7f13ebdf672a51477bfc58a8a76"
+    },
+    {
+      "year": 2025,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 965.4776635419112,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 7654260736,
+      "cache_sha256": "3be0190386792992c815123ede8e87019f9fdae10be0b86109e500b32f7e652d"
+    },
+    {
+      "year": 2024,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 904.3351620000321,
+      "peak_rss_bytes": null,
+      "cache_sha256": "53d7c0221cd405c83b3e73df3135988f1861a3c07ed5c5bb88ec1623a2bbfe5d"
+    },
+    {
+      "year": 2024,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 923.4806433749618,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 7640547328,
+      "cache_sha256": "e0e6343b72fc497d664c1dc5da0841f541b7bc63bf4a9931dfe4e6086a97f6d1"
+    },
+    {
+      "year": 2023,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 845.2341789590428,
+      "peak_rss_bytes": null,
+      "cache_sha256": "80d67039973b21ee5ec5f678b638aa46d45ec15480a4c8fbb9c16d3b1bfc7e21"
+    },
+    {
+      "year": 2023,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 870.6836303339805,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 6630326272,
+      "cache_sha256": "d95cd6372785e5b6685d7a8d315261e3c0c2b8b89fc8acc422fdd75fa6b16413"
+    },
+    {
+      "year": 2022,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 799.0765512919752,
+      "peak_rss_bytes": null,
+      "cache_sha256": "158c086775679749abee311d8cc1fb209cafa26b516877422bc195a7b8e330a7"
+    },
+    {
+      "year": 2022,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 820.2404088330222,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 7688683520,
+      "cache_sha256": "6c60a6499091da1c9399909ddb5fa728d2ae0021d924153aef041508a41469d0"
+    },
+    {
+      "year": 2021,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 768.845320124994,
+      "peak_rss_bytes": null,
+      "cache_sha256": "20daefffaae34fc643bca6bb8b9e8238826b4758819c964428124239a7e10dd3"
+    },
+    {
+      "year": 2021,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 777.7958191670477,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 6181306368,
+      "cache_sha256": "dff2e20a5f49a3342e63f5e222daa7049b2a4f912e0858eb44d00b3e330d067f"
+    },
+    {
+      "year": 2020,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 700.7445034170523,
+      "peak_rss_bytes": null,
+      "cache_sha256": "3c0b4683beb49081d675656faef308d23afb084f5a21474415df07790b4f5585"
+    },
+    {
+      "year": 2020,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 712.1660461659776,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 6141542400,
+      "cache_sha256": "7c125a4dd52887503b6b5cd45c82eb74ad5f19778e42ebd23ad91cf387669db0"
+    },
+    {
+      "year": 2019,
+      "arm": "baseline",
+      "columns": 138,
+      "oof_sufficient": true,
+      "imported": true,
+      "current_fit_seconds": 0.0,
+      "historical_fit_seconds": 644.7293707499048,
+      "peak_rss_bytes": null,
+      "cache_sha256": "3f75e00ec435a4bbe55e20d3813c619ea7dad43c2f06fbab8e626e881aec79f5"
+    },
+    {
+      "year": 2019,
+      "arm": "observation_age",
+      "columns": 140,
+      "oof_sufficient": true,
+      "imported": false,
+      "current_fit_seconds": 665.2640004169662,
+      "historical_fit_seconds": 0.0,
+      "peak_rss_bytes": 5936693248,
+      "cache_sha256": "19b4c13a760b2a00b6dfbc99f2c5a97cadaa3a72dd8a4f32ed58b20ec13db0dc"
+    }
+  ],
+  "timing_note": "Wall estimate is run-marker creation to last fresh-fit receipt; final orchestrator verification and gate replay are excluded. Per-job fit elapsed sums are not CPU time. Imported historical fitting is not current work."
+}

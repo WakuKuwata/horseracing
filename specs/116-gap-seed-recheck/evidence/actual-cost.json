@@ -1,0 +1,374 @@
+{
+  "artifact_kind": "gap_seed_recheck_actual_cost",
+  "new_full_fit_jobs": 30,
+  "new_full_fit_seconds_sum": 24707.033939042594,
+  "wall_to_last_receipt_seconds": 12527.505442,
+  "run_started_at_utc": "2026-09-08T00:56:04.492674+00:00",
+  "last_receipt_mtime_utc": "2026-09-08T04:24:51.998116+00:00",
+  "max_single_worker_peak_rss_bytes": 8538161152,
+  "workers": 2,
+  "model_threads_each": 1,
+  "paired_eval_elapsed_seconds_sum": 52.85708329093177,
+  "notes": [
+    "Fit time is summed across the30 new full-data jobs and already includes OOF work.",
+    "Wall time is run timestamp to last receipt mtime, not summed parallel fit time.",
+    "Historical seed42 fits and evidence regeneration are excluded.",
+    "Four small smoke fits, coefficient estimation and audit time are excluded from full fit and paired-evaluation sums.",
+    "Maximum RSS is a single-worker peak, not measured simultaneous total RSS."
+  ],
+  "run_manifest": {
+    "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/20260908T005604492674Z-run.json",
+    "sha256": "91881c5b3ba7e7bf9595a0c2144cc2deb6e8c2468f945f8f97f49313d1b6ac54"
+  },
+  "run_freeze_sha256": "487d4f62963639e0dcad7d9edcf22df05fe47ec2362dad5dcea96c04cb032d4d",
+  "receipts": [
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/00ca3fe15e5368abc836d90fd3d140abd3072b9b99f06c7d14a0e242bd0b99c8.json",
+      "sha256": "c7a56761953a9a6eacd0a7d9f22edafe1b87e7e82776edaa4c515412ab65ec18",
+      "job": {
+        "key": "00ca3fe15e5368abc836d90fd3d140abd3072b9b99f06c7d14a0e242bd0b99c8",
+        "train_hash": "e9ccd5b0f6308fbad2d8232e24b4908bed82a4966e8e742b3a0ff377857a6226",
+        "year": 2026,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/11dbf9255d13d11d5a83e0dc835b06976885df15d015d29c78e05a666002c413.json",
+      "sha256": "754214b4c8fa4bcc42d1aa7edf5aa20bb3c67d7460a933f42849edde0666729a",
+      "job": {
+        "key": "11dbf9255d13d11d5a83e0dc835b06976885df15d015d29c78e05a666002c413",
+        "train_hash": "5daa7afb658cbde6622b8a30d8e2abfec6c1715e5cacd23ad16b2ab95fd74867",
+        "year": 2024,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/164bbd159c7558a9dccfed6b4c7fe1b5543c7a33bfee0127faf1f46413374dcc.json",
+      "sha256": "69b7ee3a1cc8c2338c66b6b50583f74828b6c3a0034ff8ccbd6e39abb053fbd8",
+      "job": {
+        "key": "164bbd159c7558a9dccfed6b4c7fe1b5543c7a33bfee0127faf1f46413374dcc",
+        "train_hash": "cb0aa8f58c6983fdc3bd9b720ad3486ae327f9d441b9fb349edbb5ae0b9ced3b",
+        "year": 2020,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/22f6cc55d9545ee030793c6c12492b592acfcf096925516ae2b6e9aa44dfe288.json",
+      "sha256": "c38b792f2d44d41451ce86b4c61a79385b5d59ac3454d2a13039230bae2d7164",
+      "job": {
+        "key": "22f6cc55d9545ee030793c6c12492b592acfcf096925516ae2b6e9aa44dfe288",
+        "train_hash": "cb0aa8f58c6983fdc3bd9b720ad3486ae327f9d441b9fb349edbb5ae0b9ced3b",
+        "year": 2020,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/2886c9a8de5f60baf02c9e084f173916def779dd84550e02d02c933815597e8b.json",
+      "sha256": "c3332c21c7d919a245933666ab777e5dec8c3b95534b3b2fff377fe1169914a8",
+      "job": {
+        "key": "2886c9a8de5f60baf02c9e084f173916def779dd84550e02d02c933815597e8b",
+        "train_hash": "49bae58d77c54ab63563db758c8422405508a2844fd02980ff439ad97b37a04b",
+        "year": 2019,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/3343286ca330d4112d7a1d3ce7d616ba1b5100178acdb379bddf6956ffcbfac0.json",
+      "sha256": "92deef822134aeb6b7c54c3aa5dcc186d0b8286146f748a9563d521f1cffd584",
+      "job": {
+        "key": "3343286ca330d4112d7a1d3ce7d616ba1b5100178acdb379bddf6956ffcbfac0",
+        "train_hash": "49bae58d77c54ab63563db758c8422405508a2844fd02980ff439ad97b37a04b",
+        "year": 2019,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/3704976487bc7b8499bca62ab27aa27d242adbe5cac97afcee0f47c4a112e31c.json",
+      "sha256": "b3099cbe36e33de9f860e70deafc71f2a87183cdf155accdc3c373ecee684418",
+      "job": {
+        "key": "3704976487bc7b8499bca62ab27aa27d242adbe5cac97afcee0f47c4a112e31c",
+        "train_hash": "608523ef15efc50d83cd6a1416af4418e5744a0c6e24a1b4a7b031f0e8fb5d14",
+        "year": 2025,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/37de7dacfa3de5cd21173a6a7f2f8cb974940d11ba8a64d6d6b56ff0476c3487.json",
+      "sha256": "d01d214ca24706506eec36c3e2e3a10fbd722f059d3e8a637a6f81e82cbfea73",
+      "job": {
+        "key": "37de7dacfa3de5cd21173a6a7f2f8cb974940d11ba8a64d6d6b56ff0476c3487",
+        "train_hash": "5daa7afb658cbde6622b8a30d8e2abfec6c1715e5cacd23ad16b2ab95fd74867",
+        "year": 2024,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/388519a834f3cb36ba8a273ae01b4fab9783666875f367848f54988120661571.json",
+      "sha256": "8287fd37d147487ada0c950b3211f44f971b1bf96cd0240b9cdccd4f32575d67",
+      "job": {
+        "key": "388519a834f3cb36ba8a273ae01b4fab9783666875f367848f54988120661571",
+        "train_hash": "e109c42a26c69e35afb49c2c9825468db86f0c17bc33103628de0dcd9309d65a",
+        "year": 2022,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/4c51bf7c323799c6106adf3cdbf80093d8f184c3e11fddc053aedbe066d41c11.json",
+      "sha256": "5f6822e78fd7500ee7e730110f024902771669b818e55128263735d3097655bd",
+      "job": {
+        "key": "4c51bf7c323799c6106adf3cdbf80093d8f184c3e11fddc053aedbe066d41c11",
+        "train_hash": "79f3fe6961a73afb2314be764d9d2e5fc9398eb5fe55f285b10f5e84bcfbe1d1",
+        "year": 2023,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/5235348923f029539bb8a3c09e2c61cf3a88e37b41cbc556f84b3dca35832f22.json",
+      "sha256": "788a9a83d30dbea7fc70717904348c1e5fcf130b2941c52894b01ef463c74161",
+      "job": {
+        "key": "5235348923f029539bb8a3c09e2c61cf3a88e37b41cbc556f84b3dca35832f22",
+        "train_hash": "15baeffc60bdc5e13031363ba979be8a1413084e6d828a16778073b7de77cff8",
+        "year": 2021,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/5527fdeba9e0a5cbc115fac189a79dfb206fa8ee81d8866ba9fcb378858fa5ca.json",
+      "sha256": "5e217133abc8c1b175c6f3e7ab3e5e9cd1158ae836ebb28509fd3de0f0aa2d90",
+      "job": {
+        "key": "5527fdeba9e0a5cbc115fac189a79dfb206fa8ee81d8866ba9fcb378858fa5ca",
+        "train_hash": "5daa7afb658cbde6622b8a30d8e2abfec6c1715e5cacd23ad16b2ab95fd74867",
+        "year": 2024,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/59f23205dd4174f1dc9f9071bf5dcb766f6f24d2744f86742c73cdb322ab2955.json",
+      "sha256": "2e000eb29fed55d7741ee02d7f2385e223315927c85abdf0ce90cc03ddac81d3",
+      "job": {
+        "key": "59f23205dd4174f1dc9f9071bf5dcb766f6f24d2744f86742c73cdb322ab2955",
+        "train_hash": "79f3fe6961a73afb2314be764d9d2e5fc9398eb5fe55f285b10f5e84bcfbe1d1",
+        "year": 2023,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/6ac6809a391cded60bf8b1bd87a40519555c0a6633eb416f9bb25c36ddcf7932.json",
+      "sha256": "c8932f7fc6e4be3695af1f0eb875c8b943eb52c48137a452c5ab409f29254b1c",
+      "job": {
+        "key": "6ac6809a391cded60bf8b1bd87a40519555c0a6633eb416f9bb25c36ddcf7932",
+        "train_hash": "e9ccd5b0f6308fbad2d8232e24b4908bed82a4966e8e742b3a0ff377857a6226",
+        "year": 2026,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/6b5de804c4a6d0c0641b309d04728f1240f9417be10f7bc4bb2ca37e849909d6.json",
+      "sha256": "a7443ebb4803890be9bf89f57dde81f005de7f7ca8529d30bad0d507bfa2f1df",
+      "job": {
+        "key": "6b5de804c4a6d0c0641b309d04728f1240f9417be10f7bc4bb2ca37e849909d6",
+        "train_hash": "e9ccd5b0f6308fbad2d8232e24b4908bed82a4966e8e742b3a0ff377857a6226",
+        "year": 2026,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/7c55cdddd243aea1a322fed068dbbb41e90582a3489809ee8775361ec2dfbd75.json",
+      "sha256": "8a41fc8a2591b08c2db3045ff8aa2280d873e8b4ec5c99346ef971dce074a2b3",
+      "job": {
+        "key": "7c55cdddd243aea1a322fed068dbbb41e90582a3489809ee8775361ec2dfbd75",
+        "train_hash": "15baeffc60bdc5e13031363ba979be8a1413084e6d828a16778073b7de77cff8",
+        "year": 2021,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/7c7e072d40367faf00e8e546517fc4a73c5383485546f49ca2e16146f71a00d7.json",
+      "sha256": "65d6da6bb8fc6ee0629f2d3479396870095d45aa1e94a480c5eb999e8543810c",
+      "job": {
+        "key": "7c7e072d40367faf00e8e546517fc4a73c5383485546f49ca2e16146f71a00d7",
+        "train_hash": "15baeffc60bdc5e13031363ba979be8a1413084e6d828a16778073b7de77cff8",
+        "year": 2021,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/7d6601524ae5b457e5354d606a94e2ff6caf524ab98030047e5e1073204d9d35.json",
+      "sha256": "7ced3101047358ee8a7fe69f41f3c6d5f1db0f941589979144b83b0c10426f79",
+      "job": {
+        "key": "7d6601524ae5b457e5354d606a94e2ff6caf524ab98030047e5e1073204d9d35",
+        "train_hash": "5daa7afb658cbde6622b8a30d8e2abfec6c1715e5cacd23ad16b2ab95fd74867",
+        "year": 2024,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/8540a7c1d3a06cca3b3c67330fc8024e8a1a4aa6ac5a3f64fc467906e51ba65d.json",
+      "sha256": "7504249cdc44f7e25c5a32ec92a989fb30aa68b15f357651770d90d4aff2f167",
+      "job": {
+        "key": "8540a7c1d3a06cca3b3c67330fc8024e8a1a4aa6ac5a3f64fc467906e51ba65d",
+        "train_hash": "608523ef15efc50d83cd6a1416af4418e5744a0c6e24a1b4a7b031f0e8fb5d14",
+        "year": 2025,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/85c2af226551eae1922fe376d5216649e60c550c08a2e7cebeb955457be2b367.json",
+      "sha256": "60a2614794f61d206b1a75dd077919090a0960761090912a694e22a573bb9950",
+      "job": {
+        "key": "85c2af226551eae1922fe376d5216649e60c550c08a2e7cebeb955457be2b367",
+        "train_hash": "e9ccd5b0f6308fbad2d8232e24b4908bed82a4966e8e742b3a0ff377857a6226",
+        "year": 2026,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/89496ffcfa23859ef4f431b3282b41f01254d0e27f1f125edc5aeef4dc1b7d77.json",
+      "sha256": "002c7b83ee0f2c97cc548c9a2a5e5415338c3381f55dc4f84f4d038b88c7256f",
+      "job": {
+        "key": "89496ffcfa23859ef4f431b3282b41f01254d0e27f1f125edc5aeef4dc1b7d77",
+        "train_hash": "608523ef15efc50d83cd6a1416af4418e5744a0c6e24a1b4a7b031f0e8fb5d14",
+        "year": 2025,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/8faae13ff4d4ff06e1ebaa42a62f54e8cb726302f2003b5ab80f9dcedd0c0683.json",
+      "sha256": "253ab5a5721f3fe379e5963f7c846ccbd9c4260b988f85ca96e1c123c927a808",
+      "job": {
+        "key": "8faae13ff4d4ff06e1ebaa42a62f54e8cb726302f2003b5ab80f9dcedd0c0683",
+        "train_hash": "79f3fe6961a73afb2314be764d9d2e5fc9398eb5fe55f285b10f5e84bcfbe1d1",
+        "year": 2023,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/9869830eb7d54ca772636f777533e6180e4ae593cb7ca375d1d6543fb87ea6da.json",
+      "sha256": "84b75bd0edaac9c3d458b16cab8ac57f9b8ae321ebd5bc16c338273f48ec67ef",
+      "job": {
+        "key": "9869830eb7d54ca772636f777533e6180e4ae593cb7ca375d1d6543fb87ea6da",
+        "train_hash": "608523ef15efc50d83cd6a1416af4418e5744a0c6e24a1b4a7b031f0e8fb5d14",
+        "year": 2025,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/b4c020a43cc4791081442610950d6e729cbca8806ef6de98d2903a6d0ada6d7d.json",
+      "sha256": "11ab0be45d887f69d98950f5bd29372ed99568962160412f6591c628322fe4ab",
+      "job": {
+        "key": "b4c020a43cc4791081442610950d6e729cbca8806ef6de98d2903a6d0ada6d7d",
+        "train_hash": "15baeffc60bdc5e13031363ba979be8a1413084e6d828a16778073b7de77cff8",
+        "year": 2021,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/bcb16ec7a0b92fbf4f18d00612804087335fe39bf4b521f855b2dfc370d0363e.json",
+      "sha256": "27c21508e6ff6f1152aa40d9f115ccc3e3cff1a3eabfa3af48ca01992129bca8",
+      "job": {
+        "key": "bcb16ec7a0b92fbf4f18d00612804087335fe39bf4b521f855b2dfc370d0363e",
+        "train_hash": "e109c42a26c69e35afb49c2c9825468db86f0c17bc33103628de0dcd9309d65a",
+        "year": 2022,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/bdc79fb2d0615d822bbb07a5b2fda47d8bf38cbc78c419607e08bfee2efd5997.json",
+      "sha256": "3df9be00df91ffbe8bed1b94e99f1ac6feb8546c5cc58c0e338467b29aaf1d6e",
+      "job": {
+        "key": "bdc79fb2d0615d822bbb07a5b2fda47d8bf38cbc78c419607e08bfee2efd5997",
+        "train_hash": "cb0aa8f58c6983fdc3bd9b720ad3486ae327f9d441b9fb349edbb5ae0b9ced3b",
+        "year": 2020,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/c46132f65f41b4fae4a872b397cde73101e42ec5ab6072ecee929354289def29.json",
+      "sha256": "07273e4798bf413582854219c60e6f052c26df540ed3eee05d2094d12bdce2f2",
+      "job": {
+        "key": "c46132f65f41b4fae4a872b397cde73101e42ec5ab6072ecee929354289def29",
+        "train_hash": "79f3fe6961a73afb2314be764d9d2e5fc9398eb5fe55f285b10f5e84bcfbe1d1",
+        "year": 2023,
+        "seed": 44,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/d5139f1897a52086da26f9ae430f1b5aedc1cd484d5f6074db81fcf470a178bc.json",
+      "sha256": "602f4a384a5b132e7ddd912b5500afdd9c1944275922b8e4471c292390a03c45",
+      "job": {
+        "key": "d5139f1897a52086da26f9ae430f1b5aedc1cd484d5f6074db81fcf470a178bc",
+        "train_hash": "cb0aa8f58c6983fdc3bd9b720ad3486ae327f9d441b9fb349edbb5ae0b9ced3b",
+        "year": 2020,
+        "seed": 44,
+        "arm": "pruning"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/d5806c3d191eb85b34332386e8d620c6e3a3893a3abec94a48a11cbb608c7d0b.json",
+      "sha256": "b338e9adf589032271b301c8d39e8eb9c599c23634d565a1e7b24d7b7cf62dde",
+      "job": {
+        "key": "d5806c3d191eb85b34332386e8d620c6e3a3893a3abec94a48a11cbb608c7d0b",
+        "train_hash": "e109c42a26c69e35afb49c2c9825468db86f0c17bc33103628de0dcd9309d65a",
+        "year": 2022,
+        "seed": 43,
+        "arm": "anchor"
+      }
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/ec790da145b366c43080bced28c207b32fd7fd85cbbaf76a8f597a4fda37143a.json",
+      "sha256": "9b2c3c45ecebf3ea42a95f8093b81bd286c17cad732617bbcb1b080efb66f502",
+      "job": {
+        "key": "ec790da145b366c43080bced28c207b32fd7fd85cbbaf76a8f597a4fda37143a",
+        "train_hash": "e109c42a26c69e35afb49c2c9825468db86f0c17bc33103628de0dcd9309d65a",
+        "year": 2022,
+        "seed": 43,
+        "arm": "pruning"
+      }
+    }
+  ],
+  "reports": [
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/specs/116-gap-seed-recheck/evidence/seed-43-increment.json",
+      "sha256": "d80eb8eddf4a2447072e74e87d17dbe3c2fc213a2a3ea1c9d6f52bc7f8bc5073"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/specs/116-gap-seed-recheck/evidence/seed-43-anchor.json",
+      "sha256": "0599dc85466dfc73b7d1dbc5893a4d22178389dcd579779d7f8ffd696324466b"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/specs/116-gap-seed-recheck/evidence/seed-44-increment.json",
+      "sha256": "1bffa40f9e0aad65916c97317977777340bcaa8c25f1379e7f19812f5db12315"
+    },
+    {
+      "path": "/Users/kuwatawaku/workspace/horseracing/specs/116-gap-seed-recheck/evidence/seed-44-anchor.json",
+      "sha256": "d6500738cb515ca1f5231b46fb9909b5e0b410a214ba722a5729e8e357f53887"
+    }
+  ]
+}

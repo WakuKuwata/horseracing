@@ -1,0 +1,111 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0,
+  "delta_derivation_ref": "specs/112-small-gain-adoption/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "arms": {
+    "objective": "pl_topk",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "research_policy": "small-gains-v1",
+  "artifact_scope": "historical_development",
+  "artifact_kind": "extra_residual_quality_config",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "candidates": [
+    "prior_gap",
+    "global_temperature"
+  ],
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "contrasts": [
+    {
+      "id": "anchor",
+      "baseline": "anchor"
+    },
+    {
+      "id": "retained",
+      "baseline": "retained"
+    }
+  ],
+  "new_fit_jobs": 0,
+  "coefficient_refits": 0,
+  "assembly_eps": 0.0,
+  "deployment_seed": 42,
+  "candidate_selection": "Exactly121 ADVANCE branches A=prior_gap and B=global_temperature; C did not advance. Same annual saved coefficients, no fit/retune.",
+  "progression": "Require both anchor and retained equal-seed mean winner NLL differences <0; mean top2/top3 diff<=.0005, ECE diff<=.001 and candidate ECE<.05. Any valid individual hard quality BLOCKED requires REVIEW_REQUIRED. Individual DEFER/CI crossing/sign count is not a veto. Keep every passing candidate without ranking.",
+  "coefficient_order": {
+    "prior_gap": [
+      "gap_log",
+      "prior_gap_log"
+    ],
+    "global_temperature": [
+      "gap_log",
+      "centered_log_p"
+    ]
+  },
+  "limitations": [
+    "Historical development and121 selection-used full information, not an unused holdout or preweight proof.",
+    "Uses exact saved121 joint-fit coefficients; evaluates joint gap adjustment plus new term, not an isolated effect holding original gap coefficient fixed.",
+    "Top2/top3 are Harville assembled from corrected win with eps0 and strict consistency; original calibration is not applied twice.",
+    "Individual v4 CIs transfer sd_fold .001816 / k_seeds1, conditional on frozen correction coefficients; coefficient-refit, selection and retained-side correction uncertainty not fully covered.",
+    "Equal-seed mean losses/quality are not probability ensembles, no mean CI or extra sign/majority threshold; deployment seed42 risks remain visible.",
+    "No booster or coefficient fitting, annual confirmation slot, production mutation, or post-result tuning."
+  ]
+}

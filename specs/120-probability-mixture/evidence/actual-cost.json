@@ -1,0 +1,24 @@
+{
+  "artifact_kind": "measured_recheck_cost",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "new_booster_fits": 0,
+  "new_booster_fit_seconds": 0.0,
+  "paired_evaluation_seconds": {
+    "mixed6_vs_retained42": 62.76054649997968,
+    "anchor3_vs_retained42": 38.94904758303892,
+    "pruning3_vs_anchor42": 32.552502208040096,
+    "anchor3_vs_pruning3": 56.554311290965416,
+    "anchor3_vs_anchor42": 38.20205295807682,
+    "pruning3_vs_retained42": 34.90300429100171,
+    "mixed6_vs_anchor42": 60.236884625046514,
+    "mixed6_vs_pruning3": 77.13329487503506
+  },
+  "paired_evaluation_seconds_sum": 401.2916443311842,
+  "notes": [
+    "Evaluation timers exclude prepare, input reconstruction, source verification outside the timed paired evaluation, independent audit, and documentation; total end-to-end wall time was not recorded.",
+    "119 fits 21 small three-component correction vectors on existing predictions;120 performs no correction fit. These are not new boosted-tree fits."
+  ],
+  "run_freeze_sha256": "a5fc047187caca275db0bc310b4f2acba8c521d7fd92cbe0a36ca19c3ee5b57f",
+  "summary_sha256": "20455958e6169e7c8ef8628043ceb8dba31a932cca9293e9c6a14c66ff3b4f47"
+}

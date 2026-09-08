@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "artifact_kind": "independent_season_mixture_review",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "59d6422ead14356baa11a84586a90e90fa0fc04084a7a15c45eb1b7cc770fd75",
+  "helper_method_sha256": {
+    "season": "1aa4f805922d79d7557e7410984b31e8bb05b4116ece1ce1ba935e496cba1131",
+    "mixture": "92c79a493e7f75b25393c9fad94ee409c86b1b0881c37a1f4984ad28701f5cdf"
+  },
+  "run_freeze_sha256": "8958bef94881ab9de54aa20acf9ae7e9b48327287189fd4c136a2841244195f7",
+  "summary_sha256": "28d197bac8f09dde1c4601845f869b53ae9448feb16aa9f6882d33e2aa43e073",
+  "report_hashes": {
+    "joint_pruning3_vs_pruning3": {
+      "report_sha256": "0efbde63e53bc3bcdfee46b7d0d5f74329c0f1cc5d6234eeb499b3c5c4ec06a4",
+      "evidence_sha256": "d9b7c873222cb7650dc25609b3508974b5599a43ad032fc3a6b9a1e801da0518"
+    },
+    "joint_pruning3_vs_mixed6": {
+      "report_sha256": "fdabc16983f6aacdab558d81cc3c40f03b1c48af161bd5678c63bb5fccf101c3",
+      "evidence_sha256": "ccf9933070460acbfa2023ff3710128c5551c54ffb4421a34b0e413830c78cd0"
+    },
+    "joint_pruning3_vs_anchor42": {
+      "report_sha256": "f1cff9e2a8c040b76fe21dfd080c004f68c99d3b9ff93b4d24186d693e15cdca",
+      "evidence_sha256": "9af562dbba75ab364f12056aef24262995136a6da4efe0cb38b13bbd2c360411"
+    },
+    "joint_mixed6_vs_pruning3": {
+      "report_sha256": "bbba8deddc952d5ce6eb60152bd84290bb41ee5b42d1306dba22ea1321447861",
+      "evidence_sha256": "223f31a0a5c32792060b069860eee929591039a4d10dd90459af7e120b04711d"
+    },
+    "joint_mixed6_vs_mixed6": {
+      "report_sha256": "46919b39ca7e7b735542565662e9e9b2db7cf943f1c9632162bd0128fc426938",
+      "evidence_sha256": "842580da18406b946eebc3d6b9ad102c181a0fdadc94ccb0269c10882b4a8b6a"
+    },
+    "joint_mixed6_vs_anchor42": {
+      "report_sha256": "8256cf467816afc0b4f4af9bc99c1784d0f982b7daaf5d88cdc1851901398811",
+      "evidence_sha256": "e3981fae3f638b876c12ef10c340b516c6c6397c4f22d8ccd65aa3e05afa2e85"
+    }
+  },
+  "population": {
+    "n_races": 23030,
+    "n_eligible": 22990,
+    "n_days": 715,
+    "same_ordered_population": true,
+    "old116_and120_baselines_exact": true,
+    "mixture_identity_across_comparisons_exact": true
+  },
+  "checks": 621198,
+  "max_numerical_error": 1.7763568394002505e-15,
+  "max_race_nll_error": 1.7763568394002505e-15,
+  "full_quality_recent_and_primary_cis_match": true,
+  "fixed117_groups_match": true,
+  "saved_coefficients_reused_without_refit": true,
+  "max_jensen_excess": {
+    "joint_pruning3": -5.12050224443783e-09,
+    "joint_mixed6": -1.2226159871175923e-06
+  },
+  "retained_candidates": [
+    "joint_pruning3",
+    "joint_mixed6"
+  ],
+  "preferred_research_configuration": "joint_mixed6"
+}

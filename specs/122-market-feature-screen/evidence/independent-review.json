@@ -1,0 +1,108 @@
+{
+  "artifact_kind": "market_feature_screen_independent_review",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "bc0b56e6724f77310a1671ca4112b5127b3da972b63fa7a0f9a08f0f302f8cd4",
+  "run_freeze_sha256": "c655db5fba458818cc88db7b4ae3b26aeb3f96fc102e7016ce09789de1937f75",
+  "summary_sha256": "64123f3715416b463eefa796c63d3ad073d9f7d91067ab026b41e875311f484f",
+  "report_hashes": {
+    "f03": {
+      "report_sha256": "fb6cf267a34f11e943b8f8b0ee1ac1d6fd9ab6911a7448aa6863b362a33042ab",
+      "evidence_sha256": "c70c79dc78f914255ef580c3a846cf8384b601feb86671ccba7880fe8e10fb5b"
+    },
+    "f05": {
+      "report_sha256": "b5af3e80715ef7feec5253a48783dce75f44432e6adf5eac205eeced3b2ca063",
+      "evidence_sha256": "836683a47693b92ad8fac437434f681fe5202746e66ab996c9a9d0e40053a752"
+    },
+    "colsample_07": {
+      "report_sha256": "28c631d782c6b3a4a11a96d15fb91e556186eef727afdf1a08a554fb7d5a4b3f",
+      "evidence_sha256": "c6b169aa5dfde2f2bd642cb5d90bbd449fd6cb0157d51ad46cf8b2d951f702ec"
+    }
+  },
+  "cache_hashes": {
+    "baseline": "9e9fe63d47d8fe3f0635a3834541c3e8d3b9d3825559f1a44cecfd9533ac8656",
+    "f03": "d3e82b521f580c0c8285971c501a55cda98521eccab95eca0683efb1cf338773",
+    "f05": "02a9d31d51027f9fadb93ad270ece7a6a9966b82c8f193d050e35f29f9ce9933",
+    "colsample_07": "0f4c22ff13f29e313580f461dc467e1fe0c34f00a9e7ed055af8c0567605244a"
+  },
+  "population": {
+    "n_races": 3454,
+    "n_eligible": 3448,
+    "n_days": 109,
+    "complete_started_horses": 48376,
+    "incomplete_races": 0
+  },
+  "comparisons": {
+    "f03": {
+      "nll": 2.0263173121820857,
+      "diff": 0.0033188496230400766,
+      "top2_diff": 0.00022720551261612432,
+      "top3_diff": -7.16425456900871e-05,
+      "candidate_ece": 0.002725863587775572,
+      "baseline_ece": 0.003449025765906954,
+      "progression": "DEFER",
+      "ci": {
+        "point": 0.0033188496230404083,
+        "sample": [
+          -0.0023436662029054363,
+          0.009512764663947978
+        ],
+        "total": [
+          -0.00393634629208932,
+          0.010995982279300098
+        ],
+        "n_days": 109
+      }
+    },
+    "f05": {
+      "nll": 2.027720403779107,
+      "diff": 0.004721941220061421,
+      "top2_diff": 0.0005039325672073214,
+      "top3_diff": 0.0006833386980290013,
+      "candidate_ece": 0.003269224347650101,
+      "baseline_ece": 0.003449025765906954,
+      "progression": "QUALITY_REVIEW_REQUIRED",
+      "ci": {
+        "point": 0.004721941220061718,
+        "sample": [
+          -0.0002925345283540135,
+          0.010117079213543436
+        ],
+        "total": [
+          -0.002039622897749889,
+          0.011770437248047964
+        ],
+        "n_days": 109
+      }
+    },
+    "colsample_07": {
+      "nll": 2.022298208550823,
+      "diff": -0.0007002540082226005,
+      "top2_diff": -0.00023713934974189943,
+      "top3_diff": 1.781058516159284e-05,
+      "candidate_ece": 0.0030686163707444804,
+      "baseline_ece": 0.003449025765906954,
+      "progression": "ADVANCE_TO_FULL_RESEARCH",
+      "ci": {
+        "point": -0.0007002540082223152,
+        "sample": [
+          -0.007112214237278423,
+          0.005672134532937259
+        ],
+        "total": [
+          -0.008554362249571245,
+          0.007121581965980276
+        ],
+        "n_days": 109
+      }
+    }
+  },
+  "checks": 31071,
+  "max_numeric_error": 4.440892098500626e-16,
+  "limitations": [
+    "2018 screen only; no recent/nk/full-period or stack increment assertion.",
+    "Cached forecasts audited; no independent model retraining. Feature temporal prefix and common matrix parity are certified in the frozen prepare audit."
+  ]
+}

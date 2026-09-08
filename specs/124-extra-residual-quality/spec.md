@@ -1,0 +1,15 @@
+# 124 追加残差補正の全品質検証
+
+121で事前登録された一次probeの進行条件を満たしたA prior_gap、B global_temperatureの2候補だけを全v4品質で検証する。C context_temperatureは進行条件を満たさず対象外。A/Bは凍結した125列モデルに対するgapとのjoint補正であり、保持済みgap係数を固定した単独追加効果とは呼ばない。
+
+121の年別保存係数を一切再fit・調整せず適用する。2019は元係数fitのwarmupだけ、2020-01-01〜2026-08-23を評価。3seed 42/43/44それぞれ同じ期間・母集団で、anchor138と保持済み125＋gapの2基準へ比較する。計12 full reports。新規booster/係数fitは0。
+
+raw125の校正済みwinから121と同じ式でqを作り、assemble_predictions(eps=0)でtop2/top3を組み立てる。確率の有限性・内部点・総和・順序を検査し、再clip・isotonic二重適用・数値失敗後の修復はしない。Bの実効温度指数1＋global係数の正値も要求。全eligibleレースの順序とwinner NLLを121保存行へ1e-12以内で一致確認し、元116基準のNLLは完全一致させる。非eligibleを含む全23,030レースも固定母集団hashと照合する。
+
+v4 winner NLL、recent3/5年、top2/top3、ECE、critical canonical/nk/recent_year_onlyを既存paired_evalで評価する。112のdelta0、bootstrap B4000/seed20260907/alpha.0125、sd_fold.001816/k1を引き継ぐ。CIは保存係数固定・noise移送仮定付きで、係数再fitや選択まで含む全不確実性を実証した値ではない。
+
+候補ごとに両基準への3seed平均NLLが負、平均top2/top3差≤.0005、平均ECE差≤.001、候補ECE<.05を求める。いずれかの個seedに有効な硬い品質BLOCKEDがあればREVIEW_REQUIRED。個seedのDEFER、CIのゼロ跨ぎ、改善seed数は拒否条件を追加しない。両比較がMEAN_IMPROVEMENTなら研究RETAIN、品質問題ならREVIEW_REQUIRED、その他はDEFER。複数候補が通れば全て保持し優先順位を選ばない。can_adopt:false、eligible_for_verdict:falseを全成果物に保持し、本番変更・確認枠予約はしない。
+
+prepareで121完成report/receipt/freeze/prepared入力と独立監査PASSの全SHA、元111snapshot/113・116・118入力証跡を固定する。121と同じprior-gap再構成コードを使い、3seed prepared入力のgap/prior-gap・馬順序を全て照合する。元anchor/retainedのwin/top2/top3 replayとNLL一致も事前確認する。研究入力は履歴上の選択に使用済みの情報である。
+
+保存済み成果物は追記のみ。再開はsource/runtime/receipt/係数/候補・母集団・NLLを検証し、完了比較を再評価しない。summaryは全12reportの品質・母集団を再検証する。実装と独立レビュー完了後、変更停止宣言を経て親がprepare/evaluate/summaryを実行する。

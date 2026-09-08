@@ -1,0 +1,520 @@
+{
+  "artifact_kind": "small_gain_research_dispositions",
+  "policy_version": "small_gain_research_v1",
+  "eligible_for_verdict": false,
+  "can_adopt": false,
+  "method_sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2",
+  "records": [
+    {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "RETAIN_UNCERTAIN",
+      "reason": "observed_improvement_interval_includes_zero",
+      "blocking_reasons": [],
+      "primary_diff": -0.0022728446777042777,
+      "total_ci": {
+        "point": -0.002272844677704009,
+        "ci_low": -0.005305908032584232,
+        "ci_high": 0.0007024208951813796,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 825,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -0.0002353346420808644,
+        "top3_diff": -0.00024960388629774455,
+        "cand_ece": 0.0013056950376957078,
+        "act_ece": 0.001377318106000855
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "NO_DECISION",
+          "recent_year_only": "INCONCLUSIVE_LOW_PRECISION"
+        },
+        "status": "NOT_PROVEN",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": 0.0013185928771176547,
+          "recent_year_only": 0.014196873942382272
+        },
+        "assurance": "partial_or_unspecified"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "REJECT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "gate_hard_fail",
+          "gate": {
+            "primary": false,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": "COMPLETE"
+      },
+      "original_scope": {
+        "stage": "full",
+        "candidate": {
+          "id": "relative_ability",
+          "drop_features": [
+            "win_rate_vs_field",
+            "recent_win_rate_vs_field",
+            "place_rate_vs_field",
+            "show_rate_vs_field",
+            "dist_band_win_rate_vs_field",
+            "surface_win_rate_vs_field",
+            "rel_time_avg_vs_field",
+            "rel_last3f_avg_vs_field",
+            "finish_diff_best_vs_field",
+            "jockey_win_rate_vs_field",
+            "trainer_win_rate_vs_field",
+            "win_rate_field_rank",
+            "rel_time_avg_field_rank"
+          ]
+        },
+        "n_eligible": 26437,
+        "n_days": 825,
+        "target_year": 2026,
+        "evidence_regime": "historical_development",
+        "gate_config_hash": "93b2dbea6917545269cbecc108d40e48d0b827cc5165795050058e1ce07c5489",
+        "study_config_hash": "93b2dbea6917545269cbecc108d40e48d0b827cc5165795050058e1ce07c5489"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ],
+      "source_file": "/Users/kuwatawaku/workspace/horseracing/specs/110-feature-pruning/evidence/full-relative_ability.json",
+      "source_sha256": "6b32ab7882f538f80d1d9df3eda673de90539d30271fc3b20339ecc891b268f7",
+      "method_sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2"
+    },
+    {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "RETAIN_UNCERTAIN",
+      "reason": "observed_improvement_interval_includes_zero",
+      "blocking_reasons": [],
+      "primary_diff": -0.00135832616738929,
+      "total_ci": {
+        "point": -0.0013583261673890152,
+        "ci_low": -0.0035321912053273676,
+        "ci_high": 0.0008352322825003866,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 825,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -0.00015182001702546133,
+        "top3_diff": -0.0001237107252570202,
+        "cand_ece": 0.0014774772122295786,
+        "act_ece": 0.001377318106000855
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical",
+          "nk",
+          "recent_year_only"
+        ],
+        "states": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "INCONCLUSIVE_LOW_PRECISION"
+        },
+        "status": "NOT_PROVEN",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": 0.006215809853624215
+        },
+        "assurance": "partial_or_unspecified"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "REJECT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "gate_hard_fail",
+          "gate": {
+            "primary": false,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": "COMPLETE"
+      },
+      "original_scope": {
+        "stage": "full",
+        "candidate": {
+          "id": "observation_age",
+          "add_features": [
+            "asof_spdfig_last_age_days",
+            "asof_spdfig_best_age_days"
+          ],
+          "drop_features": [
+            "asof_spdfig_sd"
+          ]
+        },
+        "n_eligible": 26437,
+        "n_days": 825,
+        "target_year": 2026,
+        "evidence_regime": "historical_development",
+        "gate_config_hash": "18e36a2afbfba4eb15d6bcea19c9772788c3fc3fa74d74ff8c4698575d1a9176",
+        "study_config_hash": "18e36a2afbfba4eb15d6bcea19c9772788c3fc3fa74d74ff8c4698575d1a9176"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ],
+      "source_file": "/Users/kuwatawaku/workspace/horseracing/specs/111-ability-observation/evidence/full-observation_age.json",
+      "source_sha256": "eba767319434440b957c8201c1bb689bf6e9e2de798248c7e4893c96a6c69a2c",
+      "method_sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2"
+    },
+    {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "DEFER",
+      "reason": "no_observed_primary_improvement_in_this_scope",
+      "blocking_reasons": [],
+      "primary_diff": 3.7478109145006044e-05,
+      "total_ci": {
+        "point": 3.747810914484144e-05,
+        "ci_low": -0.00674079115407971,
+        "ci_high": 0.006946243176146721,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 109,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -0.0001457629541142258,
+        "top3_diff": 1.3498286335733578e-05,
+        "cand_ece": 0.0035316550962346156,
+        "act_ece": 0.003099328168638271
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical"
+        ],
+        "states": {
+          "canonical": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "REJECT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "gate_hard_fail",
+          "gate": {
+            "primary": false,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": "DEFER"
+      },
+      "original_scope": {
+        "stage": "screen",
+        "candidate": {
+          "id": "human_absolute",
+          "drop_features": [
+            "jockey_win_rate",
+            "trainer_win_rate"
+          ]
+        },
+        "n_eligible": 3448,
+        "n_days": 109,
+        "target_year": 2018,
+        "evidence_regime": "historical_development",
+        "gate_config_hash": "1674ccf42b35414402f8fca2382f69fa90fac5b74920673b3ed6c166d1cde7ce",
+        "study_config_hash": "93b2dbea6917545269cbecc108d40e48d0b827cc5165795050058e1ce07c5489"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ],
+      "source_file": "/Users/kuwatawaku/workspace/horseracing/specs/110-feature-pruning/evidence/screen-human_absolute.json",
+      "source_sha256": "584f649d75143719613d577684d99b0a27207ad718b9696639f6c68b069a35b7",
+      "method_sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2"
+    },
+    {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "DEFER",
+      "reason": "no_observed_primary_improvement_in_this_scope",
+      "blocking_reasons": [],
+      "primary_diff": 0.001330689007825292,
+      "total_ci": {
+        "point": 0.0013306890078251972,
+        "ci_low": -0.0054927806497124905,
+        "ci_high": 0.008312387372359106,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 109,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": 0.0001217254394635936,
+        "top3_diff": 4.305144983873799e-05,
+        "cand_ece": 0.0030440787118157808,
+        "act_ece": 0.003099328168638271
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical"
+        ],
+        "states": {
+          "canonical": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "REJECT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "gate_hard_fail",
+          "gate": {
+            "primary": false,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": "DEFER"
+      },
+      "original_scope": {
+        "stage": "screen",
+        "candidate": {
+          "id": "course_aptitude",
+          "drop_features": [
+            "venue_win_rate",
+            "venue_place_rate"
+          ]
+        },
+        "n_eligible": 3448,
+        "n_days": 109,
+        "target_year": 2018,
+        "evidence_regime": "historical_development",
+        "gate_config_hash": "1674ccf42b35414402f8fca2382f69fa90fac5b74920673b3ed6c166d1cde7ce",
+        "study_config_hash": "93b2dbea6917545269cbecc108d40e48d0b827cc5165795050058e1ce07c5489"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ],
+      "source_file": "/Users/kuwatawaku/workspace/horseracing/specs/110-feature-pruning/evidence/screen-course_aptitude.json",
+      "source_sha256": "d0530292eb0750833510a90152dea8edaa5cefd58a4d84849c67edb69e89a019",
+      "method_sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2"
+    },
+    {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "DEFER",
+      "reason": "no_observed_primary_improvement_in_this_scope",
+      "blocking_reasons": [],
+      "primary_diff": 0.0017549594521444334,
+      "total_ci": {
+        "point": 0.0017549594521439104,
+        "ci_low": -0.005207290517003523,
+        "ci_high": 0.00883390590363144,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 109,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": -0.00030626499429914356,
+        "top3_diff": -0.0003274868253285712,
+        "cand_ece": 0.0034510698475327074,
+        "act_ece": 0.003099328168638271
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical"
+        ],
+        "states": {
+          "canonical": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "REJECT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "gate_hard_fail",
+          "gate": {
+            "primary": false,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": "DEFER"
+      },
+      "original_scope": {
+        "stage": "screen",
+        "candidate": {
+          "id": "pedigree_interactions",
+          "drop_features": [
+            "debut_x_sire_win_rate",
+            "debut_x_sire_dist_band_win_rate",
+            "lowhist_x_sire_win_rate",
+            "lowhist_x_sire_dist_band_win_rate"
+          ]
+        },
+        "n_eligible": 3448,
+        "n_days": 109,
+        "target_year": 2018,
+        "evidence_regime": "historical_development",
+        "gate_config_hash": "1674ccf42b35414402f8fca2382f69fa90fac5b74920673b3ed6c166d1cde7ce",
+        "study_config_hash": "93b2dbea6917545269cbecc108d40e48d0b827cc5165795050058e1ce07c5489"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ],
+      "source_file": "/Users/kuwatawaku/workspace/horseracing/specs/110-feature-pruning/evidence/screen-pedigree_interactions.json",
+      "source_sha256": "a1ed7ca63d1878360509ba91d39b0f331b59a752709c7d65203c76c9d5815842",
+      "method_sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2"
+    },
+    {
+      "artifact_kind": "small_gain_research_disposition",
+      "policy_version": "small_gain_research_v1",
+      "eligible_for_verdict": false,
+      "can_adopt": false,
+      "state": "DEFER",
+      "reason": "no_observed_primary_improvement_in_this_scope",
+      "blocking_reasons": [],
+      "primary_diff": 0.0007653902675293089,
+      "total_ci": {
+        "point": 0.000765390267529133,
+        "ci_low": -0.005511482192442518,
+        "ci_high": 0.007381951170001202,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 109,
+        "no_decision": false
+      },
+      "quality_metrics": {
+        "top2_diff": 4.378457033876737e-05,
+        "top3_diff": 0.00013357757608550846,
+        "cand_ece": 0.002862619218677368,
+        "act_ece": 0.003099328168638271
+      },
+      "subgroup_evidence": {
+        "critical": [
+          "canonical"
+        ],
+        "states": {
+          "canonical": "PASS"
+        },
+        "status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null
+        },
+        "assurance": "full"
+      },
+      "original_result": {
+        "evaluation_contract_version": "v4",
+        "gate_readout": "REJECT",
+        "decision": null,
+        "decision_reason": {
+          "cause": "gate_hard_fail",
+          "gate": {
+            "primary": false,
+            "stat_guard": false,
+            "recent_guard": true,
+            "top_noninferior": true,
+            "calibration": true
+          }
+        },
+        "progression": "DEFER"
+      },
+      "original_scope": {
+        "stage": "screen",
+        "candidate": {
+          "id": "observation_sd",
+          "add_features": [
+            "asof_spdfig_sd"
+          ],
+          "drop_features": [
+            "asof_spdfig_last_age_days",
+            "asof_spdfig_best_age_days"
+          ]
+        },
+        "n_eligible": 3448,
+        "n_days": 109,
+        "target_year": 2018,
+        "evidence_regime": "historical_development",
+        "gate_config_hash": "a69a34e0aa7f36912d4dd1a67a71f0890fed79b49561a86c37d254f799fa0dfa",
+        "study_config_hash": "18e36a2afbfba4eb15d6bcea19c9772788c3fc3fa74d74ff8c4698575d1a9176"
+      },
+      "limitations": [
+        "Research retention only; original verdict is unchanged.",
+        "Neither retention state establishes fresh holdout independence or production readiness.",
+        "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+        "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+      ],
+      "source_file": "/Users/kuwatawaku/workspace/horseracing/specs/111-ability-observation/evidence/screen-observation_sd.json",
+      "source_sha256": "581110f251f634667a4d70044444ceb837fd6a38a2541bea53fcb62b5d89fe18",
+      "method_sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# 115 出走間隔の確率補正と全品質条件
+
+114で改善方向だったgap_logの確率残差補正を、113で残った構成へ追加し、winner NLLとv4品質条件を比較する。追加LightGBM学習・特徴量registry更新・DB取得・本番切替は行わない。
+
+113のincrementとanchorが両方RETAIN_SUPPORTEDまたはRETAIN_UNCERTAINならselected=stack127、そうでなければselected=pruning125。この分岐を先に固定し任意選択を禁止する。113の両fullレポート、証拠、verdict.json、summarize.py、8件の学習receipt/cache、元freeze/source/runtimeを照合してから115を準備する。
+
+3構成はanchor138、selected、selected+gap_log補正。2比較は補正−selectedの増分と補正−anchorの累積。元113のReadOnlyFactoryには元113の設定とfreezeを渡し、2007年以降の学習母集団を保持して過去年別キャッシュのkey/recipeを再現する。115の評価期間を元factoryのidentityへ混ぜない。
+
+補正h=log1p(111 snapshot.days_since_last)。欠損は指数offset=0。現行履歴母集団を使うため旧081の厳密再現ではない。2019年はgamma初期fitのみ、2020〜2026年はその年より前のselectedモデル予測・canonical単独勝者だけで既存fit_gamma(k=1,ridge=1e-6,max_iter=50,tol=1e-9)をfitする。各年のgamma、先行fit最終日、評価最初日、fit件数、114の目的関数・勾配・有限性検査を保存する。失敗時に設定を調整して再試行しない。
+
+当年の全started馬にq=normalize(p*exp(gamma*h))を適用し、qの有限性・厳密正値・正規化を検査後、assemble_predictions(ids,q,eps=0.0)でtop2/top3を構築する。2頭以上はq<1も必須。1頭の場合のみq=[1]を許容する。元モデルの校正済みpへ二度目のisotonicやclipを掛けない。追加clipを避ける理由はgamma=0でも既に小さいpが再clipされ別の補正になるため。実評価はassemble後の確率を使い、win/top2/top3の有限性・範囲・単調性・総和を既存許容幅と整合する1e-8で検査する。旧clip幅未満の馬数とassemble前後のwin丸め差を記録する。
+
+主評価は2020-01-01〜2026-08-23。2019を主評価のn_races/n_eligibleに混ぜない。既存paired_evalでwinner NLL、top2/top3、ECE、recent3/5、critical subgroupを計算し、small_gain_researchで研究判定する。delta0、B4000、alpha.0125、seed20260907、sd_fold.001816/k1を固定する。seed-noise値は元boosterからの移送仮定であり、gamma再fit分散を実測していない。bootstrapもgamma固定であり、表示されるtotal CIを補正込みの全不確実性の実証とは呼ばない。
+
+全成果物はcan_adopt:false、eligible_for_verdict:false。年間枠を予約せず、追加seedも回さない。historical developmentのfull-information入力であり、未使用holdoutやpreweight本番適合の証拠ではない。両比較がともにRETAIN_SUPPORTEDまたはRETAIN_UNCERTAINなら補正付き構成を次のseed/将来確認候補に保持する。一方でもDEFER/BLOCKEDなら補正追加は保留し、113で選んだbaseを維持する。両比較の結果を全て保存し、改善差の足し算や事後の最良構成選択をしない。
+
+prepareで先にsource/config/runtime/入力数を固定し、evaluateで係数と評価を行う。1個のsnapshotを共有し、年ごとの元cacheは逐次読取り、追加学習workerは起動しない。成果物は追記のみ。既存結果はreceipt/hash検証だけで再実行・上書きしない。

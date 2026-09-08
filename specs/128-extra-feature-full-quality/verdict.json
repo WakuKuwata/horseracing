@@ -1,0 +1,12 @@
+{
+  "artifact_kind": "extra_feature_full_quality_summary",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "research_decision": "NO_ADVANCING_CANDIDATES",
+  "run_freeze_sha256": "59b355c45fbc35ce2f9678baa3901134a0b8dd2fcb20bbaf15c2e04861d64799",
+  "selected_candidates": [],
+  "reports": {},
+  "new_outer_jobs": 0,
+  "new_booster_fits": 0,
+  "note": "All2018-screen-selected candidates completed seven folds without performance early stopping. Raw-model seed42 historical research only; no gap/ensemble increment or production adoption."
+}

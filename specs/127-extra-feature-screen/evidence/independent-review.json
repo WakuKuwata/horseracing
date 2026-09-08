@@ -1,0 +1,118 @@
+{
+  "artifact_kind": "extra_feature_screen_independent_review",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "2fa2009c3bd9de17a31e076dba09d8b425d04c4f37cb3f748d4620bec51b1dae",
+  "helper_method_sha256": "bc0b56e6724f77310a1671ca4112b5127b3da972b63fa7a0f9a08f0f302f8cd4",
+  "feature_review_sha256": "829d1991494dd15b5603d115b94d8f05bceb6112d3b2b098fb7069ffae2ea817",
+  "feature_method_sha256": "de537cded6d731ea31af7d6b0cf498ba9b4baf00c4120b3f4f0c523c2d16d77b",
+  "run_freeze_sha256": "78366c5c8598aca0b913f3efc0f0b3cf2a5f78c8900d0ac15a7338f90f442402",
+  "summary_sha256": "6d82554dd01bbb00075fe95a2c5a7294834392ba7d7f09b8210b8c77c3962366",
+  "report_hashes": {
+    "f04": {
+      "report_sha256": "b26aab1e8f6b5e3e74940d9d7bea63696eea2dc36245b68e817302f6b342efa7",
+      "evidence_sha256": "97b06e8124a63a060853e35c1cb35065a01e375b37572c6ba150b81fc95b31e1"
+    },
+    "finish_decomp": {
+      "report_sha256": "2f02d077feea381297613a1ddf13801777b53ed79ab4d47b747127947e71bd8d",
+      "evidence_sha256": "f9151e62d5eb20f097b52f693f3e029a3bd2c4519236f979fd8562c18a52aa71"
+    },
+    "weight_deviation": {
+      "report_sha256": "56cc1eba2b1a8e32a3cd02102f9d83d8bed46c76328a6c5e49a3a56e64b520c3",
+      "evidence_sha256": "42d533278e7f07bad18d904b1a6fef1a820e71d988304e54eecd619a9e6b7c6c"
+    }
+  },
+  "cache_hashes": {
+    "baseline": "9e9fe63d47d8fe3f0635a3834541c3e8d3b9d3825559f1a44cecfd9533ac8656",
+    "f04": "d2e85086d7372a859e94438e92959e3448f128bee3b6c9999ff3fcf3d43625fb",
+    "finish_decomp": "740302a4292c7b044133b66b49a77ec80d7dc09db3a73db648500eea4b8a493f",
+    "weight_deviation": "a9253d859db74a869cea1bac22a490e418c119a3354ab7618ca978dba93bb7cd"
+  },
+  "completion_receipt_hashes": {
+    "f04": "12e3f1e5d88554c45b129a1dd51152403e5c6312ce66899270e6e5b9a8a92fa3",
+    "finish_decomp": "fda9b111a9b3b3d0efb0292ee6c267f478b86efe25dea4c561edff9959bf34f8",
+    "weight_deviation": "aad394202af80c2e29e67d33c39cae6b66c18ee1f323b4fa3e13207d398ab9a2"
+  },
+  "source_cache_report_hashes_start_end_equal": true,
+  "population": {
+    "n_races": 3454,
+    "n_eligible": 3448,
+    "n_days": 109,
+    "complete_started_horses": 48376,
+    "incomplete_races": 0
+  },
+  "comparisons": {
+    "f04": {
+      "nll": 2.02701214644547,
+      "diff": 0.004013683886424424,
+      "top2_diff": 0.0002695093604088705,
+      "top3_diff": 0.0005477852368462877,
+      "candidate_ece": 0.0031616622110117376,
+      "baseline_ece": 0.003449025765906954,
+      "progression": "QUALITY_REVIEW_REQUIRED",
+      "ci": {
+        "point": 0.004013683886424667,
+        "sample": [
+          -0.001859442259603222,
+          0.00981867397213684
+        ],
+        "total": [
+          -0.003407056845805799,
+          0.011380616231915873
+        ],
+        "n_days": 109
+      }
+    },
+    "finish_decomp": {
+      "nll": 2.0258331780583982,
+      "diff": 0.002834715499352658,
+      "top2_diff": -9.76609134722417e-05,
+      "top3_diff": 6.123283593967299e-05,
+      "candidate_ece": 0.0035616309077242205,
+      "baseline_ece": 0.003449025765906954,
+      "progression": "DEFER",
+      "ci": {
+        "point": 0.002834715499353064,
+        "sample": [
+          -0.004545540011882788,
+          0.010028826940848418
+        ],
+        "total": [
+          -0.005827960397790677,
+          0.011339362565544717
+        ],
+        "n_days": 109
+      }
+    },
+    "weight_deviation": {
+      "nll": 2.023481348769279,
+      "diff": 0.00048288621023351297,
+      "top2_diff": -2.3024852765340942e-05,
+      "top3_diff": 0.00012760786761634169,
+      "candidate_ece": 0.002894002309546925,
+      "baseline_ece": 0.003449025765906954,
+      "progression": "DEFER",
+      "ci": {
+        "point": 0.00048288621023352766,
+        "sample": [
+          -0.004017770848132011,
+          0.005111866810693276
+        ],
+        "total": [
+          -0.005906925699740309,
+          0.006963722860486382
+        ],
+        "n_days": 109
+      }
+    }
+  },
+  "checks": 31071,
+  "max_numeric_error": 4.440892098500626e-16,
+  "limitations": [
+    "Single2018 historical-development screen. No full-period, recent-year, stack or production efficacy claim.",
+    "Scalar metric and bootstrap primitives reused from independently reviewed122 audit, with this study independently bound.",
+    "Cached forecasts audited without independent model retraining. Feature formula reconstruction is a separate audit."
+  ]
+}

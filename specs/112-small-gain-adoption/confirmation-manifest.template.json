@@ -1,0 +1,17 @@
+{
+  "_instructions": "未記入テンプレート。実際のbundle・anchorのSHAとseed結果・将来評価期間を確定して別ファイルへ保存する。prepare成功時に年間枠を消費する。",
+  "bundle_id": null,
+  "bundle_manifest_sha256": null,
+  "anchor_model_sha256": null,
+  "selection_used_through": null,
+  "frozen_at": null,
+  "eval_window": {"from": null, "to": null, "min_eval_days": null},
+  "seed_check": {
+    "seeds": [42, 43, 44],
+    "mean_diff": null,
+    "selected_seed": 42,
+    "fixed_before_results": true
+  },
+  "primary_regime": null,
+  "power_plan_ref": null
+}

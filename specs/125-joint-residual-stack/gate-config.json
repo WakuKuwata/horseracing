@@ -1,0 +1,100 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0,
+  "delta_derivation_ref": "specs/112-small-gain-adoption/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "arms": {
+    "objective": "pl_topk",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "can_adopt": false,
+  "artifact_kind": "joint_residual_stack_research_config",
+  "eligible_for_verdict": false,
+  "limitations": [
+    "Historical research on previously used data; no production activation or unused holdout.",
+    "Joint correction refits all included coefficients; individual earlier improvements are not added numerically.",
+    "Coefficient-fixed sample CI and transferred k1 fold noise do not cover coefficient refitting, conditional selection, or repeated-bundle uncertainty.",
+    "Three-seed mean losses are not an ensemble; no mean CI or sd/sqrt3 claim. Six-member mixture is separately evaluated.",
+    "Single candidate and mixture retention are separate; every individual hard quality failure remains visible.",
+    "All compared branches, latest-year and nk residual risks remain visible without extra post-hoc gates."
+  ],
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "policy": {
+    "selected_terms": "All and only124 RETAIN candidates in registered prior_gap/global_temperature order; empty selection stops.",
+    "joint_retention": "Every season and selected124 contrast has negative three-seed mean NLL and valid mean quality; any hard individual quality failure is REVIEW_REQUIRED.",
+    "mixture_retention": "All three fixed mixture comparisons have negative NLL and valid quality, independently of joint retention; report every blocked comparison.",
+    "preference": "Use new_joint_mixed6 only if mixture retained, otherwise preserve123 preferred configuration.",
+    "auto_retune": false
+  },
+  "optional_terms": [
+    "prior_gap",
+    "global_temperature"
+  ],
+  "fit": {
+    "ridge": 1e-06,
+    "max_iter": 50,
+    "tol": 1e-09,
+    "objective_max": 1e-08,
+    "gradient_inf_max": 1e-05
+  },
+  "maximum_comparisons": 12,
+  "additional_booster_fits": 0,
+  "assembly_eps": 0.0
+}

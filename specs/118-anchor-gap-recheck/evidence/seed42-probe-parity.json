@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "new_winner_nll_diff": -0.0016007505980244474,
+  "prior_probe_diff": -0.0016007505980240432,
+  "absolute_diff_error": 4.0419056990259605e-16,
+  "max_gamma_error": 0.0,
+  "source_files": {
+    "prior_probe": {
+      "path": "/Users/kuwatawaku/workspace/horseracing/specs/114-gap-season-recheck/evidence/residual-screen.json",
+      "sha256": "6d8160597d32c89e5a27afad585869ba38f3327484aa6186a55b666cc6ca9fcc"
+    },
+    "new_report": {
+      "path": "/Users/kuwatawaku/workspace/horseracing/specs/118-anchor-gap-recheck/evidence/seed-42-anchor.json",
+      "sha256": "ffe34490d4e8e6442020652208355352671a653f96bf2bf827e747f9bdfa7336"
+    },
+    "new_coefficients": {
+      "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/seed-42/coefficients.json",
+      "sha256": "cc3cdcec0e507dcdd6350a22c2b5a4b19038ba4184f5e9e9d238324c021afcb0"
+    }
+  },
+  "note": "Auxiliary numerical consistency check; no additional selection gate or independent-period evidence."
+}

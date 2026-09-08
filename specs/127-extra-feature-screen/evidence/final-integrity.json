@@ -1,0 +1,134 @@
+{
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "run_freeze_sha256": "78366c5c8598aca0b913f3efc0f0b3cf2a5f78c8900d0ac15a7338f90f442402",
+  "config_hash": "7f907a97d577a76e220f82f8678384092e5b0c49c6d1bb552e5e46ac35f7a12b",
+  "source_hash": "7c5b548fda6eeb69579b7c92aee8137970a5c648d948ae73478dfdf4d0f732ee",
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "created_at_utc": "2026-09-08T09:29:17.246159+00:00",
+  "method": {
+    "sha256": "f7b4205466b24793869a07d974b237689fba0f405559242e2b6aa24c059fa074",
+    "source_text": "\"\"\"Append only127 final cost/integrity records from immutable completed evidence.\"\"\"\nimport datetime as dt\nimport json, math, sys\nfrom pathlib import Path\nsys.path.insert(0, '/Users/kuwatawaku/workspace/horseracing/scripts')\nimport extra_feature_screen as m\n\ncfg, frozen = m.verify()\nif (m.WORK/'running.lock').exists():\n    raise ValueError('127 training is still active')\nids = [c['id'] for c in m.CONTRASTS]\nif ids != ['f04','finish_decomp','weight_deviation']:\n    raise ValueError('Unexpected registered contrast IDs')\nreports = {name: m.verified_result(name,cfg,frozen) for name in ids}\nif not all(reports.values()) or len(frozen['jobs']) != 3 or frozen['baseline']['mode'] != 'native_cache':\n    raise ValueError('All3 fresh outer jobs and reused baseline required')\ncost_path = m.SPEC/'evidence/actual-cost.json'\nfinal_path = m.SPEC/'evidence/final-integrity.json'\nif cost_path.exists() or final_path.exists():\n    raise FileExistsError('Preserve any existing final records')\nfiles = dict(frozen['sources']['files'])\ndef bind(path):\n    path = Path(path)\n    sha = m.s.p.digest(path)\n    files[str(path)] = sha\n    return sha\nfreeze_sha = bind(m.WORK/'run-freeze.json')\nfor path in [m.SPEC/'gate-config.json',m.SPEC/'gate-config.hash.txt',Path(m.__file__),m.WORK/'matrix.pkl',m.WORK/'feature-audit.json',m.SPEC/'README.md',m.SPEC/'result-review.md',\n    m.SPEC/'spec.md',m.SPEC/'plan.md',m.ROOT/'scripts/tests/test_extra_feature_screen.py']:\n    bind(path)\njob_records, cache_hashes = [], {}\nfor job in frozen['jobs']:\n    if not m.completed(job): raise ValueError('Missing completed cache receipt')\n    path = m.WORK/'cache'/f\"{job['key']}.pkl\"\n    cache = m.s.reuse.load(path)\n    receipt = m.s.read_json(m.receipt_path(job['key']))\n    seconds, rss = receipt['current_outer_fit_seconds'], receipt['peak_rss_bytes']\n    if (not math.isfinite(seconds) or seconds<=0 or type(rss) is not int or rss<=0\n        or cache['elapsed_seconds']!=seconds or cache['key']!=job['key'] or cache['train_hash']!=job['train_hash']\n        or cache['feature_columns']!=job['feature_columns'] or cache['feature_dtypes']!=job['feature_dtypes']\n        or cache['actual_params']!=receipt['actual_params'] or cache['actual_params']['n_estimators']!=900\n        or cache['oof_info']['sufficient'] is not True or cache['recipe_meta']['n_oof_blocks']!=8\n        or m.s.p.stable_hash(m.s.p.ModelRecipe.strip_new_field_defaults(cache['recipe_meta']))!=job['recipe_hash']):\n        raise ValueError('Cost receipt/payload identity mismatch')\n    if cache['actual_params']['colsample_bytree'] != 1.:\n        raise ValueError('Actual colsample mismatch')\n    cache_hashes[job['arm']] = bind(path)\n    job_records.append({'arm':job['arm'],'year':job['year'],'outer_jobs':1,'inner_oof_fits':7,'final_fits':1,\n        'booster_fits':8,'n_estimators':900,'n_oof_blocks':8,'feature_columns_count':len(job['feature_columns']),\n        'current_outer_fit_seconds':seconds,'peak_rss_bytes':rss,'peak_rss_gib':rss/1024**3,\n        'model_threads':receipt['model_threads'],'cache_path':str(path),'cache_sha256':cache_hashes[job['arm']],\n        'receipt_path':str(m.receipt_path(job['key'])),'receipt_sha256':bind(m.receipt_path(job['key']))})\n    del cache\nbaseline=frozen['baseline']\ncache_hashes['baseline']=bind(baseline['path'])\nif cache_hashes['baseline']!=baseline['sha256'] or bind(baseline['anchor_cache_path'])!=baseline['anchor_cache_sha256']:\n    raise ValueError('Original source cache identity changed')\nsmoke_path=m.SPEC/'evidence/smoke.json'\nsmoke=m.s.read_json(smoke_path)\nif (smoke['structure']!='PASS' or smoke['run_freeze_sha256']!=freeze_sha or smoke['arm_names']!=m.NAMES\n    or smoke['n_estimators']!=5 or smoke['n_oof_blocks']!=2 or len(smoke['records'])!=4):\n    raise ValueError('Four-arm structural smoke required')\nsmoke_sha=bind(smoke_path)\npaths_by_sha={m.s.p.digest(p):p for p in (m.WORK/'cache').glob('*.pkl')}\nsmoke_records=[]\nfor record in smoke['records']:\n    path=paths_by_sha[record['cache_sha256']]\n    cache=m.s.reuse.load(path)\n    recipe_hash=m.s.p.stable_hash(m.s.p.ModelRecipe.strip_new_field_defaults(cache['recipe_meta']))\n    identity=[frozen['matrix_sha256'],frozen['source_hash'],frozen['config_hash'],'smoke']\n    key=m.s.p.stable_hash([identity,recipe_hash,cache['train_hash'],2008])\n    seconds=cache['elapsed_seconds']\n    if (key!=cache['key'] or path.stem!=key or record['recipe_hash']!=recipe_hash\n        or cache['feature_columns']!=record['columns'] or cache['feature_dtypes']!=record['feature_dtypes']\n        or cache['actual_params']!=record['actual_params'] or cache['actual_params']['n_estimators']!=5\n        or cache['recipe_meta']['n_oof_blocks']!=2 or cache['oof_info']!=record['oof_info']\n        or not math.isfinite(seconds) or seconds<=0):\n        raise ValueError('Smoke cost/cache identity mismatch')\n    smoke_records.append({'arm':record['arm'],'year':2008,'outer_jobs':1,'inner_oof_fits':1,'final_fits':1,\n        'booster_fits':2,'n_estimators':5,'n_oof_blocks':2,'fit_seconds':seconds,'peak_rss_bytes':None,\n        'peak_rss_note':'Not separately captured for smoke','cache_path':str(path),'cache_sha256':bind(path)})\n    del cache\nrun_records=[]\nfor path in sorted((m.WORK/'prefill').glob('*-run.json')):\n    r=m.s.read_json(path)\n    if r['workers']!=2 or r['jobs']!=frozen['jobs'] or r['run_freeze_sha256']!=freeze_sha or r['smoke_sha256']!=smoke_sha:\n        raise ValueError('Recorded training launch differs')\n    run_records.append({'path':str(path),'sha256':bind(path),'workers':2})\nif len(run_records)!=1: raise ValueError('Expected exactly one completed launch')\nreport_hashes={}\nfor name in ids:\n    path=m.result_path(name);r=m.s.read_json(path)\n    report_hashes[name]={'report_sha256':bind(path),'evidence_sha256':bind(r['evidence_path'])}\n    bind(m.result_receipt(name))\nsummary_path=m.SPEC/'verdict.json'; summary=m.s.read_json(summary_path); summary_sha=bind(summary_path)\nif (summary['run_freeze_sha256']!=freeze_sha or summary['can_adopt'] is not False or summary['eligible_for_verdict'] is not False\n    or summary['reports']!={n:{'sha256':report_hashes[n]['report_sha256'],'progression':m.s.read_json(m.result_path(n))['progression']} for n in ids}):\n    raise ValueError('Completed summary identity mismatch')\naudit_records={}\nfor name in ['independent-review','independent-feature-review']:\n    ap=m.SPEC/f'evidence/{name}.json';mp=m.SPEC/f'evidence/{name}.py';a=m.s.read_json(ap)\n    if (a['status']!='PASS' or a['can_adopt'] is not False or a['eligible_for_verdict'] is not False or a['additional_fits']!=0\n        or a['run_freeze_sha256']!=freeze_sha or a['method_sha256']!=bind(mp)):\n        raise ValueError('Independent audit PASS/method/freeze changed')\n    if name=='independent-review':\n        if (a['artifact_kind']!='extra_feature_screen_independent_review' or a['summary_sha256']!=summary_sha\n            or a['report_hashes']!=report_hashes or a['cache_hashes']!=cache_hashes\n            or a['completion_receipt_hashes']!={j['arm']:bind(m.receipt_path(j['key'])) for j in frozen['jobs']}\n            or a['helper_method_sha256']!=bind(m.ROOT/'specs/122-market-feature-screen/evidence/independent-review.py')\n            or a['feature_method_sha256']!=bind(m.SPEC/'evidence/independent-feature-review.py')\n            or a['feature_review_sha256']!=bind(m.SPEC/'evidence/independent-feature-review.json')\n            or a['source_cache_report_hashes_start_end_equal'] is not True\n            or any(a['comparisons'][n]['progression']!=m.s.read_json(m.result_path(n))['progression'] for n in ids)):\n            raise ValueError('Prediction audit source binding differs')\n    else:\n        if (a['artifact_kind']!='extra_feature_scalar_reconstruction' or a['matrix_sha256']!=frozen['matrix_sha256']\n            or a['source_frames_sha256']!=bind(m.s.p.WORK/'source-frames.pkl')\n            or a['horse_rows']!=958011 or a['feature_cells']!=16286187\n            or any(a[k] is not True for k in ['strict_prior_dates','same_day_excluded'])):\n            raise ValueError('Scalar feature audit source/scope differs')\n        if (a['tolerances'] != {'ordinary_absolute':1e-10,'sd_absolute':1e-7,'sd_variance_absolute':1e-14}\n            or set(a['max_error_by_column']) != set(m.ADDITIONS)\n            or any(not math.isfinite(v) or v<0 or v>(1e-7 if c=='asof_pm_resid_sd5' else 1e-10) for c,v in a['max_error_by_column'].items())\n            or not math.isfinite(a['max_sd_variance_error']) or not 0<=a['max_sd_variance_error']<=1e-14):\n            raise ValueError('Scalar reconstruction errors differ from frozen tolerance')\n    audit_records[name]={'status':'PASS','method_path':str(mp),'method_sha256':a['method_sha256'],'json_path':str(ap),'json_sha256':bind(ap)}\nif any(m.s.read_json(m.result_path(n))['progression']=='ADVANCE_TO_FULL_RESEARCH' for n in ids):\n    raise ValueError('Unexpected advancing127 candidate')\n# Validate all source/config/runtime bindings again before creating either output.\nafter_cfg,after_frozen=m.verify()\nif after_cfg!=cfg or after_frozen!=frozen or not all(m.verified_result(n,cfg,frozen) for n in ids):\n    raise ValueError('Sources changed while gathering final evidence')\nfor path,sha in files.items():\n    if m.s.p.digest(path)!=sha:raise ValueError('Bound artifact changed while gathering final evidence')\nsource_text=Path(__file__).read_text()\nmethod={'sha256':m.s.p.digest(__file__),'source_text':source_text,'scope':'Receipt and frozen artifact verification only; no fitting or official evaluation run'}\ncommon={'can_adopt':False,'eligible_for_verdict':False,'run_freeze_sha256':freeze_sha,\n    'config_hash':frozen['config_hash'],'source_hash':frozen['source_hash'],'runtime':frozen['runtime'],\n    'created_at_utc':dt.datetime.now(dt.timezone.utc).isoformat(),'method':method}\nfull_seconds=sum(r['current_outer_fit_seconds'] for r in job_records)\nsmoke_seconds=sum(r['fit_seconds'] for r in smoke_records)\ncost={**common,'artifact_kind':'extra_feature_screen_actual_cost','status':'PASS',\n    'new_full_screen':{'outer_jobs':3,'inner_oof_fits':21,'final_fits':3,'booster_fits':24,'n_estimators':900,\n        'sum_outer_fit_seconds':full_seconds,'sum_outer_fit_minutes':full_seconds/60,\n        'max_worker_peak_rss_bytes':max(r['peak_rss_bytes'] for r in job_records),'jobs':job_records},\n    'new_smoke':{'outer_jobs':4,'inner_oof_fits':4,'final_fits':4,'booster_fits':8,'n_estimators':5,\n        'sum_fit_seconds':smoke_seconds,'sum_fit_minutes':smoke_seconds/60,'peak_rss_bytes':None,'jobs':smoke_records},\n    'combined_new':{'outer_jobs':7,'booster_fits':32,'sum_recorded_fit_seconds':full_seconds+smoke_seconds},\n    'reused_baseline':{'current_new_fits':0,'historical_outer_fit_seconds_excluded_from_current_total':baseline['historical_outer_fit_seconds'],\n        'cache_path':baseline['path'],'cache_sha256':baseline['sha256']},\n    'training_launches':run_records,'measured_end_to_end_wall_seconds':None,\n    'limitations':['Fit durations already include inner OOF fitting and prediction; never multiply these seconds by8.',\n        'Two-worker sums are cumulative job durations, not elapsed wall time or measured CPU time.',\n        'Individual peak RSS values must not be summed and described as a measured concurrent host peak.',\n        'Preparation, hashing, worker startup, evaluation and independent audits were not included in these fit timers.',\n        'Booster-fit counts follow the verified OOF block/final-fit structure; smoke is kept separate from900-tree study fits.']}\nfinal={**common,'artifact_kind':'extra_feature_screen_final_integrity','status':'PASS',\n    'checks':{'source_config_runtime_verified_before_and_after':True,'all3_cache_receipts_verified':True,\n        'all3_reports_verified':reports,'summary_verified':True,'all4_smoke_cache_identities_verified':True,\n        'native125_and_anchor_certificate_cache_sha_verified':True,'prediction_and_scalar_feature_audits_verified':True,\n        'all_bound_files_unchanged_before_write':True,'frozen_source_and_prior_results_modified':False,\n        'additional_model_fits':0,'additional_paired_evaluations':0},\n    'advancing_candidates':[], 'registered_contrast_ids':ids,'report_hashes':report_hashes,'audit_records':audit_records,'files':files,\n    'actual_cost_path':str(cost_path)}\n# Serialize first; only the final cost digest is appended to the second payload.\nencoded_cost=json.dumps(cost,ensure_ascii=False,indent=2,allow_nan=False)+'\\n'\njson.dumps(final,ensure_ascii=False,allow_nan=False)\nwith cost_path.open('x') as out:out.write(encoded_cost)\nfinal['actual_cost_sha256']=m.s.p.digest(cost_path)\nwith final_path.open('x') as out:json.dump(final,out,ensure_ascii=False,indent=2,allow_nan=False);out.write('\\n')\nm.verify()\nfor path,sha in files.items():\n    if m.s.p.digest(path)!=sha:raise ValueError('Bound artifact changed after final writes')\nif m.s.read_json(final_path)['actual_cost_sha256']!=m.s.p.digest(cost_path):raise ValueError('Final cost binding differs')\nprint(json.dumps({'status':'PASS','full_screen_fit_seconds':full_seconds,'smoke_fit_seconds':smoke_seconds,\n    'max_worker_peak_rss_bytes':max(r['peak_rss_bytes'] for r in job_records),\n    'cost_path':str(cost_path),'cost_sha256':m.s.p.digest(cost_path),'final_path':str(final_path),'final_sha256':m.s.p.digest(final_path)},indent=2))\n",
+    "scope": "Receipt and frozen artifact verification only; no fitting or official evaluation run"
+  },
+  "artifact_kind": "extra_feature_screen_final_integrity",
+  "status": "PASS",
+  "checks": {
+    "source_config_runtime_verified_before_and_after": true,
+    "all3_cache_receipts_verified": true,
+    "all3_reports_verified": {
+      "f04": true,
+      "finish_decomp": true,
+      "weight_deviation": true
+    },
+    "summary_verified": true,
+    "all4_smoke_cache_identities_verified": true,
+    "native125_and_anchor_certificate_cache_sha_verified": true,
+    "prediction_and_scalar_feature_audits_verified": true,
+    "all_bound_files_unchanged_before_write": true,
+    "frozen_source_and_prior_results_modified": false,
+    "additional_model_fits": 0,
+    "additional_paired_evaluations": 0
+  },
+  "advancing_candidates": [],
+  "registered_contrast_ids": [
+    "f04",
+    "finish_decomp",
+    "weight_deviation"
+  ],
+  "report_hashes": {
+    "f04": {
+      "report_sha256": "b26aab1e8f6b5e3e74940d9d7bea63696eea2dc36245b68e817302f6b342efa7",
+      "evidence_sha256": "97b06e8124a63a060853e35c1cb35065a01e375b37572c6ba150b81fc95b31e1"
+    },
+    "finish_decomp": {
+      "report_sha256": "2f02d077feea381297613a1ddf13801777b53ed79ab4d47b747127947e71bd8d",
+      "evidence_sha256": "f9151e62d5eb20f097b52f693f3e029a3bd2c4519236f979fd8562c18a52aa71"
+    },
+    "weight_deviation": {
+      "report_sha256": "56cc1eba2b1a8e32a3cd02102f9d83d8bed46c76328a6c5e49a3a56e64b520c3",
+      "evidence_sha256": "42d533278e7f07bad18d904b1a6fef1a820e71d988304e54eecd619a9e6b7c6c"
+    }
+  },
+  "audit_records": {
+    "independent-review": {
+      "status": "PASS",
+      "method_path": "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-review.py",
+      "method_sha256": "2fa2009c3bd9de17a31e076dba09d8b425d04c4f37cb3f748d4620bec51b1dae",
+      "json_path": "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-review.json",
+      "json_sha256": "f714af3073599a99525e41da92a26d908b085350156e6c873eb0603307efc903"
+    },
+    "independent-feature-review": {
+      "status": "PASS",
+      "method_path": "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-feature-review.py",
+      "method_sha256": "de537cded6d731ea31af7d6b0cf498ba9b4baf00c4120b3f4f0c523c2d16d77b",
+      "json_path": "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-feature-review.json",
+      "json_sha256": "829d1991494dd15b5603d115b94d8f05bceb6112d3b2b098fb7069ffae2ea817"
+    }
+  },
+  "files": {
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/run-freeze.json": "61fc606a18c66064201ca1af4453fe72992653f874d43585a6b55258da66fe23",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/snapshot.pkl": "c979d4ef1c9a74e55d3f32dc8a35873aec89cc75376bf79060b846fa7afdb8ba",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/snapshot.json": "5a955fefff083b73db973432a6bddc0fb02970232de6213f6c6f001526c12c10",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/run-freeze.json": "4cccbeea42f5d3b300b25c79228fc3ca25301de564086c335207cc7eba58d769",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/snapshot.pkl": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/snapshot.json": "301b601de16f004d28377aec5db0df36dc87c34dd472a735dedd5fc9b9d6633f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/source-frames.pkl": "7dc539c4224fe4132c3892099f2c62790b47d1f3136fe8b79bbaeadd5c02ef11",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/baseline-equivalence.json": "b684531067406acab2251cebf44f444e6c43c7ce5c1e02c7eb8728d91f6aae79",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/113-small-gain-stack/run-freeze.json": "5b2af3e9ba5bb56b9ba08149dc16568807578a27fd3aba340314324900857ffc",
+    "/Users/kuwatawaku/workspace/horseracing/specs/110-feature-pruning/evidence/screen-relative_ability.json": "71f06152d35cdaa4dca0b0ac59f1b4cd13c9a42888103603f0e690b449d3165e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/screen-relative_ability-evidence.json": "4007a1fc509fbf598002a6b6209d1fda41efe83dcc400f818d24e37c583c4573",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/run-freeze.json": "c655db5fba458818cc88db7b4ae3b26aeb3f96fc102e7016ce09789de1937f75",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/feature-audit.json": "d9ab72546f5589cc032a5f3a7b2379609839fa0ce8e45e4e4e082a5c598a0231",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/run-freeze.json": "78366c5c8598aca0b913f3efc0f0b3cf2a5f78c8900d0ac15a7338f90f442402",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/gate-config.json": "ee01150a31fc14cf10e419a7da42d3219d7276e40d2116a5f37aaa15f1700310",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/gate-config.hash.txt": "365b7209c72d678c8538803687c6a87f8b07c4fbc2c5a377048fd3cdf17b7400",
+    "/Users/kuwatawaku/workspace/horseracing/scripts/extra_feature_screen.py": "cafa030424ddf0e31b6a1cd4a112028a03a7f668d601b9a714e430a44e1c948a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/matrix.pkl": "57bc4f48f8fb4f3529f1c96b3c8998e47e098553de840b2b4c5804f7d04c68eb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/feature-audit.json": "ac5468b7275b75ad5bf25284e69df77e00840d40bbd030adcd5af571589d35e6",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/README.md": "36c0a4cbf46ef0c4e6769f599ab4a6d98fbeaa0cbc7308b8e3e2276cafcbc02a",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/result-review.md": "f3dfe1231ee6b678934b13bd5059e327665b9d7a68cbb4564d0515f89fbb4e74",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/spec.md": "f066589e375847aa0dd555157a4fe0673e41ef07377a4c2c1d9c6a14ed0a4cff",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/plan.md": "13465ffb95526221bc3aa78198d240858618648c9afc5aa903e4a72b3c607e41",
+    "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_extra_feature_screen.py": "c97a79a8b30d0307b634ff9ef3640fffd764edce17efd16119a6a54a427dc2e9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/cache/befc12eb6493935cee6e0891a3f1e601df1d248868553a96ff67828b28f36905.pkl": "d2e85086d7372a859e94438e92959e3448f128bee3b6c9999ff3fcf3d43625fb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/prefill/befc12eb6493935cee6e0891a3f1e601df1d248868553a96ff67828b28f36905.json": "12e3f1e5d88554c45b129a1dd51152403e5c6312ce66899270e6e5b9a8a92fa3",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/cache/36690423ad7979630657a0540665a9e1054a4fcd9db829c7ba320d60e7a889bd.pkl": "740302a4292c7b044133b66b49a77ec80d7dc09db3a73db648500eea4b8a493f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/prefill/36690423ad7979630657a0540665a9e1054a4fcd9db829c7ba320d60e7a889bd.json": "fda9b111a9b3b3d0efb0292ee6c267f478b86efe25dea4c561edff9959bf34f8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/cache/8facebceb249808a02e7bd1c521299b7c8c4bf6b58d9700888b0e8ab3c61307c.pkl": "a9253d859db74a869cea1bac22a490e418c119a3354ab7618ca978dba93bb7cd",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/prefill/8facebceb249808a02e7bd1c521299b7c8c4bf6b58d9700888b0e8ab3c61307c.json": "aad394202af80c2e29e67d33c39cae6b66c18ee1f323b4fa3e13207d398ab9a2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/72a381c996c25388f83a8bf551caf2662d52d8fdcfea21eeec3884e40e248968.pkl": "9e9fe63d47d8fe3f0635a3834541c3e8d3b9d3825559f1a44cecfd9533ac8656",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/1687af8ff46b338dbf2f50d7ed36bd840a3eab1426260df7b43af1f230def829.pkl": "0d71724a7637a3f66f254be4afc01b2e1b720fb10d253912ce8314c65abea447",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/smoke.json": "4eea051be93d99dfd414b2ee968c03d8999bf07e972cb4fff192574f237652b9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/cache/07fe36ef6d7b5f65409f8d57c69f6ab12e07e918bbc20131cb9a757b4145876a.pkl": "57c2b4e62a24f3120e1a12f01e0360385d2b57b8919584e33aa99ed30390bb19",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/cache/cb8ed3649d16ec1707f121033a72f0e11104c0ccc91af74d4c813fbe47693c86.pkl": "c1c8ee4d3876ded2fd3a859f07fc96aff92fa54c5c0fd0da03a59fe2c9c29073",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/cache/cee6a371a7d25d489e3fde01d433d2b092cd6fe8a067a34b04e85ab208c9b0a1.pkl": "4ae3536dd14a5a7c15c317c67a80699945790b89a25482f94ca2b9558fc58f78",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/cache/f24e2da78efcb836cfc41e0390fb8b2565629e0b32de216697c5ff1ec337455d.pkl": "66e29d739d8eaab3732bbaa74de2a225aba7be2811e012c0971739a09a22c7e7",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/prefill/1788857543777291000-run.json": "a9377e020b759e8f1676bdaa606c6206045ba651def54c1e6e07342681e65966",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/screen-f04.json": "b26aab1e8f6b5e3e74940d9d7bea63696eea2dc36245b68e817302f6b342efa7",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/f04-evidence.json": "97b06e8124a63a060853e35c1cb35065a01e375b37572c6ba150b81fc95b31e1",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/f04-receipt.json": "6d17f651366c9a6d711ee40a5e338a427b05823616b7ede3bcf6ccdaf7135a97",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/screen-finish_decomp.json": "2f02d077feea381297613a1ddf13801777b53ed79ab4d47b747127947e71bd8d",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/finish_decomp-evidence.json": "f9151e62d5eb20f097b52f693f3e029a3bd2c4519236f979fd8562c18a52aa71",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/finish_decomp-receipt.json": "264d001de901c6e8b4d06252b07f02ca012896850df0be79bc11353a09cf49af",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/screen-weight_deviation.json": "56cc1eba2b1a8e32a3cd02102f9d83d8bed46c76328a6c5e49a3a56e64b520c3",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/weight_deviation-evidence.json": "42d533278e7f07bad18d904b1a6fef1a820e71d988304e54eecd619a9e6b7c6c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/127-extra-feature-screen/weight_deviation-receipt.json": "2429f026a7a863a842e792d66d04606459d7c478042831c5dcf0243c6346cdf2",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/verdict.json": "6d82554dd01bbb00075fe95a2c5a7294834392ba7d7f09b8210b8c77c3962366",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-review.py": "2fa2009c3bd9de17a31e076dba09d8b425d04c4f37cb3f748d4620bec51b1dae",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-review.py": "bc0b56e6724f77310a1671ca4112b5127b3da972b63fa7a0f9a08f0f302f8cd4",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-feature-review.py": "de537cded6d731ea31af7d6b0cf498ba9b4baf00c4120b3f4f0c523c2d16d77b",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-feature-review.json": "829d1991494dd15b5603d115b94d8f05bceb6112d3b2b098fb7069ffae2ea817",
+    "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/independent-review.json": "f714af3073599a99525e41da92a26d908b085350156e6c873eb0603307efc903"
+  },
+  "actual_cost_path": "/Users/kuwatawaku/workspace/horseracing/specs/127-extra-feature-screen/evidence/actual-cost.json",
+  "actual_cost_sha256": "d83d9dcf627ebd1dbe025492170b5613a63bddabae19e8aa98150649b193c628"
+}

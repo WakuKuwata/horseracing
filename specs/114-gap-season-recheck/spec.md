@@ -1,0 +1,17 @@
+# 114 出走間隔・季節×性別の現行モデル残差再確認
+
+旧081で改善方向だった仮説を、現在のanchor138予測に残るwinner NLLの残差で安価に再確認する。LightGBM再学習、DB取得、本番更新は行わない。
+
+3候補を先に固定する。current_gap_shapeはlog1p(gap)、max(0,14-gap)、max(0,gap-70)の3項。gap_logはlog1p(gap)のみ。seasonal_sexは牝馬指標と暦年日数に対応したsin/cosの積。季節式は現在のfolklore_candidates.sqlと同式で新configに明示する。旧081の登録文章には365.24日基準の記述もあるため、旧登録全体の厳密再現とはしない。全候補を報告し、結果を見て候補や閾値を追加・変更しない。
+
+出走間隔は111 snapshotの現行days_since_lastを使う。081 SQLと関数形は同じだが、081は芝・ダート出走だけをlag対象にしており、現行履歴の母集団と異なる可能性がある。旧081の厳密再現とは呼ばない。性別はsnapshotの日本語カテゴリ（牡・牝・セ）、日付は当該レースの開催日。欠損項は指数offsetを0とし、正規化後の確率が不変とはしない。日数は欠損または正の整数に限定する。
+
+113 freezeが認証した110 anchor138の8年分キャッシュと111固定snapshotを読み取り専用で再利用する。source/config/runtime、113 freeze、snapshot、各cache/receiptのSHAを検証し114 freezeを作成してから実行する。各レースは全started馬の確率分布を維持し、既存population_masksによる単一勝者・結果完全性条件を使用する。
+
+2019年は係数の初期fitにのみ使用する。2020年以降は先行年だけで既存prequential_delta_nllの係数をfitし、当年で評価する。主指標の対象は2020-01-01〜2026-08-23のみ。2019を含むcoverage/score_Uは補足と明示し、主評価のn_races/n_daysに混ぜない。
+
+既存race_day_cluster_bootstrap_ci_v1をB4000、seed20260907、alpha0.0125で使用する。これはレース日単位のsample CIであり、training seed noise・係数再推定不確実性を含むtotal CIではない。先行fitのgamma、各損失の有限性と、初期ゼロより悪化しない正則化目的関数・勾配残差を検査し、失敗時はBLOCKED_NUMERICALを保存する。結果を見た自動再調整はしない。
+
+判定はPOINT_IMPROVEMENT / NO_OBSERVED_IMPROVEMENTのみ。top2/top3/ECE/recent/subgroupの品質条件は未測定であり、正式RETAINやADOPTを出さない。全成果物はcan_adopt:false、eligible_for_verdict:false。historical developmentのfull-information入力であり、未使用holdout・preweight本番適合・特徴量追加時の改善の証明ではない。
+
+prepare/runは追記専用。既存成果物があればhashを検証するだけで再計算・上書きしない。大きいsnapshotは必要5列を抽出後破棄し、anchor cacheは年ごとに順次読み込む。複数モデルworkerは起動しない。

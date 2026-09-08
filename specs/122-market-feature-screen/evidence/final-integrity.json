@@ -1,0 +1,121 @@
+{
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "run_freeze_sha256": "c655db5fba458818cc88db7b4ae3b26aeb3f96fc102e7016ce09789de1937f75",
+  "config_hash": "d9bf7f514c38cc695295f13f70551f89f002a10baa3b8628b110a68d17d035bb",
+  "source_hash": "8cc2fe8c99c8c39d10c750e9580b827ea709a0c2ebedf54d44f8d43fb3efc835",
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "created_at_utc": "2026-09-08T08:00:10.305058+00:00",
+  "method": {
+    "sha256": "04e9249e5eb9aab8f0593fb2127a07e1a880db07b95ff6822c7a80a52aae860e",
+    "source_text": "\"\"\"Append only122 final cost/integrity records from immutable completed evidence.\"\"\"\nimport datetime as dt\nimport json, math, sys\nfrom pathlib import Path\nsys.path.insert(0, '/Users/kuwatawaku/workspace/horseracing/scripts')\nimport market_feature_screen as m\n\ncfg, frozen = m.verify()\nif (m.WORK/'running.lock').exists():\n    raise ValueError('122 training is still active')\nids = [c['id'] for c in m.CONTRASTS]\nif ids != ['f03','f05','colsample_07']:\n    raise ValueError('Unexpected registered contrast IDs')\nreports = {name: m.verified_result(name,cfg,frozen) for name in ids}\nif not all(reports.values()) or len(frozen['jobs']) != 3 or frozen['baseline']['mode'] != 'native_cache':\n    raise ValueError('All3 fresh outer jobs and reused baseline required')\ncost_path = m.SPEC/'evidence/actual-cost.json'\nfinal_path = m.SPEC/'evidence/final-integrity.json'\nif cost_path.exists() or final_path.exists():\n    raise FileExistsError('Preserve any existing final records')\nfiles = {}\ndef bind(path):\n    path = Path(path)\n    sha = m.s.p.digest(path)\n    files[str(path)] = sha\n    return sha\nfreeze_sha = bind(m.WORK/'run-freeze.json')\nfor path in [m.SPEC/'gate-config.json',m.SPEC/'gate-config.hash.txt',Path(m.__file__),m.WORK/'matrix.pkl',m.WORK/'feature-audit.json']:\n    bind(path)\njob_records, cache_hashes = [], {}\nfor job in frozen['jobs']:\n    if not m.completed(job): raise ValueError('Missing completed cache receipt')\n    path = m.WORK/'cache'/f\"{job['key']}.pkl\"\n    cache = m.s.reuse.load(path)\n    receipt = m.s.read_json(m.receipt_path(job['key']))\n    seconds, rss = receipt['current_outer_fit_seconds'], receipt['peak_rss_bytes']\n    if (not math.isfinite(seconds) or seconds<=0 or type(rss) is not int or rss<=0\n        or cache['elapsed_seconds']!=seconds or cache['key']!=job['key'] or cache['train_hash']!=job['train_hash']\n        or cache['feature_columns']!=job['feature_columns'] or cache['feature_dtypes']!=job['feature_dtypes']\n        or cache['actual_params']!=receipt['actual_params'] or cache['actual_params']['n_estimators']!=900\n        or cache['oof_info']['sufficient'] is not True or cache['recipe_meta']['n_oof_blocks']!=8\n        or m.s.p.stable_hash(m.s.p.ModelRecipe.strip_new_field_defaults(cache['recipe_meta']))!=job['recipe_hash']):\n        raise ValueError('Cost receipt/payload identity mismatch')\n    if cache['actual_params']['colsample_bytree'] != (.7 if job['arm']=='colsample_07' else 1.):\n        raise ValueError('Actual colsample mismatch')\n    cache_hashes[job['arm']] = bind(path)\n    job_records.append({'arm':job['arm'],'year':job['year'],'outer_jobs':1,'inner_oof_fits':7,'final_fits':1,\n        'booster_fits':8,'n_estimators':900,'n_oof_blocks':8,'feature_columns_count':len(job['feature_columns']),\n        'current_outer_fit_seconds':seconds,'peak_rss_bytes':rss,'peak_rss_gib':rss/1024**3,\n        'model_threads':receipt['model_threads'],'cache_path':str(path),'cache_sha256':cache_hashes[job['arm']],\n        'receipt_path':str(m.receipt_path(job['key'])),'receipt_sha256':bind(m.receipt_path(job['key']))})\n    del cache\nbaseline=frozen['baseline']\ncache_hashes['baseline']=bind(baseline['path'])\nif cache_hashes['baseline']!=baseline['sha256'] or bind(baseline['anchor_cache_path'])!=baseline['anchor_cache_sha256']:\n    raise ValueError('Original source cache identity changed')\nsmoke_path=m.SPEC/'evidence/smoke.json'\nsmoke=m.s.read_json(smoke_path)\nif (smoke['structure']!='PASS' or smoke['run_freeze_sha256']!=freeze_sha or smoke['arm_names']!=m.NAMES\n    or smoke['n_estimators']!=5 or smoke['n_oof_blocks']!=2 or len(smoke['records'])!=4):\n    raise ValueError('Four-arm structural smoke required')\nsmoke_sha=bind(smoke_path)\npaths_by_sha={m.s.p.digest(p):p for p in (m.WORK/'cache').glob('*.pkl')}\nsmoke_records=[]\nfor record in smoke['records']:\n    path=paths_by_sha[record['cache_sha256']]\n    cache=m.s.reuse.load(path)\n    recipe_hash=m.s.p.stable_hash(m.s.p.ModelRecipe.strip_new_field_defaults(cache['recipe_meta']))\n    identity=[frozen['matrix_sha256'],frozen['source_hash'],frozen['config_hash'],'smoke']\n    key=m.s.p.stable_hash([identity,recipe_hash,cache['train_hash'],2008])\n    seconds=cache['elapsed_seconds']\n    if (key!=cache['key'] or path.stem!=key or record['recipe_hash']!=recipe_hash\n        or cache['feature_columns']!=record['columns'] or cache['feature_dtypes']!=record['feature_dtypes']\n        or cache['actual_params']!=record['actual_params'] or cache['actual_params']['n_estimators']!=5\n        or cache['recipe_meta']['n_oof_blocks']!=2 or cache['oof_info']!=record['oof_info']\n        or not math.isfinite(seconds) or seconds<=0):\n        raise ValueError('Smoke cost/cache identity mismatch')\n    smoke_records.append({'arm':record['arm'],'year':2008,'outer_jobs':1,'inner_oof_fits':1,'final_fits':1,\n        'booster_fits':2,'n_estimators':5,'n_oof_blocks':2,'fit_seconds':seconds,'peak_rss_bytes':None,\n        'peak_rss_note':'Not separately captured for smoke','cache_path':str(path),'cache_sha256':bind(path)})\n    del cache\nrun_records=[]\nfor path in sorted((m.WORK/'prefill').glob('*-run.json')):\n    r=m.s.read_json(path)\n    if r['workers']!=2 or r['jobs']!=frozen['jobs'] or r['run_freeze_sha256']!=freeze_sha or r['smoke_sha256']!=smoke_sha:\n        raise ValueError('Recorded training launch differs')\n    run_records.append({'path':str(path),'sha256':bind(path),'workers':2})\nif len(run_records)!=1: raise ValueError('Expected exactly one completed launch')\nreport_hashes={}\nfor name in ids:\n    path=m.result_path(name);r=m.s.read_json(path)\n    report_hashes[name]={'report_sha256':bind(path),'evidence_sha256':bind(r['evidence_path'])}\n    bind(m.result_receipt(name))\nsummary_path=m.SPEC/'verdict.json'; summary=m.s.read_json(summary_path); summary_sha=bind(summary_path)\nif (summary['run_freeze_sha256']!=freeze_sha or summary['can_adopt'] is not False or summary['eligible_for_verdict'] is not False\n    or summary['reports']!={n:{'sha256':report_hashes[n]['report_sha256'],'progression':m.s.read_json(m.result_path(n))['progression']} for n in ids}):\n    raise ValueError('Completed summary identity mismatch')\naudit_records={}\nfor name in ['independent-review','independent-feature-review']:\n    ap=m.SPEC/f'evidence/{name}.json';mp=m.SPEC/f'evidence/{name}.py';a=m.s.read_json(ap)\n    if (a['status']!='PASS' or a['can_adopt'] is not False or a['eligible_for_verdict'] is not False or a['additional_fits']!=0\n        or a['run_freeze_sha256']!=freeze_sha or a['method_sha256']!=bind(mp)):\n        raise ValueError('Independent audit PASS/method/freeze changed')\n    if name=='independent-review':\n        if (a['artifact_kind']!='market_feature_screen_independent_review' or a['summary_sha256']!=summary_sha\n            or a['report_hashes']!=report_hashes or a['cache_hashes']!=cache_hashes\n            or any(a['comparisons'][n]['progression']!=m.s.read_json(m.result_path(n))['progression'] for n in ids)):\n            raise ValueError('Prediction audit source binding differs')\n    else:\n        if (a['artifact_kind']!='market_feature_scalar_reconstruction' or a['matrix_sha256']!=frozen['matrix_sha256']\n            or a['source_frames_sha256']!=bind(m.s.p.WORK/'source-frames.pkl')\n            or a['horse_rows']!=958011 or a['feature_cells']!=10538121\n            or any(a[k] is not True for k in ['strict_prior_dates','same_day_excluded','target_market_unused'])):\n            raise ValueError('Scalar feature audit source/scope differs')\n    audit_records[name]={'status':'PASS','method_path':str(mp),'method_sha256':a['method_sha256'],'json_path':str(ap),'json_sha256':bind(ap)}\n# Validate all source/config/runtime bindings again before creating either output.\nafter_cfg,after_frozen=m.verify()\nif after_cfg!=cfg or after_frozen!=frozen or not all(m.verified_result(n,cfg,frozen) for n in ids):\n    raise ValueError('Sources changed while gathering final evidence')\nfor path,sha in files.items():\n    if m.s.p.digest(path)!=sha:raise ValueError('Bound artifact changed while gathering final evidence')\nsource_text=Path(__file__).read_text()\nmethod={'sha256':m.s.p.digest(__file__),'source_text':source_text,'scope':'Receipt and frozen artifact verification only; no fitting or official evaluation run'}\ncommon={'can_adopt':False,'eligible_for_verdict':False,'run_freeze_sha256':freeze_sha,\n    'config_hash':frozen['config_hash'],'source_hash':frozen['source_hash'],'runtime':frozen['runtime'],\n    'created_at_utc':dt.datetime.now(dt.timezone.utc).isoformat(),'method':method}\nfull_seconds=sum(r['current_outer_fit_seconds'] for r in job_records)\nsmoke_seconds=sum(r['fit_seconds'] for r in smoke_records)\ncost={**common,'artifact_kind':'market_feature_screen_actual_cost','status':'PASS',\n    'new_full_screen':{'outer_jobs':3,'inner_oof_fits':21,'final_fits':3,'booster_fits':24,'n_estimators':900,\n        'sum_outer_fit_seconds':full_seconds,'sum_outer_fit_minutes':full_seconds/60,\n        'max_worker_peak_rss_bytes':max(r['peak_rss_bytes'] for r in job_records),'jobs':job_records},\n    'new_smoke':{'outer_jobs':4,'inner_oof_fits':4,'final_fits':4,'booster_fits':8,'n_estimators':5,\n        'sum_fit_seconds':smoke_seconds,'sum_fit_minutes':smoke_seconds/60,'peak_rss_bytes':None,'jobs':smoke_records},\n    'combined_new':{'outer_jobs':7,'booster_fits':32,'sum_recorded_fit_seconds':full_seconds+smoke_seconds},\n    'reused_baseline':{'current_new_fits':0,'historical_outer_fit_seconds_excluded_from_current_total':baseline['historical_outer_fit_seconds'],\n        'cache_path':baseline['path'],'cache_sha256':baseline['sha256']},\n    'training_launches':run_records,'measured_end_to_end_wall_seconds':None,\n    'limitations':['Fit durations already include inner OOF fitting and prediction; never multiply these seconds by8.',\n        'Two-worker sums are cumulative job durations, not elapsed wall time or measured CPU time.',\n        'Individual peak RSS values must not be summed and described as a measured concurrent host peak.',\n        'Preparation, hashing, worker startup, evaluation and independent audits were not included in these fit timers.',\n        'Booster-fit counts follow the verified OOF block/final-fit structure; smoke is kept separate from900-tree study fits.']}\nfinal={**common,'artifact_kind':'market_feature_screen_final_integrity','status':'PASS',\n    'checks':{'source_config_runtime_verified_before_and_after':True,'all3_cache_receipts_verified':True,\n        'all3_reports_verified':reports,'summary_verified':True,'all4_smoke_cache_identities_verified':True,\n        'native125_and_anchor_certificate_cache_sha_verified':True,'prediction_and_scalar_feature_audits_verified':True,\n        'all_bound_files_unchanged_before_write':True,'frozen_source_and_prior_results_modified':False,\n        'additional_model_fits':0,'additional_paired_evaluations':0},\n    'registered_contrast_ids':ids,'report_hashes':report_hashes,'audit_records':audit_records,'files':files,\n    'call_site_diagnosis':{'incorrect':'Iterating m.CONTRASTS yields dictionaries, not contrast ID strings',\n        'correct':'[c[\"id\"] for c in m.CONTRASTS]',\n        'stop_location':'verified_result calls result_path first, which raises Unknown screen contrast before artifact reads/writes',\n        'scope':'Confirmed for the supplied failing expression; not a claim to audit unspecified preceding caller statements'},\n    'actual_cost_path':str(cost_path)}\n# Serialize first; only the final cost digest is appended to the second payload.\nencoded_cost=json.dumps(cost,ensure_ascii=False,indent=2,allow_nan=False)+'\\n'\njson.dumps(final,ensure_ascii=False,allow_nan=False)\nwith cost_path.open('x') as out:out.write(encoded_cost)\nfinal['actual_cost_sha256']=m.s.p.digest(cost_path)\nwith final_path.open('x') as out:json.dump(final,out,ensure_ascii=False,indent=2,allow_nan=False);out.write('\\n')\nm.verify()\nfor path,sha in files.items():\n    if m.s.p.digest(path)!=sha:raise ValueError('Bound artifact changed after final writes')\nif m.s.read_json(final_path)['actual_cost_sha256']!=m.s.p.digest(cost_path):raise ValueError('Final cost binding differs')\nprint(json.dumps({'status':'PASS','full_screen_fit_seconds':full_seconds,'smoke_fit_seconds':smoke_seconds,\n    'max_worker_peak_rss_bytes':max(r['peak_rss_bytes'] for r in job_records),\n    'cost_path':str(cost_path),'cost_sha256':m.s.p.digest(cost_path),'final_path':str(final_path),'final_sha256':m.s.p.digest(final_path)},indent=2))\n",
+    "scope": "Receipt and frozen artifact verification only; no fitting or official evaluation run"
+  },
+  "artifact_kind": "market_feature_screen_final_integrity",
+  "status": "PASS",
+  "checks": {
+    "source_config_runtime_verified_before_and_after": true,
+    "all3_cache_receipts_verified": true,
+    "all3_reports_verified": {
+      "f03": true,
+      "f05": true,
+      "colsample_07": true
+    },
+    "summary_verified": true,
+    "all4_smoke_cache_identities_verified": true,
+    "native125_and_anchor_certificate_cache_sha_verified": true,
+    "prediction_and_scalar_feature_audits_verified": true,
+    "all_bound_files_unchanged_before_write": true,
+    "frozen_source_and_prior_results_modified": false,
+    "additional_model_fits": 0,
+    "additional_paired_evaluations": 0
+  },
+  "registered_contrast_ids": [
+    "f03",
+    "f05",
+    "colsample_07"
+  ],
+  "report_hashes": {
+    "f03": {
+      "report_sha256": "fb6cf267a34f11e943b8f8b0ee1ac1d6fd9ab6911a7448aa6863b362a33042ab",
+      "evidence_sha256": "c70c79dc78f914255ef580c3a846cf8384b601feb86671ccba7880fe8e10fb5b"
+    },
+    "f05": {
+      "report_sha256": "b5af3e80715ef7feec5253a48783dce75f44432e6adf5eac205eeced3b2ca063",
+      "evidence_sha256": "836683a47693b92ad8fac437434f681fe5202746e66ab996c9a9d0e40053a752"
+    },
+    "colsample_07": {
+      "report_sha256": "28c631d782c6b3a4a11a96d15fb91e556186eef727afdf1a08a554fb7d5a4b3f",
+      "evidence_sha256": "c6b169aa5dfde2f2bd642cb5d90bbd449fd6cb0157d51ad46cf8b2d951f702ec"
+    }
+  },
+  "audit_records": {
+    "independent-review": {
+      "status": "PASS",
+      "method_path": "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-review.py",
+      "method_sha256": "bc0b56e6724f77310a1671ca4112b5127b3da972b63fa7a0f9a08f0f302f8cd4",
+      "json_path": "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-review.json",
+      "json_sha256": "c80c3f9317cf68827c8438290dc333f0117edabdf9886e6ed31d8d8f217eb30a"
+    },
+    "independent-feature-review": {
+      "status": "PASS",
+      "method_path": "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-feature-review.py",
+      "method_sha256": "389c335e9d4f6b7cb87b9a0c5b52c2a1dd0f6fc19820bde8912f68265d74ce25",
+      "json_path": "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-feature-review.json",
+      "json_sha256": "3860375d28622edf88519d6f7e7179f4224c0bd6e595532869ca8d16d005ca39"
+    }
+  },
+  "files": {
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/run-freeze.json": "c655db5fba458818cc88db7b4ae3b26aeb3f96fc102e7016ce09789de1937f75",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/gate-config.json": "8694cc5b9282903c8147294d243121d96dc76817d8b0ab0022472bebfa44f79f",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/gate-config.hash.txt": "4fb82bc7f7dc54fd56b6a7b6cc45303c669fed2414e791e46eb0dd7bdb040b9d",
+    "/Users/kuwatawaku/workspace/horseracing/scripts/market_feature_screen.py": "5fbf0bd40b55c64f3d99303ea725baa08558748b715f38241c58d7e8d80661e4",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/matrix.pkl": "f8c48f6de2d501948a9dd166e7e587c7bb77daf67859e5b571d7fbb7e7ca8982",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/feature-audit.json": "d9ab72546f5589cc032a5f3a7b2379609839fa0ce8e45e4e4e082a5c598a0231",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/cache/3d1f732cd505e0840a944e4fda4121c5816d86acd90168e11ba7baee59101357.pkl": "d3e82b521f580c0c8285971c501a55cda98521eccab95eca0683efb1cf338773",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/prefill/3d1f732cd505e0840a944e4fda4121c5816d86acd90168e11ba7baee59101357.json": "63f9a247c96d53693f8f277c38303bf2b3e2e9d33429a1ad708940d20b2d1906",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/cache/b178c6e32fc4785f442bb135fefc8fd42a48e4bc0213324b5135ea6482411077.pkl": "02a9d31d51027f9fadb93ad270ece7a6a9966b82c8f193d050e35f29f9ce9933",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/prefill/b178c6e32fc4785f442bb135fefc8fd42a48e4bc0213324b5135ea6482411077.json": "de1b99e1695c1340e9dd92893c5a09ef73474e49815bb23c33594d619115f6c2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/cache/63048e049a1a594a798fbd8a2e9aaed5e0ec7801a387aaf73b9f63fe18435c89.pkl": "0f4c22ff13f29e313580f461dc467e1fe0c34f00a9e7ed055af8c0567605244a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/prefill/63048e049a1a594a798fbd8a2e9aaed5e0ec7801a387aaf73b9f63fe18435c89.json": "1131caea6dd9a8e900a2559e613461b084068c4c23486026c0a9d6d2e6feb244",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/72a381c996c25388f83a8bf551caf2662d52d8fdcfea21eeec3884e40e248968.pkl": "9e9fe63d47d8fe3f0635a3834541c3e8d3b9d3825559f1a44cecfd9533ac8656",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/1687af8ff46b338dbf2f50d7ed36bd840a3eab1426260df7b43af1f230def829.pkl": "0d71724a7637a3f66f254be4afc01b2e1b720fb10d253912ce8314c65abea447",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/smoke.json": "e4bd4ece00925e15c4fd63ffc1aedcf5d5856d88dc3bb9f9d697c7929f2e40ca",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/cache/333217edc9d0da0115baf58805249f4715898f38e0341837651fd5499dde4426.pkl": "0977b7804b50a04e5d7abe54a30589e45485ccb58d737d039dc3fd071762f08c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/cache/77e09177a35220e05ce05e0f3702ea59ee2cfc8ba3d174cb8b952c0534701b47.pkl": "b9af134c65bfc400f91c497a8f5cd1a7c7efa312ff335c1e06f70330a377698b",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/cache/6c8bb22c24388f38a5f282842b498eddfa5bd1c6db458cc453dea396586e7b13.pkl": "3665d0da1a232889dece2675edf697a71ebe380b68506afdff544b7375c2700c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/cache/c2d8f23d66b73b0e48e0c066c54e9d450c9f2e82e714a7690d2a9d8ed531cedf.pkl": "971f269127d86ebb6651b514a5fb64de57a270daa6a835f12e1574f0b00b82c7",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/prefill/1788852307528986000-run.json": "97f66c84c87da50902306f68575e18785c3859c294ea31c205191e064e8ee7d8",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/screen-f03.json": "fb6cf267a34f11e943b8f8b0ee1ac1d6fd9ab6911a7448aa6863b362a33042ab",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/f03-evidence.json": "c70c79dc78f914255ef580c3a846cf8384b601feb86671ccba7880fe8e10fb5b",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/f03-receipt.json": "0b0c3f4ab1b87260b13016f2969205438218ff24452fb43b9f99d4fadb50e189",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/screen-f05.json": "b5af3e80715ef7feec5253a48783dce75f44432e6adf5eac205eeced3b2ca063",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/f05-evidence.json": "836683a47693b92ad8fac437434f681fe5202746e66ab996c9a9d0e40053a752",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/f05-receipt.json": "fa8fc26ca4dacf433d1d27d4ece55e4d0960dfbbb197e50eff0758faceed3c3a",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/screen-colsample_07.json": "28c631d782c6b3a4a11a96d15fb91e556186eef727afdf1a08a554fb7d5a4b3f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/colsample_07-evidence.json": "c6b169aa5dfde2f2bd642cb5d90bbd449fd6cb0157d51ad46cf8b2d951f702ec",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/122-market-feature-screen/colsample_07-receipt.json": "773375b6a9d157c0d23f0e0b3eb96f2fd338a0b76b920bbbdb03e2c3e98d61e6",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/verdict.json": "64123f3715416b463eefa796c63d3ad073d9f7d91067ab026b41e875311f484f",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-review.py": "bc0b56e6724f77310a1671ca4112b5127b3da972b63fa7a0f9a08f0f302f8cd4",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-review.json": "c80c3f9317cf68827c8438290dc333f0117edabdf9886e6ed31d8d8f217eb30a",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-feature-review.py": "389c335e9d4f6b7cb87b9a0c5b52c2a1dd0f6fc19820bde8912f68265d74ce25",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/source-frames.pkl": "7dc539c4224fe4132c3892099f2c62790b47d1f3136fe8b79bbaeadd5c02ef11",
+    "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/independent-feature-review.json": "3860375d28622edf88519d6f7e7179f4224c0bd6e595532869ca8d16d005ca39"
+  },
+  "call_site_diagnosis": {
+    "incorrect": "Iterating m.CONTRASTS yields dictionaries, not contrast ID strings",
+    "correct": "[c[\"id\"] for c in m.CONTRASTS]",
+    "stop_location": "verified_result calls result_path first, which raises Unknown screen contrast before artifact reads/writes",
+    "scope": "Confirmed for the supplied failing expression; not a claim to audit unspecified preceding caller statements"
+  },
+  "actual_cost_path": "/Users/kuwatawaku/workspace/horseracing/specs/122-market-feature-screen/evidence/actual-cost.json",
+  "actual_cost_sha256": "175aa393e3fc5adf5ffe621d5a03cf5cc2f5c88600523e6f390b0aae8757d39d"
+}

@@ -1,0 +1,21 @@
+{
+  "artifact_kind": "market_feature_screen_summary",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "run_freeze_sha256": "c655db5fba458818cc88db7b4ae3b26aeb3f96fc102e7016ce09789de1937f75",
+  "reports": {
+    "f03": {
+      "sha256": "fb6cf267a34f11e943b8f8b0ee1ac1d6fd9ab6911a7448aa6863b362a33042ab",
+      "progression": "DEFER"
+    },
+    "f05": {
+      "sha256": "b5af3e80715ef7feec5253a48783dce75f44432e6adf5eac205eeced3b2ca063",
+      "progression": "QUALITY_REVIEW_REQUIRED"
+    },
+    "colsample_07": {
+      "sha256": "28c631d782c6b3a4a11a96d15fb91e556186eef727afdf1a08a554fb7d5a4b3f",
+      "progression": "ADVANCE_TO_FULL_RESEARCH"
+    }
+  },
+  "note": "Three independent2018 raw-model screens. ADVANCE retains only a full-quality research candidate; no selection winner, production, gap or ensemble increment claim."
+}

@@ -1,0 +1,22 @@
+{
+  "artifact_kind": "gap_log_quality_preregistration",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "registered_at": "2026-09-07T13:46:20.336867+00:00",
+  "config_hash": "6547759b6ebc633a386dbdf0539d4fea8a0a5f7d8eb72cac687bf1d971d37196",
+  "source_hash": "912f634e752d94772ed729f7f8858ee7ab6cbd95d6f0576ef626f19effaf75ba",
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    }
+  },
+  "source_113_freeze_sha256": "5b2af3e9ba5bb56b9ba08149dc16568807578a27fd3aba340314324900857ffc",
+  "113_full_comparison_results_exist": false,
+  "selected_rule": "stack127 iff both completed 113 increment/anchor reports are RETAIN_SUPPORTED or RETAIN_UNCERTAIN; otherwise pruning125. Freeze 113 summary/reports/receipts and record branch; no discretionary selection.",
+  "research_progression": "Keep selected+gap correction for next seed/future confirmation only when BOTH increment and anchor contrasts are RETAIN_SUPPORTED or RETAIN_UNCERTAIN. If either is DEFER/BLOCKED, defer the correction and preserve the 113-selected base.",
+  "independent_review": "stack_design_review: final source/config checked, 40 tests passed, no freeze blocker; all agent edits stopped."
+}

@@ -1,0 +1,331 @@
+{
+  "status": "PASS",
+  "artifact_kind": "season_gap_independent_review",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "1aa4f805922d79d7557e7410984b31e8bb05b4116ece1ce1ba935e496cba1131",
+  "helper_method_sha256": "e3f0e5d0c8b53b3ef4f2d32eacdf987448d830028ebceb4c79f04c04492018b6",
+  "run_freeze_sha256": "a18b3ca626551c756b210591497ad9844168078c59347d30e52c885b7f2b614a",
+  "summary_sha256": "556becbc2bd628c679f77a67d7a402204d60aa4b140162fee4c958ddf5f68c8c",
+  "report_hashes": {
+    "42": {
+      "anchor": {
+        "report_sha256": "5feb3eaaa8d552550c7191fca462a10706700fdcb6c74d44f77a275d651f3f12",
+        "evidence_sha256": "7f13060921a68b4261a791c27de3ff91b840fa7192740e863f9c5957b6db5935"
+      },
+      "retained": {
+        "report_sha256": "a3746b231250347c78fefb4add11c4770e1877db568b0bdf47bb62cbf0a2eca7",
+        "evidence_sha256": "ffd05c896e5d6560109ace3b381c1748b63750fddccbfd6bddbd5e7f6a0e718d"
+      }
+    },
+    "43": {
+      "anchor": {
+        "report_sha256": "c9770558290494f8659d1cdd8348b97d7c2efcbcf8fb479398d2d3e3da09a4ab",
+        "evidence_sha256": "33d43135160bd918d1fc133e9ef224e80c661bada789e07bc6e696597c56a7ff"
+      },
+      "retained": {
+        "report_sha256": "58ecc17aa74a3a085a9843f31e062a7367bf73143b7e1dd9d9c991225aa893a1",
+        "evidence_sha256": "3b7d305aefa2d7b3b751d13dfbb7099d9d38668e4f879587395775dcfceaa825"
+      }
+    },
+    "44": {
+      "anchor": {
+        "report_sha256": "cf34712e1dd71a32f35268229cab315a787379d4f8ce1e58f1ed421f67ca0ebf",
+        "evidence_sha256": "3c63d09a754b4cad6cb2caea0660bd649138336a81a8938b15dd48203731fbd7"
+      },
+      "retained": {
+        "report_sha256": "692da018720bec2eb8de21f6ecd3198572d9eb16d95c0f5b8557debb26facc29",
+        "evidence_sha256": "d76cfd88b57108c6a83e643d0ac1b80f056e58edfd124566d41d0f1224f1a220"
+      }
+    }
+  },
+  "population": {
+    "n_eligible": 22990,
+    "n_races": 23030,
+    "n_days": 715,
+    "race_id_set_hash": "19a7e560aa247c5412da7207bea8a7f0f1d2875fdd8035bd6144fb8e88d40dab",
+    "all_new_baseline_losses_equal_original116": true,
+    "all_candidate_losses_equal_across_contrasts": true,
+    "all_full_scored_hashes_equal_original116": true
+  },
+  "seeds": [
+    {
+      "seed": 42,
+      "all_races": 23030,
+      "eligible": 22990,
+      "max_nll_error": 8.881784197001252e-16,
+      "vector_fit_checks": [
+        {
+          "year": 2020,
+          "gamma": [
+            0.08556790067940451,
+            -0.1165265123380042,
+            -0.2131591152086086
+          ],
+          "fit_races": 3447,
+          "objective": -0.0032280020703969667,
+          "gradient_inf": 3.244478971629812e-17
+        },
+        {
+          "year": 2021,
+          "gamma": [
+            0.09309572638906989,
+            -0.06811471929902074,
+            -0.1605003072888545
+          ],
+          "fit_races": 6894,
+          "objective": -0.0026888803862928964,
+          "gradient_inf": 7.871993339536446e-18
+        },
+        {
+          "year": 2022,
+          "gamma": [
+            0.09172071472878593,
+            -0.056909737338097816,
+            -0.1565620733324389
+          ],
+          "fit_races": 10341,
+          "objective": -0.0025630136717438496,
+          "gradient_inf": 1.7666579415772743e-17
+        },
+        {
+          "year": 2023,
+          "gamma": [
+            0.09957136151860772,
+            -0.056186968802353854,
+            -0.15999879903359837
+          ],
+          "fit_races": 13793,
+          "objective": -0.0029333602677580795,
+          "gradient_inf": 9.388142610452241e-18
+        },
+        {
+          "year": 2024,
+          "gamma": [
+            0.0972030866101358,
+            -0.08065062789066352,
+            -0.1704690419180511
+          ],
+          "fit_races": 17246,
+          "objective": -0.003046141325268343,
+          "gradient_inf": 8.652137153737258e-18
+        },
+        {
+          "year": 2025,
+          "gamma": [
+            0.08924380113668742,
+            -0.06714369256069153,
+            -0.1656871115438788
+          ],
+          "fit_races": 20694,
+          "objective": -0.0026278681890825046,
+          "gradient_inf": 8.133316238654199e-18
+        },
+        {
+          "year": 2026,
+          "gamma": [
+            0.09007206557648857,
+            -0.057965200323178694,
+            -0.17020001181406932
+          ],
+          "fit_races": 24141,
+          "objective": -0.002676967703217946,
+          "gradient_inf": 2.8390823856290037e-18
+        }
+      ],
+      "quality_recent_and_primary_cis_match": true
+    },
+    {
+      "seed": 43,
+      "all_races": 23030,
+      "eligible": 22990,
+      "max_nll_error": 8.881784197001252e-16,
+      "vector_fit_checks": [
+        {
+          "year": 2020,
+          "gamma": [
+            0.08514747395982149,
+            -0.11846036802804133,
+            -0.21448548534688677
+          ],
+          "fit_races": 3447,
+          "objective": -0.0032478662785889105,
+          "gradient_inf": 4.931928744726969e-17
+        },
+        {
+          "year": 2021,
+          "gamma": [
+            0.09155302916770877,
+            -0.06639778824250583,
+            -0.16017694903072774
+          ],
+          "fit_races": 6894,
+          "objective": -0.0026180252015436884,
+          "gradient_inf": 1.9184409517693246e-17
+        },
+        {
+          "year": 2022,
+          "gamma": [
+            0.09017080215646957,
+            -0.05724224686938334,
+            -0.15693291093497874
+          ],
+          "fit_races": 10341,
+          "objective": -0.0025072841935469916,
+          "gradient_inf": 1.5162035339639785e-17
+        },
+        {
+          "year": 2023,
+          "gamma": [
+            0.09870229482200642,
+            -0.0557245951622758,
+            -0.16120599203276892
+          ],
+          "fit_races": 13793,
+          "objective": -0.002905461747298195,
+          "gradient_inf": 1.4207521852312795e-17
+        },
+        {
+          "year": 2024,
+          "gamma": [
+            0.09611510935813823,
+            -0.08165960311677894,
+            -0.1740262187025685
+          ],
+          "fit_races": 17246,
+          "objective": -0.0030431018084600358,
+          "gradient_inf": 2.8390294460698003e-18
+        },
+        {
+          "year": 2025,
+          "gamma": [
+            0.08816878293642398,
+            -0.06739128609597804,
+            -0.16976034798505868
+          ],
+          "fit_races": 20694,
+          "objective": -0.0026310270198134766,
+          "gradient_inf": 2.238761019152319e-18
+        },
+        {
+          "year": 2026,
+          "gamma": [
+            0.08950765649398387,
+            -0.057996910720947384,
+            -0.17232947899559697
+          ],
+          "fit_races": 24141,
+          "objective": -0.002680860075185767,
+          "gradient_inf": 2.013900241435904e-18
+        }
+      ],
+      "quality_recent_and_primary_cis_match": true
+    },
+    {
+      "seed": 44,
+      "all_races": 23030,
+      "eligible": 22990,
+      "max_nll_error": 8.881784197001252e-16,
+      "vector_fit_checks": [
+        {
+          "year": 2020,
+          "gamma": [
+            0.08577696122837364,
+            -0.12264510070300341,
+            -0.22039468585335725
+          ],
+          "fit_races": 3447,
+          "objective": -0.003372182840806939,
+          "gradient_inf": 2.0829771017734724e-17
+        },
+        {
+          "year": 2021,
+          "gamma": [
+            0.09340525062132878,
+            -0.06918987258948499,
+            -0.16287036269047406
+          ],
+          "fit_races": 6894,
+          "objective": -0.0027248488511278897,
+          "gradient_inf": 2.550986627933115e-17
+        },
+        {
+          "year": 2022,
+          "gamma": [
+            0.09299803384566802,
+            -0.0598861575344308,
+            -0.15918724989441724
+          ],
+          "fit_races": 10341,
+          "objective": -0.002647270013832692,
+          "gradient_inf": 1.7285824871092134e-17
+        },
+        {
+          "year": 2023,
+          "gamma": [
+            0.1007948451999645,
+            -0.05845089571050943,
+            -0.1635346298192059
+          ],
+          "fit_races": 13793,
+          "objective": -0.003028023165432471,
+          "gradient_inf": 1.1986574994832418e-18
+        },
+        {
+          "year": 2024,
+          "gamma": [
+            0.09858293156986676,
+            -0.08383018155280056,
+            -0.17462585902312486
+          ],
+          "fit_races": 17246,
+          "objective": -0.0031632277667253844,
+          "gradient_inf": 1.510658115137423e-17
+        },
+        {
+          "year": 2025,
+          "gamma": [
+            0.09071167375873476,
+            -0.06926839945057459,
+            -0.16918269212850143
+          ],
+          "fit_races": 20694,
+          "objective": -0.0027291127261493374,
+          "gradient_inf": 6.699712975426295e-18
+        },
+        {
+          "year": 2026,
+          "gamma": [
+            0.09165939557869693,
+            -0.05859230571194474,
+            -0.1715846311271532
+          ],
+          "fit_races": 24141,
+          "objective": -0.002755765648349433,
+          "gradient_inf": 8.97164062841954e-18
+        }
+      ],
+      "quality_recent_and_primary_cis_match": true
+    }
+  ],
+  "checks": 552332,
+  "max_numerical_error": 8.881784197001252e-16,
+  "sex_group_sizes": {
+    "all:no_female": 1943,
+    "all:mixed": 17685,
+    "all:all_female": 3362,
+    "all:missing_sex": 0,
+    "2026:no_female": 218,
+    "2026:mixed": 1711,
+    "2026:all_female": 367,
+    "2026:missing_sex": 0
+  },
+  "independent_season_and_sex_assignment": true,
+  "research_decision": "SEASON_GAP_RETAINED",
+  "notes": [
+    "No booster or gamma fit;63 saved coefficient components evaluated.",
+    "Registered Harville and scoring primitives reused; seasonal inputs, vector tilt, objectives, gradients and groups reconstructed.",
+    "Primary sample/total CI and means checked; no new confidence or production assertion."
+  ]
+}

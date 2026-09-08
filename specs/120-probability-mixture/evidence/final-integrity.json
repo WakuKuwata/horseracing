@@ -1,0 +1,50 @@
+{
+  "checked_at_utc": "2026-09-08T07:20:04.075997+00:00",
+  "source_hash": "a21913784c7fcfdb2dc713a2701fb6059d0a3bf5875f09a84ff2fcf5e7b8a379",
+  "config_hash": "89d9124145f49c5a2e4fdbc3e00954f222aa8240aeb5b6b45ae76fbe3d75308b",
+  "run_freeze_sha256": "a5fc047187caca275db0bc310b4f2acba8c521d7fd92cbe0a36ca19c3ee5b57f",
+  "frozen_source_runtime_upstream_match": true,
+  "new_booster_fits": 0,
+  "verified_reports": [
+    {
+      "comparison": "pruning3_vs_retained42",
+      "valid": true
+    },
+    {
+      "comparison": "pruning3_vs_anchor42",
+      "valid": true
+    },
+    {
+      "comparison": "anchor3_vs_retained42",
+      "valid": true
+    },
+    {
+      "comparison": "anchor3_vs_anchor42",
+      "valid": true
+    },
+    {
+      "comparison": "mixed6_vs_retained42",
+      "valid": true
+    },
+    {
+      "comparison": "mixed6_vs_anchor42",
+      "valid": true
+    },
+    {
+      "comparison": "anchor3_vs_pruning3",
+      "valid": true
+    },
+    {
+      "comparison": "mixed6_vs_pruning3",
+      "valid": true
+    }
+  ],
+  "verdict_sha256": "20455958e6169e7c8ef8628043ceb8dba31a932cca9293e9c6a14c66ff3b4f47",
+  "independent_review_sha256": "d902c015969ee4c5e5bf73f9ab3ab743b98914d4b91d8e09a66e6c69e1b57af8",
+  "independent_method_sha256": "92c79a493e7f75b25393c9fad94ee409c86b1b0881c37a1f4984ad28701f5cdf",
+  "active_model_read_only_observation": [
+    "lgbm-094-cap900"
+  ],
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

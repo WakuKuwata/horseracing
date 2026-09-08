@@ -1,0 +1,237 @@
+{
+  "status": "PASS",
+  "artifact_kind": "joint_residual_stack_independent_numeric_review",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "method_sha256": "5f2b07b68c08eb9b09bbf7ac4562bc62f8f8f2e7dd6185e54d0452aa597c49fe",
+  "helper_method_sha256": "92c79a493e7f75b25393c9fad94ee409c86b1b0881c37a1f4984ad28701f5cdf",
+  "run_freeze_sha256": "a11a23cff5a67c395f8635e93ae2e72ddcffdfa3798bbf55c72a4492dbcb5651",
+  "summary_sha256": "56687f6c7e5aed47a06a403b12ac7467f173449ea03d7d161b54b3ad60dd3d4f",
+  "report_hashes": {
+    "joint-seed-42-vs-season": {
+      "report_sha256": "24c995b9ed7f8fe63cb7dd9b6dacc9e9b35d3baf1dbf23971b8de493736bca61",
+      "evidence_sha256": "5731c3bdefdc1cd7c32e3e1cb847848753682ccbb945610213ec2e14e0cc4bff"
+    },
+    "joint-seed-42-vs-prior_gap": {
+      "report_sha256": "23d8122fe314f0336de0bf73371a3e69a4e9a1e963c893f111663509720cc2d3",
+      "evidence_sha256": "be01233a7489f294747a582548b1b982db31c3f3f21ee68da2050294cd30c2af"
+    },
+    "joint-seed-42-vs-global_temperature": {
+      "report_sha256": "2ae4e3dc3c2bbba651bd8ae6f5c664ab66493f6960b9ab582c4b72b2f4c9f102",
+      "evidence_sha256": "5ed64c39709de72070fe928c4ba694d3c8b399d1064d0efda04c7d25180475fb"
+    },
+    "joint-seed-43-vs-season": {
+      "report_sha256": "ec52561af93773624fe106aa397223e0dd8da4ce38ac7771616147bb109ba075",
+      "evidence_sha256": "3228afa231df969708df0a62108860f3863827b654934d0d588b58c1bace72ca"
+    },
+    "joint-seed-43-vs-prior_gap": {
+      "report_sha256": "d3e9d3c2a118d13a999bff2d96f80165df19b0bf8c0d32c81342b2e8d25f7471",
+      "evidence_sha256": "32a92c1dd5af53fb4863c07a92fc2820093073e21db4621651dc45daf3733522"
+    },
+    "joint-seed-43-vs-global_temperature": {
+      "report_sha256": "01f99b7b4332e8c534d482ca5be263dae795a0f1d281fb20cc8489d7a32b2d0e",
+      "evidence_sha256": "06a8c86f7d647a74e93cb7e338eaf79cfa066a213ae3a144f4712c7a3d6320f8"
+    },
+    "joint-seed-44-vs-season": {
+      "report_sha256": "5cfd87ee49ef43b3358b5d4b1aeffc3659f3a97cce184d51983dcc4c13d8dd3c",
+      "evidence_sha256": "ada77fb4f8f3602469f94bd2828b9cfb6a31f50e429adbab16d215a04c457a7c"
+    },
+    "joint-seed-44-vs-prior_gap": {
+      "report_sha256": "4a681e2cdfffe94116851e5a0f09d6097eed35dd0e97faa0e18997651070e7e2",
+      "evidence_sha256": "910337a6379f400422cb9fba95607917427c5b282138cda115d7b0885e05ce5e"
+    },
+    "joint-seed-44-vs-global_temperature": {
+      "report_sha256": "612217d47f9a3e02d0ca038e3aca1d26427a2bd3aab38668f54ad19a3978e48e",
+      "evidence_sha256": "e082efdf182ec7b4d34007b9e15572218e35e85f4c8ca6f66878e8d3b5e1c4f7"
+    },
+    "mixture-vs-joint_mixed6": {
+      "report_sha256": "73f5ce39575ef558f097668b733eefe916a68288158e32f2a80e6d67dd63ca09",
+      "evidence_sha256": "c099061447229b9d63fc19b4221b86e1ceca95c2c5409ee7df100292b70692ae"
+    },
+    "mixture-vs-mixed6": {
+      "report_sha256": "e7d64ad751d41f4c23864c803a68c0329777cb5ab976ef390d69d159985fc7d7",
+      "evidence_sha256": "75ea09fdf20c7006a8f1d9d8bf1b1b42f1b64ec7c19a707d4d196b64292dbcb2"
+    },
+    "mixture-vs-anchor42": {
+      "report_sha256": "8af56da6089a46bf5fed3d59471b79c7bc7303c216b2bf96e81e774058c2ebd2",
+      "evidence_sha256": "e38bcef951421e85d555a953093b36f0f7e8ed022060f0851e5f75149dcd83ef"
+    }
+  },
+  "selected": [
+    "prior_gap",
+    "global_temperature"
+  ],
+  "checks": 1242429,
+  "max_numerical_error": 1.7763568394002505e-15,
+  "max_race_nll_error": 1.7763568394002505e-15,
+  "fit_checks": {
+    "42": [
+      {
+        "year": 2020,
+        "fit_races": 3447,
+        "objective": -0.00385714440136411,
+        "gradient_inf": 4.618063333099848e-17,
+        "temperature_exponent": 1.0022588227438032
+      },
+      {
+        "year": 2021,
+        "fit_races": 6894,
+        "objective": -0.003809831235981792,
+        "gradient_inf": 8.909410176575951e-18,
+        "temperature_exponent": 0.992450816988435
+      },
+      {
+        "year": 2022,
+        "fit_races": 10341,
+        "objective": -0.0032365245650634806,
+        "gradient_inf": 3.425481971524176e-17,
+        "temperature_exponent": 0.996549658289645
+      },
+      {
+        "year": 2023,
+        "fit_races": 13793,
+        "objective": -0.003484280191360464,
+        "gradient_inf": 6.458171108041013e-17,
+        "temperature_exponent": 1.0101484706439345
+      },
+      {
+        "year": 2024,
+        "fit_races": 17246,
+        "objective": -0.0036218771321803174,
+        "gradient_inf": 5.3972419929619334e-17,
+        "temperature_exponent": 1.0168449163055504
+      },
+      {
+        "year": 2025,
+        "fit_races": 20694,
+        "objective": -0.003476764682872256,
+        "gradient_inf": 4.961631477034768e-17,
+        "temperature_exponent": 1.0284621500716276
+      },
+      {
+        "year": 2026,
+        "fit_races": 24141,
+        "objective": -0.0035217108495863188,
+        "gradient_inf": 4.1064256544561987e-17,
+        "temperature_exponent": 1.0277744323785913
+      }
+    ],
+    "43": [
+      {
+        "year": 2020,
+        "fit_races": 3447,
+        "objective": -0.0038675460995171774,
+        "gradient_inf": 5.928513299752896e-17,
+        "temperature_exponent": 1.000261737871328
+      },
+      {
+        "year": 2021,
+        "fit_races": 6894,
+        "objective": -0.003772051438092751,
+        "gradient_inf": 2.8166029253022626e-17,
+        "temperature_exponent": 0.993078649817116
+      },
+      {
+        "year": 2022,
+        "fit_races": 10341,
+        "objective": -0.003208096111048973,
+        "gradient_inf": 1.0213987739906302e-17,
+        "temperature_exponent": 0.9971429091338113
+      },
+      {
+        "year": 2023,
+        "fit_races": 13793,
+        "objective": -0.003477552362303188,
+        "gradient_inf": 1.4642565914956484e-17,
+        "temperature_exponent": 1.0107092378802482
+      },
+      {
+        "year": 2024,
+        "fit_races": 17246,
+        "objective": -0.0036346409284665243,
+        "gradient_inf": 4.4608930610143624e-17,
+        "temperature_exponent": 1.017399246230929
+      },
+      {
+        "year": 2025,
+        "fit_races": 20694,
+        "objective": -0.0034806032640715065,
+        "gradient_inf": 1.2168345949207475e-16,
+        "temperature_exponent": 1.028612120159805
+      },
+      {
+        "year": 2026,
+        "fit_races": 24141,
+        "objective": -0.003533652005207311,
+        "gradient_inf": 3.493497393699716e-17,
+        "temperature_exponent": 1.0282485739498113
+      }
+    ],
+    "44": [
+      {
+        "year": 2020,
+        "fit_races": 3447,
+        "objective": -0.004050203503103694,
+        "gradient_inf": 2.717388938758213e-17,
+        "temperature_exponent": 1.0009924722928443
+      },
+      {
+        "year": 2021,
+        "fit_races": 6894,
+        "objective": -0.003908110678975337,
+        "gradient_inf": 2.222065205668549e-17,
+        "temperature_exponent": 0.9934143994251166
+      },
+      {
+        "year": 2022,
+        "fit_races": 10341,
+        "objective": -0.003355498630029586,
+        "gradient_inf": 8.518112801398048e-18,
+        "temperature_exponent": 0.9985634708015263
+      },
+      {
+        "year": 2023,
+        "fit_races": 13793,
+        "objective": -0.0036046141945368015,
+        "gradient_inf": 5.4012974940691584e-17,
+        "temperature_exponent": 1.0114106043120026
+      },
+      {
+        "year": 2024,
+        "fit_races": 17246,
+        "objective": -0.0037444122504692594,
+        "gradient_inf": 3.0588510394945423e-17,
+        "temperature_exponent": 1.0168107690220167
+      },
+      {
+        "year": 2025,
+        "fit_races": 20694,
+        "objective": -0.003584748150899653,
+        "gradient_inf": 3.1820407320163496e-17,
+        "temperature_exponent": 1.0282080999929568
+      },
+      {
+        "year": 2026,
+        "fit_races": 24141,
+        "objective": -0.003620964495309802,
+        "gradient_inf": 3.081323220631893e-17,
+        "temperature_exponent": 1.0279879022151492
+      }
+    ]
+  },
+  "population": {
+    "n_races": 23030,
+    "n_eligible": 22990,
+    "n_days": 715,
+    "same_ordered_population": true
+  },
+  "full_quality_recent_primary_cis_and_fixed117_match": true,
+  "joint_retention": "RETAIN",
+  "mixture_retention": "RETAIN",
+  "no_new_model_or_coefficient_fit": true,
+  "notes": [
+    "Scalar probability/mixture calculations and objective gradients are independently reconstructed.",
+    "Registered Harville/scoring primitives reused; input formulas rely on frozen119/121/124 audits."
+  ]
+}

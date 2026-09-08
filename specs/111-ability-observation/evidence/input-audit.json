@@ -1,0 +1,117 @@
+{
+  "snapshot_sha256": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+  "audit_method_sha256": "cac2a20cced7d52a8639bb1886cae5f41e94b0c697cdb222ba282956eef49e30",
+  "method_source": "from pathlib import Path\nimport sys,pickle\nimport numpy as np\nimport pandas as pd\nsys.path.insert(0,str(Path.cwd()/'scripts'))\nimport ability_observation as p\npath=p.WORK/'snapshot.pkl'\nwith path.open('rb') as f: matrix,races=pickle.load(f)\nx=matrix.frame\nassert matrix.feature_cols==p.columns_from_model()+p.OBSERVATION_COLUMNS\ncols=p.OBSERVATION_COLUMNS\nvalid=x[cols[:2]+['days_since_last']].notna().all(axis=1)\nassert (x.loc[valid,cols[1]]>=x.loc[valid,cols[0]]).all()\nassert (x.loc[valid,cols[0]]>=x.loc[valid,'days_since_last']).all()\nassert (x.loc[valid,'days_since_last']>0).all()\nassert x[cols[0]].notna().equals(x['asof_spdfig_count']>=1)\nassert x[cols[1]].notna().equals(x['asof_spdfig_count']>=1)\nassert x[cols[2]].notna().equals(x['asof_spdfig_count']>=2)\ny=x[pd.to_datetime(x.race_date)>=pd.Timestamp('2019-01-01')]\nsummary={}\nfor c in cols:\n    a=y[c].to_numpy(dtype=float);av=np.isfinite(a)\n    exact=[];comparisons=[]\n    for bcol in p.columns_from_model():\n        if bcol in matrix.categorical_cols: continue\n        b=y[bcol].to_numpy(dtype=float); bv=np.isfinite(b); both=av&bv\n        same=np.isclose(a[both],b[both],rtol=0,atol=1e-12)\n        if np.array_equal(av,bv) and same.all(): exact.append(bcol)\n        if both.any(): comparisons.append({'existing_column':bcol,'n_both_valid':int(both.sum()),'same_rate':float(same.mean())})\n    assert not exact, (c,exact)\n    summary[c]={'n':len(y),'n_valid':int(av.sum()),'coverage':float(av.mean()),'exact_existing_duplicates':exact,'highest_value_agreements':sorted(comparisons,key=lambda z:z['same_rate'],reverse=True)[:5]}\np.write_json(p.SPEC/'evidence/input-audit.json',{'snapshot_sha256':p.digest(path),'audit_method_sha256':p.digest(__file__),'method_source':Path(__file__).read_text(),'checks':{'all_age_ordering':True,'count_missingness_matches':True,'no_exact_existing_duplicate_columns':True},'window':['2019-01-01','2026-08-23'],'summaries':summary,'can_adopt':False,'predictive_effect_measured':False})\nprint(summary)\n",
+  "checks": {
+    "all_age_ordering": true,
+    "count_missingness_matches": true,
+    "no_exact_existing_duplicate_columns": true
+  },
+  "window": [
+    "2019-01-01",
+    "2026-08-23"
+  ],
+  "summaries": {
+    "asof_spdfig_last_age_days": {
+      "n": 363712,
+      "n_valid": 324640,
+      "coverage": 0.8925743445363364,
+      "exact_existing_duplicates": [],
+      "highest_value_agreements": [
+        {
+          "existing_column": "days_since_last",
+          "n_both_valid": 324640,
+          "same_rate": 0.9148749383932971
+        },
+        {
+          "existing_column": "field_size",
+          "n_both_valid": 324640,
+          "same_rate": 0.01643358797437161
+        },
+        {
+          "existing_column": "carried_weight",
+          "n_both_valid": 324640,
+          "same_rate": 0.009173238048299654
+        },
+        {
+          "existing_column": "career_starts",
+          "n_both_valid": 324640,
+          "same_rate": 0.007540660423854115
+        },
+        {
+          "existing_column": "past_race_count",
+          "n_both_valid": 324640,
+          "same_rate": 0.007540660423854115
+        }
+      ]
+    },
+    "asof_spdfig_best_age_days": {
+      "n": 363712,
+      "n_valid": 324640,
+      "coverage": 0.8925743445363364,
+      "exact_existing_duplicates": [],
+      "highest_value_agreements": [
+        {
+          "existing_column": "days_since_last",
+          "n_both_valid": 324640,
+          "same_rate": 0.3452008378511582
+        },
+        {
+          "existing_column": "field_size",
+          "n_both_valid": 324640,
+          "same_rate": 0.00665352390340069
+        },
+        {
+          "existing_column": "carried_weight",
+          "n_both_valid": 324640,
+          "same_rate": 0.0052088467225234105
+        },
+        {
+          "existing_column": "horse_number",
+          "n_both_valid": 324640,
+          "same_rate": 0.002966362740266141
+        },
+        {
+          "existing_column": "prev_finish",
+          "n_both_valid": 324640,
+          "same_rate": 0.0019652538196155743
+        }
+      ]
+    },
+    "asof_spdfig_sd": {
+      "n": 363712,
+      "n_valid": 288164,
+      "coverage": 0.7922862044694704,
+      "exact_existing_duplicates": [],
+      "highest_value_agreements": [
+        {
+          "existing_column": "jt_combo_win_rate",
+          "n_both_valid": 246511,
+          "same_rate": 2.4339684638819363e-05
+        },
+        {
+          "existing_column": "asof_mid_move_avg",
+          "n_both_valid": 288161,
+          "same_rate": 2.0821693428326525e-05
+        },
+        {
+          "existing_column": "win_rate",
+          "n_both_valid": 288164,
+          "same_rate": 2.0821476659124666e-05
+        },
+        {
+          "existing_column": "cancel_count",
+          "n_both_valid": 288164,
+          "same_rate": 2.0821476659124666e-05
+        },
+        {
+          "existing_column": "exclude_count",
+          "n_both_valid": 288164,
+          "same_rate": 2.0821476659124666e-05
+        }
+      ]
+    }
+  },
+  "can_adopt": false,
+  "predictive_effect_measured": false
+}

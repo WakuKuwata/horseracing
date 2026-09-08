@@ -1,0 +1,145 @@
+{
+  "evaluation_contract_version": "v4",
+  "primary_metric": "winner_nll",
+  "min_effect_delta": 0.0,
+  "delta_derivation_ref": "specs/112-small-gain-adoption/delta-derivation.json",
+  "seed_noise": {
+    "_comment": "v4 の必須項目。δ の導出はこの値を**入力に取らない**(FR-029)。",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "assume_fold_independent": true
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23",
+    "min_eval_days": 400
+  },
+  "arms": {
+    "objective": "pl_topk",
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "seed": 42,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "target_encode_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "te_smoothing": 10.0
+  },
+  "recent_guard": {
+    "mode": "non_inferiority",
+    "windows_years": [
+      3,
+      5
+    ],
+    "non_inferior_margin": 0.005
+  },
+  "top_noninferior": {
+    "top2": 0.0005,
+    "top3": 0.0005
+  },
+  "calibration": {
+    "metric": "mean_ece",
+    "noninferior_width": 0.001,
+    "emergency_abs_ece": 0.05
+  },
+  "subgroup_guard": {
+    "critical_subgroups": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "non_inferior_margin_winner_nll": 0.005,
+    "non_inferior_margin_horse_logloss": 0.001
+  },
+  "research_policy": "small-gains-v1",
+  "artifact_scope": "historical_development",
+  "can_adopt": false,
+  "artifact_kind": "anchor_gap_research_config",
+  "eligible_for_verdict": false,
+  "contrasts": [
+    {
+      "id": "anchor",
+      "baseline": "anchor"
+    },
+    {
+      "id": "retained",
+      "baseline": "retained"
+    }
+  ],
+  "gamma_fit": {
+    "first_year": 2019,
+    "k": 1,
+    "ridge": 1e-06,
+    "max_iter": 50,
+    "tol": 1e-09
+  },
+  "correction": {
+    "h": "log1p(111 snapshot days_since_last)",
+    "missing": "zero exponent offset",
+    "fit": "selected-model win probabilities, canonical eligible races, only strictly earlier years",
+    "apply": "All started horses; year-constant gamma. Normalize p*exp(gamma*h), verify strictly positive/interior, assemble_predictions(eps=0.0) for coherent Harville top2/top3; no second isotonic fit or clipping.",
+    "assembly_eps": 0.0,
+    "additional_booster_fit": false
+  },
+  "limitations": [
+    "Historical selection-used full-information data, not unused confirmation or preweight serving evidence.",
+    "2019 is coefficient warmup only; primary evaluation is2020..2026-08-23.",
+    "Three equal seed means average losses, not probability ensembles; deployment seed42 stays fixed.",
+    "Each total CI retains transferred sd_fold.001816/k_seeds1. Race-day bootstrap holds coefficients fixed. In retained comparison BOTH sides have separately estimated gamma; transferred noise does not cover both gamma-refit uncertainties or selection.",
+    "Seed42/43/44 retained pruning+gap coefficients and source cache recipes remain exactly the frozen115/116 versions.",
+    "No annual slot or production change. No seed majority, every-seed improvement or mean CI threshold."
+  ],
+  "research_progression": "Separate candidate retention versus anchor from research preference versus retained pruning+gap. No production promotion.",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "fresh_seeds": [
+    43,
+    44
+  ],
+  "deployment_seed": 42,
+  "selected_arm": "anchor",
+  "selected_columns": 138,
+  "warmup_year": 2019,
+  "smoke": {
+    "eval_window": {
+      "from": "2008-01-01",
+      "to": "2008-01-31",
+      "min_eval_days": 1
+    },
+    "n_estimators": 5,
+    "n_oof_blocks": 2,
+    "gamma": 0.0
+  },
+  "seed_mean_rule": {
+    "weighting": "equal_seed_weight",
+    "candidate_retention": "Negative anchor mean diff with quality pass retains anchor+gap as alternative",
+    "preferred_research_configuration": "When retained alternative also has negative retained mean diff, prefer anchor+gap in research; otherwise preserve pruning+gap preference",
+    "quality_review": "Any seed BLOCKED or mean quality violation in either contrast requires REVIEW_REQUIRED",
+    "invalid_evidence": "Missing seed, invalid numbers, or provenance mismatch stops summary",
+    "mean_top2_diff_max": 0.0005,
+    "mean_top3_diff_max": 0.0005,
+    "mean_candidate_ece_strict_max": 0.05,
+    "mean_ece_diff_max": 0.001,
+    "require_all_seeds_negative": false,
+    "require_majority_negative": false,
+    "require_mean_ci": false,
+    "seed_sd": "descriptive_only",
+    "deployment_seed": 42
+  },
+  "new_fit_jobs": 2,
+  "fresh_fit_years": [
+    2019
+  ]
+}

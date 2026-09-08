@@ -1,0 +1,1003 @@
+{
+  "candidate_recipe_meta": {
+    "method": "finite_mixture_of_completed_forecasts",
+    "name": "mixed6",
+    "ordered_members": [
+      {
+        "kind": "pruning",
+        "seed": 42,
+        "recipe_hash": "8a54a79692cabb1f6a8db9cf6c4825426b7e1ef3fec27d344e2b25a4bd38c648",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 42,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd",
+              "win_rate_vs_field",
+              "recent_win_rate_vs_field",
+              "place_rate_vs_field",
+              "show_rate_vs_field",
+              "dist_band_win_rate_vs_field",
+              "surface_win_rate_vs_field",
+              "rel_time_avg_vs_field",
+              "rel_last3f_avg_vs_field",
+              "finish_diff_best_vs_field",
+              "jockey_win_rate_vs_field",
+              "trainer_win_rate_vs_field",
+              "win_rate_field_rank",
+              "rel_time_avg_field_rank"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "43090d4d40900556699e2b139a59e307d2a1a58d716903a4135c62be25db7ab2"
+          }
+        },
+        "weight": 0.16666666666666666
+      },
+      {
+        "kind": "pruning",
+        "seed": 43,
+        "recipe_hash": "7e997844cc5bf7fb06e121a633f1b23fb7dc4ce41e395b7ae56965e7dafedca4",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 43,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd",
+              "win_rate_vs_field",
+              "recent_win_rate_vs_field",
+              "place_rate_vs_field",
+              "show_rate_vs_field",
+              "dist_band_win_rate_vs_field",
+              "surface_win_rate_vs_field",
+              "rel_time_avg_vs_field",
+              "rel_last3f_avg_vs_field",
+              "finish_diff_best_vs_field",
+              "jockey_win_rate_vs_field",
+              "trainer_win_rate_vs_field",
+              "win_rate_field_rank",
+              "rel_time_avg_field_rank"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "3fdc3e9419c428766a14175056498fa5637f29792777e5cbc7f173a66f8cacb4"
+          }
+        },
+        "weight": 0.16666666666666666
+      },
+      {
+        "kind": "pruning",
+        "seed": 44,
+        "recipe_hash": "56c263f2de2c683791b5fa5599407846d9397d33aa0777a477ffad41caca9ae3",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 44,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd",
+              "win_rate_vs_field",
+              "recent_win_rate_vs_field",
+              "place_rate_vs_field",
+              "show_rate_vs_field",
+              "dist_band_win_rate_vs_field",
+              "surface_win_rate_vs_field",
+              "rel_time_avg_vs_field",
+              "rel_last3f_avg_vs_field",
+              "finish_diff_best_vs_field",
+              "jockey_win_rate_vs_field",
+              "trainer_win_rate_vs_field",
+              "win_rate_field_rank",
+              "rel_time_avg_field_rank"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "310039390ec1d574821aacca8b85dde09cd996ec2c00b8634f0dd3b2c155abc3"
+          }
+        },
+        "weight": 0.16666666666666666
+      },
+      {
+        "kind": "anchor",
+        "seed": 42,
+        "recipe_hash": "d8a6e79895b2773582716020daf5683d979bfa66e0697f116cf9eee9e327cafe",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 42,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "11c859e73aac201497be9d5823e3def1a5eba4c3bfb6168c0e51615b412248b5"
+          }
+        },
+        "weight": 0.16666666666666666
+      },
+      {
+        "kind": "anchor",
+        "seed": 43,
+        "recipe_hash": "0c381d4d9421faea25c77cbfcddb107411d567645ec88ed1942dbacef532013d",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 43,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "83ef9e4536fbfe35ce46cc8cda05d8e94c1d3d581b54a1e86e08e22727ea4ecd"
+          }
+        },
+        "weight": 0.16666666666666666
+      },
+      {
+        "kind": "anchor",
+        "seed": 44,
+        "recipe_hash": "f836394d9acf72aaebe281e1fd5e3507e01ceed839363a78529ebbb44fbe2bc9",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 44,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "0b100554d5416a56527cafdf012e87ad0c524c1868aa407c9093642723096932"
+          }
+        },
+        "weight": 0.16666666666666666
+      }
+    ],
+    "dtype": "float64",
+    "heads": [
+      "win",
+      "top2",
+      "top3"
+    ],
+    "aggregation": "arithmetic_mean",
+    "post_aggregation_processing": null,
+    "recalibration": null
+  },
+  "active_recipe_meta": {
+    "method": "finite_mixture_of_completed_forecasts",
+    "name": "pruning3",
+    "ordered_members": [
+      {
+        "kind": "pruning",
+        "seed": 42,
+        "recipe_hash": "8a54a79692cabb1f6a8db9cf6c4825426b7e1ef3fec27d344e2b25a4bd38c648",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 42,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd",
+              "win_rate_vs_field",
+              "recent_win_rate_vs_field",
+              "place_rate_vs_field",
+              "show_rate_vs_field",
+              "dist_band_win_rate_vs_field",
+              "surface_win_rate_vs_field",
+              "rel_time_avg_vs_field",
+              "rel_last3f_avg_vs_field",
+              "finish_diff_best_vs_field",
+              "jockey_win_rate_vs_field",
+              "trainer_win_rate_vs_field",
+              "win_rate_field_rank",
+              "rel_time_avg_field_rank"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "43090d4d40900556699e2b139a59e307d2a1a58d716903a4135c62be25db7ab2"
+          }
+        },
+        "weight": 0.3333333333333333
+      },
+      {
+        "kind": "pruning",
+        "seed": 43,
+        "recipe_hash": "7e997844cc5bf7fb06e121a633f1b23fb7dc4ce41e395b7ae56965e7dafedca4",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 43,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd",
+              "win_rate_vs_field",
+              "recent_win_rate_vs_field",
+              "place_rate_vs_field",
+              "show_rate_vs_field",
+              "dist_band_win_rate_vs_field",
+              "surface_win_rate_vs_field",
+              "rel_time_avg_vs_field",
+              "rel_last3f_avg_vs_field",
+              "finish_diff_best_vs_field",
+              "jockey_win_rate_vs_field",
+              "trainer_win_rate_vs_field",
+              "win_rate_field_rank",
+              "rel_time_avg_field_rank"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "3fdc3e9419c428766a14175056498fa5637f29792777e5cbc7f173a66f8cacb4"
+          }
+        },
+        "weight": 0.3333333333333333
+      },
+      {
+        "kind": "pruning",
+        "seed": 44,
+        "recipe_hash": "56c263f2de2c683791b5fa5599407846d9397d33aa0777a477ffad41caca9ae3",
+        "recipe_meta": {
+          "base_recipe": {
+            "objective": "pl_topk",
+            "calibration": "none",
+            "calib_frac": 0.0,
+            "calibration_split_unit": "race_count_v1",
+            "target_encode_cols": [
+              "jockey_id",
+              "trainer_id"
+            ],
+            "te_smoothing": 10.0,
+            "seed": 44,
+            "drop_features": [
+              "asof_spdfig_last_age_days",
+              "asof_spdfig_best_age_days",
+              "asof_spdfig_sd",
+              "win_rate_vs_field",
+              "recent_win_rate_vs_field",
+              "place_rate_vs_field",
+              "show_rate_vs_field",
+              "dist_band_win_rate_vs_field",
+              "surface_win_rate_vs_field",
+              "rel_time_avg_vs_field",
+              "rel_last3f_avg_vs_field",
+              "finish_diff_best_vs_field",
+              "jockey_win_rate_vs_field",
+              "trainer_win_rate_vs_field",
+              "win_rate_field_rank",
+              "rel_time_avg_field_rank"
+            ],
+            "market_offset": false,
+            "ev_weight": false,
+            "weight_mask_rate": 0.5,
+            "weight_mask_seed": 20260810,
+            "params": [
+              [
+                "n_estimators",
+                900
+              ]
+            ],
+            "recency_half_life_days": null,
+            "weight_scope": null,
+            "label": "",
+            "arm": "oof_isotonic",
+            "n_oof_blocks": 8
+          },
+          "correction": {
+            "kind": "strict_prior_year_gap_log_probability_tilt",
+            "h": "log1p(days_since_last)",
+            "missing_exponent_offset": 0.0,
+            "warmup_year": 2019,
+            "ridge": 1e-06,
+            "max_iter": 50,
+            "tol": 1e-09,
+            "assembly_eps": 0.0,
+            "topk": "Harville from normalized corrected win",
+            "coefficient_hash": "310039390ec1d574821aacca8b85dde09cd996ec2c00b8634f0dd3b2c155abc3"
+          }
+        },
+        "weight": 0.3333333333333333
+      }
+    ],
+    "dtype": "float64",
+    "heads": [
+      "win",
+      "top2",
+      "top3"
+    ],
+    "aggregation": "arithmetic_mean",
+    "post_aggregation_processing": null,
+    "recalibration": null
+  },
+  "candidate_recipe_hash": "59c383eb7d649a25ae753634ed43a73e72405144dda4489e2c076435d2ba324a",
+  "active_recipe_hash": "b695e5ca279a24cff382333cbb65e3cb8c8f64f4974d97d21b509ba1edceab77",
+  "race_id_set_hash": "19a7e560aa247c5412da7207bea8a7f0f1d2875fdd8035bd6144fb8e88d40dab",
+  "n_races": 23030,
+  "n_eligible": 22990,
+  "uniform_baseline_winner_nll": 2.5950255945714846,
+  "periods": {
+    "all": {
+      "candidate": 2.0402012184039355,
+      "active": 2.042338772349787,
+      "diff": -0.002137553945851245,
+      "n_races": 23030
+    },
+    "recent_3y": {
+      "candidate": 2.022658197940223,
+      "active": 2.02477506018908,
+      "diff": -0.0021168622488567657,
+      "n_races": 10406
+    },
+    "recent_5y": {
+      "candidate": 2.0294676214519325,
+      "active": 2.0316101250892586,
+      "diff": -0.002142503637326154,
+      "n_races": 17318
+    }
+  },
+  "bootstrap_ci": {
+    "point": -0.0021375539458515615,
+    "ci_low": -0.0032676432315027096,
+    "ci_high": -0.0010102740645277883,
+    "b": 4000,
+    "seed": 20260907,
+    "block": "race_day",
+    "n_days": 715,
+    "no_decision": false
+  },
+  "gate": {
+    "primary": true,
+    "stat_guard": true,
+    "recent_guard": true,
+    "top_noninferior": true,
+    "calibration": true,
+    "adopted": true,
+    "reasons": {
+      "winner_nll_diff": -0.002137553945851245,
+      "min_effect_delta": 0.0,
+      "opportunity": null,
+      "ci_low": -0.00419089598967853,
+      "ci_high": -8.57567613712501e-05,
+      "top2_diff": -0.00034951243909736585,
+      "top3_diff": -0.0005494288615670029,
+      "cand_ece": 0.002181511342469465,
+      "act_ece": 0.00202714041828699,
+      "ece_available": true,
+      "emergency_stop": false,
+      "recent": {
+        "pass": true,
+        "mode": "non_inferiority",
+        "margin": 0.005,
+        "windows": {
+          "recent_3y": {
+            "diff": -0.0021168622488572575,
+            "ci_low": -0.003753822869204481,
+            "ci_high": -0.0005626645410069529,
+            "n_races": 10390,
+            "n_days": 324,
+            "decision": "PASS",
+            "point_estimate_degraded": false,
+            "residual_risk": null
+          },
+          "recent_5y": {
+            "diff": -0.0021425036373260427,
+            "ci_low": -0.0034939949651403694,
+            "ci_high": -0.0008459001228214579,
+            "n_races": 17294,
+            "n_days": 538,
+            "decision": "PASS",
+            "point_estimate_degraded": false,
+            "residual_risk": null
+          }
+        }
+      },
+      "sub_gates": {
+        "effect_beats_delta": true,
+        "ci_upper_below_zero": true,
+        "recent_no_evidence_of_harm": true,
+        "top2_noninferior": true,
+        "top3_noninferior": true,
+        "calibration_noninferior": true,
+        "calibration_not_emergency": true
+      }
+    }
+  },
+  "snapshot": {
+    "run_freeze_sha256": "a5fc047187caca275db0bc310b4f2acba8c521d7fd92cbe0a36ca19c3ee5b57f",
+    "comparison": {
+      "id": "mixed6_vs_pruning3",
+      "candidate": "mixed6",
+      "baseline": "pruning3"
+    },
+    "evidence_regime": "historical_fixed_completed_predictor_mixture"
+  },
+  "subgroups": {
+    "race_subgroups": {
+      "recent_year_field_has_nk": {
+        "bootstrap_ci": {
+          "point": -0.0048942180946432556,
+          "ci_low": -0.00898320973013017,
+          "ci_high": -0.0009146689624585197,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5965809230096374,
+        "residual_risk": null
+      },
+      "recent_year_only": {
+        "bootstrap_ci": {
+          "point": -0.004849455793831906,
+          "ci_low": -0.008216232202996292,
+          "ci_high": -0.0014378736209576895,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5558477219359984,
+        "residual_risk": null
+      },
+      "2026_field_has_nk": {
+        "bootstrap_ci": {
+          "point": -0.0048942180946432556,
+          "ci_low": -0.00898320973013017,
+          "ci_high": -0.0009146689624585197,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5965809230096374,
+        "residual_risk": null
+      },
+      "2026_only": {
+        "bootstrap_ci": {
+          "point": -0.004849455793831906,
+          "ci_low": -0.008216232202996292,
+          "ci_high": -0.0014378736209576895,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.005,
+        "n_days": 70,
+        "cand_minus_uniform": -0.5558477219359984,
+        "residual_risk": null
+      }
+    },
+    "horse_subgroups": {
+      "canonical": {
+        "bootstrap_ci": {
+          "point": -0.00017644143064496262,
+          "ci_low": -0.0002760251340693312,
+          "ci_high": -7.711450606410847e-05,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 715,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 715,
+        "cand_minus_uniform": -0.04469055928467559,
+        "residual_risk": null
+      },
+      "nk": {
+        "bootstrap_ci": {
+          "point": -0.00034418514437393403,
+          "ci_low": -0.0007228100420825214,
+          "ci_high": 1.3773668708458964e-05,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 96,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 96,
+        "cand_minus_uniform": -0.04809327963246483,
+        "residual_risk": null
+      },
+      "recent_year_nk": {
+        "bootstrap_ci": {
+          "point": -0.00041096616823176513,
+          "ci_low": -0.0008073672687212313,
+          "ci_high": -2.6607022846555137e-05,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 70,
+        "cand_minus_uniform": -0.04964919152900483,
+        "residual_risk": null
+      },
+      "2026_nk": {
+        "bootstrap_ci": {
+          "point": -0.00041096616823176513,
+          "ci_low": -0.0008073672687212313,
+          "ci_high": -2.6607022846555137e-05,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 70,
+          "no_decision": false
+        },
+        "decision": "PASS",
+        "margin": 0.001,
+        "n_days": 70,
+        "cand_minus_uniform": -0.04964919152900483,
+        "residual_risk": null
+      }
+    },
+    "critical": [
+      "canonical",
+      "nk",
+      "recent_year_only"
+    ],
+    "subgroup_guard": true,
+    "subgroup_guard_status": "PASS",
+    "target_year": 2026,
+    "subgroup_decisions": {
+      "canonical": "PASS",
+      "nk": "PASS",
+      "recent_year_only": "PASS"
+    },
+    "critical_residual_risk": {
+      "canonical": null,
+      "nk": null,
+      "recent_year_only": null
+    }
+  },
+  "decision_reason": {
+    "cause": "all_gates_pass",
+    "subgroups": {
+      "canonical": "PASS",
+      "nk": "PASS",
+      "recent_year_only": "PASS"
+    },
+    "gate": {
+      "primary": true,
+      "stat_guard": true,
+      "recent_guard": true,
+      "top_noninferior": true,
+      "calibration": true
+    },
+    "subgroup_assurance": "full",
+    "subgroup_guard_status": "PASS",
+    "critical_residual_risk": {
+      "canonical": null,
+      "nk": null,
+      "recent_year_only": null
+    },
+    "claim": "candidate improves the primary metric AND non-inferiority was established in every critical subgroup"
+  },
+  "evaluation_contract_version": "v4",
+  "gate_config_hash": "89d9124145f49c5a2e4fdbc3e00954f222aa8240aeb5b6b45ae76fbe3d75308b",
+  "bootstrap_sensitivity": {},
+  "total_ci": {
+    "point": -0.0021375539458515615,
+    "ci_low": -0.00419089598967853,
+    "ci_high": -8.57567613712501e-05,
+    "b": 4000,
+    "seed": 20260907,
+    "block": "race_day",
+    "n_days": 715,
+    "no_decision": false
+  },
+  "seed_noise": {
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "n_folds": 7,
+    "source": "scripts/seed_variance_probe.py --mode rerun (2026-08-18, 6 seeds)",
+    "applied": true
+  },
+  "opportunity": null,
+  "target_year": 2026,
+  "gate_readout": "ADOPT",
+  "artifact_kind": "finite_probability_mixture_research_report",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "comparison": {
+    "id": "mixed6_vs_pruning3",
+    "candidate": "mixed6",
+    "baseline": "pruning3"
+  },
+  "study_config_hash": "89d9124145f49c5a2e4fdbc3e00954f222aa8240aeb5b6b45ae76fbe3d75308b",
+  "run_freeze_sha256": "a5fc047187caca275db0bc310b4f2acba8c521d7fd92cbe0a36ca19c3ee5b57f",
+  "elapsed_seconds": 77.13329487503506,
+  "mixture_audit": {
+    "n_races": 23030,
+    "max_jensen_excess": -9.529575599742657e-07,
+    "no_post_average_processing": true
+  },
+  "limitations": [
+    "Fixed one-bundle historical research; not an estimate from independent ensemble replicates.",
+    "Completed individually calibrated/tilted predictor marginals are mixed. This is a different procedure from100 raw-softmax mean followed by ensemble-specific OOF calibration.",
+    "All three heads use the same equal weights and member order. No normalization, clipping or Harville reconstruction after averaging.",
+    "The v4 transferred-noise interval keeps k_seeds=1 and makes no ensemble variance shrinkage claim. Ensemble-specific retraining, gamma-refit and selection uncertainty is not fully measured.",
+    "Three/six members are not independent three-seed bundle replicates; six members share three learning seeds.",
+    "Eight historical exploratory intervals are not simultaneous confirmation or unused-period evidence.",
+    "No production activation, annual slot, learned ensemble weight or new calibrator. A serving candidate needs its own calibration/OOF evaluation and full procedure validation."
+  ],
+  "research_disposition": {
+    "artifact_kind": "small_gain_research_disposition",
+    "policy_version": "small_gain_research_v1",
+    "eligible_for_verdict": false,
+    "can_adopt": false,
+    "state": "RETAIN_SUPPORTED",
+    "reason": "observed_improvement_historical_interval_below_zero",
+    "blocking_reasons": [],
+    "primary_diff": -0.002137553945851245,
+    "total_ci": {
+      "point": -0.0021375539458515615,
+      "ci_low": -0.00419089598967853,
+      "ci_high": -8.57567613712501e-05,
+      "b": 4000,
+      "seed": 20260907,
+      "block": "race_day",
+      "n_days": 715,
+      "no_decision": false
+    },
+    "quality_metrics": {
+      "top2_diff": -0.00034951243909736585,
+      "top3_diff": -0.0005494288615670029,
+      "cand_ece": 0.002181511342469465,
+      "act_ece": 0.00202714041828699
+    },
+    "subgroup_evidence": {
+      "critical": [
+        "canonical",
+        "nk",
+        "recent_year_only"
+      ],
+      "states": {
+        "canonical": "PASS",
+        "nk": "PASS",
+        "recent_year_only": "PASS"
+      },
+      "status": "PASS",
+      "critical_residual_risk": {
+        "canonical": null,
+        "nk": null,
+        "recent_year_only": null
+      },
+      "assurance": "full"
+    },
+    "original_result": {
+      "evaluation_contract_version": "v4",
+      "gate_readout": "ADOPT",
+      "decision": null,
+      "decision_reason": {
+        "cause": "all_gates_pass",
+        "subgroups": {
+          "canonical": "PASS",
+          "nk": "PASS",
+          "recent_year_only": "PASS"
+        },
+        "gate": {
+          "primary": true,
+          "stat_guard": true,
+          "recent_guard": true,
+          "top_noninferior": true,
+          "calibration": true
+        },
+        "subgroup_assurance": "full",
+        "subgroup_guard_status": "PASS",
+        "critical_residual_risk": {
+          "canonical": null,
+          "nk": null,
+          "recent_year_only": null
+        },
+        "claim": "candidate improves the primary metric AND non-inferiority was established in every critical subgroup"
+      },
+      "progression": null
+    },
+    "original_scope": {
+      "stage": null,
+      "candidate": null,
+      "n_eligible": 22990,
+      "n_days": 715,
+      "target_year": 2026,
+      "evidence_regime": null,
+      "gate_config_hash": "89d9124145f49c5a2e4fdbc3e00954f222aa8240aeb5b6b45ae76fbe3d75308b",
+      "study_config_hash": "89d9124145f49c5a2e4fdbc3e00954f222aa8240aeb5b6b45ae76fbe3d75308b"
+    },
+    "limitations": [
+      "Research retention only; original verdict is unchanged.",
+      "Neither retention state establishes fresh holdout independence or production readiness.",
+      "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+      "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+    ]
+  },
+  "evidence_path": "/Users/kuwatawaku/workspace/horseracing/artifacts/120-probability-mixture/mixed6_vs_pruning3-evidence.json",
+  "evidence_sha256": "f5e8a814e407a7ae0544b6fda086fb143fd9016e4f6754de382c6493456c360e"
+}

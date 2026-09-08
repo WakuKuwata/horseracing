@@ -1,0 +1,38 @@
+{
+  "artifact_kind": "extra_residual_probe_final_integrity",
+  "status": "PASS",
+  "checked_at_utc": "2026-09-08T08:32:00.127773+00:00",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "additional_fits": 0,
+  "source_hash": "c46a6285fa48ac4bb60a075f362120989d11715afcc4e144d7bc41117038c1e3",
+  "config_hash": "e456f21806cccb6699162b83f0f451a8a1646caa88acb3182923b57528371571",
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    },
+    "scipy": "1.18.0"
+  },
+  "run_freeze_sha256": "950259bd8496e660a726d4510753e77ccf3e5f835f2dd61093b2c92ffae344c6",
+  "report_sha256": "c76b9b601762aef632eea7130b2849da5d4264246e19296accac11c47b672b94",
+  "receipt_sha256": "31ba000787b7082c4aad4ad3524262e5f3d6c13c012077772d1c00b590b35a4d",
+  "independent_method_sha256": "c040eeafbc2fe107f7a936d77474dd9999e2842ce3772da342e472b47d455b6d",
+  "independent_review_sha256": "5d8e657c83b26a1aae28f48ce27762cf671236587c84e0c28834fd95f1ff3dc6",
+  "prepared_input_sha256": {
+    "42": "091249623e47034a6dcc9459f316dcc85b7a5e690d3ec7043d4f275baef5e147",
+    "43": "47bb1c5ae40989358c03e3b23e514fa563df4aa1ab39c9dd2fb913039e8e0c79",
+    "44": "bbe2e11bc0af4ee4060bb613949336f932ff67286f555066a5050e097afcfef9"
+  },
+  "frozen_source_runtime_upstream_match": true,
+  "summary_recomputed_from_all_saved_seed_rows": true,
+  "candidate_states": {
+    "prior_gap": "ADVANCE_TO_FULL_QUALITY",
+    "global_temperature": "ADVANCE_TO_FULL_QUALITY",
+    "context_temperature": "NO_OBSERVED_MEAN_IMPROVEMENT"
+  },
+  "note": "Additional read-only final verification after the completed121 study; no driver, config, prediction, coefficients, report or independent audit changed."
+}

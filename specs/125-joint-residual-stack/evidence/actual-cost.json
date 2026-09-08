@@ -1,0 +1,125 @@
+{
+  "artifact_kind": "joint_residual_stack_actual_cost",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "run_freeze_sha256": "a11a23cff5a67c395f8635e93ae2e72ddcffdfa3798bbf55c72a4492dbcb5651",
+  "new_booster_fits": 0,
+  "new_coefficient_optimization_calls": 21,
+  "new_fitted_scalar_coefficients": 105,
+  "coefficient_years": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "training_seeds": [
+    42,
+    43,
+    44
+  ],
+  "coefficient_order": [
+    "gap_log",
+    "prior_gap_log",
+    "female_sin",
+    "female_cos",
+    "centered_logp"
+  ],
+  "new_smoke_fits": 0,
+  "evaluated_comparisons": 12,
+  "records": [
+    {
+      "comparison": "joint-seed-42-vs-season",
+      "recorded_evaluation_seconds": 23.63768662500661,
+      "report_sha256": "24c995b9ed7f8fe63cb7dd9b6dacc9e9b35d3baf1dbf23971b8de493736bca61",
+      "receipt_sha256": "89db6caf51b1a68f5b6f6e6c81dc5acccc4b30bfc0b39f0141c9df3331a87b7c"
+    },
+    {
+      "comparison": "joint-seed-42-vs-prior_gap",
+      "recorded_evaluation_seconds": 24.32092545798514,
+      "report_sha256": "23d8122fe314f0336de0bf73371a3e69a4e9a1e963c893f111663509720cc2d3",
+      "receipt_sha256": "169f08ab61f11317f56dd6762e701ca943c3722b954ef7395a7b4611713a5e4e"
+    },
+    {
+      "comparison": "joint-seed-42-vs-global_temperature",
+      "recorded_evaluation_seconds": 24.96843441692181,
+      "report_sha256": "2ae4e3dc3c2bbba651bd8ae6f5c664ab66493f6960b9ab582c4b72b2f4c9f102",
+      "receipt_sha256": "ab4328c788031623b04dbe8d35a800009d15a85ee7011f3e8af56be4e766e573"
+    },
+    {
+      "comparison": "joint-seed-43-vs-season",
+      "recorded_evaluation_seconds": 20.944007041980512,
+      "report_sha256": "ec52561af93773624fe106aa397223e0dd8da4ce38ac7771616147bb109ba075",
+      "receipt_sha256": "3a52245b5cc5a93cd06251169b445c2631b48700b730b4a93e70e29f43c10983"
+    },
+    {
+      "comparison": "joint-seed-43-vs-prior_gap",
+      "recorded_evaluation_seconds": 20.642317540943623,
+      "report_sha256": "d3e9d3c2a118d13a999bff2d96f80165df19b0bf8c0d32c81342b2e8d25f7471",
+      "receipt_sha256": "077247bfb5f36d4a1737528608af0c86536f5e081e7051b2f97afc479e47d9ce"
+    },
+    {
+      "comparison": "joint-seed-43-vs-global_temperature",
+      "recorded_evaluation_seconds": 20.470535708940588,
+      "report_sha256": "01f99b7b4332e8c534d482ca5be263dae795a0f1d281fb20cc8489d7a32b2d0e",
+      "receipt_sha256": "0e986082efbc2a87060ec963dc432b23e7cb80d1941fbd2fd6f8f86652ba1f01"
+    },
+    {
+      "comparison": "joint-seed-44-vs-season",
+      "recorded_evaluation_seconds": 20.000135624897666,
+      "report_sha256": "5cfd87ee49ef43b3358b5d4b1aeffc3659f3a97cce184d51983dcc4c13d8dd3c",
+      "receipt_sha256": "b661a7d9771dafd1095b84aeb6a4c6576182f7585759d3ebd393aeb1e7e0c22f"
+    },
+    {
+      "comparison": "joint-seed-44-vs-prior_gap",
+      "recorded_evaluation_seconds": 19.172954124980606,
+      "report_sha256": "4a681e2cdfffe94116851e5a0f09d6097eed35dd0e97faa0e18997651070e7e2",
+      "receipt_sha256": "8ec930307174123f13686fd9894d1c7f83e9861ed1af0e14b7a5596a2a9884b4"
+    },
+    {
+      "comparison": "joint-seed-44-vs-global_temperature",
+      "recorded_evaluation_seconds": 19.14657341700513,
+      "report_sha256": "612217d47f9a3e02d0ca038e3aca1d26427a2bd3aab38668f54ad19a3978e48e",
+      "receipt_sha256": "27fd8923cdd57815de927132200fb4cd426b51234c38f98f7600ad944c670624"
+    },
+    {
+      "comparison": "mixture-vs-joint_mixed6",
+      "recorded_evaluation_seconds": 105.36788500007242,
+      "report_sha256": "73f5ce39575ef558f097668b733eefe916a68288158e32f2a80e6d67dd63ca09",
+      "receipt_sha256": "fcbb5e3e320159602c4204dc75ff3b5f7aac5944381fa086682a1b1f33be25a0"
+    },
+    {
+      "comparison": "mixture-vs-mixed6",
+      "recorded_evaluation_seconds": 117.23523687501438,
+      "report_sha256": "e7d64ad751d41f4c23864c803a68c0329777cb5ab976ef390d69d159985fc7d7",
+      "receipt_sha256": "9de687936c8afd5cfa41c0147fc454147a153f1590fbb2dc61a7aaa9893c9f6d"
+    },
+    {
+      "comparison": "mixture-vs-anchor42",
+      "recorded_evaluation_seconds": 68.06184616696555,
+      "report_sha256": "8af56da6089a46bf5fed3d59471b79c7bc7303c216b2bf96e81e774058c2ebd2",
+      "receipt_sha256": "5034ca10254bf47e7ad79b226edf2611f005b4098e4927f6eb0b20266c63df79"
+    }
+  ],
+  "sum_recorded_evaluation_seconds": 483.96853800071403,
+  "sum_recorded_evaluation_minutes": 8.0661423000119,
+  "coefficient_fit_wall_seconds": null,
+  "whole_evaluation_wall_seconds": null,
+  "whole_study_wall_seconds": null,
+  "peak_rss_bytes": null,
+  "timer_scope": "Each report timer starts after both factories are constructed and includes paired_eval prediction/calibration application, all quality/subgroup bootstrap, report conversion, saved-baseline row validation and current coefficient provenance validation. It stops while report metadata is built, before research assessment and the expensive full source verify before saving.",
+  "excluded_from_report_timer": [
+    "prepare and full source verification",
+    "matrix/input construction",
+    "21 joint coefficient optimization calls",
+    "comparison factory construction",
+    "full upstream source verification before each report write",
+    "report/evidence/receipt persistence",
+    "summary",
+    "independent audit",
+    "documentation"
+  ],
+  "note": "The timer sum is not total wall time. Frozen deep upstream verification repeatedly recalculates prior-study summaries/CIs and is excluded. No model retraining; coefficient refits are explicitly counted."
+}

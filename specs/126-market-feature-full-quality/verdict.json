@@ -1,0 +1,96 @@
+{
+  "artifact_kind": "market_feature_full_quality_summary",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "research_decision": "FULL_QUALITY_COMPLETED",
+  "run_freeze_sha256": "77af06e543d00ee01d83b79864ff0b2f17255735f9a66edd37d55732700c13ba",
+  "selected_candidates": [
+    "colsample_07"
+  ],
+  "reports": {
+    "colsample_07": {
+      "report_sha256": "8b473374a091235039e3a8ba70336e7ffa528b434265e407838fe6f50bba7035",
+      "evidence_sha256": "a607fdc7d2219c65d910fccdebe1dc0e474ecc72c6544f377e56922bd15f7e2b",
+      "research_disposition": {
+        "artifact_kind": "small_gain_research_disposition",
+        "policy_version": "small_gain_research_v1",
+        "eligible_for_verdict": false,
+        "can_adopt": false,
+        "state": "RETAIN_UNCERTAIN",
+        "reason": "observed_improvement_interval_includes_zero",
+        "blocking_reasons": [],
+        "primary_diff": -0.00024260628430372577,
+        "total_ci": {
+          "point": -0.00024260628430358268,
+          "ci_low": -0.0031138205124761798,
+          "ci_high": 0.0027537941374256502,
+          "b": 4000,
+          "seed": 20260907,
+          "block": "race_day",
+          "n_days": 715,
+          "no_decision": false
+        },
+        "quality_metrics": {
+          "top2_diff": -0.0001510756391898127,
+          "top3_diff": -0.00012975344709004188,
+          "cand_ece": 0.0015911396199217752,
+          "act_ece": 0.0014544823053832473
+        },
+        "subgroup_evidence": {
+          "critical": [
+            "canonical",
+            "nk",
+            "recent_year_only"
+          ],
+          "states": {
+            "canonical": "PASS",
+            "nk": "PASS",
+            "recent_year_only": "PASS"
+          },
+          "status": "PASS",
+          "critical_residual_risk": {
+            "canonical": null,
+            "nk": null,
+            "recent_year_only": null
+          },
+          "assurance": "full"
+        },
+        "original_result": {
+          "evaluation_contract_version": "v4",
+          "gate_readout": "NO_DECISION",
+          "decision": null,
+          "decision_reason": {
+            "cause": "stat_guard_underpowered",
+            "gate": {
+              "primary": true,
+              "stat_guard": false,
+              "recent_guard": true,
+              "top_noninferior": true,
+              "calibration": true
+            }
+          },
+          "progression": null
+        },
+        "original_scope": {
+          "stage": "full",
+          "candidate": "colsample_07",
+          "n_eligible": 22990,
+          "n_days": 715,
+          "target_year": 2026,
+          "evidence_regime": "historical_development",
+          "gate_config_hash": "adc117e5d38909552c0ad222c02a1333354287dce87ea7b600c7982eab853fa5",
+          "study_config_hash": "adc117e5d38909552c0ad222c02a1333354287dce87ea7b600c7982eab853fa5"
+        },
+        "limitations": [
+          "Research retention only; original verdict is unchanged.",
+          "Neither retention state establishes fresh holdout independence or production readiness.",
+          "A non-vetoed uncertain subgroup does not establish its non-inferiority; read residual risk.",
+          "Individual gains cannot be added; evaluate the cumulative model against its incumbent and the fixed active anchor."
+        ]
+      }
+    }
+  },
+  "new_outer_jobs": 7,
+  "new_booster_fits": 56,
+  "note": "All2018-screen-selected candidates completed seven folds without performance early stopping. Raw-model seed42 historical research only; no gap/ensemble increment or production adoption."
+}

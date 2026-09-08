@@ -1,0 +1,49 @@
+{
+  "checked_at_utc": "2026-09-08T06:15:08.384138+00:00",
+  "source_hash": "73d3ed603b553559ebed0705de51a471289a0550456aa99229e0f240c996c649",
+  "config_hash": "24cb6da209d8697379047412272027211f9c8708944c568cf639690470012bf6",
+  "run_freeze_sha256": "d8718e64f6d61a9bb541c6bbfe8f40ec0ef023c46c97781729e3cb511527cfb6",
+  "frozen_source_runtime_upstream_match": true,
+  "completed_jobs": 2,
+  "training_lock_absent": true,
+  "verified_reports": [
+    {
+      "seed": 42,
+      "contrast": "anchor",
+      "valid": true
+    },
+    {
+      "seed": 42,
+      "contrast": "retained",
+      "valid": true
+    },
+    {
+      "seed": 43,
+      "contrast": "anchor",
+      "valid": true
+    },
+    {
+      "seed": 43,
+      "contrast": "retained",
+      "valid": true
+    },
+    {
+      "seed": 44,
+      "contrast": "anchor",
+      "valid": true
+    },
+    {
+      "seed": 44,
+      "contrast": "retained",
+      "valid": true
+    }
+  ],
+  "verdict_sha256": "11958290cb06ee2b02265f4f20ca74411c66edc6fc5ae71fc69f6854c5e4dc2e",
+  "independent_review_sha256": "9e70d65a2c88b50f5edbcaf6c4f7f5da5f1d2eb494fe828a4bfbaa14b9a91c01",
+  "independent_method_sha256": "e3f0e5d0c8b53b3ef4f2d32eacdf987448d830028ebceb4c79f04c04492018b6",
+  "active_model_read_only_observation": [
+    "lgbm-094-cap900"
+  ],
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

@@ -7,6 +7,16 @@
 - 仕様: [specs/003-eval-harness](../specs/003-eval-harness/)
 - スタック: Python 3.12, numpy, scikit-learn, SQLAlchemy 2.0
 
+## 新規の精度改善研究に使う採用基準
+
+2026-09-07以降の新規研究は [small-gains-v1](../specs/112-small-gain-adoption/README.md) を使う。
+小幅改善を研究候補として保持し、組合せ全体の最終確認は固定改善幅0とノイズ込みCIで判断する。
+同ページの準備CLIから将来の確認設定と回数予約を作る。既存研究の凍結config・verdict、
+v4の数値判定、本番activation条件は維持する。汎用eval CLI単体が新しい予約台帳を検証するわけではない。
+
+特徴量・補正・モデル平均の継続検証119〜128は、[2026-09-08の比較結果と証拠](../docs/accuracy-rechecks-20260908.md)にまとめる。
+研究保持と本番切替、単体の改善と実際に組み合わせた効果を区別している。
+
 ## 責務境界 / provenance (FR-013, 憲法 II)
 
 結果確定時の `odds` / `popularity` の扱いを明確に分離する:

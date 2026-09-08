@@ -1,0 +1,77 @@
+{
+  "artifact_kind": "extra_residual_probe_config",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "candidates": [
+    "prior_gap",
+    "global_temperature",
+    "context_temperature"
+  ],
+  "contrasts": {
+    "prior_gap": [
+      "retained"
+    ],
+    "global_temperature": [
+      "retained"
+    ],
+    "context_temperature": [
+      "retained",
+      "global_temperature"
+    ]
+  },
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "deployment_seed": 42,
+  "warmup_year": 2019,
+  "eval_window": {
+    "from": "2020-01-01",
+    "to": "2026-08-23"
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125,
+    "block": "race_day"
+  },
+  "fit": {
+    "base_ridge": 1e-06,
+    "context_lambda": 1000.0,
+    "context_ridge_scale": "lambda/n_fit_races",
+    "ab_max_iter": 50,
+    "ab_tol": 1e-09,
+    "c_max_iter": 1500,
+    "c_ftol": 1e-13,
+    "c_gtol": 1e-08,
+    "objective_max": 1e-08,
+    "gradient_inf_max": 1e-05,
+    "auto_retune": false
+  },
+  "base": "Frozen raw pruning125 OOF predictions, seed42 from113/110 and seed43/44 from116, selected branch affirmed by118. Baseline is original retained gap-only coefficients, not newly tuned.",
+  "definitions": {
+    "gap": "log1p(snapshot.days_since_last), unchanged115/116 definition",
+    "prior_gap": "log1p(D1-D2), where D2<D1<D are two latest distinct started days in frozen111 matrix for same horse_id. No ID stitching. Different from current D-D1 gap; missing neutral exponent offset.",
+    "global_temperature": "x=log(p)-mean_horse(log(p)) within full started race; fit gap and x jointly on raw pruning125 p.",
+    "context_temperature": "Joint gap + global x + x times one-hot field-size3/entropy3/top-gap3. fieldsize<=9,10-13,14+; entropy=-sum(p*log(p))/log(N); topgap=log(pmax/max(psecond,1e-12)). Entropy/topgap tertile boundaries from eligible strict-prior fit races only, unique quantile edges, np.digitize right=False. N=1 entropy=0, topgap=log(1/1e-12), x=0.",
+    "context_regularization": "New diagonal-ridge specification: gap/global ridge1e-6, nine context slopes lambda1000/n_fit_races. Lambda1000 fixed from old diagnostic; no ridge search. Old context basis retained, not an exact replay of old uniform-ridge/grid procedure."
+  },
+  "progression": "Require complete all3 seeds and exact same ordered eligible race/day population. Advance A/B if mean3 seed per-race loss difference vs retained<0. Advance C only if mean differences vs both retained and B<0. No individual seed winner selection, no CI exclusion requirement, no formal RETAIN or ADOPT.",
+  "limitations": [
+    "Historical development and selection-used full-information inputs; no unused confirmation/preweight proof.",
+    "Winner NLL only; top2/top3/ECE/recent/subgroup quality guards not measured. ADVANCE means next full-quality check, never adoption.",
+    "Race-day CI is conditional sampling only; gamma re-estimation and training noise not included. Mean3 seed losses are not a probability ensemble.",
+    "Prior-gap history is restricted to frozen matrix started rows and same IDs; missing histories/ID breaks stay missing, not repaired. Not exact reproduction of081 flat-race history.",
+    "Context slopes are linearly redundant with global temperature; ridge makes predictions identifiable but coefficients are not causally interpretable.",
+    "No booster training, DB refresh, production mutation, annual-budget reservation or outcome-adaptive retries."
+  ],
+  "temperature_domain": {
+    "effective_exponent": "1 + global_delta + selected context slope deltas",
+    "strict_positive": true,
+    "check": "all prior fit and held races",
+    "on_violation": "BLOCKED_TEMPERATURE_DOMAIN",
+    "posthoc_clipping": false,
+    "legacy_difference": "Old diagnostic optimizer had no explicit positivity constraint. This new screen refuses nonpositive fitted/held exponents without retuning."
+  }
+}
