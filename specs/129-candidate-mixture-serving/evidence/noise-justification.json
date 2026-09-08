@@ -1,0 +1,21 @@
+{
+  "artifact_kind": "mixture_noise_justification",
+  "bundle_manifest_sha256": "28f39715a9c1dba13755ee44f3a439099d5aaffd94685ac11e4d23166b388471",
+  "anchor_model_sha256": "80fd7734f2d77f729bc71350a584c5ac5fb0c171b90940972fe7ad224e6537b3",
+  "primary_regime": "preweight",
+  "noise": {
+    "method": "conservative_single_model_transfer",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "n_effective_folds": 1,
+    "independent_bundle_replicates": 1,
+    "variance_reduction_claimed": false
+  },
+  "bundle_variance_reduction_claimed": false,
+  "justification": "The confirmation compares ONE fixed six-member bundle to ONE frozen anchor on future races. The retraining-noise term is transferred from the single-model fold SD 0.001816 (spec 100, k=1) without any sqrt(6) or sqrt(7) reduction: the six members share the same training population and split only by seed and by a 13-column drop, so they are not independent bundle replicates (independent_bundle_replicates=1), and study 100 measured seed correlation rho~0.234 with a k->inf floor of 48% of single-seed variance. Transferring the full single-model SD is therefore conservative for the seed component; it does not claim to bound the (untested) variance of re-assembling a bundle from fresh fits, which the estimand excludes by fixing the bundle.",
+  "reviewed": false,
+  "independent_review": null,
+  "created_at": "2026-09-08T15:00:33.184212+00:00",
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

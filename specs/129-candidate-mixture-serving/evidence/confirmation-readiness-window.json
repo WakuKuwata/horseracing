@@ -1,0 +1,10 @@
+{
+  "state": "NOT_READY",
+  "reasons": [
+    "reviewed_power",
+    "reviewed_noise",
+    "reviewed_compatibility"
+  ],
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

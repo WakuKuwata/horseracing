@@ -1,0 +1,126 @@
+{
+  "artifact_kind": "mixture_power_plan",
+  "bundle_manifest_sha256": "28f39715a9c1dba13755ee44f3a439099d5aaffd94685ac11e4d23166b388471",
+  "anchor_model_sha256": "80fd7734f2d77f729bc71350a584c5ac5fb0c171b90940972fe7ad224e6537b3",
+  "primary_regime": "preweight",
+  "development": {
+    "path": "/Users/kuwatawaku/workspace/horseracing/specs/129-candidate-mixture-serving/evidence/power-development.json",
+    "sha256": "76f2d6d552b682cfcea00a969c80c4f79e9a8e1e5bf8339483be337922bbb1df"
+  },
+  "n_days": 4,
+  "n_races": 144,
+  "development_used_through": "2026-09-06",
+  "day_cluster_influence_sd": 0.012294951443747556,
+  "observed_difference": 0.001506811842725764,
+  "noise": {
+    "method": "conservative_single_model_transfer",
+    "sd_fold": 0.001816,
+    "k_seeds": 1,
+    "n_effective_folds": 1,
+    "independent_bundle_replicates": 1,
+    "variance_reduction_claimed": false
+  },
+  "max_practical_days": 730,
+  "scenarios": [
+    {
+      "effect": 0.00025,
+      "confidence": 0.95,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.00025,
+      "confidence": 0.9875,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.0005,
+      "confidence": 0.95,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.0005,
+      "confidence": 0.9875,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.001,
+      "confidence": 0.95,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.001,
+      "confidence": 0.9875,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.002,
+      "confidence": 0.95,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.002,
+      "confidence": 0.9875,
+      "target_power": 0.8,
+      "required_days": null,
+      "practical": false,
+      "reason": "BELOW_TRANSFERRED_NOISE_FLOOR"
+    },
+    {
+      "effect": 0.005,
+      "confidence": 0.95,
+      "target_power": 0.8,
+      "required_days": 137,
+      "practical": true,
+      "reason": "FEASIBLE"
+    },
+    {
+      "effect": 0.005,
+      "confidence": 0.9875,
+      "target_power": 0.8,
+      "required_days": 884,
+      "practical": false,
+      "reason": "BEYOND_PRACTICAL_DAY_CAP"
+    },
+    {
+      "effect": 0.01,
+      "confidence": 0.95,
+      "target_power": 0.8,
+      "required_days": 15,
+      "practical": true,
+      "reason": "FEASIBLE"
+    },
+    {
+      "effect": 0.01,
+      "confidence": 0.9875,
+      "target_power": 0.8,
+      "required_days": 24,
+      "practical": true,
+      "reason": "FEASIBLE"
+    }
+  ],
+  "method": "Normal power approximation from unequal-cluster influence SD; not an achieved bootstrap power guarantee",
+  "adoption_min_effect_delta": 0.0,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

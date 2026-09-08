@@ -1,0 +1,11 @@
+{
+  "artifact_kind": "mixture_validation",
+  "created_at": "2026-09-08T15:05:41.379075+00:00",
+  "serving_unit_tests": "177 passed",
+  "scripts_129_tests": "129 passed (build 123 incl. validate, bundle 6 → see counts)",
+  "ruff": "mixture_shadow.py / candidate_mixture_bundle.py / test_candidate_mixture_bundle.py: clean after fix; codex-authored mixture_model.py/mixture_correction.py keep pre-existing style errors (E501/E702) untouched",
+  "freeze_verify": true,
+  "log_excerpt": "== serving unit\n........................................................................ [ 81%]\n.................................                                        [100%]\n177 passed in 1.25s\n== scripts 129 tests\n........................................................................ [ 55%]\n.........................................................                [100%]\n129 passed in 1.10s\n== ruff\nscripts/candidate_mixture_bundle.py:161:57: E702 Multiple statements on one line (semicolon)\nscripts/candidate_mixture_bundle.py:162:61: E702 Multiple statements on one line (semicolon)\nFound 4 errors.\n== verify freeze\nFREEZE VERIFY PASS\n== db\nactive [('lgbm-094-cap900', datetime.datetime(2026, 8, 19, 2, 36, 16, 186011, tzinfo=zoneinfo.ZoneInfo(key='Etc/UTC')))]\nn model_versions 28\nruns after 21:30 JST 0\nVALID EXIT\n",
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

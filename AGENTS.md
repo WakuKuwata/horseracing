@@ -1,6 +1,6 @@
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+Current implementation plan: [129 candidate mixture serving](specs/129-candidate-mixture-serving/plan.md).
+Read this plan for technologies, project structure, commands, and current scope.
 <!-- SPECKIT END -->
 
 ## Codex agent の使用方針

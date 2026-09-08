@@ -1,0 +1,13 @@
+{
+  "state": "NOT_READY",
+  "reasons": [
+    "eval_window.from",
+    "eval_window.to",
+    "eval_window.min_eval_days",
+    "reviewed_power",
+    "reviewed_noise",
+    "reviewed_compatibility"
+  ],
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

@@ -1,0 +1,1035 @@
+{
+  "anchor_model_sha256": "80fd7734f2d77f729bc71350a584c5ac5fb0c171b90940972fe7ad224e6537b3",
+  "artifact_kind": "mixture_power_development",
+  "bundle_manifest_sha256": "28f39715a9c1dba13755ee44f3a439099d5aaffd94685ac11e4d23166b388471",
+  "can_adopt": false,
+  "code": {
+    "mixture_correction": "c2ff5c9e6fe5c825f43cad7244f279ef99cc1a9cd532fbbadc24ecf17bdb5255",
+    "mixture_model": "5dbe776b988abc06cc6bf309b171702a7ffba0e9df94db0bee91c8c9f56ab72c",
+    "mixture_shadow": "f900a90549da626bad9ca18b8565deaa225c2168dc2b628954ce51e88753061d"
+  },
+  "created_at": "2026-09-08T15:01:30.528378+00:00",
+  "days": [
+    "2026-08-29",
+    "2026-08-30",
+    "2026-09-05",
+    "2026-09-06"
+  ],
+  "eligible_for_verdict": false,
+  "mean_difference": 0.001506811842725764,
+  "n_days": 4,
+  "n_races": 144,
+  "primary_regime": "preweight",
+  "rows": [
+    {
+      "anchor_winner_nll": 1.9652664188902593,
+      "candidate_winner_nll": 2.1081352609762067,
+      "race_day": "2026-08-29",
+      "race_id": "202601020301",
+      "record_sha256": "d8eb2b7afc0809117d67274ce78dd76c592aba93c75d65dc3491d9cd2b976274"
+    },
+    {
+      "anchor_winner_nll": 2.9667608099348772,
+      "candidate_winner_nll": 3.0258041242675913,
+      "race_day": "2026-08-29",
+      "race_id": "202601020302",
+      "record_sha256": "95e0cbc67f1ca71118dcd94897c945e9cccafe37fa9b04d32338f077d52ca828"
+    },
+    {
+      "anchor_winner_nll": 1.7735788869647102,
+      "candidate_winner_nll": 1.752085435848767,
+      "race_day": "2026-08-29",
+      "race_id": "202601020303",
+      "record_sha256": "32670fa96d5ae68ab6e46a4d01ac89a3521f57ece6aa7f5dc436cd4112051479"
+    },
+    {
+      "anchor_winner_nll": 1.4938686452344467,
+      "candidate_winner_nll": 1.55877885866727,
+      "race_day": "2026-08-29",
+      "race_id": "202601020304",
+      "record_sha256": "0fd30c6fb4a751d48f7bd2c94298ccdf2483a1908509bc248b98f20b17e4ce47"
+    },
+    {
+      "anchor_winner_nll": 1.94156787143849,
+      "candidate_winner_nll": 1.739605337481307,
+      "race_day": "2026-08-29",
+      "race_id": "202601020305",
+      "record_sha256": "55e99e7f493c6e6189de72747af4c3a30cda558bbf0cbb86441a99b424680ff1"
+    },
+    {
+      "anchor_winner_nll": 1.6453909256049695,
+      "candidate_winner_nll": 1.634446731382439,
+      "race_day": "2026-08-29",
+      "race_id": "202601020306",
+      "record_sha256": "de1e3ad01d0d572b7930ab4771043f410475644bba8a6b59dc39f01ab60f83db"
+    },
+    {
+      "anchor_winner_nll": 1.8272514714462924,
+      "candidate_winner_nll": 1.654869012692211,
+      "race_day": "2026-08-29",
+      "race_id": "202601020307",
+      "record_sha256": "b0c7041b9666f5a9311e5944ebbb8520830cd3b1555b7902190f61f4684864ba"
+    },
+    {
+      "anchor_winner_nll": 1.964611516994649,
+      "candidate_winner_nll": 1.8303283575020934,
+      "race_day": "2026-08-29",
+      "race_id": "202601020308",
+      "record_sha256": "dfef86ce872e3bed1cdad65b6784e486df5d052fa10c59f710767a3673c3b26a"
+    },
+    {
+      "anchor_winner_nll": 1.1400813880771743,
+      "candidate_winner_nll": 1.0603858994266708,
+      "race_day": "2026-08-29",
+      "race_id": "202601020309",
+      "record_sha256": "63e92c084933c538709900c7cb568c3e99c78b232b562e39d21fa97b10d1e413"
+    },
+    {
+      "anchor_winner_nll": 1.8536661550786186,
+      "candidate_winner_nll": 1.6986444460532188,
+      "race_day": "2026-08-29",
+      "race_id": "202601020310",
+      "record_sha256": "abb9e524be72679f09bacf1eed32be2ec22dfa465f0c7e0ae9f488002795dcdc"
+    },
+    {
+      "anchor_winner_nll": 2.821689992386534,
+      "candidate_winner_nll": 2.92833441657713,
+      "race_day": "2026-08-29",
+      "race_id": "202601020311",
+      "record_sha256": "d17e420c6de79c7c0249b3c8954d804c47340b3f43be6c1030c00d66ee16991c"
+    },
+    {
+      "anchor_winner_nll": 1.1845915759663648,
+      "candidate_winner_nll": 1.3538625768046313,
+      "race_day": "2026-08-29",
+      "race_id": "202601020312",
+      "record_sha256": "89750f49fbb22780670f30b48688b0b2f6165c179c586f78515b01191573d52b"
+    },
+    {
+      "anchor_winner_nll": 1.9855867727227714,
+      "candidate_winner_nll": 2.0672291478453397,
+      "race_day": "2026-08-30",
+      "race_id": "202601020401",
+      "record_sha256": "5ddfe5e0140306336fc0a1a58deea0a1f82fcf3bf730e1810dd2567927ad8a59"
+    },
+    {
+      "anchor_winner_nll": 1.7793600254600883,
+      "candidate_winner_nll": 1.7917941812268625,
+      "race_day": "2026-08-30",
+      "race_id": "202601020402",
+      "record_sha256": "050c1562fc5a7f4c6328f95a1611743520b0b85fb871cdd9583f135c482a9185"
+    },
+    {
+      "anchor_winner_nll": 1.9697164737748234,
+      "candidate_winner_nll": 1.8843694355442027,
+      "race_day": "2026-08-30",
+      "race_id": "202601020403",
+      "record_sha256": "aaac3716cabc2274e14b529d6980725222f6f246be533c1a8f523bed64eea76a"
+    },
+    {
+      "anchor_winner_nll": 1.4358232154088872,
+      "candidate_winner_nll": 1.4204797712817163,
+      "race_day": "2026-08-30",
+      "race_id": "202601020404",
+      "record_sha256": "48e986faf9ce6b6026998a467c815a6eb2b618cf5ae80419aa229263b6dc6eef"
+    },
+    {
+      "anchor_winner_nll": 1.283264371728126,
+      "candidate_winner_nll": 1.3474520636329277,
+      "race_day": "2026-08-30",
+      "race_id": "202601020405",
+      "record_sha256": "784236cb76a49238af559152bea42a931136d0f8742fe70347e1944deb95656a"
+    },
+    {
+      "anchor_winner_nll": 1.949326716301834,
+      "candidate_winner_nll": 2.1223956126815597,
+      "race_day": "2026-08-30",
+      "race_id": "202601020406",
+      "record_sha256": "d1baddf9acdf8ba431c441490fc66e3245e37a5d3a24f7f0d3e6345218657e1e"
+    },
+    {
+      "anchor_winner_nll": 1.6571501824392625,
+      "candidate_winner_nll": 1.5642067288398303,
+      "race_day": "2026-08-30",
+      "race_id": "202601020407",
+      "record_sha256": "c56d5423184ca1c069ae246af9e82893cee17b31202b5cf74940d273911c6759"
+    },
+    {
+      "anchor_winner_nll": 1.0587464274933003,
+      "candidate_winner_nll": 1.0652112478454892,
+      "race_day": "2026-08-30",
+      "race_id": "202601020408",
+      "record_sha256": "cad94077bc1269476c4cafd43fe4b1a831a878dc2c4aa14ead9cbdf82249a237"
+    },
+    {
+      "anchor_winner_nll": 1.6625499470123437,
+      "candidate_winner_nll": 1.7460294293418281,
+      "race_day": "2026-08-30",
+      "race_id": "202601020409",
+      "record_sha256": "c1a992e7251bb0d50d8429833e607a26133267af7dc5ac8a50a78316a4448022"
+    },
+    {
+      "anchor_winner_nll": 2.450832586994997,
+      "candidate_winner_nll": 2.5112752328658585,
+      "race_day": "2026-08-30",
+      "race_id": "202601020410",
+      "record_sha256": "e34b8b41b80e88f69d9f960c3cc426c3c668adc2fdc6c2ec3d11662619aa295c"
+    },
+    {
+      "anchor_winner_nll": 2.240701100217554,
+      "candidate_winner_nll": 2.3244946267557696,
+      "race_day": "2026-08-30",
+      "race_id": "202601020411",
+      "record_sha256": "3ff15330ae4225c2d413af1c37fd7a13fd98183e6cf96ce214c36327f21fca58"
+    },
+    {
+      "anchor_winner_nll": 2.449947194367106,
+      "candidate_winner_nll": 2.4288526226274927,
+      "race_day": "2026-08-30",
+      "race_id": "202601020412",
+      "record_sha256": "00df3ad0d770f287dff34985bb04118f529e3a6fbc0fde4d237d4c97c9fb2842"
+    },
+    {
+      "anchor_winner_nll": 1.512113425752852,
+      "candidate_winner_nll": 1.655047653036429,
+      "race_day": "2026-09-05",
+      "race_id": "202601020501",
+      "record_sha256": "7fa16b180375211dcaf0dcfeb4d694792e985392d1636e24d4a77ceed0e51977"
+    },
+    {
+      "anchor_winner_nll": 1.534235824306118,
+      "candidate_winner_nll": 1.5933141587551682,
+      "race_day": "2026-09-05",
+      "race_id": "202601020502",
+      "record_sha256": "baac592a5a1ec02e341d770dbb6a6c9115a33812196324047a4892b5141f10b0"
+    },
+    {
+      "anchor_winner_nll": 2.991282918710204,
+      "candidate_winner_nll": 3.261643682088384,
+      "race_day": "2026-09-05",
+      "race_id": "202601020503",
+      "record_sha256": "1c808c6b3eb07eb8341604c83be60a5ef6ea449f5209ae923889328d5c77a68e"
+    },
+    {
+      "anchor_winner_nll": 1.0342806763846355,
+      "candidate_winner_nll": 0.965723458071064,
+      "race_day": "2026-09-05",
+      "race_id": "202601020504",
+      "record_sha256": "70cf43fca941a725c72451c38e8b460544193c8798981a3903ecf57710c32077"
+    },
+    {
+      "anchor_winner_nll": 1.5041492104570062,
+      "candidate_winner_nll": 1.427389310278363,
+      "race_day": "2026-09-05",
+      "race_id": "202601020505",
+      "record_sha256": "2b37bccf1dcb525065062cbcef3e58aacf18ccd9a5e8e1a7f874be95b250c6f0"
+    },
+    {
+      "anchor_winner_nll": 3.623717298605276,
+      "candidate_winner_nll": 3.6020683728999576,
+      "race_day": "2026-09-05",
+      "race_id": "202601020506",
+      "record_sha256": "8ce854cd391d3d1fb1223c1e6dc223c7df6c994a49d6a4194e9884c6c5cd8e82"
+    },
+    {
+      "anchor_winner_nll": 1.8413061097616168,
+      "candidate_winner_nll": 1.8748273122888302,
+      "race_day": "2026-09-05",
+      "race_id": "202601020507",
+      "record_sha256": "f89cf7d1861e430a61b1ab3ebc3a49fecb2b0b32056a98643f320a9856447879"
+    },
+    {
+      "anchor_winner_nll": 1.9449880245740485,
+      "candidate_winner_nll": 1.8880842934925501,
+      "race_day": "2026-09-05",
+      "race_id": "202601020508",
+      "record_sha256": "d6f18dc4ec0ce814d8f2932d0f8d810808478f314ca4f5a8ce66dab8b56dfe2f"
+    },
+    {
+      "anchor_winner_nll": 2.0659706555010597,
+      "candidate_winner_nll": 2.1866423228230403,
+      "race_day": "2026-09-05",
+      "race_id": "202601020509",
+      "record_sha256": "092fa9871aabde24e3c01c07f03515e7a00e3a39be3f98a4f87abdf4b89d4719"
+    },
+    {
+      "anchor_winner_nll": 2.6130448686810586,
+      "candidate_winner_nll": 2.7503018870018643,
+      "race_day": "2026-09-05",
+      "race_id": "202601020510",
+      "record_sha256": "05efb76ab0d8630f2b704862a48a0c44ff95665271c0b890cd658500dc2698a5"
+    },
+    {
+      "anchor_winner_nll": 0.6568509996273816,
+      "candidate_winner_nll": 0.5247663616542915,
+      "race_day": "2026-09-05",
+      "race_id": "202601020511",
+      "record_sha256": "7918ca61279f0b658349bfc90db61cb8e0e90002c4dd891f57a0b64828fdf6da"
+    },
+    {
+      "anchor_winner_nll": 4.300880855548289,
+      "candidate_winner_nll": 4.190675059465723,
+      "race_day": "2026-09-05",
+      "race_id": "202601020512",
+      "record_sha256": "4623676b9bf4dd457366d0b654c795fc13b1b15402a13ff4883b4009e5295452"
+    },
+    {
+      "anchor_winner_nll": 2.9555970674578504,
+      "candidate_winner_nll": 2.8094441348394636,
+      "race_day": "2026-09-06",
+      "race_id": "202601020601",
+      "record_sha256": "ff43ba39e146051041a89805460ab55d687c5b1a2f836dc9762ddd408be464e8"
+    },
+    {
+      "anchor_winner_nll": 1.9860335781624388,
+      "candidate_winner_nll": 2.018251720996858,
+      "race_day": "2026-09-06",
+      "race_id": "202601020602",
+      "record_sha256": "cc44a3ad2a06e8681f92310cd35b3a4a69055c666d9c38b8dd3a62a443a35206"
+    },
+    {
+      "anchor_winner_nll": 1.4954656635461832,
+      "candidate_winner_nll": 1.5422399714464896,
+      "race_day": "2026-09-06",
+      "race_id": "202601020603",
+      "record_sha256": "38ddbebd4ac1ced2073ec41cb94f3304c6db32c1bafef478ae555119ac3c9eb9"
+    },
+    {
+      "anchor_winner_nll": 2.4785558553658964,
+      "candidate_winner_nll": 2.5740915599312313,
+      "race_day": "2026-09-06",
+      "race_id": "202601020604",
+      "record_sha256": "f2389f2c2962fc94ff13da1ef7b5e91c492ad4f7bb160924ff8c5a949b19250a"
+    },
+    {
+      "anchor_winner_nll": 2.4775935451064335,
+      "candidate_winner_nll": 2.4709518564769217,
+      "race_day": "2026-09-06",
+      "race_id": "202601020605",
+      "record_sha256": "b88a42761d6603a35a1978e06596c8bfde4f37f84abd2c144c7dd8c207b2f85b"
+    },
+    {
+      "anchor_winner_nll": 3.14011503569369,
+      "candidate_winner_nll": 3.1617471146567953,
+      "race_day": "2026-09-06",
+      "race_id": "202601020606",
+      "record_sha256": "930dba6a0398004c2ee8155ffacb1194e633fc2fa92839feeefc4513f143e2a9"
+    },
+    {
+      "anchor_winner_nll": 1.4952034152753793,
+      "candidate_winner_nll": 1.6594804156385914,
+      "race_day": "2026-09-06",
+      "race_id": "202601020607",
+      "record_sha256": "e6965c6dd1c974920ac089b7f6b78fb7466197dcd6f157db65ee03b4e01f8b69"
+    },
+    {
+      "anchor_winner_nll": 0.9642628019803474,
+      "candidate_winner_nll": 0.9778941590651832,
+      "race_day": "2026-09-06",
+      "race_id": "202601020608",
+      "record_sha256": "93f63ec980e5e5425a997e61cb430b6b3b5a3a550c1d9cc8ea21549ebf6f107d"
+    },
+    {
+      "anchor_winner_nll": 1.3050546926367947,
+      "candidate_winner_nll": 1.3556277862141075,
+      "race_day": "2026-09-06",
+      "race_id": "202601020609",
+      "record_sha256": "30f2421a1e0373dc995875e16e2ac53a064985287078658fbadd98607cf75e93"
+    },
+    {
+      "anchor_winner_nll": 1.5951765351690328,
+      "candidate_winner_nll": 1.6097597650382962,
+      "race_day": "2026-09-06",
+      "race_id": "202601020610",
+      "record_sha256": "ce5068b69082879f5ce788ace4f8565eec49cab0c3a6afb72c1a16b435450461"
+    },
+    {
+      "anchor_winner_nll": 2.483786855127838,
+      "candidate_winner_nll": 2.444787960011325,
+      "race_day": "2026-09-06",
+      "race_id": "202601020611",
+      "record_sha256": "e9b290db09dd32bf5c6f359b76b7e62ebe7c7dab1efd61eebb4394446a22fbdf"
+    },
+    {
+      "anchor_winner_nll": 2.8126710050108508,
+      "candidate_winner_nll": 2.762917002440438,
+      "race_day": "2026-09-06",
+      "race_id": "202601020612",
+      "record_sha256": "97acaebd4c8b24f4a75858d6b64307a8536da69cabf1e8acbb195f9bc0722d15"
+    },
+    {
+      "anchor_winner_nll": 1.4979278069525663,
+      "candidate_winner_nll": 1.6067115965710785,
+      "race_day": "2026-08-29",
+      "race_id": "202604030301",
+      "record_sha256": "f06bd4e8aa796cb2003ab3eee3b3b00f52c1e2dfba19d6f024da612ea4feefae"
+    },
+    {
+      "anchor_winner_nll": 1.7184341677987707,
+      "candidate_winner_nll": 1.8195138393120824,
+      "race_day": "2026-08-29",
+      "race_id": "202604030302",
+      "record_sha256": "ce5b83f517e1f8e5faca5c16c6aba8d5d714c371c219746b0d3855274fbdde50"
+    },
+    {
+      "anchor_winner_nll": 2.3041097271595437,
+      "candidate_winner_nll": 2.2601835495346836,
+      "race_day": "2026-08-29",
+      "race_id": "202604030303",
+      "record_sha256": "b76abed1cb9a4dc3fa50e99c3e67d468aefcb5b862eac2640a932dbc31a0bbac"
+    },
+    {
+      "anchor_winner_nll": 1.2528853701438394,
+      "candidate_winner_nll": 1.3373610608638982,
+      "race_day": "2026-08-29",
+      "race_id": "202604030304",
+      "record_sha256": "35a796de649b11b40ea1b2d50c1562dafa5259d13cf5b1802c3220fd851765bd"
+    },
+    {
+      "anchor_winner_nll": 1.459998453902782,
+      "candidate_winner_nll": 1.3760887557575652,
+      "race_day": "2026-08-29",
+      "race_id": "202604030305",
+      "record_sha256": "ac323853ade974fe97f3ee8c5325bbd11fc57e81cbbc85b29938c93d2bcd7c75"
+    },
+    {
+      "anchor_winner_nll": 1.9158132123517935,
+      "candidate_winner_nll": 1.8678147914917296,
+      "race_day": "2026-08-29",
+      "race_id": "202604030306",
+      "record_sha256": "4dfc3784bd82bb24c71e1c361541bce7b11f652914804c5434cb7584935b13fb"
+    },
+    {
+      "anchor_winner_nll": 1.3537782396690483,
+      "candidate_winner_nll": 1.463449055297988,
+      "race_day": "2026-08-29",
+      "race_id": "202604030307",
+      "record_sha256": "dee8cebe0f99075fb693029052010531e15b3f18954bc7619fd1a635052fbd2f"
+    },
+    {
+      "anchor_winner_nll": 2.551746472056371,
+      "candidate_winner_nll": 2.45362437404363,
+      "race_day": "2026-08-29",
+      "race_id": "202604030308",
+      "record_sha256": "636155c602201df494d7b0f82dcc5602841430d751b11bbd9af4bbe34a6bac7f"
+    },
+    {
+      "anchor_winner_nll": 1.9724338461566702,
+      "candidate_winner_nll": 1.8698578449567436,
+      "race_day": "2026-08-29",
+      "race_id": "202604030309",
+      "record_sha256": "362066abbf9e8069aa5c3e13e4715b5d74a51b2b1f9252375cbbdbfc1154e1bb"
+    },
+    {
+      "anchor_winner_nll": 1.1871005241190018,
+      "candidate_winner_nll": 1.2443908725916415,
+      "race_day": "2026-08-29",
+      "race_id": "202604030310",
+      "record_sha256": "9be4d05677ca409e9566c7e0fcf6895c8120e6aa3a13369f7ca7b98e0282c4ee"
+    },
+    {
+      "anchor_winner_nll": 3.443639675449942,
+      "candidate_winner_nll": 3.563054701072214,
+      "race_day": "2026-08-29",
+      "race_id": "202604030311",
+      "record_sha256": "baf1ff5113b394af594a71537e3216bc1d91a3f8a84140f694a4ffcae3279cb2"
+    },
+    {
+      "anchor_winner_nll": 0.8868195735020329,
+      "candidate_winner_nll": 0.7874568221284441,
+      "race_day": "2026-08-29",
+      "race_id": "202604030312",
+      "record_sha256": "71cc4322c87b66731a7c832ee9cb527ea77c635a269af966f56029fc047bc50c"
+    },
+    {
+      "anchor_winner_nll": 2.406343485668463,
+      "candidate_winner_nll": 2.2932077302294855,
+      "race_day": "2026-08-30",
+      "race_id": "202604030401",
+      "record_sha256": "3501d3c1c66833a387a6716ec6bbf6041c656a2a167635eb72c3be6852ba5a20"
+    },
+    {
+      "anchor_winner_nll": 1.3361443244710383,
+      "candidate_winner_nll": 1.331221708941029,
+      "race_day": "2026-08-30",
+      "race_id": "202604030402",
+      "record_sha256": "6d354f9268a1d6d057d7e01462060569883e5ae7204670438f71f1bef8960e37"
+    },
+    {
+      "anchor_winner_nll": 4.728931124395774,
+      "candidate_winner_nll": 4.5179802484792715,
+      "race_day": "2026-08-30",
+      "race_id": "202604030403",
+      "record_sha256": "6773445383b13f3e2acd83cd48646ab5bfc88567f710f033b5a5b8c6ae20ef07"
+    },
+    {
+      "anchor_winner_nll": 0.6009666603415884,
+      "candidate_winner_nll": 0.6591002540774592,
+      "race_day": "2026-08-30",
+      "race_id": "202604030404",
+      "record_sha256": "499fcb18eb2a1ba04284be1fd95c3dd1928de0494bc97a7a7030b40bbe0057d9"
+    },
+    {
+      "anchor_winner_nll": 4.10360682750906,
+      "candidate_winner_nll": 4.088977455867333,
+      "race_day": "2026-08-30",
+      "race_id": "202604030405",
+      "record_sha256": "24d7545cc670e39186798eb1580cce23c934e94742996dbb603efa54aa5f0a9d"
+    },
+    {
+      "anchor_winner_nll": 0.8816609153339425,
+      "candidate_winner_nll": 0.8263161813089214,
+      "race_day": "2026-08-30",
+      "race_id": "202604030406",
+      "record_sha256": "8495d526ef25c6fed80d58c6f41ece71738e1fe193b4c1bccd92368112695f53"
+    },
+    {
+      "anchor_winner_nll": 1.9600276858660104,
+      "candidate_winner_nll": 1.8595739450665967,
+      "race_day": "2026-08-30",
+      "race_id": "202604030407",
+      "record_sha256": "0160f3dc03b24008031a34e8fcba89c2edbc74b1d9cac2743321f67bbbf70248"
+    },
+    {
+      "anchor_winner_nll": 2.4330527411349796,
+      "candidate_winner_nll": 2.679274647911094,
+      "race_day": "2026-08-30",
+      "race_id": "202604030408",
+      "record_sha256": "656dad918af829869ba5becfd737ca37d7ee44c7425653564133e44ca7d7774a"
+    },
+    {
+      "anchor_winner_nll": 1.4645288500458722,
+      "candidate_winner_nll": 1.2387071123957414,
+      "race_day": "2026-08-30",
+      "race_id": "202604030409",
+      "record_sha256": "f24bfa1e7de554a5c3fafed5e0ba950fde614eaee3c70a3c939459f736ddd52d"
+    },
+    {
+      "anchor_winner_nll": 2.173571730212667,
+      "candidate_winner_nll": 2.3342848751626164,
+      "race_day": "2026-08-30",
+      "race_id": "202604030410",
+      "record_sha256": "667684f437c3feb5d02f53cfcbae8a62aadf295b9e12cde1162ef7f939bf0fec"
+    },
+    {
+      "anchor_winner_nll": 1.3252397124105073,
+      "candidate_winner_nll": 1.2452417624296686,
+      "race_day": "2026-08-30",
+      "race_id": "202604030411",
+      "record_sha256": "90c046a55bc38bb22397922ffa5fa3a261f3c2abb52e8c1fcd9d78a8c85255ec"
+    },
+    {
+      "anchor_winner_nll": 1.0138425608210717,
+      "candidate_winner_nll": 0.9744160655856466,
+      "race_day": "2026-08-30",
+      "race_id": "202604030412",
+      "record_sha256": "e69b64fe882fc41884349d2d639de7b4511c9d707e1bb7bc0d7f2967b68023f7"
+    },
+    {
+      "anchor_winner_nll": 1.5184897052213062,
+      "candidate_winner_nll": 1.6112189293912929,
+      "race_day": "2026-09-05",
+      "race_id": "202606040101",
+      "record_sha256": "03b92c677fe3c200c362927b06030135c1988e7f731edfe177f9eb07c4b6f2b0"
+    },
+    {
+      "anchor_winner_nll": 1.3391421559195813,
+      "candidate_winner_nll": 1.3209017094057405,
+      "race_day": "2026-09-05",
+      "race_id": "202606040102",
+      "record_sha256": "5f6d215563149ea4c7bbb23a2344d94c95b1d6bbbda1c8ff069d769a050b9a88"
+    },
+    {
+      "anchor_winner_nll": 2.8420806305936384,
+      "candidate_winner_nll": 2.7001608243964657,
+      "race_day": "2026-09-05",
+      "race_id": "202606040103",
+      "record_sha256": "0cb7582144ab0f19edf746802b502a29bd362d9b80948cd76e6b0484973d4514"
+    },
+    {
+      "anchor_winner_nll": 1.4783390042733007,
+      "candidate_winner_nll": 1.3172968370939664,
+      "race_day": "2026-09-05",
+      "race_id": "202606040104",
+      "record_sha256": "3c46302f5f60cd859f9763d42068c0547123520c58f2c3fdfd890ff200e94409"
+    },
+    {
+      "anchor_winner_nll": 0.9449013735788744,
+      "candidate_winner_nll": 0.9768858707604977,
+      "race_day": "2026-09-05",
+      "race_id": "202606040105",
+      "record_sha256": "85f0fd8ee3ee1e1c116d6e2748944aa28e071fb59f9dbdde769636370f35f945"
+    },
+    {
+      "anchor_winner_nll": 1.5159482423356647,
+      "candidate_winner_nll": 1.4465761366907879,
+      "race_day": "2026-09-05",
+      "race_id": "202606040106",
+      "record_sha256": "bfed90fc1f19ab4006178465ed0101d6f6241281696c1e173cb38ea963da4850"
+    },
+    {
+      "anchor_winner_nll": 2.4851468686196827,
+      "candidate_winner_nll": 2.424760952540806,
+      "race_day": "2026-09-05",
+      "race_id": "202606040107",
+      "record_sha256": "893e53b1d24a2a635b496effd98f5c70a0f1d685c462c2f3b15273c898c0fabf"
+    },
+    {
+      "anchor_winner_nll": 1.6607290083051718,
+      "candidate_winner_nll": 1.7596041514099015,
+      "race_day": "2026-09-05",
+      "race_id": "202606040108",
+      "record_sha256": "5a306a3d4de3aec963db770574c31a49d5d1d96c812bf64c2c61794a4aa569a9"
+    },
+    {
+      "anchor_winner_nll": 2.9696626480171444,
+      "candidate_winner_nll": 2.9095945995672494,
+      "race_day": "2026-09-05",
+      "race_id": "202606040109",
+      "record_sha256": "faca43de993c526033235bbd59b1e57a1fc1afc7756e06f1d5758977f62a17b6"
+    },
+    {
+      "anchor_winner_nll": 3.224701976697061,
+      "candidate_winner_nll": 3.090806675747307,
+      "race_day": "2026-09-05",
+      "race_id": "202606040110",
+      "record_sha256": "ecaa34d8ce19ae2ed174a9232e44143feb4dafaa1592c8a4959af3eb9cdf9848"
+    },
+    {
+      "anchor_winner_nll": 3.0798755532402144,
+      "candidate_winner_nll": 3.0911529870316508,
+      "race_day": "2026-09-05",
+      "race_id": "202606040111",
+      "record_sha256": "b14651c238901e73ad1e2c3dc9207bf5fe9c009bf69685fd82ffa0723ca4882e"
+    },
+    {
+      "anchor_winner_nll": 1.463102376639782,
+      "candidate_winner_nll": 1.4932199412435125,
+      "race_day": "2026-09-05",
+      "race_id": "202606040112",
+      "record_sha256": "0e6f0aac4eec8b38b13e8a5a6095b877c79510b0249832a8f6253410d49dee64"
+    },
+    {
+      "anchor_winner_nll": 1.9333894800622968,
+      "candidate_winner_nll": 1.977730382947658,
+      "race_day": "2026-09-06",
+      "race_id": "202606040201",
+      "record_sha256": "a16e6ee7c0ef829e7b018411340b89890fcf92cf72375fa24ac33dec837b4cf5"
+    },
+    {
+      "anchor_winner_nll": 3.8646187048101712,
+      "candidate_winner_nll": 3.934655441839104,
+      "race_day": "2026-09-06",
+      "race_id": "202606040202",
+      "record_sha256": "ae7344c64648513cecf08f87a383d6bc99d90f291d231361c0bce5011d82edc2"
+    },
+    {
+      "anchor_winner_nll": 1.4799677578223134,
+      "candidate_winner_nll": 1.4769553676820821,
+      "race_day": "2026-09-06",
+      "race_id": "202606040203",
+      "record_sha256": "c21778efff77934384b2ab9ef16b54b49d29dacb0b5df1d979a9b768e2bde558"
+    },
+    {
+      "anchor_winner_nll": 2.8569337794069405,
+      "candidate_winner_nll": 2.8747852856859737,
+      "race_day": "2026-09-06",
+      "race_id": "202606040204",
+      "record_sha256": "feb4574e568c3689733c73e82d88a155e46df0dd413c769c2500e0e6450134f3"
+    },
+    {
+      "anchor_winner_nll": 1.584493032522683,
+      "candidate_winner_nll": 1.5682833329648431,
+      "race_day": "2026-09-06",
+      "race_id": "202606040205",
+      "record_sha256": "9fa61ef2b0137b28989a76ca0f9d2e9afc4fad258ad7791c312b08de16cf36e1"
+    },
+    {
+      "anchor_winner_nll": 2.4463091229698355,
+      "candidate_winner_nll": 2.375744187757276,
+      "race_day": "2026-09-06",
+      "race_id": "202606040206",
+      "record_sha256": "f2512c5cd0bec8416c2d4117f8c4626fd3320ca405e1d447d2537b901ec3bd06"
+    },
+    {
+      "anchor_winner_nll": 5.573652802547001,
+      "candidate_winner_nll": 5.5199418128512745,
+      "race_day": "2026-09-06",
+      "race_id": "202606040207",
+      "record_sha256": "5e4a82ef3ab698846acef3b4592b7e9c0bc65767c72b3b9b08f06fa9548af229"
+    },
+    {
+      "anchor_winner_nll": 2.6718547952156646,
+      "candidate_winner_nll": 2.7610478597959407,
+      "race_day": "2026-09-06",
+      "race_id": "202606040208",
+      "record_sha256": "4c86c335330f4438ba562428fefe5d3c92e427a80e0380f2f0b2593a3c8394c9"
+    },
+    {
+      "anchor_winner_nll": 1.3259831804530609,
+      "candidate_winner_nll": 1.2639073092967243,
+      "race_day": "2026-09-06",
+      "race_id": "202606040209",
+      "record_sha256": "1a989f10002f9f146bf1374e0287b23deb63538adfc914e037a136490fb3e4d8"
+    },
+    {
+      "anchor_winner_nll": 2.748077554799038,
+      "candidate_winner_nll": 2.4463311939349883,
+      "race_day": "2026-09-06",
+      "race_id": "202606040210",
+      "record_sha256": "a3d0d4a44aad6ae879bebd116c447c7c81cfd3f13f95656a35afcbd413502611"
+    },
+    {
+      "anchor_winner_nll": 2.638460931406266,
+      "candidate_winner_nll": 3.000705593976744,
+      "race_day": "2026-09-06",
+      "race_id": "202606040211",
+      "record_sha256": "0c4c62ff0735f28a35055e16731e80af938ce9e823ade5997a623671d9f331d9"
+    },
+    {
+      "anchor_winner_nll": 1.7616095286995905,
+      "candidate_winner_nll": 1.7258509490558802,
+      "race_day": "2026-09-06",
+      "race_id": "202606040212",
+      "record_sha256": "bfd7e17e41b42e341187d68b9d5303cff9e828fbf10ae42fe8c5671cdbef01f9"
+    },
+    {
+      "anchor_winner_nll": 1.4922434389942845,
+      "candidate_winner_nll": 1.9519912880648824,
+      "race_day": "2026-08-29",
+      "race_id": "202607030301",
+      "record_sha256": "c01c6b0e2fb01bfacf500e70f2a16255de20ae96f35804b1e7cff83a1b7eb140"
+    },
+    {
+      "anchor_winner_nll": 1.3627323311821922,
+      "candidate_winner_nll": 1.2614739467677492,
+      "race_day": "2026-08-29",
+      "race_id": "202607030302",
+      "record_sha256": "c988c9e83fbc9a0338cf22a914bb21a215d5925331753d9fadfea7505647a17a"
+    },
+    {
+      "anchor_winner_nll": 2.0810138890124827,
+      "candidate_winner_nll": 2.06675354935755,
+      "race_day": "2026-08-29",
+      "race_id": "202607030303",
+      "record_sha256": "483712d39b950b01f99bb72cfe51f44536dcef985e7e0268bf0926cff2df9d9e"
+    },
+    {
+      "anchor_winner_nll": 1.4756509419367436,
+      "candidate_winner_nll": 1.3215819464967085,
+      "race_day": "2026-08-29",
+      "race_id": "202607030304",
+      "record_sha256": "30be3de90055d1c550deb95c4f150aced37b09a7b73f55aa5ae53639c49a5d6c"
+    },
+    {
+      "anchor_winner_nll": 1.079398646981061,
+      "candidate_winner_nll": 1.0522120636898435,
+      "race_day": "2026-08-29",
+      "race_id": "202607030305",
+      "record_sha256": "dbfd71c84a0c5bc24bd17b984909334ee577dffcf56d66e277fc91d8016b3add"
+    },
+    {
+      "anchor_winner_nll": 2.4559938791856375,
+      "candidate_winner_nll": 2.213696832999301,
+      "race_day": "2026-08-29",
+      "race_id": "202607030306",
+      "record_sha256": "a9f35e2fd3465a3d8a7e1b70fffb66749c4721968d786e3eb00a81e1dc346448"
+    },
+    {
+      "anchor_winner_nll": 2.9461386859140997,
+      "candidate_winner_nll": 2.877226769114708,
+      "race_day": "2026-08-29",
+      "race_id": "202607030307",
+      "record_sha256": "5e62fdd73a0f456babafbf731a44f524bd853785569b5235c7604b9c09684081"
+    },
+    {
+      "anchor_winner_nll": 2.2118245893605013,
+      "candidate_winner_nll": 2.189257787980106,
+      "race_day": "2026-08-29",
+      "race_id": "202607030308",
+      "record_sha256": "7ca1075c299303880c2881bec8825cab2574bba30c15dccf6302bfacc28fce45"
+    },
+    {
+      "anchor_winner_nll": 2.2351015244859,
+      "candidate_winner_nll": 2.2587479819858705,
+      "race_day": "2026-08-29",
+      "race_id": "202607030309",
+      "record_sha256": "52ddb327a99ddd7b8a266bd5a60751bf175614f7b8a37bb52deee250ed74aa86"
+    },
+    {
+      "anchor_winner_nll": 2.0494247119550244,
+      "candidate_winner_nll": 1.9602042950462986,
+      "race_day": "2026-08-29",
+      "race_id": "202607030310",
+      "record_sha256": "56ba104c28a4647225daad162fbff43582eaee17d2fd339a330eab013dbace23"
+    },
+    {
+      "anchor_winner_nll": 1.8346480930301479,
+      "candidate_winner_nll": 1.6161680123107993,
+      "race_day": "2026-08-29",
+      "race_id": "202607030311",
+      "record_sha256": "a9ad9f00ede42505b886de4bf04566fa55bd7e8ca5edcf1f5ca07509edb944d7"
+    },
+    {
+      "anchor_winner_nll": 3.9405343556051373,
+      "candidate_winner_nll": 4.0654008153255266,
+      "race_day": "2026-08-29",
+      "race_id": "202607030312",
+      "record_sha256": "d3c3a8aab9ec40eb6369bdad7b44e470f64acc1d089f17c1d2478565e35588f3"
+    },
+    {
+      "anchor_winner_nll": 1.1108619809746558,
+      "candidate_winner_nll": 0.9682618994101632,
+      "race_day": "2026-08-30",
+      "race_id": "202607030401",
+      "record_sha256": "399eaa5a96ff3f3471d1183ea86b806cd96de68af44232d2435b4cc0b2ca87a0"
+    },
+    {
+      "anchor_winner_nll": 2.5979722738752313,
+      "candidate_winner_nll": 2.6067541198231123,
+      "race_day": "2026-08-30",
+      "race_id": "202607030402",
+      "record_sha256": "a015324720628c54e8c400901c3f6ce783d3f0f2de0a9e981c4b3c4aba0b4835"
+    },
+    {
+      "anchor_winner_nll": 2.369912091954956,
+      "candidate_winner_nll": 2.25834239977609,
+      "race_day": "2026-08-30",
+      "race_id": "202607030403",
+      "record_sha256": "cf09b085e8c7e4273c76e25616e3f0633fd49f28d48d4672e50e017d27e82e7c"
+    },
+    {
+      "anchor_winner_nll": 0.8770032840482717,
+      "candidate_winner_nll": 0.7895814542099703,
+      "race_day": "2026-08-30",
+      "race_id": "202607030404",
+      "record_sha256": "f4d285410e4a218a708c1026094b65fbbeeb9d5bcae90dafbfd0f5dc44b93759"
+    },
+    {
+      "anchor_winner_nll": 2.3207843076657007,
+      "candidate_winner_nll": 2.056751351514806,
+      "race_day": "2026-08-30",
+      "race_id": "202607030405",
+      "record_sha256": "aa5e570bb7376065ab90a8aa3d57a247fea38cca67f5ba329d1bd16445123237"
+    },
+    {
+      "anchor_winner_nll": 1.349780001512562,
+      "candidate_winner_nll": 1.411136286898983,
+      "race_day": "2026-08-30",
+      "race_id": "202607030406",
+      "record_sha256": "36097fcb18504bf23f51b81b8e0a02911347b55ffbde228a28551e5e532cde08"
+    },
+    {
+      "anchor_winner_nll": 0.7934216263253923,
+      "candidate_winner_nll": 0.8112239107792457,
+      "race_day": "2026-08-30",
+      "race_id": "202607030407",
+      "record_sha256": "f6a0d5214f2e8d92183a5970797df1311fe54a89318239e1e438ad1ac85777c6"
+    },
+    {
+      "anchor_winner_nll": 2.330091952570878,
+      "candidate_winner_nll": 2.293737152730176,
+      "race_day": "2026-08-30",
+      "race_id": "202607030408",
+      "record_sha256": "2ac72a8fe4531a1d8c195cc47ceaf9ea9c172c074d4654b96d3ff3e4e33fe5bf"
+    },
+    {
+      "anchor_winner_nll": 1.6521431873320613,
+      "candidate_winner_nll": 1.5883457664587222,
+      "race_day": "2026-08-30",
+      "race_id": "202607030409",
+      "record_sha256": "11431484c74cb013d26147a6f422c8af9c32c6d048e9ce708864d8b662d11abf"
+    },
+    {
+      "anchor_winner_nll": 1.8586527221669251,
+      "candidate_winner_nll": 1.9084870939308396,
+      "race_day": "2026-08-30",
+      "race_id": "202607030410",
+      "record_sha256": "8aa406b6a4c818b075f19cd61616d1ac5d24f625906a9b2eada8acc5a4ac8c33"
+    },
+    {
+      "anchor_winner_nll": 2.6220887340065584,
+      "candidate_winner_nll": 2.6775747881651366,
+      "race_day": "2026-08-30",
+      "race_id": "202607030411",
+      "record_sha256": "591b95a8d81a48345aaf82c3d3b410ed8bc87c66d4339b45d256d6a0524d87f6"
+    },
+    {
+      "anchor_winner_nll": 3.2531680603104216,
+      "candidate_winner_nll": 3.6614768931977664,
+      "race_day": "2026-08-30",
+      "race_id": "202607030412",
+      "record_sha256": "21b51f447fbce7d7a402b53842bc7c0dfb9a839d1c46e6d7a24b447e6bcc4345"
+    },
+    {
+      "anchor_winner_nll": 1.259524758581127,
+      "candidate_winner_nll": 1.2636722852676872,
+      "race_day": "2026-09-05",
+      "race_id": "202609040101",
+      "record_sha256": "1ec6bf3eca7071d9d0a84d3871999436216512ea3e150ab12b0efe5838519756"
+    },
+    {
+      "anchor_winner_nll": 1.6164610214804893,
+      "candidate_winner_nll": 1.542458363105134,
+      "race_day": "2026-09-05",
+      "race_id": "202609040102",
+      "record_sha256": "ec9357d2ba34f2fed8a4d2b0e03f437fa25d0c8394e8e27fcf60e0a02b0ea0b9"
+    },
+    {
+      "anchor_winner_nll": 1.9472328534568044,
+      "candidate_winner_nll": 1.9151570118461583,
+      "race_day": "2026-09-05",
+      "race_id": "202609040103",
+      "record_sha256": "621d79c6593332defba1679df6319445510a3794f9dc72c7387f9d907d8dd132"
+    },
+    {
+      "anchor_winner_nll": 4.208244271616888,
+      "candidate_winner_nll": 4.257440646062284,
+      "race_day": "2026-09-05",
+      "race_id": "202609040104",
+      "record_sha256": "3bc39eb443c37ec9182ca732f6d86a73afd2980d6727f36cdf880eccdec62fc2"
+    },
+    {
+      "anchor_winner_nll": 2.3998840514609636,
+      "candidate_winner_nll": 2.341300760916952,
+      "race_day": "2026-09-05",
+      "race_id": "202609040105",
+      "record_sha256": "551d6db7cd5550771b49e9079bd90894fb152f1f9983dcbec3d92be6511f3d49"
+    },
+    {
+      "anchor_winner_nll": 1.9740983934222207,
+      "candidate_winner_nll": 1.9429525573462838,
+      "race_day": "2026-09-05",
+      "race_id": "202609040106",
+      "record_sha256": "054055d3781a8d3e5aa6928b41eed27fe35a2e18c5c61d88026035178ad55468"
+    },
+    {
+      "anchor_winner_nll": 2.9667597518432944,
+      "candidate_winner_nll": 3.154542943489637,
+      "race_day": "2026-09-05",
+      "race_id": "202609040107",
+      "record_sha256": "b8a7b43de653ed3f34fdcdc97f9d51898206b420aecb3173dd67de2c07028758"
+    },
+    {
+      "anchor_winner_nll": 2.830788394708108,
+      "candidate_winner_nll": 2.872424872990684,
+      "race_day": "2026-09-05",
+      "race_id": "202609040108",
+      "record_sha256": "30459ba92bd509e7739a9d25fabbc4f93606a7c76aef0028394cc1285f49df68"
+    },
+    {
+      "anchor_winner_nll": 1.9319719038595786,
+      "candidate_winner_nll": 1.923541311620418,
+      "race_day": "2026-09-05",
+      "race_id": "202609040109",
+      "record_sha256": "cd70e8340573bd815d7aa51af2bed8b91698d85cbda5b37ff4e531f65f1ae180"
+    },
+    {
+      "anchor_winner_nll": 2.236677946167975,
+      "candidate_winner_nll": 2.6433850601792224,
+      "race_day": "2026-09-05",
+      "race_id": "202609040110",
+      "record_sha256": "77f3c3fac832d122c14e28c32b66ac185f7e017adcc5fd8c6bb73d9a33de49b3"
+    },
+    {
+      "anchor_winner_nll": 2.319489523794868,
+      "candidate_winner_nll": 2.3488050075490077,
+      "race_day": "2026-09-05",
+      "race_id": "202609040111",
+      "record_sha256": "62b5afe5621c91f4b4e46bfcb25cade50b0b34504263407a87d38b7cbfdcc3c6"
+    },
+    {
+      "anchor_winner_nll": 3.079212565354149,
+      "candidate_winner_nll": 3.2014299214009405,
+      "race_day": "2026-09-05",
+      "race_id": "202609040112",
+      "record_sha256": "d2fdcee77b934034a997b1f233c2c9a674773b67d9b5930ab8facad0fd01bdf6"
+    },
+    {
+      "anchor_winner_nll": 1.128641525042115,
+      "candidate_winner_nll": 1.1705880916172184,
+      "race_day": "2026-09-06",
+      "race_id": "202609040201",
+      "record_sha256": "d6db9bb2342b7d5687155fa2cfb046289f62f82a6062eec74418c61263aac4d7"
+    },
+    {
+      "anchor_winner_nll": 2.719365028006271,
+      "candidate_winner_nll": 2.5042473308330404,
+      "race_day": "2026-09-06",
+      "race_id": "202609040202",
+      "record_sha256": "d37982054c738dbacf5bb138a754166bbb26d2d21fd167e2057679456fb2216b"
+    },
+    {
+      "anchor_winner_nll": 1.188565674817332,
+      "candidate_winner_nll": 1.2365320055274902,
+      "race_day": "2026-09-06",
+      "race_id": "202609040203",
+      "record_sha256": "022124f13a8d7c27e0947845c39306e13a9294f9005f275499fdfc2b215dafa8"
+    },
+    {
+      "anchor_winner_nll": 1.1968105327590242,
+      "candidate_winner_nll": 1.104587110709954,
+      "race_day": "2026-09-06",
+      "race_id": "202609040204",
+      "record_sha256": "4e6f08539e8922acb0b5321dff7649074aa66dfb60f0d1836c41d5b4da13c66f"
+    },
+    {
+      "anchor_winner_nll": 1.5299169614731962,
+      "candidate_winner_nll": 1.5385109379726634,
+      "race_day": "2026-09-06",
+      "race_id": "202609040205",
+      "record_sha256": "e38970667825f4595625cc664d166264e3473331ed911718d844e464541ef52b"
+    },
+    {
+      "anchor_winner_nll": 3.5781889515509526,
+      "candidate_winner_nll": 3.422380532904654,
+      "race_day": "2026-09-06",
+      "race_id": "202609040206",
+      "record_sha256": "a7dfe049c1e6cb876f025ba47698aed103c965ccafae3de14d3f4405c8f8c8f1"
+    },
+    {
+      "anchor_winner_nll": 3.739238192252362,
+      "candidate_winner_nll": 3.857155098423837,
+      "race_day": "2026-09-06",
+      "race_id": "202609040207",
+      "record_sha256": "563463df4eb515a8e4189fd164e00fa024b1c36850c277f2b7466c26be72f0da"
+    },
+    {
+      "anchor_winner_nll": 1.4924058280152885,
+      "candidate_winner_nll": 1.349630346137789,
+      "race_day": "2026-09-06",
+      "race_id": "202609040208",
+      "record_sha256": "c3450ef67e64bd92761472c68e8b1843f854dab8ca699cd3f443d7b936cd59dd"
+    },
+    {
+      "anchor_winner_nll": 2.0731724339102366,
+      "candidate_winner_nll": 2.1184212509185247,
+      "race_day": "2026-09-06",
+      "race_id": "202609040209",
+      "record_sha256": "8c1a0676bbeb16a63e504583d70b98f3b677879ac6643c91b3147f892caef14a"
+    },
+    {
+      "anchor_winner_nll": 1.8212364821741531,
+      "candidate_winner_nll": 1.7420471472745371,
+      "race_day": "2026-09-06",
+      "race_id": "202609040210",
+      "record_sha256": "d859b48914acc8100d32df2af64f588b790bff1c1f31c0632e38410233fbf0f2"
+    },
+    {
+      "anchor_winner_nll": 1.2408261273181662,
+      "candidate_winner_nll": 1.509210569388675,
+      "race_day": "2026-09-06",
+      "race_id": "202609040211",
+      "record_sha256": "f5ffb04afb0adf3db15e26421de3e4115eb5f1a1126ce75956d61ad3af0ec04c"
+    },
+    {
+      "anchor_winner_nll": 3.599603607154671,
+      "candidate_winner_nll": 3.7701394575287956,
+      "race_day": "2026-09-06",
+      "race_id": "202609040212",
+      "record_sha256": "008677fbae8f1ee51c3e8ddd0a36d19cb9191879db32982fcd382c53ae33e650"
+    }
+  ],
+  "scope": "Rehearsal replay on races after the bundle training cutoff; day-variance input for power planning only.",
+  "skipped": {}
+}

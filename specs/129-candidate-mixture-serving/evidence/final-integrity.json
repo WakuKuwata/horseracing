@@ -1,0 +1,93 @@
+{
+  "artifact_kind": "mixture_final_integrity",
+  "status": "PASS",
+  "created_at": "2026-09-08T15:05:41.379075+00:00",
+  "active_model": "lgbm-094-cap900 (unchanged; see log)",
+  "db_prediction_runs_after_session_start": "0",
+  "bundle_sha256": "28f39715a9c1dba13755ee44f3a439099d5aaffd94685ac11e4d23166b388471",
+  "anchor_sha256": "80fd7734f2d77f729bc71350a584c5ac5fb0c171b90940972fe7ad224e6537b3",
+  "stage_discount_sha256": "0983175af3b2b7356d7f0080f57468a9705ad985d13886b673b5c78362543da5",
+  "run_freeze_sha256": "eaeeb6408c648a253c8ceba8199e39d04f6483bc07454ac3759c2a638edf135c",
+  "receipts": {
+    "anchor-42.json": "d6cdbf69f4ce2e02ced7695f17dec9150b02e48f0876dcc1c04d4b692307c2bf",
+    "anchor-43.json": "7c0eae9af0c5281cc8e29f0059d2a0c304c7eb9dc8181c1b2a1c6403300e86e6",
+    "anchor-44.json": "30e6143846cba55e13fd4c32e121234531867f15433ebd1b62ecf389af6a832a",
+    "joint-42.json": "8acdec48ec79a68d7cf05918dd41acaa541a7e5830fbeea13e15eeafa09ed15b",
+    "joint-43.json": "87eacd3ac8d42753db77eb453f5139535a28010b62f6b63b7ff359051079c23f",
+    "joint-44.json": "2536c65c90942c365ede24f4ee85225ba75f8ba0511e3d5f835e1a39e042777a"
+  },
+  "members": {
+    "anchor-42": {
+      "model.txt": "7a901c9d71ea8c40811f641b0572a5f2abe82913ee69b10b16349b4fb516d99a",
+      "calibrator.pkl": "65a2770806dcb46dfe38b3f4463893a70f61362893c3e1e09eeda61826cd0a72",
+      "preprocessor.pkl": "337973c7f20063ab76d68e6b2bd098ae4528a195db7a62d81b6faceac7e607a4",
+      "metadata.json": "2489142e7490ce9eab5634cc08fe898bf38d3a2752b332adeba8ebdb2b763a00"
+    },
+    "anchor-43": {
+      "model.txt": "245f79f519ca8e96661cba2ad56841bfb2f02daa986cf40015f8c47522e2adfa",
+      "calibrator.pkl": "eca13a6c582de2be2c244af38761ddcb2bde0c40badfe008da9110dc30fb1030",
+      "preprocessor.pkl": "337973c7f20063ab76d68e6b2bd098ae4528a195db7a62d81b6faceac7e607a4",
+      "metadata.json": "a3c85dd9e23902d1e3f7fbe7829a01ee67acf37742154ae1da018151d5c86a74"
+    },
+    "anchor-44": {
+      "model.txt": "7aaef771d86829e59829ebc133a6743f035065361384593e79f56cb4878e41c8",
+      "calibrator.pkl": "62703d08d9527744bf0d8d881b90da39ab55f92d1bbe92b0230f843444a4643e",
+      "preprocessor.pkl": "337973c7f20063ab76d68e6b2bd098ae4528a195db7a62d81b6faceac7e607a4",
+      "metadata.json": "b10d96d39de47b0a2eb98b58f01991fa08ae3bb080c299002abc06664b459334"
+    },
+    "joint-42": {
+      "model.txt": "41a125fb490205a38cea7c4263af53d7dbcc78adf43eb75157b3c8514134b280",
+      "calibrator.pkl": "24072a3649011227891cfdae3b8c2740c1044f6c74b1201ab2c148db51a0d450",
+      "preprocessor.pkl": "80f7301876de61597cd6761f10ffc0bd7e666bb89bdc110b35845b3012823de9",
+      "metadata.json": "781f3a250f1d9e38bfd97fbb838db8236aa0c59bb68da4c12f7c0acb12215204"
+    },
+    "joint-43": {
+      "model.txt": "db3c55f4584ee5013c349ae8d046e3c302b250fca18c1c35f995ce42fe22ac9c",
+      "calibrator.pkl": "f793bafe9890827fe2f9b4ae223d5708b2f3265d7282dae10b38d55863c02c11",
+      "preprocessor.pkl": "80f7301876de61597cd6761f10ffc0bd7e666bb89bdc110b35845b3012823de9",
+      "metadata.json": "1bae48b128c2776819c7a9f47b0d91e2aa04d51471f6c127e2c4e939d5c5c51b"
+    },
+    "joint-44": {
+      "model.txt": "6cf58c31004957611979ee4ff3c304e4b8c0df02a143af2d6194b3f2e930f444",
+      "calibrator.pkl": "0d50d4e5b5035f9b56aef6a9669017644583e7653bc6fa7fc70294a0c4f83f3a",
+      "preprocessor.pkl": "80f7301876de61597cd6761f10ffc0bd7e666bb89bdc110b35845b3012823de9",
+      "metadata.json": "08eda6a1400ef8c9542ff8f08a76113e0d6221cdf18c963afe0f7eeef573b5f8"
+    }
+  },
+  "evidence": {
+    "annual-serving-parity.json": "c65820a3ccca35cb2618e0bf4f98dd69bb2500f34d0c6e3480a5f8e009380504",
+    "confirmation-readiness-window.json": "c0370640be690160ba0ce11ef0af0f5092e602ce2bfcdeb77f756e470e4101bb",
+    "confirmation-readiness.json": "1349eae0461123f3b505ed25bfbd77f71f62cd3e271812320150748ded53d0e4",
+    "noise-justification.json": "36224915dd014431f5db40fe6dfd5224e566e80b2a7b261ba0f7767f59dd606f",
+    "power-development.json": "76f2d6d552b682cfcea00a969c80c4f79e9a8e1e5bf8339483be337922bbb1df",
+    "power-plan.json": "dfdf4ab3a41b04ff6cb24d470d9e1be985c9d766deb9ff5769fb421a79db3deb",
+    "serving-compatibility.json": "5b354ad78b8e748fbb14d5dc48f648b7531f2dae864cd97cf07183254d60ea43",
+    "validation.json": "e5b0a44b9343984143c20db9e7cb3e8e71e02001b13f3e486634b0c74c4214b5"
+  },
+  "rehearsal_records": 144,
+  "prospective_records": 0,
+  "research_125_unchanged": true,
+  "confirmation_reserved": false,
+  "ledger_touched": false,
+  "fit_cost": {
+    "wall_train_minutes_2_workers": 55,
+    "fit_seconds": {
+      "anchor-42.json": 995,
+      "anchor-43.json": 1024,
+      "anchor-44.json": 1024,
+      "joint-42.json": 934,
+      "joint-43.json": 966,
+      "joint-44.json": 969
+    },
+    "peak_rss_mb": {
+      "anchor-42.json": 9108,
+      "anchor-43.json": 9910,
+      "anchor-44.json": 8780,
+      "joint-42.json": 7776,
+      "joint-43.json": 7874,
+      "joint-44.json": 8608
+    }
+  },
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

@@ -1,0 +1,616 @@
+{
+  "artifact_kind": "candidate_annual_serving_parity",
+  "status": "PASS",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "method_sha256": "00005ca496a8c96f71289e3747f400fdc5895bee7d2abd5f90c8c6be3c18ef72",
+  "helper_sha256": "c2ff5c9e6fe5c825f43cad7244f279ef99cc1a9cd532fbbadc24ecf17bdb5255",
+  "research_source_hash": "e93f403a80eaf3cfae5967e875dfcfabc46ef4466346ea2cbf7cf8b92b920d9e",
+  "runtime": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "packages": {
+      "numpy": "2.5.0",
+      "pandas": "3.0.3",
+      "lightgbm": "4.6.0",
+      "scikit-learn": "1.9.0"
+    },
+    "scipy": "1.18.0"
+  },
+  "input_hashes": {
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/08330eb0c3de4dffa5f8f730b690f895e35ae05a6240bc4eaa5e29c443d781a3.pkl": "3092bb603f19ae9cb647eb88e965ae5781e4d635ef46ebdfbbd5d759ba3baf82",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/24f0c77a5448679a520acf8343cf14b8847cfcc8233e326ff5395257d9a853aa.pkl": "a9fadbfa63929ce75cebd8715696daf1d4efe3e5c4bab5b67db445362e6566ac",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/504eae48988104a5da02e1d7de2aeb11df32151763fe1a667b902de8d28ac779.pkl": "31c633dfb708860887057005f69f4b963f40c3011b3c5de4b193bbe6165a4437",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/87ec1df2cc990aac89f54aa8dcac6ea8a22f032c632dd6541172e5ce284b3f77.pkl": "65d37f5f6c0eadf0ebe38d410ca789559cc25bcf4c23e0f5fdc29ad62ca60c2d",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/a3d1287149c2a1e918e5ce0a71d4442beee6b29ec3feb16d5dcaba96bea94dd8.pkl": "4d3a1ce7b55fdbae3f83012878fbc40dfb5bc6b83afb6b090763ba26306c6ba0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/ba6e80a52a062d625ce806534a2577e9feb46a3a806b2421d496c5bd12842e45.pkl": "f35483331319d598b5c34e6bda00cb96ed25ffa2e8c7437a85944329df23fc64",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/c192f8d1be7497d38071e0c5af9aae5500fcee7f00e0ffe2fe69338b7e9011e0.pkl": "1277b541e743989caef87f441ef60b4fc9a34fb031ab19f6724563b8eb405404",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/cc72144927e66d82c82004d62ca07f15466df044363d8744c968d9bb96b3ff57.pkl": "fe747f33f42fa0b0f36a69733c707d56d773615041c2af2ee161b948a97396f7",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/e1c612d465240a8c446b5bfe3a9c3b24e81b1c9c37769b229359c33f1b166c87.pkl": "4927951b4e2fe241b86f5917021199c6d86bcf37b012f9fd578bd4019feaa775",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/e3c2060810ee4083e00a305b1d5cbb7d4a5bed66d0e8783301f5e0867cfb6052.pkl": "1cc63ce415e46630084a9beed8e110e29fbe3ebfe476d121a1d447af91a2a7d3",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/e9f2d430996605ff216f083992fc04c7266e04d16c8f6a1780b5457acbd2118e.pkl": "8a13c12b8b25b6e66d0e8628220c9331ec29a147b5c2cb2d04b0797851151303",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/f1e2e1565f12c962db2f8feff060296d65937df633c5cde62c2a9d5319230ce8.pkl": "5fef41c2d4652559b1b7b89bb534ba30618d81ab8c37ed08995f699ca1e07059",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/f62b86a76f0a35ccdaad886892c61c78471845e3553c31cf7a1827c00836a8d1.pkl": "4490d348cadd35440f2ba7a4b6c7c4f21a76016274842dcdd4ce674ef979862d",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/cache/f8b50b2ba36be79ab1326f5767e599a6b7719a4da6a454973c9e68367a961bed.pkl": "0b087eb90fc3f6214e3afb4a31182e196601b3f1e851c6f2a516091f838f64bb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/08330eb0c3de4dffa5f8f730b690f895e35ae05a6240bc4eaa5e29c443d781a3.json": "d53859897b285c8c761cb8a40a1078f4f3a89d83a33258bddca0acfe2a5b7ca0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/24f0c77a5448679a520acf8343cf14b8847cfcc8233e326ff5395257d9a853aa.json": "46f7353e7ec93cae39ab261438f56e560d5180730ffc77c6d48134dd751c6d9a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/504eae48988104a5da02e1d7de2aeb11df32151763fe1a667b902de8d28ac779.json": "819f8ef4fcf3a533aa8a1cbafccc538b2b9115a5166317435c87af3dde05f680",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/87ec1df2cc990aac89f54aa8dcac6ea8a22f032c632dd6541172e5ce284b3f77.json": "5b8ddb75b173a33ec5cfa6bf7beb887f4fa6752c8e832eb9037e5e70f57824ad",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/a3d1287149c2a1e918e5ce0a71d4442beee6b29ec3feb16d5dcaba96bea94dd8.json": "009af5791da4899929e56e07ab31c13e4892a42d387056964909036e0d3b9fd8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/ba6e80a52a062d625ce806534a2577e9feb46a3a806b2421d496c5bd12842e45.json": "447f41c11db9cbe2fcad6b5d56e454abf2eac19964f43729a1ea96de6229f87f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/c192f8d1be7497d38071e0c5af9aae5500fcee7f00e0ffe2fe69338b7e9011e0.json": "b38334a81f1af0cc8f8d5b0b6238f97939a8563b7b39dab5de69ef26134863c1",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/cc72144927e66d82c82004d62ca07f15466df044363d8744c968d9bb96b3ff57.json": "ec0ac649a6e00cdbb96255ad70af6742c5aecad61409e34ae3b2aebe2a517b60",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/e1c612d465240a8c446b5bfe3a9c3b24e81b1c9c37769b229359c33f1b166c87.json": "e03874e831133233ca042c2258129579790102abf179ed83ac6f5d1b57ff93eb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/e3c2060810ee4083e00a305b1d5cbb7d4a5bed66d0e8783301f5e0867cfb6052.json": "ae155ff8c733f16b242b3dbba08184dad74a394a0a60da48a9819eecbedab9de",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/e9f2d430996605ff216f083992fc04c7266e04d16c8f6a1780b5457acbd2118e.json": "db9d05feaded6f8ee4e08d4747a7e4cdcbd38a0eed1bb65f925933f6a5f6ba24",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/f1e2e1565f12c962db2f8feff060296d65937df633c5cde62c2a9d5319230ce8.json": "5517566b47138ae7a226c93856e56c7f902c7e26d6ca67a420d405c77073240c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/f62b86a76f0a35ccdaad886892c61c78471845e3553c31cf7a1827c00836a8d1.json": "6767f5bb3898564278de767ab19ea55d05b1862a97ae8ee66de02993e3d21f6e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/110-feature-pruning/prefill/f8b50b2ba36be79ab1326f5767e599a6b7719a4da6a454973c9e68367a961bed.json": "0243861832bca78bff69f99a3f55f674e01a80b285f51f925dc7c4343119a56b",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/snapshot.pkl": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/113-small-gain-stack/run-freeze.json": "5b2af3e9ba5bb56b9ba08149dc16568807578a27fd3aba340314324900857ffc",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/00ca3fe15e5368abc836d90fd3d140abd3072b9b99f06c7d14a0e242bd0b99c8.pkl": "b764ef617fff70a26ef9b1a3a4b37f4fd0fecab8504846138585404cd658c6f9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/11dbf9255d13d11d5a83e0dc835b06976885df15d015d29c78e05a666002c413.pkl": "c0c7febc59c84cbf0cb0b27cf5754b9f9bc50d0a6bd2aa671851aaf0edd06091",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/164bbd159c7558a9dccfed6b4c7fe1b5543c7a33bfee0127faf1f46413374dcc.pkl": "287401da74b57cfa50bdfd4a38da364acab4059a0a078b890dd01486f5f7f055",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/22f6cc55d9545ee030793c6c12492b592acfcf096925516ae2b6e9aa44dfe288.pkl": "ce4152b6ea2914115f8630ee41f34c74d7ebd16e574a62bac5f4e4f06533f35b",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/3704976487bc7b8499bca62ab27aa27d242adbe5cac97afcee0f47c4a112e31c.pkl": "53f7bcabf9790e7722f916674bf3f89c2a49f891cfcf9463d09816ddd6199396",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/37de7dacfa3de5cd21173a6a7f2f8cb974940d11ba8a64d6d6b56ff0476c3487.pkl": "078a09d97de74413ce41d158ff2b365d0754b3b204ca5ecfa258b0fd563248d6",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/388519a834f3cb36ba8a273ae01b4fab9783666875f367848f54988120661571.pkl": "56f72651e7a32411358166a1e3403ab17b46d828013509945a5cfba3b45f1176",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/4c51bf7c323799c6106adf3cdbf80093d8f184c3e11fddc053aedbe066d41c11.pkl": "2b913e27576eb5d121c99a1e5a5c93ec0604232e17f9247552157ac5c462cce9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/5235348923f029539bb8a3c09e2c61cf3a88e37b41cbc556f84b3dca35832f22.pkl": "1d2aa7a3d6cb676464fab47bea6cd7a71a8ed68de63e71c6ff503850d8cf27c2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/5527fdeba9e0a5cbc115fac189a79dfb206fa8ee81d8866ba9fcb378858fa5ca.pkl": "5bca26856c1cee4bff058d2377e83826ddda9ba2957a49eb3089a4a512b82e99",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/59f23205dd4174f1dc9f9071bf5dcb766f6f24d2744f86742c73cdb322ab2955.pkl": "60a6db2015fa0dcfb39eff660cea6fcd7cd43e612ac811e00c772d46c9a79881",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/6ac6809a391cded60bf8b1bd87a40519555c0a6633eb416f9bb25c36ddcf7932.pkl": "7ea10fea1d8bb2a1c3a1cb5a9a3fb96304cd535e82b12a9583bcb79d1d983bde",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/6b5de804c4a6d0c0641b309d04728f1240f9417be10f7bc4bb2ca37e849909d6.pkl": "4d8a49d61ba31bff8aefb88230532479f38004c177216f4150cca21337477411",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/7c55cdddd243aea1a322fed068dbbb41e90582a3489809ee8775361ec2dfbd75.pkl": "948a7662109d2600018fc93dea9d1c4eb9a95a55470195323a2f2f9baad68b46",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/7c7e072d40367faf00e8e546517fc4a73c5383485546f49ca2e16146f71a00d7.pkl": "7178864c876c99d111420cfe2913d4daf7240bb69f70b64ff20ce00344e31c01",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/7d6601524ae5b457e5354d606a94e2ff6caf524ab98030047e5e1073204d9d35.pkl": "210379a4b382a930515361247177b267fb80a997511eaeef8181de179e0263fb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/8540a7c1d3a06cca3b3c67330fc8024e8a1a4aa6ac5a3f64fc467906e51ba65d.pkl": "d7a4e5a93e4d4b8e91210bbd324fcf02cf579640db02de1b99b62ea129833335",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/85c2af226551eae1922fe376d5216649e60c550c08a2e7cebeb955457be2b367.pkl": "2fae1e52477c6032d8f59d1166f77c78fc8bd151b396a5f8b7c5ef1306157728",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/89496ffcfa23859ef4f431b3282b41f01254d0e27f1f125edc5aeef4dc1b7d77.pkl": "0a207d74a65ca1c4f5140f81f1d73e1ad71c817846ce58afb7d17622599c0812",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/8faae13ff4d4ff06e1ebaa42a62f54e8cb726302f2003b5ab80f9dcedd0c0683.pkl": "653e28ef1e86f82fd48572c4588db3919a5844645b38dc33233086fac35b6fbe",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/9869830eb7d54ca772636f777533e6180e4ae593cb7ca375d1d6543fb87ea6da.pkl": "b1b268e5ed1d05ed08fcd7a0e2122055b1906262422dc9bbb6cffe1e5a3611c2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/b4c020a43cc4791081442610950d6e729cbca8806ef6de98d2903a6d0ada6d7d.pkl": "429c1c644df2e474f39b10ea7ad87806f81c59508761134a8b4071689cb5522d",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/bcb16ec7a0b92fbf4f18d00612804087335fe39bf4b521f855b2dfc370d0363e.pkl": "4dfb878ee325c0a7c2ae305f14803f367f672a92b747e2c58768018d58da30c7",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/bdc79fb2d0615d822bbb07a5b2fda47d8bf38cbc78c419607e08bfee2efd5997.pkl": "460f06efbe67c1f2b8af7103d88e2b442ad912217a51585ad7492c44d4ba0163",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/c46132f65f41b4fae4a872b397cde73101e42ec5ab6072ecee929354289def29.pkl": "3f87ae0bdef0a3e7430e1234dc63326a1b1bd90a31b03c0e78e8148f58ca6b5e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/d5139f1897a52086da26f9ae430f1b5aedc1cd484d5f6074db81fcf470a178bc.pkl": "139195c16c3e683da5abc5075317a8a010286adfaf48c9aca3e5bf52d12bf499",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/d5806c3d191eb85b34332386e8d620c6e3a3893a3abec94a48a11cbb608c7d0b.pkl": "63a25a2ac35dcec928cb1b3b27977f992c2a09147fbd4d948af8d83df571378c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/cache/ec790da145b366c43080bced28c207b32fd7fd85cbbaf76a8f597a4fda37143a.pkl": "d10d25519cbd2995bcd331c45915450726dc7c07cd036b06d28173f6bc954623",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/00ca3fe15e5368abc836d90fd3d140abd3072b9b99f06c7d14a0e242bd0b99c8.json": "c7a56761953a9a6eacd0a7d9f22edafe1b87e7e82776edaa4c515412ab65ec18",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/11dbf9255d13d11d5a83e0dc835b06976885df15d015d29c78e05a666002c413.json": "754214b4c8fa4bcc42d1aa7edf5aa20bb3c67d7460a933f42849edde0666729a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/164bbd159c7558a9dccfed6b4c7fe1b5543c7a33bfee0127faf1f46413374dcc.json": "69b7ee3a1cc8c2338c66b6b50583f74828b6c3a0034ff8ccbd6e39abb053fbd8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/22f6cc55d9545ee030793c6c12492b592acfcf096925516ae2b6e9aa44dfe288.json": "c38b792f2d44d41451ce86b4c61a79385b5d59ac3454d2a13039230bae2d7164",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/3704976487bc7b8499bca62ab27aa27d242adbe5cac97afcee0f47c4a112e31c.json": "b3099cbe36e33de9f860e70deafc71f2a87183cdf155accdc3c373ecee684418",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/37de7dacfa3de5cd21173a6a7f2f8cb974940d11ba8a64d6d6b56ff0476c3487.json": "d01d214ca24706506eec36c3e2e3a10fbd722f059d3e8a637a6f81e82cbfea73",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/388519a834f3cb36ba8a273ae01b4fab9783666875f367848f54988120661571.json": "8287fd37d147487ada0c950b3211f44f971b1bf96cd0240b9cdccd4f32575d67",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/4c51bf7c323799c6106adf3cdbf80093d8f184c3e11fddc053aedbe066d41c11.json": "5f6822e78fd7500ee7e730110f024902771669b818e55128263735d3097655bd",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/5235348923f029539bb8a3c09e2c61cf3a88e37b41cbc556f84b3dca35832f22.json": "788a9a83d30dbea7fc70717904348c1e5fcf130b2941c52894b01ef463c74161",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/5527fdeba9e0a5cbc115fac189a79dfb206fa8ee81d8866ba9fcb378858fa5ca.json": "5e217133abc8c1b175c6f3e7ab3e5e9cd1158ae836ebb28509fd3de0f0aa2d90",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/59f23205dd4174f1dc9f9071bf5dcb766f6f24d2744f86742c73cdb322ab2955.json": "2e000eb29fed55d7741ee02d7f2385e223315927c85abdf0ce90cc03ddac81d3",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/6ac6809a391cded60bf8b1bd87a40519555c0a6633eb416f9bb25c36ddcf7932.json": "c8932f7fc6e4be3695af1f0eb875c8b943eb52c48137a452c5ab409f29254b1c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/6b5de804c4a6d0c0641b309d04728f1240f9417be10f7bc4bb2ca37e849909d6.json": "a7443ebb4803890be9bf89f57dde81f005de7f7ca8529d30bad0d507bfa2f1df",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/7c55cdddd243aea1a322fed068dbbb41e90582a3489809ee8775361ec2dfbd75.json": "8a41fc8a2591b08c2db3045ff8aa2280d873e8b4ec5c99346ef971dce074a2b3",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/7c7e072d40367faf00e8e546517fc4a73c5383485546f49ca2e16146f71a00d7.json": "65d6da6bb8fc6ee0629f2d3479396870095d45aa1e94a480c5eb999e8543810c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/7d6601524ae5b457e5354d606a94e2ff6caf524ab98030047e5e1073204d9d35.json": "7ced3101047358ee8a7fe69f41f3c6d5f1db0f941589979144b83b0c10426f79",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/8540a7c1d3a06cca3b3c67330fc8024e8a1a4aa6ac5a3f64fc467906e51ba65d.json": "7504249cdc44f7e25c5a32ec92a989fb30aa68b15f357651770d90d4aff2f167",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/85c2af226551eae1922fe376d5216649e60c550c08a2e7cebeb955457be2b367.json": "60a2614794f61d206b1a75dd077919090a0960761090912a694e22a573bb9950",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/89496ffcfa23859ef4f431b3282b41f01254d0e27f1f125edc5aeef4dc1b7d77.json": "002c7b83ee0f2c97cc548c9a2a5e5415338c3381f55dc4f84f4d038b88c7256f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/8faae13ff4d4ff06e1ebaa42a62f54e8cb726302f2003b5ab80f9dcedd0c0683.json": "253ab5a5721f3fe379e5963f7c846ccbd9c4260b988f85ca96e1c123c927a808",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/9869830eb7d54ca772636f777533e6180e4ae593cb7ca375d1d6543fb87ea6da.json": "84b75bd0edaac9c3d458b16cab8ac57f9b8ae321ebd5bc16c338273f48ec67ef",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/b4c020a43cc4791081442610950d6e729cbca8806ef6de98d2903a6d0ada6d7d.json": "11ab0be45d887f69d98950f5bd29372ed99568962160412f6591c628322fe4ab",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/bcb16ec7a0b92fbf4f18d00612804087335fe39bf4b521f855b2dfc370d0363e.json": "27c21508e6ff6f1152aa40d9f115ccc3e3cff1a3eabfa3af48ca01992129bca8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/bdc79fb2d0615d822bbb07a5b2fda47d8bf38cbc78c419607e08bfee2efd5997.json": "3df9be00df91ffbe8bed1b94e99f1ac6feb8546c5cc58c0e338467b29aaf1d6e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/c46132f65f41b4fae4a872b397cde73101e42ec5ab6072ecee929354289def29.json": "07273e4798bf413582854219c60e6f052c26df540ed3eee05d2094d12bdce2f2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/d5139f1897a52086da26f9ae430f1b5aedc1cd484d5f6074db81fcf470a178bc.json": "602f4a384a5b132e7ddd912b5500afdd9c1944275922b8e4471c292390a03c45",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/d5806c3d191eb85b34332386e8d620c6e3a3893a3abec94a48a11cbb608c7d0b.json": "b338e9adf589032271b301c8d39e8eb9c599c23634d565a1e7b24d7b7cf62dde",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/prefill/ec790da145b366c43080bced28c207b32fd7fd85cbbaf76a8f597a4fda37143a.json": "9b2c3c45ecebf3ea42a95f8093b81bd286c17cad732617bbcb1b080efb66f502",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/116-gap-seed-recheck/run-freeze.json": "487d4f62963639e0dcad7d9edcf22df05fe47ec2362dad5dcea96c04cb032d4d",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/run-freeze.json": "d8718e64f6d61a9bb541c6bbfe8f40ec0ef023c46c97781729e3cb511527cfb6",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/seed-42/coefficients-receipt.json": "e2165d942b0b0695cc2b40750e1a30d1a7eb29ad58cdb6a64b7b933b8428f8c3",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/seed-42/coefficients.json": "cc3cdcec0e507dcdd6350a22c2b5a4b19038ba4184f5e9e9d238324c021afcb0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/seed-43/coefficients-receipt.json": "f6765c299d77c00de63c0338d1b5f2cb7e428f5cc60c422c97ef896665b88bb9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/seed-43/coefficients.json": "ec7eaae3f4a0e4d00492259bff8eb934f45775f5030ae1c56efdf570266604e2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/seed-44/coefficients-receipt.json": "b2dd7ca0297cdc11b9213f5a4da2156b1efa5be20b654cdcc27aed848ddf815c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/118-anchor-gap-recheck/seed-44/coefficients.json": "9daeb967b802c7db3863855015d6fdfb25fc09d7ca4b72422d328213e0c25af9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-42-vs-global_temperature-evidence.json": "5ed64c39709de72070fe928c4ba694d3c8b399d1064d0efda04c7d25180475fb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-42-vs-global_temperature-receipt.json": "ab4328c788031623b04dbe8d35a800009d15a85ee7011f3e8af56be4e766e573",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-42-vs-prior_gap-evidence.json": "be01233a7489f294747a582548b1b982db31c3f3f21ee68da2050294cd30c2af",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-42-vs-prior_gap-receipt.json": "169f08ab61f11317f56dd6762e701ca943c3722b954ef7395a7b4611713a5e4e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-42-vs-season-evidence.json": "5731c3bdefdc1cd7c32e3e1cb847848753682ccbb945610213ec2e14e0cc4bff",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-42-vs-season-receipt.json": "89db6caf51b1a68f5b6f6e6c81dc5acccc4b30bfc0b39f0141c9df3331a87b7c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-43-vs-global_temperature-evidence.json": "06a8c86f7d647a74e93cb7e338eaf79cfa066a213ae3a144f4712c7a3d6320f8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-43-vs-global_temperature-receipt.json": "0e986082efbc2a87060ec963dc432b23e7cb80d1941fbd2fd6f8f86652ba1f01",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-43-vs-prior_gap-evidence.json": "32a92c1dd5af53fb4863c07a92fc2820093073e21db4621651dc45daf3733522",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-43-vs-prior_gap-receipt.json": "077247bfb5f36d4a1737528608af0c86536f5e081e7051b2f97afc479e47d9ce",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-43-vs-season-evidence.json": "3228afa231df969708df0a62108860f3863827b654934d0d588b58c1bace72ca",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-43-vs-season-receipt.json": "3a52245b5cc5a93cd06251169b445c2631b48700b730b4a93e70e29f43c10983",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-44-vs-global_temperature-evidence.json": "e082efdf182ec7b4d34007b9e15572218e35e85f4c8ca6f66878e8d3b5e1c4f7",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-44-vs-global_temperature-receipt.json": "27fd8923cdd57815de927132200fb4cd426b51234c38f98f7600ad944c670624",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-44-vs-prior_gap-evidence.json": "910337a6379f400422cb9fba95607917427c5b282138cda115d7b0885e05ce5e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-44-vs-prior_gap-receipt.json": "8ec930307174123f13686fd9894d1c7f83e9861ed1af0e14b7a5596a2a9884b4",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-44-vs-season-evidence.json": "ada77fb4f8f3602469f94bd2828b9cfb6a31f50e429adbab16d215a04c457a7c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/joint-seed-44-vs-season-receipt.json": "b661a7d9771dafd1095b84aeb6a4c6576182f7585759d3ebd393aeb1e7e0c22f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/mixture-vs-anchor42-evidence.json": "e38bcef951421e85d555a953093b36f0f7e8ed022060f0851e5f75149dcd83ef",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/mixture-vs-anchor42-receipt.json": "5034ca10254bf47e7ad79b226edf2611f005b4098e4927f6eb0b20266c63df79",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/mixture-vs-joint_mixed6-evidence.json": "c099061447229b9d63fc19b4221b86e1ceca95c2c5409ee7df100292b70692ae",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/mixture-vs-joint_mixed6-receipt.json": "fcbb5e3e320159602c4204dc75ff3b5f7aac5944381fa086682a1b1f33be25a0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/mixture-vs-mixed6-evidence.json": "75ea09fdf20c7006a8f1d9d8bf1b1b42f1b64ec7c19a707d4d196b64292dbcb2",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/mixture-vs-mixed6-receipt.json": "9de687936c8afd5cfa41c0147fc454147a153f1590fbb2dc61a7aaa9893c9f6d",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/run-freeze.json": "a11a23cff5a67c395f8635e93ae2e72ddcffdfa3798bbf55c72a4492dbcb5651",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/seed-42/coefficients-receipt.json": "579da69c1d7d54d9ec73ef3863eff1206eadd968ddbb4876371fcf4952d1dafa",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/seed-42/coefficients.json": "29d2d745e76f8f63bf549ef9a2166aa12748cc891469a949002ae62275ab5e79",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/seed-43/coefficients-receipt.json": "4bee403f7e89a07ce75f747576551e09676110cdf692c53c55671a213b8a4e0e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/seed-43/coefficients.json": "9bd6f7e522bb17639bd4aecca933512f1d7980c66bdc69f19b0678f9d6535cc5",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/seed-44/coefficients-receipt.json": "db0204c36391ae9c2e3a8fc8dca832b7fdda0ea35efe54e402b3daf1011105fb",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/125-joint-residual-stack/seed-44/coefficients.json": "268b65ba82b0c0f88add79368b53f6dc72a7541b5d2d3c65d104d2a8788cbcb6",
+    "/Users/kuwatawaku/workspace/horseracing/scripts/candidate_mixture_validate.py": "00005ca496a8c96f71289e3747f400fdc5895bee7d2abd5f90c8c6be3c18ef72",
+    "/Users/kuwatawaku/workspace/horseracing/serving/src/horseracing_serving/mixture_correction.py": "c2ff5c9e6fe5c825f43cad7244f279ef99cc1a9cd532fbbadc24ecf17bdb5255",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/independent-review.json": "de460d0be14678fff0b2addac51c5760e50cf2444ecc88d09efe602469621292",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/independent-review.py": "5f2b07b68c08eb9b09bbf7ac4562bc62f8f8f2e7dd6185e54d0452aa597c49fe",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-42-vs-global_temperature.json": "2ae4e3dc3c2bbba651bd8ae6f5c664ab66493f6960b9ab582c4b72b2f4c9f102",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-42-vs-prior_gap.json": "23d8122fe314f0336de0bf73371a3e69a4e9a1e963c893f111663509720cc2d3",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-42-vs-season.json": "24c995b9ed7f8fe63cb7dd9b6dacc9e9b35d3baf1dbf23971b8de493736bca61",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-43-vs-global_temperature.json": "01f99b7b4332e8c534d482ca5be263dae795a0f1d281fb20cc8489d7a32b2d0e",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-43-vs-prior_gap.json": "d3e9d3c2a118d13a999bff2d96f80165df19b0bf8c0d32c81342b2e8d25f7471",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-43-vs-season.json": "ec52561af93773624fe106aa397223e0dd8da4ce38ac7771616147bb109ba075",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-44-vs-global_temperature.json": "612217d47f9a3e02d0ca038e3aca1d26427a2bd3aab38668f54ad19a3978e48e",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-44-vs-prior_gap.json": "4a681e2cdfffe94116851e5a0f09d6097eed35dd0e97faa0e18997651070e7e2",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/joint-seed-44-vs-season.json": "5cfd87ee49ef43b3358b5d4b1aeffc3659f3a97cce184d51983dcc4c13d8dd3c",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/mixture-vs-anchor42.json": "8af56da6089a46bf5fed3d59471b79c7bc7303c216b2bf96e81e774058c2ebd2",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/mixture-vs-joint_mixed6.json": "73f5ce39575ef558f097668b733eefe916a68288158e32f2a80e6d67dd63ca09",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/evidence/mixture-vs-mixed6.json": "e7d64ad751d41f4c23864c803a68c0329777cb5ab976ef390d69d159985fc7d7",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/gate-config.hash.txt": "5619694a6940288556b667c0e70f738d359e605e9d299182c21a1337b506bffe",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/gate-config.json": "3af74cb14f5a33433c7027414e47ddb19885e0b66a771a0ced122531e37239d0",
+    "/Users/kuwatawaku/workspace/horseracing/specs/125-joint-residual-stack/verdict.json": "56687f6c7e5aed47a06a403b12ac7467f173449ea03d7d161b54b3ad60dd3d4f"
+  },
+  "report_hashes": {
+    "joint-seed-42-vs-season": {
+      "report_sha256": "24c995b9ed7f8fe63cb7dd9b6dacc9e9b35d3baf1dbf23971b8de493736bca61",
+      "evidence_sha256": "5731c3bdefdc1cd7c32e3e1cb847848753682ccbb945610213ec2e14e0cc4bff"
+    },
+    "joint-seed-42-vs-prior_gap": {
+      "report_sha256": "23d8122fe314f0336de0bf73371a3e69a4e9a1e963c893f111663509720cc2d3",
+      "evidence_sha256": "be01233a7489f294747a582548b1b982db31c3f3f21ee68da2050294cd30c2af"
+    },
+    "joint-seed-42-vs-global_temperature": {
+      "report_sha256": "2ae4e3dc3c2bbba651bd8ae6f5c664ab66493f6960b9ab582c4b72b2f4c9f102",
+      "evidence_sha256": "5ed64c39709de72070fe928c4ba694d3c8b399d1064d0efda04c7d25180475fb"
+    },
+    "joint-seed-43-vs-season": {
+      "report_sha256": "ec52561af93773624fe106aa397223e0dd8da4ce38ac7771616147bb109ba075",
+      "evidence_sha256": "3228afa231df969708df0a62108860f3863827b654934d0d588b58c1bace72ca"
+    },
+    "joint-seed-43-vs-prior_gap": {
+      "report_sha256": "d3e9d3c2a118d13a999bff2d96f80165df19b0bf8c0d32c81342b2e8d25f7471",
+      "evidence_sha256": "32a92c1dd5af53fb4863c07a92fc2820093073e21db4621651dc45daf3733522"
+    },
+    "joint-seed-43-vs-global_temperature": {
+      "report_sha256": "01f99b7b4332e8c534d482ca5be263dae795a0f1d281fb20cc8489d7a32b2d0e",
+      "evidence_sha256": "06a8c86f7d647a74e93cb7e338eaf79cfa066a213ae3a144f4712c7a3d6320f8"
+    },
+    "joint-seed-44-vs-season": {
+      "report_sha256": "5cfd87ee49ef43b3358b5d4b1aeffc3659f3a97cce184d51983dcc4c13d8dd3c",
+      "evidence_sha256": "ada77fb4f8f3602469f94bd2828b9cfb6a31f50e429adbab16d215a04c457a7c"
+    },
+    "joint-seed-44-vs-prior_gap": {
+      "report_sha256": "4a681e2cdfffe94116851e5a0f09d6097eed35dd0e97faa0e18997651070e7e2",
+      "evidence_sha256": "910337a6379f400422cb9fba95607917427c5b282138cda115d7b0885e05ce5e"
+    },
+    "joint-seed-44-vs-global_temperature": {
+      "report_sha256": "612217d47f9a3e02d0ca038e3aca1d26427a2bd3aab38668f54ad19a3978e48e",
+      "evidence_sha256": "e082efdf182ec7b4d34007b9e15572218e35e85f4c8ca6f66878e8d3b5e1c4f7"
+    },
+    "mixture-vs-joint_mixed6": {
+      "report_sha256": "73f5ce39575ef558f097668b733eefe916a68288158e32f2a80e6d67dd63ca09",
+      "evidence_sha256": "c099061447229b9d63fc19b4221b86e1ceca95c2c5409ee7df100292b70692ae"
+    },
+    "mixture-vs-mixed6": {
+      "report_sha256": "e7d64ad751d41f4c23864c803a68c0329777cb5ab976ef390d69d159985fc7d7",
+      "evidence_sha256": "75ea09fdf20c7006a8f1d9d8bf1b1b42f1b64ec7c19a707d4d196b64292dbcb2"
+    },
+    "mixture-vs-anchor42": {
+      "report_sha256": "8af56da6089a46bf5fed3d59471b79c7bc7303c216b2bf96e81e774058c2ebd2",
+      "evidence_sha256": "e38bcef951421e85d555a953093b36f0f7e8ed022060f0851e5f75149dcd83ef"
+    }
+  },
+  "years": {
+    "2020": {
+      "all_races": 3456,
+      "eligible_races": 3447,
+      "members": {
+        "joint-42": {
+          "head_checks": 144174,
+          "max_abs_by_head": [
+            2.220446049250313e-16,
+            4.440892098500626e-16,
+            7.771561172376096e-16
+          ]
+        },
+        "joint-43": {
+          "head_checks": 144174,
+          "max_abs_by_head": [
+            1.1102230246251565e-16,
+            4.440892098500626e-16,
+            1.887379141862766e-15
+          ]
+        },
+        "joint-44": {
+          "head_checks": 144174,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            9.992007221626409e-16
+          ]
+        },
+        "anchor-42": {
+          "head_checks": 144174,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-43": {
+          "head_checks": 144174,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-44": {
+          "head_checks": 144174,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "all_six_annual_gammas_preserved": true
+    },
+    "2021": {
+      "all_races": 3456,
+      "eligible_races": 3447,
+      "members": {
+        "joint-42": {
+          "head_checks": 142827,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            6.661338147750939e-16
+          ]
+        },
+        "joint-43": {
+          "head_checks": 142827,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            6.661338147750939e-16,
+            9.992007221626409e-16
+          ]
+        },
+        "joint-44": {
+          "head_checks": 142827,
+          "max_abs_by_head": [
+            2.220446049250313e-16,
+            4.440892098500626e-16,
+            7.771561172376096e-16
+          ]
+        },
+        "anchor-42": {
+          "head_checks": 142827,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-43": {
+          "head_checks": 142827,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-44": {
+          "head_checks": 142827,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "all_six_annual_gammas_preserved": true
+    },
+    "2022": {
+      "all_races": 3456,
+      "eligible_races": 3452,
+      "members": {
+        "joint-42": {
+          "head_checks": 140958,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            5.551115123125783e-16,
+            9.992007221626409e-16
+          ]
+        },
+        "joint-43": {
+          "head_checks": 140958,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            7.771561172376096e-16
+          ]
+        },
+        "joint-44": {
+          "head_checks": 140958,
+          "max_abs_by_head": [
+            2.220446049250313e-16,
+            5.551115123125783e-16,
+            1.4432899320127035e-15
+          ]
+        },
+        "anchor-42": {
+          "head_checks": 140958,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-43": {
+          "head_checks": 140958,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-44": {
+          "head_checks": 140958,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "all_six_annual_gammas_preserved": true
+    },
+    "2023": {
+      "all_races": 3456,
+      "eligible_races": 3453,
+      "members": {
+        "joint-42": {
+          "head_checks": 142296,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            9.992007221626409e-16
+          ]
+        },
+        "joint-43": {
+          "head_checks": 142296,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            7.771561172376096e-16
+          ]
+        },
+        "joint-44": {
+          "head_checks": 142296,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            8.881784197001252e-16
+          ]
+        },
+        "anchor-42": {
+          "head_checks": 142296,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-43": {
+          "head_checks": 142296,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-44": {
+          "head_checks": 142296,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "all_six_annual_gammas_preserved": true
+    },
+    "2024": {
+      "all_races": 3454,
+      "eligible_races": 3448,
+      "members": {
+        "joint-42": {
+          "head_checks": 140763,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            7.771561172376096e-16
+          ]
+        },
+        "joint-43": {
+          "head_checks": 140763,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            5.551115123125783e-16,
+            8.881784197001252e-16
+          ]
+        },
+        "joint-44": {
+          "head_checks": 140763,
+          "max_abs_by_head": [
+            2.220446049250313e-16,
+            4.440892098500626e-16,
+            8.881784197001252e-16
+          ]
+        },
+        "anchor-42": {
+          "head_checks": 140763,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-43": {
+          "head_checks": 140763,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-44": {
+          "head_checks": 140763,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "all_six_annual_gammas_preserved": true
+    },
+    "2025": {
+      "all_races": 3454,
+      "eligible_races": 3447,
+      "members": {
+        "joint-42": {
+          "head_checks": 142965,
+          "max_abs_by_head": [
+            2.220446049250313e-16,
+            5.551115123125783e-16,
+            1.2212453270876722e-15
+          ]
+        },
+        "joint-43": {
+          "head_checks": 142965,
+          "max_abs_by_head": [
+            2.220446049250313e-16,
+            6.661338147750939e-16,
+            1.887379141862766e-15
+          ]
+        },
+        "joint-44": {
+          "head_checks": 142965,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            8.881784197001252e-16
+          ]
+        },
+        "anchor-42": {
+          "head_checks": 142965,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-43": {
+          "head_checks": 142965,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-44": {
+          "head_checks": 142965,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "all_six_annual_gammas_preserved": true
+    },
+    "2026": {
+      "all_races": 2298,
+      "eligible_races": 2296,
+      "members": {
+        "joint-42": {
+          "head_checks": 95295,
+          "max_abs_by_head": [
+            1.6653345369377348e-16,
+            4.440892098500626e-16,
+            8.881784197001252e-16
+          ]
+        },
+        "joint-43": {
+          "head_checks": 95295,
+          "max_abs_by_head": [
+            1.1102230246251565e-16,
+            3.3306690738754696e-16,
+            7.771561172376096e-16
+          ]
+        },
+        "joint-44": {
+          "head_checks": 95295,
+          "max_abs_by_head": [
+            1.1102230246251565e-16,
+            4.440892098500626e-16,
+            7.771561172376096e-16
+          ]
+        },
+        "anchor-42": {
+          "head_checks": 95295,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-43": {
+          "head_checks": 95295,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "anchor-44": {
+          "head_checks": 95295,
+          "max_abs_by_head": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "all_six_annual_gammas_preserved": true
+    }
+  },
+  "n_races": 23030,
+  "n_eligible": 22990,
+  "n_days": 715,
+  "all_head_checks": 6644946,
+  "max_abs_by_head": [
+    2.220446049250313e-16,
+    6.661338147750939e-16,
+    1.887379141862766e-15
+  ],
+  "atol": 1e-12,
+  "eligible_order_sha256": "2e985f09d0f977c430fb8a6d4b5ce10e07e2502752ca9f2f3a0bc11d77cd7e08",
+  "additional_booster_fits": 0,
+  "additional_coefficient_fits": 0,
+  "scope": "Historical annual caches and annual coefficients; raw full-information replay only. Not final-export parity or future/preweight performance evidence."
+}
