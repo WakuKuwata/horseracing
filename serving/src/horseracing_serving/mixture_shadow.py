@@ -25,8 +25,8 @@ from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
-from horseracing_db.enums import EntryStatus
-from horseracing_db.models import ModelVersion, Race, RaceHorse, RaceResult
+from horseracing_db.enums import EntryStatus  # noqa: F401  (re-exported for callers/tests)
+from horseracing_db.models import ModelVersion, Race, RaceResult
 from horseracing_db.session import create_db_engine
 from horseracing_eval.stage_discount import StageDiscount, logic_version_fragment
 from horseracing_features.builder import build_feature_matrix
@@ -34,6 +34,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from . import mixture_correction, mixture_model
+from . import mixture_serving as _serving
 from .mixture_model import load_mixture_bundle, predict_mixture, prepare_race_inputs
 from .model_loader import load_serving_model
 from .predictor import predict_race
@@ -153,41 +154,8 @@ def validate_capture(classification, race_date, scheduled_start, result_count, c
         raise ValueError("Prospective capture requires zero result rows")
 
 
-def history_for(target_rows, raw_history):
-    """Started rows strictly before each target horse's race day; no result columns."""
-    required = {"race_id", "horse_id", "race_date"}
-    if not required.issubset(raw_history.columns) or not {"horse_id", "race_date"}.issubset(
-        target_rows.columns
-    ):
-        raise ValueError("History/target columns missing")
-    history = raw_history[[c for c in raw_history.columns if "result" not in c]].copy()
-    if "entry_status" in history.columns:
-        if not history.entry_status.isin(EntryStatus.ALL).all():
-            raise ValueError("Unknown history entry status")
-        history = history[history.entry_status == EntryStatus.STARTED]
-    history["race_date"] = pd.to_datetime(history.race_date)
-    targets = target_rows[["horse_id", "race_date"]].drop_duplicates("horse_id")
-    targets = targets.assign(race_date=pd.to_datetime(targets.race_date)).rename(
-        columns={"race_date": "target_date"}
-    )
-    merged = history.merge(targets, on="horse_id", how="inner")
-    merged = merged[
-        (merged.race_date < merged.target_date) & (merged.race_date >= pd.Timestamp(HISTORY_START))
-    ]
-    out = merged[["race_id", "horse_id", "race_date"]].sort_values(
-        ["horse_id", "race_date", "race_id"], kind="stable"
-    )
-    return out.reset_index(drop=True)
-
-
-def load_started_history(session, horse_ids):
-    stmt = (
-        select(RaceHorse.race_id, RaceHorse.horse_id, Race.race_date, RaceHorse.entry_status)
-        .join(Race, Race.race_id == RaceHorse.race_id)
-        .where(RaceHorse.horse_id.in_(list(horse_ids)), Race.race_date >= HISTORY_START)
-    )
-    rows = session.execute(stmt).all()
-    return pd.DataFrame(rows, columns=["race_id", "horse_id", "race_date", "entry_status"])
+history_for = _serving.history_for
+load_started_history = _serving.load_started_history
 
 
 # --- anchor ---------------------------------------------------------------------------

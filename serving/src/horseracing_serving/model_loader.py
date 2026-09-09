@@ -264,6 +264,14 @@ def load_serving_model(
         raise ServingError(f"metadata.json missing for '{mv_name}'")
     metadata = json.loads(meta_path.read_text())
 
+    # Feature 131: a six-member mixture model_version is a different artifact shape (a bundle
+    # manifest + member directories). It is dispatched on its declared kind BEFORE any of the
+    # single-booster checks below; those stay byte-for-byte as they were for every other row.
+    if metadata.get("artifact_kind") == "mixture_model_version":
+        from .mixture_serving import load_mixture_serving_model
+
+        return load_mixture_serving_model(mv_name, art_dir, metadata)
+
     # INV-S4: the trained feature schema must be servable under the current registry.
     # Fast path: the trained hash IS the current global hash AND the trained feature_version IS the
     # current one. The version check is REQUIRED because feature_hash covers only the column NAMES

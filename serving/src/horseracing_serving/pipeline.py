@@ -22,6 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import SERVING_LOGIC_VERSION
+from .mixture_serving import is_mixture, mixture_context, predict_mixture_race
 from .model_loader import ServingError, load_serving_model
 from .persistence import persist_run
 from .predictor import predict_race, race_weight_availability
@@ -40,6 +41,9 @@ def _base_logic_version(model) -> str:
     if getattr(model, "market_offset", None) is not None:
         lv += ";mkt=logq"
     lv += f";rcr={model.race_class_representation}"
+    # Feature 131: the six-member mixture records its bundle identity and coefficient year.
+    if is_mixture(model):
+        lv += f";mix=6:{model.bundle_sha12};coef={model.coefficient_year}"
     return lv
 
 
@@ -124,6 +128,9 @@ def run_serving(
         target_race_ids=frozenset(race_ids),
     )
     present = set(feature_rows["race_id"].unique())
+    history = None
+    if is_mixture(model):  # Feature 131: dated rows + started history for the prior-gap term
+        feature_rows, history = mixture_context(session, feature_rows, race_ids, target_date)
     # date-level cutoff matches the feature end_date; fit the discount once, strictly before it.
     # Feature 076 priority: OFF (apply_stage_discount=False) > explicit injection > manifest > fit.
     sd, calib_digest = _resolve_stage_discount(
@@ -143,7 +150,7 @@ def run_serving(
             results.append(
                 _predict_persist(
                     session, model, rid, feature_rows, logic_version, stage_discount=sd,
-                    calib_digest=calib_digest, availability=avail,
+                    calib_digest=calib_digest, availability=avail, history=history,
                 )
             )
         except MarketOffsetSkip:
@@ -292,7 +299,7 @@ def _wregime_lv(logic_version: str, availability) -> str:
 
 def _predict_persist(
     session: Session, model, race_id: str, feature_rows, logic_version: str, stage_discount=None,
-    calib_digest: str | None = None, availability=None,
+    calib_digest: str | None = None, availability=None, history=None,
 ) -> ServingResult:
     """Predict one race + persist the run (shared by run_serving and run_serving_backfill).
 
@@ -303,7 +310,15 @@ def _predict_persist(
     persisted top2/top3 are traceable to the exact immutable artifact (V). WIN is untouched.
     """
     win_odds = None
-    if getattr(model, "market_offset", None) is not None:
+    if is_mixture(model):  # Feature 131
+        if history is None:
+            raise ServingError("mixture model requires the day's started history (pipeline bug)")
+        predictions, snapshots, explanations, audit = predict_mixture_race(
+            model, race_id, feature_rows, history, stage_discount=stage_discount
+        )
+        if audit.get("coefficient_stale_years"):
+            logic_version = f"{logic_version};coefstale={audit['coefficient_stale_years']}"
+    elif getattr(model, "market_offset", None) is not None:
         win_odds = _race_win_odds(session, race_id)
         try:
             predictions, snapshots, explanations, audit = predict_race(
@@ -425,6 +440,9 @@ def run_serving_backfill(
                     target_race_ids=frozenset(race_ids),  # Feature 072: only the day's races
                 )
                 present = set(feature_rows["race_id"].unique())
+                history = None
+                if is_mixture(model):  # Feature 131
+                    feature_rows, history = mixture_context(session, feature_rows, race_ids, day)
                 # Feature 076 priority (as run_serving); a manifest whose window covers this
                 # day fails closed here (per-day, isolated into error_days — FR-021).
                 if not apply_stage_discount:
@@ -452,7 +470,7 @@ def run_serving_backfill(
                     try:
                         _predict_persist(
                             session, model, rid, feature_rows, logic_version, stage_discount=sd,
-                            calib_digest=calib_digest, availability=avail,
+                            calib_digest=calib_digest, availability=avail, history=history,
                         )
                     except MarketOffsetSkip:
                         skip_no_odds += 1  # typed skip: no prediction row (INV-M4)

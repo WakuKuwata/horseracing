@@ -280,12 +280,28 @@ def predict_base(model, rows):
     return assemble_predictions(rows.horse_id.tolist(), calibrated, eps=1e-6), x
 
 
-def predict_mixture(bundle, race_id, feature_rows, history, regime='preweight'):
+def coefficient_year_offset(valid_year, target_year, grace_years=0):
+    """Years the target lies past the coefficients' fit year; fail closed outside the grace."""
+    offset = int(target_year) - int(valid_year)
+    if offset < 0 or offset > int(grace_years):
+        raise ValueError(
+            f'Frozen residual coefficients are valid for {valid_year} (+{grace_years} grace), '
+            f'not {target_year}')
+    return offset
+
+
+def predict_mixture(bundle, race_id, feature_rows, history, regime='preweight', *,
+                    coefficient_grace_years=0):
     if [member.id for member in bundle.members] != [item['id'] for item in IDENTITIES]:
         raise ValueError('Six loaded members required in the registered order')
     rows, audit = prepare_race_inputs(feature_rows, race_id, regime)
-    if pd.Timestamp(rows.race_date.iloc[0]).year != 2026:
-        raise ValueError('Frozen residual coefficients are valid for 2026 only')
+    valid_years = {int(item['correction']['valid_year']) for item in bundle.manifest['members']}
+    if len(valid_years) != 1:
+        raise ValueError('Members disagree on coefficient year')
+    valid_year = valid_years.pop()
+    stale = coefficient_year_offset(valid_year, pd.Timestamp(rows.race_date.iloc[0]).year,
+                                    coefficient_grace_years)
+    audit.update(coefficient_year=valid_year, coefficient_stale_years=stale)
     # Filter to target horses before the history helper; result-less starts remain.
     correction = build_correction_inputs(rows, history[history.horse_id.isin(rows.horse_id)])
     ids = rows.horse_id.tolist(); predictions = []; base_hashes = {}
