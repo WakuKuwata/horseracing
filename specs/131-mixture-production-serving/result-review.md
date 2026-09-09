@@ -19,9 +19,9 @@
 | explanation | 全馬 null(API は「未提供」) |
 | `promote-model` 昇格前確認(dry-run) | OK: artifact 実在・feature schema が serving に乗る |
 
-## 昇格(未実行・ユーザー実行待ち)
+## 昇格(実行済み・2026-09-09)
 
-自動モードの分類器が `--apply` を止めたため、昇格は実行していない。コマンドは quickstart に記載。昇格後は 2026 年分の backfill(約 70 開催日)を流すと front の既定表示が新モデルになる。
+ユーザー指示で `promote-model --apply` を実行。ACTIVE = mix-129-nj6、lgbm-094-cap900 は candidate へ降格(rollback コマンドは metrics_summary に記録)。続けて 2026-01-01〜09-06 の backfill を実行(結果は下記)。
 
 ## セルフレビュー checklist(codex unavailable・使用上限 9/15 まで)
 
@@ -37,3 +37,7 @@
 - 将来レースでの実測はゼロ(129 の prospective capture を継続し 112 の事後確認に使う)。
 - 4 日 rehearsal(+0.0015)は 130 と矛盾しないが支持もしない。
 - integration テスト(testcontainers)は 106 の append-only トリガが試験用 TRUNCATE を拒むため、本変更と無関係に赤(既存問題・別タスク)。
+
+## backfill(2026-01-01〜09-06)
+
+generated=2,441・skip_exists=1(E2E で先に作った run)・error_days=0。2026 年の全 2,442 レースに mix-129-nj6 の run があり、API の既定 run と `/models` の active も新モデル。`coefstale` 付き run は 0(すべて 2026 年=係数年と一致)。
