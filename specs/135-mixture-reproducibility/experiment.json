@@ -1,0 +1,99 @@
+{
+  "cutoff": "2026-09-06",
+  "historical_source_end": "2026-08-23",
+  "step_order": [
+    "calibration",
+    "repro",
+    "recent"
+  ],
+  "repro": {
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "years": [
+      2024,
+      2026
+    ],
+    "regimes": [
+      "full",
+      "preweight"
+    ],
+    "primary_regime": "preweight",
+    "feature_count": 125,
+    "colsample_bytree": 0.7,
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "te_smoothing": 10,
+    "weight_mask_rate": 0.5,
+    "weight_mask_seed": 20260810,
+    "candidate_weight": [
+      1,
+      7
+    ],
+    "correction": "125 same-seed same-evaluation-year joint coefficients; recompute centered_logp on candidate",
+    "topk": "same annual/regime baseline lambda from132 for both arms",
+    "seed_aggregation": "mean of per-race loss differences; not mean prediction ensemble"
+  },
+  "recent": {
+    "from": "2026-08-29",
+    "through": "2026-09-06",
+    "candidate_seed": 42,
+    "candidate_weight": [
+      1,
+      7
+    ],
+    "train_through": "2026-08-23",
+    "baseline": "129 six-member saved final models trained through 2026-08-23",
+    "candidate": "same training endpoint/recipe with colsample.7, seed42",
+    "coefficients": "2026 prior-year fixed",
+    "stage_lambda": "132 2026 same-regime baseline lambda fixed for both arms; fit through2025 only",
+    "allow_selection_after_recent_results": false
+  },
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125
+  },
+  "quality": {
+    "top2_logloss_margin": 0.0005,
+    "top3_logloss_margin": 0.0005,
+    "ece_margin": 0.001,
+    "ece_ceiling": 0.05
+  },
+  "resources": {
+    "max_workers": 2,
+    "num_threads": 1,
+    "full_outer_fits": 7,
+    "full_booster_fits": 56,
+    "smoke_separate": true
+  },
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "calibration": {
+    "regimes": [
+      "full",
+      "preweight"
+    ],
+    "source_end": "2026-08-23",
+    "warmup_year": 2020,
+    "primary_years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "min_races": 300,
+    "fit_boundary": "strictly prior evaluation years",
+    "comparisons": [
+      "same_lambda_131_vs_132",
+      "native_complete_vs_132",
+      "native_including_incomplete_vs_132"
+    ],
+    "actual_runtime_latest_replay": false,
+    "additional_booster_fits": 0
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "status": "PASS_WITH_INTERPRETATION_LIMITS",
+  "summary_sha256": "ab907ade63391296343486ad2ccc3c8b138ced9d960674d5822ff7b5ffd892c9",
+  "independent_numeric_review_sha256": "f726a827e09e06102a44ac45e8ae6660444ab54d6606512be9b35e1ff4cc750f",
+  "primary_preweight_pooled": {
+    "baseline_nll": 2.0138791192758543,
+    "mean_loss_difference": {
+      "ci": [
+        -0.0009595821673238053,
+        -9.59288019841977e-05
+      ],
+      "n_days": 176,
+      "n_races": 5744,
+      "n_rows": 5744,
+      "point": -0.0005281851499458617,
+      "seed_points": [
+        -0.0005421715339024989,
+        -0.0005334035472344358,
+        -0.0005089803687006505
+      ],
+      "seed_range": [
+        -0.0005421715339024989,
+        -0.0005089803687006505
+      ],
+      "seed_sd": 1.7199916120729908e-05
+    },
+    "relative_nll_reduction_percent": 0.026227251918465953,
+    "every_seed_point_negative": true,
+    "every_single_seed_ci_crosses_zero": true
+  },
+  "limitations": [
+    "The negative CI concerns the per-race loss difference averaged across the three fixed seeds; it is not a probability ensemble or proof that the fixed recent seed42 alone beats baseline.",
+    "Each individual preweight pooled seed CI includes zero. The2026 primary cohort CI includes zero; full2026 seed43 has a positive point estimate.",
+    "Three seeds and same historical dates do not establish all training-procedure variance or remove previous candidate-selection/reused-period effects.",
+    "Absolute NLL gain is small. Noninferiority guards and descriptive ECE checks passing are not an adoption decision."
+  ],
+  "quality_checks": {
+    "all_topk_mean_noninferiority_supported": true,
+    "all_head_ece_descriptive_guards": true,
+    "full2026_seed43_nll_difference": {
+      "ci": [
+        -0.0006599336012128225,
+        0.0011614254154196989
+      ],
+      "n_days": 70,
+      "n_races": 2296,
+      "n_rows": 2296,
+      "point": 0.00026437454846353674
+    }
+  },
+  "recent_values_read": false,
+  "recent_results_read": false,
+  "after_cutoff_real_data_read": false,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

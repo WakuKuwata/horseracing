@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "summary_sha256": "0838599a2c2e31e8d047b0014235cfe35f849aeaa2569708ade97101e58cf228",
+  "execution_receipt_sha256": "16263759fd4a3ef200ed62a8251cb6bee28e76fd62bdb33faaeface8848ef9d2",
+  "auditor_sha256": "1080ec31a6c1412158cb07deeff7bc341587c35bcc8fa500e71c9946437add65",
+  "metric_auditor_sha256": "b4a5bedfbfba6b149620a0ff5d99074577713f24446b50947e8940330a84cd94",
+  "checks": 104,
+  "n_races": 123,
+  "n_dates": 4,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

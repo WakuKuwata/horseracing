@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
-Current implementation plan: [129 candidate mixture serving](specs/129-candidate-mixture-serving/plan.md).
+Current implementation plan: [135 mixture reproducibility](specs/135-mixture-reproducibility/plan.md).
 Read this plan for technologies, project structure, commands, and current scope.
 <!-- SPECKIT END -->
 

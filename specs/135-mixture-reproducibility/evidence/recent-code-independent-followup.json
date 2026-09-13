@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "reviewed_at": "2026-09-13T03:39:06.271975+00:00",
+  "supersedes_source_version_review": "recent-code-independent-review.json",
+  "source_sha256": {
+    "scripts/mixture_recent_check_135.py": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec",
+    "scripts/tests/test_mixture_recent_check_135.py": "93d35eb27bdd94aaffbb6177604e77a4b3627a6846592cf425056650d9c93e60",
+    "scripts/audit_mixture_recent_inputs_135.py": "f1fa1b9e8bbdb02f0e0685b8d4d5048a88876a0238b0eb6a14922a83e62200e5",
+    "scripts/tests/test_audit_mixture_recent_inputs_135.py": "bd6e21b76bbf332ef2334e4e152b3a5a9f305f97845f7b0d1fd2fb771063431e",
+    "scripts/mixture_reproducibility.py": "f15590f2741835feff870513ce299181a3bfcf06a461fc2504f1216b1e40177f"
+  },
+  "source_changes_since_previous_review": [
+    "Driver coefficient gate corrected from coefficients[seed][gammas][year] to actual frozen135 coefficients[seed][year] contract at mixture_reproducibility.py:288. Earlier code-only review did not catch this schema mismatch; parent/author review caught it before any recent capture."
+  ],
+  "independent_auditor_review": {
+    "reviewer": "challenge_history with parent review",
+    "resolved_findings": [
+      {
+        "finding": "Auditor copied incorrect extra gammas level in coefficient lookup",
+        "resolution": "Cross-checked Step2 prepare source and changed lookup to coefficients[42][2026]; no real auditor run had occurred."
+      },
+      {
+        "finding": "Extra prediction arms/races or dates were not rejected by auditor",
+        "resolution": "Added exact regime/lambda/arm/date/race envelope checks and 4 synthetic rejection cases."
+      },
+      {
+        "finding": "Native PL margin intent was implicit in booster prediction",
+        "resolution": "Explicit raw_score=True and num_threads=1, with synthetic flag and softmax-calibration-clip order check."
+      }
+    ],
+    "remaining_blocking_findings": [],
+    "mathematics_review": "Independent softmax/calibration normalization, multiplicative-vs-log-space tilt and exhaustive ordered topk formulas verified against source. TE inverse sets include every union identity and both-unknown prior."
+  },
+  "tests": {
+    "command": "training/.venv/bin/python -m pytest scripts/tests/test_audit_mixture_recent_inputs_135.py scripts/tests/test_mixture_recent_check_135.py -q",
+    "passed": 40,
+    "seconds": 1.15,
+    "live_database": false
+  },
+  "execution_state": {
+    "actual_recent_capture_by_this_reviewer": 0,
+    "actual_input_audit_runs": 0,
+    "actual_prediction_audit_runs": 0,
+    "real_recent_values_read": false,
+    "real_recent_results_read": false,
+    "real_after_cutoff_data_read": false,
+    "actual_model_fits": 0
+  },
+  "required_order": [
+    "Step2 complete plus independent numerical PASS",
+    "capture fixed recent inputs",
+    "independent inputs audit",
+    "freeze predictions",
+    "independent predictions audit without results",
+    "score results then parent independent numeric audit"
+  ],
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

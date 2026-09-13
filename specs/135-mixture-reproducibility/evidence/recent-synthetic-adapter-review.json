@@ -1,0 +1,73 @@
+{
+  "actual_recent_inputs_read": false,
+  "additional_fits": 0,
+  "bundle_sha256": "28f39715a9c1dba13755ee44f3a439099d5aaffd94685ac11e4d23166b388471",
+  "can_adopt": false,
+  "candidate_fixture": "129 joint42 booster wrapped in135 ResearchModel; actual colsample candidate is checked after fit before values",
+  "checks": {
+    "anchor-42/full": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "anchor-42/preweight": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "anchor-43/full": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "anchor-43/preweight": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "anchor-44/full": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "anchor-44/preweight": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "candidate/full": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "candidate/preweight": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "joint-42/full": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "joint-42/preweight": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "joint-43/full": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "joint-43/preweight": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "joint-44/full": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    },
+    "joint-44/preweight": {
+      "max_abs_diff": 0.0,
+      "status": "PASS"
+    }
+  },
+  "data_kind": "synthetic only",
+  "eligible_for_verdict": false,
+  "n_checks": 14,
+  "source_sha256": {
+    "/Users/kuwatawaku/workspace/horseracing/scripts/mixture_recent_check_135.py": "aaedd5c5c73c5d4406bba8bacde2d54bfca6b1447db3fad77c82d9531db1122b",
+    "/Users/kuwatawaku/workspace/horseracing/scripts/mixture_reproducibility.py": "594d066dd369509cfef526395ea29e5677fe8ae839f3ea880f44717fc86ceecf"
+  },
+  "status": "PASS"
+}

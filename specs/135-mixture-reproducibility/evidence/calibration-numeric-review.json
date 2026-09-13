@@ -1,0 +1,27 @@
+{
+  "status": "NUMERIC_PASS_SOURCE_RECOVERY_PENDING",
+  "checks": 92160,
+  "regimes": {
+    "full": {
+      "races": 23030,
+      "same_lambda_max_abs_diff": [
+        0.0,
+        5.551115123125783e-16,
+        1.7763568394002505e-15
+      ],
+      "complete_material_lambda_exact": true
+    },
+    "preweight": {
+      "races": 23030,
+      "same_lambda_max_abs_diff": [
+        0.0,
+        6.661338147750939e-16,
+        1.887379141862766e-15
+      ],
+      "complete_material_lambda_exact": true
+    }
+  },
+  "summary_sha256": "1c3c8587a31ab632a60afe0837dfcc104b01a9d60f194bdacc0b6d0ca3c84be6",
+  "audit_correction": "initial auditor omitted incomplete-results exclusion from winner NLL; corrected to complete results and unique winner",
+  "can_adopt": false
+}

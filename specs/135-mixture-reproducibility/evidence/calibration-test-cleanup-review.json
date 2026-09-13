@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "completed_at": "2026-09-13T04:30:29.332731+00:00",
+  "authorization": "Parent requested removing only own unchanged generic test after exact ownership proof and exclusive archive.",
+  "removed_path": "scripts/tests/test_calibration_serving_recheck.py",
+  "archive_path": "specs/135-mixture-reproducibility/evidence/calibration-original-test-source.py",
+  "archive_sha256": "bb498fe47967dd115d31b93b42560682119f4725c85aff2d15047f82fd9b0d65",
+  "own_patch_log": "artifacts/135-mixture-reproducibility/calibration/source-recovery/own-test-patches.json",
+  "own_patch_log_sha256": "b8eb6324252162f5053de41ca948b522699845fab65cccde16d5b281c6541842",
+  "proof": {
+    "original_current_and_reconstructed_sha256": "bb498fe47967dd115d31b93b42560682119f4725c85aff2d15047f82fd9b0d65",
+    "reconstruction": "Applied original Add File and two Update File patches in memory; all four update hunks had exactly one context match. Reconstructed7580 bytes equal current old test byte for byte.",
+    "cross_check": "Dedicated135 test with only import module suffix removed is also byte-identical.",
+    "last_own_patch_utc": "2026-09-13T02:38:17.404Z",
+    "original_mtime_utc": "2026-09-13T02:38:17.421762+00:00",
+    "other_task_changes_to_old_test": false,
+    "archive_verified_before_unlink": true,
+    "inode_mtime_sha_rechecked_before_unlink": true,
+    "old_path_now_absent": true
+  },
+  "retained_test": "scripts/tests/test_calibration_serving_recheck135.py",
+  "retained_test_sha256": "1ab31232e37ef4bdebc4c876285d810507e40f33c46658d29d524460301d8010",
+  "test_result": {
+    "command": "training/.venv/bin/python -m pytest scripts/tests/test_calibration_serving_recheck135.py -q",
+    "passed": 10,
+    "seconds": 0.78
+  },
+  "untouched": {
+    "external_generic_script_accessed": false,
+    "external_test_modified": false,
+    "existing_repro_source_sha256": "f15590f2741835feff870513ce299181a3bfcf06a461fc2504f1216b1e40177f",
+    "isolated_calibration_source_sha256": "ba6d6dcab19c2b9e6d7592bf06d8297989d6d367fbe7269163e5ad1c2b674a63",
+    "existing_config_or_review_changed": false
+  },
+  "recent_real_values_read": false,
+  "recent_real_results_read": false,
+  "after_cutoff_real_data_read": false,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

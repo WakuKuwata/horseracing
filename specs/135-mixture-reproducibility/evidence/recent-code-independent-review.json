@@ -1,0 +1,81 @@
+{
+  "status": "PASS",
+  "review_kind": "independent_source_and_synthetic_only",
+  "reviewed_at": "2026-09-13T03:16:20.828360+00:00",
+  "source_sha256": {
+    "scripts/mixture_recent_check_135.py": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec",
+    "scripts/tests/test_mixture_recent_check_135.py": "93d35eb27bdd94aaffbb6177604e77a4b3627a6846592cf425056650d9c93e60",
+    "scripts/mixture_reproducibility.py": "f15590f2741835feff870513ce299181a3bfcf06a461fc2504f1216b1e40177f",
+    "serving/src/horseracing_serving/mixture_correction.py": "c2ff5c9e6fe5c825f43cad7244f279ef99cc1a9cd532fbbadc24ecf17bdb5255",
+    "serving/src/horseracing_serving/mixture_model.py": "ff489b58437825dc5d7de783955f2fafda139ea439686fb93e7faa6a9a1aa7cb",
+    "serving/src/horseracing_serving/predictor.py": "51d775b7cdcf3f900a9a99d89e2fac38456c0d7e406b741fcde176a28051580f",
+    "training/src/horseracing_training/target_encoding.py": "cb538a02a362e18e8bae35323301e4008a8e053fbdf564bb676c455f4a0ad90e"
+  },
+  "tests": {
+    "command": "training/.venv/bin/python -m pytest scripts/tests/test_mixture_recent_check_135.py -q",
+    "passed": 27,
+    "seconds": 0.86,
+    "live_database_access": false
+  },
+  "new_blocking_findings": [],
+  "resolved_parent_findings": [
+    "heads_from_win uses keyword-only lambda2/lambda3",
+    "quality ECE evaluated separately for win/top2/top3",
+    "missing labels and CI None remain UNRESOLVED",
+    "baseline train_through and joint42 coefficients match frozen135 explicitly"
+  ],
+  "checks": [
+    {
+      "area": "TE inverse ambiguity",
+      "source": "scripts/mixture_recent_check_135.py:174",
+      "result": "PASS",
+      "reason": "For every old encoded value, enumerates old/new mapping identity union; old-prior group also includes identities newly known to new encoder and identity unknown to both. Only singleton new-value sets are converted. No guessed identity, approximate float match, or fallback replacement."
+    },
+    {
+      "area": "Target encoder provenance",
+      "source": "scripts/mixture_recent_check_135.py:346",
+      "result": "PASS",
+      "reason": "Pinned model artifacts are checked before unpickle. All six baseline and candidate encoders must exactly match in columns, mapping, prior and smoothing. Candidate and baseline endpoints are 2026-08-23; candidate fixed seed42 and fixed job metadata bind training and OOF recipe."
+    },
+    {
+      "area": "Already encoded model entry",
+      "source": "scripts/mixture_recent_check_135.py:238",
+      "result": "PASS",
+      "reason": "Explicit numeric/category dtype preparation does not call TargetEncoder.transform; raw_predict then saved calibrator and single eps1e-6 assembly agrees with normal129 path on synthetic known/unknown inputs in full/preweight."
+    },
+    {
+      "area": "Correction identity and chronology",
+      "source": "scripts/mixture_recent_check_135.py:571",
+      "result": "PASS",
+      "reason": "Reconstruct sorts horse_id once, prediction matrices are indexed and returned in same order, and correct_member_predictions rejects a differing order. build_correction_inputs returns target order and computes prior gap from distinct same-horse dates strictly before target using searchsorted(side=left). Same-day and future appearances cannot enter the prior gap."
+    },
+    {
+      "area": "Bounded SQL and phase gates",
+      "source": "scripts/mixture_recent_check_135.py:51",
+      "result": "PASS",
+      "reason": "Every SQL starts from a MATERIALIZED race_date-bounded target. Snapshot source requires model094 and feature version021 plus run/snapshot timestamps strictly pre-post and before 2026-09-07 JST. Appearance delta is 2026-08-24..09-06 only. RESULT_SQL is called only after frozen prediction receipt. No mutable horse master or latest feature builder used."
+    },
+    {
+      "area": "Pre-result exclusions and audit input",
+      "source": "scripts/mixture_recent_check_135.py:435",
+      "result": "PASS",
+      "reason": "Whole-race exclusions depend on preserved input existence/count, exact started set, unique identities/schema and TE ambiguity. Required old encoded values are stored in raw-inputs.pkl before transform, excluding output JSON extras. Included predictions and source/input hashes are frozen before results."
+    },
+    {
+      "area": "Interpretation limits",
+      "source": "scripts/mixture_recent_check_135.py:531",
+      "result": "PASS",
+      "reason": "Current dated appearance/status and scheduled post-time assumptions remain explicit. Converted subset may be unrepresentative; previously referenced four-day window is not an untouched holdout. This review does not validate coverage or actual numeric performance."
+    }
+  ],
+  "data_access": {
+    "real_recent_values_read": false,
+    "real_recent_results_read": false,
+    "real_after_cutoff_data_read": false,
+    "actual_model_fits": 0,
+    "scope": "Source files and synthetic pytest data only"
+  },
+  "next_required": "After Step2 and capture gate, independently replay raw saved inputs -> exact TE conversion/exclusions and saved predictions, without outcomes. This code-only PASS does not substitute for that audit.",
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

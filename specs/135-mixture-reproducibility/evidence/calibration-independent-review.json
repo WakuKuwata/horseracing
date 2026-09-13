@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "summary_sha256": "1c3c8587a31ab632a60afe0837dfcc104b01a9d60f194bdacc0b6d0ca3c84be6",
+  "design_sha256": "d282cef2291cfa3605ef00db403f09aec42d8b832e479ae60a62bee0ee4b904b",
+  "experiment_sha256": "2a076d6df0cfffafe9a2f3378ae387de1193933b1d3b46546d1f6f5ee0ab2bc1",
+  "checks": 92177,
+  "source_status": "all execution hashes verified; externally replaced filename resolved using exact recovered execution-source.py",
+  "original_source_recovery_sha256": "76e4dd73f83c27517e5cd1ca1d53081482b270dd7c93974ab13ccdba462d6ef8",
+  "numeric_review_sha256": "97bed5e937dd0a668944b571d234c04e7fa8b6dc163a65eee90e5ed958667b8e",
+  "additional_booster_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

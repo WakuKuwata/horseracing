@@ -1,0 +1,148 @@
+{
+  "additional_fits": 0,
+  "can_adopt": false,
+  "code_contracts": {
+    "ambiguous_or_absent_group": "exclude whole race",
+    "encoded_snapshot_writer": "serving/src/horseracing_serving/predictor.py",
+    "float_tolerance_allowed": false,
+    "old_unknown_group_includes_new_only_ids_and_both_unknown": true,
+    "prior_gap": "frozen111 started appearances plus bounded current race_id/horse_id/race_date only",
+    "snapshot_has_separate_raw_ids": false,
+    "unbounded_horse_master_prohibited": true
+  },
+  "cutoff": "2026-09-06",
+  "days": [
+    {
+      "current_raw_id_rows_stable_by_capture": 0,
+      "current_raw_id_rows_stable_by_cutoff": 453,
+      "race_date": "2026-08-29",
+      "selected_snapshot_rows": 453,
+      "strict_prestart_snapshot_races": 33,
+      "target_races": 36
+    },
+    {
+      "current_raw_id_rows_stable_by_capture": 0,
+      "current_raw_id_rows_stable_by_cutoff": 479,
+      "race_date": "2026-08-30",
+      "selected_snapshot_rows": 479,
+      "strict_prestart_snapshot_races": 36,
+      "target_races": 36
+    },
+    {
+      "current_raw_id_rows_stable_by_capture": 0,
+      "current_raw_id_rows_stable_by_cutoff": 10,
+      "race_date": "2026-09-05",
+      "selected_snapshot_rows": 422,
+      "strict_prestart_snapshot_races": 33,
+      "target_races": 36
+    },
+    {
+      "current_raw_id_rows_stable_by_capture": 0,
+      "current_raw_id_rows_stable_by_cutoff": 13,
+      "race_date": "2026-09-06",
+      "selected_snapshot_rows": 468,
+      "strict_prestart_snapshot_races": 34,
+      "target_races": 36
+    }
+  ],
+  "eligible_for_verdict": false,
+  "input_values_read": false,
+  "kind": "135_recent_metadata_inventory",
+  "limitations": [
+    "Maximum136 usable races before exact TE conversion and population checks; no input coverage claim yet.",
+    "Zero current raw-ID rows prove stable at snapshot capture; current raw rider/trainer fallback is prohibited.",
+    "Current scheduled post time and bounded appearance identities/status are assumptions, not complete as-of reconstruction.",
+    "Prior129 rehearsal already referenced all144 window races; this is not an untouched holdout."
+  ],
+  "metadata_query_scope": {
+    "from": "2026-08-29",
+    "rule": "SELECT date/version/timestamp classification and counts only; bounded races SQL; repeatable-read read-only",
+    "strict_rule": "whole094 run and every snapshot created/updated strictly before scheduled post and JST cutoff; latest eligible run",
+    "through": "2026-09-06",
+    "timestamp_exclusive_end_jst": "2026-09-07T00:00:00+09:00",
+    "timestamp_exclusive_end_utc": "2026-09-06T15:00:00+00:00"
+  },
+  "model_files": {
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/bundle.json": "28f39715a9c1dba13755ee44f3a439099d5aaffd94685ac11e4d23166b388471",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-42/calibrator.pkl": "65a2770806dcb46dfe38b3f4463893a70f61362893c3e1e09eeda61826cd0a72",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-42/metadata.json": "2489142e7490ce9eab5634cc08fe898bf38d3a2752b332adeba8ebdb2b763a00",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-42/model.txt": "7a901c9d71ea8c40811f641b0572a5f2abe82913ee69b10b16349b4fb516d99a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-42/preprocessor.pkl": "337973c7f20063ab76d68e6b2bd098ae4528a195db7a62d81b6faceac7e607a4",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-43/calibrator.pkl": "eca13a6c582de2be2c244af38761ddcb2bde0c40badfe008da9110dc30fb1030",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-43/metadata.json": "a3c85dd9e23902d1e3f7fbe7829a01ee67acf37742154ae1da018151d5c86a74",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-43/model.txt": "245f79f519ca8e96661cba2ad56841bfb2f02daa986cf40015f8c47522e2adfa",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-43/preprocessor.pkl": "337973c7f20063ab76d68e6b2bd098ae4528a195db7a62d81b6faceac7e607a4",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-44/calibrator.pkl": "62703d08d9527744bf0d8d881b90da39ab55f92d1bbe92b0230f843444a4643e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-44/metadata.json": "b10d96d39de47b0a2eb98b58f01991fa08ae3bb080c299002abc06664b459334",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-44/model.txt": "7aaef771d86829e59829ebc133a6743f035065361384593e79f56cb4878e41c8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/anchor-44/preprocessor.pkl": "337973c7f20063ab76d68e6b2bd098ae4528a195db7a62d81b6faceac7e607a4",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-42/calibrator.pkl": "24072a3649011227891cfdae3b8c2740c1044f6c74b1201ab2c148db51a0d450",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-42/metadata.json": "781f3a250f1d9e38bfd97fbb838db8236aa0c59bb68da4c12f7c0acb12215204",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-42/model.txt": "41a125fb490205a38cea7c4263af53d7dbcc78adf43eb75157b3c8514134b280",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-42/preprocessor.pkl": "80f7301876de61597cd6761f10ffc0bd7e666bb89bdc110b35845b3012823de9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-43/calibrator.pkl": "f793bafe9890827fe2f9b4ae223d5708b2f3265d7282dae10b38d55863c02c11",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-43/metadata.json": "1bae48b128c2776819c7a9f47b0d91e2aa04d51471f6c127e2c4e939d5c5c51b",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-43/model.txt": "db3c55f4584ee5013c349ae8d046e3c302b250fca18c1c35f995ce42fe22ac9c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-43/preprocessor.pkl": "80f7301876de61597cd6761f10ffc0bd7e666bb89bdc110b35845b3012823de9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-44/calibrator.pkl": "0d50d4e5b5035f9b56aef6a9669017644583e7653bc6fa7fc70294a0c4f83f3a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-44/metadata.json": "08eda6a1400ef8c9542ff8f08a76113e0d6221cdf18c963afe0f7eeef573b5f8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-44/model.txt": "6cf58c31004957611979ee4ff3c304e4b8c0df02a143af2d6194b3f2e930f444",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/129-candidate-mixture-serving/members/joint-44/preprocessor.pkl": "80f7301876de61597cd6761f10ffc0bd7e666bb89bdc110b35845b3012823de9",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/model_versions/lgbm-094-cap900/calibrator.pkl": "4a6abf71b1e3bece025ddbc38e3589fc278d37312eeab7bdccda6b764eb82338",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/model_versions/lgbm-094-cap900/metadata.json": "9c88c690f03a7545f4984d0b7936b67bae7af8101504f39e6098b5ce5e419618",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/model_versions/lgbm-094-cap900/model.txt": "23b8e2db73ed5b163e3c1cb88e2a916d296bf03c66a3d834a9bda5eab8641abd",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/model_versions/lgbm-094-cap900/preprocessor.pkl": "6eda1f7d8280bae987f11e32e48d15dc62345c07a25565d896ac55c54dc15cf1"
+  },
+  "old_model": {
+    "feature_version": "features-021",
+    "model_version": "lgbm-094-cap900",
+    "te_cols": [
+      "jockey_id",
+      "trainer_id"
+    ],
+    "train_through": "2026-08-16"
+  },
+  "prior_reference": {
+    "method": "129 rehearsal filename stems matched to bounded race IDs; file contents not opened",
+    "races_with_prior_rehearsal_filename": 144,
+    "untouched_holdout": false
+  },
+  "recent_results_read": false,
+  "schema_version": 1,
+  "snapshot111": {
+    "path": "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/snapshot.pkl",
+    "sha256": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+    "through": "2026-08-23"
+  },
+  "target_model": {
+    "annual130_boosters_preserved": false,
+    "baseline": "129 saved6 trained2026-08-23",
+    "baseline_refits_required": 0,
+    "candidate": "135 recent-42 colsample.7 same endpoint",
+    "candidate_booster_fits_required": 8,
+    "candidate_encoder_equality": "must be checked after fixed candidate fit before values",
+    "six_baseline_encoders_exact_equal": true
+  },
+  "te_conversion_model_only": {
+    "jockey_id": {
+      "ambiguous_groups": 2,
+      "exact_float_only": true,
+      "old_value_groups": 420,
+      "unique_new_value_groups": 418,
+      "unknown_fallback_included": true
+    },
+    "trainer_id": {
+      "ambiguous_groups": 3,
+      "exact_float_only": true,
+      "old_value_groups": 405,
+      "unique_new_value_groups": 402,
+      "unknown_fallback_included": true
+    }
+  },
+  "totals": {
+    "missing_snapshot_races": 8,
+    "selected_snapshot_rows": 1822,
+    "strict_prestart_snapshot_races": 136,
+    "target_races": 144
+  }
+}

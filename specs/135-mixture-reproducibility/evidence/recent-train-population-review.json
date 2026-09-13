@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "matches_fixed135_recent_job": true,
+  "members": {
+    "joint-42": {
+      "train_hash": "eda7b6ecd8902f9ac7b722feecfa17736449ba4a1101bc57fe53a996432b435d",
+      "n_train_races": 67923,
+      "n_train_rows": 957997,
+      "metadata_sha256": "781f3a250f1d9e38bfd97fbb838db8236aa0c59bb68da4c12f7c0acb12215204"
+    },
+    "joint-43": {
+      "train_hash": "eda7b6ecd8902f9ac7b722feecfa17736449ba4a1101bc57fe53a996432b435d",
+      "n_train_races": 67923,
+      "n_train_rows": 957997,
+      "metadata_sha256": "1bae48b128c2776819c7a9f47b0d91e2aa04d51471f6c127e2c4e939d5c5c51b"
+    },
+    "joint-44": {
+      "train_hash": "eda7b6ecd8902f9ac7b722feecfa17736449ba4a1101bc57fe53a996432b435d",
+      "n_train_races": 67923,
+      "n_train_rows": 957997,
+      "metadata_sha256": "08eda6a1400ef8c9542ff8f08a76113e0d6221cdf18c963afe0f7eeef573b5f8"
+    },
+    "anchor-42": {
+      "train_hash": "eda7b6ecd8902f9ac7b722feecfa17736449ba4a1101bc57fe53a996432b435d",
+      "n_train_races": 67923,
+      "n_train_rows": 957997,
+      "metadata_sha256": "2489142e7490ce9eab5634cc08fe898bf38d3a2752b332adeba8ebdb2b763a00"
+    },
+    "anchor-43": {
+      "train_hash": "eda7b6ecd8902f9ac7b722feecfa17736449ba4a1101bc57fe53a996432b435d",
+      "n_train_races": 67923,
+      "n_train_rows": 957997,
+      "metadata_sha256": "a3c85dd9e23902d1e3f7fbe7829a01ee67acf37742154ae1da018151d5c86a74"
+    },
+    "anchor-44": {
+      "train_hash": "eda7b6ecd8902f9ac7b722feecfa17736449ba4a1101bc57fe53a996432b435d",
+      "n_train_races": 67923,
+      "n_train_rows": 957997,
+      "metadata_sha256": "b10d96d39de47b0a2eb98b58f01991fa08ae3bb080c299002abc06664b459334"
+    }
+  },
+  "additional_fits": 0,
+  "recent_values_read": false
+}

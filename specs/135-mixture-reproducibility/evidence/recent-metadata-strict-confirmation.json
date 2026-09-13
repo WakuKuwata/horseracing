@@ -1,0 +1,34 @@
+{
+  "by_day": {
+    "2026-08-29": {
+      "snapshot_rows": 453,
+      "strict_prestart_races": 33,
+      "target_races": 36
+    },
+    "2026-08-30": {
+      "snapshot_rows": 479,
+      "strict_prestart_races": 36,
+      "target_races": 36
+    },
+    "2026-09-05": {
+      "snapshot_rows": 422,
+      "strict_prestart_races": 33,
+      "target_races": 36
+    },
+    "2026-09-06": {
+      "snapshot_rows": 468,
+      "strict_prestart_races": 34,
+      "target_races": 36
+    }
+  },
+  "can_adopt": false,
+  "cutoff": "2026-09-06",
+  "eligible_for_verdict": false,
+  "feature_values_read": false,
+  "outcomes_read": false,
+  "predictions_read": false,
+  "query": "\nWITH target AS MATERIALIZED (\n SELECT race_id, race_date, post_time FROM races\n WHERE race_date >= :start AND race_date <= :end\n), eligible AS (\n SELECT p.race_id, p.prediction_run_id, p.computed_at, p.created_at, p.updated_at,\n        r.race_date, r.post_time, count(s.horse_id) AS n_snapshots\n FROM target r JOIN prediction_runs p ON p.race_id = r.race_id\n JOIN feature_snapshots s ON s.prediction_run_id = p.prediction_run_id\n WHERE p.model_version = :old_model\n AND p.computed_at < r.post_time AND p.created_at < r.post_time AND p.updated_at < r.post_time\n AND p.computed_at < :captured_before AND p.created_at < :captured_before AND p.updated_at < :captured_before\n GROUP BY p.race_id,p.prediction_run_id,p.computed_at,p.created_at,p.updated_at,r.race_date,r.post_time\n HAVING bool_and(s.feature_version = :feature_version\n   AND s.created_at < r.post_time AND s.updated_at < r.post_time\n   AND s.created_at < :captured_before AND s.updated_at < :captured_before)\n), picked AS (\n SELECT DISTINCT ON (race_id) * FROM eligible\n ORDER BY race_id, computed_at DESC, prediction_run_id\n)\nSELECT r.race_id,r.race_date,r.post_time,p.prediction_run_id,p.computed_at,\n       p.created_at,p.updated_at,p.n_snapshots\nFROM target r LEFT JOIN picked p USING(race_id)\nORDER BY r.race_date,r.race_id\n",
+  "query_sha256": "8fac4674a21163c056027878354114e533e5c8beedd99552dd0033f059d9a5ff",
+  "status": "METADATA_ONLY_COMPLETE",
+  "whole_run_bool_and": true
+}

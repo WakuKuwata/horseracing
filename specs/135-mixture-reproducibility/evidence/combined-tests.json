@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "pytest": "54 passed in1.13s",
+  "scope": "three new135 test modules, no real fitting or recent input/outcome reads",
+  "additional_auditor_synthetic_checks": "24 tied ECE cases; five fixed seed-average metrics; all-missing results produce None",
+  "source_sha256": {
+    "scripts/tests/test_calibration_serving_recheck135.py": "1ab31232e37ef4bdebc4c876285d810507e40f33c46658d29d524460301d8010",
+    "scripts/tests/test_mixture_reproducibility.py": "da65ef7b19959e4046af88b0c35087bc00a0dd9b38449214c5946da2b49022f0",
+    "scripts/tests/test_mixture_recent_check_135.py": "93d35eb27bdd94aaffbb6177604e77a4b3627a6846592cf425056650d9c93e60",
+    "scripts/calibration_serving_recheck135.py": "ba6d6dcab19c2b9e6d7592bf06d8297989d6d367fbe7269163e5ad1c2b674a63",
+    "scripts/mixture_reproducibility.py": "f15590f2741835feff870513ce299181a3bfcf06a461fc2504f1216b1e40177f",
+    "scripts/mixture_recent_check_135.py": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec",
+    "scripts/audit_mixture_reproducibility_135.py": "731516cb1ace9dafcb8e7568d601c50517d30dacd1545b6ba50552a3a9b3290e",
+    "scripts/audit_mixture_recent_135.py": "77d272040655efda1dba6213e2c5844f4d9b078d7b25a79804cb5153841b19e4"
+  },
+  "created_at": "2026-09-13T03:27:15.750733+00:00",
+  "can_adopt": false
+}

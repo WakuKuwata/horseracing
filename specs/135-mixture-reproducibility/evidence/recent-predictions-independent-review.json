@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "phase": "predictions",
+  "input_receipt_sha256": "1d1b17bcf352af8fcb0fd167779e0424c9153cdda5092f4f5af71c7b89026629",
+  "source_sha256": "f1fa1b9e8bbdb02f0e0685b8d4d5048a88876a0238b0eb6a14922a83e62200e5",
+  "n_included_races": 123,
+  "n_excluded_races": 21,
+  "n_encoded_values_checked": 3430,
+  "exclusion_reasons": {
+    "snapshot/started population mismatch": 5,
+    "no preserved prestart094 snapshot": 8,
+    "ambiguous encoded value: jockey_id": 1,
+    "ambiguous encoded value: trainer_id": 7
+  },
+  "methods": [
+    "Explicit identity union plus both-unknown TE enumeration for each stored value",
+    "Exact included/excluded race sets, ordered horse IDs and converted dataframe equality",
+    "Native saved booster and calibrator only; independent softmax, clipping, strict-past correction, mean win and exhaustive ordered topk"
+  ],
+  "recent_results_read": false,
+  "database_queries": 0,
+  "additional_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "execution_receipt_sha256": "16263759fd4a3ef200ed62a8251cb6bee28e76fd62bdb33faaeface8848ef9d2",
+  "input_review_sha256": "c8dfa441257f3fb72db8eeb160f51e01ba1426d6ad6f470658957ee096009ca0",
+  "max_abs_prediction_error": 1.6653345369377348e-15,
+  "n_race_arm_regime_checks": 492
+}

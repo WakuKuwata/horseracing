@@ -1,0 +1,88 @@
+{
+  "status": "PASS",
+  "reviewer": "/root/challenge_model",
+  "scope": "Independent source review and synthetic unit tests before full fits; no historical matrix/snapshot values or recent outcome files loaded.",
+  "source_sha256": {
+    "scripts/mixture_reproducibility.py": "f15590f2741835feff870513ce299181a3bfcf06a461fc2504f1216b1e40177f",
+    "scripts/tests/test_mixture_reproducibility.py": "da65ef7b19959e4046af88b0c35087bc00a0dd9b38449214c5946da2b49022f0",
+    "scripts/audit_mixture_reproducibility_135.py": "0482a0f5ab4346f8c43123ee6578b97c1c37bc784449dc001e1674349a890c5b"
+  },
+  "resolved_findings": [
+    {
+      "file": "scripts/mixture_reproducibility.py",
+      "function": "ResearchModel.predict_encoded",
+      "issue": "Transient dedent in for col in X prevented module compilation. Author corrected before v2 prepare/full fits; synthetic tests passed afterwards."
+    }
+  ],
+  "unresolved_blocking_findings": [],
+  "checks": [
+    {
+      "name": "OOF and booster count",
+      "result": "PASS",
+      "evidence": [
+        "partition_proof",
+        "make_predictor",
+        "test_candidate_seed_and_matrix_reach_final_and_every_inner_booster"
+      ],
+      "detail": "Same seed/colsample/matrix is passed to final and all strict-prior inner predictors. Eight day blocks yield one final plus seven inner fits; training outcomes patch rejects other IDs or DB sessions."
+    },
+    {
+      "name": "Native126 and seed42 identity",
+      "result": "PASS",
+      "evidence": [
+        "prepare",
+        "fit",
+        "summarize"
+      ],
+      "detail": "Before fitting, native126 effective125 projection, categorical data, labels, recipe and train identity are compared with sealed111. Completed seed42 artifacts require full prediction equality to126 and corrected1/7 equality to132; actual parity remains an execution-time check."
+    },
+    {
+      "name": "Same fit for full and preweight plus serialization",
+      "result": "PASS",
+      "evidence": [
+        "fit",
+        "save_model",
+        "load_model"
+      ],
+      "detail": "A fitted predictor is reused across both prediction masks; portable model files are SHA checked and all validation predictions must remain byte-identical after loading. Failed or partial output is retained rather than accepted."
+    },
+    {
+      "name": "Encoded entry domain",
+      "result": "PASS",
+      "evidence": [
+        "ResearchModel.predict_encoded",
+        "ResearchModel.predict",
+        "test_encoded_entry_uses_no_encoders_no_coercion_and_exact_order"
+      ],
+      "detail": "Explicit encoded path applies no second TE/coercion/fallback and checks column/started order, dates, numeric versus categorical dtypes and Inf. Raw path encodes once before this entry. Caller remains responsible for proving the encoding domain for any external snapshot."
+    },
+    {
+      "name": "Fixed mixed6 comparison and seed estimand",
+      "result": "PASS",
+      "evidence": [
+        "construct",
+        "seed_mean_metrics"
+      ],
+      "detail": "Uses same annual/regime baseline lambda for both arms, same-seed/year transferred coefficients, 1/7 fixed addition, and mean of per-race losses across seeds rather than a new average-probability model."
+    },
+    {
+      "name": "Parent independent numerical auditor",
+      "result": "PASS",
+      "evidence": [
+        "scripts/audit_mixture_reproducibility_135.py:calculate",
+        "scripts/audit_mixture_reproducibility_135.py:day_pair"
+      ],
+      "detail": "Result completeness is required before any labels are scored; a unique winner is additionally required for NLL. DNF receives zero only on complete races. Head losses are horse-pooled; day bootstrap resamples numerator and denominator, with seed losses averaged before resampling. No concrete formula/population defect found; the auditor was not run on incomplete real outputs."
+    }
+  ],
+  "tests": {
+    "command": "training/.venv/bin/python -m pytest scripts/tests/test_mixture_reproducibility.py -q",
+    "result": "17 passed in 0.70s",
+    "exit_code": 0
+  },
+  "additional_booster_fits": 0,
+  "snapshot_values_read": 0,
+  "post_cutoff_result_reads": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

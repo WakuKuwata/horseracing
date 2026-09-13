@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "completed_at": "2026-09-13",
+  "tasks_completed": ["T001", "T002", "T003", "T004", "T005", "T006", "T007", "T008", "T009", "T010", "T011", "T012", "T013", "T014", "T015", "T016", "T017"],
+  "regular_booster_fits": 56,
+  "step2_booster_fits": 48,
+  "recent_booster_fits": 8,
+  "smoke_booster_fits_separate": 2,
+  "recent_fit_seconds": 950.4917547500227,
+  "recent_roundtrip": {
+    "status": "PASS",
+    "n_races": 2298,
+    "n_values": 190590,
+    "max_abs_diff": 0.0
+  },
+  "recent_population": {
+    "target_races": 144,
+    "included_races": 123,
+    "excluded_races": 21,
+    "included_horses": 1633,
+    "dates": 4,
+    "complete_result_races": 123
+  },
+  "independent_checks": {
+    "input_encoded_values": 3430,
+    "prediction_race_arm_regime": 492,
+    "prediction_max_abs_error": 1.6653345369377348e-15,
+    "numeric_checks": 104
+  },
+  "final_tests": {
+    "command": "training/.venv/bin/python -m pytest -q scripts/tests/test_accuracy_batch_common.py scripts/tests/test_calibration_serving_recheck135.py scripts/tests/test_mixture_reproducibility.py scripts/tests/test_mixture_recent_check_135.py scripts/tests/test_audit_mixture_recent_inputs_135.py",
+    "passed": 79,
+    "failed": 0
+  },
+  "sha256": {
+    "recent_fit_receipt": "1d569e5a94bcd00984511347b117bb84ed65804f56a1617e1ee9f42b31ba2bbd",
+    "recent_model_check": "9fc3b4703df5c4c017e6a14646e25075986b3404a5d208e69b67b64acf4ed509",
+    "input_receipt": "1d1b17bcf352af8fcb0fd167779e0424c9153cdda5092f4f5af71c7b89026629",
+    "execution_receipt": "16263759fd4a3ef200ed62a8251cb6bee28e76fd62bdb33faaeface8848ef9d2",
+    "recent_summary": "0838599a2c2e31e8d047b0014235cfe35f849aeaa2569708ade97101e58cf228",
+    "input_independent_review": "c8dfa441257f3fb72db8eeb160f51e01ba1426d6ad6f470658957ee096009ca0",
+    "prediction_independent_review": "52914660c664002b6a80d2573c4e5133a2ff9a5e4e391a27955b2a31f12b0ad7",
+    "numeric_independent_review": "156aa50e3f7b64a1b5020db665622f634ccc5f0c4ae63b936a7e0499b0859933"
+  },
+  "initial_capture_failure": {
+    "cause": "DATABASE_URL missing from the command environment",
+    "stopped_before_input_query": true,
+    "recent_inputs_read": false,
+    "recent_results_read": false,
+    "preserved_directory": "artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913"
+  },
+  "decision": "RESEARCH_ONLY_DO_NOT_PROMOTE",
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

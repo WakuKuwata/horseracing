@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "kind": "135_recent_protocol_lock",
+  "experiment_sha256": "2a076d6df0cfffafe9a2f3378ae387de1193933b1d3b46546d1f6f5ee0ab2bc1",
+  "cutoff": "2026-09-06",
+  "recent": {
+    "from": "2026-08-29",
+    "through": "2026-09-06",
+    "candidate_seed": 42,
+    "candidate_weight": [
+      1,
+      7
+    ],
+    "train_through": "2026-08-23",
+    "baseline": "129 six-member saved final models trained through 2026-08-23",
+    "candidate": "same training endpoint/recipe with colsample.7, seed42",
+    "coefficients": "2026 prior-year fixed",
+    "stage_lambda": "132 2026 same-regime baseline lambda fixed for both arms; fit through2025 only",
+    "allow_selection_after_recent_results": false
+  },
+  "regimes": [
+    "full",
+    "preweight"
+  ],
+  "primary_regime": "preweight",
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125
+  },
+  "quality": {
+    "top2_logloss_margin": 0.0005,
+    "top3_logloss_margin": 0.0005,
+    "ece_margin": 0.001,
+    "ece_ceiling": 0.05
+  },
+  "selection": {
+    "candidate_fixed_before_step2_results": true,
+    "seed": 42,
+    "candidate_weight": [
+      1,
+      7
+    ],
+    "no_selection_using_recent_results": true,
+    "window_status": "previously referenced by129 rehearsal; retrospective confirmation, not untouched holdout"
+  },
+  "input_policy": {
+    "dated_source": "094 prestart snapshots selected using metadata only",
+    "target_te": "129 six members and135 final candidate encoders must be identical",
+    "te_conversion": "exact saved old encoded value to unique new encoded value over old/new ID union and unknown fallback; reject whole race on ambiguity or absence",
+    "raw_id_fabrication": false,
+    "prediction_entry": "already-encoded adapter; prove parity against normal encoder path",
+    "coverage": "use complete reconstructible races only; report all exclusions",
+    "history": "111 frozen appearances through2026-08-23 plus bounded dated horse appearances; no result features",
+    "execution_lock": "record metadata selection, run IDs, input/source/model SHA before outcome reads in separate immutable execution receipt"
+  },
+  "gates": {
+    "before_recent_values": "Step2 summary and independent review complete",
+    "before_recent_outcomes": "protocol plus execution/input/predictions frozen",
+    "actual_latest_runtime_replay": false
+  },
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

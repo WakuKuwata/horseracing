@@ -1,0 +1,130 @@
+{
+  "kind": "135 unexpected recent outputs ownership metadata",
+  "agent": "/root/challenge_history",
+  "own_thread_id": "01a09820-732c-7cd0-823d-b5c3722dca18",
+  "own_session_log": "/Users/kuwatawaku/.codex/sessions/2026/09/13/rollout-2026-09-13T09-17-38-01a09820-732c-7cd0-823d-b5c3722dca18.jsonl",
+  "own_commands_0425_to_0435_utc": [
+    {
+      "timestamp": "2026-09-13T04:33:05.928Z",
+      "call_id": "call_lx0AMEDIpE6jpgZkmpFqU5gG",
+      "input_sha256": "2b71df12b7226165b7eb41c977f5ac7b46538c4724331496e579b1d836274b9f",
+      "calls_capture": true,
+      "calls_predict": false,
+      "calls_score": false,
+      "contains_rename": false
+    },
+    {
+      "timestamp": "2026-09-13T04:33:31.159Z",
+      "call_id": "call_lRKC5esLUpwStd1SG08MKYSN",
+      "input_sha256": "4e2e866ec7db0354a9db5b1d5dabd3433525731feb32dc8137e13b0f1399c31e",
+      "calls_capture": false,
+      "calls_predict": false,
+      "calls_score": false,
+      "contains_rename": false
+    },
+    {
+      "timestamp": "2026-09-13T04:33:44.766Z",
+      "call_id": "call_51OSgJCQvDcXYDyOBovvrhfS",
+      "input_sha256": "56baf49fbbab5d417378a3ebd72bc316faf46ee31e5695a77a17270e59671d6d",
+      "calls_capture": false,
+      "calls_predict": false,
+      "calls_score": false,
+      "contains_rename": false
+    },
+    {
+      "timestamp": "2026-09-13T04:34:43.459Z",
+      "call_id": "call_wWtblanrgKwVXIZAMJfuYlHZ",
+      "input_sha256": "d27b3ed1a736cb860b859f5993ab3d0b13904084e5ee863848820f2a5dd5a348",
+      "calls_capture": false,
+      "calls_predict": false,
+      "calls_score": false,
+      "contains_rename": false
+    }
+  ],
+  "own_capture_attempt": {
+    "at_utc": "2026-09-13T04:33:05.928Z",
+    "error_type": "FileExistsError",
+    "source_line": 439,
+    "database_connected": false,
+    "recent_values_read": false,
+    "recent_outcomes_read": false
+  },
+  "unexpected_output_metadata": [
+    {
+      "path": "artifacts/135-mixture-reproducibility/recent",
+      "entries": [
+        {
+          "name": "execution-receipt.json",
+          "is_dir": false,
+          "bytes": 77512,
+          "mtime_utc": "2026-09-13T04:35:40.431688+00:00"
+        },
+        {
+          "name": "input-receipt.json",
+          "is_dir": false,
+          "bytes": 82028,
+          "mtime_utc": "2026-09-13T04:35:05.053698+00:00"
+        },
+        {
+          "name": "inputs.pkl",
+          "is_dir": false,
+          "bytes": 2750940,
+          "mtime_utc": "2026-09-13T04:35:05.050348+00:00"
+        },
+        {
+          "name": "metadata-selection.json",
+          "is_dir": false,
+          "bytes": 54945,
+          "mtime_utc": "2026-09-13T04:35:02.252157+00:00"
+        },
+        {
+          "name": "outcomes.pkl",
+          "is_dir": false,
+          "bytes": 262025,
+          "mtime_utc": "2026-09-13T04:36:17.259978+00:00"
+        },
+        {
+          "name": "predictions.pkl",
+          "is_dir": false,
+          "bytes": 201138,
+          "mtime_utc": "2026-09-13T04:35:40.007375+00:00"
+        },
+        {
+          "name": "raw-inputs.pkl",
+          "is_dir": false,
+          "bytes": 2967726,
+          "mtime_utc": "2026-09-13T04:35:02.416186+00:00"
+        },
+        {
+          "name": "source",
+          "is_dir": true,
+          "bytes": 288,
+          "mtime_utc": "2026-09-13T04:35:02.168532+00:00"
+        },
+        {
+          "name": "summary.json",
+          "is_dir": false,
+          "bytes": 92199,
+          "mtime_utc": "2026-09-13T04:36:17.261355+00:00"
+        }
+      ]
+    },
+    {
+      "path": "artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913",
+      "entries": [
+        {
+          "name": "source",
+          "is_dir": true,
+          "bytes": 288,
+          "mtime_utc": "2026-09-13T04:31:27.722399+00:00"
+        }
+      ]
+    }
+  ],
+  "agent_moved_recent_directory": false,
+  "agent_retried_capture": false,
+  "agent_ran_predict_or_score": false,
+  "unknown_output_contents_read": false,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

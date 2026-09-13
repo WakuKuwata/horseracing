@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "freeze_sha256": "55f932dd95cd97d297d9761ac6f000fda5983bfeeef579d77e163607539b9e27",
+  "summary_sha256": "ab907ade63391296343486ad2ccc3c8b138ced9d960674d5822ff7b5ffd892c9",
+  "auditor_sha256": "b4a5bedfbfba6b149620a0ff5d99074577713f24446b50947e8940330a84cd94",
+  "checks": 894,
+  "audited_outer_fits": 6,
+  "audited_booster_fits": 48,
+  "independently_recomputed": [
+    "NLL",
+    "head logloss",
+    "Brier",
+    "tie-safe ECE",
+    "per-seed day CI",
+    "seed-loss-mean day CI"
+  ],
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}
