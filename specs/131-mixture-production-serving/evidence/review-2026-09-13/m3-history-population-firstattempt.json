@@ -1,0 +1,12 @@
+{
+ "snapshot_rows": 958011,
+ "db_started_rows": 958011,
+ "only_db": 0,
+ "only_snapshot": 0,
+ "only_db_track_type": {},
+ "only_db_has_result": {},
+ "only_db_by_year": {},
+ "n_2026_targets": 31765,
+ "prior_gap_log_differs": 7236,
+ "days_since_last_differs": 0
+}

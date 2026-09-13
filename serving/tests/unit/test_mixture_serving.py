@@ -104,7 +104,7 @@ def test_predict_mixture_race_keeps_win_and_derives_display_heads(monkeypatch):
     ids = ["a", "b", "c", "d"]
     win = np.array([0.4, 0.3, 0.2, 0.1])
     rows = pd.DataFrame({"race_id": ["r1"] * 4, "horse_id": ids, "race_date": [dt.date(2026, 9, 5)] * 4,
-                         "weight": [480.0, 470.0, 500.0, 460.0], "x": [1, 2, 3, 4]})
+                         "weight": [480.0, 470.0, 500.0, 460.0], "x": [1, 2, 3, 4], "career_starts": [0.0] * 4})
     monkeypatch.setattr(ms, "prepare_race_inputs", lambda fr, rid, regime: (rows, {"regime": regime}))
     monkeypatch.setattr(ms, "history_for", lambda rows, raw: pd.DataFrame(columns=["race_id", "horse_id", "race_date"]))
     captured = {}
@@ -139,3 +139,105 @@ def test_logic_version_carries_bundle_identity_and_coefficient_year(monkeypatch)
 def test_predict_persist_requires_history_for_mixture():
     with pytest.raises(ServingError):
         pipeline._predict_persist(None, _model(), "r1", pd.DataFrame(), "lv", history=None)
+
+
+# --- 2026-09-13 review additions -------------------------------------------------------------
+
+def test_loader_rejects_non_raw_registry_representation(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(ms, "load_mixture_bundle", lambda *a, **k: calls.append(a))
+    monkeypatch.setattr(ms.feature_registry, "RACE_CLASS_REPRESENTATION", "canonical-v1", raising=False)
+    meta = {"artifact_kind": ms.ARTIFACT_KIND, "bundle_sha256": "c" * 64,
+            "feature_version": "features-021", "feature_hash": mm.FULL_HASH}
+    with pytest.raises(ServingError):
+        ms.load_mixture_serving_model("mix-test", tmp_path, meta)
+    assert calls == []
+
+
+def _wired(monkeypatch, ids, win, day=dt.date(2026, 9, 5)):
+    rows = pd.DataFrame({"race_id": ["r1"] * len(ids), "horse_id": ids, "race_date": [day] * len(ids),
+                         "weight": [480.0] * len(ids), "x": list(range(len(ids))),
+                         "career_starts": [0.0] * len(ids)})
+    monkeypatch.setattr(ms, "prepare_race_inputs", lambda fr, rid, regime: (rows, {"regime": regime}))
+    monkeypatch.setattr(ms, "history_for", lambda rows, raw: pd.DataFrame(columns=["race_id", "horse_id", "race_date"]))
+
+    def fake_predict(bundle, rid, fr, history, regime, *, coefficient_grace_years):
+        preds = {h: Prediction(w, min(1.0, w + .3), min(1.0, w + .5)) for h, w in zip(ids, win, strict=True)}
+        return SimpleNamespace(predictions=preds, audit={"bundle_sha256": "a" * 64, "coefficient_stale_years": 0})
+
+    monkeypatch.setattr(ms, "predict_mixture", fake_predict)
+    return rows
+
+
+def test_sub_clip_mean_win_is_persisted_exactly(monkeypatch):
+    """A corrected six-member mean can sit below the booster path's DEFAULT_CLIP (1e-6). The
+    display assembly must not clip it up (which renormalises the whole race): the persisted win is
+    the mixture's own vector, bit for bit (2026 backfill audit: 27 races differed before the fix)."""
+    from horseracing_eval.consistency import check_consistency
+
+    ids = ["a", "b", "c", "d", "e"]
+    win = np.array([0.6, 0.3, 0.05, 0.0499995, 5e-7])
+    assert abs(win.sum() - 1.0) < 1e-12 and win.min() < 1e-6
+    rows = _wired(monkeypatch, ids, win)
+    sd = StageDiscount(lambda2=0.85, lambda3=0.7, n_races_l2=100, n_races_l3=100)
+    for discount in (None, sd):
+        preds, snaps, _, _ = ms.predict_mixture_race(_model(), "r1", rows, pd.DataFrame(), stage_discount=discount)
+        assert [preds[h].win for h in ids] == win.tolist()          # exact, not merely close
+        assert snaps["e"]["_raw_win"] == preds["e"].win == 5e-7
+        check_consistency(preds)
+
+
+def test_extreme_win_vector_keeps_consistency(monkeypatch):
+    """18 runners, one near-certain winner: win untouched, heads finite/ordered/summing to 2 and 3."""
+    from horseracing_eval.consistency import check_consistency
+
+    ids = [f"h{i:02d}" for i in range(18)]
+    win = np.full(18, (1 - 0.99999) / 17)
+    win[0] = 1 - win[1:].sum()
+    rows = _wired(monkeypatch, ids, win)
+    sd = StageDiscount(lambda2=0.85, lambda3=0.7, n_races_l2=100, n_races_l3=100)
+    preds, _, _, _ = ms.predict_mixture_race(_model(), "r1", rows, pd.DataFrame(), stage_discount=sd)
+    assert [preds[h].win for h in ids] == win.tolist()
+    assert all(np.isfinite([p.win, p.top2, p.top3]).all() and p.win <= p.top2 <= p.top3 <= 1 for p in preds.values())
+    check_consistency(preds)
+
+
+def test_history_for_started_strict_past_in_scope_only():
+    target = pd.DataFrame({"horse_id": ["a", "b"], "race_date": [dt.date(2026, 9, 13)] * 2})
+    raw = pd.DataFrame({
+        "race_id": ["same", "future", "cancel", "pre2007", "ok1", "ok2", "other"],
+        "horse_id": ["a", "a", "a", "a", "a", "b", "z"],
+        "race_date": ["2026-09-13", "2026-09-20", "2026-09-06", "2006-12-31", "2026-08-30", "2026-01-05", "2026-08-30"],
+        "entry_status": ["started", "started", "cancelled", "started", "started", "started", "started"],
+    })
+    out = ms.history_for(target, raw)
+    assert out.race_id.tolist() == ["ok1", "ok2"] and "entry_status" not in out.columns
+    with pytest.raises(ValueError):
+        ms.history_for(target, raw.assign(entry_status=["bogus"] + ["started"] * 6))
+
+
+def test_history_for_rejects_several_target_dates_per_horse():
+    target = pd.DataFrame({"horse_id": ["a", "a"], "race_date": [dt.date(2026, 9, 6), dt.date(2026, 9, 13)]})
+    raw = pd.DataFrame({"race_id": ["r"], "horse_id": ["a"], "race_date": ["2026-09-10"], "entry_status": ["started"]})
+    with pytest.raises(ValueError):
+        ms.history_for(target, raw)
+    # the same horse twice on ONE day (duplicate rows of one race) is still a single target date
+    assert ms.history_for(pd.DataFrame({"horse_id": ["a", "a"], "race_date": [dt.date(2026, 9, 13)] * 2}), raw).race_id.tolist() == ["r"]
+
+
+def test_history_must_agree_with_career_starts():
+    rows = pd.DataFrame({"race_id": ["r1"] * 3, "horse_id": ["a", "b", "c"],
+                         "race_date": [dt.date(2026, 9, 13)] * 3, "career_starts": [2.0, 0.0, np.nan]})
+    ok = pd.DataFrame({"race_id": ["p1", "p2"], "horse_id": ["a", "a"], "race_date": ["2026-08-01", "2026-08-20"]})
+    ms.assert_history_matches_features(rows, ok)                       # a=2, b=0, c unknown -> fine
+    ms.assert_history_matches_features(rows.assign(career_starts=[2.0, 0.0, 5.0]), ok.assign(
+        race_id=["p1", "p2"]).pipe(lambda h: pd.concat([h, pd.DataFrame({"race_id": [f"q{i}" for i in range(5)],
+        "horse_id": ["c"] * 5, "race_date": ["2026-01-01"] * 5})], ignore_index=True)))
+    with pytest.raises(ServingError):                                  # feature says 2 starts, history has 1
+        ms.assert_history_matches_features(rows, ok.iloc[:1])
+    with pytest.raises(ServingError):                                  # feature says debut, history has rows
+        ms.assert_history_matches_features(rows.assign(career_starts=[2.0, 1.0, np.nan]), ok)
+    with pytest.raises(ServingError):                                  # column missing -> cannot cross-check
+        ms.assert_history_matches_features(rows.drop(columns=["career_starts"]), ok)
+    with pytest.raises(ServingError):                                  # history wired but empty for a raced horse
+        ms.assert_history_matches_features(rows, ok.iloc[:0])

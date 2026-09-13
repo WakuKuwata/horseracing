@@ -20,7 +20,8 @@ import numpy as np
 import pandas as pd
 from horseracing_db.enums import EntryStatus
 from horseracing_db.models import Race, RaceHorse
-from horseracing_training.calibration import DEFAULT_CLIP
+from horseracing_eval.predictor import Prediction
+from horseracing_features import registry as feature_registry
 from horseracing_training.dataset import CATEGORICAL_FEATURES
 from horseracing_training.predictor import assemble_predictions
 from sqlalchemy import select
@@ -77,15 +78,27 @@ def load_mixture_serving_model(model_version: str, art_dir: Path, metadata: dict
     expected = metadata.get("bundle_sha256")
     if not isinstance(expected, str) or not re.fullmatch("[0-9a-f]{64}", expected):
         raise ServingError(f"'{model_version}' metadata lacks a valid bundle_sha256")
-    if metadata.get("feature_version") != "features-021" or metadata.get("feature_hash") != FULL_HASH:
+    if (metadata.get("feature_version") != "features-021"
+            or metadata.get("feature_hash") != FULL_HASH):
         raise ServingError(
             f"'{model_version}' mixture metadata must pin features-021/{FULL_HASH[:12]}"
+        )
+    # The members were trained on RAW race_class spellings. ``feature_profile`` pins the registry
+    # version/hash, but a representation binding (098: values change, column names do not) is not
+    # visible in either, so pin it here too — the booster path resolves this in the loader as well.
+    representation = getattr(feature_registry, "RACE_CLASS_REPRESENTATION", None)
+    if representation not in (None, "raw"):
+        raise ServingError(
+            f"'{model_version}' mixture members are raw-representation artifacts; registry "
+            f"binds {representation!r}"
         )
     try:
         bundle = load_mixture_bundle(Path(art_dir) / "bundle.json", expected_sha256=expected)
         cols = list(feature_profile()["full_columns"])
     except ValueError as exc:
-        raise ServingError(f"mixture bundle for '{model_version}' failed validation: {exc}") from exc
+        raise ServingError(
+            f"mixture bundle for '{model_version}' failed validation: {exc}"
+        ) from exc
     return MixtureServingModel(
         model_version=model_version, bundle=bundle, feature_cols=cols,
         categorical_cols=[c for c in CATEGORICAL_FEATURES if c in cols],
@@ -135,7 +148,11 @@ def history_for(target_rows: pd.DataFrame, raw_history: pd.DataFrame) -> pd.Data
             raise ValueError("Unknown history entry status")
         history = history[history.entry_status == EntryStatus.STARTED]
     history["race_date"] = pd.to_datetime(history.race_date)
-    targets = target_rows[["horse_id", "race_date"]].drop_duplicates("horse_id")
+    targets = target_rows[["horse_id", "race_date"]].drop_duplicates()
+    if targets.horse_id.duplicated().any():
+        # ``drop_duplicates("horse_id")`` would silently keep the FIRST date and truncate the
+        # later targets' history; one call = one race day per horse (a horse runs once a day).
+        raise ValueError("history_for: a horse has several target dates in one call")
     targets = targets.assign(race_date=pd.to_datetime(targets.race_date)).rename(
         columns={"race_date": "target_date"}
     )
@@ -148,6 +165,29 @@ def history_for(target_rows: pd.DataFrame, raw_history: pd.DataFrame) -> pd.Data
         ["horse_id", "race_date", "race_id"], kind="stable"
     )
     return out.reset_index(drop=True)
+
+
+def assert_history_matches_features(rows: pd.DataFrame, history: pd.DataFrame) -> None:
+    """The prior-gap history and the feature matrix must describe the SAME past.
+
+    ``career_starts`` (feature 004) is the number of the horse's started rows strictly before the
+    race day, from the same ``race_horses`` population the prior-gap term reads. If the two ever
+    disagree (a different pool start, a filter on one side only, an ID re-key between the two
+    loads), the gap terms and the model inputs would refer to different "last starts" — a
+    plausible-looking number, silently wrong. Fail closed instead; the audit of the 2026 runs
+    (34,304 horse rows) found the two equal everywhere, so this never fires on a consistent DB.
+    """
+    if "career_starts" not in rows.columns:
+        raise ServingError("feature rows lack career_starts; cannot cross-check the history")
+    counts = history.groupby("horse_id").size() if len(history) else pd.Series(dtype="int64")
+    expected = pd.to_numeric(rows["career_starts"], errors="coerce")
+    actual = rows["horse_id"].map(counts).fillna(0).astype("float64")
+    bad = rows.loc[expected.notna() & (expected.to_numpy() != actual.to_numpy()), "horse_id"]
+    if len(bad):
+        raise ServingError(
+            "started history disagrees with career_starts for "
+            f"{sorted(bad.tolist())[:5]} (history rows != feature count)"
+        )
 
 
 def mixture_context(session, feature_rows: pd.DataFrame, race_ids, race_date: dt.date):
@@ -169,6 +209,7 @@ def predict_mixture_race(
     rows, regime_audit = prepare_race_inputs(feature_rows, race_id, "serving")
     ids = rows.horse_id.tolist()
     history = history_for(rows, raw_history)
+    assert_history_matches_features(rows, history)
     result = predict_mixture(
         model.bundle, race_id, feature_rows, history, "serving",
         coefficient_grace_years=model.coefficient_grace_years,
@@ -179,7 +220,20 @@ def predict_mixture_race(
     if not np.isfinite(win).all() or (win <= 0).any():
         raise ServingError("mixture produced a non-finite or non-positive win vector")
     # Production display convention (049): top2/top3 from the served win vector, win untouched.
-    predictions = assemble_predictions(ids, win, eps=DEFAULT_CLIP, stage_discount=stage_discount)
+    # ``eps=0.0`` — the mixture contract assembles at eps 0 (129 ``INFERENCE['assembly_eps']``):
+    # each member's corrected q is already positive and race-normalised, and the six-member mean
+    # inherits that. Re-clipping at DEFAULT_CLIP (1e-6) is NOT a no-op here: a corrected q can sit
+    # below 1e-6 (the residual tilt multiplies a base p clipped at 1e-6), and clipping it up
+    # renormalises the WHOLE race, so the persisted win would no longer be the mixture's own vector
+    # (2026 backfill audit: 27 races / 416 horse rows differed, max 3.3e-7). Harville needs win<1
+    # only, which the ``_heads`` domain check upstream already guarantees.
+    assembled = assemble_predictions(ids, win, eps=0.0, stage_discount=stage_discount)
+    if max(abs(assembled[h].win - win[i]) for i, h in enumerate(ids)) > 1e-12:
+        raise ServingError("display assembly changed the mixture win vector")
+    predictions = {
+        h: Prediction(win=float(win[i]), top2=assembled[h].top2, top3=assembled[h].top3)
+        for i, h in enumerate(ids)
+    }
     snapshots: dict[str, dict] = {}
     for i, hid in enumerate(ids):
         feat = {c: _jsonable(rows.iloc[i][c]) for c in model.feature_cols}

@@ -1,0 +1,35 @@
+[
+ {
+  "race_id": "202608010205",
+  "day": "2026-01-05",
+  "n": 17,
+  "min_win": 9.364775535144659e-07,
+  "max_diff_vs_persisted_raw_win": 0.0,
+  "max_diff_vs_persisted_prefix_win_prob": 6.352238296309138e-08,
+  "sum_win": 1.0,
+  "sum_top2": 2.0,
+  "sum_top3": 3.000000000000001
+ },
+ {
+  "race_id": "202606010605",
+  "day": "2026-01-17",
+  "n": 18,
+  "min_win": 8.3612561506012e-07,
+  "max_diff_vs_persisted_raw_win": 0.0,
+  "max_diff_vs_persisted_prefix_win_prob": 1.6387422106552193e-07,
+  "sum_win": 1.0,
+  "sum_top2": 2.0,
+  "sum_top3": 3.0
+ },
+ {
+  "race_id": "202608010904",
+  "day": "2026-01-25",
+  "n": 10,
+  "min_win": 7.370608494891151e-07,
+  "max_diff_vs_persisted_raw_win": 0.0,
+  "max_diff_vs_persisted_prefix_win_prob": 2.6293888757180344e-07,
+  "sum_win": 1.0,
+  "sum_top2": 2.0,
+  "sum_top3": 3.0
+ }
+]

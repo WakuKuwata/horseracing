@@ -41,3 +41,7 @@
 ## backfill(2026-01-01〜09-06)
 
 generated=2,441・skip_exists=1(E2E で先に作った run)・error_days=0。2026 年の全 2,442 レースに mix-129-nj6 の run があり、API の既定 run と `/models` の active も新モデル。`coefstale` 付き run は 0(すべて 2026 年=係数年と一致)。
+
+## 独立検証(2026-09-13)
+
+コードと実データによる事後レビューを [review-2026-09-13.md](review-2026-09-13.md) に記録した。要点: WIN は保存入力から 1.1e-16 で再現(168 run)/top2/top3 の本番規約は研究の head 平均より校正が良い(OOS 22,946 レース・top3 ECE 0.017→0.005)/**不具合 1 件修正**(平均 win を eps=1e-6 で再クリップ・再正規化していた=27 レースで最大 3.3e-7)/履歴母集団の一致検査を fail-closed 化。証跡は `evidence/review-2026-09-13/`。

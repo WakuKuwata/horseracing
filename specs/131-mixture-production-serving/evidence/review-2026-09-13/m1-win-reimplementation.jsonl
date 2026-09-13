@@ -1,0 +1,3 @@
+{ "n_runs": 24, "regime": "serving", "max_abs_diff_vs_persisted_raw_win": 1.1102230246251565e-16, "races": [], "n_horses": 314}
+{ "n_runs": 72, "regime": "full_info", "max_abs_diff_vs_persisted_raw_win": 1.1102230246251565e-16, "races": [], "n_horses": 943}
+{ "n_runs": 72, "regime": "full_info", "max_abs_diff_vs_persisted_raw_win": 1.1102230246251565e-16, "races": [], "n_horses": 1003}

@@ -1,0 +1,20 @@
+[
+ {
+  "day": "2026-09-06",
+  "n_races_compared": 36,
+  "regimes": {
+   "full_info": 36
+  },
+  "max_abs_diff_vs_persisted_raw_win": 0.0,
+  "n_history_rows": 4997
+ },
+ {
+  "day": "2026-03-01",
+  "n_races_compared": 36,
+  "regimes": {
+   "full_info": 36
+  },
+  "max_abs_diff_vs_persisted_raw_win": 0.0,
+  "n_history_rows": 6953
+ }
+]

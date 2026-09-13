@@ -1,0 +1,12 @@
+{
+ "n_rows": 34304,
+ "n_races": 2490,
+ "n_rows_diff": 416,
+ "n_races_diff": 27,
+ "max_abs_diff": 3.3079909797856465e-07,
+ "n_rows_mean_win_below_1e6": 28,
+ "min_mean_win": 6.69200571222116e-07,
+ "max_win_prob": 0.8076217759192902,
+ "scope": "mix-129-nj6 runs computed before 2026-09-13 (pre-fix code)",
+ "note": "win_prob = assemble_predictions(eps=1e-6) of the mean; _raw_win = six-member corrected mean"
+}
