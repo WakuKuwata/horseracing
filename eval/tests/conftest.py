@@ -64,6 +64,7 @@ def _truncate_between_tests(request):
     if engine is None:
         return
     with engine.begin() as conn:
+        conn.execute(text("SET LOCAL session_replication_role = 'replica'"))
         conn.execute(
             text(
                 """
