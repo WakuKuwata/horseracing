@@ -23,12 +23,23 @@ def seeded_race(session, tmp_path):
 
 
 def _run(session, race_id, model_version, logic_version):
-    from horseracing_db.models import PredictionRun
+    from horseracing_db.enums import EntryStatus
+    from horseracing_db.models import PredictionRun, RaceHorse, RacePrediction
+    from sqlalchemy import select
 
     r = PredictionRun(
         race_id=race_id, model_version=model_version, logic_version=logic_version,
     )
     session.add(r)
+    session.flush()
+    started = list(session.scalars(select(RaceHorse.horse_id).where(
+        RaceHorse.race_id == race_id, RaceHorse.entry_status == EntryStatus.STARTED,
+    )))
+    for horse_id in started:
+        session.add(RacePrediction(
+            prediction_run_id=r.prediction_run_id, horse_id=horse_id,
+            win_prob=1 / len(started), top2_prob=2 / len(started), top3_prob=3 / len(started),
+        ))
     session.flush()
     return r
 

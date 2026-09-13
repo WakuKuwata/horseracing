@@ -17,9 +17,10 @@
 - **推論順序（INV-T1）**: `raw win → 校正 → clip([eps,1-eps]) → レース内正規化(Σwin=1) → Harville top2/top3`。
   Harville は `horseracing_eval.baselines.harville_topk` を再利用し market baseline と同一導出。
   これで `0<=win<=top2<=top3<=1`・Σ 許容内を機構保証。
-- **採用ゲート**: `win LogLoss(model) < baseline` 厳密 かつ `top2/top3 LogLoss <= baseline` かつ
-  `win ECE <= 閾値`（事前固定）→ `active`、そうでなければ `candidate`。baseline は `model_versions` の
-  market/uniform を同一評価条件で参照。
+- **採用ゲート**: 従来のLogLoss/ECE比較だけではACTIVEにしない。通常昇格には、確認評価のADOPT、
+  完全な部分群保証、候補・比較基準それぞれについて評価時と登録時の実学習契約一致、
+  登録時の本体SHA一致を要求する。
+  探索結果・必要な証拠がないモデルはcandidateとして保存する。統計閾値は変更していない。
 - **保存（スキーマ変更なし）**: `model_versions` に upsert（`metrics_summary` + `weights_uri` +
   `calibrator_uri`）し、`artifacts/model_versions/{model_version}/` に `model.txt` /
   `calibrator.pkl` / `metadata.json`（seed/params/fold 境界/校正方式/feature_version/feature hash/
@@ -38,6 +39,30 @@ uv run python -m horseracing_training train-evaluate \
 
 walk-forward で fold ごとに LightGBM 学習 + train-only 校正 → harness 評価 → baseline と比較 →
 採用判定 → `model_versions` + artifacts に保存。label 別指標と採用結果を表示。
+
+### 通常昇格の証拠
+
+新しい `paired-eval --confirmatory --gate-config ... --gate-config-hash ... --from ... --to ...`
+出力には `promotion_evidence_v1` が入る。標準評価と体重情報別評価の両経路で、探索・動作確認の
+出力は `eligible_for_verdict=false` / `can_adopt=false` とする。既存のrecipe hash、凍結設定、
+過去の評価結果は書き換えない。
+
+登録時には、実fitの特徴列・版、seed、params、TE、校正方式・分割・OOF数、体重mask等を
+`fitted_training_contract_v1` として保存する。walk-forwardと最終fitは学習期間が異なるため
+booster自体のSHAは一致させず、この学習契約を比較する。HPOではデータごとのbest paramsの差を
+許し、同じ順序の解決済み探索候補・seed・分割数を比較する。HPO以外のparamsは実値で一致を要求する。
+model・calibrator・preprocessor・metadataのSHAは登録時に別途固定し、通常昇格の計画時と実行時に
+実ファイルを確認する。昇格記録にも候補・旧ACTIVEのbindingとgate config hashを残す。
+
+対象は標準 `LightGBMPredictor` とisotonicの標準 `OofCalibratedPredictor`。
+派生builder、market/EV/教師変調等の未対応手順、必要なfit情報がない旧artifactを同じ手順と推測しない。
+来歴を持たない旧モデル／旧reportも、理由を明示する `promote-model --override-reason ...` による
+例外昇格・rollbackは引き続き利用できる。
+
+既存ACTIVEがいる場合、`train-evaluate` の通常登録はcandidateに止め、切替は
+`promote-model --model-version ... --verdict ... --apply` で行う。比較基準はその時点のACTIVEと照合する。
+ACTIVEと同じmodel-versionへの再登録はファイル書込み前に拒否する。登録と昇格のDB遷移は同じ
+テーブルロックで直列化し、計画後にACTIVEや登録本体が変わった場合は再計画を要求する。
 
 ### US4: ハイパラ探索 + OOF target encoding（opt-in）
 

@@ -93,8 +93,11 @@ class _FakeSession:
     def __init__(self, row):
         self._row = row
 
-    def get(self, _model, _key):
+    def get(self, _model, _key, *, populate_existing=False):
         return self._row
+
+    def execute(self, stmt):
+        assert str(stmt) == "LOCK TABLE model_versions IN SHARE ROW EXCLUSIVE MODE"
 
 
 class _StubEval:

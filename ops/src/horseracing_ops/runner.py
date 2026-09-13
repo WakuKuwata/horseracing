@@ -322,6 +322,23 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     return job
 
 
+class CalibrationConfigurationError(ValueError):
+    """A calibration setting that cannot recover by retrying the same job."""
+
+
+def _calibration_args(*, mode: str, manifest: str | None) -> list[str]:
+    """Keep a required calibration from turning into an implicit runtime fit."""
+    if mode == "legacy-runtime":
+        return []
+    if mode != "manifest-required":
+        raise CalibrationConfigurationError(f"unknown calibration mode: {mode!r}")
+    if not manifest or not manifest.strip():
+        raise CalibrationConfigurationError(
+            "manifest-required calibration needs a nonempty manifest path"
+        )
+    return ["--calib-manifest", manifest, "--calib-mode", "manifest-required"]
+
+
 def _calib_argv(prefix: str) -> list[str]:
     """Feature 076 (076-gap): opt-in manifest activation for a per-race ops subprocess via env.
 
@@ -332,9 +349,7 @@ def _calib_argv(prefix: str) -> list[str]:
     the do-not-default-ON waiver until real manifest generation (078)."""
     manifest = os.environ.get(f"{prefix}_CALIB_MANIFEST") or None
     mode = os.environ.get(f"{prefix}_CALIB_MODE", "legacy-runtime")
-    if mode == "manifest-required" and manifest:
-        return ["--calib-manifest", manifest, "--calib-mode", "manifest-required"]
-    return []
+    return _calibration_args(mode=mode, manifest=manifest)
 
 
 def _serving_predict(race_id: str) -> subprocess.CompletedProcess:
@@ -523,6 +538,8 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
     predict_origin = initial_summary.get("predict_origin")
     if predict_origin not in {"manual_ui", "auto_after_refresh"}:
         raise ValueError(f"invalid or missing predict_origin: {predict_origin!r}")
+    # Validate before capture commits or starts a subprocess for a predict that cannot run.
+    _calib_argv("PREDICT")
     capture = initial_summary.get("capture")
     run_capture = False
 
@@ -780,8 +797,7 @@ def _live_refresh(
         "refresh", "--from", date_from, "--to", date_to,
         "--database-url", owner_database_url(),
     ]
-    if calib_mode == "manifest-required" and calib_manifest:
-        cmd += ["--calib-manifest", calib_manifest, "--calib-mode", "manifest-required"]
+    cmd += _calibration_args(mode=calib_mode, manifest=calib_manifest)
     env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
     return subprocess.run(  # noqa: S603 — fixed argv, dates are endpoint-validated ISO dates
         cmd, capture_output=True, text=True, timeout=_LIVE_TIMEOUT_S,
@@ -800,7 +816,10 @@ def run_refresh_range(session: Session, job: IngestionJob, *, fetcher=None) -> I
     # The REST payload/contract is unchanged; ops just forwards the flags to the live subprocess.
     calib_manifest = os.environ.get("REFRESH_CALIB_MANIFEST") or None
     calib_mode = os.environ.get("REFRESH_CALIB_MODE", "legacy-runtime")
-    if calib_mode == "manifest-required" and calib_manifest:
+    # Validate here too: even a replaced launcher must not receive a legacy call for a
+    # required-but-missing manifest. The worker records configuration errors as FAILED.
+    calib_args = _calibration_args(mode=calib_mode, manifest=calib_manifest)
+    if calib_args:
         proc = _live_refresh(date_from, date_to,
                              calib_manifest=calib_manifest, calib_mode=calib_mode)
     else:  # default: unchanged 2-arg call (backward-compatible)

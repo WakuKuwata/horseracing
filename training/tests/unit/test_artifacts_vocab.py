@@ -68,7 +68,7 @@ class _FakeSession:
         self.params: dict | None = None
         self.committed = False
 
-    def get(self, _model, _key):
+    def get(self, _model, _key, *, populate_existing=False):
         return None
 
     def execute(self, statement):

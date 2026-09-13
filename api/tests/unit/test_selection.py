@@ -37,7 +37,7 @@ def test_canonical_excludes_scratched_and_nonpositive(session):
     seed_model(session)
     run = seed_race(session, race_id=_RACE, horses={
         1: {"win": 0.5, "odds": 2.0},
-        2: {"win": 0.3, "odds": 3.0, "status": EntryStatus.CANCELLED},  # scratched -> excluded
+        2: {"odds": 3.0, "status": EntryStatus.CANCELLED},  # never predicted a nonstarter
         3: {"win": 0.0, "odds": 5.0},                                    # zero prob -> excluded
     })
     cw = canonical_win_probs(session, run_id=run, race_id=_RACE)

@@ -31,7 +31,9 @@ class ScoringLabel:
 class EvalRace:
     context: RaceContext
     labels: tuple[ScoringLabel, ...]  # finished horses only
-    #: codex C#2: result rows of ANY status (finished/stopped/disqualified) for this race.
+    #: Result rows of ANY status (finished/stopped/disqualified) matched to STARTED
+    #: horses by (race_id, horse_id). Nonstarted/stale results must not cover a missing
+    #: started horse. The existing field layout is retained for saved EvalRace pickles.
     #: None = unknown (legacy constructors / tests) -> coverage not enforced. When set, a race
     #: whose started field has horses with NO result row at all (partial ingest) is ineligible
     #: for winner NLL — absent-from-results is only a legitimate 0-label when the row exists
@@ -66,7 +68,12 @@ class RacePopulation:
 
 
 def population_masks(er: EvalRace) -> RacePopulation:
-    """Classify one race's started population and winner eligibility (T004, pure)."""
+    """Classify started population and winner eligibility (T004, pure).
+
+    The DB loader verifies the result/started ID intersection before setting the count.
+    Direct constructors and old frozen pickles are trusted legacy inputs: their total
+    count alone cannot reconstruct result horse IDs or prove the same intersection.
+    """
     label_by_id = {sl.horse_id: sl for sl in er.labels}
     started_ids = tuple(h.horse_id for h in er.context.started_horses)
     started_win: dict[str, int] = {}
@@ -145,12 +152,19 @@ def load_eval_races(
         .where(RaceResult.result_status == ResultStatus.FINISHED)
         .order_by(Race.race_date, Race.race_id, RaceResult.finish_order, RaceResult.horse_id)
     )
-    # codex C#2: result-row coverage per race, ANY status (finished/stopped/disqualified) — used
-    # to make the partial-ingest exclusion real (a started horse with NO result row at all).
+    # Count only results belonging to the actual started field. A stale result for a
+    # cancelled horse must not offset another started horse's absent result row.
+    # RaceResult's primary key makes this ID intersection count at most the field size.
     from sqlalchemy import func
     cov_stmt = (
         select(RaceResult.race_id, func.count().label("n"))
         .join(Race, Race.race_id == RaceResult.race_id)
+        .join(
+            RaceHorse,
+            (RaceHorse.race_id == RaceResult.race_id)
+            & (RaceHorse.horse_id == RaceResult.horse_id),
+        )
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
         .group_by(RaceResult.race_id)
     )
     if start_date is not None:

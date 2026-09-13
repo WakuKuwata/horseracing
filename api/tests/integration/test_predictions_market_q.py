@@ -65,7 +65,7 @@ def test_odds_source_prerace_when_no_results(client, session):
 def test_scratched_excluded_from_q_field(client, session):
     seed_model(session)
     horses = dict(_HORSES)
-    horses[4] = {"win": 0.12, "odds": 9.0, "status": EntryStatus.CANCELLED}
+    horses[4] = {"odds": 9.0, "status": EntryStatus.CANCELLED}  # cancelled before prediction
     seed_race(session, race_id=_RACE, horses=horses)
     body = client.get(f"/api/v1/races/{_RACE}/predictions").json()
     numbers = {h["horse_number"] for h in body["horses"]}

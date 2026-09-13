@@ -64,6 +64,23 @@ def test_manifest_env_forwards_calib_flags(session, monkeypatch):
     assert seen == {"manifest": _MANIFEST, "mode": "manifest-required"}
 
 
+def test_required_manifest_missing_marks_refresh_job_failed(session, monkeypatch):
+    """The worker records the configuration error instead of launching a legacy refresh."""
+    monkeypatch.setenv("REFRESH_CALIB_MODE", "manifest-required")
+    monkeypatch.delenv("REFRESH_CALIB_MANIFEST", raising=False)
+    launched = []
+    monkeypatch.setattr(runner_mod, "_live_refresh", lambda *a, **kw: launched.append(kw))
+    job, _ = enqueue_refresh_range(session, _FROM, _TO)
+    session.commit()
+    assert drain(session) == 1
+    session.refresh(job)
+    assert job.status == "failed"
+    assert job.retry_count == 0
+    assert job.completed_at is not None
+    assert "nonempty manifest path" in job.error_message
+    assert launched == []
+
+
 def test_live_refresh_builds_calib_argv(monkeypatch):
     """The real _live_refresh appends the flags to the subprocess argv (captured, not run)."""
     import horseracing_ops.runner as rm

@@ -22,8 +22,8 @@ import json
 from dataclasses import dataclass, field
 
 import numpy as np
-from horseracing_db.enums import ResultStatus
-from horseracing_db.models import RaceResult
+from horseracing_db.enums import EntryStatus, ResultStatus
+from horseracing_db.models import RaceHorse, RaceResult
 from horseracing_eval.hashing import stable_hash
 from horseracing_eval.predictor import Predictor, RaceContext
 from horseracing_probability.model_calibration import _apply_gamma, fit_power_gamma
@@ -65,7 +65,8 @@ def _started_all_outcomes(session: Session, race_ids) -> dict[str, tuple[int, se
     - **dead heats are kept**, with every finished 1st-place horse labelled 1 (a per-horse
       isotonic sample has no reason to drop the race, unlike a winner-NLL sample which needs an
       unambiguous winner);
-    - ``n_result_rows`` counts result rows of ANY status, so the caller can apply the evaluator's
+    - ``n_result_rows`` counts result rows of ANY status matched to STARTED horses by
+      ``(race_id, horse_id)``, so the caller can apply the evaluator's
       fail-closed partial-ingest rule (``eval.dataset.population_masks``: fewer result rows than
       started horses means some started horse has no outcome at all, so "absent = 0" is
       unverifiable and the race must be excluded rather than labelled all-zero).
@@ -80,6 +81,12 @@ def _started_all_outcomes(session: Session, race_ids) -> dict[str, tuple[int, se
                 RaceResult.race_id, RaceResult.horse_id,
                 RaceResult.result_status, RaceResult.finish_order,
             )
+            .join(
+                RaceHorse,
+                (RaceHorse.race_id == RaceResult.race_id)
+                & (RaceHorse.horse_id == RaceResult.horse_id),
+            )
+            .where(RaceHorse.entry_status == EntryStatus.STARTED)
             .where(RaceResult.race_id.in_(chunk))
         )
         for rid, hid, status, order in session.execute(stmt):
@@ -388,6 +395,10 @@ class OofCalibratedPredictor:
                     continue
                 n_result_rows, winners = got
                 started = [h.horse_id for h in ctx.started_horses]
+                if not winners.issubset(started):
+                    raise RuntimeError(
+                        f"arm E: outcome winner/started mismatch for {ctx.race_id}"
+                    )
                 if not started or n_result_rows < len(started):
                     # partial ingest: "absent result = 0" is unverifiable (eval fail-closed rule)
                     info["n_incomplete_races"] += 1

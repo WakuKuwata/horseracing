@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 from horseracing_db.enums import EntryStatus
-from horseracing_db.models import PredictionRun, Race, RaceHorse
+from horseracing_db.models import PredictionRun, Race, RaceHorse, RacePrediction
 from horseracing_eval.consistency import check_consistency
 from horseracing_features.builder import build_feature_matrix, verify_materialized
 from horseracing_features.registry import FEATURE_VERSION
@@ -398,7 +398,8 @@ def run_serving_backfill(
 
     Per-DAY it rebuilds the feature matrix (end_date=day) and predicts via the SAME _predict_persist
     path as run_serving → p-parity. Idempotent: a race that already has a prediction_run for the
-    resolved model_version is skipped (``force`` regenerates, append-only). Per-day exception
+    resolved model_version and current started field is skipped (``force`` regenerates,
+    append-only). A changed field requires a fresh run even without force. Per-day exception
     isolation (one bad day doesn't abort the range). Returns reconciliation counts.
 
     Feature 055: with ``use_materialized`` the staleness fingerprint is verified ONCE up front
@@ -498,18 +499,28 @@ def _has_run_for_model(
     wregime: str | None = None,
     race_class_representation: str | None = None,
 ) -> bool:
-    """True if the race already has a prediction_run for this model_version (idempotency).
+    """True if the latest matching run still describes the current started field.
 
     Feature 076 (codex 076-gap): the check is calibration-aware. In manifest mode a race that only
     has a LEGACY run for the model must still generate the manifest version (a bare model check
     would skip it and the manifest run would never be produced); a non-manifest backfill likewise
     ignores manifest runs. Runs are separate prediction_runs (unlike betting's in-run groups); the
-    read API picks the latest, so serving needs no conflict-refusal — only correct gap-filling."""
+    read API picks the latest, so serving needs no conflict-refusal — only correct gap-filling.
+
+    Check the latest matching run before its population, rather than searching for any matching
+    population: an older run cannot make a newer incomplete/stale run usable in the read API.
+    """
     q = (
         select(PredictionRun.prediction_run_id)
         .where(PredictionRun.race_id == race_id)
         .where(PredictionRun.model_version == model_version)
     )
+    recency = (PredictionRun.computed_at.desc(), PredictionRun.prediction_run_id.desc())
+    latest_run_id = session.scalars(q.order_by(*recency).limit(1)).first()
+    # The API selects the model's latest run across all markers. Even a valid older run in the
+    # requested regime cannot restore the display if a newer run in another regime is stale.
+    if latest_run_id is None or not _run_population_matches(session, race_id, latest_run_id):
+        return False
     if calib_digest is not None:
         q = q.where(PredictionRun.logic_version.contains(f";calib={calib_digest};"))
     else:
@@ -530,4 +541,21 @@ def _has_run_for_model(
         )
     else:
         q = q.where(~PredictionRun.logic_version.contains(";rcr="))
-    return session.scalars(q).first() is not None
+    run_id = session.scalars(q.order_by(*recency).limit(1)).first()
+    if run_id is None:
+        return False
+    return run_id == latest_run_id or _run_population_matches(session, race_id, run_id)
+
+
+def _run_population_matches(session: Session, race_id: str, run_id) -> bool:
+    # Same field contract as the API, kept here to avoid a serving -> API dependency.
+    # Both directions matter: cancellation, missing predictions and equal-size ID replacement.
+    started = select(RaceHorse.horse_id).where(
+        RaceHorse.race_id == race_id, RaceHorse.entry_status == EntryStatus.STARTED,
+    )
+    predicted = select(RacePrediction.horse_id).where(
+        RacePrediction.prediction_run_id == run_id,
+    )
+    unexpected = predicted.where(RacePrediction.horse_id.not_in(started)).exists()
+    missing = started.where(RaceHorse.horse_id.not_in(predicted)).exists()
+    return bool(session.scalar(select(started.exists() & ~unexpected & ~missing)))

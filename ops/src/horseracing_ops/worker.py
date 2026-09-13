@@ -33,6 +33,7 @@ from . import (
 from .config import CONFIG
 from .deps import create_ops_engine
 from .runner import (
+    CalibrationConfigurationError,
     make_fetcher,
     run_day,
     run_one,
@@ -435,6 +436,13 @@ def _run_claimed(session: Session, job: IngestionJob, *, fetcher=None) -> None:
         runner = run_one
     try:
         runner(session, job, fetcher=fetcher)
+    except CalibrationConfigurationError as exc:
+        session.rollback()
+        job.status = JobStatus.FAILED
+        job.completed_at = _now()
+        job.error_message = str(exc)
+        session.add(job)
+        session.commit()
     except Exception as exc:  # noqa: BLE001 — one bad job must not kill the worker
         session.rollback()
         _demote(job, reason=str(exc))  # error_message is set only when retries are exhausted

@@ -45,7 +45,7 @@ def test_joint_top_k_by_bet_type(client, session):
 def test_canonical_excludes_scratched_in_joint(client, session):
     seed_model(session)
     horses = dict(_HORSES)
-    horses[4] = {"win": 0.12, "odds": 9.0, "status": EntryStatus.CANCELLED}  # scratched
+    horses[4] = {"odds": 9.0, "status": EntryStatus.CANCELLED}  # cancelled before prediction
     seed_race(session, race_id=_RACE, horses=horses)
     r = client.get(f"/api/v1/races/{_RACE}/predictions", params={"bet_type": "exacta", "top": 50})
     body = r.json()

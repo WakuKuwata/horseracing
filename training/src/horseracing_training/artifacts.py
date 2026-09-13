@@ -21,6 +21,7 @@ from pathlib import Path
 from horseracing_db.enums import AdoptionStatus
 from horseracing_db.models import ModelVersion
 from horseracing_eval.harness import EvalResult
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -256,13 +257,14 @@ def save_model_version(
     git_sha: str | None = None,
     register_as_candidate: bool = False,
     verdict: dict | None = None,
+    reference_model_version: str | None = None,
 ) -> Path:
     """Write artifacts and upsert the model_versions row. Returns the artifacts dir.
 
     Feature 060: ``register_as_candidate=True`` pins the row to CANDIDATE even when the
     decision passed — accuracy-first models never auto-activate (FR-006); promotion to
-    default is a separate explicit user decision. Default False keeps the pre-060
-    pass->ACTIVE behaviour byte-identical.
+    default is a separate explicit user decision. Default False permits initial activation only
+    with confirmed evidence and a bound reference; an existing ACTIVE requires explicit promotion.
 
     2026-08: going ACTIVE now also requires ``verdict`` — a v3 evaluation report (either report
     shape) that is verdict-eligible, says ADOPT, and has FULL subgroup assurance. Without it the
@@ -278,6 +280,10 @@ def save_model_version(
             "refusing to persist an EV-weighted predictor as a model_version "
             "(079 is artifact-only; a registry row would breach isolation) — fail-closed"
         )
+    # Fit has already finished. Serialize the entire export/registration with promotion, so a
+    # candidate cannot become ACTIVE between the overwrite check and writing its artifact files.
+    # Refresh existing rows after acquiring the lock: this Session may have cached them during fit.
+    session.execute(text("LOCK TABLE model_versions IN SHARE ROW EXCLUSIVE MODE"))
     info = predictor.fit_info_ or {}
     fcols = info.get("feature_cols", predictor.feature_cols_ or [])
     race_class_representation = info.get("race_class_representation", "raw")
@@ -313,8 +319,13 @@ def save_model_version(
             "stamped with the current FEATURE_VERSION. serving cannot load this artifact."
         )
 
-    existing = session.get(ModelVersion, model_version)
+    existing = session.get(ModelVersion, model_version, populate_existing=True)
     if existing is not None:
+        if getattr(existing, "adoption_status", None) == AdoptionStatus.ACTIVE:
+            raise ValueError(
+                f"refusing to overwrite ACTIVE model_version {model_version!r}; "
+                "register a new candidate ID and use promote-model for the transition"
+            )
         prior_split = ((existing.metrics_summary or {}).get("training") or {}).get(
             "calibration_split_unit"
         )
@@ -393,6 +404,11 @@ def save_model_version(
         "calibrator_degenerate": info.get("calibrator_degenerate"),
         "adoption": {"adopted": decision.adopted, **asdict(gate), "reasons": decision.reasons},
     }
+    from .promotion_evidence import artifact_hashes, fitted_contract, registered_contract
+
+    contract = fitted_contract(predictor, feature_version=feature_version)
+    if contract is not None:
+        metadata["promotion_contract"] = contract
     # Feature 060: market-offset definition + closing-leaning limitation (FR-008). Key absent
     # for ordinary models (INV-M3: their metadata stays byte-identical).
     if info.get("market_offset"):
@@ -458,10 +474,37 @@ def save_model_version(
     if info.get("margin_teacher"):  # Feature 099: 教師信号の同一性も DB 単独で追跡可能に(V)
         summary["training"]["margin_teacher"] = dict(info["margin_teacher"])
 
+    if contract is not None:
+        summary["training"]["promotion_identity"] = {
+            "fitted_contract": contract,
+            "artifact_sha256": artifact_hashes(model_path, calib_path),
+        }
+
+    active_rows, active_contract = [], None
+    if not register_as_candidate and decision.adopted and isinstance(verdict, dict) and verdict:
+        # Registration never silently replaces an existing default model. Only promote-model
+        # owns that transition, including its demotion record and rollback command.
+        active_rows = session.execute(
+            select(ModelVersion).where(ModelVersion.adoption_status == AdoptionStatus.ACTIVE)
+            .execution_options(populate_existing=True)
+        ).scalars().all()
+        reference = (
+            session.get(ModelVersion, reference_model_version, populate_existing=True)
+            if reference_model_version else (active_rows[0] if len(active_rows) == 1 else None)
+        )
+        active_contract, _ = registered_contract(reference)
+
     promotion = evaluate_promotion(
         legacy=decision, verdict=verdict, register_as_candidate=register_as_candidate,
-        servable=schema.servable,
+        servable=schema.servable, candidate_contract=contract, active_contract=active_contract,
     )
+    if promotion.promotable and active_rows:
+        from .adoption import PromotionDecision
+
+        promotion = PromotionDecision(False, "candidate", {
+            **promotion.reasons, "cause": "existing_active_requires_explicit_promotion",
+            "active_models": [row.model_version for row in active_rows],
+        })
     summary["promotion"] = {
         "promotable": promotion.promotable, "status": promotion.status,
         "reasons": promotion.reasons,

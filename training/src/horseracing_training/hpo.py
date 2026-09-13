@@ -16,7 +16,12 @@ import pandas as pd
 from sklearn.metrics import log_loss
 
 from .folds import chronological_race_folds
-from .target_encoding import DEFAULT_SMOOTHING, apply_encoded_columns, fit_target_encoder
+from .target_encoding import (
+    DEFAULT_SMOOTHING,
+    apply_encoded_columns,
+    fit_target_encoder,
+    oof_target_encode,
+)
 from .win_model import DEFAULT_PARAMS, WinModel
 
 _CLIP = 1e-15
@@ -35,15 +40,26 @@ def _encode_fold(
     te_cols: tuple[str, ...],
     label_col: str,
     smoothing: float,
+    *,
+    race_id_col: str = "race_id",
+    race_date_col: str = "race_date",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Fit TE on the train fold only; transform both folds. va is never used to fit (no leak)."""
+    """Use final-fit OOF TE for training and train-only encoders for validation.
+
+    Encoding the training rows with their own labels would select parameters for a
+    different learning procedure from ``LightGBMPredictor.fit``. Reuse its OOF helper,
+    smoothing and model-fit prior, while validation still uses the full train encoder.
+    """
     tr_x, va_x = tr[feature_cols].copy(), va[feature_cols].copy()
     if te_cols:
         prior = float(tr[label_col].mean())
         tr_enc, va_enc = {}, {}
         for col in te_cols:
             enc = fit_target_encoder(tr, col, label_col=label_col, prior=prior, smoothing=smoothing)
-            tr_enc[col] = enc.transform(tr[col])
+            tr_enc[col] = oof_target_encode(
+                tr, col, race_id_col=race_id_col, race_date_col=race_date_col,
+                label_col=label_col, prior=prior, smoothing=smoothing,
+            ).to_numpy()
             va_enc[col] = enc.transform(va[col])
         tr_x = apply_encoded_columns(tr_x, tr_enc, feature_cols)
         va_x = apply_encoded_columns(va_x, va_enc, feature_cols)
@@ -80,7 +96,10 @@ def select_params_cv(
             va = df[df[race_id_col].isin(valid_races)]
             if tr.empty or va.empty or va[label_col].nunique() < 2:
                 continue
-            tr_x, va_x = _encode_fold(tr, va, feature_cols, te_cols, label_col, te_smoothing)
+            tr_x, va_x = _encode_fold(
+                tr, va, feature_cols, te_cols, label_col, te_smoothing,
+                race_id_col=race_id_col, race_date_col=race_date_col,
+            )
             model = WinModel(seed=seed, params={**DEFAULT_PARAMS, **params}).fit(
                 tr_x, tr[label_col].to_numpy(), categorical_cols=cat_for_model
             )

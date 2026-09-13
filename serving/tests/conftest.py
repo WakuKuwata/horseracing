@@ -64,6 +64,9 @@ def _truncate_between_tests(request):
     if engine is None:
         return
     with engine.begin() as conn:
+        # Only the isolated testcontainer cleanup bypasses append-only TRUNCATE triggers (106).
+        # This matches api/tests; production serving never changes the replication role.
+        conn.execute(text("SET LOCAL session_replication_role = replica"))
         conn.execute(
             text(
                 """

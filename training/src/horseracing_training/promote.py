@@ -19,6 +19,7 @@ override として扱う。**override は隠さず metrics_summary に残す。*
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -43,6 +44,7 @@ class PromotePlan:
     verdict_summary: dict | None
     problems: list[str] = field(default_factory=list)
     rollback_command: str = ""
+    artifact_binding: dict = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -99,7 +101,7 @@ def plan_promotion(
     current_fv: str,
 ) -> PromotePlan:
     """昇格計画を組み、実行可能かを判定する。書き込みはしない。"""
-    row = session.get(ModelVersion, model_version)
+    row = session.get(ModelVersion, model_version, populate_existing=True)
     if row is None:
         raise PromoteError(f"model_versions に {model_version!r} が無い")
 
@@ -111,23 +113,30 @@ def plan_promotion(
     if len(current) > 1:
         raise PromoteError(f"active が複数ある(単一 active 不変条件の破れ): {current}")
     previous = current[0] if current else None
+    from .promotion_evidence import registered_contract
+
+    candidate_contract, candidate_problem = registered_contract(row)
+    reference = session.get(ModelVersion, previous, populate_existing=True) if previous else None
+    active_contract, active_problem = registered_contract(reference)
 
     # v3 verdict があるなら正規の経路で判定する。legacy 側は「この候補は既に登録済み」なので
     # adopted=True 相当として渡し、v3 側の条件だけを見る。
     decision = evaluate_promotion(
         legacy=AdoptionDecision(adopted=True, reasons={"source": "promote-model"}),
-        verdict=verdict,
+        verdict=verdict, candidate_contract=candidate_contract, active_contract=active_contract,
     )
     if decision.promotable:
         basis, reason = "v3_verdict", None
     else:
-        if not override_reason:
+        if not isinstance(override_reason, str) or not override_reason.strip():
             raise PromoteError(
                 "v3 verdict が昇格要件を満たさないため override が必要: "
-                f"{decision.reasons.get('cause')}。--override-reason に理由を書くこと"
+                f"{decision.reasons.get('cause')}"
+                f" (candidate={candidate_problem}, active={active_problem})。"
+                "--override-reason に理由を書くこと"
                 "(理由は metrics_summary に残る)"
             )
-        basis, reason = "override", override_reason
+        basis, reason = "override", override_reason.strip()
 
     plan = PromotePlan(
         model_version=model_version,
@@ -136,6 +145,10 @@ def plan_promotion(
         override_reason=reason,
         verdict_summary=decision.reasons.get("v3_verdict"),
         problems=_artifact_problems(row, current_fv=current_fv),
+        artifact_binding=(deepcopy({
+            "candidate": row.metrics_summary["training"]["promotion_identity"],
+            "active": reference.metrics_summary["training"]["promotion_identity"],
+        }) if basis == "v3_verdict" else {}),
     )
     if previous:
         plan.rollback_command = (
@@ -173,6 +186,26 @@ def apply_promotion(
     """単一トランザクションで active を切り替え、両方の行に根拠を記録する。"""
     if not plan.ok:
         raise PromoteError(f"昇格前確認が通っていない: {plan.problems}")
+    from sqlalchemy import text
+
+    # Serialize the read/transition with automatic registration. Two plans prepared against the
+    # same active model must not independently activate two candidates.
+    session.execute(text("LOCK TABLE model_versions IN SHARE ROW EXCLUSIVE MODE"))
+    current = session.execute(select(ModelVersion.model_version).where(
+        ModelVersion.adoption_status == AdoptionStatus.ACTIVE)).scalars().all()
+    expected = [plan.previous_active] if plan.previous_active else []
+    if current != expected:
+        raise PromoteError("active model changed after promotion preflight; prepare a new plan")
+    if plan.basis == "v3_verdict":
+        from .promotion_evidence import registered_contract
+
+        for role, version in (("candidate", plan.model_version), ("active", plan.previous_active)):
+            row = session.get(ModelVersion, version, populate_existing=True)
+            _, problem = registered_contract(row)
+            training = (row.metrics_summary or {}).get("training") if row is not None else None
+            identity = (training or {}).get("promotion_identity")
+            if problem or identity != plan.artifact_binding.get(role):
+                raise PromoteError(f"{role} artifact changed after promotion preflight: {problem}")
 
     record = {
         "promoted_at": at,
@@ -183,14 +216,18 @@ def apply_promotion(
         "git_sha": git_sha,
         "rollback_command": plan.rollback_command,
     }
-    target = session.get(ModelVersion, plan.model_version)
+    if plan.basis == "v3_verdict":
+        record["artifact_binding"] = deepcopy(plan.artifact_binding)
+    target = session.get(ModelVersion, plan.model_version, populate_existing=True)
+    if target is None:
+        raise PromoteError("candidate removed after promotion preflight; prepare a new plan")
     summary = dict(target.metrics_summary or {})
     summary["promotion"] = merged_promotion_record(summary.get("promotion"), record)
     target.metrics_summary = summary
     target.adoption_status = str(AdoptionStatus.ACTIVE)
 
     if plan.previous_active and plan.previous_active != plan.model_version:
-        prev = session.get(ModelVersion, plan.previous_active)
+        prev = session.get(ModelVersion, plan.previous_active, populate_existing=True)
         prev_summary = dict(prev.metrics_summary or {})
         prev_summary["promotion"] = {
             **(prev_summary.get("promotion") or {}),

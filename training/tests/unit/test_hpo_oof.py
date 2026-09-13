@@ -76,7 +76,9 @@ def test_cv_fold_encoding_does_not_leak_validation_labels():
     # codex's #1 trap: a category that appears ONLY in the validation fold with label 1 must be
     # encoded by the train-fold encoder as the prior — never as its own (validation) label.
     tr = pd.DataFrame(
-        {"race_id": ["r0", "r0", "r1"], "win": [1, 0, 0], "g": ["A", "B", "A"], "x": [1.0, 0.0, 0.0]}
+        {"race_id": ["r0", "r0", "r1"],
+         "race_date": [datetime.date(2007, 1, 1)] * 2 + [datetime.date(2007, 1, 2)],
+         "win": [1, 0, 0], "g": ["A", "B", "A"], "x": [1.0, 0.0, 0.0]}
     )
     va = pd.DataFrame(
         {"race_id": ["r2", "r2"], "win": [1, 1], "g": ["Z", "Z"], "x": [1.0, 1.0]}  # 'Z' unseen in tr
@@ -87,3 +89,31 @@ def test_cv_fold_encoding_does_not_leak_validation_labels():
     assert (abs(va_x["g"].to_numpy() - prior) < 1e-9).all()
     # train encodings are derived from train labels only and stay finite
     assert np.isfinite(tr_x["g"].to_numpy()).all()
+
+
+def test_cv_training_encoding_matches_final_fit_oof_and_excludes_singleton_labels():
+    tr = _learnable_df(n_races=12)
+    tr["g"] = [f"singleton-{i}" for i in range(len(tr))]
+    va = tr.iloc[:6].copy()
+    va["g"] = "unseen"
+    prior = float(tr["win"].mean())
+    train_x, valid_x = _encode_fold(tr, va, ["x", "g"], ("g",), "win", 10.0)
+    final_encoding = oof_target_encode(
+        tr, "g", race_id_col="race_id", race_date_col="race_date",
+        label_col="win", prior=prior, smoothing=10.0,
+    )
+    np.testing.assert_array_equal(train_x["g"], final_encoding)
+    # A singleton has no observed labels outside its held-out race. Its own win/loss
+    # must therefore have no effect on either the CV or final-fit encoding.
+    np.testing.assert_array_equal(train_x["g"], np.full(len(tr), prior))
+    np.testing.assert_array_equal(valid_x["g"], np.full(len(va), prior))
+
+
+def test_cv_oof_encoding_honours_custom_race_and_date_columns():
+    df = _learnable_df().rename(columns={"race_id": "event", "race_date": "day"})
+    df["g"] = np.tile(["A", "B", "C", "D", "E", "F"], 12)
+    result = select_params_cv(
+        df, ["x", "g"], race_id_col="event", race_date_col="day", label_col="win",
+        grid=[{"n_estimators": 5}], target_encode_cols=("g",), n_splits=2,
+    )
+    assert all(np.isfinite(v) for v in result.scores.values())

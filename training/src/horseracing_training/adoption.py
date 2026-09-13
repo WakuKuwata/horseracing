@@ -125,19 +125,31 @@ def normalize_verdict(report: dict | None) -> dict | None:
     ``decision`` / ``decision_reason`` at the top level, while ``regime_paired.RegimeReport``
     nests it under ``verdict`` and adds ``artifact_kind`` / ``eligible_for_verdict``.
     """
-    if not report:
+    if not isinstance(report, dict) or not report:
         return None
     v = report.get("verdict") or {}
-    status = v.get("status") or report.get("decision")
-    reason = v.get("decision_reason") or report.get("decision_reason") or {}
+    if not isinstance(v, dict):
+        return None
+    status = v["status"] if "status" in v else report.get("decision")
+    reason = v["decision_reason"] if "decision_reason" in v else report.get("decision_reason", {})
+    if not isinstance(reason, dict):
+        return None
+    config = report.get("gate_config") or {}
+    if not isinstance(config, dict):
+        return None
     return {
         "status": status,
-        "subgroup_assurance": v.get("subgroup_assurance") or reason.get("subgroup_assurance"),
-        "contract_version": report.get("evaluation_contract_version")
-        or (report.get("gate_config") or {}).get("evaluation_contract_version"),
-        # absent on the standard path, which has no acceptance/diagnostic arms to isolate
+        "subgroup_assurance": (v["subgroup_assurance"] if "subgroup_assurance" in v
+                               else reason.get("subgroup_assurance")),
+        "contract_version": (report["evaluation_contract_version"]
+                             if "evaluation_contract_version" in report
+                             else config.get("evaluation_contract_version")),
         "artifact_kind": report.get("artifact_kind"),
         "eligible_for_verdict": report.get("eligible_for_verdict"),
+        "can_adopt": report.get("can_adopt"),
+        "candidate_recipe_hash": report.get("candidate_recipe_hash"),
+        "active_recipe_hash": report.get("active_recipe_hash"),
+        "gate_config_hash": report.get("gate_config_hash"),
     }
 
 
@@ -151,7 +163,8 @@ def _contract_number(version: str | None) -> int | None:
 
 def evaluate_promotion(
     *, legacy: AdoptionDecision, verdict: dict | None, register_as_candidate: bool = False,
-    servable: bool = True,
+    servable: bool = True, candidate_contract: dict | None = None,
+    active_contract: dict | None = None,
 ) -> PromotionDecision:
     """Fold the legacy gate and the v3 verdict into one ACTIVE/CANDIDATE decision.
 
@@ -194,19 +207,26 @@ def evaluate_promotion(
         reasons["cause"] = "verdict_contract_too_old"
         reasons["min_contract_version"] = CONTRACT_VERSION
         return PromotionDecision(False, "candidate", reasons)
-    if v["artifact_kind"] is not None and (
-        v["artifact_kind"] != VERDICT_ARTIFACT_KIND or not v["eligible_for_verdict"]
-    ):
+    if (v["artifact_kind"] != VERDICT_ARTIFACT_KIND
+            or v["eligible_for_verdict"] is not True or v["can_adopt"] is not True):
         # acceptance / diagnostic / exploratory arms share folds with the confirmatory window
         reasons["cause"] = "verdict_artifact_not_eligible"
         return PromotionDecision(False, "candidate", reasons)
     if v["status"] != "ADOPT":
         reasons["cause"] = "v3_verdict_not_adopt"
         return PromotionDecision(False, "candidate", reasons)
-    if v["subgroup_assurance"] not in (None, "full"):
+    if v["subgroup_assurance"] != "full":
         # "no FAIL" is not "no harm": an untestable critical subgroup means this run cannot speak
         # about that population, so the model waits as a candidate for current-regime evidence.
         reasons["cause"] = "subgroup_assurance_not_full"
         return PromotionDecision(False, "candidate", reasons)
+    from .promotion_evidence import evidence_problem
+
+    problem = evidence_problem(verdict, candidate_contract, active_contract)
+    if problem:
+        reasons["cause"] = problem
+        return PromotionDecision(False, "candidate", reasons)
+    reasons["candidate_contract_sha256"] = candidate_contract["sha256"]
+    reasons["active_contract_sha256"] = active_contract["sha256"]
     reasons["cause"] = "legacy_gate_and_v3_verdict_agree"
     return PromotionDecision(True, "active", reasons)

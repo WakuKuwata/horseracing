@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import pytest
 from horseracing_db.enums import BetType
-from horseracing_db.models import PredictionRun
 
 from horseracing_api.selection import select_prediction_run
 from tests._synth import add_recommendation, seed_model, seed_race
@@ -22,11 +21,9 @@ def test_recommendations_scoped_to_selected_run_with_stake(client, session):
         1: {"win": 0.4, "odds": 2.0}, 2: {"win": 0.3, "odds": 3.0},
     })
     # a SECOND run for the same race (its recs must NOT appear if it isn't the selected one)
-    other = PredictionRun(race_id=_RACE, model_version="m-active", logic_version="other")
-    session.add(other)
-    session.flush()
-    other_id = other.prediction_run_id
-    session.commit()
+    other_id = seed_race(session, race_id=_RACE, horses={
+        1: {"win": 0.4, "odds": 2.0}, 2: {"win": 0.3, "odds": 3.0},
+    })
 
     # whichever run the read API deterministically selects gets the (stake-bearing) rec;
     # the other run gets a TRIO rec that must be excluded from the response.

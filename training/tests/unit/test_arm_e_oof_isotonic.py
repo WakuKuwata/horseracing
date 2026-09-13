@@ -180,6 +180,15 @@ def test_prediction_started_mismatch_is_a_contract_error(monkeypatch):
         pred._oof_isotonic_rows(races)
 
 
+def test_outcome_winner_outside_started_field_is_rejected(monkeypatch):
+    races = _races(12, per_day=2, field=4)
+    outcomes = _complete_outcomes(races)
+    outcomes[races[-1].race_id] = (4, {"cancelled-stale-winner"})
+    pred = _make_pred(races, outcomes, monkeypatch=monkeypatch)
+    with pytest.raises(RuntimeError, match="outcome winner/started mismatch"):
+        pred._oof_isotonic_rows(races)
+
+
 # --- sufficiency (§3.3) -----------------------------------------------------
 
 

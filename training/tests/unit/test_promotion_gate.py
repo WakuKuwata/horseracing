@@ -17,6 +17,7 @@ from horseracing_training.adoption import (
     evaluate_promotion,
     normalize_verdict,
 )
+from tests._promotion_evidence import confirmed_report, contracts
 
 ADOPTED = AdoptionDecision(adopted=True, reasons={})
 NOT_ADOPTED = AdoptionDecision(adopted=False, reasons={})
@@ -24,25 +25,18 @@ NOT_ADOPTED = AdoptionDecision(adopted=False, reasons={})
 
 def _regime_report(status="ADOPT", assurance="full", kind="full_walk_forward", eligible=True):
     """A ``regime_paired.RegimeReport``-shaped dict (091 path)."""
-    return {
-        "artifact_kind": kind,
-        "eligible_for_verdict": eligible,
-        "verdict": {"status": status, "subgroup_assurance": assurance},
-        "gate_config": {"evaluation_contract_version": "v3"},
-    }
+    report = confirmed_report(regime=True, status=status, assurance=assurance)
+    report.update(artifact_kind=kind, eligible_for_verdict=eligible)
+    return report
 
 
 def _paired_report(status="ADOPT", assurance="full"):
     """A ``paired.PairedReport``-shaped dict (standard path — no artifact_kind concept)."""
-    return {
-        "decision": status,
-        "decision_reason": {"subgroup_assurance": assurance},
-        "evaluation_contract_version": "v3",
-    }
+    return confirmed_report(status=status, assurance=assurance)
 
 
 def _promote(verdict, legacy=ADOPTED, **kw) -> PromotionDecision:
-    return evaluate_promotion(legacy=legacy, verdict=verdict, **kw)
+    return evaluate_promotion(legacy=legacy, verdict=verdict, **contracts(), **kw)
 
 
 # --- the promotable case ----------------------------------------------------------------------
@@ -116,13 +110,13 @@ def test_register_as_candidate_wins_over_a_perfect_verdict():
 def test_normalize_reads_both_report_shapes():
     a = normalize_verdict(_regime_report(status="REJECT", assurance="partial"))
     assert (a["status"], a["subgroup_assurance"], a["contract_version"]) == (
-        "REJECT", "partial", "v3")
+        "REJECT", "partial", "v4")
     assert a["artifact_kind"] == "full_walk_forward"
 
     b = normalize_verdict(_paired_report(status="NO_DECISION", assurance="partial"))
     assert (b["status"], b["subgroup_assurance"], b["contract_version"]) == (
-        "NO_DECISION", "partial", "v3")
-    assert b["artifact_kind"] is None  # standard path has no acceptance/diagnostic arms
+        "NO_DECISION", "partial", "v4")
+    assert b["artifact_kind"] == "full_walk_forward"
 
     assert normalize_verdict(None) is None
     assert normalize_verdict({}) is None
@@ -194,7 +188,7 @@ def test_unservable_is_reported_ahead_of_softer_causes():
 
 def test_a_servable_artifact_is_unaffected():
     """既定 servable=True は従来どおり(この修正が正常系を変えていない)."""
-    assert evaluate_promotion(legacy=ADOPTED, verdict=_regime_report()).promotable is True
+    assert evaluate_promotion(legacy=ADOPTED, verdict=_regime_report(), **contracts()).promotable is True
     assert evaluate_promotion(
-        legacy=ADOPTED, verdict=_regime_report(), servable=True
+        legacy=ADOPTED, verdict=_regime_report(), servable=True, **contracts()
     ).promotable is True

@@ -182,6 +182,7 @@ def train_evaluate(
         git_sha=_git_sha(),
         register_as_candidate=register_as_candidate,
         verdict=verdict,
+        reference_model_version=baseline,
     )
 
     overall = result.to_summary()["eval"]["overall"]
@@ -1927,6 +1928,7 @@ def _paired_eval_regimes(args, cand, act, eval_races, gate_cfg, eval_start_year)
                      # the frozen determinism contract or ran wider than it
                      "num_threads": num_threads,
                      "determinism_declared": det or None}
+    d = _stamp_promotion_report(d, cand, act, gate_cfg, args)
     srv, fi = d["serving_regime"], d["full_info_regime"]
     print(f"paired-eval[regime] candidate={args.candidate} active={args.active} "
           f"kind={d['artifact_kind']} races={d['notes']['n_valid_races']}")
@@ -2088,6 +2090,7 @@ def _paired_eval(session: Session, args) -> int:
         print("  no verdict was written — this run is a wiring fault, not a result",
               file=sys.stderr)
         return 1
+    report_dict = _stamp_promotion_report(report.to_dict(), cand, act, gate_cfg, args)
     g = report.gate
     print(f"paired-eval candidate={args.candidate} active={args.active} "
           f"n_races={report.n_races} n_eligible={report.n_eligible}")
@@ -2145,7 +2148,7 @@ def _paired_eval(session: Session, args) -> int:
                   "not establish non-inferiority; see residual_risk for what is still admitted.")
     if args.json_out:
         with open(args.json_out, "w") as fh:
-            json.dump(report.to_dict(), fh, indent=2, default=str)
+            json.dump(report_dict, fh, indent=2, default=str)
         print(f"  wrote {args.json_out}")
     # Feature 100 US1: the per-race evidence rides inside the report JSON too, but a separate
     # append-only file is what makes a past judgement re-analysable without hunting through a
@@ -2156,6 +2159,18 @@ def _paired_eval(session: Session, args) -> int:
         n = len(report.evidence.rows)
         print(f"  wrote {args.evidence_out} ({n} races, sign={report.evidence.sign_convention})")
     return 0
+
+
+def _stamp_promotion_report(report, candidate, active, cfg, args):
+    """One provenance boundary for standard and regime-aware CLI evaluation outputs."""
+    from .promotion_evidence import stamp_report
+
+    window = {"from": args.from_.isoformat() if args.from_ else None,
+              "to": args.to.isoformat() if args.to else None}
+    return stamp_report(report, candidate, active, cfg=cfg,
+                        confirmed=getattr(args, "confirmatory", False) is True,
+                        expected_hash=getattr(args, "gate_config_hash", None), window=window,
+                        feature_version=FEATURE_VERSION)
 
 
 def _coverage_audit(session: Session, args) -> int:

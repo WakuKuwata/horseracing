@@ -4,7 +4,7 @@ A race may have several prediction_runs across model versions. We pick determini
 whose model is adopted (``adoption_status='active'``) first, then most recent ``computed_at``, then
 highest ``prediction_run_id`` — a total order. PredictionRun has no adoption_status column, so we
 JOIN model_versions. The chosen run_id is returned to the caller for the audit envelope. Canonical
-win probs exclude scratched/non-starters and non-positive probs (constitution IV) for 009.
+win probs require the saved run's horse IDs to match today's started field (constitution IV).
 """
 
 from __future__ import annotations
@@ -18,6 +18,30 @@ from sqlalchemy.orm import Session
 from .queries import canonical_win_odds
 
 
+def prediction_population_matches(session: Session, *, run_id, race_id: str) -> bool:
+    """A saved run is usable only for the exact, nonempty field it predicted.
+
+    Dropping a subsequently cancelled horse would leave the persisted win/top2/top3 on the
+    old field. Require a new prediction instead; neither head scaling nor an older-run fallback
+    can recover the model's inference and calibration on the changed field.
+    """
+    started = select(RaceHorse.horse_id).where(
+        RaceHorse.race_id == race_id, RaceHorse.entry_status == EntryStatus.STARTED,
+    )
+    predicted = select(RacePrediction.horse_id).where(
+        RacePrediction.prediction_run_id == run_id,
+    )
+    unexpected = predicted.where(RacePrediction.horse_id.not_in(started)).exists()
+    missing = started.where(RaceHorse.horse_id.not_in(predicted)).exists()
+    return session.scalar(
+        select(PredictionRun.prediction_run_id).where(
+            PredictionRun.prediction_run_id == run_id,
+            PredictionRun.race_id == race_id,
+            started.exists(), ~unexpected, ~missing,
+        )
+    ) is not None
+
+
 def select_prediction_run(
     session: Session, race_id: str, model_version: str | None = None
 ) -> PredictionRun | None:
@@ -29,29 +53,40 @@ def select_prediction_run(
     ``model_version`` given (Feature 057): restrict to that model's runs, computed_at DESC →
     prediction_run_id DESC (the active-first tie-break does NOT apply — active status must not
     affect which model is selected). Returns None when that model has no run (caller → 404).
+    The selected run must match the current started field; if stale, return None without falling
+    back to an older run or a different model. A fresh prediction restores availability.
     """
     recency = (PredictionRun.computed_at.desc(), PredictionRun.prediction_run_id.desc())
     if model_version is not None:
-        return session.scalars(
+        run = session.scalars(
             select(PredictionRun)
             .where(PredictionRun.race_id == race_id)
             .where(PredictionRun.model_version == model_version)
             .order_by(*recency)
         ).first()
-    active_first = case((ModelVersion.adoption_status == AdoptionStatus.ACTIVE, 0), else_=1)
-    return session.scalars(
-        select(PredictionRun)
-        .join(ModelVersion, PredictionRun.model_version == ModelVersion.model_version)
-        .where(PredictionRun.race_id == race_id)
-        .order_by(active_first, *recency)
-    ).first()
+    else:
+        active_first = case((ModelVersion.adoption_status == AdoptionStatus.ACTIVE, 0), else_=1)
+        run = session.scalars(
+            select(PredictionRun)
+            .join(ModelVersion, PredictionRun.model_version == ModelVersion.model_version)
+            .where(PredictionRun.race_id == race_id)
+            .order_by(active_first, *recency)
+        ).first()
+    if run is None or not prediction_population_matches(
+        session, run_id=run.prediction_run_id, race_id=race_id,
+    ):
+        return None
+    return run
 
 
 def canonical_win_probs(session: Session, *, run_id, race_id: str) -> dict[int, float]:
     """{horse_number -> win_prob} for STARTED horses with positive win_prob (009 input pop).
 
-    Scratched/excluded horses and non-positive/None probs are dropped; the 009 engine renormalizes.
+    A changed or incomplete field returns empty, including for direct run-ID callers.
+    For a matching field, non-positive/None probs are dropped; the 009 engine renormalizes.
     """
+    if not prediction_population_matches(session, run_id=run_id, race_id=race_id):
+        return {}
     rows = session.execute(
         select(RaceHorse.horse_number, RacePrediction.win_prob)
         .join(RacePrediction, RacePrediction.horse_id == RaceHorse.horse_id)
