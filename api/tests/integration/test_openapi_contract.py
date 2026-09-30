@@ -13,6 +13,8 @@ _EXPECTED_PATHS = {
     "/api/v1/races/{race_id}/predictions",
     "/api/v1/races/{race_id}/odds",
     "/api/v1/races/{race_id}/recommendations",
+    # Feature 137: market-aware expected return (read-only, separate from the win model)
+    "/api/v1/races/{race_id}/market-ev",
 }
 
 

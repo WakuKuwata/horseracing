@@ -23,7 +23,7 @@ from sqlalchemy import select
 from horseracing_ops import runner
 from horseracing_ops.config import CONFIG
 from horseracing_ops.enqueue import enqueue_race
-from horseracing_ops.worker import drain
+from horseracing_ops.worker import _IO_LANE, drain
 from tests._synth import mark_finished, seed_race
 from tests.conftest import _read  # same fixture loader the shared fetcher uses
 
@@ -146,7 +146,10 @@ def test_recapture_overwrites_in_place(session):
     for _ in range(2):
         job, _ = enqueue_race(session, RID, origin="daily_bulk", force=True)
         session.commit()
-        drain(session, fetcher=CountingFixtureFetcher(_pages(with_results=False)), max_jobs=1)
+        # IO lane only: the first pass queued a 期待回収率 recompute (Feature 137) that is older
+        # than the second refresh, so an unfiltered drain would claim it instead of the refresh.
+        drain(session, fetcher=CountingFixtureFetcher(_pages(with_results=False)), max_jobs=1,
+              job_types=_IO_LANE)
 
     rows = session.scalars(select(ExoticQuote).where(ExoticQuote.race_id == RID)).all()
     assert len(rows) == len(QUOTE_TYPES), f"expected one row per bet type, got {len(rows)}"

@@ -1206,6 +1206,48 @@
         "title": "HorseHistoryRow",
         "type": "object"
       },
+      "HorseMarketEv": {
+        "additionalProperties": false,
+        "description": "One started horse: expected_return = market-aware p × odds_used (ratio; 1.2 = 120%).\n\nPseudo (a model estimate, never a realized return). exceeds_threshold is decided by the API\n(strictly greater than the response's threshold).",
+        "properties": {
+          "exceeds_threshold": {
+            "title": "Exceeds Threshold",
+            "type": "boolean"
+          },
+          "expected_return": {
+            "title": "Expected Return",
+            "type": "number"
+          },
+          "horse_id": {
+            "title": "Horse Id",
+            "type": "string"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "odds_used": {
+            "title": "Odds Used",
+            "type": "number"
+          }
+        },
+        "required": [
+          "horse_id",
+          "horse_number",
+          "expected_return",
+          "odds_used",
+          "exceeds_threshold"
+        ],
+        "title": "HorseMarketEv",
+        "type": "object"
+      },
       "HorsePrediction": {
         "properties": {
           "divergence": {
@@ -1999,6 +2041,114 @@
           "prob"
         ],
         "title": "JointEntry",
+        "type": "object"
+      },
+      "MarketEvAvailable": {
+        "additionalProperties": false,
+        "description": "Stored market-aware expected returns for every started horse of the race + provenance.",
+        "properties": {
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "horses": {
+            "items": {
+              "$ref": "#/components/schemas/HorseMarketEv"
+            },
+            "title": "Horses",
+            "type": "array"
+          },
+          "is_pseudo": {
+            "const": true,
+            "title": "Is Pseudo",
+            "type": "boolean"
+          },
+          "logic_version": {
+            "title": "Logic Version",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "odds_changed_after_compute": {
+            "title": "Odds Changed After Compute",
+            "type": "boolean"
+          },
+          "odds_observed_at": {
+            "format": "date-time",
+            "title": "Odds Observed At",
+            "type": "string"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "result_pending_at_compute": {
+            "title": "Result Pending At Compute",
+            "type": "boolean"
+          },
+          "status": {
+            "const": "available",
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "status",
+          "race_id",
+          "model_version",
+          "logic_version",
+          "computed_at",
+          "odds_observed_at",
+          "odds_changed_after_compute",
+          "result_pending_at_compute",
+          "threshold",
+          "is_pseudo",
+          "horses"
+        ],
+        "title": "MarketEvAvailable",
+        "type": "object"
+      },
+      "MarketEvUnavailable": {
+        "additionalProperties": false,
+        "description": "Typed empty state: not computed yet, the started field changed after the compute, or a\nstarted horse currently has no valid win odds (so the stored values must not be shown).",
+        "properties": {
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "not_computed",
+              "field_changed",
+              "odds_unavailable"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "const": "unavailable",
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "status",
+          "race_id",
+          "reason",
+          "threshold"
+        ],
+        "title": "MarketEvUnavailable",
         "type": "object"
       },
       "ModelListResponse": {
@@ -5809,6 +5959,63 @@
         "summary": "Race Detail",
         "tags": [
           "races"
+        ]
+      }
+    },
+    "/api/v1/races/{race_id}/market-ev": {
+      "get": {
+        "operationId": "race_market_ev_api_v1_races__race_id__market_ev_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "available": "#/components/schemas/MarketEvAvailable",
+                      "unavailable": "#/components/schemas/MarketEvUnavailable"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MarketEvAvailable"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MarketEvUnavailable"
+                    }
+                  ],
+                  "title": "Response Race Market Ev Api V1 Races  Race Id  Market Ev Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Race Market Ev",
+        "tags": [
+          "market-ev"
         ]
       }
     },

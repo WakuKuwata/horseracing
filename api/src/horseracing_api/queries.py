@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+from decimal import Decimal
 
 from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus, ResultStatus
 from horseracing_db.models import (
@@ -18,6 +19,7 @@ from horseracing_db.models import (
     Horse,
     IngestionJob,
     Jockey,
+    MarketEvPrediction,
     ModelVersion,
     PredictionRun,
     Race,
@@ -122,6 +124,46 @@ def canonical_win_odds(session: Session, race_id: str) -> dict[int, float]:
             continue
         out[int(horse_number)] = float(odds)
     return out
+
+
+def started_win_odds_by_horse(session: Session, race_id: str) -> dict[str, Decimal | None]:
+    """Feature 137: {horse_id -> current win odds (Decimal or None)} for every STARTED horse.
+
+    The key set is the race's current started field (compared with the stored market-ev rows).
+    """
+    return {hid: odds for (_number, hid, odds, _updated) in win_odds(session, race_id)}
+
+
+def market_ev_rows(session: Session, race_id: str) -> list[MarketEvPrediction]:
+    """Feature 137: stored market-aware expected-return rows of ONE model_version for the race.
+
+    Independent of the win-model selection (no model_version parameter). When several market-aware
+    model versions have rows for the race, the most recently computed one is shown (max computed_at,
+    then model_version descending as a deterministic tie-break). Empty list = not computed yet.
+    """
+    chosen = session.scalar(
+        select(MarketEvPrediction.model_version)
+        .where(MarketEvPrediction.race_id == race_id)
+        .group_by(MarketEvPrediction.model_version)
+        .order_by(
+            func.max(MarketEvPrediction.computed_at).desc(),
+            MarketEvPrediction.model_version.desc(),
+        )
+        .limit(1)
+    )
+    if chosen is None:
+        return []
+    return list(
+        session.scalars(
+            select(MarketEvPrediction)
+            .where(MarketEvPrediction.race_id == race_id)
+            .where(MarketEvPrediction.model_version == chosen)
+            .order_by(
+                MarketEvPrediction.horse_number.asc().nulls_last(),
+                MarketEvPrediction.horse_id.asc(),
+            )
+        )
+    )
 
 
 def prior_start_counts(session: Session, race_id: str) -> dict[str, int]:

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   PLACEHOLDER,
   formatDateTime,
+  formatJstDateTime,
   formatNum,
   formatOdds,
   formatPct,
@@ -71,5 +72,19 @@ describe("formatPostTime", () => {
   it("placeholder for null/invalid", () => {
     expect(formatPostTime(null)).toBe(PLACEHOLDER);
     expect(formatPostTime("not-a-date")).toBe(PLACEHOLDER);
+  });
+});
+
+describe("formatJstDateTime", () => {
+  it("renders an ISO instant as YYYY/MM/DD HH:MM in Asia/Tokyo", () => {
+    expect(formatJstDateTime("2026-07-05T09:30:00Z")).toBe("2026/07/05 18:30");
+    expect(formatJstDateTime("2026-09-27T01:05:00+09:00")).toBe("2026/09/27 01:05");
+  });
+
+  it("returns null for absent or unparseable values", () => {
+    expect(formatJstDateTime(null)).toBeNull();
+    expect(formatJstDateTime(undefined)).toBeNull();
+    expect(formatJstDateTime("")).toBeNull();
+    expect(formatJstDateTime("not a date")).toBeNull();
   });
 });

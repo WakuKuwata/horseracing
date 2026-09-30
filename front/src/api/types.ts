@@ -37,6 +37,11 @@ export type Explanation = S["Explanation"];
 export type ExplanationItem = S["ExplanationItem"];
 export type ImportanceResponse = S["ImportanceResponse"];
 export type ImportanceValue = S["ImportanceValue"];
+// Feature 137: market-aware expected return (期待回収率) — a SEPARATE model from the win model
+export type HorseMarketEv = S["HorseMarketEv"];
+export type MarketEvAvailable = S["MarketEvAvailable"];
+export type MarketEvUnavailable = S["MarketEvUnavailable"];
+export type MarketEvResponse = MarketEvAvailable | MarketEvUnavailable;
 
 // Feature 106: purchase records & triple comparison (read-only api side)
 export type PurchaseRecordsResponse =

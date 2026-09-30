@@ -290,6 +290,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/races/{race_id}/market-ev": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Race Market Ev */
+        get: operations["race_market_ev_api_v1_races__race_id__market_ev_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/races/{race_id}/odds": {
         parameters: {
             query?: never;
@@ -779,6 +796,25 @@ export interface components {
             /** Venue Code */
             venue_code?: string | null;
         };
+        /**
+         * HorseMarketEv
+         * @description One started horse: expected_return = market-aware p × odds_used (ratio; 1.2 = 120%).
+         *
+         *     Pseudo (a model estimate, never a realized return). exceeds_threshold is decided by the API
+         *     (strictly greater than the response's threshold).
+         */
+        HorseMarketEv: {
+            /** Exceeds Threshold */
+            exceeds_threshold: boolean;
+            /** Expected Return */
+            expected_return: number;
+            /** Horse Id */
+            horse_id: string;
+            /** Horse Number */
+            horse_number: number | null;
+            /** Odds Used */
+            odds_used: number;
+        };
         /** HorsePrediction */
         HorsePrediction: {
             /** Divergence */
@@ -1014,6 +1050,67 @@ export interface components {
             prob: number;
             /** Selection */
             selection: number[];
+        };
+        /**
+         * MarketEvAvailable
+         * @description Stored market-aware expected returns for every started horse of the race + provenance.
+         */
+        MarketEvAvailable: {
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Horses */
+            horses: components["schemas"]["HorseMarketEv"][];
+            /**
+             * Is Pseudo
+             * @constant
+             */
+            is_pseudo: true;
+            /** Logic Version */
+            logic_version: string;
+            /** Model Version */
+            model_version: string;
+            /** Odds Changed After Compute */
+            odds_changed_after_compute: boolean;
+            /**
+             * Odds Observed At
+             * Format: date-time
+             */
+            odds_observed_at: string;
+            /** Race Id */
+            race_id: string;
+            /** Result Pending At Compute */
+            result_pending_at_compute: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "available";
+            /** Threshold */
+            threshold: number;
+        };
+        /**
+         * MarketEvUnavailable
+         * @description Typed empty state: not computed yet, the started field changed after the compute, or a
+         *     started horse currently has no valid win odds (so the stored values must not be shown).
+         */
+        MarketEvUnavailable: {
+            /** Race Id */
+            race_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "not_computed" | "field_changed" | "odds_unavailable";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "unavailable";
+            /** Threshold */
+            threshold: number;
         };
         /** ModelListResponse */
         ModelListResponse: {
@@ -2597,6 +2694,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    race_market_ev_api_v1_races__race_id__market_ev_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                race_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketEvAvailable"] | components["schemas"]["MarketEvUnavailable"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

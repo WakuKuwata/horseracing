@@ -945,3 +945,65 @@ class PurchaseComparisonResponse(BaseModel):
     n_corrections: int
     n_presentation_unavailable: int
     notes: list[str]
+
+
+# --- Feature 137: market-aware expected return (期待回収率) ------------------------------
+# The values come from a SEPARATE market-aware model (current win odds are among its inputs), so the
+# response is independent of the win-probability model selection. win_prob is never exposed
+# (constitution IV: the raw binary output is not race-normalized and must not read as a 1着率).
+# Strict schemas (extra="forbid", no silent defaults) are the 075 splat-null countermeasure.
+
+
+class HorseMarketEv(BaseModel):
+    """One started horse: expected_return = market-aware p × odds_used (ratio; 1.2 = 120%).
+
+    Pseudo (a model estimate, never a realized return). exceeds_threshold is decided by the API
+    (strictly greater than the response's threshold)."""
+
+    model_config = {"extra": "forbid"}
+
+    horse_id: str
+    horse_number: int | None
+    expected_return: float
+    odds_used: float
+    exceeds_threshold: bool
+
+
+class MarketEvAvailable(BaseModel):
+    """Stored market-aware expected returns for every started horse of the race + provenance."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["available"]
+    race_id: str
+    model_version: str
+    logic_version: str
+    computed_at: datetime.datetime
+    #: newest odds observation time across the stored rows
+    odds_observed_at: datetime.datetime
+    #: the current win odds of at least one horse differ from the odds_used at compute time
+    odds_changed_after_compute: bool
+    #: every stored row was computed while the race had no result yet
+    result_pending_at_compute: bool
+    threshold: float
+    is_pseudo: Literal[True]
+    #: horse_number ascending (nulls last, then horse_id)
+    horses: list[HorseMarketEv]
+
+
+class MarketEvUnavailable(BaseModel):
+    """Typed empty state: not computed yet, the started field changed after the compute, or a
+    started horse currently has no valid win odds (so the stored values must not be shown)."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["unavailable"]
+    race_id: str
+    reason: Literal["not_computed", "field_changed", "odds_unavailable"]
+    threshold: float
+
+
+MarketEvResponse = Annotated[
+    MarketEvAvailable | MarketEvUnavailable,
+    Field(discriminator="status"),
+]

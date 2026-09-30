@@ -36,8 +36,9 @@ def test_no_purchase_named_feature_columns():
     assert not hits, f"purchase-derived columns registered as features: {hits}"
 
 
-def test_migration_head_is_0017_purchase_records():
+def test_purchase_records_migration_present_and_head_is_0018():
     versions = sorted(
         p.stem for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py")
     )
-    assert versions[-1] == "0017_purchase_records", versions[-1]
+    assert "0017_purchase_records" in versions
+    assert versions[-1] == "0018_market_ev_predictions", versions[-1]

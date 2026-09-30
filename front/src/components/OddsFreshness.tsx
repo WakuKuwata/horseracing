@@ -1,3 +1,5 @@
+import { formatJstDateTime } from "../lib/format";
+
 const HOUR_MS = 60 * 60 * 1000;
 
 type OddsFreshnessProps = {
@@ -6,23 +8,9 @@ type OddsFreshnessProps = {
   hasResults: boolean | null | undefined;
 };
 
-function formatOddsDateTime(value: string | null | undefined): string | null {
-  if (!value) return null;
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-
-  // 既存の formatDateTime は監査用の UTC 表示なので、人が読む正本はレース時刻と同じ JST に揃える。
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: "Asia/Tokyo",
-  }).format(date);
-}
+// 既存の formatDateTime は監査用の UTC 表示なので、人が読む正本はレース時刻と同じ JST に揃える。
+// (feature 137 の期待回収率の注記と同じ書式を共有する。)
+const formatOddsDateTime = formatJstDateTime;
 
 function hoursBeforePost(
   oddsAsOf: string | null | undefined,

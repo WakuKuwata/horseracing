@@ -14,6 +14,7 @@ import pytest
 from horseracing_db.enums import JobStatus
 
 from horseracing_ops.enqueue import (
+    enqueue_expected_return,
     enqueue_predict,
     enqueue_race,
     enqueue_recommend,
@@ -128,6 +129,93 @@ def test_lanes_do_not_claim_each_others_jobs(session):
     io_job = claim_one(session, job_types=_IO_LANE)
     assert io_job is not None and io_job.ingestion_job_id == refresh.ingestion_job_id
     assert claim_one(session, job_types=_IO_LANE) is None
+
+
+def test_expected_return_is_cpu_lane_only(session):
+    """Feature 137: the recompute is a training-CLI subprocess with no scrape — it must never hold
+    one of the politeness-capped IO slots."""
+    seed_race(session, race_id=R1)
+    refresh, _ = enqueue_race(session, R1, origin="daily_bulk")
+    er, _ = enqueue_expected_return(
+        session, datetime.date(2024, 12, 28), source="auto_after_refresh"
+    )
+    session.commit()
+
+    io_job = claim_one(session, job_types=_IO_LANE)
+    assert io_job is not None and io_job.ingestion_job_id == refresh.ingestion_job_id
+    assert claim_one(session, job_types=_IO_LANE) is None  # the recompute is invisible to IO
+    cpu_job = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert cpu_job is not None and cpu_job.ingestion_job_id == er.ingestion_job_id
+
+
+def test_only_one_expected_return_runs_at_a_time(session):
+    """enqueue reuses only QUEUED jobs, so a newer job for a date can exist while an older one is
+    RUNNING. Running both would have two processes replacing the same races' rows — the claim
+    hides every queued expected_return while one runs; other CPU work stays claimable."""
+    seed_race(session, race_id=R1)
+    day = datetime.date(2024, 12, 28)
+    first, _ = enqueue_expected_return(session, day, source="auto_after_refresh")
+    session.commit()
+    running = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert running.ingestion_job_id == first.ingestion_job_id
+
+    newer, reused = enqueue_expected_return(session, day, source="auto_after_refresh")
+    session.commit()
+    other_day, _ = enqueue_expected_return(
+        session, datetime.date(2024, 12, 29), source="manual_ui"
+    )
+    session.commit()
+    predict, _ = enqueue_predict(session, R1, origin="auto_after_refresh")
+    session.commit()
+    assert reused is False
+
+    nxt = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert nxt.ingestion_job_id == predict.ingestion_job_id  # both recomputes are held back
+    assert claim_one(session, job_types=_CPU_LANE, interactive_first=True) is None
+
+    running.status = JobStatus.SUCCEEDED
+    session.add(running)
+    session.commit()
+    # the cap lifts; the manual (rank 0) recompute goes first, then the older auto one
+    a = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert a.ingestion_job_id == other_day.ingestion_job_id
+    assert claim_one(session, job_types=_CPU_LANE, interactive_first=True) is None
+    a.status = JobStatus.SUCCEEDED
+    session.add(a)
+    session.commit()
+    b = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert b.ingestion_job_id == newer.ingestion_job_id
+
+
+def test_manual_expected_return_ranks_interactive(session):
+    """A recompute triggered by a race-page refresh click overtakes the batch backlog; one from a
+    bulk refresh stays FIFO behind older batch work."""
+    seed_race(session, race_id=R1)
+    backlog, _ = enqueue_predict(session, R1, origin="auto_after_refresh")
+    session.commit()
+    auto_er, _ = enqueue_expected_return(
+        session, datetime.date(2024, 12, 27), source="auto_after_refresh"
+    )
+    session.commit()
+
+    first = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert first.ingestion_job_id == backlog.ingestion_job_id  # FIFO within rank 1
+    first.status = JobStatus.QUEUED  # put it back: only the ORDER is under test here
+    first.started_at = None
+    session.add(first)
+    session.commit()
+
+    manual_er, _ = enqueue_expected_return(
+        session, datetime.date(2024, 12, 28), source="manual_ui"
+    )
+    session.commit()
+    top = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert top.ingestion_job_id == manual_er.ingestion_job_id
+    rest = claim_one(session, job_types=_CPU_LANE, interactive_first=True)
+    assert rest.ingestion_job_id == backlog.ingestion_job_id
+    # auto_er is still queued behind the RUNNING manual recompute (one-at-a-time cap)
+    assert claim_one(session, job_types=_CPU_LANE, interactive_first=True) is None
+    assert auto_er.ingestion_job_id not in {top.ingestion_job_id, rest.ingestion_job_id}
 
 
 def test_io_lane_stays_fifo(session):

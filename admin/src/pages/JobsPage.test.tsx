@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -291,9 +291,48 @@ describe("JobsPage", () => {
       "horse_profile",
       "predict",
       "recommend",
+      "expected_return",
     ]) {
       expect(options).toContain(t);
     }
     expect(options).not.toContain("laps");
+  });
+
+  it("names the 期待回収率 recompute job and filters on its identifier", async () => {
+    // Feature 137: one expected_return job per race DATE (scope_value = YYYY-MM-DD).
+    let lastJobType: string | null = null;
+    const erJob = {
+      ...baseJob,
+      ingestion_job_id: "er1",
+      job_type: "expected_return",
+      scope: "date",
+      scope_value: "2026-09-27",
+      status: "skipped",
+      processed_rows: null,
+      summary: { kind: "expected_return", reason: "no_races_with_odds" },
+    };
+    server.use(http.get(`${BASE}/jobs`, ({ request }) => {
+      lastJobType = new URL(request.url).searchParams.get("job_type");
+      return HttpResponse.json({ items: [erJob] });
+    }));
+    const { container } = renderWithProviders(<JobsPage />);
+
+    await screen.findByText("2026-09-27");
+    const typeSelect = screen.getByLabelText("種別");
+    const option = Array.from(typeSelect.querySelectorAll("option")).find(
+      (o) => o.value === "expected_return",
+    );
+    expect(option?.textContent).toBe("expected_return(期待回収率)");
+    expect(
+      container.querySelector('tr[data-status="skipped"] td')?.textContent,
+    ).toBe("expected_return(期待回収率)");
+
+    await userEvent.selectOptions(typeSelect, "expected_return");
+    await waitFor(() => expect(lastJobType).toBe("expected_return"));
+    // other job types keep their bare identifier
+    const predictOption = Array.from(typeSelect.querySelectorAll("option")).find(
+      (o) => o.value === "predict",
+    );
+    expect(predictOption?.textContent).toBe("predict");
   });
 });

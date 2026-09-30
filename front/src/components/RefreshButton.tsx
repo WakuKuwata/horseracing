@@ -43,11 +43,13 @@ export function RefreshButton({
   const qc = useQueryClient();
   const [jobId, setJobId] = useState<string | null>(null);
   const [invalidated, setInvalidated] = useState(false);
+  const [evInvalidated, setEvInvalidated] = useState(false);
 
   const start = useMutation<JobAccepted, ErrorInfo, void>({
     mutationFn: () => refreshRace(raceId),
     onSuccess: (job) => {
       setInvalidated(false);
+      setEvInvalidated(false);
       setJobId(job.job_id);
     },
   });
@@ -65,16 +67,39 @@ export function RefreshButton({
   const status = poll.data?.status;
 
   // On a terminal success/partial, refetch the 014 views that a refresh feeds: the race detail
-  // (entries/results), the odds panel, and the predictions (market q is derived from odds at read
-  // time) — so the whole page reflects the new data without a manual reload.
+  // (entries/results), the odds panel, the predictions (market q is derived from odds at read
+  // time) and the 137 期待回収率 (its odds_changed / field_changed states are read-time too) —
+  // so the whole page reflects the new data without a manual reload.
   useEffect(() => {
     if (!invalidated && (status === "succeeded" || status === "partial")) {
       void qc.invalidateQueries({ queryKey: ["race", raceId] });
       void qc.invalidateQueries({ queryKey: ["odds", raceId] });
       void qc.invalidateQueries({ queryKey: ["predictions", raceId] });
+      void qc.invalidateQueries({ queryKey: ["market-ev", raceId] });
       setInvalidated(true);
     }
   }, [status, invalidated, qc, raceId]);
+
+  // 137: a refresh that wrote new odds for a pending race enqueues the 期待回収率 recompute
+  // (ops exposes it as followup_job_id). It runs after the refresh in the CPU lane, so keep
+  // polling it and refetch the market-ev view once it lands — otherwise the page would show the
+  // pre-refresh values until the next reload.
+  const followupId =
+    status === "succeeded" || status === "partial" ? (poll.data?.followup_job_id ?? null) : null;
+  const followupPoll = useQuery<Job, ErrorInfo>({
+    queryKey: ["opsJob", followupId],
+    queryFn: () => getJob(followupId as string),
+    enabled: followupId != null,
+    refetchInterval: (q) => (isTerminal(q.state.data?.status) ? false : pollMs),
+    refetchIntervalInBackground: true,
+  });
+  const followupStatus = followupPoll.data?.status;
+  useEffect(() => {
+    if (!evInvalidated && isTerminal(followupStatus)) {
+      void qc.invalidateQueries({ queryKey: ["market-ev", raceId] });
+      setEvInvalidated(true);
+    }
+  }, [followupStatus, evInvalidated, qc, raceId]);
 
   const running = start.isPending || (jobId != null && !isTerminal(status));
 

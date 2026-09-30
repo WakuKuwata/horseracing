@@ -88,7 +88,9 @@ def _add_race_and_snapshot(session, *, status: str = "active") -> ChaosSnapshot:
 
 
 #: created at 0013 or later.
-_TABLES_ADDED_AFTER_0012 = {"fetch_throttle_state", "exotic_quotes", "purchase_records"}
+_TABLES_ADDED_AFTER_0012 = {
+    "fetch_throttle_state", "exotic_quotes", "purchase_records", "market_ev_predictions",
+}
 
 
 def test_0012_upgrade_downgrade_upgrade_preserves_existing_tables(

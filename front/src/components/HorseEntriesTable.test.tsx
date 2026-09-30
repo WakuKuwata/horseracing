@@ -1,7 +1,15 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
-import type { HorseEntry, HorsePrediction } from "../api/types";
+import type {
+  HorseEntry,
+  HorsePrediction,
+  MarketEvAvailable,
+  MarketEvUnavailable,
+} from "../api/types";
+import { EXPECTED_RETURN_SCOPE, PROFIT_COLOUR_SELECTOR } from "../lib/forbiddenPhrases";
+import { assertPseudoLabelCoverage } from "../tests/pseudo";
 import { renderWithProviders } from "../tests/utils";
 import { HorseEntriesTable } from "./HorseEntriesTable";
 
@@ -182,5 +190,212 @@ describe("HorseEntriesTable p/q presentation (021 invariants)", () => {
     );
     expect(screen.getByText("出走歴 多")).toBeInTheDocument();
     expect(screen.getByText("出走歴 少")).toBeInTheDocument();
+  });
+});
+
+// Feature 137: 期待回収率 column (separate market-aware model, pseudo, API-flagged highlight).
+describe("HorseEntriesTable 期待回収率 (137)", () => {
+  const evEntries: HorseEntry[] = [
+    ...entries,
+    // a cancelled horse — even with a (stale) stored row it must show "—", never a value
+    { horse_id: "2020000004", horse_name: "取消馬", horse_number: 4, entry_status: "cancelled",
+      jockey_name: "騎手D" },
+  ];
+
+  const marketEv: MarketEvAvailable = {
+    status: "available",
+    race_id: "202609270511",
+    model_version: "mev-binary-v2",
+    logic_version: "mev-v1",
+    computed_at: "2026-09-27T00:15:00Z",
+    odds_observed_at: "2026-09-27T00:10:00Z",
+    odds_changed_after_compute: false,
+    result_pending_at_compute: true,
+    threshold: 1.2,
+    is_pseudo: true,
+    horses: [
+      { horse_id: "2020000001", horse_number: 1, expected_return: 1.243, odds_used: 3.9,
+        exceeds_threshold: true },
+      // exactly the threshold: the API says NOT exceeding (strict >) → no highlight
+      { horse_id: "nk:99999", horse_number: 2, expected_return: 1.2, odds_used: 6.0,
+        exceeds_threshold: false },
+      // horse 3 (2020000003) has no stored row → "—"
+      { horse_id: "2020000004", horse_number: 4, expected_return: 1.5, odds_used: 12.0,
+        exceeds_threshold: true },
+    ],
+  };
+
+  const notComputed: MarketEvUnavailable = {
+    status: "unavailable", race_id: "202609270511", reason: "not_computed", threshold: 1.2,
+  };
+
+  function rowOf(container: HTMLElement, name: string): HTMLTableRowElement {
+    const row = Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr")).find(
+      (tr) => tr.querySelector("td:nth-child(2) .cell-main")?.textContent?.startsWith(name),
+    );
+    if (!row) throw new Error(`row ${name} not found`);
+    return row;
+  }
+
+  function headerTexts(container: HTMLElement): string[] {
+    return Array.from(container.querySelectorAll("thead th")).map(
+      (th) => th.textContent?.replace(/ [▲▼]$/, "") ?? "",
+    );
+  }
+
+  function evCell(row: HTMLTableRowElement): HTMLTableCellElement {
+    const cell = row.querySelector<HTMLTableCellElement>("td.ev-cell");
+    if (!cell) throw new Error("ev cell not found");
+    return cell;
+  }
+
+  it("renders every value as a badged pseudo 推定 figure (coverage, not a spot-check)", () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={evEntries} predictions={predictions}
+        canonicalConsistent={true} marketEv={marketEv} />,
+    );
+    assertPseudoLabelCoverage(container, ["124.3%", "120.0%"]);
+    const nodes = container.querySelectorAll('[data-pseudo-kind="expected_return"]');
+    expect(nodes).toHaveLength(2);
+    nodes.forEach((n) => expect(n.querySelector("[data-pseudo-badge]")).toHaveTextContent("推定"));
+  });
+
+  it("highlights only the rows the API flags (1.2 exactly is NOT flagged)", () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={evEntries} predictions={predictions}
+        canonicalConsistent={true} marketEv={marketEv} />,
+    );
+    const over = rowOf(container, "本登録馬");
+    expect(over.className).toContain("entry--ev-over");
+    const chip = within(over).getByLabelText("期待回収率が120%を超えています");
+    expect(chip).toHaveTextContent("120%超");
+    expect(chip.getAttribute("title")).toBe("期待回収率が120%を超えています");
+    expect(evCell(over)).toHaveTextContent("124.3%");
+
+    const exact = rowOf(container, "サロゲート馬");
+    expect(evCell(exact)).toHaveTextContent("120.0%");
+    expect(exact.className).not.toContain("entry--ev-over");
+    expect(within(exact).queryByText(/超$/)).toBeNull();
+    // exactly one highlighted row in the whole table
+    expect(container.querySelectorAll("tr.entry--ev-over")).toHaveLength(1);
+  });
+
+  it("follows the API's exceeds_threshold flag and never recomputes it from the value", () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={entries} predictions={[]} marketEv={{
+        ...marketEv,
+        horses: [
+          { horse_id: "2020000001", horse_number: 1, expected_return: 1.25, odds_used: 5.0,
+            exceeds_threshold: false },
+        ],
+      }} />,
+    );
+    const row = rowOf(container, "本登録馬");
+    expect(evCell(row)).toHaveTextContent("125.0%");
+    expect(row.className).not.toContain("entry--ev-over");
+    expect(screen.queryByLabelText(/を超えています/)).toBeNull();
+  });
+
+  it("shows — for a cancelled horse and a horse without a stored row (never 0/NaN)", () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={evEntries} predictions={predictions}
+        canonicalConsistent={true} marketEv={marketEv} />,
+    );
+    const cancelled = rowOf(container, "取消馬");
+    expect(evCell(cancelled).textContent).toBe("—");
+    expect(cancelled.className).not.toContain("entry--ev-over");
+    expect(evCell(cancelled).querySelector("[data-pseudo]")).toBeNull();
+
+    const missing = rowOf(container, "騎手なし馬");
+    expect(evCell(missing).textContent).toBe("—");
+    container.querySelectorAll("td.ev-cell").forEach((td) => {
+      expect(td.textContent).not.toMatch(/NaN|undefined/);
+      expect(td.textContent).not.toMatch(/^0\.0%/);
+    });
+  });
+
+  it("is NOT sortable and sits right after モデル勝率", async () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={evEntries} predictions={predictions}
+        canonicalConsistent={true} marketEv={marketEv} />,
+    );
+    const headers = headerTexts(container);
+    expect(headers[headers.indexOf("モデル勝率") + 1]).toBe("期待回収率");
+    const evHeader = screen.getByText("期待回収率").closest("th");
+    expect(evHeader?.className).not.toContain("sortable");
+    expect(evHeader?.getAttribute("aria-sort")).toBeNull();
+    expect(evHeader?.getAttribute("title")).toMatch(/別の市場連動モデル/);
+
+    const namesBefore = Array.from(
+      container.querySelectorAll("tbody tr td:nth-child(2) .cell-main"),
+    ).map((n) => n.textContent);
+    await userEvent.click(evHeader!);
+    const namesAfter = Array.from(
+      container.querySelectorAll("tbody tr td:nth-child(2) .cell-main"),
+    ).map((n) => n.textContent);
+    // clicking the header changes nothing: the default モデル勝率 sort stays in force
+    expect(namesAfter).toEqual(namesBefore);
+    const winHeader = screen.getByText(/^モデル勝率/).closest("th");
+    expect(winHeader?.getAttribute("aria-sort")).toBe("descending");
+  });
+
+  it("is shown without predictions (right after 単勝) — independent of the win model", () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={entries} predictions={[]} marketEv={marketEv} />,
+    );
+    const headers = headerTexts(container);
+    expect(headers).not.toContain("モデル勝率");
+    expect(headers[headers.indexOf("単勝") + 1]).toBe("期待回収率");
+    expect(headers[headers.length - 1]).toBe("期待回収率");
+    expect(screen.getByText("124.3%")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["unavailable", notComputed],
+    ["undefined", undefined],
+    ["null", null],
+  ])("hides the column entirely when marketEv is %s", (_label, value) => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={entries} predictions={predictions}
+        canonicalConsistent={true} marketEv={value} />,
+    );
+    expect(screen.queryByText("期待回収率")).toBeNull();
+    expect(container.querySelector("td.ev-cell")).toBeNull();
+    expect(container.querySelector("tr.entry--ev-over")).toBeNull();
+  });
+
+  it("widens the expansion row colSpan to cover the new column", async () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={evEntries} predictions={predictions}
+        canonicalConsistent={true} marketEv={marketEv} />,
+    );
+    const nHeaders = container.querySelectorAll("thead th").length;
+    await userEvent.click(within(rowOf(container, "本登録馬")).getByRole("button",
+      { name: "スコア寄与" }));
+    const expansion = container.querySelector<HTMLTableCellElement>("tr.explanation-row td");
+    expect(expansion?.colSpan).toBe(nHeaders);
+    // every body row has exactly as many cells as there are headers
+    container.querySelectorAll("tbody tr.entry-row").forEach((tr) =>
+      expect(tr.querySelectorAll("td")).toHaveLength(nHeaders),
+    );
+  });
+
+  it("uses no buy wording, no scoped forbidden phrase and no profit/loss colour", () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={evEntries} predictions={predictions}
+        canonicalConsistent={true} marketEv={marketEv} />,
+    );
+    const table = container.querySelector("table")!;
+    expect(table.textContent).not.toMatch(/買/);
+    expect(table.textContent).not.toMatch(EXPECTED_RETURN_SCOPE);
+    const attrs = Array.from(table.querySelectorAll("[title], [aria-label]")).flatMap((el) => [
+      el.getAttribute("title") ?? "",
+      el.getAttribute("aria-label") ?? "",
+    ]);
+    for (const a of attrs) {
+      expect(a).not.toMatch(/買/);
+      expect(a).not.toMatch(EXPECTED_RETURN_SCOPE);
+    }
+    expect(container.querySelector(`${PROFIT_COLOUR_SELECTOR}, .up, .down`)).toBeNull();
   });
 });

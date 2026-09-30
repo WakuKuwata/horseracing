@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from . import (
     JOB_TYPE_DAY,
+    JOB_TYPE_EXPECTED_RETURN,
     JOB_TYPE_PREDICT,
     JOB_TYPE_RACE,
     JOB_TYPE_RECOMMEND,
@@ -36,6 +37,7 @@ from .runner import (
     CalibrationConfigurationError,
     make_fetcher,
     run_day,
+    run_expected_return,
     run_one,
     run_predict,
     run_recommend,
@@ -43,9 +45,10 @@ from .runner import (
 )
 
 #: job types the worker drains (refresh_day discovers + fans out; refresh_race scrapes; predict runs
-#: the serving model for one race — Feature 028; recommend generates buy-ups — Feature 043).
+#: the serving model for one race — Feature 028; recommend generates buy-ups — Feature 043;
+#: expected_return recomputes one date's 期待回収率 via the training CLI — Feature 137).
 _CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND,
-              JOB_TYPE_REFRESH_RANGE)
+              JOB_TYPE_REFRESH_RANGE, JOB_TYPE_EXPECTED_RETURN)
 
 #: Lane split (interactive latency): scrape-bound jobs (netkeiba politeness caps their
 #: concurrency) vs compute-bound jobs (subprocesses that never touch netkeiba). Before the split
@@ -56,7 +59,9 @@ _CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND,
 #: CLI = predict+recommend backfill with NO scrape, so in the IO lane it would both hog a
 #: politeness slot it doesn't need and run heavy compute outside the CPU lane's memory budget.
 _IO_LANE = (JOB_TYPE_RACE, JOB_TYPE_DAY)
-_CPU_LANE = (JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND, JOB_TYPE_REFRESH_RANGE)
+#: expected_return (Feature 137) is CPU for the same reason: a training-CLI subprocess, no scrape.
+_CPU_LANE = (JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND, JOB_TYPE_REFRESH_RANGE,
+             JOB_TYPE_EXPECTED_RETURN)
 
 
 def _interactive_rank():
@@ -65,7 +70,10 @@ def _interactive_rank():
     rank 0 — a human is waiting: predict from the 予測 button (predict_origin=manual_ui),
              recommend from the 買い目生成 button (source=manual), or the follow-up recommend of
              a MANUAL predict (source=auto_after_predict + predict_origin=manual_ui — the user's
-             clicked unit completes without a second wait).
+             clicked unit completes without a second wait), or the 期待回収率 recompute a
+             race-page refresh click triggered (expected_return, source=manual_ui — Feature 137;
+             it reads odds and race history, never predictions, so jumping batch
+             predicts/recommends changes none of their inputs).
     rank 1 — everything else, created_at FIFO. Deliberately NOT "recommend before backlog
              predicts" (codex blocker): the legacy two-gamma fit reads the predictions persisted
              at recommend time, so hoisting a batch recommend ahead of the batch's remaining
@@ -84,6 +92,7 @@ def _interactive_rank():
         (and_(IngestionJob.job_type == JOB_TYPE_RECOMMEND, src == "manual"), 0),
         (and_(IngestionJob.job_type == JOB_TYPE_RECOMMEND,
               src == "auto_after_predict", origin == "manual_ui"), 0),
+        (and_(IngestionJob.job_type == JOB_TYPE_EXPECTED_RETURN, src == "manual_ui"), 0),
         else_=1,
     )
 
@@ -266,6 +275,7 @@ _DETACHED_CHILD_GRACE_S = {
     JOB_TYPE_PREDICT: 360,          # runner._SERVING_TIMEOUT_S = 300, + margin
     JOB_TYPE_RECOMMEND: 360,        # runner._BETTING_TIMEOUT_S = 300, + margin
     JOB_TYPE_REFRESH_RANGE: 3900,   # runner._LIVE_TIMEOUT_S = 3600, + margin
+    JOB_TYPE_EXPECTED_RETURN: 660,  # runner._MARKET_EV_TIMEOUT_S = 600, + margin
 }
 
 
@@ -383,7 +393,13 @@ def claim_one(
     refresh_range cap (codex): at most ONE refresh_range runs at a time — each spawns a live
     subprocess doing a whole range's predict+recommend backfill, so two would blow the CPU
     lane's memory budget while starving single-race jobs. Best-effort (two threads can race the
-    NOT-EXISTS check within one poll tick), which only ever degrades to the pre-cap behavior."""
+    NOT-EXISTS check within one poll tick), which only ever degrades to the pre-cap behavior.
+
+    expected_return cap (Feature 137), same shape: at most ONE runs at a time. enqueue reuses only
+    QUEUED jobs, so a newer job for a date can exist while an older one is RUNNING; running both
+    would have two processes concurrently replacing the same races' market_ev_predictions rows.
+    Serialising also keeps one full-history load in memory, not three. A stranded RUNNING row
+    holds the cap until orphan recovery (grace below) — the same trade refresh_range makes."""
     stmt = (
         select(IngestionJob)
         .where(IngestionJob.job_type.in_(job_types))
@@ -398,6 +414,16 @@ def claim_one(
         )
         stmt = stmt.where(
             or_(IngestionJob.job_type != JOB_TYPE_REFRESH_RANGE, ~running_range)
+        )
+    if JOB_TYPE_EXPECTED_RETURN in job_types:
+        running_er = (
+            select(IngestionJob.ingestion_job_id)
+            .where(IngestionJob.job_type == JOB_TYPE_EXPECTED_RETURN)
+            .where(IngestionJob.status == JobStatus.RUNNING)
+            .exists()
+        )
+        stmt = stmt.where(
+            or_(IngestionJob.job_type != JOB_TYPE_EXPECTED_RETURN, ~running_er)
         )
     order = (
         (_interactive_rank(), IngestionJob.created_at.asc(), IngestionJob.ingestion_job_id.asc())
@@ -432,6 +458,8 @@ def _run_claimed(session: Session, job: IngestionJob, *, fetcher=None) -> None:
         runner = run_recommend
     elif job.job_type == JOB_TYPE_REFRESH_RANGE:
         runner = run_refresh_range
+    elif job.job_type == JOB_TYPE_EXPECTED_RETURN:
+        runner = run_expected_return
     else:
         runner = run_one
     try:

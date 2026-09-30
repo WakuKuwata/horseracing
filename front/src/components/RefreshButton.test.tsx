@@ -50,7 +50,7 @@ describe("RefreshButton", () => {
     expect(await screen.findByText("対象なし")).toBeInTheDocument();
   });
 
-  it("on success refetches race, odds AND predictions (the views a refresh feeds)", async () => {
+  it("on success refetches race, odds, predictions AND 期待回収率 (the views a refresh feeds)", async () => {
     server.use(
       http.post(`${BASE}/races/${RID}/refresh`, () => accept()),
       http.get(`${BASE}/jobs/${JOB}`, () => job("succeeded")),
@@ -65,6 +65,37 @@ describe("RefreshButton", () => {
     expect(keys).toContain(JSON.stringify(["race", RID]));
     expect(keys).toContain(JSON.stringify(["odds", RID]));
     expect(keys).toContain(JSON.stringify(["predictions", RID]));
+    // Feature 137: the market-aware expected return is recomputed by ops after a refresh
+    expect(keys).toContain(JSON.stringify(["market-ev", RID]));
+  });
+
+  it("polls the 期待回収率 recompute it enqueued and refetches market-ev once that lands", async () => {
+    const ER = "22222222-2222-2222-2222-222222222222";
+    let erPolls = 0;
+    server.use(
+      http.post(`${BASE}/races/${RID}/refresh`, () => accept()),
+      http.get(`${BASE}/jobs/${JOB}`, () =>
+        HttpResponse.json({ job_id: JOB, job_type: "refresh_race", status: "succeeded",
+          scope: "race", scope_value: RID, retry_count: 0, followup_job_id: ER })),
+      http.get(`${BASE}/jobs/${ER}`, () => {
+        erPolls += 1;
+        return HttpResponse.json({ job_id: ER, job_type: "expected_return",
+          status: erPolls < 3 ? "running" : "succeeded", scope: "date",
+          scope_value: "2024-06-05", retry_count: 0 });
+      }),
+    );
+    const { queryClient } = renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
+    await screen.findByText("更新完了");
+    const marketEvCalls = () =>
+      invalidate.mock.calls.filter(
+        (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(["market-ev", RID]),
+      ).length;
+    // once at the refresh's terminal status, once more when the recompute job finishes
+    await waitFor(() => expect(marketEvCalls()).toBe(2));
+    expect(erPolls).toBeGreaterThanOrEqual(3);
   });
 
   it("shows a poll error instead of a silent 更新中…, then recovers to 更新完了", async () => {

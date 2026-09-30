@@ -17,3 +17,6 @@ JOB_TYPE_PREDICT = "predict"  # Feature 028: generate model predictions for a ra
 JOB_TYPE_RECOMMEND = "recommend"  # Feature 043: generate buy recommendations (via betting CLI)
 # Feature 053: predict+recommend backfill over a date range (via the live CLI, subprocess)
 JOB_TYPE_REFRESH_RANGE = "refresh_range"
+# Feature 137: recompute the market-aware 期待回収率 for ONE race date (via the training CLI,
+# subprocess). scope="date", scope_value="YYYY-MM-DD".
+JOB_TYPE_EXPECTED_RETURN = "expected_return"

@@ -6,6 +6,7 @@ from .chaos import ChaosReadout, ChaosSnapshot, FetchThrottleState
 from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from .ingestion import IdMapping, IngestionJob
 from .market import ExoticOdds, ExoticQuote, RaceLaps
+from .market_ev import MarketEvPrediction
 from .prediction import (
     DiagnosticRun,
     FeatureSnapshot,
@@ -33,6 +34,7 @@ __all__ = [
     "IngestionJob",
     "ExoticOdds",
     "ExoticQuote",
+    "MarketEvPrediction",
     "RaceLaps",
     "ModelVersion",
     "PredictionRun",

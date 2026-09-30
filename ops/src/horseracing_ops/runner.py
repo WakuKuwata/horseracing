@@ -26,7 +26,7 @@ from pathlib import Path
 
 import httpx
 from horseracing_db.enums import JobStatus
-from horseracing_db.models import IngestionJob, ModelVersion, PredictionRun, RaceResult
+from horseracing_db.models import IngestionJob, ModelVersion, PredictionRun, Race, RaceResult
 from horseracing_scrape import robots_cache
 from horseracing_scrape.fetch import HttpFetcher
 from horseracing_scrape.pipeline import (
@@ -45,6 +45,7 @@ from sqlalchemy.orm import Session
 from .config import CONFIG
 from .deps import owner_database_url
 from .enqueue import (
+    enqueue_expected_return,
     enqueue_predict,
     enqueue_race,
     enqueue_recommend,
@@ -71,6 +72,12 @@ _CAPTURE_DEADLINE_S = 10
 #: predict). The CLI resolves the active-model run, is idempotent, and persists recommendations.
 _BETTING_DIR = Path(__file__).resolve().parents[3] / "betting"
 _BETTING_TIMEOUT_S = 300
+
+#: Feature 137: the market-aware 期待回収率 is computed by the training CLI (it loads the booster
+#: and the as-of history), so ops shells out to it like predict/recommend — same boundary rule.
+#: 600s is below the generic 900s stale window, and the worker's detached-child grace covers it.
+_TRAINING_DIR = Path(__file__).resolve().parents[3] / "training"
+_MARKET_EV_TIMEOUT_S = 600
 
 
 #: Where the daily job keeps its gzipped copy of every page it fetches. Set the env var to an
@@ -227,6 +234,7 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     results = scrape_results(session, urls=[result_url(race_id)], fetcher=fetcher,
                              scope_value=race_id)
     summaries = [results] if corners_only else [entries, results]
+    odds = None
     if not corners_only:
         odds = scrape_odds(session, urls=[win_odds_url(race_id)], fetcher=fetcher,
                            scope_value=race_id)
@@ -316,10 +324,46 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
         )
         if not reused:
             summary["predict_job_id"] = str(followup.ingestion_job_id)
+    # Feature 137: the stored 期待回収率 is win_prob × the odds it was computed from, so odds this
+    # refresh wrote make it stale — queue that date's recompute (one job per date, QUEUED-only
+    # dedup). Only while the race is still pending: a settled race's value is an after-the-fact
+    # reference and its odds no longer move. Never for a 通過順 patch-up (it fetches no odds).
+    er_job_id = _maybe_enqueue_expected_return(
+        session, race_id, odds=odds, refresh_origin=refresh_origin
+    )
+    if er_job_id is not None:
+        summary["expected_return_job_id"] = er_job_id
     job.summary = {**summary, "refresh_origin": refresh_origin}
     session.add(job)
     session.commit()
     return job
+
+
+def _maybe_enqueue_expected_return(
+    session: Session, race_id: str, *, odds, refresh_origin: str
+) -> str | None:
+    """Feature 137 trigger. Returns the enqueued/reused job id, or None when not triggered.
+
+    Conditions (all required): the switch is on, this is not a corner_backfill patch-up, the
+    win-odds sub-step wrote at least one row, and the race is still result-pending AFTER this
+    refresh's results sub-step (a race whose result landed in this very pass is settled). Enqueued
+    in the refresh's own transaction, so the date's advisory lock is released by run_one's commit.
+    """
+    if not CONFIG.expected_return_on_refresh or refresh_origin == "corner_backfill":
+        return None
+    if odds is None or odds.written <= 0:
+        return None
+    if not is_result_pending(session, race_id):
+        return None
+    race_date = session.scalar(select(Race.race_date).where(Race.race_id == race_id))
+    if race_date is None:
+        return None
+    er_job, _ = enqueue_expected_return(
+        session,
+        race_date,
+        source="manual_ui" if refresh_origin == "manual_ui" else "auto_after_refresh",
+    )
+    return str(er_job.ingestion_job_id)
 
 
 class CalibrationConfigurationError(ValueError):
@@ -713,6 +757,106 @@ def run_recommend(session: Session, job: IngestionJob, *, fetcher=None) -> Inges
     else:
         job.status = JobStatus.SUCCEEDED
         job.summary = {"kind": "recommend", "source": source, "output": tail, **audit}
+    session.add(job)
+    session.commit()
+    return job
+
+
+def _training_market_ev(race_date: str) -> subprocess.CompletedProcess:
+    """Feature 137: invoke the training CLI in its OWN env (`uv run --project training`) — ops must
+    not import the training stack (boundary II/VI). ``market-ev --date D --pending-only`` computes
+    every still-pending race of D that has odds and replaces that race's rows (a settled race keeps
+    the value computed on its pre-race odds); its final stdout line is ``OK: …`` or
+    ``SKIPPED: …`` and it exits non-zero on failure. Same env handling as _serving_predict
+    (cwd=training, VIRTUAL_ENV dropped). Monkeypatched in tests.
+
+    Launched in its own process group so a timeout kills the python grandchild too, not just the
+    `uv` launcher: an orphan still writing the date's rows would collide with the next recompute.
+    Raises subprocess.TimeoutExpired after killing the group."""
+    cmd = [
+        "uv", "run", "--project", str(_TRAINING_DIR), "python", "-m", "horseracing_training",
+        "market-ev", "--date", race_date, "--pending-only",
+        "--model-dir", CONFIG.market_ev_model_dir,
+        "--database-url", owner_database_url(),
+    ]
+    env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
+    proc = subprocess.Popen(  # noqa: S603 — fixed argv; race_date is a parsed ISO date
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        cwd=str(_TRAINING_DIR), env=env, start_new_session=True,
+    )
+    try:
+        stdout, stderr = proc.communicate(timeout=_MARKET_EV_TIMEOUT_S)
+    except Exception:
+        # generic despite its name: SIGKILLs the whole process group, then reaps the leader
+        _kill_capture_process_group(proc)
+        raise
+    return subprocess.CompletedProcess(
+        args=cmd, returncode=proc.returncode, stdout=stdout, stderr=stderr
+    )
+
+
+def _parse_marker(line: str) -> dict:
+    """``OK: races=3 horses=41 from=D1 to=D2`` → {"races": 3, "horses": 41, "from": …, "to": …}."""
+    out: dict = {}
+    for token in line.split(":", 1)[1].split():
+        key, sep, value = token.partition("=")
+        if not sep:
+            continue
+        out[key] = int(value) if value.isdigit() else value
+    return out
+
+
+def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:
+    """Feature 137: recompute one race date's 期待回収率 via the training CLI (no scrape, so
+    ``fetcher`` is unused — kept for the worker's uniform runner call).
+
+    Maps the CLI outcome by its final stdout line: non-zero exit → FAILED; ``SKIPPED:`` → SKIPPED
+    (no race of the date has odds); ``OK:`` → SUCCEEDED. rc 0 WITHOUT either marker is FAILED —
+    success is claimed only when the CLI says so. A timeout is FAILED too: the same date would time
+    out again, so a worker retry would only repeat ten minutes of compute. None of these are
+    worker-retried. The CLI persists market_ev_predictions itself (run_id / booster / sha256 per
+    row); the job keeps the enqueue-time source label and a short output tail, assigned once."""
+    race_date = datetime.date.fromisoformat(job.scope_value or "").isoformat()
+    audit = {
+        "kind": "expected_return",
+        "source": (job.summary or {}).get("source", "auto_after_refresh"),
+        "race_date": race_date,
+        "model_dir": CONFIG.market_ev_model_dir,
+    }
+    try:
+        proc = _training_market_ev(race_date)
+    except subprocess.TimeoutExpired:
+        job.completed_at = _now()
+        job.status = JobStatus.FAILED
+        job.error_message = f"market-ev timed out after {_MARKET_EV_TIMEOUT_S}s"
+        job.summary = {**audit, "error": job.error_message}
+        session.add(job)
+        session.commit()
+        return job
+
+    stdout = proc.stdout or ""
+    tail = ((proc.stderr or "") + stdout).strip()[-500:]
+    lines = [ln.strip() for ln in stdout.splitlines() if ln.strip()]
+    marker = lines[-1] if lines else ""
+    job.completed_at = _now()
+    if proc.returncode != 0:
+        job.status = JobStatus.FAILED
+        job.error_message = tail
+        job.summary = {**audit, "error": tail}
+    elif marker.startswith("SKIPPED:"):
+        job.status = JobStatus.SKIPPED
+        job.summary = {**audit, "reason": marker.split(":", 1)[1].strip()[:200]}
+    elif marker.startswith("OK:"):
+        result = _parse_marker(marker)
+        job.status = JobStatus.SUCCEEDED
+        horses = result.get("horses")
+        if isinstance(horses, int):
+            job.processed_rows = horses
+        job.summary = {**audit, "output": marker[:500], "result": result}
+    else:
+        job.status = JobStatus.FAILED
+        job.error_message = f"market-ev exited 0 without an OK:/SKIPPED: marker: {tail}"[:500]
+        job.summary = {**audit, "error": job.error_message}
     session.add(job)
     session.commit()
     return job

@@ -34,5 +34,15 @@ export const UNMEASURED_ODDS_DRIFT = /通常.*[%％]|平均して.*動|変動幅
  */
 export const CHAOS_PANEL_ONLY = /暫定|妙味|edge|儲|利益|EV 中立/i;
 
+/** feature 137 の期待回収率(列と注記)に限った禁止語。
+ *
+ * `PROFIT_LANGUAGE` は `回収率` を含むので、列見出し「期待回収率」と注記の検証要約そのものが
+ * 引っかかる。`PROFIT_LANGUAGE` は変えず(他パネルの規約を緩めない)、ここだけの集合を置く:
+ * `回収率` は許可し、利益が出るかのような表現(`利益が出`)を加える。注記は「利益は確認できて
+ * いません」「利益を保証するものではありません」と書くので、裸の `利益` は禁じない。
+ */
+export const EXPECTED_RETURN_SCOPE =
+  /妙味|危険|儲|edge|買うべき|勝てる|おすすめ|お得|利益が出/;
+
 /** 損益色として使ってはならない CSS クラス(表示規律)。 */
 export const PROFIT_COLOUR_SELECTOR = ".good, .bad, .danger, .success, .profit";

@@ -2,8 +2,9 @@ import { useState } from "react";
 
 import { Link, useParams } from "react-router-dom";
 
-import { usePredictions, useRace } from "../api/queries";
+import { useMarketEv, usePredictions, useRace } from "../api/queries";
 import { CalibrationChart } from "../components/CalibrationChart";
+import { ExpectedReturnNote } from "../components/ExpectedReturnNote";
 import { ImportanceChart } from "../components/ImportanceChart";
 import { JointPanel } from "../components/JointPanel";
 import { ModelSelector } from "../components/ModelSelector";
@@ -38,6 +39,9 @@ export function RaceDetailPage() {
   const [modelVersion, setModelVersion] = useState<string | undefined>(undefined);
   // Per-horse predictions WITHOUT joint params (no bet_type/top) → flat win/top2/top3 only.
   const predQuery = usePredictions(raceId, undefined, modelVersion);
+  // Feature 137: 期待回収率 from the SEPARATE market-aware model — independent of the win-model
+  // selection above (no model_version) and of whether the win model has predicted this race.
+  const marketEvQuery = useMarketEv(raceId);
   const [tab, setTab] = useState<Tab>("recs");
 
   const pred = predQuery.data;
@@ -147,11 +151,18 @@ export function RaceDetailPage() {
                 postTime={r.post_time}
                 hasResults={r.has_results}
               />
+              {/* Feature 137: 期待回収率の注記は出走表の直前に常時表示(別モデル・時刻・過去検証)。 */}
+              <ExpectedReturnNote
+                marketEv={marketEvQuery.data}
+                isLoading={marketEvQuery.isLoading}
+                error={marketEvQuery.error ?? null}
+              />
               <HorseEntriesTable
                 entries={r.horses}
                 predictions={pred?.horses ?? []}
                 oddsAsOf={pred?.odds_as_of}
                 canonicalConsistent={pred?.canonical_consistent}
+                marketEv={marketEvQuery.data}
               />
               <p className="table-hint">
                 列見出しをクリックで並び替え（市場評価＝単勝オッズ由来の推定値・実測ではありません）。

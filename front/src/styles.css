@@ -11,6 +11,8 @@
   --real-fg: #6fcf86;
   --error-bg: #3a1418;
   --error-fg: #ff8088;
+  /* Feature 137: 期待回収率 highlight — a neutral light mark, deliberately NOT green/red. */
+  --ev-mark: #d7dee8;
   font-family: system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
 }
 
@@ -526,6 +528,65 @@ th.colgroup {
 .entries-table tr.entry--cancelled {
   opacity: 0.45;
   text-decoration: line-through;
+}
+
+/* Feature 137: 期待回収率 (separate market-aware model, pseudo). The API-flagged rows get an
+   outline + a left bar + a text chip — never colour alone, never profit/loss green/red. */
+.entries-table th.ev-head {
+  white-space: nowrap;
+}
+.ev-cell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+/* 137: 期待回収率 120% 超の行。損益色(緑/赤)や既存の意味色(青/紫/琥珀/赤)を避け、
+   白の枠・太い左帯・濃いめの地色・塗りつぶしチップ・太字の値で「形」でも区別できるようにする。 */
+.entries-table tr.entry--ev-over > td {
+  border-top: 2px solid var(--ev-mark);
+  border-bottom: 2px solid var(--ev-mark);
+  background: color-mix(in srgb, var(--ev-mark) 13%, var(--panel));
+}
+.entries-table tr.entry--ev-over > td:first-child {
+  box-shadow: inset 7px 0 0 var(--ev-mark);
+  padding-left: 0.9rem;
+}
+.entries-table tr.entry--ev-over > td:last-child {
+  border-right: 2px solid var(--ev-mark);
+}
+.entries-table tr.entry--ev-over .ev-cell [data-pseudo="true"] {
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.ev-chip {
+  display: inline-block;
+  margin-top: 0.2rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--ev-mark);
+  border-radius: 4px;
+  background: var(--ev-mark);
+  color: var(--bg);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.ev-note {
+  margin: 0.5rem 0;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ev-mark);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.ev-note p {
+  margin: 0.15rem 0;
+}
+.ev-note .ev-note__title {
+  margin: 0 0 0.25rem;
+  color: var(--text);
+  font-weight: 600;
 }
 
 /* JRA 枠番カラー (1白 2黒 3赤 4青 5黄 6緑 7橙 8桃) */
