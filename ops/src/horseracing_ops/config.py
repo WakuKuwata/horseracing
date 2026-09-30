@@ -9,6 +9,29 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
+
+#: Feature 137: the market-aware 期待回収率 model directory (gitignored artifact). Absolute and
+#: derived from this file's location (ops/src/horseracing_ops/config.py → repo root = parents[3]),
+#: because the training CLI rejects relative paths and anything under `.claude/worktrees/`.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_MARKET_EV_MODEL_DIR = _REPO_ROOT / "artifacts" / "market_ev" / "mev-binary-v2"
+
+_FALSE_WORDS = frozenset({"0", "false", "no", "off"})
+
+
+def _bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    return raw.strip().lower() not in _FALSE_WORDS
+
+
+def _str(name: str, default: str) -> str:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    return raw.strip()
 
 
 def _int(name: str, default: int) -> int:
@@ -63,6 +86,12 @@ class OpsConfig:
     #: the per-refresh cap, so one click can never balloon into an unbounded scrape.
     corner_backfill_days: int = _int("OPS_CORNER_BACKFILL_DAYS", 14)
     corner_backfill_max_races: int = _int("OPS_CORNER_BACKFILL_MAX_RACES", 36)
+    #: Feature 137: a race refresh that WROTE win odds for a still-pending race queues a recompute
+    #: of that race date's 期待回収率 (the value is win_prob × the odds it was computed from, so
+    #: new odds make the stored one stale). Off-switch for the operator; default on.
+    expected_return_on_refresh: bool = _bool("OPS_EXPECTED_RETURN_ON_REFRESH", True)
+    #: Feature 137: absolute model directory handed to `horseracing_training market-ev`.
+    market_ev_model_dir: str = _str("OPS_MARKET_EV_MODEL_DIR", str(_DEFAULT_MARKET_EV_MODEL_DIR))
 
 
 CONFIG = OpsConfig()

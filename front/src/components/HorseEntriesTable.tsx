@@ -2,10 +2,16 @@ import { Fragment, useMemo, useState } from "react";
 
 import { Link } from "react-router-dom";
 
-import type { HorseEntry, HorsePrediction } from "../api/types";
+import type {
+  HorseEntry,
+  HorseMarketEv,
+  HorsePrediction,
+  MarketEvResponse,
+} from "../api/types";
 import { formatNum, formatPct, PLACEHOLDER } from "../lib/format";
 import { DataBackingBadge } from "./DataBackingBadge";
 import { ExplanationPanel } from "./ExplanationPanel";
+import { PseudoValue } from "./PseudoValue";
 
 // Feature 029: link a name to its profile when an id is present. `nk:` surrogates DO resolve to a
 // profile (the surrogate horse/jockey exists in the DB with its scraped identity + accumulated
@@ -74,6 +80,17 @@ const DIVERGENCE_LONG: Record<Div, string> = {
 const DIVERGENCE_TOOLTIP =
   "モデル勝率と市場評価の差です。意見の相違であり、的中や利益を保証するものではありません";
 
+// Feature 137: 期待回収率 comes from a SEPARATE market-aware model (current win odds are among its
+// inputs), not from the モデル勝率 column. Pseudo → always via <PseudoValue>. Deliberately NOT
+// sortable (ordering by it would be an edge sort, 021 R3) and never green/red.
+const EV_HEADER_TITLE =
+  "表の「モデル勝率」とは別の市場連動モデルが推定した勝率 × 単勝オッズ。推定値であり実績ではありません";
+
+/** "1.2" → "120%" (the API's threshold ratio, as shown on the highlight chip). */
+function thresholdLabel(threshold: number): string {
+  return `${Number((threshold * 100).toFixed(1))}%`;
+}
+
 function value(row: Row, key: ColKey): number | string | null | undefined {
   if (key === "win") return row.pred?.win ?? null;
   return (row as Record<string, unknown>)[key] as number | string | null | undefined;
@@ -107,17 +124,23 @@ function ProbBar({
  *  vote-share): its disclosure lives in the 単勝 header tooltip + the always-visible note under
  *  the table (user decision 2026-07-02 — badges were noise; the labelled sub-line + note keep
  *  021's "q never unlabelled" intent). Cancelled horses are dimmed with a badge next to the name
- *  (no dedicated 状態 column). */
+ *  (no dedicated 状態 column). Feature 137 adds a non-sortable 期待回収率 column (a separate
+ *  market-aware model, pseudo-badged) whenever that value is available; rows the API flags as
+ *  above the threshold get an outline + left bar + a text chip (never colour-only, never green/red). */
 export function HorseEntriesTable({
   entries,
   predictions,
   oddsAsOf,
   canonicalConsistent,
+  marketEv,
 }: {
   entries: HorseEntry[];
   predictions: HorsePrediction[];
   oddsAsOf?: string | null;
   canonicalConsistent?: boolean | null;
+  /** Feature 137: the market-aware expected return. The column shows only when available —
+   *  independent of whether the win model has predicted this race. */
+  marketEv?: MarketEvResponse | null;
 }) {
   // Default sort = モデル勝率 desc (the prediction IS what this screen is for; user decision
   // 2026-07-02). Without predictions every win is null → the null-last comparator keeps the
@@ -129,6 +152,17 @@ export function HorseEntriesTable({
   const hasPreds = predictions.length > 0;
   // 差(p−q) is only meaningful when the API confirms p and q share one canonical field (021 R1).
   const comparable = hasPreds && canonicalConsistent === true;
+  // Feature 137: the highlight flag is the API's exceeds_threshold (single source of truth) —
+  // never recomputed here from expected_return.
+  const evAvailable = marketEv?.status === "available";
+  const evByHorse = useMemo(
+    () =>
+      new Map<string, HorseMarketEv>(
+        marketEv?.status === "available" ? marketEv.horses.map((h) => [h.horse_id, h]) : [],
+      ),
+    [marketEv],
+  );
+  const evOverLabel = marketEv ? thresholdLabel(marketEv.threshold) : "";
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -178,7 +212,7 @@ export function HorseEntriesTable({
   const sortableColumns = hasPreds ? [...BASE_COLUMNS, ...PRED_COLUMNS] : BASE_COLUMNS;
   // total columns for the expansion row colSpan
   const totalCols =
-    sortableColumns.length + (comparable ? 1 : 0) + (hasPreds ? 1 : 0);
+    sortableColumns.length + (evAvailable ? 1 : 0) + (comparable ? 1 : 0) + (hasPreds ? 1 : 0);
 
   return (
     <div className="table-scroll">
@@ -197,6 +231,12 @@ export function HorseEntriesTable({
                 {sortKey === c.key ? (asc ? " ▲" : " ▼") : ""}
               </th>
             ))}
+            {/* 137: right after モデル勝率 (or after 単勝 without predictions) — NOT sortable */}
+            {evAvailable && (
+              <th className="num ev-head" title={EV_HEADER_TITLE}>
+                期待回収率
+              </th>
+            )}
             {comparable && (
               <th
                 className="num"
@@ -216,12 +256,15 @@ export function HorseEntriesTable({
             const q = r.pred?.market_win_prob;
             const diff = comparable && p != null && q != null ? p - q : null;
             const div = r.pred?.divergence ?? null;
+            // 137: a cancelled horse (or one without a stored row) shows "—", never a value.
+            const ev = evAvailable && !cancelled ? evByHorse.get(r.horse_id) : undefined;
+            const evOver = ev?.exceeds_threshold === true;
             return (
               <Fragment key={r.horse_id}>
                 <tr
                   className={`entry-row${i % 2 ? " row--alt" : ""}${
                     cancelled ? " entry--cancelled" : ""
-                  }`}
+                  }${evOver ? " entry--ev-over" : ""}`}
                 >
                   <td>
                     <span className="umaban-cell">
@@ -299,6 +342,31 @@ export function HorseEntriesTable({
                         <span className="cell-sub">複勝 {formatPct(r.pred?.top3, 0)}</span>
                       )}
                       <ProbBar value={p} max={probMax} variant="p" />
+                    </td>
+                  )}
+                  {evAvailable && (
+                    <td className="num ev-cell">
+                      {ev ? (
+                        <>
+                          <span className="cell-main">
+                            <PseudoValue kind="expected_return">
+                              {formatPct(ev.expected_return, 1)}
+                            </PseudoValue>
+                          </span>
+                          {evOver && (
+                            <span
+                              className="ev-chip"
+                              role="note"
+                              aria-label={`期待回収率が${evOverLabel}を超えています`}
+                              title={`期待回収率が${evOverLabel}を超えています`}
+                            >
+                              {evOverLabel}超
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        PLACEHOLDER
+                      )}
                     </td>
                   )}
                   {comparable && (

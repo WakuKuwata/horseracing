@@ -33,6 +33,24 @@ export function formatDateTime(value: string | null | undefined): string {
   return value.replace("T", " ").replace(/\.\d+/, "").replace("Z", " UTC");
 }
 
+/** ISO datetime → human-facing "YYYY/MM/DD HH:MM" in Asia/Tokyo (the race-time zone), or null
+ *  when absent/unparseable. formatDateTime above is the UTC audit form; this is what people read
+ *  next to race times (OddsFreshness, Feature 137 期待回収率 note). */
+export function formatJstDateTime(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Tokyo",
+  }).format(date);
+}
+
 /** Post time (JST-aware ISO) → "12:55" in Asia/Tokyo; em-dash when absent. netkeiba-sourced, so
  *  JRA-VAN-only races have none — callers may omit the chip rather than render the placeholder. */
 export function formatPostTime(value: string | null | undefined): string {

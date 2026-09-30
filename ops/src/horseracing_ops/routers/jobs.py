@@ -34,7 +34,9 @@ def _to_job(j: IngestionJob) -> Job:
     return Job(
         job_id=j.ingestion_job_id, job_type=j.job_type, status=j.status, scope=j.scope,
         scope_value=j.scope_value, trace_id=j.trace_id, kind=summary.get("kind"),
-        reason=summary.get("reason"), followup_job_id=summary.get("recommend_job_id"),
+        reason=summary.get("reason"),
+        # predict → auto recommend (028/043), refresh_race → 期待回収率 recompute (137)
+        followup_job_id=summary.get("recommend_job_id") or summary.get("expected_return_job_id"),
         processed_rows=j.processed_rows, skipped_rows=j.skipped_rows, error_count=j.error_count,
         retry_count=j.retry_count, started_at=j.started_at, completed_at=j.completed_at,
         error_message=j.error_message,

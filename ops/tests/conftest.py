@@ -8,6 +8,7 @@ so the TestClient reads the SAME database the `session` fixture seeds. A network
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -141,3 +142,27 @@ def _isolate_robots_cache(monkeypatch):
     a RobotsCache on tmp_path explicitly.
     """
     monkeypatch.setenv("HORSERACING_ROBOTS_CACHE_DIR", "")
+
+
+@pytest.fixture(autouse=True)
+def _no_real_market_ev_subprocess(monkeypatch):
+    """Feature 137: a refresh that writes odds for a pending race queues an ``expected_return`` job.
+    A test that then drains it must never launch the real training CLI (minutes of compute against
+    the test database) — and must not pass silently if it does, because the worker swallows the
+    outcome into a job status. Tests that exercise the job monkeypatch
+    ``runner._training_market_ev`` themselves, which overrides this guard."""
+    from horseracing_ops import runner
+
+    calls: list[str] = []
+
+    def _guard(race_date: str) -> subprocess.CompletedProcess:
+        calls.append(race_date)
+        return subprocess.CompletedProcess(args=[], returncode=97, stdout="",
+                                           stderr="test guard: real market-ev launcher reached")
+
+    monkeypatch.setattr(runner, "_training_market_ev", _guard)
+    yield
+    assert not calls, (
+        f"test reached the real market-ev launcher for {calls}: monkeypatch "
+        "runner._training_market_ev, or drain only the IO lane"
+    )

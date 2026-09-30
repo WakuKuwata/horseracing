@@ -165,12 +165,12 @@ def test_capture_provenance_not_in_calibration_inputs_or_bet_selection():
     )
 
 
-def test_migration_head_is_0017_purchase_records():
+def test_migration_head_is_0018_market_ev_predictions():
     versions = sorted(
         path.stem
         for path in (_ROOT / "db" / "migrations" / "versions").glob("0*.py")
     )
-    assert versions[-1] == "0017_purchase_records", versions[-1]
+    assert versions[-1] == "0018_market_ev_predictions", versions[-1]
 
 
 def test_capture_policy_version_is_not_a_prospective_stratification_key():

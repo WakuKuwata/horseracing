@@ -7,9 +7,11 @@ import {
   happyHandlers,
   http,
   HttpResponse,
+  marketEvAvailable,
   raceDetail,
   recommendationResponse,
 } from "../tests/fixtures";
+import { assertPseudoLabelCoverage } from "../tests/pseudo";
 import { renderWithProviders } from "../tests/utils";
 import { RaceDetailPage } from "./RaceDetailPage";
 
@@ -83,5 +85,59 @@ describe("RaceDetailPage", () => {
     const card = await screen.findByTestId("bet-slip-card-rec-w1");
     expect(within(card).getByText("サンプルホース")).toBeInTheDocument();
     expect(card.querySelector(".frame-chip--3")).toHaveTextContent("1");
+  });
+
+  // Feature 137: the page fetches the market-aware expected return on its own (no model_version),
+  // puts the note right before the entries table and passes the value into the table column.
+  it("wires 期待回収率: note before the table, badged column, API-flagged highlight", async () => {
+    const marketEvUrls: string[] = [];
+    server.use(
+      http.get("*/api/v1/races/:id", () =>
+        HttpResponse.json({
+          ...raceDetail,
+          horses: [
+            { horse_id: "h1", horse_number: 1, entry_status: "started", horse_name: "イチ" },
+            { horse_id: "h2", horse_number: 2, entry_status: "started", horse_name: "ニ" },
+          ],
+        }),
+      ),
+      http.get("*/api/v1/races/:id/market-ev", ({ request }) => {
+        marketEvUrls.push(request.url);
+        return HttpResponse.json(marketEvAvailable);
+      }),
+      // overrides FIRST — MSW resolves handlers first-match-wins
+      ...happyHandlers,
+    );
+    const { container } = renderDetail();
+
+    // distinct values (1.237 / 0.864) so no other test's percentage lookup collides
+    expect(await screen.findByText("123.7%")).toBeInTheDocument();
+    expect(screen.getByText("86.4%")).toBeInTheDocument();
+    assertPseudoLabelCoverage(container, ["123.7%", "86.4%"]);
+
+    const note = screen.getByTestId("expected-return-note");
+    expect(note).toHaveTextContent("市場連動モデル(mev-binary-v2)");
+    const table = container.querySelector("table.entries-table")!;
+    // the note sits BEFORE the entries table
+    expect(note.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // h1 is flagged by the API → highlighted with the chip; h2 is not
+    const flagged = container.querySelectorAll("tr.entry--ev-over");
+    expect(flagged).toHaveLength(1);
+    expect(within(flagged[0] as HTMLElement).getByText("イチ")).toBeInTheDocument();
+    expect(within(flagged[0] as HTMLElement).getByText("120%超")).toBeInTheDocument();
+
+    // independent of the win-model selection: no model_version (or any) query parameter
+    expect(marketEvUrls.length).toBeGreaterThan(0);
+    for (const u of marketEvUrls) expect(new URL(u).search).toBe("");
+  });
+
+  it("default (not computed): reason in the note, no 期待回収率 column", async () => {
+    server.use(...happyHandlers);
+    renderDetail();
+    expect(
+      await screen.findByText("このレースの期待回収率はまだ計算されていません"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("期待回収率", { selector: "th" })).toBeNull();
   });
 });

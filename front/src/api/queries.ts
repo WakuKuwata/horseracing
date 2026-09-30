@@ -8,6 +8,7 @@ import type {
   ImportanceResponse,
   JockeyHistoryPage,
   JockeyProfile,
+  MarketEvResponse,
   OddsResponse,
   PredictionResponse,
   PurchaseComparisonResponse,
@@ -139,6 +140,22 @@ export function useRecommendations(raceId: string) {
     queryFn: async () =>
       unwrap(
         await api.GET("/api/v1/races/{race_id}/recommendations", {
+          params: { path: { race_id: raceId } },
+        }),
+      ),
+  });
+}
+
+// --- Feature 137: market-aware expected return (期待回収率) ---------------------
+// Independent of the win-model selection (the endpoint takes no model_version). Every non-error
+// answer is a typed 200 (available / unavailable), so retrying cannot change the outcome.
+export function useMarketEv(raceId: string) {
+  return useQuery<MarketEvResponse, ErrorInfo>({
+    queryKey: ["market-ev", raceId],
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/races/{race_id}/market-ev", {
           params: { path: { race_id: raceId } },
         }),
       ),

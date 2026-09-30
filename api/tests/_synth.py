@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import datetime
+import uuid
 from decimal import Decimal
 
 from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus, ResultStatus
 from horseracing_db.models import (
     ExoticOdds,
     Horse,
+    MarketEvPrediction,
     ModelVersion,
     PredictionRun,
     Race,
@@ -83,3 +85,38 @@ def add_recommendation(session, *, race_id, run_id, bet_type=BetType.EXACTA, sel
         logic_version="rec-lv",
     ))
     session.commit()
+
+
+def seed_market_ev(
+    session: Session,
+    *,
+    race_id: str,
+    horses: dict[int, dict],  # horse_number -> {win_prob, odds_used, expected_return?, horse_id?, ...}
+    model_version="mev-binary-v2",
+    logic_version="mev-v1;test",
+    computed_at=datetime.datetime(2026, 9, 27, 3, 0, tzinfo=datetime.UTC),
+    odds_observed_at=datetime.datetime(2026, 9, 27, 2, 50, tzinfo=datetime.UTC),
+    result_pending=True,
+    booster="model_2026.txt",
+):
+    """Feature 137: persist market-aware expected-return rows (one compute run) for a race.
+
+    expected_return defaults to win_prob × odds_used (as the training job stores it). Per-horse
+    overrides: horse_id, expected_return, odds_observed_at, result_pending.
+    """
+    run_id = uuid.uuid4()
+    for n, h in horses.items():
+        win_prob = Decimal(str(h["win_prob"]))
+        odds_used = Decimal(str(h["odds_used"]))
+        expected = (Decimal(str(h["expected_return"])) if "expected_return" in h
+                    else win_prob * odds_used)
+        session.add(MarketEvPrediction(
+            race_id=race_id, model_version=model_version, horse_id=h.get("horse_id", f"H{n}"),
+            horse_number=n, win_prob=win_prob, odds_used=odds_used, expected_return=expected,
+            odds_observed_at=h.get("odds_observed_at", odds_observed_at),
+            result_pending_at_compute=h.get("result_pending", result_pending),
+            booster=booster, booster_sha256="0" * 64, logic_version=logic_version,
+            run_id=run_id, computed_at=computed_at,
+        ))
+    session.commit()
+    return run_id

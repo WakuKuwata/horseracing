@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from . import (
     JOB_TYPE_DAY,
+    JOB_TYPE_EXPECTED_RETURN,
     JOB_TYPE_PREDICT,
     JOB_TYPE_RACE,
     JOB_TYPE_RECOMMEND,
@@ -32,6 +33,7 @@ DEFAULT_FRESH_SECONDS = CONFIG.fresh_seconds
 _ACTIVE = (JobStatus.QUEUED, JobStatus.RUNNING)
 PredictOrigin = Literal["manual_ui", "auto_after_refresh"]
 RefreshOrigin = Literal["manual_ui", "daily_bulk", "corner_backfill"]
+ExpectedReturnSource = Literal["manual_ui", "auto_after_refresh"]
 
 
 def _now() -> datetime.datetime:
@@ -383,6 +385,61 @@ def enqueue_refresh_range(
         source=Source.NETKEIBA, job_type=JOB_TYPE_REFRESH_RANGE,
         scope="range", scope_value=scope_value,
         status=JobStatus.QUEUED, summary={"kind": "refresh_range", "source": "manual"},
+    )
+    session.add(job)
+    session.flush()
+    return job, False
+
+
+def enqueue_expected_return(
+    session: Session,
+    race_date: datetime.date,
+    *,
+    source: ExpectedReturnSource,
+) -> tuple[IngestionJob, bool]:
+    """Feature 137: enqueue a 期待回収率 recompute for ONE race date. (job, reused); caller commits.
+
+    One job = one date (``scope="date"``, ``scope_value="YYYY-MM-DD"``): the training CLI computes
+    every race of the date that has odds, so a day refresh touching 36 races converges on a single
+    queued job instead of 36 subprocesses.
+
+    Dedup reuses a QUEUED job ONLY. A RUNNING job has already read the odds it will persist — these
+    very odds may have landed after it did — so riding it would leave the stored value computed
+    from stale odds with nothing queued to correct it. A completed job is not reused either. The
+    worker runs at most one expected_return at a time (worker.claim_one), so the newer job cannot
+    race the running one over the same races' rows.
+
+    ``source`` is the audit label and the CPU-lane rank key: ``manual_ui`` (a refresh clicked on the
+    race page — a human is looking at the table) or ``auto_after_refresh`` (bulk). A manual trigger
+    that lands on a QUEUED automatic job promotes it (same shape as enqueue_predict).
+    """
+    if source not in {"manual_ui", "auto_after_refresh"}:
+        raise ValueError(f"unsupported expected_return source: {source!r}")
+    if isinstance(race_date, datetime.datetime):
+        race_date = race_date.date()
+    if not isinstance(race_date, datetime.date):
+        raise TypeError(f"race_date must be a date, got {type(race_date).__name__}")
+    scope_value = race_date.isoformat()
+    session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
+                    {"k": f"expected_return:{scope_value}"})
+    queued = session.scalars(
+        select(IngestionJob)
+        .where(IngestionJob.job_type == JOB_TYPE_EXPECTED_RETURN)
+        .where(IngestionJob.scope_value == scope_value)
+        .where(IngestionJob.status == JobStatus.QUEUED)
+        .order_by(IngestionJob.created_at.desc())
+        .with_for_update()
+    ).first()
+    if queued is not None:
+        if source == "manual_ui" and (queued.summary or {}).get("source") != "manual_ui":
+            queued.summary = {**(queued.summary or {}), "source": "manual_ui"}
+            session.flush()
+        return queued, True
+
+    job = IngestionJob(
+        source=Source.NETKEIBA, job_type=JOB_TYPE_EXPECTED_RETURN,
+        scope="date", scope_value=scope_value,
+        status=JobStatus.QUEUED, summary={"kind": "expected_return", "source": source},
     )
     session.add(job)
     session.flush()

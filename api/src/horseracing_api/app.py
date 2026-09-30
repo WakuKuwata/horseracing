@@ -27,6 +27,7 @@ from .routers import (
     importance,
     jobs,
     jockeys,
+    market_ev,
     models,
     odds,
     predictions,
@@ -99,3 +100,4 @@ app.include_router(shadow_log.router, prefix=API_PREFIX)
 app.include_router(horses.router, prefix=API_PREFIX)
 app.include_router(jockeys.router, prefix=API_PREFIX)
 app.include_router(purchase.router, prefix=API_PREFIX)
+app.include_router(market_ev.router, prefix=API_PREFIX)

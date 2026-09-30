@@ -3,6 +3,8 @@ import { http, HttpResponse } from "msw";
 import type {
   CalibrationResponse,
   ImportanceResponse,
+  MarketEvAvailable,
+  MarketEvUnavailable,
   OddsResponse,
   PredictionResponse,
   RaceDetail,
@@ -210,6 +212,34 @@ export const shadowLogResponse = {
   first_at: "2026-08-01T09:00:00", last_at: "2026-08-15T09:00:00",
 };
 
+// Feature 137: the default is the typed empty state (not computed) so no existing test sees an
+// extra 期待回収率 column or percentage string; wiring tests install marketEvAvailable explicitly.
+export const marketEvNotComputed: MarketEvUnavailable = {
+  status: "unavailable",
+  race_id: "200806010111",
+  reason: "not_computed",
+  threshold: 1.2,
+};
+
+export const marketEvAvailable: MarketEvAvailable = {
+  status: "available",
+  race_id: "200806010111",
+  model_version: "mev-binary-v2",
+  logic_version: "mev-v1;features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007",
+  computed_at: "2008-06-01T01:15:00Z",
+  odds_observed_at: "2008-06-01T01:10:00Z",
+  odds_changed_after_compute: false,
+  result_pending_at_compute: true,
+  threshold: 1.2,
+  is_pseudo: true,
+  horses: [
+    { horse_id: "h1", horse_number: 1, expected_return: 1.237, odds_used: 3.1,
+      exceeds_threshold: true },
+    { horse_id: "h2", horse_number: 2, expected_return: 0.864, odds_used: 5.4,
+      exceeds_threshold: false },
+  ],
+};
+
 /** Default happy-path handlers; tests override individually with server.use(). */
 export const happyHandlers = [
   http.get(`${BASE}/shadow-log`, () => HttpResponse.json(shadowLogResponse)),
@@ -221,6 +251,7 @@ export const happyHandlers = [
   }),
   http.get(`${BASE}/races/:id/odds`, () => HttpResponse.json(oddsResponse)),
   http.get(`${BASE}/races/:id/recommendations`, () => HttpResponse.json(recommendationResponse)),
+  http.get(`${BASE}/races/:id/market-ev`, () => HttpResponse.json(marketEvNotComputed)),
   http.get(`${BASE}/models/:mv/calibration`, () => HttpResponse.json(calibrationResponse)),
   http.get(`${BASE}/models/:mv/importance`, () => HttpResponse.json(importanceResponse)),
 ];

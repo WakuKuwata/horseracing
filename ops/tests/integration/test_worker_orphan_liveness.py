@@ -22,6 +22,7 @@ from horseracing_db.models import IngestionJob
 from sqlalchemy.orm import sessionmaker
 
 from horseracing_ops import (
+    JOB_TYPE_EXPECTED_RETURN,
     JOB_TYPE_PREDICT,
     JOB_TYPE_RACE,
     JOB_TYPE_RECOMMEND,
@@ -100,7 +101,8 @@ def test_a_job_this_process_is_running_is_never_reclaimed(session):
 
 
 @pytest.mark.parametrize(
-    "job_type", [JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND, JOB_TYPE_REFRESH_RANGE]
+    "job_type",
+    [JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND, JOB_TYPE_REFRESH_RANGE, JOB_TYPE_EXPECTED_RETURN],
 )
 def test_detached_child_types_keep_an_age_floor(session, job_type):
     """CPU-lane runners shell out; those children outlive a killed parent and keep writing.
@@ -138,6 +140,18 @@ def test_grace_covers_the_runners_subprocess_timeouts():
     assert _DETACHED_CHILD_GRACE_S[JOB_TYPE_PREDICT] >= runner._SERVING_TIMEOUT_S
     assert _DETACHED_CHILD_GRACE_S[JOB_TYPE_RECOMMEND] >= runner._BETTING_TIMEOUT_S
     assert _DETACHED_CHILD_GRACE_S[JOB_TYPE_REFRESH_RANGE] >= runner._LIVE_TIMEOUT_S
+    assert _DETACHED_CHILD_GRACE_S[JOB_TYPE_EXPECTED_RETURN] > runner._MARKET_EV_TIMEOUT_S
+
+
+def test_expected_return_timeout_stays_inside_the_generic_stale_window():
+    """expected_return has no per-type stale window (unlike refresh_range), so its subprocess
+    timeout must stay under the generic one — or a legitimately running recompute would be
+    re-queued by an age-based sweep while its child is still writing."""
+    from horseracing_ops import runner
+    from horseracing_ops.worker import STALE_RUNNING_SECONDS
+
+    assert runner._MARKET_EV_TIMEOUT_S < STALE_RUNNING_SECONDS
+    assert _DETACHED_CHILD_GRACE_S[JOB_TYPE_EXPECTED_RETURN] <= STALE_RUNNING_SECONDS
 
 
 # --- ordering: a row must never be visible as RUNNING before it is registered ---------------------

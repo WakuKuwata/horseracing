@@ -1306,7 +1306,32 @@ def main(argv: list[str] | None = None) -> int:
                     help="build a NON-production (fixture-scope) manifest at a dirty/unknown SHA")
     gm.add_argument("--database-url", default=None)
 
+    # Feature 137: market-aware expected return (期待回収率). A SEPARATE model that takes the
+    # current win odds as an input; its rows are display-only and never re-enter any feature.
+    mev = sub.add_parser("market-ev",
+                         help="137: compute + persist the market-aware expected return per horse")
+    mev_scope = mev.add_mutually_exclusive_group(required=True)
+    mev_scope.add_argument("--date", type=_parse_date, default=None, metavar="YYYY-MM-DD",
+                           help="compute every race of this race day")
+    mev_scope.add_argument("--race-id", default=None,
+                           help="compute the whole race day of this race")
+    mev_scope.add_argument("--from", dest="from_", type=_parse_date, default=None,
+                           metavar="YYYY-MM-DD", help="range start (requires --to)")
+    mev.add_argument("--to", dest="to", type=_parse_date, default=None, metavar="YYYY-MM-DD",
+                     help="range end (only together with --from)")
+    mev.add_argument("--model-dir", required=True,
+                     help="ABSOLUTE path of the model directory (model.spec.json + "
+                          "model_YYYY.txt); paths inside a Claude worktree are rejected")
+    mev.add_argument("--model-version", default=None,
+                     help="default: the basename of --model-dir")
+    mev.add_argument("--pending-only", action="store_true",
+                     help="rewrite only races without results (settled races keep their "
+                          "pre-race value); used by the automatic recompute after an odds refresh")
+    mev.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
+    if args.command == "market-ev":
+        return _market_ev(args, mev)
     if args.command == "oof-generate":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1458,6 +1483,70 @@ def main(argv: list[str] | None = None) -> int:
         _print_summary(summary)
         return 0
     return 1
+
+
+def _market_ev(args, parser: argparse.ArgumentParser) -> int:
+    """Feature 137 (plan 0.3): compute + persist the market-aware expected return.
+
+    Argument errors exit 2 (argparse) before any DB access. The LAST stdout line is the machine
+    marker the ops runner reads: ``OK: races=N horses=M from=D1 to=D2`` or
+    ``SKIPPED: no_races_with_odds``. Any failure prints ``ERROR: ...`` to stderr and returns 1.
+    """
+    import traceback
+
+    from . import market_ev
+
+    if (args.from_ is None) != (args.to is None):
+        parser.error("--from and --to must be given together (and --to only with --from)")
+    if args.from_ is not None and args.from_ > args.to:
+        parser.error(f"--from {args.from_} is after --to {args.to}")
+    try:
+        model_dir = market_ev.validate_model_dir(args.model_dir)
+    except ValueError as exc:
+        parser.error(str(exc))
+    if not (model_dir / "model.spec.json").is_file():
+        parser.error(f"--model-dir has no model.spec.json: {model_dir}")
+
+    engine = create_db_engine(args.database_url)
+    try:
+        with Session(engine) as session:
+            if args.race_id is not None:
+                d_from = d_to = market_ev.resolve_race_date(session, args.race_id)
+            elif args.date is not None:
+                d_from = d_to = args.date
+            else:
+                d_from, d_to = args.from_, args.to
+            result = market_ev.compute_and_persist(
+                session,
+                race_date_from=d_from,
+                race_date_to=d_to,
+                model_dir=model_dir,
+                model_version=args.model_version,
+                pending_only=args.pending_only,
+            )
+    except Exception as exc:
+        traceback.print_exc(file=sys.stderr)
+        print(f"ERROR: market-ev failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+
+    boosters = ",".join(f"{name}:{sha[:12]}" for name, sha in result["boosters"].items())
+    print(
+        f"market-ev: model_version={result['model_version']} "
+        f"logic_version={result['logic_version']} run_id={result['run_id']} "
+        f"races_in_range={result['races_in_range']} "
+        f"races_invalid_odds={result['races_invalid_odds']} "
+        f"result_pending_races={result['result_pending_races']} boosters={boosters or '-'}"
+    )
+    if result["status"] != "ok":
+        print(f"SKIPPED: {result['reason']}")
+        return 0
+    print(
+        f"OK: races={result['races']} horses={result['horses']} "
+        f"from={result['from']} to={result['to']}"
+    )
+    return 0
 
 
 def _expand_group_drops(group_names: tuple[str, ...]) -> tuple[str, ...]:

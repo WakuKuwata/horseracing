@@ -23,8 +23,20 @@ const JOB_TYPES = [
   "horse_profile",
   "predict",
   "recommend",
+  "expected_return",
   "race_laps",
 ];
+// Human-readable names for job types whose identifier alone does not say what they compute.
+// The identifier stays visible (it is what the filter sends and what the DB stores).
+const JOB_TYPE_LABELS: Record<string, string> = {
+  expected_return: "期待回収率",
+};
+
+function jobTypeText(t: string | null | undefined): string {
+  if (!t) return textOr(t);
+  const label = JOB_TYPE_LABELS[t];
+  return label ? `${t}(${label})` : t;
+}
 
 /**
  * Feature 052 US2: ingestion_jobs history — the ops service only exposes single-job polling;
@@ -53,7 +65,7 @@ export function JobsPage() {
         <label>
           種別
           <select value={jobType} onChange={(e) => setJobType(e.target.value)}>
-            {JOB_TYPES.map((t) => <option key={t} value={t}>{t || "すべて"}</option>)}
+            {JOB_TYPES.map((t) => <option key={t} value={t}>{t ? jobTypeText(t) : "すべて"}</option>)}
           </select>
         </label>
       </div>
@@ -86,7 +98,7 @@ export function JobsPage() {
                   : null;
                 return (
                   <tr key={j.ingestion_job_id} data-status={j.status}>
-                    <td>{textOr(j.job_type)}</td>
+                    <td>{jobTypeText(j.job_type)}</td>
                     <td>{textOr(j.scope_value)}</td>
                     <td>
                       <span className={`badge badge--job-${j.status}`}>{j.status}</span>
