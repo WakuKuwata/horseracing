@@ -92,11 +92,14 @@ def main(argv=None) -> int:
     ap.add_argument("--train-from", type=int, default=1986, help="earliest training year (history-length sensitivity)")
     ap.add_argument("--save-last-model", default="", help="path prefix: save the last year's booster + feature/category spec")
     ap.add_argument("--rows", default="", help="alternative rows parquet (e.g. the 2007+ product export)")
+    ap.add_argument("--train-window-years", type=int, default=0,
+                    help=">0: rolling window — train year y on [y-N, y-1] only (default 0 = expanding from --train-from)")
     args = ap.parse_args(argv)
     tag = f"armC_{args.objective}" + ("_withp" if args.with_model_p else "") + (f"_seed{args.seed}" if args.seed != 1 else "") \
         + (f"_drop-{args.drop_groups.replace(',', '+')}" if args.drop_groups else "") \
         + (f"_nullq{args.synthetic_q}" if args.synthetic_q else "") \
-        + (f"_from{args.train_from}" if args.train_from != 1986 else "") + args.tag
+        + (f"_from{args.train_from}" if args.train_from != 1986 else "") \
+        + (f"_win{args.train_window_years}" if args.train_window_years else "") + args.tag
     out_dir = ART / "results" / tag
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -148,6 +151,8 @@ def main(argv=None) -> int:
     importances = {}
     for yv in range(args.start_year, args.end_year + 1):
         tr = (years < yv) & (years >= args.train_from); te = years == yv
+        if args.train_window_years:
+            tr &= years >= yv - args.train_window_years
         if args.with_model_p:
             tr &= years >= 2008
         if te.sum() == 0 or tr.sum() < 50000:
