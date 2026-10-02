@@ -39,6 +39,10 @@ describe("openapi snapshot", () => {
         "/api/v1/races/{race_id}/recommendations",
         // Feature 137: market-aware expected return (read-only, separate from the win model)
         "/api/v1/races/{race_id}/market-ev",
+        // feature 138: 注目条件(判断時点の該当・凍結表と前向き現況・当日一覧)
+        "/api/v1/races/{race_id}/attention",
+        "/api/v1/attention-rules",
+        "/api/v1/attention/day",
         // Feature 065: prospective shadow-betting log (read-only honest instrument)
         "/api/v1/shadow-log",
         "/api/v1/models/{model_version}/calibration",

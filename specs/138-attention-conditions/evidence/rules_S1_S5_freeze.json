@@ -1,0 +1,1013 @@
+{
+ "adoption_gate": {
+  "ece_equal_mass": "ens15 <= single + 0.001",
+  "ens15": {
+   "ece_equal_mass": 0.000655,
+   "logloss": 0.201204
+  },
+  "logloss": "ens15 <= single",
+  "passed": true,
+  "single": {
+   "ece_equal_mass": 0.001106,
+   "logloss": 0.201584
+  },
+  "tol_ece": 0.001,
+  "window": "ALL"
+ },
+ "all_horses": {
+  "ALL": {
+   "all": 0.721982,
+   "ens15_ev_gt_1.2": 1.064064,
+   "single_ev_gt_1.2": 1.008277
+  },
+  "C": {
+   "all": 0.720328,
+   "ens15_ev_gt_1.2": 1.112789,
+   "single_ev_gt_1.2": 0.995144
+  }
+ },
+ "bootstrap": {
+  "b": 20000,
+  "block": "race_day",
+  "block_universe": "race-days with >=1 selected bet of the rule in the window",
+  "day_key_order": "ascending ISO race_date",
+  "impl": "horseracing_eval.bootstrap.race_block_ratio_bootstrap_ci_v1",
+  "rng": "numpy.default_rng(PCG64)",
+  "seed": 20260905
+ },
+ "calibration": {
+  "ens15": {
+   "ALL": {
+    "ece_equal_mass": 0.000655,
+    "ece_equal_width": 0.000913,
+    "logloss": 0.201204,
+    "mean_p": 0.070775,
+    "n": 786049,
+    "reliability": [
+     {
+      "mean_p": 0.007243,
+      "n": 319059,
+      "p_hi": 0.02,
+      "p_lo": 0.0,
+      "win_rate": 0.007463
+     },
+     {
+      "mean_p": 0.033056,
+      "n": 152978,
+      "p_hi": 0.05,
+      "p_lo": 0.02,
+      "win_rate": 0.033593
+     },
+     {
+      "mean_p": 0.072672,
+      "n": 125506,
+      "p_hi": 0.1,
+      "p_lo": 0.05,
+      "win_rate": 0.073502
+     },
+     {
+      "mean_p": 0.122799,
+      "n": 73341,
+      "p_hi": 0.15,
+      "p_lo": 0.1,
+      "win_rate": 0.120069
+     },
+     {
+      "mean_p": 0.17247,
+      "n": 40661,
+      "p_hi": 0.2,
+      "p_lo": 0.15,
+      "win_rate": 0.170065
+     },
+     {
+      "mean_p": 0.244458,
+      "n": 43099,
+      "p_hi": 0.3,
+      "p_lo": 0.2,
+      "win_rate": 0.245226
+     },
+     {
+      "mean_p": 0.367916,
+      "n": 26602,
+      "p_hi": 0.5,
+      "p_lo": 0.3,
+      "win_rate": 0.367566
+     },
+     {
+      "mean_p": 0.583381,
+      "n": 4803,
+      "p_hi": 1.0,
+      "p_lo": 0.5,
+      "win_rate": 0.587549
+     }
+    ],
+    "win_rate": 0.070778
+   },
+   "C": {
+    "ece_equal_mass": 0.000928,
+    "ece_equal_width": 0.000837,
+    "logloss": 0.203484,
+    "mean_p": 0.072864,
+    "n": 355466,
+    "reliability": [
+     {
+      "mean_p": 0.007385,
+      "n": 142560,
+      "p_hi": 0.02,
+      "p_lo": 0.0,
+      "win_rate": 0.007358
+     },
+     {
+      "mean_p": 0.033255,
+      "n": 69492,
+      "p_hi": 0.05,
+      "p_lo": 0.02,
+      "win_rate": 0.033687
+     },
+     {
+      "mean_p": 0.072692,
+      "n": 55253,
+      "p_hi": 0.1,
+      "p_lo": 0.05,
+      "win_rate": 0.071544
+     },
+     {
+      "mean_p": 0.123092,
+      "n": 33810,
+      "p_hi": 0.15,
+      "p_lo": 0.1,
+      "win_rate": 0.118959
+     },
+     {
+      "mean_p": 0.172265,
+      "n": 19117,
+      "p_hi": 0.2,
+      "p_lo": 0.15,
+      "win_rate": 0.172098
+     },
+     {
+      "mean_p": 0.244645,
+      "n": 19730,
+      "p_hi": 0.3,
+      "p_lo": 0.2,
+      "win_rate": 0.246275
+     },
+     {
+      "mean_p": 0.369379,
+      "n": 13173,
+      "p_hi": 0.5,
+      "p_lo": 0.3,
+      "win_rate": 0.366887
+     },
+     {
+      "mean_p": 0.588938,
+      "n": 2331,
+      "p_hi": 1.0,
+      "p_lo": 0.5,
+      "win_rate": 0.59674
+     }
+    ],
+    "win_rate": 0.072406
+   }
+  },
+  "single": {
+   "ALL": {
+    "ece_equal_mass": 0.001106,
+    "ece_equal_width": 0.001284,
+    "logloss": 0.201584,
+    "mean_p": 0.070826,
+    "n": 786049,
+    "reliability": [
+     {
+      "mean_p": 0.007177,
+      "n": 320394,
+      "p_hi": 0.02,
+      "p_lo": 0.0,
+      "win_rate": 0.007581
+     },
+     {
+      "mean_p": 0.033074,
+      "n": 152467,
+      "p_hi": 0.05,
+      "p_lo": 0.02,
+      "win_rate": 0.034093
+     },
+     {
+      "mean_p": 0.072543,
+      "n": 124934,
+      "p_hi": 0.1,
+      "p_lo": 0.05,
+      "win_rate": 0.073943
+     },
+     {
+      "mean_p": 0.122741,
+      "n": 72483,
+      "p_hi": 0.15,
+      "p_lo": 0.1,
+      "win_rate": 0.120483
+     },
+     {
+      "mean_p": 0.172528,
+      "n": 40853,
+      "p_hi": 0.2,
+      "p_lo": 0.15,
+      "win_rate": 0.167846
+     },
+     {
+      "mean_p": 0.244499,
+      "n": 43114,
+      "p_hi": 0.3,
+      "p_lo": 0.2,
+      "win_rate": 0.243772
+     },
+     {
+      "mean_p": 0.36823,
+      "n": 26853,
+      "p_hi": 0.5,
+      "p_lo": 0.3,
+      "win_rate": 0.364242
+     },
+     {
+      "mean_p": 0.584385,
+      "n": 4951,
+      "p_hi": 1.0,
+      "p_lo": 0.5,
+      "win_rate": 0.583518
+     }
+    ],
+    "win_rate": 0.070778
+   },
+   "C": {
+    "ece_equal_mass": 0.001114,
+    "ece_equal_width": 0.001076,
+    "logloss": 0.203779,
+    "mean_p": 0.07294,
+    "n": 355466,
+    "reliability": [
+     {
+      "mean_p": 0.007323,
+      "n": 142824,
+      "p_hi": 0.02,
+      "p_lo": 0.0,
+      "win_rate": 0.007485
+     },
+     {
+      "mean_p": 0.033252,
+      "n": 69249,
+      "p_hi": 0.05,
+      "p_lo": 0.02,
+      "win_rate": 0.033979
+     },
+     {
+      "mean_p": 0.072513,
+      "n": 55279,
+      "p_hi": 0.1,
+      "p_lo": 0.05,
+      "win_rate": 0.072197
+     },
+     {
+      "mean_p": 0.122946,
+      "n": 33537,
+      "p_hi": 0.15,
+      "p_lo": 0.1,
+      "win_rate": 0.119241
+     },
+     {
+      "mean_p": 0.172284,
+      "n": 19008,
+      "p_hi": 0.2,
+      "p_lo": 0.15,
+      "win_rate": 0.166035
+     },
+     {
+      "mean_p": 0.244329,
+      "n": 19898,
+      "p_hi": 0.3,
+      "p_lo": 0.2,
+      "win_rate": 0.245552
+     },
+     {
+      "mean_p": 0.369403,
+      "n": 13289,
+      "p_hi": 0.5,
+      "p_lo": 0.3,
+      "win_rate": 0.366243
+     },
+     {
+      "mean_p": 0.588573,
+      "n": 2382,
+      "p_hi": 1.0,
+      "p_lo": 0.5,
+      "win_rate": 0.594878
+     }
+    ],
+    "win_rate": 0.072406
+   }
+  }
+ },
+ "calibration_spec": {
+  "ece_bins": 10,
+  "p_hat": "EV / odds",
+  "population": "race_ok & ~dead_heat & year in window (all horses)",
+  "reliability_edges": [
+   0.0,
+   0.02,
+   0.05,
+   0.1,
+   0.15,
+   0.2,
+   0.3,
+   0.5,
+   1.0
+  ]
+ },
+ "created": "2026-10-01",
+ "definition_semantics": "EV > t (strict); band: 20 <= odds < 40 and 14 <= days_since_last <= 112 (NaN gap -> not matched)",
+ "definitions_sha256": "923913faf79034a495ce6a07b5ca3f6dc3c493ce060d0347e6b60fcd36f48547",
+ "ens_prediction_inputs": [
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 1,
+   "sha256": "a0f7983d975f41e565e00734c6aec18b32581985033751e5eb02acb3e44f11ce"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed2_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 2,
+   "sha256": "99b6ea4da89529dc2f027e2c4346cfb92edbc0107740907abf1fa236e034062e"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed3_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 3,
+   "sha256": "142d0ec2c34fb2ce300ceafa0d8516c94e8597bdb63144cf7f33493dfd074c97"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed4_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 4,
+   "sha256": "5f8b3ba640d0fdcccbd5520a3e6d4087450dfe03d011f5b5ffa50aed3638d11f"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed5_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 5,
+   "sha256": "18f547c5a374818cb5fdd935b9c6b256c8daad8344e78547e752e9144d5a6e59"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed6_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 6,
+   "sha256": "71ab7a1ac651f667aad9763f2207b78fc81a938744393a384211bec34d1dde66"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed7_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 7,
+   "sha256": "99fc00028abf5e85800f825d06c9d50b36d3128bd90a6ee99457aa8e36304885"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed8_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 8,
+   "sha256": "b9d624736914012e07c59da73be1c7b8aa07bb4bdaff63ef980ae9d40aa35f5d"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed9_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 9,
+   "sha256": "341f2003d41781e40eb39219fe4ea7376f42c4049188eb21bc32ff0969d329f9"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed10_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 10,
+   "sha256": "fdaffae7ac6092dc22e5e9697052970fbb459ae94386fe6cdcd350da1cb40feb"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed11_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 11,
+   "sha256": "fa01524d31151ef304a2d3d0f0dc31a757e8a6eb0b7c1d2bdc5f2f312392d5a5"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed12_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 12,
+   "sha256": "afd760407943188ca1db027ffb25ab96b9da97d744a8a00f591f9d6dc6b31749"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed13_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 13,
+   "sha256": "b63a195d008e8bccc3accbefb1bad393146b5f693eff300c375c28c0b6af7b98"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed14_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 14,
+   "sha256": "fab7ef1cd942a8a9d6facacdf7b2802a6671d49cd5578ce2e8defdfbf8e2b81f"
+  },
+  {
+   "path": "artifacts/roi_explore/results/armC_binary_seed15_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+   "row_count": 786049,
+   "seed": 15,
+   "sha256": "7b39f823f16421bb2dc35cfef3e14aca580ba1a7524b08f9bab230d086c12db3"
+  }
+ ],
+ "evaluated_population": {
+  "row_count": 786049,
+  "row_order_sha256": "155414c085640d0b8c78a192ea6d8ed22a46b48b8d09a4edd003660877db2d9b"
+ },
+ "freeze_script_sha256": "02ff9d4731d96b43bb3b28490f8d80d13ecd9b9bf276f7e293513a016d7b3987",
+ "frozen_from": "production ens15 fits (--threads 1 --deterministic)",
+ "git_commit": "c1c44f9b66074d50618eccaa4a8474098119c90b",
+ "input_rows": {
+  "max_date": "2026-09-22",
+  "min_date": "2007-01-06",
+  "path": "artifacts/market_ev/rows_2007.parquet",
+  "row_count": 931017,
+  "sha256": "99f699502424c65a4f2dcd998bd105c2537551952b931b2c4a19f28399468b2b"
+ },
+ "numpy_version": "2.5.0",
+ "price_noise": {
+  "reps": 10,
+  "seed0": 100,
+  "sigmas": [
+   0.1,
+   0.2,
+   0.3
+  ]
+ },
+ "price_noise_provenance": {
+  "aggregation": "roi / n / overlap are means over reps",
+  "overlap_with_unperturbed": "|perturbed selection AND unperturbed selection| / |perturbed selection|, mean over reps",
+  "perturbation": "odds * exp(N(0, sigma))",
+  "rng": "numpy.random.default_rng(seed0 + rep), rep = 0..reps-1; one N(0, sigma) draw per row of the evaluated population (rows_2007.parquet row order, left-joined with the 15+1 prediction files preserving order, then filtered to race_ok & ~dead_heat & year >= 2010); draws follow that row order (see evaluated_population.row_order_sha256)",
+  "selection": "attention_rules.match_mask with EV = p_hat * perturbed odds and the odds band on perturbed odds",
+  "settlement": "stored odds x 100 yen (unperturbed)",
+  "years": ">= 2010"
+ },
+ "pvalue": {
+  "alternative": "greater",
+  "center": "pooled_roi_1",
+  "impl": "centered_one_sided_p_from_replicates",
+  "method": "centered_one_sided_ratio_bootstrap_v1",
+  "plus_one_correction": true,
+  "same_draws_as_ci": true
+ },
+ "rounding": "roi/ci/p and calibration values rounded to 6 decimals",
+ "rule_set_version": "attention-S1-S5-v1",
+ "rules": {
+  "S1": {
+   "ALL": {
+    "ci95": [
+     1.053376,
+     1.371353
+    ],
+    "hits": 225,
+    "max_hit_share": 0.006295,
+    "n": 5235,
+    "n_days": 1493,
+    "p_one_sided": 0.0006,
+    "roi": 1.210735
+   },
+   "C": {
+    "ci95": [
+     0.854896,
+     1.517019
+    ],
+    "hits": 47,
+    "max_hit_share": 0.028516,
+    "n": 1183,
+    "n_days": 572,
+    "p_one_sided": 0.114644,
+    "roi": 1.176839
+   },
+   "bets_by_year": {
+    "2010": 654,
+    "2011": 405,
+    "2012": 395,
+    "2013": 563,
+    "2014": 643,
+    "2015": 497,
+    "2016": 404,
+    "2017": 292,
+    "2018": 199,
+    "2019": 200,
+    "2020": 236,
+    "2021": 193,
+    "2022": 129,
+    "2023": 121,
+    "2024": 97,
+    "2025": 105,
+    "2026": 102
+   },
+   "definition": {
+    "ensemble": "ens15",
+    "ev_gt": 1.2,
+    "gap_days": [
+     14,
+     112
+    ],
+    "odds_band": [
+     20.0,
+     40.0
+    ]
+   },
+   "price_noise_ALL": {
+    "0.1": {
+     "n": 6432,
+     "overlap_with_unperturbed": 0.586,
+     "roi": 1.166235
+    },
+    "0.2": {
+     "n": 9981,
+     "overlap_with_unperturbed": 0.3,
+     "roi": 1.044695
+    },
+    "0.3": {
+     "n": 14786,
+     "overlap_with_unperturbed": 0.165,
+     "roi": 0.966821
+    }
+   },
+   "selected_calibration": {
+    "ALL": {
+     "mean_ev": 1.405512,
+     "mean_p_hat": 0.050938,
+     "n": 5235,
+     "realized_roi": 1.210735,
+     "win_rate": 0.04298
+    },
+    "C": {
+     "mean_ev": 1.32409,
+     "mean_p_hat": 0.046593,
+     "n": 1183,
+     "realized_roi": 1.176839,
+     "win_rate": 0.03973
+    }
+   },
+   "yearly_roi": {
+    "2010": 0.985474,
+    "2011": 1.14642,
+    "2012": 1.734177,
+    "2013": 1.563055,
+    "2014": 1.052877,
+    "2015": 1.02173,
+    "2016": 0.938119,
+    "2017": 1.187671,
+    "2018": 1.817085,
+    "2019": 1.266,
+    "2020": 0.952119,
+    "2021": 1.436269,
+    "2022": 1.394574,
+    "2023": 0.738017,
+    "2024": 1.271134,
+    "2025": 1.318095,
+    "2026": 1.041176
+   }
+  },
+  "S2": {
+   "ALL": {
+    "ci95": [
+     1.08847,
+     1.506363
+    ],
+    "hits": 141,
+    "max_hit_share": 0.009937,
+    "n": 3108,
+    "n_days": 1182,
+    "p_one_sided": 0.00015,
+    "roi": 1.291924
+   },
+   "C": {
+    "ci95": [
+     0.886217,
+     1.972972
+    ],
+    "hits": 24,
+    "max_hit_share": 0.055316,
+    "n": 512,
+    "n_days": 339,
+    "p_one_sided": 0.026799,
+    "roi": 1.401758
+   },
+   "bets_by_year": {
+    "2010": 460,
+    "2011": 268,
+    "2012": 267,
+    "2013": 348,
+    "2014": 436,
+    "2015": 318,
+    "2016": 239,
+    "2017": 156,
+    "2018": 104,
+    "2019": 95,
+    "2020": 104,
+    "2021": 92,
+    "2022": 53,
+    "2023": 47,
+    "2024": 43,
+    "2025": 32,
+    "2026": 46
+   },
+   "definition": {
+    "ensemble": "ens15",
+    "ev_gt": 1.3,
+    "gap_days": [
+     14,
+     112
+    ],
+    "odds_band": [
+     20.0,
+     40.0
+    ]
+   },
+   "price_noise_ALL": {
+    "0.1": {
+     "n": 3899,
+     "overlap_with_unperturbed": 0.568,
+     "roi": 1.227577
+    },
+    "0.2": {
+     "n": 6620,
+     "overlap_with_unperturbed": 0.264,
+     "roi": 1.076371
+    },
+    "0.3": {
+     "n": 10844,
+     "overlap_with_unperturbed": 0.132,
+     "roi": 0.983593
+    }
+   },
+   "selected_calibration": {
+    "ALL": {
+     "mean_ev": 1.515389,
+     "mean_p_hat": 0.05458,
+     "n": 3108,
+     "realized_roi": 1.291924,
+     "win_rate": 0.045367
+    },
+    "C": {
+     "mean_ev": 1.430179,
+     "mean_p_hat": 0.049063,
+     "n": 512,
+     "realized_roi": 1.401758,
+     "win_rate": 0.046875
+    }
+   },
+   "yearly_roi": {
+    "2010": 0.766957,
+    "2011": 1.262687,
+    "2012": 2.055431,
+    "2013": 1.484483,
+    "2014": 1.117431,
+    "2015": 0.859434,
+    "2016": 1.133473,
+    "2017": 1.852564,
+    "2018": 2.121154,
+    "2019": 1.238947,
+    "2020": 1.223077,
+    "2021": 1.968478,
+    "2022": 2.316981,
+    "2023": 0.595745,
+    "2024": 1.4,
+    "2025": 0.940625,
+    "2026": 1.1
+   }
+  },
+  "S3": {
+   "ALL": {
+    "ci95": [
+     0.9828,
+     1.151261
+    ],
+    "hits": 1315,
+    "max_hit_share": 0.019347,
+    "n": 22384,
+    "n_days": 1787,
+    "p_one_sided": 0.059297,
+    "roi": 1.064064
+   },
+   "C": {
+    "ci95": [
+     0.932525,
+     1.309569
+    ],
+    "hits": 273,
+    "max_hit_share": 0.035034,
+    "n": 4848,
+    "n_days": 812,
+    "p_one_sided": 0.100795,
+    "roi": 1.112789
+   },
+   "bets_by_year": {
+    "2010": 3162,
+    "2011": 1980,
+    "2012": 2181,
+    "2013": 2429,
+    "2014": 2507,
+    "2015": 1857,
+    "2016": 1449,
+    "2017": 1121,
+    "2018": 850,
+    "2019": 825,
+    "2020": 960,
+    "2021": 813,
+    "2022": 571,
+    "2023": 543,
+    "2024": 422,
+    "2025": 413,
+    "2026": 301
+   },
+   "definition": {
+    "ensemble": "ens15",
+    "ev_gt": 1.2,
+    "gap_days": null,
+    "odds_band": null
+   },
+   "price_noise_ALL": {
+    "0.1": {
+     "n": 28914,
+     "overlap_with_unperturbed": 0.62,
+     "roi": 1.033016
+    },
+    "0.2": {
+     "n": 50134,
+     "overlap_with_unperturbed": 0.316,
+     "roi": 0.956798
+    },
+    "0.3": {
+     "n": 81229,
+     "overlap_with_unperturbed": 0.18,
+     "roi": 0.907118
+    }
+   },
+   "selected_calibration": {
+    "ALL": {
+     "mean_ev": 1.381646,
+     "mean_p_hat": 0.078148,
+     "n": 22384,
+     "realized_roi": 1.064064,
+     "win_rate": 0.058747
+    },
+    "C": {
+     "mean_ev": 1.309934,
+     "mean_p_hat": 0.071363,
+     "n": 4848,
+     "realized_roi": 1.112789,
+     "win_rate": 0.056312
+    }
+   },
+   "yearly_roi": {
+    "2010": 1.097976,
+    "2011": 1.004545,
+    "2012": 1.073911,
+    "2013": 1.244627,
+    "2014": 1.069565,
+    "2015": 0.92811,
+    "2016": 0.951898,
+    "2017": 0.899554,
+    "2018": 0.946353,
+    "2019": 1.056364,
+    "2020": 1.246771,
+    "2021": 1.204182,
+    "2022": 1.062347,
+    "2023": 0.781215,
+    "2024": 1.24218,
+    "2025": 1.223002,
+    "2026": 0.954485
+   }
+  },
+  "S4": {
+   "ALL": {
+    "ci95": [
+     1.029091,
+     1.258316
+    ],
+    "hits": 371,
+    "max_hit_share": 0.003885,
+    "n": 8987,
+    "n_days": 1718,
+    "p_one_sided": 0.00275,
+    "roi": 1.14284
+   },
+   "C": {
+    "ci95": [
+     0.832284,
+     1.250163
+    ],
+    "hits": 93,
+    "max_hit_share": 0.015256,
+    "n": 2515,
+    "n_days": 756,
+    "p_one_sided": 0.361282,
+    "roi": 1.034672
+   },
+   "bets_by_year": {
+    "2010": 941,
+    "2011": 614,
+    "2012": 627,
+    "2013": 856,
+    "2014": 988,
+    "2015": 824,
+    "2016": 697,
+    "2017": 526,
+    "2018": 399,
+    "2019": 388,
+    "2020": 457,
+    "2021": 404,
+    "2022": 308,
+    "2023": 268,
+    "2024": 226,
+    "2025": 240,
+    "2026": 224
+   },
+   "definition": {
+    "ensemble": "ens15",
+    "ev_gt": 1.1,
+    "gap_days": [
+     14,
+     112
+    ],
+    "odds_band": [
+     20.0,
+     40.0
+    ]
+   },
+   "price_noise_ALL": {
+    "0.1": {
+     "n": 10611,
+     "overlap_with_unperturbed": 0.615,
+     "roi": 1.099928
+    },
+    "0.2": {
+     "n": 14899,
+     "overlap_with_unperturbed": 0.349,
+     "roi": 1.00851
+    },
+    "0.3": {
+     "n": 19986,
+     "overlap_with_unperturbed": 0.213,
+     "roi": 0.956266
+    }
+   },
+   "selected_calibration": {
+    "ALL": {
+     "mean_ev": 1.296997,
+     "mean_p_hat": 0.047229,
+     "n": 8987,
+     "realized_roi": 1.14284,
+     "win_rate": 0.041282
+    },
+    "C": {
+     "mean_ev": 1.229117,
+     "mean_p_hat": 0.044015,
+     "n": 2515,
+     "realized_roi": 1.034672,
+     "win_rate": 0.036978
+    }
+   },
+   "yearly_roi": {
+    "2010": 1.038576,
+    "2011": 1.180293,
+    "2012": 1.447687,
+    "2013": 1.406776,
+    "2014": 1.113563,
+    "2015": 0.990291,
+    "2016": 1.095839,
+    "2017": 1.041445,
+    "2018": 1.570927,
+    "2019": 1.219072,
+    "2020": 0.949891,
+    "2021": 1.466337,
+    "2022": 0.877273,
+    "2023": 0.530597,
+    "2024": 1.159292,
+    "2025": 1.342083,
+    "2026": 0.474107
+   }
+  },
+  "S5": {
+   "ALL": {
+    "ci95": [
+     0.943703,
+     1.076621
+    ],
+    "hits": 1820,
+    "max_hit_share": 0.015216,
+    "n": 30036,
+    "n_days": 1807,
+    "p_one_sided": 0.39458,
+    "roi": 1.008277
+   },
+   "C": {
+    "ci95": [
+     0.863715,
+     1.137162
+    ],
+    "hits": 438,
+    "max_hit_share": 0.0152,
+    "n": 7682,
+    "n_days": 831,
+    "p_one_sided": 0.523174,
+    "roi": 0.995144
+   },
+   "bets_by_year": {
+    "2010": 3747,
+    "2011": 2395,
+    "2012": 2618,
+    "2013": 3134,
+    "2014": 3047,
+    "2015": 2549,
+    "2016": 2035,
+    "2017": 1572,
+    "2018": 1257,
+    "2019": 1257,
+    "2020": 1353,
+    "2021": 1259,
+    "2022": 970,
+    "2023": 952,
+    "2024": 659,
+    "2025": 689,
+    "2026": 543
+   },
+   "definition": {
+    "ensemble": "single",
+    "ev_gt": 1.2,
+    "gap_days": null,
+    "odds_band": null
+   },
+   "price_noise_ALL": {
+    "0.1": {
+     "n": 36553,
+     "overlap_with_unperturbed": 0.669,
+     "roi": 0.984019
+    },
+    "0.2": {
+     "n": 56691,
+     "overlap_with_unperturbed": 0.381,
+     "roi": 0.941295
+    },
+    "0.3": {
+     "n": 85718,
+     "overlap_with_unperturbed": 0.233,
+     "roi": 0.890056
+    }
+   },
+   "selected_calibration": {
+    "ALL": {
+     "mean_ev": 1.401886,
+     "mean_p_hat": 0.08232,
+     "n": 30036,
+     "realized_roi": 1.008277,
+     "win_rate": 0.060594
+    },
+    "C": {
+     "mean_ev": 1.334943,
+     "mean_p_hat": 0.074511,
+     "n": 7682,
+     "realized_roi": 0.995144,
+     "win_rate": 0.057016
+    }
+   },
+   "yearly_roi": {
+    "2010": 0.977395,
+    "2011": 1.023424,
+    "2012": 1.027922,
+    "2013": 1.119815,
+    "2014": 1.08615,
+    "2015": 0.905806,
+    "2016": 1.022113,
+    "2017": 0.850382,
+    "2018": 1.02681,
+    "2019": 0.891408,
+    "2020": 0.937251,
+    "2021": 1.268308,
+    "2022": 0.983505,
+    "2023": 0.813235,
+    "2024": 0.816085,
+    "2025": 1.092598,
+    "2026": 1.179558
+   }
+  }
+ },
+ "settlement": "stored_odds_x100_yen; dead-heat races excluded; years>=2010; ens15 = arithmetic mean of 15 seeds' EV",
+ "single_prediction_input": {
+  "path": "artifacts/roi_explore/results/armC_binary_drop-sameday+weightlive_serving_v2_2007/predictions.parquet",
+  "row_count": 786049,
+  "sha256": "a0f7983d975f41e565e00734c6aec18b32581985033751e5eb02acb3e44f11ce"
+ },
+ "windows": {
+  "ALL": [
+   2010,
+   2026
+  ],
+  "C": [
+   2019,
+   2026
+  ]
+ }
+}

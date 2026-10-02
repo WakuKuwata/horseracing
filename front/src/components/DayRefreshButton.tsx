@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ErrorInfo } from "../api/client";
 import {
   getBatch,
+  getJob,
   isBatchDone,
+  isTerminal,
   refreshDay,
   type Batch,
   type BatchAccepted,
+  type Job,
 } from "../api/opsClient";
 
 // US2: refresh every race on the selected day (ops write service). The display stays on 014 — on a
@@ -31,11 +34,13 @@ export function DayRefreshButton({
   const qc = useQueryClient();
   const [traceId, setTraceId] = useState<string | null>(null);
   const [invalidated, setInvalidated] = useState(false);
+  const [followupsInvalidated, setFollowupsInvalidated] = useState(false);
 
   const start = useMutation<BatchAccepted, ErrorInfo, boolean | void>({
     mutationFn: (force) => refreshDay(date, force === true),
     onSuccess: (b) => {
       setInvalidated(false);
+      setFollowupsInvalidated(false);
       setTraceId(b.trace_id);
     },
   });
@@ -65,12 +70,55 @@ export function DayRefreshButton({
   // the parent itself failed (e.g. discovery never ran) — there are no children to explain it
   const parentFailed = b?.status === "failed" && total === 0;
 
+  // On a batch with progress, refetch the day's race list and the 138 注目条件 day list (its chips
+  // come from each race's first computation and its 最新の計算 time from the latest ens15 row) and
+  // the rules list (prospective tallies and checkpoint records are read-time over the results).
   useEffect(() => {
     if (!invalidated && done && b && succeeded + partial > 0) {
       void qc.invalidateQueries({ queryKey: ["races"] });
+      void qc.invalidateQueries({ queryKey: ["attention-day", date] });
+      void qc.invalidateQueries({ queryKey: ["attention-rules"] });
       setInvalidated(true);
     }
-  }, [done, b, invalidated, qc, succeeded, partial]);
+  }, [done, b, invalidated, qc, succeeded, partial, date]);
+
+  // 137/138: each refresh_race child that wrote new odds enqueues the 期待回収率 recompute
+  // (`followup_job_id`, one per date and reused while QUEUED). That job — not the refresh — writes
+  // each race's first computation (scan + picks) and the latest ens15 row the day list reads, and
+  // it runs in the CPU lane AFTER the batch. Refetching only at the batch's end would leave the
+  // day list on 「該当なし」/old times until a reload, so poll the distinct follow-ups (same
+  // pattern as RefreshButton) and refetch again once every one of them is terminal.
+  const followupIds = useMemo(
+    () =>
+      done && b
+        ? [
+            ...new Set(
+              (b.children ?? [])
+                .map((c) => c.followup_job_id)
+                .filter((id): id is string => id != null),
+            ),
+          ].sort()
+        : [],
+    [done, b],
+  );
+  const followups = useQueries({
+    queries: followupIds.map((id) => ({
+      queryKey: ["opsJob", id],
+      queryFn: (): Promise<Job> => getJob(id),
+      refetchInterval: (q: { state: { data?: Job } }) =>
+        isTerminal(q.state.data?.status) ? false : pollMs,
+      refetchIntervalInBackground: true,
+    })),
+  });
+  const followupsDone =
+    followupIds.length > 0 && followups.every((q) => isTerminal(q.data?.status));
+  useEffect(() => {
+    if (!followupsInvalidated && followupsDone) {
+      void qc.invalidateQueries({ queryKey: ["attention-day", date] });
+      void qc.invalidateQueries({ queryKey: ["attention-rules"] });
+      setFollowupsInvalidated(true);
+    }
+  }, [followupsDone, followupsInvalidated, qc, date]);
 
   const running = start.isPending || (traceId != null && !done);
   // the day itself has no races (a non-race day) — distinct from "had races, re-fetched none"

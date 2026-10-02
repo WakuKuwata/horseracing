@@ -3,12 +3,23 @@ import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import type {
+  AttentionAvailable,
+  AttentionHorse,
+  AttentionResponse,
   HorseEntry,
   HorseMarketEv,
   HorsePrediction,
   MarketEvResponse,
 } from "../api/types";
+import {
+  chipLabel,
+  chipNowLabel,
+  emphasisLevel,
+  freshnessLevel,
+  type Level,
+} from "../lib/attention";
 import { formatNum, formatPct, PLACEHOLDER } from "../lib/format";
+import { AttentionPanel, hasAttentionDetail } from "./AttentionPanel";
 import { DataBackingBadge } from "./DataBackingBadge";
 import { ExplanationPanel } from "./ExplanationPanel";
 import { PseudoValue } from "./PseudoValue";
@@ -86,9 +97,40 @@ const DIVERGENCE_TOOLTIP =
 const EV_HEADER_TITLE =
   "表の「モデル勝率」とは別の市場連動モデルが推定した勝率 × 単勝オッズ。推定値であり実績ではありません";
 
-/** "1.2" → "120%" (the API's threshold ratio, as shown on the highlight chip). */
-function thresholdLabel(threshold: number): string {
-  return `${Number((threshold * 100).toFixed(1))}%`;
+/** Feature 138: 注目条件チップ(判断時点の表示)。どの条件か・段階・S2 副チップは API の値
+ *  (`chip_rule`/`chip_stage`/`chip_s2`)をそのまま使い、front は該当を導き直さない。強調レベル
+ *  (4 軸の最小値)は `lib/attention.ts` が決め、形(塗り/枠/文字のみ)で 3 段に描き分ける。
+ *  閾値の数値は出さない(期待値シグナルとして読まれる)。「印」「推奨」「おすすめ」は使わない。 */
+function AttentionChip({ horse, level }: { horse: AttentionHorse; level: Level }) {
+  if (horse.chip_rule == null) return null;
+  const label = horse.chip_stage
+    ? chipLabel(horse.chip_rule, horse.chip_stage)
+    : `注目条件 ${horse.chip_rule}`;
+  const now = chipNowLabel(horse.chip_now);
+  return (
+    <span className="cell-sub attn-chips" data-testid="attention-chips">
+      <span className={`attn-chip attn-chip--${level}`} role="note" aria-label={label}>
+        {label}
+      </span>
+      {horse.chip_s2 && (
+        <span className="attn-chip attn-chip--sub" title="S2 にも該当">
+          S2
+        </span>
+      )}
+      {now && <span className="attn-now">{now}</span>}
+    </span>
+  );
+}
+
+/** チップの強調レベル(描画時に 1 回評価・自動更新しない)。 */
+function chipLevel(horse: AttentionHorse, race: AttentionAvailable, now: Date | number): Level {
+  const freshness = freshnessLevel(
+    horse.current?.odds_observed_at,
+    race.post_time,
+    race.has_results,
+    now,
+  );
+  return emphasisLevel(horse.levels, freshness.level, horse.chip_now, horse.chip_stage);
 }
 
 function value(row: Row, key: ColKey): number | string | null | undefined {
@@ -125,14 +167,18 @@ function ProbBar({
  *  the table (user decision 2026-07-02 — badges were noise; the labelled sub-line + note keep
  *  021's "q never unlabelled" intent). Cancelled horses are dimmed with a badge next to the name
  *  (no dedicated 状態 column). Feature 137 adds a non-sortable 期待回収率 column (a separate
- *  market-aware model, pseudo-badged) whenever that value is available; rows the API flags as
- *  above the threshold get an outline + left bar + a text chip (never colour-only, never green/red). */
+ *  market-aware model, pseudo-badged) whenever that value is available. Feature 138 puts the
+ *  注目条件 chip (judgment-time, from the API) in that cell and the breakdown (AttentionPanel) in the
+ *  expansion row; the outline + left bar fire only at emphasis level 3 (never colour-only, never
+ *  green/red). 137's 「120%超」 text chip is gone — S1–S3 already imply ens15 EV > 1.2. */
 export function HorseEntriesTable({
   entries,
   predictions,
   oddsAsOf,
   canonicalConsistent,
   marketEv,
+  attention,
+  now,
 }: {
   entries: HorseEntry[];
   predictions: HorsePrediction[];
@@ -141,6 +187,10 @@ export function HorseEntriesTable({
   /** Feature 137: the market-aware expected return. The column shows only when available —
    *  independent of whether the win model has predicted this race. */
   marketEv?: MarketEvResponse | null;
+  /** Feature 138: 注目条件(判断時点のチップと内訳)。`available` のときだけ使う。 */
+  attention?: AttentionResponse | null;
+  /** 描画時刻(価格鮮度の評価)。省略時は描画のたびに現在時刻 — 自動では再描画しない。 */
+  now?: Date | number;
 }) {
   // Default sort = モデル勝率 desc (the prediction IS what this screen is for; user decision
   // 2026-07-02). Without predictions every win is null → the null-last comparator keeps the
@@ -152,8 +202,6 @@ export function HorseEntriesTable({
   const hasPreds = predictions.length > 0;
   // 差(p−q) is only meaningful when the API confirms p and q share one canonical field (021 R1).
   const comparable = hasPreds && canonicalConsistent === true;
-  // Feature 137: the highlight flag is the API's exceeds_threshold (single source of truth) —
-  // never recomputed here from expected_return.
   const evAvailable = marketEv?.status === "available";
   const evByHorse = useMemo(
     () =>
@@ -162,7 +210,20 @@ export function HorseEntriesTable({
       ),
     [marketEv],
   );
-  const evOverLabel = marketEv ? thresholdLabel(marketEv.threshold) : "";
+  // Feature 138: the chip is judged at the race's first computation and stays when the latest
+  // market-ev is unavailable (再計算待ち/オッズ欠落 → 「現在値なし」) — so the 期待回収率 column also
+  // shows whenever the attention state is available (values "—", chips kept; US1 scenario 11).
+  const attentionRace = attention?.status === "available" ? attention : null;
+  const attentionByHorse = useMemo(
+    () =>
+      new Map<string, AttentionHorse>(
+        attention?.status === "available" ? attention.horses.map((h) => [h.horse_id, h]) : [],
+      ),
+    [attention],
+  );
+  const evColumn = evAvailable || attentionRace !== null;
+  // Evaluated at render (FR-006): not auto-refreshed; a refetch re-renders and re-evaluates it.
+  const renderNow = now ?? Date.now();
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -212,7 +273,7 @@ export function HorseEntriesTable({
   const sortableColumns = hasPreds ? [...BASE_COLUMNS, ...PRED_COLUMNS] : BASE_COLUMNS;
   // total columns for the expansion row colSpan
   const totalCols =
-    sortableColumns.length + (evAvailable ? 1 : 0) + (comparable ? 1 : 0) + (hasPreds ? 1 : 0);
+    sortableColumns.length + (evColumn ? 1 : 0) + (comparable ? 1 : 0) + (hasPreds ? 1 : 0);
 
   return (
     <div className="table-scroll">
@@ -232,7 +293,7 @@ export function HorseEntriesTable({
               </th>
             ))}
             {/* 137: right after モデル勝率 (or after 単勝 without predictions) — NOT sortable */}
-            {evAvailable && (
+            {evColumn && (
               <th className="num ev-head" title={EV_HEADER_TITLE}>
                 期待回収率
               </th>
@@ -258,7 +319,17 @@ export function HorseEntriesTable({
             const div = r.pred?.divergence ?? null;
             // 137: a cancelled horse (or one without a stored row) shows "—", never a value.
             const ev = evAvailable && !cancelled ? evByHorse.get(r.horse_id) : undefined;
-            const evOver = ev?.exceeds_threshold === true;
+            // 138: chip from the API (S1–S4; S5-only horses have none). A cancelled horse gets no
+            // chip (its pick is voided by the next computation); the breakdown stays reachable but
+            // shows only the scratched fact and the judgment-time rules (no chip title / badges /
+            // progress — AttentionPanel `cancelled`).
+            const attn = attentionByHorse.get(r.horse_id);
+            const showChip = attentionRace !== null && attn?.chip_rule != null && !cancelled;
+            const level =
+              showChip && attn && attentionRace ? chipLevel(attn, attentionRace, renderNow) : null;
+            // The 137 outline + left bar: emphasis level 3 only (unreachable with the frozen values).
+            const evOver = level === 3;
+            const attnDetail = attentionRace !== null && attn != null && hasAttentionDetail(attn);
             return (
               <Fragment key={r.horse_id}>
                 <tr
@@ -344,28 +415,31 @@ export function HorseEntriesTable({
                       <ProbBar value={p} max={probMax} variant="p" />
                     </td>
                   )}
-                  {evAvailable && (
+                  {evColumn && (
                     <td className="num ev-cell">
                       {ev ? (
-                        <>
-                          <span className="cell-main">
-                            <PseudoValue kind="expected_return">
-                              {formatPct(ev.expected_return, 1)}
-                            </PseudoValue>
-                          </span>
-                          {evOver && (
-                            <span
-                              className="ev-chip"
-                              role="note"
-                              aria-label={`期待回収率が${evOverLabel}を超えています`}
-                              title={`期待回収率が${evOverLabel}を超えています`}
-                            >
-                              {evOverLabel}超
-                            </span>
-                          )}
-                        </>
+                        <span className="cell-main">
+                          <PseudoValue kind="expected_return">
+                            {formatPct(ev.expected_return, 1)}
+                          </PseudoValue>
+                        </span>
                       ) : (
                         PLACEHOLDER
+                      )}
+                      {showChip && attn && level != null && (
+                        <AttentionChip horse={attn} level={level} />
+                      )}
+                      {attnDetail && (
+                        <button
+                          type="button"
+                          className="expand-btn attn-toggle"
+                          aria-expanded={isOpen}
+                          aria-label="注目条件の内訳"
+                          title="注目条件の内訳を表示"
+                          onClick={() => toggleExpand(r.horse_id)}
+                        >
+                          {isOpen ? "▾" : "▸"}
+                        </button>
                       )}
                     </td>
                   )}
@@ -403,7 +477,15 @@ export function HorseEntriesTable({
                 {isOpen && (
                   <tr className="explanation-row">
                     <td colSpan={totalCols}>
-                      <ExplanationPanel explanation={r.pred?.explanation} />
+                      {hasPreds && <ExplanationPanel explanation={r.pred?.explanation} />}
+                      {attnDetail && attn && attentionRace && (
+                        <AttentionPanel
+                          horse={attn}
+                          race={attentionRace}
+                          now={renderNow}
+                          cancelled={cancelled}
+                        />
+                      )}
                     </td>
                   </tr>
                 )}

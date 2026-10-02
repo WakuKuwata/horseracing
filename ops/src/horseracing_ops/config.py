@@ -16,6 +16,9 @@ from pathlib import Path
 #: because the training CLI rejects relative paths and anything under `.claude/worktrees/`.
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_MARKET_EV_MODEL_DIR = _REPO_ROOT / "artifacts" / "market_ev" / "mev-binary-v2"
+#: Feature 138: the 15-seed ensemble (`mev-ens15-v1`, the displayed 期待回収率 version). Same
+#: absolute-path rule; the training CLI writes both versions in one run when it is given this.
+_DEFAULT_MARKET_EV_ENSEMBLE_DIR = _REPO_ROOT / "artifacts" / "market_ev" / "mev-ens15-v1"
 
 _FALSE_WORDS = frozenset({"0", "false", "no", "off"})
 
@@ -92,6 +95,11 @@ class OpsConfig:
     expected_return_on_refresh: bool = _bool("OPS_EXPECTED_RETURN_ON_REFRESH", True)
     #: Feature 137: absolute model directory handed to `horseracing_training market-ev`.
     market_ev_model_dir: str = _str("OPS_MARKET_EV_MODEL_DIR", str(_DEFAULT_MARKET_EV_MODEL_DIR))
+    #: Feature 138: absolute ensemble directory handed to `market-ev --ensemble-dir`. ops always
+    #: passes it, so every recompute also writes the attention scan/picks and runs the checkpoints.
+    market_ev_ensemble_dir: str = _str(
+        "OPS_MARKET_EV_ENSEMBLE_DIR", str(_DEFAULT_MARKET_EV_ENSEMBLE_DIR)
+    )
 
 
 CONFIG = OpsConfig()

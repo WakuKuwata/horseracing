@@ -4,6 +4,9 @@ Read-only view of the SEPARATE market-aware model's stored expected return (æœŸå
 no ``model_version`` query parameter: this is independent of the win-probability model selection
 on /predictions. 422 invalid_race_id / 404 race_not_found; every other state is a typed 200
 (``available`` or ``unavailable`` with a reason). Shaping and the threshold live in market_ev.py.
+
+Feature 138 (D8): the version shown is the registry constant ``DISPLAYED_MARKET_EV_MODEL_VERSION``
+(the 15-seed average); a newer single-seed recompute of the same race never replaces the column.
 """
 
 from __future__ import annotations
@@ -15,7 +18,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
-from ..market_ev import build_market_ev
+from ..market_ev import DISPLAYED_MARKET_EV_MODEL_VERSION, build_market_ev
 from ..queries import get_race, market_ev_rows, started_win_odds_by_horse
 from ..schemas import MarketEvResponse
 
@@ -38,6 +41,6 @@ def race_market_ev(race_id: str, session: Session = Depends(get_session)):
         return _err(404, "race_not_found", f"race {race_id} not found")
     return build_market_ev(
         race_id,
-        market_ev_rows(session, race_id),
+        market_ev_rows(session, race_id, model_version=DISPLAYED_MARKET_EV_MODEL_VERSION),
         started_win_odds_by_horse(session, race_id),
     )

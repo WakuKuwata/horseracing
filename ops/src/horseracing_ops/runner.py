@@ -770,6 +770,11 @@ def _training_market_ev(race_date: str) -> subprocess.CompletedProcess:
     ``SKIPPED: …`` and it exits non-zero on failure. Same env handling as _serving_predict
     (cwd=training, VIRTUAL_ENV dropped). Monkeypatched in tests.
 
+    Feature 138: ``--ensemble-dir`` is always passed (right after ``--model-dir``), so one run
+    writes both versions (`mev-binary-v2` + the displayed `mev-ens15-v1`) under the same run_id,
+    records the attention scan/picks of first-computed races and then runs the checkpoint
+    judgement; the ``OK:`` line then also carries ``versions=2 picks=P checkpoints=…``.
+
     Launched in its own process group so a timeout kills the python grandchild too, not just the
     `uv` launcher: an orphan still writing the date's rows would collide with the next recompute.
     Raises subprocess.TimeoutExpired after killing the group."""
@@ -777,6 +782,7 @@ def _training_market_ev(race_date: str) -> subprocess.CompletedProcess:
         "uv", "run", "--project", str(_TRAINING_DIR), "python", "-m", "horseracing_training",
         "market-ev", "--date", race_date, "--pending-only",
         "--model-dir", CONFIG.market_ev_model_dir,
+        "--ensemble-dir", CONFIG.market_ev_ensemble_dir,
         "--database-url", owner_database_url(),
     ]
     env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
@@ -796,7 +802,10 @@ def _training_market_ev(race_date: str) -> subprocess.CompletedProcess:
 
 
 def _parse_marker(line: str) -> dict:
-    """``OK: races=3 horses=41 from=D1 to=D2`` → {"races": 3, "horses": 41, "from": …, "to": …}."""
+    """``OK: races=3 horses=41 from=D1 to=D2`` → {"races": 3, "horses": 41, "from": …, "to": …}.
+
+    Feature 138's suffix ``versions=2 picks=P checkpoints=ok|pending|error`` is carried the same
+    way (ints stay ints, ``checkpoints`` stays its word)."""
     out: dict = {}
     for token in line.split(":", 1)[1].split():
         key, sep, value = token.partition("=")
@@ -804,6 +813,22 @@ def _parse_marker(line: str) -> dict:
             continue
         out[key] = int(value) if value.isdigit() else value
     return out
+
+
+_CHECKPOINTS_ERROR_PREFIX = "attention-checkpoints: error="
+
+
+def _checkpoints_error(lines: list[str], stderr: str, tail: str) -> str:
+    """The cause the CLI printed before ``OK: … checkpoints=error`` (``attention-checkpoints:
+    error=<type: summary>``); the last such line wins. Only the error form counts — the same
+    judgement also prints ``attention-checkpoints: written=… pending=…`` summaries, which are not
+    a cause. Without an error line, stderr's tail stands in (a traceback lands there, and stdout's
+    diagnostics line alone can fill the 500-char combined tail); with no stderr, the combined
+    tail — so the summary never records an error with no cause."""
+    for line in reversed(lines):
+        if line.startswith(_CHECKPOINTS_ERROR_PREFIX):
+            return line.split(":", 1)[1].strip()[:500]
+    return stderr.strip()[-500:] or tail
 
 
 def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:
@@ -815,13 +840,22 @@ def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) ->
     success is claimed only when the CLI says so. A timeout is FAILED too: the same date would time
     out again, so a worker retry would only repeat ten minutes of compute. None of these are
     worker-retried. The CLI persists market_ev_predictions itself (run_id / booster / sha256 per
-    row); the job keeps the enqueue-time source label and a short output tail, assigned once."""
+    row); the job keeps the enqueue-time source label and a short output tail, assigned once.
+
+    Feature 138: a failed checkpoint judgement does NOT fail the job — the CLI commits both
+    versions and the picks first and judges in a separate transaction, so the computed values are
+    already persisted. It reports ``checkpoints=error`` on the OK line with the cause on an earlier
+    ``attention-checkpoints: error=…`` line; that cause is kept as ``checkpoints_error`` and also
+    set as ``error_message`` (``checkpoints: …``) with ``error_count=1``, so the failure shows on
+    the jobs pages and not only in the raw summary (the API shows those checkpoints as pending,
+    which alone looks the same as a checkpoint that is genuinely waiting)."""
     race_date = datetime.date.fromisoformat(job.scope_value or "").isoformat()
     audit = {
         "kind": "expected_return",
         "source": (job.summary or {}).get("source", "auto_after_refresh"),
         "race_date": race_date,
         "model_dir": CONFIG.market_ev_model_dir,
+        "ensemble_dir": CONFIG.market_ev_ensemble_dir,
     }
     try:
         proc = _training_market_ev(race_date)
@@ -852,7 +886,16 @@ def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) ->
         horses = result.get("horses")
         if isinstance(horses, int):
             job.processed_rows = horses
-        job.summary = {**audit, "output": marker[:500], "result": result}
+        summary = {**audit, "output": marker[:500], "result": result}
+        if result.get("checkpoints") == "error":
+            cause = _checkpoints_error(lines[:-1], proc.stderr or "", tail)
+            summary["checkpoints_error"] = cause
+            # still SUCCEEDED (the values are persisted), but the jobs pages show only
+            # error_message / error_count, never the summary — without these a judgement that
+            # fails on every job would look like an ordinary success and 300/600 never get written
+            job.error_count = 1
+            job.error_message = f"checkpoints: {cause}"[:500]
+        job.summary = summary
     else:
         job.status = JobStatus.FAILED
         job.error_message = f"market-ev exited 0 without an OK:/SKIPPED: marker: {tail}"[:500]

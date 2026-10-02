@@ -539,8 +539,9 @@ th.colgroup {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-/* 137: 期待回収率 120% 超の行。損益色(緑/赤)や既存の意味色(青/紫/琥珀/赤)を避け、
-   白の枠・太い左帯・濃いめの地色・塗りつぶしチップ・太字の値で「形」でも区別できるようにする。 */
+/* 137 の意匠(白の枠・太い左帯・濃いめの地色・太字の値)。138 からは注目条件の強調レベル 3 の
+   行だけに付ける(凍結値では到達しない)。損益色(緑/赤)や既存の意味色(青/紫/琥珀/赤)を避け、
+   「形」でも区別できるようにする。 */
 .entries-table tr.entry--ev-over > td {
   border-top: 2px solid var(--ev-mark);
   border-bottom: 2px solid var(--ev-mark);
@@ -558,18 +559,78 @@ th.colgroup {
   font-weight: 800;
   color: var(--text);
 }
-.ev-chip {
-  display: inline-block;
-  margin-top: 0.2rem;
-  padding: 0.05rem 0.45rem;
-  border: 1px solid var(--ev-mark);
-  border-radius: 4px;
-  background: var(--ev-mark);
-  color: var(--bg);
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+/* 138: 期待回収率セル内の注目条件チップ群と内訳の開閉ボタン(137 の「120%超」チップは廃止) */
+.entries-table .attn-chips {
   white-space: nowrap;
+}
+.ev-cell .attn-toggle {
+  margin-top: 0.2rem;
+  margin-left: 0.3rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  font-size: 0.7rem;
+  vertical-align: middle;
+}
+/* 138: 展開行の注目条件の内訳(AttentionPanel)。中立色のみ */
+.attn-panel {
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ev-mark);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  text-align: left;
+}
+.attn-panel--minimal p {
+  margin: 0;
+  color: var(--muted);
+}
+.attn-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+.attn-panel__title {
+  font-weight: 700;
+}
+.attn-panel__head .attn-level {
+  margin-left: auto;
+}
+.attn-panel__rows {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.8rem;
+  margin: 0;
+}
+.attn-panel__rows dt {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.attn-panel__rows dd {
+  margin: 0;
+}
+.attn-panel__rows dd > div + div {
+  margin-top: 0.1rem;
+}
+@media (max-width: 640px) {
+  .attn-panel__rows {
+    grid-template-columns: 1fr;
+  }
+}
+.attn-panel__axis,
+.attn-panel__note,
+.attn-tag {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+.attn-panel__ev-label {
+  font-weight: 600;
+}
+.attn-panel > .attn-panel__note {
+  margin: 0.4rem 0 0;
 }
 .ev-note {
   margin: 0.5rem 0;
@@ -587,6 +648,164 @@ th.colgroup {
   margin: 0 0 0.25rem;
   color: var(--text);
   font-weight: 600;
+}
+
+/* Feature 138: 注目条件チップ。強調レベル(4 軸の最小値)を「形」で 3 段に分ける:
+   3 = 塗りつぶし(137 の「120%超」チップと同じ見た目)/ 2 = 枠線 / 1 = 文字のみ。
+   色は --ev-mark(白系の中立色)と既存の文字色だけ — 損益色(緑/赤)も意味色(青/紫/琥珀)も使わない。
+   レベルの区別は色に頼らず、塗り・枠・太さの違いで読めるようにする。 */
+.attn-chip {
+  display: inline-block;
+  margin-top: 0.2rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.attn-chip--3 {
+  border-color: var(--ev-mark);
+  background: var(--ev-mark);
+  color: var(--bg);
+  font-weight: 800;
+}
+.attn-chip--2 {
+  border-color: var(--ev-mark);
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+}
+.attn-chip--1 {
+  padding-left: 0;
+  padding-right: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+}
+/* S2 副チップ: 主チップより小さく、破線の枠で「添え」と分かるようにする */
+.attn-chip--sub {
+  margin-left: 0.3rem;
+  padding: 0 0.3rem;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+/* チップに添える「判断時点のみ該当」「現在値なし」 */
+.attn-now {
+  margin-left: 0.3rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+/* 「検証の進み具合 ●○○」— ●表現は必ずテキストラベルと並べる(チップには置かない) */
+.attn-level {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.attn-level__dots {
+  margin-left: 0.3rem;
+  color: var(--text);
+  letter-spacing: 0.08em;
+}
+/* 画面には出さず支援技術にだけ読ませるテキスト(例: ●○○ の「3 段階中 1」) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* 「探索後固定」「前向き未確認」などの事実バッジ(中立色・操作要素ではない) */
+.attn-badge {
+  display: inline-block;
+  margin-right: 0.3rem;
+  padding: 0 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  color: var(--muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+/* 回収率の計算基準ラベル(〔確定オッズ近似〕など)。数値と同じ要素に置く */
+.attn-roi-basis {
+  margin-left: 0.2rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+/* 注目条件の一覧(<details>)と 1 条件の区画。順位の固定順で縦に並べるだけ — 強調色は使わない */
+.attn-rules {
+  margin: 0.5rem 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+.attn-rules__title {
+  cursor: pointer;
+  font-weight: 600;
+}
+.attn-rule {
+  margin: 0.75rem 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+.attn-rule__title {
+  margin: 0 0 0.3rem;
+  font-size: 0.92rem;
+}
+.attn-rule__definition {
+  margin: 0 0 0.4rem;
+}
+.attn-rule__rows {
+  margin: 0;
+}
+.attn-rule__row {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.2rem 0.75rem;
+  margin: 0.35rem 0;
+}
+.attn-rule__row dt {
+  color: var(--muted);
+}
+.attn-rule__row dd {
+  margin: 0;
+  min-width: 0;
+  overflow-x: auto;
+}
+@media (max-width: 640px) {
+  .attn-rule__row {
+    grid-template-columns: 1fr;
+  }
+}
+.attn-rule__line {
+  margin: 0.1rem 0;
+}
+.attn-rule__meta {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+.attn-rule__table {
+  width: auto;
+  margin: 0.25rem 0;
+  font-size: 0.78rem;
+}
+.attn-rule__decisions {
+  margin: 0.1rem 0;
+  padding-left: 1.1rem;
+}
+/* 日付ページの該当馬一覧(発走順のみ) */
+.attn-day .attn-day__table {
+  font-size: 0.8rem;
 }
 
 /* JRA 枠番カラー (1白 2黒 3赤 4青 5黄 6緑 7橙 8桃) */

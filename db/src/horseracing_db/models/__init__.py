@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .attention import AttentionCheckpoint, AttentionPick, AttentionRaceScan
 from .chaos import ChaosReadout, ChaosSnapshot, FetchThrottleState
 from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from .ingestion import IdMapping, IngestionJob
@@ -18,6 +19,9 @@ from .prediction import (
 from .purchase import PURCHASE_KINDS, PurchaseRecord
 
 __all__ = [
+    "AttentionCheckpoint",
+    "AttentionPick",
+    "AttentionRaceScan",
     "ChaosReadout",
     "PURCHASE_KINDS",
     "PurchaseRecord",

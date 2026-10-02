@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/v1/attention-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Attention Rule List */
+        get: operations["attention_rule_list_api_v1_attention_rules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attention/day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Attention Day */
+        get: operations["attention_day_api_v1_attention_day_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/coverage": {
         parameters: {
             query?: never;
@@ -290,6 +324,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/races/{race_id}/attention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Race Attention */
+        get: operations["race_attention_api_v1_races__race_id__attention_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/races/{race_id}/market-ev": {
         parameters: {
             query?: never;
@@ -379,6 +430,424 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AttentionAvailable
+         * @description The race's first ensemble computation is recorded; ``horses`` covers every currently
+         *     started horse plus any judged horse that was scratched later (horse_number order).
+         */
+        AttentionAvailable: {
+            /** Has Results */
+            has_results: boolean;
+            /** Horses */
+            horses: components["schemas"]["AttentionHorse"][];
+            /**
+             * Judged At
+             * Format: date-time
+             */
+            judged_at: string;
+            /** Post Time */
+            post_time: string | null;
+            /** Race Id */
+            race_id: string;
+            /** Rule Set Version */
+            rule_set_version: string;
+            /** Selection Policy Version */
+            selection_policy_version: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "available";
+        };
+        /** AttentionBacktest */
+        AttentionBacktest: {
+            all: components["schemas"]["AttentionFrozenStats"];
+            /** Bets 2024 25 26 */
+            bets_2024_25_26: number[];
+            bootstrap: components["schemas"]["AttentionBacktestBootstrap"];
+            c: components["schemas"]["AttentionFrozenStats"];
+            selected: components["schemas"]["AttentionSelectedWindows"];
+            /**
+             * Valuation Basis
+             * @constant
+             */
+            valuation_basis: "closing_odds_approx";
+        };
+        /** AttentionBacktestBootstrap */
+        AttentionBacktestBootstrap: {
+            /** B */
+            b: number;
+            /** Block */
+            block: string;
+            /** Block Universe */
+            block_universe: string;
+            /** Impl */
+            impl: string;
+            /** Seed */
+            seed: number;
+        };
+        /** AttentionCheckpointBootstrap */
+        AttentionCheckpointBootstrap: {
+            /** B */
+            b: number | null;
+            /** Block Universe */
+            block_universe: string | null;
+            /** Impl */
+            impl: string | null;
+            /** Seed */
+            seed: number | null;
+        };
+        /**
+         * AttentionDayItem
+         * @description One chip horse of the day (judged at the race's first computation).
+         */
+        AttentionDayItem: {
+            /**
+             * Chip Now
+             * @enum {string}
+             */
+            chip_now: "matches" | "no_longer" | "unknown";
+            /**
+             * Chip Rule
+             * @enum {string}
+             */
+            chip_rule: "S1" | "S2" | "S3" | "S4" | "S5";
+            /** Chip S2 */
+            chip_s2: boolean;
+            chip_stage: components["schemas"]["StageDetail"];
+            /** Current Odds Observed At */
+            current_odds_observed_at: string | null;
+            /** Has Results */
+            has_results: boolean;
+            /** Horse Id */
+            horse_id: string;
+            /** Horse Name */
+            horse_name: string | null;
+            /** Horse Number */
+            horse_number: number | null;
+            levels: components["schemas"]["AttentionLevels"];
+            /** Post Time */
+            post_time: string | null;
+            /** Race Id */
+            race_id: string;
+            /** Race Number */
+            race_number: number | null;
+            /** Stages */
+            stages: {
+                [key: string]: components["schemas"]["StageDetail"];
+            };
+            /** Venue Code */
+            venue_code: string | null;
+        };
+        /** AttentionDayResponse */
+        AttentionDayResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Items */
+            items: components["schemas"]["AttentionDayItem"][];
+        };
+        /**
+         * AttentionExclusionCounts
+         * @description Exclusive exclusion classes (eval ``classify_pick``); with n_counted they sum to the rule's
+         *     total pick rows (date-unfiltered, voided picks included).
+         */
+        AttentionExclusionCounts: {
+            /** Before Start */
+            before_start: number;
+            /** Computed After Post */
+            computed_after_post: number;
+            /** Dead Heat */
+            dead_heat: number;
+            /** Observed After Post */
+            observed_after_post: number;
+            /** Pending Result */
+            pending_result: number;
+            /** Post Time Unknown */
+            post_time_unknown: number;
+            /** Result Known At Compute */
+            result_known_at_compute: number;
+            /** Unsettled Horse */
+            unsettled_horse: number;
+            /** Voided Scratched */
+            voided_scratched: number;
+        };
+        /**
+         * AttentionFlags
+         * @description Non-exclusive audit flags (counted picks are flagged too; never part of the Σ check).
+         */
+        AttentionFlags: {
+            /** Field Changed After Pick */
+            field_changed_after_pick: number;
+        };
+        /** AttentionFreshnessBand */
+        AttentionFreshnessBand: {
+            /** Hits */
+            hits: number;
+            /** N */
+            n: number;
+            /** Roi Frozen */
+            roi_frozen: number | null;
+        };
+        /**
+         * AttentionFrozenBasis
+         * @description Settlement at the judged odds (odds_used × 100 yen) — the basis of the stages.
+         */
+        AttentionFrozenBasis: {
+            /** Ci */
+            ci: [
+                number,
+                number
+            ] | null;
+            /** P One Sided */
+            p_one_sided: number | null;
+            /** Roi */
+            roi: number | null;
+            /**
+             * Valuation Basis
+             * @constant
+             */
+            valuation_basis: "frozen_pick_odds";
+        };
+        /**
+         * AttentionFrozenStats
+         * @description Frozen backtest window statistics (closing-odds approximation, ratio units).
+         */
+        AttentionFrozenStats: {
+            /** Ci High */
+            ci_high: number;
+            /** Ci Low */
+            ci_low: number;
+            /** Hits */
+            hits: number;
+            /** N */
+            n: number;
+            /** P One Sided */
+            p_one_sided: number;
+            /** Roi */
+            roi: number;
+        };
+        /** AttentionHorse */
+        AttentionHorse: {
+            /** Applicable */
+            applicable: ("S1" | "S2" | "S3" | "S4" | "S5")[];
+            /** Chip Now */
+            chip_now: ("matches" | "no_longer" | "unknown") | null;
+            /** Chip Rule */
+            chip_rule: ("S1" | "S2" | "S3" | "S4" | "S5") | null;
+            /** Chip S2 */
+            chip_s2: boolean;
+            chip_stage: components["schemas"]["StageDetail"] | null;
+            current: components["schemas"]["EvSnapshot"] | null;
+            /** Field Changed After Pick */
+            field_changed_after_pick: boolean;
+            /** Horse Id */
+            horse_id: string;
+            /** Horse Number */
+            horse_number: number | null;
+            judged: components["schemas"]["EvSnapshot"] | null;
+            levels: components["schemas"]["AttentionLevels"] | null;
+            /** Pick Status */
+            pick_status: {
+                [key: string]: "pick" | "void:scratched" | "none";
+            };
+            /** Stages */
+            stages: {
+                [key: string]: components["schemas"]["StageDetail"];
+            };
+        };
+        /**
+         * AttentionJudgedFreshness
+         * @description Counted picks by 判断時鮮度帯 = post_time − the pick's odds_observed_at.
+         */
+        AttentionJudgedFreshness: {
+            "<=10m": components["schemas"]["AttentionFreshnessBand"];
+            "<=60m": components["schemas"]["AttentionFreshnessBand"];
+            ">60m": components["schemas"]["AttentionFreshnessBand"];
+        };
+        /**
+         * AttentionLevels
+         * @description Axis levels decided by the API (価格鮮度 is computed by the front at render time).
+         */
+        AttentionLevels: {
+            /**
+             * Backtest
+             * @enum {integer}
+             */
+            backtest: 1 | 2 | 3;
+            /**
+             * Price Noise
+             * @enum {integer}
+             */
+            price_noise: 1 | 2 | 3;
+            /**
+             * Prospective
+             * @enum {integer}
+             */
+            prospective: 1 | 2 | 3;
+        };
+        /**
+         * AttentionOddsDrift
+         * @description log(current stored odds / odds_used) over counted picks (diagnostic).
+         */
+        AttentionOddsDrift: {
+            /** Median Log Ratio */
+            median_log_ratio: number | null;
+            /** N */
+            n: number;
+            /** P10 */
+            p10: number | null;
+            /** P90 */
+            p90: number | null;
+        };
+        /** AttentionPriceNoise */
+        AttentionPriceNoise: {
+            /** N */
+            n: number;
+            /** Overlap */
+            overlap: number;
+            /** Roi */
+            roi: number;
+            /** Sigma */
+            sigma: number;
+        };
+        /** AttentionProspective */
+        AttentionProspective: {
+            bootstrap: components["schemas"]["AttentionProspectiveBootstrap"];
+            by_judged_freshness: components["schemas"]["AttentionJudgedFreshness"];
+            /** Checkpoint */
+            checkpoint: (300 | 600) | null;
+            /** Checkpoint Pending */
+            checkpoint_pending: boolean;
+            counts: components["schemas"]["AttentionExclusionCounts"];
+            /** Decisions */
+            decisions: components["schemas"]["CheckpointDecision"][];
+            flags: components["schemas"]["AttentionFlags"];
+            frozen: components["schemas"]["AttentionFrozenBasis"];
+            /** N Counted */
+            n_counted: number;
+            /** N Hits */
+            n_hits: number;
+            /** N Picks Total */
+            n_picks_total: number;
+            /** Next Checkpoint */
+            next_checkpoint: (300 | 600) | null;
+            odds_drift: components["schemas"]["AttentionOddsDrift"];
+            /** Policy Version */
+            policy_version: string;
+            /** Remaining To Next */
+            remaining_to_next: number | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "researching" | "observing" | "passed" | "failed" | "undecided";
+            /** Start Date */
+            start_date: string | null;
+            stored: components["schemas"]["AttentionStoredBasis"];
+        };
+        /** AttentionProspectiveBootstrap */
+        AttentionProspectiveBootstrap: {
+            /** B */
+            b: number;
+            /** Block */
+            block: string;
+            /** Block Universe */
+            block_universe: string;
+            /** Impl */
+            impl: string;
+            /** Numpy Version */
+            numpy_version: string;
+            /** Rng */
+            rng: string;
+            /** Seed */
+            seed: number;
+        };
+        /** AttentionRuleLevels */
+        AttentionRuleLevels: {
+            /**
+             * Backtest
+             * @enum {integer}
+             */
+            backtest: 1 | 2 | 3;
+            /**
+             * Price Noise
+             * @enum {integer}
+             */
+            price_noise: 1 | 2 | 3;
+        };
+        /** AttentionRulesResponse */
+        AttentionRulesResponse: {
+            /** Disclaimer */
+            disclaimer: string;
+            /** Items */
+            items: components["schemas"]["RuleSummary"][];
+            /** Rule Set Version */
+            rule_set_version: string;
+        };
+        /**
+         * AttentionSelectedCalibration
+         * @description Selected horses: mean expected return vs realized return (expected-return units only).
+         */
+        AttentionSelectedCalibration: {
+            /** Mean Ev */
+            mean_ev: number;
+            /** N */
+            n: number;
+            /** Realized Roi */
+            realized_roi: number;
+        };
+        /** AttentionSelectedWindows */
+        AttentionSelectedWindows: {
+            all: components["schemas"]["AttentionSelectedCalibration"];
+            c: components["schemas"]["AttentionSelectedCalibration"];
+        };
+        /**
+         * AttentionStoredBasis
+         * @description Reference settlement at the CURRENT stored win odds (mutable; may be re-ingested).
+         *
+         *     Only counted picks whose stored odds are still valid are settled here (``n``); the others are
+         *     left out of numerator and denominator and counted (``n_missing_stored_odds``), never valued at
+         *     the judged odds. ``n + n_missing_stored_odds`` equals the prospective ``n_counted``.
+         */
+        AttentionStoredBasis: {
+            /** Ci */
+            ci: [
+                number,
+                number
+            ] | null;
+            /** N */
+            n: number;
+            /** N Missing Stored Odds */
+            n_missing_stored_odds: number;
+            /** Roi */
+            roi: number | null;
+            /**
+             * Valuation Basis
+             * @constant
+             */
+            valuation_basis: "stored_odds_mutable";
+        };
+        /**
+         * AttentionUnavailable
+         * @description No first computation yet: not computed, or a started horse has no valid win odds.
+         */
+        AttentionUnavailable: {
+            /** Race Id */
+            race_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "not_computed" | "odds_unavailable";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "unavailable";
+        };
         /**
          * AvailableModel
          * @description Feature 057: a model that has a persisted prediction_run for THIS race (i.e. selectable on
@@ -504,6 +973,53 @@ export interface components {
             snapshot_id: string;
             /** Source */
             source: string;
+        };
+        /**
+         * CheckpointDecision
+         * @description One recorded checkpoint decision (append-only; the stage follows these records).
+         */
+        CheckpointDecision: {
+            bootstrap: components["schemas"]["AttentionCheckpointBootstrap"];
+            /**
+             * Checkpoint
+             * @enum {integer}
+             */
+            checkpoint: 300 | 600;
+            /** Ci */
+            ci: [
+                number,
+                number
+            ] | null;
+            /** Counted Pick Ids Sha256 */
+            counted_pick_ids_sha256: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "passed" | "failed" | "continue" | "undecided";
+            /** N Counted */
+            n_counted: number;
+            /** N Hits */
+            n_hits: number;
+            /**
+             * Prospective Start Date
+             * Format: date
+             */
+            prospective_start_date: string;
+            /** Roi Frozen */
+            roi_frozen: number;
+            /**
+             * Settlement Cutoff
+             * Format: date-time
+             */
+            settlement_cutoff: string;
+            /** Skipped Pending Before Last */
+            skipped_pending_before_last: number;
         };
         /** ComparisonCoverage */
         ComparisonCoverage: {
@@ -651,6 +1167,30 @@ export interface components {
             pseudo: true;
             /** Selection */
             selection: number[];
+        };
+        /**
+         * EvSnapshot
+         * @description Expected returns (ratio, pseudo) at one moment. ``judged`` = the frozen pick values;
+         *     ``current`` = the displayed version's latest row (single seed only from the same run).
+         */
+        EvSnapshot: {
+            /** Computed At */
+            computed_at: string | null;
+            /** Ens Expected Return */
+            ens_expected_return: number | null;
+            /**
+             * Is Pseudo
+             * @constant
+             */
+            is_pseudo: true;
+            /** Odds */
+            odds: number | null;
+            /** Odds Observed At */
+            odds_observed_at: string | null;
+            /** Run Id */
+            run_id: string | null;
+            /** Single Expected Return */
+            single_expected_return: number | null;
         };
         /**
          * Explanation
@@ -1670,6 +2210,41 @@ export interface components {
             /** Valuation Basis */
             valuation_basis?: string | null;
         };
+        /** RuleSummary */
+        RuleSummary: {
+            backtest: components["schemas"]["AttentionBacktest"];
+            /** Control */
+            control: boolean;
+            /** Definition Ja */
+            definition_ja: string;
+            /** Ev Gt */
+            ev_gt: number;
+            /** Gap Days */
+            gap_days: [
+                number,
+                number
+            ] | null;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "S1" | "S2" | "S3" | "S4" | "S5";
+            levels: components["schemas"]["AttentionRuleLevels"];
+            /** Odds Band */
+            odds_band: [
+                number,
+                number
+            ] | null;
+            /** Posthoc */
+            posthoc: boolean;
+            /** Price Noise */
+            price_noise: components["schemas"]["AttentionPriceNoise"][];
+            prospective: components["schemas"]["AttentionProspective"];
+            /** Rank */
+            rank: number;
+            /** Uses Ensemble */
+            uses_ensemble: boolean;
+        };
         /** RunAudit */
         RunAudit: {
             /**
@@ -2117,6 +2692,21 @@ export interface components {
             weak_pretime: number;
         };
         /**
+         * StageDetail
+         * @description Prospective stage of one rule: enough to draw 「300 点不通過」 / 「観察中・判定待ち」.
+         */
+        StageDetail: {
+            /** Checkpoint */
+            checkpoint: (300 | 600) | null;
+            /** Checkpoint Pending */
+            checkpoint_pending: boolean;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "researching" | "observing" | "passed" | "failed" | "undecided";
+        };
+        /**
          * UnderratedLongshot
          * @description Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT
          *     rank top 3 (popularity_rank > 3). A NEUTRAL FACT (model/market disagree), NOT a buy call.
@@ -2176,6 +2766,57 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    attention_rule_list_api_v1_attention_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttentionRulesResponse"];
+                };
+            };
+        };
+    };
+    attention_day_api_v1_attention_day_get: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttentionDayResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     coverage_api_v1_coverage_get: {
         parameters: {
             query: {
@@ -2694,6 +3335,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    race_attention_api_v1_races__race_id__attention_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                race_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttentionAvailable"] | components["schemas"]["AttentionUnavailable"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

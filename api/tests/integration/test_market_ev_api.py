@@ -13,6 +13,10 @@ from decimal import Decimal
 import pytest
 from horseracing_db.enums import AdoptionStatus, EntryStatus
 from horseracing_db.models import Horse, MarketEvPrediction, RaceHorse
+from horseracing_eval.attention_rules import (
+    DISPLAYED_MARKET_EV_MODEL_VERSION,
+    SINGLE_SEED_MODEL_VERSION,
+)
 from sqlalchemy import func, select
 from sqlalchemy import update as sa_update
 
@@ -102,7 +106,7 @@ def test_available_values_equal_persisted_rows(client, session):
     }
     assert body["status"] == "available"
     assert body["race_id"] == _RACE
-    assert body["model_version"] == "mev-binary-v2"
+    assert body["model_version"] == DISPLAYED_MARKET_EV_MODEL_VERSION
     assert body["logic_version"] == "mev-v1;features=test"
     assert body["threshold"] == MARKET_EV_THRESHOLD == 1.2
     assert body["is_pseudo"] is True
@@ -242,7 +246,7 @@ def test_independent_of_win_model_selection(client, session):
     with_param = client.get(_url(), params={"model_version": "m-other"})
     assert plain.status_code == with_param.status_code == 200
     assert with_param.json() == plain.json()
-    assert plain.json()["model_version"] == "mev-binary-v2"
+    assert plain.json()["model_version"] == DISPLAYED_MARKET_EV_MODEL_VERSION
 
     for mv in (None, "m-active", "m-other"):
         params = {"model_version": mv} if mv else {}
@@ -258,15 +262,27 @@ def test_prediction_run_without_rows_is_still_not_computed(client, session):
     assert client.get(_url()).json()["reason"] == "not_computed"
 
 
-def test_newest_market_model_version_is_shown(client, session):
-    _seed(session, model_version="mev-binary-v1",
-          computed_at=datetime.datetime(2026, 9, 26, 3, 0, tzinfo=datetime.UTC))
+def test_single_seed_newer_than_ens15_still_shows_ens15(client, session):
+    # Feature 138 (D8): the displayed version is a registry constant, not "the newest version".
+    # A later single-seed-only recompute (e.g. a manual run without the ensemble) must not swap
+    # the column back to the single-seed series.
+    _seed(session, computed_at=datetime.datetime(2026, 9, 26, 3, 0, tzinfo=datetime.UTC))
+    before = client.get(_url()).json()
     newer = {n: {**h, "win_prob": 0.05} for n, h in _EV.items()}
-    seed_market_ev(session, race_id=_RACE, horses=newer, model_version="mev-binary-v2",
+    seed_market_ev(session, race_id=_RACE, horses=newer, model_version=SINGLE_SEED_MODEL_VERSION,
                    computed_at=datetime.datetime(2026, 9, 27, 3, 0, tzinfo=datetime.UTC))
     body = client.get(_url()).json()
-    assert body["model_version"] == "mev-binary-v2"
-    assert [h["expected_return"] for h in body["horses"]] == [0.125, 0.2, 0.4, 0.75]
+    assert body["model_version"] == DISPLAYED_MARKET_EV_MODEL_VERSION
+    assert [h["expected_return"] for h in body["horses"]] == [0.9, 1.0, 1.28, 1.35]
+    assert body == before
+
+
+def test_only_single_seed_rows_is_not_computed(client, session):
+    # rows of another market-aware version never stand in for the displayed one
+    _seed(session, model_version=SINGLE_SEED_MODEL_VERSION)
+    resp = client.get(_url())
+    assert resp.status_code == 200
+    assert resp.json()["reason"] == "not_computed"
 
 
 def test_market_ev_read_writes_nothing(client, session):

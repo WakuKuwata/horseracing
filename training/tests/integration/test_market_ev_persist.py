@@ -4,10 +4,16 @@ A recompute replaces a race's rows for its model_version in one transaction (rac
 scratched after the first compute leaves no stale row, other model versions are untouched, and every
 provenance column (odds used + when observed, result-pending flag, booster + sha256, logic
 version, run id, computed_at) is filled.
+
+Feature 138 (T019): with ``--ensemble-dir`` the 15-seed average is written in the same run (one
+run_id / computed_at / transaction, per-date locks single → ensemble, the same rows), a failure
+anywhere rolls back both versions and the scans, and ``--ensemble-only`` never touches a byte of the
+single-seed rows.
 """
 
 from __future__ import annotations
 
+import contextlib
 import datetime
 import hashlib
 from decimal import Decimal
@@ -15,6 +21,8 @@ from decimal import Decimal
 import pytest
 from horseracing_db.enums import EntryStatus, ResultStatus
 from horseracing_db.models import (
+    AttentionPick,
+    AttentionRaceScan,
     Horse,
     Jockey,
     MarketEvPrediction,
@@ -23,10 +31,11 @@ from horseracing_db.models import (
     RaceResult,
     Trainer,
 )
-from sqlalchemy import select, update
+from sqlalchemy import event, select, update
 
 from horseracing_training import market_ev
 from horseracing_training.cli import main
+from tests import _attention_synth as att
 from tests._market_ev_synth import write_model_dir
 
 pytestmark = pytest.mark.integration
@@ -236,3 +245,203 @@ def test_pending_only_keeps_the_pre_race_value_of_a_settled_race(session, model_
     base = ["--model-dir", str(model_dir), "--database-url", database_url]
     assert main(["market-ev", "--date", HISTORY_DAY.isoformat(), "--pending-only", *base]) == 0
     assert capsys.readouterr().out.strip().splitlines()[-1] == "SKIPPED: no_pending_races"
+
+
+# ------------------------------------------------------------------------ Feature 138: 2 versions
+
+
+@pytest.fixture
+def ens_dirs(tmp_path):
+    return att.model_dirs(tmp_path)
+
+
+def _all_rows(session, model_version: str) -> list[tuple]:
+    """Every column of a version's rows (byte-level comparison)."""
+    cols = [c.name for c in MarketEvPrediction.__table__.columns]
+    session.expire_all()
+    rows = session.scalars(
+        select(MarketEvPrediction).where(MarketEvPrediction.model_version == model_version)
+        .order_by(MarketEvPrediction.race_id, MarketEvPrediction.horse_id)
+    )
+    return [tuple(getattr(r, c) for c in cols) for r in rows]
+
+
+def _attention_rows(session) -> tuple[list, list]:
+    session.expire_all()
+    return (list(session.scalars(select(AttentionRaceScan))),
+            list(session.scalars(select(AttentionPick))))
+
+
+def test_two_versions_share_one_run_and_one_time(session, ens_dirs):
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    out = att.run(session, single, ensemble)
+    assert out["status"] == "ok" and (out["races"], out["horses"]) == (3, 10)
+    assert out["model_version"] == att.SINGLE and out["ensemble_version"] == att.ENS
+    assert set(out["versions"]) == {att.SINGLE, att.ENS}
+    manifest = ensemble / "ensemble_2025.json"
+    assert out["versions"][att.ENS]["boosters"] == {
+        "ensemble_2025.json": hashlib.sha256(manifest.read_bytes()).hexdigest()
+    }
+
+    single_rows, ens_rows = _rows(session, att.SINGLE), _rows(session, att.ENS)
+    assert len(single_rows) == len(ens_rows) == 10
+    assert {(r.race_id, r.horse_id) for r in single_rows} == {
+        (r.race_id, r.horse_id) for r in ens_rows
+    }
+    assert {(str(r.run_id), r.computed_at) for r in single_rows + ens_rows} == {
+        (out["run_id"], single_rows[0].computed_at)
+    }
+    assert {r.logic_version for r in ens_rows} == {market_ev.ENSEMBLE_LOGIC_VERSION}
+    assert {r.logic_version for r in single_rows} == {market_ev.LOGIC_VERSION}
+    assert {r.booster for r in ens_rows} == {"ensemble_2025.json"}
+    assert {r.booster for r in single_rows} == {"model_2025.txt"}
+    for r in ens_rows:
+        assert r.expected_return == r.win_prob * r.odds_used
+    # the two models really differ (the ensemble is not the single seed written twice)
+    assert [r.win_prob for r in single_rows] != [r.win_prob for r in ens_rows]
+
+
+@pytest.mark.parametrize("where", ["ensemble_rows", "picks"])
+def test_a_failure_rolls_back_both_versions_and_the_scans(session, ens_dirs, monkeypatch,
+                                                           where):
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    if where == "ensemble_rows":
+        real = market_ev._replace_rows
+
+        def _replace(sess, pred, **kw):
+            if kw["model_version"] == att.ENS:
+                raise RuntimeError("ensemble insert failed")
+            return real(sess, pred, **kw)
+
+        monkeypatch.setattr(market_ev, "_replace_rows", _replace)
+    else:
+        from horseracing_training import attention_picks
+
+        def _record(sess, **kw):
+            raise RuntimeError("pick insert failed")
+
+        monkeypatch.setattr(attention_picks, "record_attention", _record)
+    with pytest.raises(RuntimeError, match="failed"):
+        att.run(session, single, ensemble)
+    assert _rows(session, att.SINGLE) == [] and _rows(session, att.ENS) == []
+    assert _attention_rows(session) == ([], [])
+
+
+@contextlib.contextmanager
+def _lock_keys(engine):
+    """The keys of every ``pg_advisory_xact_lock`` issued while the block runs, in order."""
+    keys: list[str] = []
+
+    def _capture(_conn, _cursor, statement, parameters, _context, _many):
+        if "pg_advisory_xact_lock" in statement:
+            keys.append(parameters["k"])
+
+    event.listen(engine, "before_cursor_execute", _capture)
+    try:
+        yield keys
+    finally:
+        event.remove(engine, "before_cursor_execute", _capture)
+
+
+def test_advisory_locks_are_per_date_single_then_ensemble(session, engine, ens_dirs):
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    with _lock_keys(engine) as keys:
+        att.run(session, single, ensemble, day_from=att.DAY, day_to=att.NEXT_DAY)
+    days = (att.DAY.isoformat(), att.NEXT_DAY.isoformat())
+    # the compute transaction's per-date locks (ascending, single then ensemble), then the
+    # checkpoint step's own lock in its separate transaction after the commit
+    assert keys == [f"market_ev:{v}:{d}" for d in days for v in (att.SINGLE, att.ENS)] + [
+        "attention_checkpoints"]
+
+
+def test_ensemble_only_takes_only_the_ensemble_locks(session, engine, ens_dirs):
+    """D24: a backfill run never writes the single-seed rows, so it never serialises on them."""
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    with _lock_keys(engine) as keys:
+        out = att.run(session, single, ensemble, day_from=att.DAY, day_to=att.NEXT_DAY,
+                      ensemble_only=True)
+    assert out["status"] == "ok"
+    days = (att.DAY.isoformat(), att.NEXT_DAY.isoformat())
+    assert keys == [f"market_ev:{att.ENS}:{d}" for d in days] + ["attention_checkpoints"]
+
+
+def test_versions_must_compute_the_same_rows(session, ens_dirs, monkeypatch):
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    real = market_ev.predict_ensemble
+    monkeypatch.setattr(market_ev, "predict_ensemble", lambda m, f: real(m, f).iloc[1:])
+    with pytest.raises(RuntimeError, match="disagree"):
+        att.run(session, single, ensemble)
+    assert _rows(session, att.SINGLE) == [] and _rows(session, att.ENS) == []
+    assert _attention_rows(session) == ([], [])
+
+
+def test_pending_only_with_the_ensemble_keeps_settled_rows_of_both_versions(session, ens_dirs):
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    first = att.run(session, single, ensemble)
+    settled = {v: [r for r in _all_rows(session, v) if r[0] == att.D] for v in (att.SINGLE,
+                                                                                att.ENS)}
+    assert all(settled.values())
+    session.execute(update(RaceHorse).where(RaceHorse.race_id == att.D,
+                                            RaceHorse.horse_id == "H11")
+                    .values(odds=Decimal("2.6")))
+    session.commit()
+    second = att.run(session, single, ensemble, pending_only=True)
+    assert second["status"] == "ok" and second["races_settled_skipped"] == 1
+    assert second["picks"]["races_first_computed"] == 0
+    for v in (att.SINGLE, att.ENS):
+        rows = _all_rows(session, v)
+        assert [r for r in rows if r[0] == att.D] == settled[v]
+        assert {str(r.run_id) for r in _rows(session, v) if r.race_id in (att.A, att.B)} == {
+            second["run_id"]
+        }
+    assert first["run_id"] != second["run_id"]
+
+
+def test_ensemble_only_leaves_the_single_seed_rows_untouched(session, ens_dirs):
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    att.run(session, single, None)  # 137's single-version rows, computed first
+    before = _all_rows(session, att.SINGLE)
+    assert before and _rows(session, att.ENS) == []
+
+    out = att.run(session, single, ensemble, ensemble_only=True)
+    assert out["status"] == "ok" and list(out["versions"]) == [att.ENS]
+    assert out["model_version"] == att.ENS
+    assert out["logic_version"] == market_ev.ENSEMBLE_LOGIC_VERSION
+    assert _all_rows(session, att.SINGLE) == before  # not one byte changed
+    ens_rows = _rows(session, att.ENS)
+    assert len(ens_rows) == 10 and {str(r.run_id) for r in ens_rows} == {out["run_id"]}
+    scans, _ = _attention_rows(session)
+    assert {s.race_id for s in scans} == {att.A, att.B, att.D}
+    assert {str(s.run_id) for s in scans} == {out["run_id"]}
+
+
+def test_cli_end_to_end_with_the_ensemble(session, database_url, ens_dirs, capsys):
+    att.seed_card(session)
+    single, ensemble = ens_dirs
+    base = ["--model-dir", str(single), "--ensemble-dir", str(ensemble),
+            "--database-url", database_url]
+    assert main(["market-ev", "--date", att.DAY.isoformat(), *base]) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    picks = len(_attention_rows(session)[1])
+    assert lines[-1] == (
+        f"OK: races=3 horses=10 from={att.DAY} to={att.DAY} versions=2 picks={picks} "
+        "checkpoints=ok"
+    )
+    assert lines[-2].startswith("attention-checkpoints: written=- pending=- ")
+
+    assert main(["market-ev", "--date", att.DAY.isoformat(), "--ensemble-only", *base]) == 0
+    assert capsys.readouterr().out.strip().splitlines()[-1] == (
+        f"OK: races=3 horses=10 from={att.DAY} to={att.DAY} versions=ens picks=0 checkpoints=ok"
+    )
+    # a mismatched pair is refused (the ERROR path, nothing written)
+    bad = ["--model-dir", str(single), "--ensemble-dir", str(ensemble), "--ensemble-version",
+           "mev-ens15-v9", "--database-url", database_url]
+    assert main(["market-ev", "--date", att.DAY.isoformat(), *bad]) == 1
+    assert "ERROR: market-ev failed" in capsys.readouterr().err

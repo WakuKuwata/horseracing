@@ -29,6 +29,7 @@ from tests._market_ev_synth import (
     SPEC_FEATURES,
     race_id,
     raw_frame,
+    write_ensemble_dir,
     write_model_dir,
 )
 
@@ -376,3 +377,325 @@ def test_cli_exception_exits_nonzero_without_a_marker(fake_run, model_dir, capsy
     captured = capsys.readouterr()
     assert "OK:" not in captured.out and "SKIPPED:" not in captured.out
     assert "ERROR: market-ev failed: RuntimeError: boom" in captured.err
+
+
+# --------------------------------------------------------------------------- Feature 138: ensemble
+
+ENS = "mev-ens15-v1"
+SINGLE = "mev-binary-v2"
+
+
+def test_ensemble_logic_version_is_the_contract_value():
+    assert market_ev.ENSEMBLE_LOGIC_VERSION == (
+        "mev-ens15-v1;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;"
+        "drop=sameday,weightlive;data>=2007"
+    )
+    assert market_ev.ENSEMBLE_SEEDS == tuple(range(1, 16))
+    # the single-version contract is untouched
+    assert market_ev.LOGIC_VERSION.startswith("mev-v1;")
+
+
+def test_predict_ensemble_is_the_mean_of_the_members(tmp_path):
+    ens_dir = write_ensemble_dir(tmp_path / ENS, years=(2026,))
+    model = market_ev.EnsembleMarketEvModel.load(ens_dir, ENS)
+    feats = market_ev.build_features(raw_frame())
+    pred = market_ev.predict_ensemble(model, feats)
+
+    assert list(pred.columns) == list(market_ev._PREDICTION_COLUMNS)
+    single = market_ev.predict(market_ev.MarketEvModel.load(ens_dir / "seed_01", "s1"), feats)
+    assert market_ev._row_keys(pred) == market_ev._row_keys(single)  # same race_ok filter
+
+    ok = feats[feats["race_ok"].astype(bool)]
+    X = model.design_matrix(ok)
+    import lightgbm as lgb
+
+    members = [lgb.Booster(model_file=str(ens_dir / f"seed_{s:02d}" / "model_2026.txt"))
+               for s in range(1, 16)]
+    expected = np.mean(np.vstack([b.predict(X) for b in members]), axis=0)
+    np.testing.assert_array_equal(pred["win_prob"].to_numpy(), expected)
+    np.testing.assert_array_equal(
+        pred["expected_return"].to_numpy(), expected * pred["odds_used"].to_numpy()
+    )
+    # the members really differ (an average of identical boosters would hide a wiring bug)
+    assert not np.array_equal(members[0].predict(X), members[1].predict(X))
+    manifest = ens_dir / "ensemble_2026.json"
+    assert set(pred["booster"]) == {"ensemble_2026.json"}
+    assert set(pred["booster_sha256"]) == {hashlib.sha256(manifest.read_bytes()).hexdigest()}
+
+
+def test_ensemble_manifest_falls_back_to_the_latest_earlier_year(tmp_path):
+    ens_dir = write_ensemble_dir(tmp_path / ENS, years=(2024, 2025))
+    model = market_ev.EnsembleMarketEvModel.load(ens_dir, ENS)
+    assert model.booster_manifest_for_year(2025).name == "ensemble_2025.json"
+    assert model.booster_manifest_for_year(2026).name == "ensemble_2025.json"
+    with pytest.raises(FileNotFoundError):
+        model.booster_manifest_for_year(2023)
+    pred = market_ev.predict_ensemble(model, market_ev.build_features(raw_frame()))
+    assert set(pred["booster"]) == {"ensemble_2025.json"}
+
+
+def _rewrite_manifest(ens_dir: pathlib.Path, year: int, mutate) -> None:
+    path = ens_dir / f"ensemble_{year}.json"
+    manifest = json.loads(path.read_text())
+    mutate(manifest)
+    path.write_text(json.dumps(manifest))
+
+
+def test_ensemble_member_sha_mismatch_fails_closed(tmp_path):
+    ens_dir = write_ensemble_dir(tmp_path / ENS)
+    member = ens_dir / "seed_07" / "model_2026.txt"
+    member.write_text(member.read_text() + "\n")  # one byte differs from the recorded sha256
+    model = market_ev.EnsembleMarketEvModel.load(ens_dir, ENS)
+    with pytest.raises(market_ev.EnsembleIntegrityError, match="sha256 mismatch"):
+        market_ev.predict_ensemble(model, market_ev.build_features(raw_frame()))
+
+
+@pytest.mark.parametrize(
+    ("mutate", "match"),
+    [
+        (lambda m: m["members"].pop(), "member seeds"),                    # partial average
+        (lambda m: m["members"].reverse(), "member seeds"),                # order is part of it
+        (lambda m: m["members"][0].update(path="../escape.txt"), "escapes"),
+        (lambda m: m.update(version="mev-other"), "version/year"),
+        (lambda m: m.update(year=2025), "version/year"),
+    ],
+)
+def test_ensemble_manifest_must_match_spec(tmp_path, mutate, match):
+    ens_dir = write_ensemble_dir(tmp_path / ENS)
+    _rewrite_manifest(ens_dir, 2026, mutate)
+    model = market_ev.EnsembleMarketEvModel.load(ens_dir, ENS)
+    with pytest.raises(market_ev.EnsembleIntegrityError, match=match):
+        model.load_members(ens_dir / "ensemble_2026.json")
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"seeds": list(range(1, 15))},
+        {"num_threads": 8},
+        {"deterministic": False},
+        {"objective": "lambdarank"},
+        {"version": "mev-ens15-v0"},
+        # "drop=sameday,weightlive;data>=2007" is part of the logic version the rows carry
+        {"drop_groups": ["sameday"]},
+        {"drop_groups": ["sameday", "weightlive", "odds"]},
+        {"drop_groups": None},
+        {"train_from": 1986},
+        {"train_from": None},
+    ],
+)
+def test_ensemble_spec_must_match_the_logic_version(tmp_path, patch):
+    ens_dir = write_ensemble_dir(tmp_path / ENS)
+    spec_path = ens_dir / "ensemble.spec.json"
+    spec = json.loads(spec_path.read_text()) | patch
+    spec_path.write_text(json.dumps(spec))
+    with pytest.raises(market_ev.EnsembleIntegrityError):
+        market_ev.EnsembleMarketEvModel.load(ens_dir, ENS)
+
+
+def test_ensemble_spec_drop_group_order_is_irrelevant(tmp_path):
+    ens_dir = write_ensemble_dir(tmp_path / ENS)
+    spec_path = ens_dir / "ensemble.spec.json"
+    spec = json.loads(spec_path.read_text()) | {"drop_groups": ["weightlive", "sameday"]}
+    spec_path.write_text(json.dumps(spec))
+    assert market_ev.EnsembleMarketEvModel.load(ens_dir, ENS).spec["train_from"] == 2007
+
+
+def test_ensemble_runs_only_pair_the_registry_versions(tmp_path):
+    """Picks recorded from another pair would be filed under the same rule set (fail-closed,
+    before any database access)."""
+    single = write_model_dir(tmp_path / "mev-it-v1")
+    ens = write_ensemble_dir(tmp_path / ENS)
+    with pytest.raises(ValueError, match=SINGLE):
+        market_ev.compute_and_persist(None, race_date_from=D1, race_date_to=D1,
+                                      model_dir=single, ensemble_dir=ens)
+    other = write_ensemble_dir(tmp_path / "mev-ens15-v9")
+    with pytest.raises(ValueError, match=ENS):
+        market_ev.compute_and_persist(None, race_date_from=D1, race_date_to=D1,
+                                      model_dir=write_model_dir(tmp_path / SINGLE),
+                                      ensemble_dir=other)
+    with pytest.raises(ValueError, match="ensemble_only requires"):
+        market_ev.compute_and_persist(None, race_date_from=D1, race_date_to=D1,
+                                      model_dir=single, ensemble_only=True)
+
+
+def test_drop_invalid_odds_races_is_race_atomic():
+    pred = pd.DataFrame({"race_id": ["a", "a", "b"], "odds_used": [0.9, 3.0, 2.0]})
+    kept, invalid = market_ev.drop_invalid_odds_races(pred)
+    assert invalid == {"a"} and list(kept["race_id"]) == ["b"]
+
+
+# --------------------------------------------------------------------------- Feature 138: CLI
+
+
+@pytest.fixture
+def ensemble_dir(tmp_path) -> pathlib.Path:
+    d = tmp_path / ENS
+    d.mkdir()
+    (d / "ensemble.spec.json").write_text(json.dumps({"objective": "binary"}))
+    return d
+
+
+def test_cli_rejects_bad_ensemble_dirs(no_db, tmp_path, model_dir, ensemble_dir):
+    base = ["market-ev", "--date", "2026-09-27", "--model-dir", str(model_dir)]
+    assert _exit_code([*base, "--ensemble-dir", "artifacts/market_ev/mev-ens15-v1"]) == 2
+    worktree = tmp_path / ".claude" / "worktrees" / "wt" / ENS
+    worktree.mkdir(parents=True)
+    (worktree / "ensemble.spec.json").write_text("{}")
+    assert _exit_code([*base, "--ensemble-dir", str(worktree)]) == 2
+    specless = tmp_path / "specless"
+    specless.mkdir()
+    (specless / "model.spec.json").write_text("{}")  # a single-model dir is not an ensemble
+    assert _exit_code([*base, "--ensemble-dir", str(specless)]) == 2
+    assert _exit_code([*base, "--ensemble-only"]) == 2
+    assert _exit_code([*base, "--ensemble-version", ENS]) == 2
+
+
+@pytest.fixture
+def fake_ens_run(monkeypatch):
+    """A recording compute_and_persist that answers like an ensemble run."""
+    engine = create_engine("sqlite://")
+    monkeypatch.setattr(cli, "create_db_engine", lambda _url=None: engine)
+    calls: list[dict] = []
+    outcome: dict = {"checkpoints": {"written": [], "pending": [], "error": None,
+                                     "prospective_start_date": None}}
+
+    def _compute(session, **kwargs):
+        calls.append(kwargs)
+        only = kwargs.get("ensemble_only", False)
+        single = {"races": 3, "horses": 42, "result_pending_races": 3,
+                  "logic_version": market_ev.LOGIC_VERSION,
+                  "boosters": {"model_2026.txt": "ab" * 32}}
+        ens = {"races": 3, "horses": 42, "result_pending_races": 3,
+               "logic_version": market_ev.ENSEMBLE_LOGIC_VERSION,
+               "boosters": {"ensemble_2026.json": "cd" * 32}}
+        versions = {ENS: ens} if only else {SINGLE: single, ENS: ens}
+        top = ens if only else single
+        return {
+            "status": "ok", "reason": None, "races": 3, "horses": 42,
+            "from": kwargs["race_date_from"].isoformat(), "to": kwargs["race_date_to"].isoformat(),
+            "model_version": ENS if only else SINGLE, "logic_version": top["logic_version"],
+            "run_id": "r", "races_in_range": 3, "races_invalid_odds": 0,
+            "result_pending_races": 3, "boosters": top["boosters"], "versions": versions,
+            "picks": {"races_first_computed": 3, "races_already_scanned": 0, "written": 5,
+                      "voided_scratched": 1, "skipped_no_horse_number": 0},
+            "checkpoints": outcome["checkpoints"],
+        }
+
+    monkeypatch.setattr(market_ev, "compute_and_persist", _compute)
+    return calls, outcome
+
+
+def _ens_argv(model_dir, ensemble_dir, *extra):
+    return ["market-ev", "--date", "2026-09-27", "--model-dir", str(model_dir),
+            "--ensemble-dir", str(ensemble_dir), *extra]
+
+
+def test_cli_ensemble_marker_ok(fake_ens_run, model_dir, ensemble_dir, capsys):
+    calls, _ = fake_ens_run
+    assert cli.main(_ens_argv(model_dir, ensemble_dir)) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[-1] == (
+        "OK: races=3 horses=42 from=2026-09-27 to=2026-09-27 versions=2 picks=5 checkpoints=ok"
+    )
+    assert any(ln.startswith(f"market-ev: model_version={ENS} ") for ln in lines)
+    assert any(ln.startswith("attention-picks: ") and "voided_scratched=1" in ln for ln in lines)
+    (call,) = calls
+    assert call["ensemble_dir"] == ensemble_dir
+    assert call["ensemble_version"] is None and call["ensemble_only"] is False
+
+
+def test_cli_ensemble_marker_pending(fake_ens_run, model_dir, ensemble_dir, capsys):
+    _, outcome = fake_ens_run
+    outcome["checkpoints"] = {"written": [("S3", 300, "continue")], "pending": [("S1", 300)],
+                              "error": None, "prospective_start_date": "2026-10-04"}
+    assert cli.main(_ens_argv(model_dir, ensemble_dir)) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[-1].endswith(" versions=2 picks=5 checkpoints=pending")
+    assert lines[-2] == ("attention-checkpoints: written=S3:300:continue pending=S1:300 "
+                         "prospective_start_date=2026-10-04")
+
+
+def test_cli_ensemble_marker_error_keeps_the_cause_right_before_it(
+    fake_ens_run, model_dir, ensemble_dir, capsys
+):
+    _, outcome = fake_ens_run
+    outcome["checkpoints"] = {"written": [], "pending": [], "error": "RuntimeError: boom",
+                              "prospective_start_date": "2026-10-04"}
+    assert cli.main(_ens_argv(model_dir, ensemble_dir)) == 0  # the computed rows are committed
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[-1].endswith(" versions=2 picks=5 checkpoints=error")
+    assert lines[-2] == "attention-checkpoints: error=RuntimeError: boom"
+
+
+def test_cli_ensemble_only_marker(fake_ens_run, model_dir, ensemble_dir, capsys):
+    calls, _ = fake_ens_run
+    argv = _ens_argv(model_dir, ensemble_dir, "--ensemble-only", "--ensemble-version", ENS)
+    assert cli.main(argv) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[-1] == (
+        "OK: races=3 horses=42 from=2026-09-27 to=2026-09-27 versions=ens picks=5 checkpoints=ok"
+    )
+    assert calls[0]["ensemble_only"] is True and calls[0]["ensemble_version"] == ENS
+    # one market-ev line only: the written version is the ensemble
+    assert [ln for ln in lines if ln.startswith("market-ev:")] == [
+        ln for ln in lines if ln.startswith(f"market-ev: model_version={ENS} ")
+    ]
+
+
+def test_cli_ensemble_skipped_prints_the_void_pass_before_the_marker(
+    fake_ens_run, model_dir, ensemble_dir, monkeypatch, capsys
+):
+    picks = {"races_first_computed": 0, "races_already_scanned": 0, "written": 0,
+             "voided_scratched": 2, "skipped_no_horse_number": 0, "void_run_id": "v"}
+
+    def _compute(session, **kwargs):
+        return {"status": "skipped", "reason": "no_pending_races", "races": 0, "horses": 0,
+                "from": "2026-09-27", "to": "2026-09-27", "model_version": SINGLE,
+                "logic_version": market_ev.LOGIC_VERSION, "run_id": None, "races_in_range": 3,
+                "races_invalid_odds": 0, "result_pending_races": 0, "boosters": {},
+                "versions": {}, "picks": picks, "checkpoints": None}
+
+    monkeypatch.setattr(market_ev, "compute_and_persist", _compute)
+    assert cli.main(_ens_argv(model_dir, ensemble_dir, "--pending-only")) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[-1] == "SKIPPED: no_pending_races"  # the marker ops reads is unchanged
+    assert lines[-2].startswith("attention-picks: ") and "voided_scratched=2" in lines[-2]
+
+
+def test_cli_without_ensemble_dir_passes_no_ensemble_arguments(fake_run, model_dir, capsys):
+    calls, _ = fake_run
+    assert cli.main(["market-ev", "--date", "2026-09-27", "--model-dir", str(model_dir)]) == 0
+    assert not any(k.startswith("ensemble") for k in calls[0])
+    out = capsys.readouterr().out
+    assert "attention-" not in out and "versions=" not in out
+
+
+@pytest.fixture
+def fake_checkpoints(monkeypatch):
+    from horseracing_training import attention_checkpoints
+
+    engine = create_engine("sqlite://")
+    monkeypatch.setattr(cli, "create_db_engine", lambda _url=None: engine)
+    calls: list[dict] = []
+    outcome: dict = {"error": None}
+
+    def _evaluate(session, **kwargs):
+        calls.append(kwargs)
+        return {"written": [("S3", 300, "continue")], "pending": [], "error": outcome["error"],
+                "prospective_start_date": "2026-10-04", "dry_run": kwargs["dry_run"]}
+
+    monkeypatch.setattr(attention_checkpoints, "evaluate_checkpoints", _evaluate)
+    return calls, outcome
+
+
+def test_cli_attention_checkpoints(fake_checkpoints, capsys):
+    calls, outcome = fake_checkpoints
+    assert cli.main(["attention-checkpoints", "--dry-run"]) == 0
+    assert _last_line(capsys) == "OK: written=1 pending=0 dry_run=true"
+    assert calls[0]["dry_run"] is True and calls[0]["now"].tzinfo is not None
+    assert cli.main(["attention-checkpoints"]) == 0
+    assert _last_line(capsys) == "OK: written=1 pending=0 dry_run=false"
+    outcome["error"] = "CheckpointStartDateMismatch: S1/300"
+    assert cli.main(["attention-checkpoints"]) == 1
+    assert "ERROR: attention-checkpoints: CheckpointStartDateMismatch" in capsys.readouterr().err

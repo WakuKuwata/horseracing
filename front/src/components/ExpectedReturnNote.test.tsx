@@ -12,7 +12,7 @@ import { ExpectedReturnNote } from "./ExpectedReturnNote";
 const AVAILABLE: MarketEvAvailable = {
   status: "available",
   race_id: "202609270511",
-  model_version: "mev-binary-v2",
+  model_version: "mev-ens15-v1",
   logic_version: "mev-v1",
   // JST 09:10 / 09:15 — the note reads in the race-time zone, like OddsFreshness
   odds_observed_at: "2026-09-27T00:10:00Z",
@@ -31,8 +31,9 @@ const unavailable = (reason: MarketEvUnavailable["reason"]): MarketEvUnavailable
   status: "unavailable", race_id: "202609270511", reason, threshold: 1.2,
 });
 
+// Feature 138 (T038): the column is the 15-seed average now — the summary is the refrozen S3 values.
 const VALIDATION =
-  "過去検証(2010〜2026 年、各年を前年までのデータで学習): 期待回収率 120% 超の馬の単勝回収率は 100.8%(95% 区間 94〜108%)、2019 年以降は 99.5%。参考として全馬は 72%。120% を超えても利益は確認できていません。";
+  "過去検証(2010〜2026 年、各年を前年までのデータで学習): 期待回収率 120% 超の馬の単勝回収率は 106.4%(95% 区間 98〜115%)、2019 年以降は 111.3%。参考として全馬は 72%。120% を超えても利益は確認できていません。";
 
 describe("ExpectedReturnNote (137)", () => {
   it("available: says it is a separate model, when the odds/compute were taken, and the record", () => {
@@ -41,15 +42,23 @@ describe("ExpectedReturnNote (137)", () => {
     const note = screen.getByTestId("expected-return-note");
     expect(note).toHaveTextContent("期待回収率について");
     expect(screen.getByTestId("expected-return-definition").textContent).toBe(
-      "期待回収率は、表の『モデル勝率』とは別の市場連動モデル(mev-binary-v2)が、単勝オッズと各馬の過去成績から推定した勝率 × 単勝オッズです。",
+      "期待回収率は、表の『モデル勝率』とは別の市場連動モデル(mev-ens15-v1)が、単勝オッズと各馬の過去成績から推定した勝率 × 単勝オッズです。",
     );
     expect(screen.getByTestId("expected-return-times").textContent).toBe(
       "オッズ取得 2026/09/27 09:10 ・計算 2026/09/27 09:15",
     );
     expect(screen.getByTestId("expected-return-validation").textContent).toBe(VALIDATION);
-    expect(screen.getByTestId("expected-return-uncertainty").textContent).toBe(
-      "2025〜26 年は保存オッズに発走前の値が混ざるため検証の精度が落ちます。発走前オッズでの前向きの検証はまだ行っておらず、120%超の目印はその前に付けているものです。",
+    expect(screen.getByTestId("expected-return-series").textContent).toBe(
+      "2026 年 10 月から表示を 15 seed 平均に切り替えたため、それ以前の表示(単 seed)とは比較できません。",
     );
+    expect(screen.getByTestId("expected-return-uncertainty").textContent).toBe(
+      "2025〜26 年は保存オッズに発走前の値が混ざるため検証の精度が落ちます。発走前オッズでの前向きの検証はまだ行っていません。",
+    );
+    // 137's 「120%超の目印」 is merged into the 注目条件 chip (138) — the note no longer mentions it,
+    // and still says plainly that no profit is confirmed.
+    expect(note.textContent).not.toMatch(/目印/);
+    expect(note.textContent).not.toMatch(/120%超/);
+    expect(note).toHaveTextContent("利益は確認できていません");
     expect(screen.getByTestId("expected-return-disclaimer").textContent).toBe(
       "的中や利益を保証するものではありません。",
     );

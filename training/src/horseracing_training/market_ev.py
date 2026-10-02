@@ -13,6 +13,13 @@ What this module does (batch, offline, never on the API request path):
      ``expected_return = win_prob × odds``,
   5. (``compute_and_persist``) replace the target races' rows of ``market_ev_predictions``.
 
+Feature 138 (``specs/138-attention-conditions`` plan 0.4) adds an optional second version computed
+from the SAME features in the same run: the 15-seed average ``mev-ens15-v1``
+(``EnsembleMarketEvModel`` / ``predict_ensemble``). Both versions share one run_id / computed_at /
+transaction, and that run also records the attention-condition picks (``attention_picks``) and,
+after the commit, the checkpoint decisions (``attention_checkpoints``). Without an ensemble
+directory nothing of that runs and the single-version path is unchanged.
+
 This model deliberately uses the current win odds as an input. It is NOT a win-probability model of
 the main prediction pipeline (constitution II keeps odds out of those), and its output never
 re-enters any feature (leak guard: ``features/tests/unit/test_market_ev_leak_guard.py``). The
@@ -59,6 +66,18 @@ order by rh.race_id, rh.horse_number
 #: window produced the value. Bump when any of them changes.
 LOGIC_VERSION = "mev-v1;features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007"
 
+#: Feature 138: the logic version of the 15-seed average rows. ``EnsembleMarketEvModel.load``
+#: refuses an ensemble spec that does not match it (seeds 1-15, one thread, deterministic).
+ENSEMBLE_LOGIC_VERSION = (
+    "mev-ens15-v1;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;"
+    "drop=sameday,weightlive;data>=2007"
+)
+ENSEMBLE_SEEDS = tuple(range(1, 16))
+#: what ``drop=sameday,weightlive;data>=2007`` in ENSEMBLE_LOGIC_VERSION states about the training
+ENSEMBLE_DROP_GROUPS = ("sameday", "weightlive")
+ENSEMBLE_TRAIN_FROM = 2007
+ENSEMBLE_SPEC_NAME = "ensemble.spec.json"
+
 #: Constitution I: JRA-VAN data before 2007 uses a different ID system and must not be used.
 DATA_START = "2007-01-01"
 
@@ -67,6 +86,7 @@ DATA_START = "2007-01-01"
 _WORKTREE_MARKER = "/.claude/worktrees/"
 
 _BOOSTER_NAME = re.compile(r"^model_(\d{4})\.txt$")
+_MANIFEST_NAME = re.compile(r"^ensemble_(\d{4})\.json$")
 
 _CLASS_RANK = {"debut": 0, "maiden": 1, "C1": 2, "C2": 3, "C3": 4, "OP": 5}
 _CLASS_CANON = {
@@ -330,11 +350,124 @@ class MarketEvModel:
         return self.model_dir / f"model_{earlier[-1]}.txt"
 
     def design_matrix(self, feats: pd.DataFrame) -> np.ndarray:
-        X = feats[self.spec["features"]].astype(float).copy()
-        for c in self.spec["cats"]:
-            encode = partial(_encode_category, mapping=self.spec["cat_maps"][c])
-            X[c] = feats[c].astype(object).map(encode).astype(float)
-        return X.to_numpy(dtype=np.float32)
+        return _design_matrix(self.spec, feats)
+
+
+def _design_matrix(spec: dict, feats: pd.DataFrame) -> np.ndarray:
+    X = feats[spec["features"]].astype(float).copy()
+    for c in spec["cats"]:
+        encode = partial(_encode_category, mapping=spec["cat_maps"][c])
+        X[c] = feats[c].astype(object).map(encode).astype(float)
+    return X.to_numpy(dtype=np.float32)
+
+
+class EnsembleIntegrityError(ValueError):
+    """The ensemble artifact does not match its manifest or the pinned logic version."""
+
+
+@dataclass(frozen=True)
+class EnsembleMarketEvModel:
+    """Feature 138: the 15-seed average (``mev-ens15-v1``) — same features, same filters.
+
+    Layout (``scripts/roi_explore/assemble_ens15_20261001.py``): ``ensemble.spec.json`` (shared
+    features / cats / cat_maps, seeds, threads, deterministic) and one ``ensemble_YYYY.json`` per
+    booster year listing every member's relative path and the sha256 of its exact bytes."""
+
+    ensemble_dir: pathlib.Path
+    spec: dict
+    version: str
+
+    @staticmethod
+    def load(ensemble_dir: str | pathlib.Path, version: str) -> EnsembleMarketEvModel:
+        d = pathlib.Path(ensemble_dir)
+        spec = json.loads((d / ENSEMBLE_SPEC_NAME).read_text())
+        if spec.get("objective") != "binary":
+            raise EnsembleIntegrityError(
+                f"market-ev ensemble expects a binary spec, got {spec.get('objective')!r}"
+            )
+        missing = [k for k in ("features", "cats", "cat_maps") if k not in spec]
+        if missing:
+            raise EnsembleIntegrityError(f"{ENSEMBLE_SPEC_NAME} lacks {missing}")
+        if spec.get("version") != version:
+            raise EnsembleIntegrityError(
+                f"{ENSEMBLE_SPEC_NAME} is version {spec.get('version')!r}, expected {version!r}"
+            )
+        # the rows carry ENSEMBLE_LOGIC_VERSION, so the artifact must be what it claims
+        if (
+            list(spec.get("seeds") or []) != list(ENSEMBLE_SEEDS)
+            or spec.get("num_threads") != 1
+            or spec.get("deterministic") is not True
+            or sorted(spec.get("drop_groups") or []) != list(ENSEMBLE_DROP_GROUPS)
+            or spec.get("train_from") != ENSEMBLE_TRAIN_FROM
+        ):
+            raise EnsembleIntegrityError(
+                f"{ENSEMBLE_SPEC_NAME} does not match ENSEMBLE_LOGIC_VERSION "
+                f"(seeds={spec.get('seeds')}, num_threads={spec.get('num_threads')}, "
+                f"deterministic={spec.get('deterministic')}, "
+                f"drop_groups={spec.get('drop_groups')}, train_from={spec.get('train_from')})"
+            )
+        return EnsembleMarketEvModel(d, spec, version)
+
+    def booster_manifest_for_year(self, year: int) -> pathlib.Path:
+        """``ensemble_{year}.json``, else the latest earlier year (the walk-forward rule of
+        ``MarketEvModel.booster_path_for_year``)."""
+        exact = self.ensemble_dir / f"ensemble_{year}.json"
+        if exact.exists():
+            return exact
+        cands = sorted(
+            int(m.group(1))
+            for p in self.ensemble_dir.glob("ensemble_*.json")
+            if (m := _MANIFEST_NAME.match(p.name))
+        )
+        earlier = [y for y in cands if y < year]
+        if not earlier:
+            raise FileNotFoundError(
+                f"no market-ev ensemble manifest usable for {year} in {self.ensemble_dir}"
+            )
+        return self.ensemble_dir / f"ensemble_{earlier[-1]}.json"
+
+    def load_members(self, manifest_path: pathlib.Path) -> tuple[list, str]:
+        """Every member booster of a manifest (seed order) + the sha256 of the manifest bytes.
+
+        Fail-closed: the manifest must name this version and year, list exactly the spec's
+        seeds in order (no partial average), keep member paths inside the ensemble directory,
+        and every member's bytes must hash to the recorded sha256."""
+        data = manifest_path.read_bytes()
+        manifest = json.loads(data.decode("utf-8"))
+        m = _MANIFEST_NAME.match(manifest_path.name)
+        if manifest.get("version") != self.version or (
+            m is None or manifest.get("year") != int(m.group(1))
+        ):
+            raise EnsembleIntegrityError(
+                f"{manifest_path.name}: version/year {manifest.get('version')!r}/"
+                f"{manifest.get('year')!r} do not match {self.version!r}"
+            )
+        members = manifest.get("members") or []
+        seeds = [member.get("seed") for member in members]
+        if seeds != list(self.spec["seeds"]):
+            raise EnsembleIntegrityError(
+                f"{manifest_path.name}: member seeds {seeds} != spec seeds {self.spec['seeds']}"
+            )
+        root = self.ensemble_dir.resolve()
+        boosters = []
+        for member in members:
+            rel = pathlib.PurePosixPath(str(member.get("path", "")))
+            path = (self.ensemble_dir / rel).resolve()
+            if rel.is_absolute() or ".." in rel.parts or root not in path.parents:
+                raise EnsembleIntegrityError(
+                    f"{manifest_path.name}: member path escapes the ensemble dir: {rel}"
+                )
+            bst, sha256 = _read_booster(path)
+            if sha256 != member.get("sha256"):
+                raise EnsembleIntegrityError(
+                    f"{manifest_path.name}: sha256 mismatch for {rel} "
+                    f"(manifest {member.get('sha256')}, file {sha256})"
+                )
+            boosters.append(bst)
+        return boosters, hashlib.sha256(data).hexdigest()
+
+    def design_matrix(self, feats: pd.DataFrame) -> np.ndarray:
+        return _design_matrix(self.spec, feats)
 
 
 def predict(model: MarketEvModel, feats: pd.DataFrame) -> pd.DataFrame:
@@ -359,14 +492,52 @@ def predict(model: MarketEvModel, feats: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def validate_model_dir(model_dir: str | pathlib.Path) -> pathlib.Path:
+def predict_ensemble(model: EnsembleMarketEvModel, feats: pd.DataFrame) -> pd.DataFrame:
+    """``predict`` for the ensemble: the same ``race_ok`` filter, ``win_prob`` = the arithmetic
+    mean of the members' predictions, ``booster`` = the manifest file used and
+    ``booster_sha256`` = the sha256 of that manifest's bytes."""
+    rows = feats[feats["race_ok"].astype(bool)].copy()
+    out = []
+    loaded: dict[pathlib.Path, tuple[list, str]] = {}
+    for year, part in rows.groupby("year"):
+        path = model.booster_manifest_for_year(int(year))
+        if path not in loaded:
+            loaded[path] = model.load_members(path)
+        boosters, sha256 = loaded[path]
+        X = model.design_matrix(part)
+        p = np.mean(np.vstack([bst.predict(X) for bst in boosters]), axis=0)
+        res = part[["race_id", "horse_id", "horse_number", "odds", "horse_row_updated_at"]].copy()
+        res["win_prob"] = p
+        res["expected_return"] = p * part["odds"].to_numpy(dtype=float)
+        res["booster"] = path.name
+        res["booster_sha256"] = sha256
+        out.append(res)
+    if not out:
+        return pd.DataFrame(columns=list(_PREDICTION_COLUMNS))
+    return pd.concat(out, ignore_index=True).rename(
+        columns={"odds": "odds_used", "horse_row_updated_at": "odds_observed_at"}
+    )
+
+
+def drop_invalid_odds_races(pred: pd.DataFrame) -> tuple[pd.DataFrame, set[str]]:
+    """NUMERIC CHECK odds_used >= 1.0: a race carrying an impossible price is not computed at all
+    (race-atomic), rather than aborting the whole run on the constraint."""
+    invalid = set(pred.loc[pred["odds_used"].astype(float) < 1.0, "race_id"].astype(str))
+    if invalid:
+        pred = pred[~pred["race_id"].astype(str).isin(invalid)]
+    return pred, invalid
+
+
+def validate_model_dir(
+    model_dir: str | pathlib.Path, *, flag: str = "--model-dir"
+) -> pathlib.Path:
     """The model directory must be an absolute, durable path (never inside a Claude worktree)."""
     path = pathlib.Path(model_dir)
     if not path.is_absolute():
-        raise ValueError(f"--model-dir must be an absolute path: {model_dir}")
+        raise ValueError(f"{flag} must be an absolute path: {model_dir}")
     for candidate in (str(path), str(path.resolve())):
         if _WORKTREE_MARKER in candidate:
-            raise ValueError(f"--model-dir must not live inside a Claude worktree: {candidate}")
+            raise ValueError(f"{flag} must not live inside a Claude worktree: {candidate}")
     return path
 
 
@@ -402,6 +573,15 @@ def _exact(value: float) -> Decimal:
     return Decimal(repr(float(value)))
 
 
+def stored_values(win_prob: float, odds: float) -> tuple[Decimal, Decimal, Decimal]:
+    """(win_prob, odds_used, expected_return) exactly as persisted: the expected return is the
+    exact product of the two stored values (plan 0.2). The attention picks match the rules on
+    this same stored value, so a judged row and the row it came from can never disagree."""
+    win = _exact(win_prob)
+    odds_used = _exact(odds)
+    return win, odds_used, win * odds_used
+
+
 def _row_values(
     rec: dict,
     *,
@@ -409,9 +589,9 @@ def _row_values(
     pending: bool,
     run_id: uuid.UUID,
     computed_at: datetime.datetime,
+    logic_version: str = LOGIC_VERSION,
 ) -> dict:
-    win_prob = _exact(rec["win_prob"])
-    odds_used = _exact(rec["odds_used"])
+    win_prob, odds_used, expected_return = stored_values(rec["win_prob"], rec["odds_used"])
     number = rec["horse_number"]
     observed = pd.Timestamp(rec["odds_observed_at"])
     return {
@@ -422,14 +602,156 @@ def _row_values(
         "win_prob": win_prob,
         "odds_used": odds_used,
         # stored as the exact product of the two stored values (plan 0.2)
-        "expected_return": win_prob * odds_used,
+        "expected_return": expected_return,
         "odds_observed_at": observed.to_pydatetime(),
         "result_pending_at_compute": pending,
         "booster": str(rec["booster"]),
         "booster_sha256": str(rec["booster_sha256"]),
-        "logic_version": LOGIC_VERSION,
+        "logic_version": logic_version,
         "run_id": run_id,
         "computed_at": computed_at,
+    }
+
+
+def _replace_rows(
+    session: Session,
+    pred: pd.DataFrame,
+    *,
+    model_version: str,
+    logic_version: str,
+    with_results: set[str],
+    run_id: uuid.UUID,
+    computed_at: datetime.datetime,
+) -> tuple[int, int, int]:
+    """Per race: delete this version's rows, insert the new ones. Returns (races, horses, pending
+    races). The caller owns the transaction."""
+    table = MarketEvPrediction.__table__
+    n_races = n_horses = n_pending = 0
+    for key, part in pred.groupby("race_id", sort=True):
+        race_id = str(key)
+        pending = race_id not in with_results
+        session.execute(
+            delete(MarketEvPrediction).where(
+                MarketEvPrediction.race_id == race_id,
+                MarketEvPrediction.model_version == model_version,
+            )
+        )
+        values = [
+            _row_values(rec, model_version=model_version, pending=pending, run_id=run_id,
+                        computed_at=computed_at, logic_version=logic_version)
+            for rec in part.to_dict("records")
+        ]
+        session.execute(insert(table), values)
+        n_races += 1
+        n_horses += len(values)
+        n_pending += int(pending)
+    return n_races, n_horses, n_pending
+
+
+def _lock_version_day(session: Session, version: str, day: str) -> None:
+    session.execute(
+        text("select pg_advisory_xact_lock(hashtext(:k))"),
+        {"k": f"market_ev:{version}:{day}"},
+    )
+
+
+def _boosters(pred: pd.DataFrame) -> dict[str, str]:
+    return (
+        pred[["booster", "booster_sha256"]].drop_duplicates().sort_values("booster")
+        .set_index("booster")["booster_sha256"].to_dict()
+    )
+
+
+def _row_keys(pred: pd.DataFrame) -> set[tuple[str, str]]:
+    return set(zip(pred["race_id"].astype(str), pred["horse_id"].astype(str), strict=True))
+
+
+def _post_times(session: Session, race_ids: list[str]) -> dict[str, datetime.datetime | None]:
+    """races.post_time at compute time (ROWS_SQL does not carry it)."""
+    if not race_ids:
+        return {}
+    found = session.execute(
+        select(Race.race_id, Race.post_time).where(Race.race_id.in_(race_ids))
+    ).all()
+    return {str(rid): post for rid, post in found}
+
+
+def _check_attention_versions(single_version: str, ensemble_version: str) -> None:
+    """The attention rules are defined on exactly these two series (S1-S4 on the displayed
+    15-seed average, S5 on 137's single seed). Picks recorded from any other pair would be filed
+    under the same rule set and corrupt the prospective record, so refuse them up front."""
+    from horseracing_eval import attention_rules
+
+    expected = (
+        attention_rules.SINGLE_SEED_MODEL_VERSION,
+        attention_rules.DISPLAYED_MARKET_EV_MODEL_VERSION,
+    )
+    if (single_version, ensemble_version) != expected:
+        raise ValueError(
+            "an ensemble run records attention picks and must pair "
+            f"--model-dir {expected[0]} with --ensemble-dir {expected[1]} "
+            f"(got {single_version} / {ensemble_version})"
+        )
+
+
+def _one_line_error(exc: BaseException) -> str:
+    text_ = " ".join(f"{type(exc).__name__}: {exc}".split())
+    return text_[:300]
+
+
+def _started_fields(raw: pd.DataFrame, in_range: pd.Series) -> dict[str, tuple[str, ...]]:
+    """The started field of every race in range at compute time (``field_digest``)."""
+    rows = raw.loc[in_range, ["race_id", "horse_id"]].astype(str)
+    return rows.groupby("race_id")["horse_id"].agg(tuple).to_dict()
+
+
+def _void_pass_only(
+    session: Session,
+    *,
+    d_from: datetime.date,
+    d_to: datetime.date,
+    started: dict[str, tuple[str, ...]],
+    with_results: set[str],
+    ensemble_version: str,
+    single_version: str,
+) -> dict:
+    """Feature 138 (plan 0.4 step 1・D26): the void pass of an ensemble run that computes no row.
+
+    ``--pending-only`` on a date whose races have all settled (or a date without a ``race_ok``
+    race) writes no prediction, yet a 競走除外 at the gate becomes known exactly then, with the
+    results. Without this pass its pick would stay a valid pick on screen. Own short transaction
+    (committed here) under the ensemble version's per-date advisory locks of [from, to], taken in
+    ascending order like every other writer; the voids carry a fresh run_id because no
+    market-ev row of this run exists. Nothing else (scan, pick, checkpoint) is touched."""
+    from . import attention_picks
+
+    run_id = uuid.uuid4()
+    ctx = attention_picks.PickContext(
+        run_id=run_id,
+        computed_at=datetime.datetime.now(datetime.UTC),
+        ensemble_model_version=ensemble_version,
+        single_model_version=single_version,
+        with_results=frozenset(with_results),
+        post_times={},  # the void pass reads races.post_time itself
+        started=started,
+    )
+    try:
+        day = d_from
+        while day <= d_to:
+            _lock_version_day(session, ensemble_version, day.isoformat())
+            day += datetime.timedelta(days=1)
+        voided = attention_picks.void_scratched(session, date_from=d_from, date_to=d_to, ctx=ctx)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    return {
+        "races_first_computed": 0,
+        "races_already_scanned": 0,
+        "written": 0,
+        "voided_scratched": voided,
+        "skipped_no_horse_number": 0,
+        "void_run_id": str(run_id) if voided else None,
     }
 
 
@@ -441,6 +763,9 @@ def compute_and_persist(
     model_dir: str | pathlib.Path,
     model_version: str | None = None,
     pending_only: bool = False,
+    ensemble_dir: str | pathlib.Path | None = None,
+    ensemble_version: str | None = None,
+    ensemble_only: bool = False,
 ) -> dict:
     """Predict every ``race_ok`` race dated in [from, to] and replace its rows.
 
@@ -453,20 +778,39 @@ def compute_and_persist(
     Writers of the same dates are serialised with a transaction-scoped advisory lock per
     (model_version, date), so a manual backfill and a worker job cannot interleave their
     DELETE/INSERT pairs.
+
+    Feature 138 — ``ensemble_dir`` given: the 15-seed average is predicted from the same features
+    and written in the same transaction with the same run_id / computed_at (locks: per date in
+    ascending order, the single version then the ensemble). Inside that transaction the attention
+    picks are recorded (``attention_picks.record_attention``: scratched voids, the first-compute
+    scan rows and the picks of first computations); after the commit the checkpoint decisions run
+    in a separate transaction whose failure is reported in ``summary['checkpoints']['error']`` and
+    never undoes the computed rows. ``ensemble_only=True`` (backfill only, plan D24) writes the
+    ensemble rows, scans and picks but leaves the single-seed rows untouched — the single-seed
+    predictions are still made in memory for S5 and ``single_expected_return``. A run that
+    computes nothing (``status='skipped'``) still runs the void pass over [from, to] in its own
+    transaction (``_void_pass_only``) and reports it in ``summary['picks']``.
     """
     d_from = _as_date(race_date_from)
     d_to = _as_date(race_date_to)
     if d_from > d_to:
         raise ValueError(f"race_date_from {d_from} is after race_date_to {d_to}")
+    if ensemble_only and ensemble_dir is None:
+        raise ValueError("ensemble_only requires ensemble_dir")
     mdir = validate_model_dir(model_dir)
     version = model_version or mdir.name
     model = MarketEvModel.load(mdir, version)  # fail fast before the heavy load
+    ens_model: EnsembleMarketEvModel | None = None
+    if ensemble_dir is not None:
+        edir = validate_model_dir(ensemble_dir, flag="--ensemble-dir")
+        ens_version = ensemble_version or edir.name
+        _check_attention_versions(version, ens_version)
+        ens_model = EnsembleMarketEvModel.load(edir, ens_version)
 
     raw = load_rows(session.connection(), through=d_to.isoformat())
     raw_dates = pd.to_datetime(raw["race_date"]).dt.date
-    in_range_ids = sorted(
-        raw.loc[(raw_dates >= d_from) & (raw_dates <= d_to), "race_id"].astype(str).unique()
-    )
+    in_range = (raw_dates >= d_from) & (raw_dates <= d_to)
+    in_range_ids = sorted(raw.loc[in_range, "race_id"].astype(str).unique())
     summary: dict = {
         "from": d_from.isoformat(),
         "to": d_to.isoformat(),
@@ -479,10 +823,29 @@ def compute_and_persist(
         "result_pending_races": 0,
         "boosters": {},
         "run_id": None,
+        "versions": {},
+        "picks": None,
+        "checkpoints": None,
     }
-    skipped = {"status": "skipped", "reason": "no_races_with_odds"}
+    if ens_model is not None:
+        summary["ensemble_version"] = ens_model.version
+        summary["ensemble_only"] = ensemble_only
+        if ensemble_only:
+            summary["model_version"] = ens_model.version
+            summary["logic_version"] = ENSEMBLE_LOGIC_VERSION
+
+    def _skipped(reason: str, results: set[str]) -> dict:
+        out = {**summary, "status": "skipped", "reason": reason}
+        if ens_model is not None:
+            out["picks"] = _void_pass_only(
+                session, d_from=d_from, d_to=d_to, started=_started_fields(raw, in_range),
+                with_results=results, ensemble_version=ens_model.version,
+                single_version=version,
+            )
+        return out
+
     if not in_range_ids:
-        return {**summary, **skipped}
+        return _skipped("no_races_with_odds", set())
     # read at the same moment as the odds: "no race_results row yet" for the odds that were used
     with_results = _races_with_results(session, in_range_ids)
     summary["races_settled_skipped"] = 0
@@ -490,7 +853,7 @@ def compute_and_persist(
         summary["races_settled_skipped"] = sum(1 for r in in_range_ids if r in with_results)
         in_range_ids = [r for r in in_range_ids if r not in with_results]
         if not in_range_ids:
-            return {**summary, "status": "skipped", "reason": "no_pending_races"}
+            return _skipped("no_pending_races", with_results)
 
     feats = build_features(raw)
     feat_dates = feats["race_date"].dt.date
@@ -498,60 +861,94 @@ def compute_and_persist(
     if pending_only:
         target = target[target["race_id"].astype(str).isin(set(in_range_ids))]
     pred = predict(model, target)
-
-    # NUMERIC CHECK odds_used >= 1.0: a race carrying an impossible price is not computed at all
-    # (race-atomic), rather than aborting the whole run on the constraint.
-    invalid = set(pred.loc[pred["odds_used"].astype(float) < 1.0, "race_id"].astype(str))
-    if invalid:
-        pred = pred[~pred["race_id"].astype(str).isin(invalid)]
+    pred, invalid = drop_invalid_odds_races(pred)
     summary["races_invalid_odds"] = len(invalid)
+    pred_ens: pd.DataFrame | None = None
+    if ens_model is not None:
+        pred_ens, invalid_ens = drop_invalid_odds_races(predict_ensemble(ens_model, target))
+        # the same target, the same race_ok / odds filters: anything else is a defect (fail-closed)
+        if invalid_ens != invalid or _row_keys(pred_ens) != _row_keys(pred):
+            raise RuntimeError(
+                "market-ev versions disagree on the computed races/horses: "
+                f"single={len(pred)} rows, ensemble={len(pred_ens)} rows"
+            )
     if pred.empty:
-        return {**summary, **skipped}
+        return _skipped("no_races_with_odds", with_results)
 
     run_id = uuid.uuid4()
     computed_at = datetime.datetime.now(datetime.UTC)
-    table = MarketEvPrediction.__table__
-    n_races = n_horses = n_pending = 0
+    write_single = not ensemble_only
+    versions: dict[str, dict] = {}
+    picks_summary: dict | None = None
     try:
         for day in sorted({str(d) for d in pd.to_datetime(target["race_date"]).dt.date}):
-            session.execute(
-                text("select pg_advisory_xact_lock(hashtext(:k))"),
-                {"k": f"market_ev:{version}:{day}"},
+            if write_single:
+                _lock_version_day(session, version, day)
+            if ens_model is not None:
+                _lock_version_day(session, ens_model.version, day)
+        if write_single:
+            races, horses, pending = _replace_rows(
+                session, pred, model_version=version, logic_version=LOGIC_VERSION,
+                with_results=with_results, run_id=run_id, computed_at=computed_at,
             )
-        for key, part in pred.groupby("race_id", sort=True):
-            race_id = str(key)
-            pending = race_id not in with_results
-            session.execute(
-                delete(MarketEvPrediction).where(
-                    MarketEvPrediction.race_id == race_id,
-                    MarketEvPrediction.model_version == version,
-                )
+            versions[version] = {"races": races, "horses": horses, "result_pending_races": pending,
+                                 "logic_version": LOGIC_VERSION, "boosters": _boosters(pred)}
+        if ens_model is not None and pred_ens is not None:
+            from . import attention_picks
+
+            races, horses, pending = _replace_rows(
+                session, pred_ens, model_version=ens_model.version,
+                logic_version=ENSEMBLE_LOGIC_VERSION, with_results=with_results, run_id=run_id,
+                computed_at=computed_at,
             )
-            values = [
-                _row_values(rec, model_version=version, pending=pending, run_id=run_id,
-                            computed_at=computed_at)
-                for rec in part.to_dict("records")
-            ]
-            session.execute(insert(table), values)
-            n_races += 1
-            n_horses += len(values)
-            n_pending += int(pending)
+            versions[ens_model.version] = {
+                "races": races, "horses": horses, "result_pending_races": pending,
+                "logic_version": ENSEMBLE_LOGIC_VERSION, "boosters": _boosters(pred_ens),
+            }
+            target_ids = sorted(target["race_id"].astype(str).unique())
+            picks_summary = attention_picks.record_attention(
+                session,
+                pred_ens=pred_ens,
+                pred_single=pred,
+                feats=target,
+                ctx=attention_picks.PickContext(
+                    run_id=run_id,
+                    computed_at=computed_at,
+                    ensemble_model_version=ens_model.version,
+                    single_model_version=version,
+                    with_results=frozenset(with_results),
+                    post_times=_post_times(session, target_ids),
+                    started=_started_fields(raw, in_range),
+                ),
+                void_date_from=d_from,
+                void_date_to=d_to,
+            )
         session.commit()
     except Exception:
         session.rollback()
         raise
 
-    boosters = (
-        pred[["booster", "booster_sha256"]].drop_duplicates().sort_values("booster")
-        .set_index("booster")["booster_sha256"].to_dict()
-    )
-    return {
+    top = versions[version] if write_single else versions[ens_model.version]
+    result = {
         **summary,
         "status": "ok",
         "reason": None,
-        "races": n_races,
-        "horses": n_horses,
-        "result_pending_races": n_pending,
-        "boosters": boosters,
+        "races": top["races"],
+        "horses": top["horses"],
+        "result_pending_races": top["result_pending_races"],
+        "boosters": top["boosters"],
         "run_id": str(run_id),
+        "versions": versions,
+        "picks": picks_summary,
     }
+    if ens_model is not None:
+        from . import attention_checkpoints
+
+        try:
+            result["checkpoints"] = attention_checkpoints.evaluate_checkpoints(
+                session, now=computed_at, run_id=run_id
+            )
+        except Exception as exc:  # noqa: BLE001 — never undo the committed computation
+            session.rollback()
+            result["checkpoints"] = {"written": [], "pending": [], "error": _one_line_error(exc)}
+    return result

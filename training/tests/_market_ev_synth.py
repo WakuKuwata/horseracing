@@ -100,3 +100,39 @@ def write_model_dir(
         bst = lgb.train(params, lgb.Dataset(X, y), num_boost_round=5)
         bst.save_model(str(path / f"model_{year}.txt"))
     return path
+
+
+def write_ensemble_dir(
+    path: pathlib.Path,
+    *,
+    years: tuple[int, ...] = (2026,),
+    seeds: tuple[int, ...] = tuple(range(1, 16)),
+    version: str | None = None,
+) -> pathlib.Path:
+    """Feature 138: an ensemble in the production layout of ``assemble_ens15_20261001.py``.
+
+    ``seed_NN/model_{y}.txt`` (one tiny booster per seed and year, distinct seeds so the members
+    differ), ``ensemble.spec.json`` (shared spec + seeds / threads / deterministic / drop groups /
+    first training year) and one
+    ``ensemble_{y}.json`` manifest per year with each member's relative path and sha256."""
+    import hashlib
+
+    path.mkdir(parents=True, exist_ok=True)
+    version = version or path.name
+    for s in seeds:
+        write_model_dir(path / f"seed_{s:02d}", years=years, seed=s)
+    spec = {"objective": "binary", "features": SPEC_FEATURES, "cats": SPEC_CATS,
+            "cat_maps": SPEC_CAT_MAPS, "version": version, "seeds": list(seeds),
+            "num_threads": 1, "deterministic": True, "drop_groups": ["sameday", "weightlive"],
+            "train_from": 2007, "booster_years": list(years),
+            "members": [f"seed_{s:02d}" for s in seeds]}
+    (path / "ensemble.spec.json").write_text(json.dumps(spec, ensure_ascii=False))
+    for year in years:
+        members = []
+        for s in seeds:
+            rel = f"seed_{s:02d}/model_{year}.txt"
+            members.append({"seed": s, "path": rel,
+                            "sha256": hashlib.sha256((path / rel).read_bytes()).hexdigest()})
+        manifest = {"version": version, "year": year, "members": members}
+        (path / f"ensemble_{year}.json").write_text(json.dumps(manifest, sort_keys=True))
+    return path

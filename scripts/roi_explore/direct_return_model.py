@@ -75,6 +75,30 @@ def log(m):
     print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
 
 
+def file_sha256(path) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def model_spec(*, objective, feats, cats, cat_maps, last_year, params, rounds, train_from, drop_groups,
+               training_cutoff_by_year, input_rows_sha256) -> dict:
+    """model.spec.json の中身(138 で来歴キーを追加。既存キー objective/features/cats/cat_maps/trained_for_year/
+    train_through は不変=137 の loader は未知キーを無視する)。feature_hash = sha256(json.dumps(features + cats))。"""
+    import hashlib
+    return {"objective": objective, "features": feats, "cats": cats, "cat_maps": cat_maps, "trained_for_year": last_year,
+            "train_through": last_year - 1,
+            "seed": int(params["seed"]), "rounds": int(rounds), "num_threads": int(params["num_threads"]),
+            "deterministic": bool(params.get("deterministic", False)), "train_from": int(train_from),
+            "drop_groups": sorted(g for g in drop_groups.split(",") if g),
+            "feature_hash": hashlib.sha256(json.dumps(list(feats) + list(cats), ensure_ascii=False).encode("utf-8")).hexdigest(),
+            "input_rows_sha256": input_rows_sha256,
+            "training_cutoff_by_year": {str(k): v for k, v in sorted(training_cutoff_by_year.items())}}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--start-year", type=int, default=2000)
@@ -92,6 +116,8 @@ def main(argv=None) -> int:
     ap.add_argument("--train-from", type=int, default=1986, help="earliest training year (history-length sensitivity)")
     ap.add_argument("--save-last-model", default="", help="path prefix: save the last year's booster + feature/category spec")
     ap.add_argument("--rows", default="", help="alternative rows parquet (e.g. the 2007+ product export)")
+    ap.add_argument("--deterministic", action="store_true",
+                    help="LightGBM deterministic=True + force_row_wise=True (use with --threads 1 for bit-reproducible fits; 138)")
     ap.add_argument("--train-window-years", type=int, default=0,
                     help=">0: rolling window — train year y on [y-N, y-1] only (default 0 = expanding from --train-from)")
     args = ap.parse_args(argv)
@@ -103,7 +129,8 @@ def main(argv=None) -> int:
     out_dir = ART / "results" / tag
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
-    df = pd.read_parquet(args.rows or (ART / "rows.parquet"))
+    rows_path = args.rows or (ART / "rows.parquet")
+    df = pd.read_parquet(rows_path)
     df = df[df["race_ok"] & ~df["dead_heat"]].reset_index(drop=True)
     if args.synthetic_q:
         # null world: one winner per race drawn from market q (E[ROI] ≈ 1/overround); outcome columns replaced
@@ -148,7 +175,13 @@ def main(argv=None) -> int:
               "verbose": -1, "num_threads": args.threads, "seed": args.seed, "max_bin": 255}
     if args.objective == "huber":
         params["alpha"] = 200.0
+    if args.deterministic:
+        params["deterministic"] = True
+        params["force_row_wise"] = True
     importances = {}
+    cutoffs = {}
+    if args.save_last_model:
+        pathlib.Path(args.save_last_model).parent.mkdir(parents=True, exist_ok=True)  # 138: 親 dir を作る
     for yv in range(args.start_year, args.end_year + 1):
         tr = (years < yv) & (years >= args.train_from); te = years == yv
         if args.train_window_years:
@@ -167,13 +200,16 @@ def main(argv=None) -> int:
             importances[n_] = importances.get(n_, 0.0) + float(g)
         log(f"year {yv}: train={tr.sum():,} test={te.sum():,} mean_pred={np.nanmean(pred[te]):.2f} ({time.time() - t0:.0f}s)")
         last_bst, last_year = bst, yv
+        cutoffs[yv] = {"train_from": int(max(args.train_from, yv - args.train_window_years) if args.train_window_years else args.train_from),
+                       "train_through": yv - 1}
         if args.save_last_model and yv >= 2019:
             bst.save_model(f"{args.save_last_model}_{yv}.txt")
     if args.save_last_model:
         last_bst.save_model(args.save_last_model + ".txt")
-        pathlib.Path(args.save_last_model + ".spec.json").write_text(json.dumps(
-            {"objective": args.objective, "features": feats, "cats": cats, "cat_maps": cat_maps, "trained_for_year": last_year,
-             "train_through": last_year - 1}, ensure_ascii=False))
+        pathlib.Path(args.save_last_model + ".spec.json").write_text(json.dumps(model_spec(
+            objective=args.objective, feats=feats, cats=cats, cat_maps=cat_maps, last_year=last_year, params=params,
+            rounds=args.rounds, train_from=args.train_from, drop_groups=args.drop_groups, training_cutoff_by_year=cutoffs,
+            input_rows_sha256=file_sha256(rows_path)), ensure_ascii=False))
         log(f"saved last model (for year {last_year}) → {args.save_last_model}.txt")
     df["pred"] = pred
     ok = ~np.isnan(pred)

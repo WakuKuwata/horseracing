@@ -68,14 +68,19 @@ export function RefreshButton({
 
   // On a terminal success/partial, refetch the 014 views that a refresh feeds: the race detail
   // (entries/results), the odds panel, the predictions (market q is derived from odds at read
-  // time) and the 137 期待回収率 (its odds_changed / field_changed states are read-time too) —
-  // so the whole page reflects the new data without a manual reload.
+  // time), the 137 期待回収率 (its odds_changed / field_changed states are read-time too) and the
+  // 138 注目条件 (its current values, chip_now and scratched voids are read-time) — so the whole
+  // page reflects the new data without a manual reload. The 138 rules list is refetched too: its
+  // prospective tallies, stages and checkpoint records are read-time over the ingested results, so
+  // a chip that moved to 「300 点不通過」 must not sit above a breakdown still saying 研究中.
   useEffect(() => {
     if (!invalidated && (status === "succeeded" || status === "partial")) {
       void qc.invalidateQueries({ queryKey: ["race", raceId] });
       void qc.invalidateQueries({ queryKey: ["odds", raceId] });
       void qc.invalidateQueries({ queryKey: ["predictions", raceId] });
       void qc.invalidateQueries({ queryKey: ["market-ev", raceId] });
+      void qc.invalidateQueries({ queryKey: ["attention", raceId] });
+      void qc.invalidateQueries({ queryKey: ["attention-rules"] });
       setInvalidated(true);
     }
   }, [status, invalidated, qc, raceId]);
@@ -83,7 +88,9 @@ export function RefreshButton({
   // 137: a refresh that wrote new odds for a pending race enqueues the 期待回収率 recompute
   // (ops exposes it as followup_job_id). It runs after the refresh in the CPU lane, so keep
   // polling it and refetch the market-ev view once it lands — otherwise the page would show the
-  // pre-refresh values until the next reload.
+  // pre-refresh values until the next reload. 138: the same job writes the race's first
+  // computation (scan + picks) and the latest ens15 row the 注目条件 current values read, so the
+  // attention view is refetched together with market-ev.
   const followupId =
     status === "succeeded" || status === "partial" ? (poll.data?.followup_job_id ?? null) : null;
   const followupPoll = useQuery<Job, ErrorInfo>({
@@ -97,6 +104,8 @@ export function RefreshButton({
   useEffect(() => {
     if (!evInvalidated && isTerminal(followupStatus)) {
       void qc.invalidateQueries({ queryKey: ["market-ev", raceId] });
+      void qc.invalidateQueries({ queryKey: ["attention", raceId] });
+      void qc.invalidateQueries({ queryKey: ["attention-rules"] });
       setEvInvalidated(true);
     }
   }, [followupStatus, evInvalidated, qc, raceId]);

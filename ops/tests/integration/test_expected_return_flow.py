@@ -8,8 +8,10 @@ training stack (boundary II/VI). The CLI contract (plan.md 0.3): final stdout li
 from __future__ import annotations
 
 import datetime
+import importlib.util
 import os
 import subprocess
+import sys
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -166,10 +168,152 @@ def test_ok_marker_is_succeeded(session, monkeypatch, client):
     assert job.summary["source"] == "auto_after_refresh"  # enqueue-time label survives
     assert job.summary["race_date"] == "2024-12-28"
     assert job.summary["model_dir"] == runner_mod.CONFIG.market_ev_model_dir
+    assert job.summary["ensemble_dir"] == runner_mod.CONFIG.market_ev_ensemble_dir  # 138 audit
     assert job.summary["result"] == {"races": 12, "horses": 180,
                                      "from": "2024-12-28", "to": "2024-12-28"}
+    assert "checkpoints_error" not in job.summary
     body = client.get(f"/ops/v1/jobs/{job.ingestion_job_id}").json()
     assert body["status"] == "succeeded" and body["kind"] == "expected_return"
+
+
+@pytest.mark.parametrize("checkpoints", ["ok", "pending"])
+def test_two_version_marker_is_carried_into_the_result(session, monkeypatch, checkpoints):
+    """Feature 138: the ``--ensemble-dir`` suffix lands in the result like the other pairs."""
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0, "OK: races=12 horses=180 from=2024-12-28 to=2024-12-28 "
+           f"versions=2 picks=3 checkpoints={checkpoints}\n"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+
+    assert job.status == JobStatus.SUCCEEDED and job.processed_rows == 180
+    assert job.summary["result"] == {"races": 12, "horses": 180,
+                                     "from": "2024-12-28", "to": "2024-12-28",
+                                     "versions": 2, "picks": 3, "checkpoints": checkpoints}
+    assert "checkpoints_error" not in job.summary
+
+
+def test_checkpoint_error_keeps_the_job_succeeded_and_records_the_cause(
+        session, monkeypatch, client):
+    """Feature 138: the judgement runs after both versions and the picks are committed, so its
+    failure must not fail the job — but the cause (the ``attention-checkpoints:`` line printed
+    before the marker) must stay in the summary, not vanish into an ok-looking SUCCEEDED."""
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0,
+        "loading rows\n"
+        "attention-checkpoints: error=OperationalError: lock timeout\n"
+        "OK: races=2 horses=30 from=2024-12-28 to=2024-12-28 "
+        "versions=2 picks=0 checkpoints=error\n",
+        "some stderr noise"))
+    job, _ = enqueue_expected_return(session, DAY, source="manual_ui")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+
+    assert job.status == JobStatus.SUCCEEDED and job.retry_count == 0
+    # the jobs pages show error_message / error_count, never the summary
+    assert job.error_message == "checkpoints: error=OperationalError: lock timeout"
+    assert job.error_count == 1
+    assert job.processed_rows == 30
+    assert job.summary["result"]["checkpoints"] == "error"
+    assert job.summary["result"]["picks"] == 0 and job.summary["result"]["versions"] == 2
+    assert job.summary["checkpoints_error"] == "error=OperationalError: lock timeout"
+    assert job.summary["ensemble_dir"] == runner_mod.CONFIG.market_ev_ensemble_dir
+    body = client.get(f"/ops/v1/jobs/{job.ingestion_job_id}").json()
+    assert body["status"] == "succeeded"
+    assert body["error_count"] == 1
+    assert body["error_message"] == "checkpoints: error=OperationalError: lock timeout"
+
+
+@pytest.mark.parametrize("checkpoints", ["ok", "pending"])
+def test_no_checkpoint_error_leaves_the_error_fields_empty(session, monkeypatch, checkpoints):
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0, f"OK: races=1 horses=1 from=x to=x versions=2 picks=1 checkpoints={checkpoints}\n",
+        "some stderr noise"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert job.status == JobStatus.SUCCEEDED
+    assert job.error_message is None and job.error_count is None
+
+
+def test_checkpoint_error_without_a_cause_line_falls_back_to_the_tail(session, monkeypatch):
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0, "OK: races=1 horses=1 from=x to=x versions=2 picks=1 checkpoints=error\n",
+        "Traceback: judge blew up"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert job.status == JobStatus.SUCCEEDED
+    assert "judge blew up" in job.summary["checkpoints_error"]
+    assert "judge blew up" in job.error_message and job.error_count == 1
+
+
+def test_checkpoint_error_fallback_prefers_stderr_over_a_long_stdout(session, monkeypatch):
+    """A diagnostics line on stdout longer than 500 chars must not push the stderr cause out of
+    the recorded error (the combined tail puts stdout last)."""
+    boosters = "market-ev: model_version=mev-binary-v2 boosters=" + ",".join(
+        f"/abs/artifacts/market_ev/mev-ens15-v1/seed{i:02d}/booster.txt" for i in range(15))
+    assert len(boosters) > 500
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0,
+        f"{boosters}\n"
+        "OK: races=1 horses=1 from=x to=x versions=2 picks=1 checkpoints=error\n",
+        "Traceback (most recent call last):\nRuntimeError: judge blew up"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert job.status == JobStatus.SUCCEEDED
+    assert "RuntimeError: judge blew up" in job.summary["checkpoints_error"]
+    assert "boosters=" not in job.summary["checkpoints_error"]
+    assert "RuntimeError: judge blew up" in job.error_message
+
+
+def test_checkpoint_error_without_any_stderr_falls_back_to_the_combined_tail(
+        session, monkeypatch):
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0, "judge blew up on stdout\n"
+           "OK: races=1 horses=1 from=x to=x versions=2 picks=1 checkpoints=error\n", ""))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert "judge blew up on stdout" in job.summary["checkpoints_error"]
+
+
+def test_only_the_error_form_of_the_checkpoints_line_is_the_cause(session, monkeypatch):
+    """The standalone judgement prints ``attention-checkpoints: written=… pending=…`` summaries
+    too; one printed after the error line must not replace the cause."""
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0,
+        "attention-checkpoints: error=OperationalError: lock timeout\n"
+        "attention-checkpoints: written=0 pending=10\n"
+        "OK: races=1 horses=1 from=x to=x versions=2 picks=1 checkpoints=error\n",
+        ""))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert job.summary["checkpoints_error"] == "error=OperationalError: lock timeout"
+    assert job.error_message == "checkpoints: error=OperationalError: lock timeout"
+
+
+def test_a_non_error_checkpoints_line_alone_is_not_taken_as_the_cause(session, monkeypatch):
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0,
+        "attention-checkpoints: written=0 pending=10\n"
+        "OK: races=1 horses=1 from=x to=x versions=2 picks=1 checkpoints=error\n",
+        "Traceback: judge blew up"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert "judge blew up" in job.summary["checkpoints_error"]
+    assert "written=0" not in job.summary["checkpoints_error"]
 
 
 def test_skipped_marker_is_skipped_with_reason(session, monkeypatch, client):
@@ -247,7 +391,7 @@ class _FakePopen:
         self.communicate_timeout = timeout
         if self.timeout:
             raise subprocess.TimeoutExpired(cmd=["uv"], timeout=timeout)
-        return ("OK: races=1 horses=2 from=a to=a\n", "")
+        return ("OK: races=1 horses=2 from=a to=a versions=2 picks=0 checkpoints=ok\n", "")
 
 
 def test_launcher_argv_cwd_env_and_timeout(monkeypatch):
@@ -261,7 +405,8 @@ def test_launcher_argv_cwd_env_and_timeout(monkeypatch):
     monkeypatch.setattr(runner_mod.subprocess, "Popen", popen)
     monkeypatch.setattr(runner_mod, "owner_database_url", lambda: "postgresql+psycopg://o/db")
     monkeypatch.setattr(runner_mod, "CONFIG", replace(runner_mod.CONFIG,
-                                                      market_ev_model_dir="/abs/models/mev"))
+                                                      market_ev_model_dir="/abs/models/mev",
+                                                      market_ev_ensemble_dir="/abs/models/ens"))
     monkeypatch.setenv("VIRTUAL_ENV", "/ops/.venv")
 
     result = _REAL_LAUNCHER("2024-12-28")
@@ -270,6 +415,7 @@ def test_launcher_argv_cwd_env_and_timeout(monkeypatch):
     assert seen["cmd"] == [
         "uv", "run", "--project", training_dir, "python", "-m", "horseracing_training",
         "market-ev", "--date", "2024-12-28", "--pending-only", "--model-dir", "/abs/models/mev",
+        "--ensemble-dir", "/abs/models/ens",  # 138: right after --model-dir
         "--database-url", "postgresql+psycopg://o/db",
     ]
     assert seen["kwargs"]["cwd"] == training_dir
@@ -303,6 +449,13 @@ def test_config_defaults():
     if "OPS_MARKET_EV_MODEL_DIR" not in os.environ:
         assert config_mod.CONFIG.market_ev_model_dir == str(default)
 
+    ensemble = config_mod._DEFAULT_MARKET_EV_ENSEMBLE_DIR  # Feature 138
+    assert ensemble.is_absolute()
+    assert ensemble.parts[-3:] == ("artifacts", "market_ev", "mev-ens15-v1")
+    assert ensemble.parent == default.parent
+    if "OPS_MARKET_EV_ENSEMBLE_DIR" not in os.environ:
+        assert config_mod.CONFIG.market_ev_ensemble_dir == str(ensemble)
+
 
 @pytest.mark.parametrize(
     ("raw", "expected"),
@@ -322,6 +475,17 @@ def test_model_dir_env_override(monkeypatch):
     assert config_mod._str("OPS_MARKET_EV_MODEL_DIR", "d") == "/abs/elsewhere"
     monkeypatch.setenv("OPS_MARKET_EV_MODEL_DIR", "")
     assert config_mod._str("OPS_MARKET_EV_MODEL_DIR", "d") == "d"
+
+
+def test_ensemble_dir_env_override(monkeypatch):
+    """Feature 138: OPS_MARKET_EV_ENSEMBLE_DIR is read when the config is built (import time), so
+    load a private copy of the module — the shared CONFIG the runner holds stays untouched."""
+    monkeypatch.setenv("OPS_MARKET_EV_ENSEMBLE_DIR", " /abs/ens-elsewhere ")
+    spec = importlib.util.spec_from_file_location("_ops_config_copy", config_mod.__file__)
+    copy = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, spec.name, copy)  # @dataclass resolves its module here
+    spec.loader.exec_module(copy)
+    assert copy.CONFIG.market_ev_ensemble_dir == "/abs/ens-elsewhere"
 
 
 # --- the refresh trigger ------------------------------------------------------------------------

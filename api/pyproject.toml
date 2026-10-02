@@ -5,6 +5,7 @@ description = "Read-only prediction-serving JSON API (FastAPI) over existing per
 requires-python = ">=3.12"
 dependencies = [
     "horseracing-db",
+    "horseracing-eval",
     "horseracing-probability",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
@@ -23,6 +24,7 @@ dev = [
 
 [tool.uv.sources]
 horseracing-db = { path = "../db", editable = true }
+horseracing-eval = { path = "../eval", editable = true }
 horseracing-probability = { path = "../probability", editable = true }
 
 [build-system]

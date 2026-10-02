@@ -14,6 +14,9 @@ from decimal import Decimal
 
 from horseracing_db.enums import AdoptionStatus, BetType, EntryStatus, ResultStatus
 from horseracing_db.models import (
+    AttentionCheckpoint,
+    AttentionPick,
+    AttentionRaceScan,
     DiagnosticRun,
     ExoticOdds,
     Horse,
@@ -29,8 +32,9 @@ from horseracing_db.models import (
     Recommendation,
     Trainer,
 )
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from horseracing_eval import attention_rules
+from sqlalchemy import and_, exists, func, select
+from sqlalchemy.orm import Session, aliased
 
 
 def _filtered_races(date: datetime.date | None, venue: str | None):
@@ -134,30 +138,21 @@ def started_win_odds_by_horse(session: Session, race_id: str) -> dict[str, Decim
     return {hid: odds for (_number, hid, odds, _updated) in win_odds(session, race_id)}
 
 
-def market_ev_rows(session: Session, race_id: str) -> list[MarketEvPrediction]:
-    """Feature 137: stored market-aware expected-return rows of ONE model_version for the race.
+def market_ev_rows(
+    session: Session, race_id: str, *, model_version: str
+) -> list[MarketEvPrediction]:
+    """Feature 137/138: stored market-aware expected-return rows of ``model_version`` for the race.
 
-    Independent of the win-model selection (no model_version parameter). When several market-aware
-    model versions have rows for the race, the most recently computed one is shown (max computed_at,
-    then model_version descending as a deterministic tie-break). Empty list = not computed yet.
+    Independent of the win-model selection. The caller names the market-aware version explicitly
+    (138 D8: the column shows the registry's displayed version; the panel also reads the
+    single-seed series) — there is no "newest version wins" selection any more. The table keeps the
+    latest compute only, so these rows ARE the latest values. Empty list = not computed yet.
     """
-    chosen = session.scalar(
-        select(MarketEvPrediction.model_version)
-        .where(MarketEvPrediction.race_id == race_id)
-        .group_by(MarketEvPrediction.model_version)
-        .order_by(
-            func.max(MarketEvPrediction.computed_at).desc(),
-            MarketEvPrediction.model_version.desc(),
-        )
-        .limit(1)
-    )
-    if chosen is None:
-        return []
     return list(
         session.scalars(
             select(MarketEvPrediction)
             .where(MarketEvPrediction.race_id == race_id)
-            .where(MarketEvPrediction.model_version == chosen)
+            .where(MarketEvPrediction.model_version == model_version)
             .order_by(
                 MarketEvPrediction.horse_number.asc().nulls_last(),
                 MarketEvPrediction.horse_id.asc(),
@@ -574,3 +569,291 @@ def latest_diagnostic_run(session: Session, kind: str) -> DiagnosticRun | None:
         .order_by(DiagnosticRun.computed_at.desc(), DiagnosticRun.diagnostic_run_id)
         .limit(1)
     ).first()
+
+
+# --- Feature 138: 注目条件 (attention conditions) — read-only ------------------------------
+# Every read is narrowed to the CURRENT rule set (plan D25) and checkpoint records also to the
+# current selection policy. Registry attributes are read at call time (``attention_rules.X``),
+# never copied at import, so a go-live date set later is honoured after the API restarts.
+
+
+def attention_scan_for_race(session: Session, race_id: str) -> AttentionRaceScan | None:
+    """The race's first-computation record (None = no ensemble computation yet)."""
+    return session.get(AttentionRaceScan, (race_id, attention_rules.RULE_SET_VERSION))
+
+
+def attention_scans_for_races(
+    session: Session, race_ids: list[str]
+) -> dict[str, AttentionRaceScan]:
+    if not race_ids:
+        return {}
+    rows = session.scalars(
+        select(AttentionRaceScan)
+        .where(AttentionRaceScan.race_id.in_(race_ids))
+        .where(AttentionRaceScan.rule_set_version == attention_rules.RULE_SET_VERSION)
+    ).all()
+    return {row.race_id: row for row in rows}
+
+
+def attention_picks_for_races(session: Session, race_ids: list[str]) -> list[AttentionPick]:
+    """Pick AND void rows of the races (current rule set), in a stable order."""
+    if not race_ids:
+        return []
+    return list(
+        session.scalars(
+            select(AttentionPick)
+            .where(AttentionPick.race_id.in_(race_ids))
+            .where(AttentionPick.rule_set_version == attention_rules.RULE_SET_VERSION)
+            .order_by(AttentionPick.race_id, AttentionPick.horse_id, AttentionPick.rule_id,
+                      AttentionPick.kind, AttentionPick.pick_id)
+        )
+    )
+
+
+def attention_picks_for_race(session: Session, race_id: str) -> list[AttentionPick]:
+    return attention_picks_for_races(session, [race_id])
+
+
+def attention_picks_for_date(session: Session, date: datetime.date) -> list[AttentionPick]:
+    """Pick and void rows of every race held on ``date`` (races.race_date)."""
+    return list(
+        session.scalars(
+            select(AttentionPick)
+            .join(Race, Race.race_id == AttentionPick.race_id)
+            .where(Race.race_date == date)
+            .where(AttentionPick.rule_set_version == attention_rules.RULE_SET_VERSION)
+            .order_by(AttentionPick.race_id, AttentionPick.horse_id, AttentionPick.rule_id,
+                      AttentionPick.kind, AttentionPick.pick_id)
+        )
+    )
+
+
+def races_by_id(session: Session, race_ids: list[str]) -> dict[str, Race]:
+    if not race_ids:
+        return {}
+    return {r.race_id: r for r in session.scalars(select(Race).where(Race.race_id.in_(race_ids)))}
+
+
+def entries_for_races(session: Session, race_ids: list[str]):
+    """(race_id, horse_id, horse_number, entry_status, odds, horse_name) of every entry."""
+    if not race_ids:
+        return []
+    return session.execute(
+        select(
+            RaceHorse.race_id, RaceHorse.horse_id, RaceHorse.horse_number,
+            RaceHorse.entry_status, RaceHorse.odds, Horse.horse_name,
+        )
+        .select_from(RaceHorse)
+        .outerjoin(Horse, Horse.horse_id == RaceHorse.horse_id)
+        .where(RaceHorse.race_id.in_(race_ids))
+        .order_by(RaceHorse.race_id, RaceHorse.horse_number.asc().nulls_last(),
+                  RaceHorse.horse_id)
+    ).all()
+
+
+def market_ev_rows_for_races(
+    session: Session, race_ids: list[str], *, model_version: str
+) -> list[MarketEvPrediction]:
+    """``market_ev_rows`` for several races at once (latest-only table)."""
+    if not race_ids:
+        return []
+    return list(
+        session.scalars(
+            select(MarketEvPrediction)
+            .where(MarketEvPrediction.race_id.in_(race_ids))
+            .where(MarketEvPrediction.model_version == model_version)
+            .order_by(
+                MarketEvPrediction.race_id,
+                MarketEvPrediction.horse_number.asc().nulls_last(),
+                MarketEvPrediction.horse_id,
+            )
+        )
+    )
+
+
+def _rule_pick_races(rule_ids: list[str]):
+    return (
+        select(AttentionPick.race_id)
+        .where(AttentionPick.rule_set_version == attention_rules.RULE_SET_VERSION)
+        .where(AttentionPick.rule_id.in_(rule_ids))
+    )
+
+
+def attention_tally_rows(session: Session, rule_ids: list[str]):
+    """Every ``kind='pick'`` row of the rules (current rule set, NO date filter) with what is known
+    about it now: voided?, the race has any result?, the horse's own result, the race's number of
+    winners (finished at 1st) and the horse's CURRENT stored win odds. Classification happens in
+    the eval registry (``classify_pick``), not here."""
+    if not rule_ids:
+        return []
+    void = aliased(AttentionPick)
+    own = aliased(RaceResult)
+    anyres = aliased(RaceResult)
+    winner = aliased(RaceResult)
+    voided = exists().where(
+        void.voids_pick_id == AttentionPick.pick_id,
+        void.kind == "void",
+        void.rule_set_version == AttentionPick.rule_set_version,
+    )
+    has_result = exists().where(anyres.race_id == AttentionPick.race_id)
+    n_winners = (
+        select(func.count())
+        .select_from(winner)
+        .where(winner.race_id == AttentionPick.race_id)
+        .where(winner.finish_order == 1)
+        .where(winner.result_status == ResultStatus.FINISHED)
+        .scalar_subquery()
+    )
+    return session.execute(
+        select(
+            AttentionPick.pick_id, AttentionPick.race_id, AttentionPick.horse_id,
+            AttentionPick.horse_number, AttentionPick.rule_id, AttentionPick.computed_at,
+            AttentionPick.post_time, AttentionPick.odds_observed_at,
+            AttentionPick.result_pending_at_compute, AttentionPick.odds_used,
+            AttentionPick.field_digest,
+            voided.label("voided"),
+            has_result.label("has_race_result"),
+            own.horse_id.is_not(None).label("horse_has_result"),
+            own.finish_order.label("finish_order"),
+            own.result_status.label("result_status"),
+            n_winners.label("n_winners"),
+            RaceHorse.odds.label("stored_odds"),
+        )
+        .select_from(AttentionPick)
+        .outerjoin(
+            own, and_(own.race_id == AttentionPick.race_id, own.horse_id == AttentionPick.horse_id)
+        )
+        .outerjoin(
+            RaceHorse,
+            and_(
+                RaceHorse.race_id == AttentionPick.race_id,
+                RaceHorse.horse_id == AttentionPick.horse_id,
+            ),
+        )
+        .where(AttentionPick.kind == "pick")
+        .where(AttentionPick.rule_set_version == attention_rules.RULE_SET_VERSION)
+        .where(AttentionPick.rule_id.in_(rule_ids))
+        .order_by(AttentionPick.rule_id, AttentionPick.pick_id)
+    ).all()
+
+
+def attention_started_by_race(session: Session, rule_ids: list[str]) -> dict[str, list[str]]:
+    """{race_id -> currently STARTED horse_ids} for every race holding a pick of the rules (the
+    material of the ``field_changed_after_pick`` audit flag)."""
+    if not rule_ids:
+        return {}
+    rows = session.execute(
+        select(RaceHorse.race_id, RaceHorse.horse_id)
+        .where(RaceHorse.race_id.in_(_rule_pick_races(rule_ids)))
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    ).all()
+    out: dict[str, list[str]] = {}
+    for race_id, horse_id in rows:
+        out.setdefault(race_id, []).append(horse_id)
+    return out
+
+
+def attention_checkpoint_rows(session: Session) -> list[AttentionCheckpoint]:
+    """Recorded checkpoint decisions of the current rule set AND selection policy."""
+    return list(
+        session.scalars(
+            select(AttentionCheckpoint)
+            .where(
+                AttentionCheckpoint.selection_policy_version
+                == attention_rules.SELECTION_POLICY_VERSION
+            )
+            .where(AttentionCheckpoint.rule_set_version == attention_rules.RULE_SET_VERSION)
+            .order_by(AttentionCheckpoint.rule_id, AttentionCheckpoint.checkpoint)
+        )
+    )
+
+
+def attention_memo_key(session: Session) -> dict[str, tuple]:
+    """Per-rule memo key of the read-time tally (plan D22) in ONE aggregate statement.
+
+    (rule_id, pick+void rows, max pick computed_at, checkpoint records, max decided_at, result
+    rows / max result timestamp of the races holding the rule's picks, entry rows / max entry
+    timestamp of those races, PROSPECTIVE_START_DATE). Result re-ingests and odds re-ingests move
+    the TimestampMixin timestamps (DB trigger), so either invalidates the memo.
+    """
+    rsv = attention_rules.RULE_SET_VERSION
+    picks = (
+        select(
+            AttentionPick.rule_id.label("rule_id"),
+            func.count().label("n_rows"),
+            func.max(AttentionPick.computed_at).label("max_computed_at"),
+        )
+        .where(AttentionPick.rule_set_version == rsv)
+        .group_by(AttentionPick.rule_id)
+        .subquery("p")
+    )
+    pick_races = (
+        select(AttentionPick.rule_id.label("rule_id"), AttentionPick.race_id.label("race_id"))
+        .where(AttentionPick.rule_set_version == rsv)
+        .distinct()
+        .subquery("pr")
+    )
+    results = (
+        select(
+            pick_races.c.rule_id,
+            func.count().label("n_results"),
+            func.max(RaceResult.updated_at).label("max_results_ts"),
+        )
+        .select_from(pick_races)
+        .join(RaceResult, RaceResult.race_id == pick_races.c.race_id)
+        .group_by(pick_races.c.rule_id)
+        .subquery("rr")
+    )
+    entries = (
+        select(
+            pick_races.c.rule_id,
+            func.count().label("n_entries"),
+            func.max(RaceHorse.updated_at).label("max_entries_ts"),
+        )
+        .select_from(pick_races)
+        .join(RaceHorse, RaceHorse.race_id == pick_races.c.race_id)
+        .group_by(pick_races.c.rule_id)
+        .subquery("rh")
+    )
+    records = (
+        select(
+            AttentionCheckpoint.rule_id.label("rule_id"),
+            func.count().label("n_records"),
+            func.max(AttentionCheckpoint.decided_at).label("max_decided_at"),
+        )
+        .where(
+            AttentionCheckpoint.selection_policy_version
+            == attention_rules.SELECTION_POLICY_VERSION
+        )
+        .where(AttentionCheckpoint.rule_set_version == rsv)
+        .group_by(AttentionCheckpoint.rule_id)
+        .subquery("cp")
+    )
+    # every rule that has picks OR records (a record never exists without picks in production,
+    # but the key must not depend on that)
+    rules = (
+        select(picks.c.rule_id.label("rule_id"))
+        .union(select(records.c.rule_id.label("rule_id")))
+        .subquery("rules")
+    )
+    stmt = (
+        select(
+            rules.c.rule_id, picks.c.n_rows, picks.c.max_computed_at,
+            records.c.n_records, records.c.max_decided_at,
+            results.c.n_results, results.c.max_results_ts,
+            entries.c.n_entries, entries.c.max_entries_ts,
+        )
+        .select_from(rules)
+        .outerjoin(picks, picks.c.rule_id == rules.c.rule_id)
+        .outerjoin(records, records.c.rule_id == rules.c.rule_id)
+        .outerjoin(results, results.c.rule_id == rules.c.rule_id)
+        .outerjoin(entries, entries.c.rule_id == rules.c.rule_id)
+    )
+    start = attention_rules.PROSPECTIVE_START_DATE
+    keys = {
+        rule_id: (rule_id, 0, None, None, None, None, None, None, None, start)
+        for rule_id in attention_rules.RULE_IDS
+    }
+    for row in session.execute(stmt).all():
+        keys[row.rule_id] = (*tuple(row), start)
+    return keys
