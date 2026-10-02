@@ -2,6 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api, parseApiError, type ErrorInfo } from "./client";
 import type {
+  AttentionDayResponse,
+  AttentionResponse,
+  AttentionRulesResponse,
   CalibrationResponse,
   HorseHistoryPage,
   HorseProfile,
@@ -157,6 +160,47 @@ export function useMarketEv(raceId: string) {
       unwrap(
         await api.GET("/api/v1/races/{race_id}/market-ev", {
           params: { path: { race_id: raceId } },
+        }),
+      ),
+  });
+}
+
+// --- Feature 138: 注目条件 (attention conditions S1–S5) ------------------------
+// The chips are judgment-time (frozen at the race's first computation) and decided by the API;
+// the front only renders them. Every non-error answer is a typed 200 (available / unavailable),
+// so retrying cannot change the outcome — settle immediately (same as useMarketEv).
+export function useAttention(raceId: string) {
+  return useQuery<AttentionResponse, ErrorInfo>({
+    queryKey: ["attention", raceId],
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/races/{race_id}/attention", {
+          params: { path: { race_id: raceId } },
+        }),
+      ),
+  });
+}
+
+/** Frozen backtest + price-noise test + prospective tally for all 5 rules, in fixed rank order
+ *  (never re-sorted by results). Shared by the expanded panel, the rules list and /attention. */
+export function useAttentionRules() {
+  return useQuery<AttentionRulesResponse, ErrorInfo>({
+    queryKey: ["attention-rules"],
+    queryFn: async () => unwrap(await api.GET("/api/v1/attention-rules", {})),
+  });
+}
+
+/** The day's chip horses (S1–S4, judged at each race's first computation), post-time order.
+ *  `date` is required by the API (an empty one is a 422), so the query waits for it. */
+export function useAttentionDay(date: string) {
+  return useQuery<AttentionDayResponse, ErrorInfo>({
+    queryKey: ["attention-day", date],
+    enabled: !!date,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/attention/day", {
+          params: { query: { date } },
         }),
       ),
   });

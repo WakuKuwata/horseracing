@@ -2,7 +2,9 @@ import { useState } from "react";
 
 import { Link, useParams } from "react-router-dom";
 
-import { useMarketEv, usePredictions, useRace } from "../api/queries";
+import { useAttention, useMarketEv, usePredictions, useRace } from "../api/queries";
+import { AttentionNote } from "../components/AttentionNote";
+import { AttentionRulesPanel } from "../components/AttentionRulesPanel";
 import { CalibrationChart } from "../components/CalibrationChart";
 import { ExpectedReturnNote } from "../components/ExpectedReturnNote";
 import { ImportanceChart } from "../components/ImportanceChart";
@@ -42,6 +44,9 @@ export function RaceDetailPage() {
   // Feature 137: 期待回収率 from the SEPARATE market-aware model — independent of the win-model
   // selection above (no model_version) and of whether the win model has predicted this race.
   const marketEvQuery = useMarketEv(raceId);
+  // Feature 138: 注目条件(S1〜S5)— judged once at the race's first computation (server side);
+  // the page only reads it. Independent of the win-model selection as well.
+  const attentionQuery = useAttention(raceId);
   const [tab, setTab] = useState<Tab>("recs");
 
   const pred = predQuery.data;
@@ -157,17 +162,29 @@ export function RaceDetailPage() {
                 isLoading={marketEvQuery.isLoading}
                 error={marketEvQuery.error ?? null}
               />
+              {/* Feature 138 (FR-011): 注目条件の常設注記。期待回収率の注記の直後・出走表の前。
+                  /attention の取得失敗はここで中立の 1 行として示す(チップが無いだけだと
+                  「該当なし」と見分けがつかない)。 */}
+              <AttentionNote
+                error={attentionQuery.error ?? null}
+                isLoading={attentionQuery.isLoading}
+              />
               <HorseEntriesTable
                 entries={r.horses}
                 predictions={pred?.horses ?? []}
                 oddsAsOf={pred?.odds_as_of}
                 canonicalConsistent={pred?.canonical_consistent}
                 marketEv={marketEvQuery.data}
+                attention={attentionQuery.data}
               />
               <p className="table-hint">
                 列見出しをクリックで並び替え（市場評価＝単勝オッズ由来の推定値・実測ではありません）。
                 「寄与」でモデルの判断要因を表示。
+                {attentionQuery.data?.status === "available" &&
+                  "注目条件の「▸」でその馬の注目条件の内訳を表示。"}
               </p>
+              {/* Feature 138 (T036/T039): 注目条件の一覧(S1〜S5・閉じた状態で開始)。 */}
+              <AttentionRulesPanel />
               {hasPreds && (
                 <>
                   {/* Feature 103 US1: 旧「市場優位」注記はここから ModelMarketStanding へ移した。

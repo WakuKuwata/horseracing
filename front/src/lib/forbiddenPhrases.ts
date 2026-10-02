@@ -44,5 +44,21 @@ export const CHAOS_PANEL_ONLY = /暫定|妙味|edge|儲|利益|EV 中立/i;
 export const EXPECTED_RETURN_SCOPE =
   /妙味|危険|儲|edge|買うべき|勝てる|おすすめ|お得|利益が出/;
 
+/** feature 138 の注目条件(S1〜S5)に限った禁止語。
+ *
+ * 当てる範囲は**注目条件のコンポーネントが描く DOM だけ**(`.attn-chip` 要素・`AttentionPanel`・
+ * `AttentionNote`・`AttentionRulesPanel`・`AttentionDayList` のコンテナ)。出走表全体やページ全体には
+ * 当てない — 既存の「…推奨ではありません」(乖離の title)・「買い目推奨」タブ・「買い目の推奨では
+ * ありません」に当たり、103 の禁止語統合と同じ罠になる。
+ *
+ * `EXPECTED_RETURN_SCOPE` に購入誘導の語(`買え`・`買い目`・`狙い目`・`勝負`・`推奨`)を足した集合。
+ * 「おすすめ」は利用者の依頼の語だが、購入推奨に見えるので注目条件では使わない(codex)。
+ * 裸の `買い`・`印` は入れない(「買い方」などを誤検出する)。`条件`・`回収率` は許可する — 一覧と
+ * パネルは回収率を計算基準のラベルつきで出すのが仕事である。aria-label の `印|推奨|おすすめ` は
+ * 範囲内の `[aria-label]` に別の断言で当てる。鮮度の注記には `UNMEASURED_ODDS_DRIFT` も当てる。
+ */
+export const ATTENTION_SCOPE =
+  /妙味|危険|儲|edge|買うべき|買え|買い目|勝てる|おすすめ|お得|利益が出|狙い目|勝負|推奨/;
+
 /** 損益色として使ってはならない CSS クラス(表示規律)。 */
 export const PROFIT_COLOUR_SELECTOR = ".good, .bad, .danger, .success, .profit";

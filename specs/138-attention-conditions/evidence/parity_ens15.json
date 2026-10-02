@@ -1,0 +1,894 @@
+{
+ "acceptance": {
+  "a_common_match_rate": true,
+  "b_one_side_rows_explained": true,
+  "c_rule_selections_agree": true,
+  "passed": true,
+  "per_day_sample": true
+ },
+ "common": {
+  "match_rate": 0.9999751200457792,
+  "max_abs_dp": 0.0015314713149930728,
+  "min_match_rate": 0.9999,
+  "rows": 80386,
+  "tol": 1e-09,
+  "within_tol": 80384
+ },
+ "elapsed_s": 54.5,
+ "generated_at": "2026-10-02T01:45:11.718613+00:00",
+ "git_commit": "c1c44f9b66074d50618eccaa4a8474098119c90b",
+ "known_reasons": [
+  "after_research_snapshot",
+  "changed_after_research_snapshot",
+  "duplicate_registration",
+  "horse_id_rekeyed",
+  "research_excludes_races_without_one_winner"
+ ],
+ "mismatches": {
+  "by_reason": {
+   "race_field_differs:duplicate_registration,horse_id_rekeyed": 2
+  },
+  "count": 2,
+  "rows": [
+   {
+    "dp": 0.0015314713149930728,
+    "horse_id": "2022106098",
+    "odds_p": 26.5,
+    "odds_r": 26.5,
+    "p_p": 0.04103372988519933,
+    "p_r": 0.039502258570206256,
+    "race_date": "2025-10-26",
+    "race_id": "202504040407",
+    "reason": "race_field_differs:duplicate_registration,horse_id_rekeyed"
+   },
+   {
+    "dp": 0.0012764358540425583,
+    "horse_id": "nk:2022106098",
+    "odds_p": 26.5,
+    "odds_r": 26.5,
+    "p_p": 0.03635890677319577,
+    "p_r": 0.037635342627238326,
+    "race_date": "2025-10-26",
+    "race_id": "202504040407",
+    "reason": "race_field_differs:duplicate_registration,horse_id_rekeyed"
+   }
+  ]
+ },
+ "numpy_version": "2.5.0",
+ "per_day_sample": {
+  "days": [
+   "2025-01-05",
+   "2025-11-15",
+   "2026-09-22"
+  ],
+  "max_abs_dp": 0.0,
+  "passed": true,
+  "rows": 1031
+ },
+ "production": {
+  "definitions_sha256": "923913faf79034a495ce6a07b5ca3f6dc3c493ce060d0347e6b60fcd36f48547",
+  "ensemble_dir": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/mev-ens15-v1",
+  "ensemble_spec_sha256": "5a6a503c0c7820f018deffc2f6893dfc6ef0edad7b378a609a3c49bf8865c41e",
+  "ensemble_version": "mev-ens15-v1",
+  "invalid_odds_races": [],
+  "logic_version": "mev-ens15-v1;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007",
+  "manifests": {
+   "ensemble_2019.json": "d335df36e98f104d004990f1dc9308f61ecdc3e7f45609a7bb1eed21aa30605e",
+   "ensemble_2020.json": "a42ec113ebda3c52d661fb54716ce034cd6ddf242f7e9238c77657b0608db198",
+   "ensemble_2021.json": "f557824725d0b4d2f55c13fcd99ed0f60b308894817e1d95cc4c0cd4a51a1784",
+   "ensemble_2022.json": "eff69c3b669ab9a3cab730611e51f152b34aa9cbd91ef48bf94fc89dc8b90660",
+   "ensemble_2023.json": "c46930b5db3cd6f56557f5a8ea4d89d3c98ffa4477b56370e071e89a62f2862a",
+   "ensemble_2024.json": "c5bb40a325b9aaea73b9bed0339b514948a58a70bedd7c571a240b229f9460fc",
+   "ensemble_2025.json": "d8e7fcfbee582cee887bd3879271dfeb4439f816d664cf2c09463a071f814d8d",
+   "ensemble_2026.json": "6a4f42895b7c7b622559fc30458f84eff39744099a3a80778c7d1a541de1c7d9"
+  },
+  "model_dir": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/mev-binary-v2",
+  "race_ok_false_races": [
+   "202504040406"
+  ],
+  "races": 5809,
+  "rows": 80490,
+  "rule_set_version": "attention-S1-S5-v1",
+  "single_version": "mev-binary-v2",
+  "skipped_no_horse_number": 0
+ },
+ "production_only": {
+  "by_reason": {
+   "research_excludes_races_without_one_winner": 104
+  },
+  "count": 104,
+  "rows": [
+   {
+    "horse_id": "2022100194",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022100257",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022101469",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022101626",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022101983",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022102519",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022102749",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022102819",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022103036",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022103324",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022104197",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022105212",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022106187",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022106190",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022109047",
+    "race_date": "2025-05-24",
+    "race_id": "202504010709",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019105187",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020103540",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021101211",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021101398",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021103689",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021104173",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022100700",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022101314",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022102920",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022104750",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022104815",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022104844",
+    "race_date": "2025-08-23",
+    "race_id": "202504030112",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019101340",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019102186",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019105754",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020101601",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020102876",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020103710",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020103975",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020104111",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020105813",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021100897",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021103440",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021105078",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021105131",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021106759",
+    "race_date": "2025-04-26",
+    "race_id": "202505020107",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2018103560",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2018104512",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019104928",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020103795",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021101639",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021105417",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021106827",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022100019",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022102174",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022104959",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022105421",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022105520",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022106813",
+    "race_date": "2025-11-16",
+    "race_id": "202505050408",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019100824",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019101629",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019103430",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019104968",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019105040",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019105377",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019105448",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2019105571",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020102831",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020102873",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020103195",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020105626",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020105631",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020105655",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2020105795",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021101387",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021105414",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2021106823",
+    "race_date": "2025-01-25",
+    "race_id": "202510010111",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023100179",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023100348",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023100794",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023100831",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023102859",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023104942",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023105138",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023106931",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023107103",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023100931",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023101295",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023104341",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023105215",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023105290",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023106476",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023107255",
+    "race_date": "2026-05-23",
+    "race_id": "202604010705",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022101429",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022101690",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022102052",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022104892",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022105012",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022105715",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022106912",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2022107147",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023102025",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023102990",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023103247",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023105300",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023106107",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023107105",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "2023107183",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   },
+   {
+    "horse_id": "nk:2023101501",
+    "race_date": "2026-08-16",
+    "race_id": "202607020811",
+    "reason": "research_excludes_races_without_one_winner"
+   }
+  ],
+  "unknown": 0
+ },
+ "range": {
+  "from": "2025-01-01",
+  "to": "2026-09-30"
+ },
+ "research": {
+  "ens_prediction_inputs": [
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 1,
+    "sha256": "a0f7983d975f41e565e00734c6aec18b32581985033751e5eb02acb3e44f11ce"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed2_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 2,
+    "sha256": "99b6ea4da89529dc2f027e2c4346cfb92edbc0107740907abf1fa236e034062e"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed3_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 3,
+    "sha256": "142d0ec2c34fb2ce300ceafa0d8516c94e8597bdb63144cf7f33493dfd074c97"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed4_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 4,
+    "sha256": "5f8b3ba640d0fdcccbd5520a3e6d4087450dfe03d011f5b5ffa50aed3638d11f"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed5_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 5,
+    "sha256": "18f547c5a374818cb5fdd935b9c6b256c8daad8344e78547e752e9144d5a6e59"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed6_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 6,
+    "sha256": "71ab7a1ac651f667aad9763f2207b78fc81a938744393a384211bec34d1dde66"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed7_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 7,
+    "sha256": "99fc00028abf5e85800f825d06c9d50b36d3128bd90a6ee99457aa8e36304885"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed8_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 8,
+    "sha256": "b9d624736914012e07c59da73be1c7b8aa07bb4bdaff63ef980ae9d40aa35f5d"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed9_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 9,
+    "sha256": "341f2003d41781e40eb39219fe4ea7376f42c4049188eb21bc32ff0969d329f9"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed10_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 10,
+    "sha256": "fdaffae7ac6092dc22e5e9697052970fbb459ae94386fe6cdcd350da1cb40feb"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed11_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 11,
+    "sha256": "fa01524d31151ef304a2d3d0f0dc31a757e8a6eb0b7c1d2bdc5f2f312392d5a5"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed12_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 12,
+    "sha256": "afd760407943188ca1db027ffb25ab96b9da97d744a8a00f591f9d6dc6b31749"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed13_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 13,
+    "sha256": "b63a195d008e8bccc3accbefb1bad393146b5f693eff300c375c28c0b6af7b98"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed14_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 14,
+    "sha256": "fab7ef1cd942a8a9d6facacdf7b2802a6671d49cd5578ce2e8defdfbf8e2b81f"
+   },
+   {
+    "path": "artifacts/roi_explore/results/armC_binary_seed15_drop-sameday+weightlive_from2007_ens15/predictions.parquet",
+    "row_count": 786049,
+    "seed": 15,
+    "sha256": "7b39f823f16421bb2dc35cfef3e14aca580ba1a7524b08f9bab230d086c12db3"
+   }
+  ],
+  "max_race_date": "2026-09-22",
+  "rows": {
+   "mtime_utc": "2026-09-29T11:41:30.134050+00:00",
+   "path": "artifacts/market_ev/rows_2007.parquet",
+   "sha256": "99f699502424c65a4f2dcd998bd105c2537551952b931b2c4a19f28399468b2b"
+  },
+  "rows_in_range": 80386,
+  "selected": {
+   "S1": 207,
+   "S2": 78,
+   "S3": 714,
+   "S4": 464,
+   "S5": 1232
+  },
+  "single_prediction_input": {
+   "path": "artifacts/roi_explore/results/armC_binary_drop-sameday+weightlive_serving_v2_2007/predictions.parquet",
+   "row_count": 786049,
+   "sha256": "a0f7983d975f41e565e00734c6aec18b32581985033751e5eb02acb3e44f11ce"
+  },
+  "snapshot_utc": "2026-09-29T11:41:30.134050+00:00"
+ },
+ "research_only": {
+  "by_reason": {},
+  "count": 0,
+  "rows": [],
+  "unknown": 0
+ },
+ "rule_failure_count": 0,
+ "rule_failures": [],
+ "rule_failures_by_reason": {},
+ "rule_failures_without_known_row_reason": 0,
+ "rules": {
+  "S1": {
+   "agreement_rate": 1.0,
+   "production_agrees": 207,
+   "production_has_row": 207,
+   "production_only_selected_on_common_rows": 0,
+   "research_selected": 207
+  },
+  "S2": {
+   "agreement_rate": 1.0,
+   "production_agrees": 78,
+   "production_has_row": 78,
+   "production_only_selected_on_common_rows": 0,
+   "research_selected": 78
+  },
+  "S3": {
+   "agreement_rate": 1.0,
+   "production_agrees": 714,
+   "production_has_row": 714,
+   "production_only_selected_on_common_rows": 0,
+   "research_selected": 714
+  },
+  "S4": {
+   "agreement_rate": 1.0,
+   "production_agrees": 464,
+   "production_has_row": 464,
+   "production_only_selected_on_common_rows": 0,
+   "research_selected": 464
+  },
+  "S5": {
+   "agreement_rate": 1.0,
+   "production_agrees": 1232,
+   "production_has_row": 1232,
+   "production_only_selected_on_common_rows": 0,
+   "research_selected": 1232
+  }
+ },
+ "script_sha256": "42acc2997f824e71419473076ce92fc52442454acba428a5a3c2248dd5f5df7f"
+}

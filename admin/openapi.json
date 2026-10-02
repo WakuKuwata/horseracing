@@ -1,6 +1,1259 @@
 {
   "components": {
     "schemas": {
+      "AttentionAvailable": {
+        "additionalProperties": false,
+        "description": "The race's first ensemble computation is recorded; ``horses`` covers every currently\nstarted horse plus any judged horse that was scratched later (horse_number order).",
+        "properties": {
+          "has_results": {
+            "title": "Has Results",
+            "type": "boolean"
+          },
+          "horses": {
+            "items": {
+              "$ref": "#/components/schemas/AttentionHorse"
+            },
+            "title": "Horses",
+            "type": "array"
+          },
+          "judged_at": {
+            "format": "date-time",
+            "title": "Judged At",
+            "type": "string"
+          },
+          "post_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Time"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "rule_set_version": {
+            "title": "Rule Set Version",
+            "type": "string"
+          },
+          "selection_policy_version": {
+            "title": "Selection Policy Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "available",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "race_id",
+          "post_time",
+          "has_results",
+          "judged_at",
+          "selection_policy_version",
+          "rule_set_version",
+          "horses"
+        ],
+        "title": "AttentionAvailable",
+        "type": "object"
+      },
+      "AttentionBacktest": {
+        "additionalProperties": false,
+        "properties": {
+          "all": {
+            "$ref": "#/components/schemas/AttentionFrozenStats"
+          },
+          "bets_2024_25_26": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Bets 2024 25 26",
+            "type": "array"
+          },
+          "bootstrap": {
+            "$ref": "#/components/schemas/AttentionBacktestBootstrap"
+          },
+          "c": {
+            "$ref": "#/components/schemas/AttentionFrozenStats"
+          },
+          "selected": {
+            "$ref": "#/components/schemas/AttentionSelectedWindows"
+          },
+          "valuation_basis": {
+            "const": "closing_odds_approx",
+            "title": "Valuation Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "all",
+          "c",
+          "bets_2024_25_26",
+          "selected",
+          "valuation_basis",
+          "bootstrap"
+        ],
+        "title": "AttentionBacktest",
+        "type": "object"
+      },
+      "AttentionBacktestBootstrap": {
+        "additionalProperties": false,
+        "properties": {
+          "b": {
+            "title": "B",
+            "type": "integer"
+          },
+          "block": {
+            "title": "Block",
+            "type": "string"
+          },
+          "block_universe": {
+            "title": "Block Universe",
+            "type": "string"
+          },
+          "impl": {
+            "title": "Impl",
+            "type": "string"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "impl",
+          "b",
+          "seed",
+          "block",
+          "block_universe"
+        ],
+        "title": "AttentionBacktestBootstrap",
+        "type": "object"
+      },
+      "AttentionCheckpointBootstrap": {
+        "additionalProperties": false,
+        "properties": {
+          "b": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "B"
+          },
+          "block_universe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Universe"
+          },
+          "impl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impl"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          }
+        },
+        "required": [
+          "impl",
+          "b",
+          "seed",
+          "block_universe"
+        ],
+        "title": "AttentionCheckpointBootstrap",
+        "type": "object"
+      },
+      "AttentionDayItem": {
+        "additionalProperties": false,
+        "description": "One chip horse of the day (judged at the race's first computation).",
+        "properties": {
+          "chip_now": {
+            "enum": [
+              "matches",
+              "no_longer",
+              "unknown"
+            ],
+            "title": "Chip Now",
+            "type": "string"
+          },
+          "chip_rule": {
+            "enum": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5"
+            ],
+            "title": "Chip Rule",
+            "type": "string"
+          },
+          "chip_s2": {
+            "title": "Chip S2",
+            "type": "boolean"
+          },
+          "chip_stage": {
+            "$ref": "#/components/schemas/StageDetail"
+          },
+          "current_odds_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Odds Observed At"
+          },
+          "has_results": {
+            "title": "Has Results",
+            "type": "boolean"
+          },
+          "horse_id": {
+            "title": "Horse Id",
+            "type": "string"
+          },
+          "horse_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Name"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "levels": {
+            "$ref": "#/components/schemas/AttentionLevels"
+          },
+          "post_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Time"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "race_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Number"
+          },
+          "stages": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StageDetail"
+            },
+            "propertyNames": {
+              "enum": [
+                "S1",
+                "S2",
+                "S3",
+                "S4",
+                "S5"
+              ]
+            },
+            "title": "Stages",
+            "type": "object"
+          },
+          "venue_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Code"
+          }
+        },
+        "required": [
+          "race_id",
+          "post_time",
+          "has_results",
+          "venue_code",
+          "race_number",
+          "horse_id",
+          "horse_number",
+          "horse_name",
+          "chip_rule",
+          "chip_stage",
+          "chip_s2",
+          "chip_now",
+          "stages",
+          "levels",
+          "current_odds_observed_at"
+        ],
+        "title": "AttentionDayItem",
+        "type": "object"
+      },
+      "AttentionDayResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AttentionDayItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "date",
+          "items"
+        ],
+        "title": "AttentionDayResponse",
+        "type": "object"
+      },
+      "AttentionExclusionCounts": {
+        "additionalProperties": false,
+        "description": "Exclusive exclusion classes (eval ``classify_pick``); with n_counted they sum to the rule's\ntotal pick rows (date-unfiltered, voided picks included).",
+        "properties": {
+          "before_start": {
+            "title": "Before Start",
+            "type": "integer"
+          },
+          "computed_after_post": {
+            "title": "Computed After Post",
+            "type": "integer"
+          },
+          "dead_heat": {
+            "title": "Dead Heat",
+            "type": "integer"
+          },
+          "observed_after_post": {
+            "title": "Observed After Post",
+            "type": "integer"
+          },
+          "pending_result": {
+            "title": "Pending Result",
+            "type": "integer"
+          },
+          "post_time_unknown": {
+            "title": "Post Time Unknown",
+            "type": "integer"
+          },
+          "result_known_at_compute": {
+            "title": "Result Known At Compute",
+            "type": "integer"
+          },
+          "unsettled_horse": {
+            "title": "Unsettled Horse",
+            "type": "integer"
+          },
+          "voided_scratched": {
+            "title": "Voided Scratched",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "voided_scratched",
+          "before_start",
+          "post_time_unknown",
+          "computed_after_post",
+          "result_known_at_compute",
+          "observed_after_post",
+          "pending_result",
+          "unsettled_horse",
+          "dead_heat"
+        ],
+        "title": "AttentionExclusionCounts",
+        "type": "object"
+      },
+      "AttentionFlags": {
+        "additionalProperties": false,
+        "description": "Non-exclusive audit flags (counted picks are flagged too; never part of the Σ check).",
+        "properties": {
+          "field_changed_after_pick": {
+            "title": "Field Changed After Pick",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "field_changed_after_pick"
+        ],
+        "title": "AttentionFlags",
+        "type": "object"
+      },
+      "AttentionFreshnessBand": {
+        "additionalProperties": false,
+        "properties": {
+          "hits": {
+            "title": "Hits",
+            "type": "integer"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "roi_frozen": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi Frozen"
+          }
+        },
+        "required": [
+          "n",
+          "hits",
+          "roi_frozen"
+        ],
+        "title": "AttentionFreshnessBand",
+        "type": "object"
+      },
+      "AttentionFrozenBasis": {
+        "additionalProperties": false,
+        "description": "Settlement at the judged odds (odds_used × 100 yen) — the basis of the stages.",
+        "properties": {
+          "ci": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci"
+          },
+          "p_one_sided": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P One Sided"
+          },
+          "roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi"
+          },
+          "valuation_basis": {
+            "const": "frozen_pick_odds",
+            "title": "Valuation Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valuation_basis",
+          "roi",
+          "ci",
+          "p_one_sided"
+        ],
+        "title": "AttentionFrozenBasis",
+        "type": "object"
+      },
+      "AttentionFrozenStats": {
+        "additionalProperties": false,
+        "description": "Frozen backtest window statistics (closing-odds approximation, ratio units).",
+        "properties": {
+          "ci_high": {
+            "title": "Ci High",
+            "type": "number"
+          },
+          "ci_low": {
+            "title": "Ci Low",
+            "type": "number"
+          },
+          "hits": {
+            "title": "Hits",
+            "type": "integer"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "p_one_sided": {
+            "title": "P One Sided",
+            "type": "number"
+          },
+          "roi": {
+            "title": "Roi",
+            "type": "number"
+          }
+        },
+        "required": [
+          "roi",
+          "ci_low",
+          "ci_high",
+          "p_one_sided",
+          "n",
+          "hits"
+        ],
+        "title": "AttentionFrozenStats",
+        "type": "object"
+      },
+      "AttentionHorse": {
+        "additionalProperties": false,
+        "properties": {
+          "applicable": {
+            "items": {
+              "enum": [
+                "S1",
+                "S2",
+                "S3",
+                "S4",
+                "S5"
+              ],
+              "type": "string"
+            },
+            "title": "Applicable",
+            "type": "array"
+          },
+          "chip_now": {
+            "anyOf": [
+              {
+                "enum": [
+                  "matches",
+                  "no_longer",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chip Now"
+          },
+          "chip_rule": {
+            "anyOf": [
+              {
+                "enum": [
+                  "S1",
+                  "S2",
+                  "S3",
+                  "S4",
+                  "S5"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chip Rule"
+          },
+          "chip_s2": {
+            "title": "Chip S2",
+            "type": "boolean"
+          },
+          "chip_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "field_changed_after_pick": {
+            "title": "Field Changed After Pick",
+            "type": "boolean"
+          },
+          "horse_id": {
+            "title": "Horse Id",
+            "type": "string"
+          },
+          "horse_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horse Number"
+          },
+          "judged": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "levels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttentionLevels"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pick_status": {
+            "additionalProperties": {
+              "enum": [
+                "pick",
+                "void:scratched",
+                "none"
+              ],
+              "type": "string"
+            },
+            "propertyNames": {
+              "enum": [
+                "S1",
+                "S2",
+                "S3",
+                "S4",
+                "S5"
+              ]
+            },
+            "title": "Pick Status",
+            "type": "object"
+          },
+          "stages": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StageDetail"
+            },
+            "propertyNames": {
+              "enum": [
+                "S1",
+                "S2",
+                "S3",
+                "S4",
+                "S5"
+              ]
+            },
+            "title": "Stages",
+            "type": "object"
+          }
+        },
+        "required": [
+          "horse_id",
+          "horse_number",
+          "applicable",
+          "chip_rule",
+          "chip_stage",
+          "chip_s2",
+          "chip_now",
+          "judged",
+          "current",
+          "field_changed_after_pick",
+          "levels",
+          "stages",
+          "pick_status"
+        ],
+        "title": "AttentionHorse",
+        "type": "object"
+      },
+      "AttentionJudgedFreshness": {
+        "additionalProperties": false,
+        "description": "Counted picks by 判断時鮮度帯 = post_time − the pick's odds_observed_at.",
+        "properties": {
+          "<=10m": {
+            "$ref": "#/components/schemas/AttentionFreshnessBand"
+          },
+          "<=60m": {
+            "$ref": "#/components/schemas/AttentionFreshnessBand"
+          },
+          ">60m": {
+            "$ref": "#/components/schemas/AttentionFreshnessBand"
+          }
+        },
+        "required": [
+          "<=10m",
+          "<=60m",
+          ">60m"
+        ],
+        "title": "AttentionJudgedFreshness",
+        "type": "object"
+      },
+      "AttentionLevels": {
+        "additionalProperties": false,
+        "description": "Axis levels decided by the API (価格鮮度 is computed by the front at render time).",
+        "properties": {
+          "backtest": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Backtest",
+            "type": "integer"
+          },
+          "price_noise": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Price Noise",
+            "type": "integer"
+          },
+          "prospective": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Prospective",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "backtest",
+          "prospective",
+          "price_noise"
+        ],
+        "title": "AttentionLevels",
+        "type": "object"
+      },
+      "AttentionOddsDrift": {
+        "additionalProperties": false,
+        "description": "log(current stored odds / odds_used) over counted picks (diagnostic).",
+        "properties": {
+          "median_log_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Log Ratio"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "p10": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P10"
+          },
+          "p90": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P90"
+          }
+        },
+        "required": [
+          "n",
+          "median_log_ratio",
+          "p10",
+          "p90"
+        ],
+        "title": "AttentionOddsDrift",
+        "type": "object"
+      },
+      "AttentionPriceNoise": {
+        "additionalProperties": false,
+        "properties": {
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "overlap": {
+            "title": "Overlap",
+            "type": "number"
+          },
+          "roi": {
+            "title": "Roi",
+            "type": "number"
+          },
+          "sigma": {
+            "title": "Sigma",
+            "type": "number"
+          }
+        },
+        "required": [
+          "sigma",
+          "roi",
+          "n",
+          "overlap"
+        ],
+        "title": "AttentionPriceNoise",
+        "type": "object"
+      },
+      "AttentionProspective": {
+        "additionalProperties": false,
+        "properties": {
+          "bootstrap": {
+            "$ref": "#/components/schemas/AttentionProspectiveBootstrap"
+          },
+          "by_judged_freshness": {
+            "$ref": "#/components/schemas/AttentionJudgedFreshness"
+          },
+          "checkpoint": {
+            "anyOf": [
+              {
+                "enum": [
+                  300,
+                  600
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint"
+          },
+          "checkpoint_pending": {
+            "title": "Checkpoint Pending",
+            "type": "boolean"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/AttentionExclusionCounts"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/CheckpointDecision"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
+          "flags": {
+            "$ref": "#/components/schemas/AttentionFlags"
+          },
+          "frozen": {
+            "$ref": "#/components/schemas/AttentionFrozenBasis"
+          },
+          "n_counted": {
+            "title": "N Counted",
+            "type": "integer"
+          },
+          "n_hits": {
+            "title": "N Hits",
+            "type": "integer"
+          },
+          "n_picks_total": {
+            "title": "N Picks Total",
+            "type": "integer"
+          },
+          "next_checkpoint": {
+            "anyOf": [
+              {
+                "enum": [
+                  300,
+                  600
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Checkpoint"
+          },
+          "odds_drift": {
+            "$ref": "#/components/schemas/AttentionOddsDrift"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "remaining_to_next": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining To Next"
+          },
+          "stage": {
+            "enum": [
+              "researching",
+              "observing",
+              "passed",
+              "failed",
+              "undecided"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "stored": {
+            "$ref": "#/components/schemas/AttentionStoredBasis"
+          }
+        },
+        "required": [
+          "start_date",
+          "policy_version",
+          "stage",
+          "checkpoint",
+          "checkpoint_pending",
+          "decisions",
+          "next_checkpoint",
+          "remaining_to_next",
+          "n_counted",
+          "n_hits",
+          "n_picks_total",
+          "frozen",
+          "stored",
+          "bootstrap",
+          "counts",
+          "flags",
+          "by_judged_freshness",
+          "odds_drift"
+        ],
+        "title": "AttentionProspective",
+        "type": "object"
+      },
+      "AttentionProspectiveBootstrap": {
+        "additionalProperties": false,
+        "properties": {
+          "b": {
+            "title": "B",
+            "type": "integer"
+          },
+          "block": {
+            "title": "Block",
+            "type": "string"
+          },
+          "block_universe": {
+            "title": "Block Universe",
+            "type": "string"
+          },
+          "impl": {
+            "title": "Impl",
+            "type": "string"
+          },
+          "numpy_version": {
+            "title": "Numpy Version",
+            "type": "string"
+          },
+          "rng": {
+            "title": "Rng",
+            "type": "string"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "impl",
+          "b",
+          "seed",
+          "block",
+          "block_universe",
+          "rng",
+          "numpy_version"
+        ],
+        "title": "AttentionProspectiveBootstrap",
+        "type": "object"
+      },
+      "AttentionRuleLevels": {
+        "additionalProperties": false,
+        "properties": {
+          "backtest": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Backtest",
+            "type": "integer"
+          },
+          "price_noise": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Price Noise",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "backtest",
+          "price_noise"
+        ],
+        "title": "AttentionRuleLevels",
+        "type": "object"
+      },
+      "AttentionRulesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RuleSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "rule_set_version": {
+            "title": "Rule Set Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule_set_version",
+          "items",
+          "disclaimer"
+        ],
+        "title": "AttentionRulesResponse",
+        "type": "object"
+      },
+      "AttentionSelectedCalibration": {
+        "additionalProperties": false,
+        "description": "Selected horses: mean expected return vs realized return (expected-return units only).",
+        "properties": {
+          "mean_ev": {
+            "title": "Mean Ev",
+            "type": "number"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "realized_roi": {
+            "title": "Realized Roi",
+            "type": "number"
+          }
+        },
+        "required": [
+          "n",
+          "mean_ev",
+          "realized_roi"
+        ],
+        "title": "AttentionSelectedCalibration",
+        "type": "object"
+      },
+      "AttentionSelectedWindows": {
+        "additionalProperties": false,
+        "properties": {
+          "all": {
+            "$ref": "#/components/schemas/AttentionSelectedCalibration"
+          },
+          "c": {
+            "$ref": "#/components/schemas/AttentionSelectedCalibration"
+          }
+        },
+        "required": [
+          "all",
+          "c"
+        ],
+        "title": "AttentionSelectedWindows",
+        "type": "object"
+      },
+      "AttentionStoredBasis": {
+        "additionalProperties": false,
+        "description": "Reference settlement at the CURRENT stored win odds (mutable; may be re-ingested).\n\nOnly counted picks whose stored odds are still valid are settled here (``n``); the others are\nleft out of numerator and denominator and counted (``n_missing_stored_odds``), never valued at\nthe judged odds. ``n + n_missing_stored_odds`` equals the prospective ``n_counted``.",
+        "properties": {
+          "ci": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "n_missing_stored_odds": {
+            "title": "N Missing Stored Odds",
+            "type": "integer"
+          },
+          "roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi"
+          },
+          "valuation_basis": {
+            "const": "stored_odds_mutable",
+            "title": "Valuation Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valuation_basis",
+          "roi",
+          "ci",
+          "n",
+          "n_missing_stored_odds"
+        ],
+        "title": "AttentionStoredBasis",
+        "type": "object"
+      },
+      "AttentionUnavailable": {
+        "additionalProperties": false,
+        "description": "No first computation yet: not computed, or a started horse has no valid win odds.",
+        "properties": {
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "not_computed",
+              "odds_unavailable"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "const": "unavailable",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "race_id",
+          "reason"
+        ],
+        "title": "AttentionUnavailable",
+        "type": "object"
+      },
       "AvailableModel": {
         "description": "Feature 057: a model that has a persisted prediction_run for THIS race (i.e. selectable on\nthe race-detail view). display_name/purpose are human labels (null until set). is_selected marks\nthe model whose run this response returns. adoption_status lets the front badge the active model\n('active') distinctly from the selected one (selected ≠ adopted).",
         "properties": {
@@ -288,6 +1541,105 @@
           "snapshot_id"
         ],
         "title": "ChaosSnapshotProvenance",
+        "type": "object"
+      },
+      "CheckpointDecision": {
+        "additionalProperties": false,
+        "description": "One recorded checkpoint decision (append-only; the stage follows these records).",
+        "properties": {
+          "bootstrap": {
+            "$ref": "#/components/schemas/AttentionCheckpointBootstrap"
+          },
+          "checkpoint": {
+            "enum": [
+              300,
+              600
+            ],
+            "title": "Checkpoint",
+            "type": "integer"
+          },
+          "ci": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci"
+          },
+          "counted_pick_ids_sha256": {
+            "title": "Counted Pick Ids Sha256",
+            "type": "string"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "passed",
+              "failed",
+              "continue",
+              "undecided"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "n_counted": {
+            "title": "N Counted",
+            "type": "integer"
+          },
+          "n_hits": {
+            "title": "N Hits",
+            "type": "integer"
+          },
+          "prospective_start_date": {
+            "format": "date",
+            "title": "Prospective Start Date",
+            "type": "string"
+          },
+          "roi_frozen": {
+            "title": "Roi Frozen",
+            "type": "number"
+          },
+          "settlement_cutoff": {
+            "format": "date-time",
+            "title": "Settlement Cutoff",
+            "type": "string"
+          },
+          "skipped_pending_before_last": {
+            "title": "Skipped Pending Before Last",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checkpoint",
+          "decision",
+          "n_counted",
+          "n_hits",
+          "roi_frozen",
+          "ci",
+          "decided_at",
+          "settlement_cutoff",
+          "prospective_start_date",
+          "skipped_pending_before_last",
+          "counted_pick_ids_sha256",
+          "bootstrap"
+        ],
+        "title": "CheckpointDecision",
         "type": "object"
       },
       "ComparisonCoverage": {
@@ -634,6 +1986,97 @@
           "as_of"
         ],
         "title": "EstimatedOddsRow",
+        "type": "object"
+      },
+      "EvSnapshot": {
+        "additionalProperties": false,
+        "description": "Expected returns (ratio, pseudo) at one moment. ``judged`` = the frozen pick values;\n``current`` = the displayed version's latest row (single seed only from the same run).",
+        "properties": {
+          "computed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Computed At"
+          },
+          "ens_expected_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ens Expected Return"
+          },
+          "is_pseudo": {
+            "const": true,
+            "title": "Is Pseudo",
+            "type": "boolean"
+          },
+          "odds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds"
+          },
+          "odds_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Observed At"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "single_expected_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Single Expected Return"
+          }
+        },
+        "required": [
+          "ens_expected_return",
+          "single_expected_return",
+          "odds",
+          "odds_observed_at",
+          "computed_at",
+          "run_id",
+          "is_pseudo"
+        ],
+        "title": "EvSnapshot",
         "type": "object"
       },
       "Explanation": {
@@ -3841,6 +5284,121 @@
         "title": "RecommendationRow",
         "type": "object"
       },
+      "RuleSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "backtest": {
+            "$ref": "#/components/schemas/AttentionBacktest"
+          },
+          "control": {
+            "title": "Control",
+            "type": "boolean"
+          },
+          "definition_ja": {
+            "title": "Definition Ja",
+            "type": "string"
+          },
+          "ev_gt": {
+            "title": "Ev Gt",
+            "type": "number"
+          },
+          "gap_days": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Days"
+          },
+          "id": {
+            "enum": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "levels": {
+            "$ref": "#/components/schemas/AttentionRuleLevels"
+          },
+          "odds_band": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Band"
+          },
+          "posthoc": {
+            "title": "Posthoc",
+            "type": "boolean"
+          },
+          "price_noise": {
+            "items": {
+              "$ref": "#/components/schemas/AttentionPriceNoise"
+            },
+            "title": "Price Noise",
+            "type": "array"
+          },
+          "prospective": {
+            "$ref": "#/components/schemas/AttentionProspective"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "uses_ensemble": {
+            "title": "Uses Ensemble",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "rank",
+          "definition_ja",
+          "uses_ensemble",
+          "ev_gt",
+          "odds_band",
+          "gap_days",
+          "posthoc",
+          "control",
+          "backtest",
+          "price_noise",
+          "levels",
+          "prospective"
+        ],
+        "title": "RuleSummary",
+        "type": "object"
+      },
       "RunAudit": {
         "properties": {
           "computed_at": {
@@ -5005,6 +6563,49 @@
         "title": "ShadowLogResponse",
         "type": "object"
       },
+      "StageDetail": {
+        "additionalProperties": false,
+        "description": "Prospective stage of one rule: enough to draw 「300 点不通過」 / 「観察中・判定待ち」.",
+        "properties": {
+          "checkpoint": {
+            "anyOf": [
+              {
+                "enum": [
+                  300,
+                  600
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint"
+          },
+          "checkpoint_pending": {
+            "title": "Checkpoint Pending",
+            "type": "boolean"
+          },
+          "stage": {
+            "enum": [
+              "researching",
+              "observing",
+              "passed",
+              "failed",
+              "undecided"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "checkpoint",
+          "checkpoint_pending"
+        ],
+        "title": "StageDetail",
+        "type": "object"
+      },
       "UnderratedLongshot": {
         "description": "Feature 066 axis B: a horse the MODEL ranks in its top 3 (by p) that the MARKET does NOT\nrank top 3 (popularity_rank > 3). A NEUTRAL FACT (model/market disagree), NOT a buy call.",
         "properties": {
@@ -5154,6 +6755,70 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/attention-rules": {
+      "get": {
+        "operationId": "attention_rule_list_api_v1_attention_rules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttentionRulesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Attention Rule List",
+        "tags": [
+          "attention"
+        ]
+      }
+    },
+    "/api/v1/attention/day": {
+      "get": {
+        "operationId": "attention_day_api_v1_attention_day_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttentionDayResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attention Day",
+        "tags": [
+          "attention"
+        ]
+      }
+    },
     "/api/v1/coverage": {
       "get": {
         "operationId": "coverage_api_v1_coverage_get",
@@ -5959,6 +7624,63 @@
         "summary": "Race Detail",
         "tags": [
           "races"
+        ]
+      }
+    },
+    "/api/v1/races/{race_id}/attention": {
+      "get": {
+        "operationId": "race_attention_api_v1_races__race_id__attention_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "available": "#/components/schemas/AttentionAvailable",
+                      "unavailable": "#/components/schemas/AttentionUnavailable"
+                    },
+                    "propertyName": "status"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AttentionAvailable"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AttentionUnavailable"
+                    }
+                  ],
+                  "title": "Response Race Attention Api V1 Races  Race Id  Attention Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Race Attention",
+        "tags": [
+          "attention"
         ]
       }
     },

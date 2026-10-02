@@ -19,6 +19,7 @@ same seed produce bit-identical CIs (SC-002/SC-003). Fewer than 2 race-days → 
 from __future__ import annotations
 
 import statistics
+from collections import OrderedDict
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -278,7 +279,10 @@ def inflate_for_seed_noise(
 # ---------------------------------------------------------------------------------------------
 
 _BLOCK_KINDS = ("race_day", "iso_week", "calendar_month")
-_COUNTS_CACHE: dict[tuple[int, int, int], np.ndarray] = {}
+#: LRU of the last few draws. Unbounded growth was fine for one-shot scripts (109) but not for the
+#: resident API process (138 reads per-rule CIs at request time); only determinism is a requirement.
+_COUNTS_CACHE_MAXSIZE = 8
+_COUNTS_CACHE: OrderedDict[tuple[int, int, int], np.ndarray] = OrderedDict()
 
 
 def block_keys_for(day_keys, block: str) -> list:
@@ -312,6 +316,7 @@ def block_bootstrap_counts(n_blocks: int, b: int, seed: int) -> np.ndarray:
     key = (int(n_blocks), int(b), int(seed))
     hit = _COUNTS_CACHE.get(key)
     if hit is not None:
+        _COUNTS_CACHE.move_to_end(key)
         return hit
     rng = np.random.default_rng(seed)
     picks = rng.integers(0, n_blocks, size=(b, n_blocks))
@@ -319,6 +324,8 @@ def block_bootstrap_counts(n_blocks: int, b: int, seed: int) -> np.ndarray:
     for i in range(b):
         counts[i] = np.bincount(picks[i], minlength=n_blocks)
     _COUNTS_CACHE[key] = counts
+    while len(_COUNTS_CACHE) > _COUNTS_CACHE_MAXSIZE:
+        _COUNTS_CACHE.popitem(last=False)
     return counts
 
 
@@ -426,3 +433,24 @@ def race_block_ratio_bootstrap_ci_v1(
         hi[has] = np.nanpercentile(reps[has], 100.0 * (1.0 - alpha / 2.0), axis=1)
     return BlockRatioBootstrap(block, b, seed, n_blocks, len(days), False, point, lo, hi, reps,
                                n_zero.astype(np.int64))
+
+
+def centered_one_sided_p_from_replicates(replicates, point: float) -> float:
+    """One-sided p for H0: ratio <= 1 from the SAME replicates that gave the CI (138).
+
+    Rescaling the payouts so the pooled ratio is exactly 1 divides every replicate by
+    ``point``, so the null-centred bootstrap needs no second draw:
+    ``p = (1 + #{rep_b / point >= point}) / (B + 1)`` with ``B = len(replicates)``.
+    Replicates that are NaN (zero resampled denominator) never count as ``>=``. This is the
+    research ``centered_pvalue`` rule evaluated on the CI's own draws, so a CI and its p-value
+    can never come from two different resamplings. ``point <= 0`` (no payout) returns 1.0.
+    """
+    reps = np.asarray(replicates, dtype=float).ravel()
+    b = reps.size
+    if b == 0:
+        raise ValueError("replicates must be non-empty")
+    if not np.isfinite(point) or point <= 0:
+        return 1.0
+    with np.errstate(invalid="ignore"):
+        ge = int(np.sum((reps / point) >= point))
+    return (1 + ge) / (b + 1)

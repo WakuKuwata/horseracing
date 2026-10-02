@@ -23,7 +23,12 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-from horseracing_db.models import MarketEvPrediction
+from horseracing_db.models import (
+    AttentionCheckpoint,
+    AttentionPick,
+    AttentionRaceScan,
+    MarketEvPrediction,
+)
 
 from horseracing_features.registry import REGISTRY, materialized_columns, model_input_features
 from horseracing_features.schema import ALL_COLUMNS
@@ -40,9 +45,22 @@ _PACKAGE_ROOTS = {
 #: the main win model's feature/dataset path (plan 0.7)
 _TRAINING_FEATURE_PATH = ("dataset", "predictor", "target_encoding", "win_model")
 _COMPUTE_MODULE = "horseracing_training.market_ev"
-_FORBIDDEN = ("market_ev_predictions", "MarketEvPrediction", _COMPUTE_MODULE)
+#: Feature 138: the prospective record of the attention conditions and its writers
+_ATTENTION_MODELS = (AttentionPick, AttentionRaceScan, AttentionCheckpoint)
+_ATTENTION_MODULES = (
+    "horseracing_training.attention_picks",
+    "horseracing_training.attention_checkpoints",
+)
+_FORBIDDEN = (
+    "market_ev_predictions",
+    "MarketEvPrediction",
+    _COMPUTE_MODULE,
+    *(m.__tablename__ for m in _ATTENTION_MODELS),
+    *(m.__name__ for m in _ATTENTION_MODELS),
+    *_ATTENTION_MODULES,
+)
 #: display names that must never become feature column names
-_FORBIDDEN_COLUMN_TOKENS = ("market_ev", "expected_return")
+_FORBIDDEN_COLUMN_TOKENS = ("market_ev", "expected_return", "attention", "ens15")
 
 
 def _python_files(root: Path) -> tuple[Path, ...]:
@@ -117,6 +135,10 @@ def test_guard_tokens_name_the_real_table_and_class():
     # the guard would be vacuous if the ORM were renamed away from the tokens it scans for
     assert MarketEvPrediction.__name__ in _FORBIDDEN
     assert MarketEvPrediction.__tablename__ in _FORBIDDEN
+    assert {m.__tablename__ for m in _ATTENTION_MODELS} == {
+        "attention_picks", "attention_race_scans", "attention_checkpoints"}
+    for m in _ATTENTION_MODELS:
+        assert m.__name__ in _FORBIDDEN and m.__tablename__ in _FORBIDDEN
 
 
 def test_features_source_never_references_market_ev():
@@ -156,6 +178,9 @@ def test_training_feature_path_never_references_market_ev():
     assert _COMPUTE_MODULE not in closure, (
         f"the main training feature path imports {_COMPUTE_MODULE}: {sorted(closure)}"
     )
+    # Feature 138: the single place for this closure assertion (the training tests do not repeat it)
+    leaked = [m for m in _ATTENTION_MODULES if m in closure]
+    assert not leaked, f"the main training feature path imports the attention writers: {leaked}"
     offenders = _token_offenders(tuple(closure.values()))
     assert not offenders, (
         f"market-aware expected return leaked into the training feature path: {offenders}"
@@ -176,3 +201,15 @@ def test_no_market_ev_named_feature_columns():
             if any(token in column.lower() for token in _FORBIDDEN_COLUMN_TOKENS)
         ]
         assert not hits, f"market-aware expected return columns registered in {surface}: {hits}"
+
+
+def test_attention_registry_is_a_pure_eval_module():
+    """Feature 138 (A6): eval's registry may name the displayed model VERSION
+    (``mev-ens15-v1`` — its single definition) because the scan above matches table / class /
+    module names, not version strings. That exception is safe only while the registry stays a pure
+    module: it must not import the database layer, the training package or a dataframe library."""
+    path = _ROOT / "eval" / "src" / "horseracing_eval" / "attention_rules.py"
+    imported = _imported_names(path, "horseracing_eval.attention_rules")
+    banned = ("horseracing_db", "horseracing_training", "sqlalchemy", "pandas")
+    hits = sorted(n for n in imported if n.split(".")[0] in banned)
+    assert not hits, f"attention_rules must stay pure: {hits}"

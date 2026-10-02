@@ -67,6 +67,11 @@ describe("RefreshButton", () => {
     expect(keys).toContain(JSON.stringify(["predictions", RID]));
     // Feature 137: the market-aware expected return is recomputed by ops after a refresh
     expect(keys).toContain(JSON.stringify(["market-ev", RID]));
+    // Feature 138: the 注目条件 view reads the same recompute (current values, chip_now, voids)
+    expect(keys).toContain(JSON.stringify(["attention", RID]));
+    // ...and the rules list's prospective tallies / checkpoint records (read-time over results),
+    // so the expanded breakdown never disagrees with a chip that moved to 「300 点不通過」
+    expect(keys).toContain(JSON.stringify(["attention-rules"]));
   });
 
   it("polls the 期待回収率 recompute it enqueued and refetches market-ev once that lands", async () => {
@@ -96,6 +101,44 @@ describe("RefreshButton", () => {
     // once at the refresh's terminal status, once more when the recompute job finishes
     await waitFor(() => expect(marketEvCalls()).toBe(2));
     expect(erPolls).toBeGreaterThanOrEqual(3);
+  });
+
+  it("refetches the 注目条件 view in BOTH completion paths (refresh, then the recompute)", async () => {
+    // Feature 138: the recompute job writes the race's first computation (scan + picks) and the
+    // latest ens15 row — so the attention view must be refetched when it lands, not only when the
+    // refresh itself finishes (otherwise the chips appear only after a manual reload).
+    const ER = "33333333-3333-3333-3333-333333333333";
+    let erPolls = 0;
+    server.use(
+      http.post(`${BASE}/races/${RID}/refresh`, () => accept()),
+      http.get(`${BASE}/jobs/${JOB}`, () =>
+        HttpResponse.json({ job_id: JOB, job_type: "refresh_race", status: "succeeded",
+          scope: "race", scope_value: RID, retry_count: 0, followup_job_id: ER })),
+      http.get(`${BASE}/jobs/${ER}`, () => {
+        erPolls += 1;
+        return HttpResponse.json({ job_id: ER, job_type: "expected_return",
+          status: erPolls < 3 ? "running" : "succeeded", scope: "date",
+          scope_value: "2024-06-05", retry_count: 0 });
+      }),
+    );
+    const { queryClient } = renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
+    await screen.findByText("更新完了");
+    const attentionCalls = () =>
+      invalidate.mock.calls.filter(
+        (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(["attention", RID]),
+      ).length;
+    // the refresh's terminal status has invalidated once; the recompute is still running
+    await waitFor(() => expect(attentionCalls()).toBeGreaterThanOrEqual(1));
+    await waitFor(() => expect(attentionCalls()).toBe(2));
+    expect(erPolls).toBeGreaterThanOrEqual(3);
+    // the rules list follows both paths too
+    const rulesCalls = invalidate.mock.calls.filter(
+      (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(["attention-rules"]),
+    ).length;
+    expect(rulesCalls).toBe(2);
   });
 
   it("shows a poll error instead of a silent 更新中…, then recovers to 更新完了", async () => {

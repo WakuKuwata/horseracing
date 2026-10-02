@@ -5,6 +5,11 @@ are stored per started horse in ``market_ev_predictions`` by the training job. T
 shapes stored rows into the response; it never recomputes a probability and imports no ML package.
 It is independent of the win-probability model selection (the endpoint takes no model_version).
 
+Feature 138: the endpoint shows ONE fixed model version, ``DISPLAYED_MARKET_EV_MODEL_VERSION``
+(the 15-seed average), imported from the eval registry and never re-declared here. The former
+"most recently computed version" selection is gone: with two versions stored per race, a manual
+single-seed recompute must not silently swap the column back to the single-seed series.
+
 ``MARKET_EV_THRESHOLD`` is the single source of truth for the highlight threshold. The unit is a
 ratio (1.2 = 120%; percent formatting belongs to the front) and the comparison is STRICT:
 ``expected_return > MARKET_EV_THRESHOLD``, so exactly 1.2 is not flagged.
@@ -29,7 +34,17 @@ from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from typing import Protocol
 
+from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
+
 from .schemas import HorseMarketEv, MarketEvAvailable, MarketEvUnavailable
+
+__all__ = [
+    "DISPLAYED_MARKET_EV_MODEL_VERSION",
+    "MARKET_EV_THRESHOLD",
+    "StoredMarketEv",
+    "build_market_ev",
+    "exceeds_threshold",
+]
 
 #: The ONLY place the highlight threshold is defined (ratio, strict ``>``).
 MARKET_EV_THRESHOLD = 1.2

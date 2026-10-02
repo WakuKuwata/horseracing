@@ -48,6 +48,8 @@ _CHECKS = {
     "ck_market_ev_predictions_expected_return",
 }
 _INDEX = "ix_market_ev_predictions_model_version_computed_at"
+#: created after 0018 — they also disappear when downgrading to 0017 (Feature 138)
+_TABLES_ADDED_AFTER_0018 = {"attention_race_scans", "attention_picks", "attention_checkpoints"}
 
 
 def _seed_race(session: Session) -> None:
@@ -206,7 +208,8 @@ def test_downgrade_to_0017_removes_the_table_and_upgrade_restores_it(
     try:
         command.downgrade(alembic_cfg, "0017_purchase_records")
         inspector = inspect(engine)
-        assert set(inspector.get_table_names()) == tables_at_head - {_TABLE}
+        expected = tables_at_head - {_TABLE} - _TABLES_ADDED_AFTER_0018
+        assert set(inspector.get_table_names()) == expected
         with engine.connect() as conn:
             leftover_index = conn.execute(
                 text("SELECT to_regclass(:name)"), {"name": _INDEX}

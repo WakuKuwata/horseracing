@@ -9,8 +9,10 @@ recompute time), real rows carry ``updated_at`` (DB latest). selection stays a h
 from __future__ import annotations
 
 import datetime
+import uuid
 from typing import Annotated, Literal
 
+from horseracing_eval.attention_rules import Decision, RuleId, Stage
 from pydantic import BaseModel, Field
 
 
@@ -1007,3 +1009,384 @@ MarketEvResponse = Annotated[
     MarketEvAvailable | MarketEvUnavailable,
     Field(discriminator="status"),
 ]
+
+
+# --- Feature 138: 注目条件 (attention conditions) S1-S5 --------------------------------------
+# Rule ids and stage names are the eval registry's own Literal types (single definition). Stage
+# values are ASCII; the Japanese labels live only in the front's label table (FR-014). No win
+# probability and no p̂ anywhere (constitution IV): selected-horse calibration is reported in
+# expected-return units only. Strict schemas (extra="forbid", no silent defaults) as in 137.
+
+
+class StageDetail(BaseModel):
+    """Prospective stage of one rule: enough to draw 「300 点不通過」 / 「観察中・判定待ち」."""
+
+    model_config = {"extra": "forbid"}
+
+    stage: Stage
+    #: the checkpoint the stage was decided at (300 / 600), None while no decision is recorded
+    checkpoint: Literal[300, 600] | None
+    #: the counted picks reached a checkpoint whose decision is not recorded (or was recorded under
+    #: another prospective start date)
+    checkpoint_pending: bool
+
+
+class EvSnapshot(BaseModel):
+    """Expected returns (ratio, pseudo) at one moment. ``judged`` = the frozen pick values;
+    ``current`` = the displayed version's latest row (single seed only from the same run)."""
+
+    model_config = {"extra": "forbid"}
+
+    ens_expected_return: float | None
+    single_expected_return: float | None
+    odds: float | None
+    odds_observed_at: datetime.datetime | None
+    computed_at: datetime.datetime | None
+    run_id: uuid.UUID | None
+    is_pseudo: Literal[True]
+
+
+class AttentionLevels(BaseModel):
+    """Axis levels decided by the API (価格鮮度 is computed by the front at render time)."""
+
+    model_config = {"extra": "forbid"}
+
+    backtest: Literal[1, 2, 3]
+    prospective: Literal[1, 2, 3]
+    price_noise: Literal[1, 2, 3]
+
+
+class AttentionHorse(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    horse_id: str
+    horse_number: int | None
+    #: rules (rank order, S5 included) with a live (non-voided) pick from the first computation
+    applicable: list[RuleId]
+    #: the chip's rule (never S5); None when no S1-S4 pick is live
+    chip_rule: RuleId | None
+    chip_stage: StageDetail | None
+    #: S2 sub-chip (only with an S1 chip while S2 also applies and is neither failed nor undecided)
+    chip_s2: bool
+    #: does the chip's condition still hold on the current values? None when there is no chip
+    chip_now: Literal["matches", "no_longer", "unknown"] | None
+    judged: EvSnapshot | None
+    current: EvSnapshot | None
+    #: audit flag: the started field differs from the one the pick was judged on (no effect on
+    #: the tally)
+    field_changed_after_pick: bool
+    #: the chip rule's levels; None when there is no chip
+    levels: AttentionLevels | None
+    #: stage of every applicable rule
+    stages: dict[RuleId, StageDetail]
+    pick_status: dict[RuleId, Literal["pick", "void:scratched", "none"]]
+
+
+class AttentionAvailable(BaseModel):
+    """The race's first ensemble computation is recorded; ``horses`` covers every currently
+    started horse plus any judged horse that was scratched later (horse_number order)."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["available"]
+    race_id: str
+    post_time: datetime.datetime | None
+    has_results: bool
+    #: computed_at of the race's first computation (the scan row)
+    judged_at: datetime.datetime
+    selection_policy_version: str
+    rule_set_version: str
+    horses: list[AttentionHorse]
+
+
+class AttentionUnavailable(BaseModel):
+    """No first computation yet: not computed, or a started horse has no valid win odds."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["unavailable"]
+    race_id: str
+    reason: Literal["not_computed", "odds_unavailable"]
+
+
+AttentionResponse = Annotated[
+    AttentionAvailable | AttentionUnavailable,
+    Field(discriminator="status"),
+]
+
+
+class AttentionFrozenStats(BaseModel):
+    """Frozen backtest window statistics (closing-odds approximation, ratio units)."""
+
+    model_config = {"extra": "forbid"}
+
+    roi: float
+    ci_low: float
+    ci_high: float
+    p_one_sided: float
+    n: int
+    hits: int
+
+
+class AttentionSelectedCalibration(BaseModel):
+    """Selected horses: mean expected return vs realized return (expected-return units only)."""
+
+    model_config = {"extra": "forbid"}
+
+    n: int
+    mean_ev: float
+    realized_roi: float
+
+
+class AttentionSelectedWindows(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    all: AttentionSelectedCalibration
+    c: AttentionSelectedCalibration
+
+
+class AttentionBacktestBootstrap(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    impl: str
+    b: int
+    seed: int
+    block: str
+    block_universe: str
+
+
+class AttentionBacktest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    all: AttentionFrozenStats
+    c: AttentionFrozenStats
+    bets_2024_25_26: list[int]
+    selected: AttentionSelectedWindows
+    valuation_basis: Literal["closing_odds_approx"]
+    #: provenance of the frozen CIs/p (production refreeze — registry ``FROZEN_BOOTSTRAP``)
+    bootstrap: AttentionBacktestBootstrap
+
+
+class AttentionPriceNoise(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    sigma: float
+    roi: float
+    n: int
+    overlap: float
+
+
+class AttentionRuleLevels(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    backtest: Literal[1, 2, 3]
+    price_noise: Literal[1, 2, 3]
+
+
+class AttentionCheckpointBootstrap(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    impl: str | None
+    b: int | None
+    seed: int | None
+    block_universe: str | None
+
+
+class CheckpointDecision(BaseModel):
+    """One recorded checkpoint decision (append-only; the stage follows these records)."""
+
+    model_config = {"extra": "forbid"}
+
+    checkpoint: Literal[300, 600]
+    decision: Decision
+    n_counted: int
+    n_hits: int
+    roi_frozen: float
+    #: [low, high]; null when the record has no interval (too few race days)
+    ci: tuple[float, float] | None
+    decided_at: datetime.datetime
+    settlement_cutoff: datetime.datetime
+    prospective_start_date: datetime.date
+    skipped_pending_before_last: int
+    counted_pick_ids_sha256: str
+    bootstrap: AttentionCheckpointBootstrap
+
+
+class AttentionFrozenBasis(BaseModel):
+    """Settlement at the judged odds (odds_used × 100 yen) — the basis of the stages."""
+
+    model_config = {"extra": "forbid"}
+
+    valuation_basis: Literal["frozen_pick_odds"]
+    roi: float | None
+    ci: tuple[float, float] | None
+    p_one_sided: float | None
+
+
+class AttentionStoredBasis(BaseModel):
+    """Reference settlement at the CURRENT stored win odds (mutable; may be re-ingested).
+
+    Only counted picks whose stored odds are still valid are settled here (``n``); the others are
+    left out of numerator and denominator and counted (``n_missing_stored_odds``), never valued at
+    the judged odds. ``n + n_missing_stored_odds`` equals the prospective ``n_counted``."""
+
+    model_config = {"extra": "forbid"}
+
+    valuation_basis: Literal["stored_odds_mutable"]
+    roi: float | None
+    ci: tuple[float, float] | None
+    n: int
+    n_missing_stored_odds: int
+
+
+class AttentionProspectiveBootstrap(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    impl: str
+    b: int
+    seed: int
+    block: str
+    block_universe: str
+    rng: str
+    numpy_version: str
+
+
+class AttentionExclusionCounts(BaseModel):
+    """Exclusive exclusion classes (eval ``classify_pick``); with n_counted they sum to the rule's
+    total pick rows (date-unfiltered, voided picks included)."""
+
+    model_config = {"extra": "forbid"}
+
+    voided_scratched: int
+    before_start: int
+    post_time_unknown: int
+    computed_after_post: int
+    result_known_at_compute: int
+    observed_after_post: int
+    pending_result: int
+    unsettled_horse: int
+    dead_heat: int
+
+
+class AttentionFlags(BaseModel):
+    """Non-exclusive audit flags (counted picks are flagged too; never part of the Σ check)."""
+
+    model_config = {"extra": "forbid"}
+
+    field_changed_after_pick: int
+
+
+class AttentionFreshnessBand(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    n: int
+    hits: int
+    roi_frozen: float | None
+
+
+class AttentionJudgedFreshness(BaseModel):
+    """Counted picks by 判断時鮮度帯 = post_time − the pick's odds_observed_at."""
+
+    model_config = {"extra": "forbid", "populate_by_name": True}
+
+    le_10m: AttentionFreshnessBand = Field(alias="<=10m")
+    le_60m: AttentionFreshnessBand = Field(alias="<=60m")
+    gt_60m: AttentionFreshnessBand = Field(alias=">60m")
+
+
+class AttentionOddsDrift(BaseModel):
+    """log(current stored odds / odds_used) over counted picks (diagnostic)."""
+
+    model_config = {"extra": "forbid"}
+
+    n: int
+    median_log_ratio: float | None
+    p10: float | None
+    p90: float | None
+
+
+class AttentionProspective(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    start_date: datetime.date | None
+    policy_version: str
+    stage: Stage
+    checkpoint: Literal[300, 600] | None
+    checkpoint_pending: bool
+    #: every recorded decision of the rule (current policy and rule set), checkpoint order
+    decisions: list[CheckpointDecision]
+    next_checkpoint: Literal[300, 600] | None
+    remaining_to_next: int | None
+    n_counted: int
+    n_hits: int
+    n_picks_total: int
+    frozen: AttentionFrozenBasis
+    stored: AttentionStoredBasis
+    bootstrap: AttentionProspectiveBootstrap
+    counts: AttentionExclusionCounts
+    flags: AttentionFlags
+    by_judged_freshness: AttentionJudgedFreshness
+    odds_drift: AttentionOddsDrift
+
+
+class RuleSummary(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    id: RuleId
+    rank: int
+    definition_ja: str
+    uses_ensemble: bool
+    #: strict threshold (EV > ev_gt, ratio)
+    ev_gt: float
+    #: lo <= odds < hi, or None
+    odds_band: tuple[float, float] | None
+    #: lo <= days_since_last <= hi, or None
+    gap_days: tuple[int, int] | None
+    #: found after looking at results (S1/S2: 「探索後固定」)
+    posthoc: bool
+    #: the comparison condition (S5): never a chip
+    control: bool
+    backtest: AttentionBacktest
+    price_noise: list[AttentionPriceNoise]
+    levels: AttentionRuleLevels
+    prospective: AttentionProspective
+
+
+class AttentionRulesResponse(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    rule_set_version: str
+    #: rank order, fixed (never sorted by results)
+    items: list[RuleSummary]
+    disclaimer: str
+
+
+class AttentionDayItem(BaseModel):
+    """One chip horse of the day (judged at the race's first computation)."""
+
+    model_config = {"extra": "forbid"}
+
+    race_id: str
+    post_time: datetime.datetime | None
+    has_results: bool
+    venue_code: str | None
+    race_number: int | None
+    horse_id: str
+    horse_number: int | None
+    horse_name: str | None
+    chip_rule: RuleId
+    chip_stage: StageDetail
+    chip_s2: bool
+    chip_now: Literal["matches", "no_longer", "unknown"]
+    stages: dict[RuleId, StageDetail]
+    levels: AttentionLevels
+    #: odds_observed_at of the displayed version's latest row (null: no current value)
+    current_odds_observed_at: datetime.datetime | None
+
+
+class AttentionDayResponse(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    date: datetime.date
+    #: post_time ascending (unknown last), then race_id, then horse_number
+    items: list[AttentionDayItem]

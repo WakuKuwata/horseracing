@@ -1327,11 +1327,29 @@ def main(argv: list[str] | None = None) -> int:
     mev.add_argument("--pending-only", action="store_true",
                      help="rewrite only races without results (settled races keep their "
                           "pre-race value); used by the automatic recompute after an odds refresh")
+    # Feature 138: the 15-seed average written alongside in the same run, plus the attention picks
+    mev.add_argument("--ensemble-dir", default=None,
+                     help="138: ABSOLUTE path of the 15-seed ensemble (ensemble.spec.json + "
+                          "ensemble_YYYY.json); also records the attention picks and checkpoints")
+    mev.add_argument("--ensemble-version", default=None,
+                     help="default: the basename of --ensemble-dir")
+    mev.add_argument("--ensemble-only", action="store_true",
+                     help="138 backfill only: write the ensemble rows / scans / picks and leave "
+                          "the single-seed rows untouched (requires --ensemble-dir)")
     mev.add_argument("--database-url", default=None)
+
+    # Feature 138: (re)run the checkpoint judgement of the attention conditions
+    acp = sub.add_parser("attention-checkpoints",
+                         help="138: record the due 300/600-point attention checkpoint decisions")
+    acp.add_argument("--dry-run", action="store_true",
+                     help="decide and print, but write nothing")
+    acp.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)
     if args.command == "market-ev":
         return _market_ev(args, mev)
+    if args.command == "attention-checkpoints":
+        return _attention_checkpoints(args)
     if args.command == "oof-generate":
         engine = create_db_engine(args.database_url)
         with Session(engine) as session:
@@ -1491,6 +1509,13 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
     Argument errors exit 2 (argparse) before any DB access. The LAST stdout line is the machine
     marker the ops runner reads: ``OK: races=N horses=M from=D1 to=D2`` or
     ``SKIPPED: no_races_with_odds``. Any failure prints ``ERROR: ...`` to stderr and returns 1.
+
+    Feature 138: only with ``--ensemble-dir`` the OK line gains
+    `` versions=2|ens picks=P checkpoints=ok|pending|error``; on ``error`` the line right before it
+    is ``attention-checkpoints: error=<type: summary>`` (the computed rows are committed anyway).
+    A ``SKIPPED`` run with ``--ensemble-dir`` still runs the void pass and prints its
+    ``attention-picks:`` line before the unchanged ``SKIPPED: <reason>`` marker. Without
+    ``--ensemble-dir`` the output is exactly 137's.
     """
     import traceback
 
@@ -1506,6 +1531,18 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
         parser.error(str(exc))
     if not (model_dir / "model.spec.json").is_file():
         parser.error(f"--model-dir has no model.spec.json: {model_dir}")
+    ensemble_dir = None
+    if args.ensemble_dir is not None:
+        try:
+            ensemble_dir = market_ev.validate_model_dir(args.ensemble_dir, flag="--ensemble-dir")
+        except ValueError as exc:
+            parser.error(str(exc))
+        if not (ensemble_dir / market_ev.ENSEMBLE_SPEC_NAME).is_file():
+            parser.error(
+                f"--ensemble-dir has no {market_ev.ENSEMBLE_SPEC_NAME}: {ensemble_dir}"
+            )
+    elif args.ensemble_only or args.ensemble_version is not None:
+        parser.error("--ensemble-only / --ensemble-version require --ensemble-dir")
 
     engine = create_db_engine(args.database_url)
     try:
@@ -1516,6 +1553,10 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
                 d_from = d_to = args.date
             else:
                 d_from, d_to = args.from_, args.to
+            kwargs = {}
+            if ensemble_dir is not None:
+                kwargs = {"ensemble_dir": ensemble_dir, "ensemble_version": args.ensemble_version,
+                          "ensemble_only": args.ensemble_only}
             result = market_ev.compute_and_persist(
                 session,
                 race_date_from=d_from,
@@ -1523,6 +1564,7 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
                 model_dir=model_dir,
                 model_version=args.model_version,
                 pending_only=args.pending_only,
+                **kwargs,
             )
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
@@ -1540,11 +1582,93 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
         f"result_pending_races={result['result_pending_races']} boosters={boosters or '-'}"
     )
     if result["status"] != "ok":
+        if ensemble_dir is not None and result.get("picks") is not None:
+            # the void pass of a run that computed nothing (the marker below stays the last line)
+            print("attention-picks: " + " ".join(f"{k}={v}" for k, v in result["picks"].items()))
         print(f"SKIPPED: {result['reason']}")
         return 0
-    print(
+    ok = (
         f"OK: races={result['races']} horses={result['horses']} "
         f"from={result['from']} to={result['to']}"
+    )
+    if ensemble_dir is None:
+        print(ok)
+        return 0
+    # Feature 138: the ensemble line, the picks, the checkpoint outcome (an error cause sits on
+    # the line right before the marker, where the ops runner looks for it)
+    for name, info in result.get("versions", {}).items():
+        if name == result["model_version"]:
+            continue
+        ens_boosters = ",".join(f"{b}:{sha[:12]}" for b, sha in info["boosters"].items())
+        print(
+            f"market-ev: model_version={name} logic_version={info['logic_version']} "
+            f"run_id={result['run_id']} races={info['races']} horses={info['horses']} "
+            f"boosters={ens_boosters or '-'}"
+        )
+    picks = result.get("picks") or {}
+    print(
+        "attention-picks: " + " ".join(f"{k}={v}" for k, v in picks.items())
+    )
+    checkpoints = result.get("checkpoints") or {}
+    state = _checkpoint_state(checkpoints)
+    if state == "error":
+        print(f"attention-checkpoints: error={checkpoints['error']}")
+    else:
+        print(f"attention-checkpoints: {_checkpoint_detail(checkpoints)}")
+    marker_versions = "ens" if args.ensemble_only else str(len(result.get("versions", {})))
+    print(
+        f"{ok} versions={marker_versions} picks={picks.get('written', 0)} checkpoints={state}"
+    )
+    return 0
+
+
+def _checkpoint_state(checkpoints: dict) -> str:
+    """``error`` > ``pending`` (a checkpoint's count is reached but not yet decidable) > ``ok``."""
+    if checkpoints.get("error"):
+        return "error"
+    if checkpoints.get("pending"):
+        return "pending"
+    return "ok"
+
+
+def _checkpoint_detail(checkpoints: dict) -> str:
+    written = ",".join(f"{r}:{c}:{d}" for r, c, d in checkpoints.get("written", [])) or "-"
+    pending = ",".join(f"{r}:{c}" for r, c in checkpoints.get("pending", [])) or "-"
+    start = checkpoints.get("prospective_start_date") or "-"
+    return f"written={written} pending={pending} prospective_start_date={start}"
+
+
+def _attention_checkpoints(args) -> int:
+    """Feature 138 (plan 0.4): decide and record the due attention checkpoints (operator re-run of
+    what every ensemble market-ev run does at its end). Last stdout line ``OK: written=N
+    pending=M dry_run=…``; an error prints ``ERROR: …`` to stderr and returns 1."""
+    import datetime as _dt
+    import traceback
+    import uuid
+
+    from . import attention_checkpoints
+
+    engine = create_db_engine(args.database_url)
+    try:
+        with Session(engine) as session:
+            result = attention_checkpoints.evaluate_checkpoints(
+                session, now=_dt.datetime.now(_dt.UTC), run_id=uuid.uuid4(),
+                dry_run=args.dry_run,
+            )
+    except Exception as exc:
+        traceback.print_exc(file=sys.stderr)
+        print(f"ERROR: attention-checkpoints failed: {type(exc).__name__}: {exc}",
+              file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+    print(f"attention-checkpoints: {_checkpoint_detail(result)}")
+    if result.get("error"):
+        print(f"ERROR: attention-checkpoints: {result['error']}", file=sys.stderr)
+        return 1
+    print(
+        f"OK: written={len(result['written'])} pending={len(result['pending'])} "
+        f"dry_run={'true' if result['dry_run'] else 'false'}"
     )
     return 0
 

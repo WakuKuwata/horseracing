@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 
-import { useRaces } from "../api/queries";
+import { useAttentionDay, useRaces } from "../api/queries";
+import { AttentionDayList } from "../components/AttentionDayList";
 import { DayRefreshButton } from "../components/DayRefreshButton";
 import { RaceDayBoard } from "../components/RaceDayBoard";
 import { EmptyView, QueryStateView } from "../components/StateView";
@@ -24,6 +25,8 @@ export function RaceListPage() {
     { date: effectiveDate, page_size: DAY_PAGE_SIZE },
     { enabled: !!effectiveDate },
   );
+  // Feature 138: the day's 注目条件 horses (judged at each race's first computation), post order.
+  const attentionDay = useAttentionDay(effectiveDate);
 
   function selectDate(value: string) {
     const sp = new URLSearchParams(searchParams);
@@ -68,6 +71,14 @@ export function RaceListPage() {
         >
           {(d) => <RaceDayBoard races={d.items} />}
         </QueryStateView>
+      )}
+
+      {effectiveDate && (
+        <AttentionDayList
+          day={attentionDay.data}
+          isLoading={attentionDay.isLoading}
+          error={attentionDay.error ?? null}
+        />
       )}
     </section>
   );

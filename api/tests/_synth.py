@@ -19,6 +19,7 @@ from horseracing_db.models import (
     RaceResult,
     Recommendation,
 )
+from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
 from sqlalchemy.orm import Session
 
 
@@ -92,7 +93,7 @@ def seed_market_ev(
     *,
     race_id: str,
     horses: dict[int, dict],  # horse_number -> {win_prob, odds_used, expected_return?, horse_id?, ...}
-    model_version="mev-binary-v2",
+    model_version=DISPLAYED_MARKET_EV_MODEL_VERSION,
     logic_version="mev-v1;test",
     computed_at=datetime.datetime(2026, 9, 27, 3, 0, tzinfo=datetime.UTC),
     odds_observed_at=datetime.datetime(2026, 9, 27, 2, 50, tzinfo=datetime.UTC),

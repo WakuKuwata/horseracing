@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DayRefreshButton } from "./DayRefreshButton";
 import { server } from "../tests/server";
@@ -44,6 +44,82 @@ describe("DayRefreshButton", () => {
     renderWithProviders(<DayRefreshButton date={DATE} pollMs={10} />);
     await userEvent.click(screen.getByRole("button", { name: "この日を更新" }));
     expect(await screen.findByText(/完了 2\/2 成功/)).toBeInTheDocument();
+  });
+
+  it("on completion refetches the races list AND the day's 注目条件 list", async () => {
+    server.use(
+      http.post(`${BASE}/days/${DATE}/refresh`, () => accept()),
+      http.get(`${BASE}/batches/${TRACE}`, () => batch("succeeded", 2, 0)),
+    );
+    const { queryClient } = renderWithProviders(<DayRefreshButton date={DATE} pollMs={10} />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    await userEvent.click(screen.getByRole("button", { name: "この日を更新" }));
+    await screen.findByText(/完了 2\/2 成功/);
+
+    const keys = invalidate.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey));
+    expect(keys).toContain(JSON.stringify(["races"]));
+    // Feature 138: the day list is keyed by the date (other days' lists are left alone)
+    expect(keys).toContain(JSON.stringify(["attention-day", DATE]));
+    // ...and the rules list (prospective tallies / checkpoint records are read-time over results)
+    expect(keys).toContain(JSON.stringify(["attention-rules"]));
+  });
+
+  it("polls the per-date 期待回収率 recompute(s) and refetches the 注目条件 day list once they land", async () => {
+    // 138: the expected_return follow-up — not the refresh — writes each race's first computation
+    // (scan + picks) and the latest ens15 row the day list reads, and it finishes AFTER the batch.
+    const ER = "44444444-4444-4444-4444-444444444444";
+    let erPolls = 0;
+    const child = (job_id: string, scope_value: string) => ({
+      job_id, job_type: "refresh_race", status: "succeeded", scope: "race", scope_value,
+      retry_count: 0, followup_job_id: ER,
+    });
+    server.use(
+      http.post(`${BASE}/days/${DATE}/refresh`, () => accept()),
+      http.get(`${BASE}/batches/${TRACE}`, () =>
+        // both children share the same per-date recompute (QUEUED reuse) → polled once
+        batch("succeeded", 2, 0, {
+          children: [child("j1", "202406050911"), child("j2", "202406050912")],
+        }),
+      ),
+      http.get(`${BASE}/jobs/${ER}`, () => {
+        erPolls += 1;
+        return HttpResponse.json({ job_id: ER, job_type: "expected_return",
+          status: erPolls < 3 ? "running" : "succeeded", scope: "date", scope_value: DATE,
+          retry_count: 0 });
+      }),
+    );
+    const { queryClient } = renderWithProviders(<DayRefreshButton date={DATE} pollMs={10} />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    await userEvent.click(screen.getByRole("button", { name: "この日を更新" }));
+    await screen.findByText(/完了 2\/2 成功/);
+    const calls = (key: unknown[]) =>
+      invalidate.mock.calls.filter(
+        (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(key),
+      ).length;
+    // once at the batch's end, once more when the (single, shared) recompute finishes
+    await waitFor(() => expect(calls(["attention-day", DATE])).toBe(2));
+    expect(calls(["attention-rules"])).toBe(2);
+    expect(erPolls).toBeGreaterThanOrEqual(3);
+    // the races list is not re-invalidated by the recompute (it does not read the ens15 rows)
+    expect(calls(["races"])).toBe(1);
+  });
+
+  it("without follow-ups the day list is refetched exactly once (no phantom second refetch)", async () => {
+    server.use(
+      http.post(`${BASE}/days/${DATE}/refresh`, () => accept()),
+      http.get(`${BASE}/batches/${TRACE}`, () => batch("succeeded", 2, 0)),
+    );
+    const { queryClient } = renderWithProviders(<DayRefreshButton date={DATE} pollMs={10} />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    await userEvent.click(screen.getByRole("button", { name: "この日を更新" }));
+    await screen.findByText(/完了 2\/2 成功/);
+    await new Promise((r) => setTimeout(r, 50));
+    const n = invalidate.mock.calls.filter(
+      (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(["attention-day", DATE]),
+    ).length;
+    expect(n).toBe(1);
   });
 
   it("shows a batch poll error instead of silent progress, then recovers to 完了", async () => {
