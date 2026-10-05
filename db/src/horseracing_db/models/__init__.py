@@ -6,7 +6,7 @@ from .attention import AttentionCheckpoint, AttentionPick, AttentionRaceScan
 from .chaos import ChaosReadout, ChaosSnapshot, FetchThrottleState
 from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from .ingestion import IdMapping, IngestionJob
-from .market import ExoticOdds, ExoticQuote, RaceLaps
+from .market import ExoticOdds, ExoticQuote, OfficialWinPayout, RaceLaps
 from .market_ev import MarketEvPrediction
 from .prediction import (
     DiagnosticRun,
@@ -39,6 +39,7 @@ __all__ = [
     "ExoticOdds",
     "ExoticQuote",
     "MarketEvPrediction",
+    "OfficialWinPayout",
     "RaceLaps",
     "ModelVersion",
     "PredictionRun",

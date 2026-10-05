@@ -133,7 +133,11 @@ describe("Feature 138 fixture builders follow the API shape", () => {
     const s4 = r.items.find((i) => i.id === "S4")!;
     expect(s4.prospective.stage).toBe("failed");
     expect(s4.prospective.checkpoint).toBe(300);
-    expect(s4.prospective.policy_version).toBe("v1");
+    expect(s4.prospective.policy_version).toBe("v2");
+    // the buy-time conversion is part of the frozen registry, carried through the overrides
+    expect(s4.buy_time_expectation?.range_low).toBeCloseTo(0.8, 6);
+    expect(s4.buy_time_expectation?.range_high).toBeCloseTo(0.85, 6);
+    expect(s4.buy_time_expectation?.interval_includes_100).toBe(false);
     expect(s4.backtest.all.roi).toBeCloseTo(1.14284, 6);
     expect(r.items.find((i) => i.id === "S1")!.prospective.stage).toBe("researching");
   });

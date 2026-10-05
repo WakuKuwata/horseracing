@@ -14,6 +14,10 @@ The guard is structural:
   probability packages neither names them nor imports the compute module (the import walk
   catches a relative ``from .market_ev import`` that a plain token scan would miss);
 * no registry / materialized / model-input column carries the display's names.
+
+Feature 139 adds the official 単勝 payout (``official_win_payouts``) to the same scan: it is a
+RESULT of the race (what the winner paid), so it may settle the 138 prospective check but must
+never reach a feature, the main training path, probability, serving, betting or eval.
 """
 
 from __future__ import annotations
@@ -28,6 +32,7 @@ from horseracing_db.models import (
     AttentionPick,
     AttentionRaceScan,
     MarketEvPrediction,
+    OfficialWinPayout,
 )
 
 from horseracing_features.registry import REGISTRY, materialized_columns, model_input_features
@@ -51,6 +56,8 @@ _ATTENTION_MODULES = (
     "horseracing_training.attention_picks",
     "horseracing_training.attention_checkpoints",
 )
+#: Feature 139: the official win payout is a race RESULT (it settles 138, never feeds a model)
+_PAYOUT_MODELS = (OfficialWinPayout,)
 _FORBIDDEN = (
     "market_ev_predictions",
     "MarketEvPrediction",
@@ -58,9 +65,13 @@ _FORBIDDEN = (
     *(m.__tablename__ for m in _ATTENTION_MODELS),
     *(m.__name__ for m in _ATTENTION_MODELS),
     *_ATTENTION_MODULES,
+    *(m.__tablename__ for m in _PAYOUT_MODELS),
+    *(m.__name__ for m in _PAYOUT_MODELS),
 )
 #: display names that must never become feature column names
-_FORBIDDEN_COLUMN_TOKENS = ("market_ev", "expected_return", "attention", "ens15")
+_FORBIDDEN_COLUMN_TOKENS = (
+    "market_ev", "expected_return", "attention", "ens15", "official_win", "win_payout",
+)
 
 
 def _python_files(root: Path) -> tuple[Path, ...]:
@@ -139,6 +150,9 @@ def test_guard_tokens_name_the_real_table_and_class():
         "attention_picks", "attention_race_scans", "attention_checkpoints"}
     for m in _ATTENTION_MODELS:
         assert m.__name__ in _FORBIDDEN and m.__tablename__ in _FORBIDDEN
+    # Feature 139
+    assert OfficialWinPayout.__tablename__ == "official_win_payouts"
+    assert {"official_win_payouts", "OfficialWinPayout"} <= set(_FORBIDDEN)
 
 
 def test_features_source_never_references_market_ev():

@@ -136,8 +136,8 @@ def test_first_computation_records_scans_and_picks_from_the_same_run(
         assert p.field_digest == scans[p.race_id].field_digest
         assert (p.ensemble_model_version, p.single_model_version) == (ENS, SINGLE)
         assert p.logic_version == attention_picks.PICK_LOGIC_VERSION
-        assert p.logic_version == market_ev.ENSEMBLE_LOGIC_VERSION + ";policy=v1"
-        assert p.selection_policy_version == ar.SELECTION_POLICY_VERSION
+        assert p.logic_version == market_ev.ENSEMBLE_LOGIC_VERSION + ";policy=v2"
+        assert p.selection_policy_version == ar.SELECTION_POLICY_VERSION == "v2"
         assert p.rule_set_version == ar.RULE_SET_VERSION
         assert p.void_reason is None and p.voids_pick_id is None
 

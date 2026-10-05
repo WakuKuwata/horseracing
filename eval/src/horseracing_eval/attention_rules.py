@@ -7,9 +7,10 @@ Three parts, in the order they were built (plan 0.3):
   freeze script selects its backtest rows with it and ``definitions_sha256`` ties the frozen
   statistics to these exact definitions (a changed boundary changes the hash).
 * **Prospective rules** — how a judged horse (a "pick") is classified, how the 300/600-point
-  checkpoints are decided and how a stage follows from the recorded decisions.
-* **Frozen statistics and levels** — the backtest / price-noise numbers shown on screen and the
-  axis levels derived from them mechanically.
+  checkpoints are decided and how a stage follows from the recorded decisions. Selection policy
+  v2 (feature 139) settles at the official win payout; v1 (judged odds) is kept as a reference.
+* **Frozen statistics and levels** — the backtest / price-noise numbers shown on screen, the axis
+  levels derived from them mechanically and the buy-time expectation (139 D13).
 
 Nothing here reads a database or a model: training and api build ``PickFacts`` from their own
 queries and call these pure functions, so both sides classify and decide identically.
@@ -182,11 +183,17 @@ def field_digest(horse_ids: Iterable[str]) -> str:
 # Prospective rules (plan 0.3 「前向き検証の規約」・T007)
 # =============================================================================================
 
-SELECTION_POLICY_VERSION = "v1"
-#: go-live date (T045): picks computed on/after this JST date count. Set once at go-live
-#: (2026-10-02, the day the market-ev job started writing picks) and never moved — moving it
-#: needs a new selection policy version. ``None`` meant "before go-live" (every pick before_start).
-PROSPECTIVE_START_DATE: datetime.date | None = datetime.date(2026, 10, 2)
+#: Selection policy = selection + classification + settlement, versioned together (139 D12).
+#: v1 (2026-10-02..04): settled at the judged odds (``frozen_payout``). v2 (from 2026-10-05):
+#: settled at the official win payout (``official_payout``) and two payout classes added.
+SELECTION_POLICY_VERSION = "v2"
+#: v1's go-live date (138 T045, the day the market-ev job started writing picks). Kept for the
+#: record only: v1 counted picks computed 2026-10-02..04 (JST) and settled them at the judged odds.
+V1_START_DATE = datetime.date(2026, 10, 2)
+#: go-live date of the CURRENT policy (v2): picks computed on/after this JST date count. v2 counts
+#: from its own start (139 D12) — the v1-period picks are before_start and never mixed in. Moving
+#: it needs a new selection policy version. ``None`` means "before go-live" (all before_start).
+PROSPECTIVE_START_DATE: datetime.date | None = datetime.date(2026, 10, 5)
 LOCAL_TZ = ZoneInfo("Asia/Tokyo")
 OBSERVING_MIN = 100
 CHECKPOINTS = (300, 600)
@@ -213,6 +220,8 @@ PickClass = Literal[
     "result_known_at_compute",
     "observed_after_post",
     "pending_result",
+    "payout_race_missing",
+    "payout_inconsistent",
     "unsettled_horse",
     "dead_heat",
     "counted",
@@ -226,6 +235,8 @@ EXCLUSION_ORDER: tuple[str, ...] = (
     "result_known_at_compute",
     "observed_after_post",
     "pending_result",
+    "payout_race_missing",
+    "payout_inconsistent",
     "unsettled_horse",
     "dead_heat",
 )
@@ -255,6 +266,14 @@ class PickFacts:
     ``dead_heat`` is race level: the race's number of winners != 1 (zero winners included) — the
     same definition the frozen backtest used. ``stored_odds`` feeds only api's reference
     settlement; classification and checkpoint decisions never read it.
+
+    ``official_payout_yen`` = this horse's official win payout per 100 yen (None when the race's
+    payout row has no entry for it), ``race_payout_known`` = the race has at least one official
+    win payout row and ``race_payout_consistent`` = the race's payout rows name exactly its
+    winners: the set of 馬番 of its horses that FINISHED 1st equals the set of 馬番 with a payout
+    row (policy v2, 139 D11 — race level, so a disagreement leaves the WHOLE race out, never only
+    the picks it touches). All three default to "unknown" / "inconsistent" so a caller that does
+    not load payouts can never count a pick (fail-closed).
     """
 
     pick_id: str
@@ -271,10 +290,34 @@ class PickFacts:
     dead_heat: bool
     odds_used: float
     stored_odds: float | None = None
+    official_payout_yen: float | None = None
+    race_payout_known: bool = False
+    race_payout_consistent: bool = False
+
+
+def race_payout_consistent(
+    winner_numbers: Iterable[int | None], paid_numbers: Iterable[int]
+) -> bool:
+    """``PickFacts.race_payout_consistent`` of one race: the 馬番 of its 1st-place finishers
+    (``None`` for a winner whose 馬番 is unknown) equal, as a set, the 馬番 of its official win
+    payout rows. A winner without a known 馬番 never matches (fail-closed). api computes the same
+    set equality in SQL (``queries.attention_tally_rows``)."""
+    winners = set(winner_numbers)
+    return None not in winners and winners == set(paid_numbers)
 
 
 def classify_pick(f: PickFacts, *, start_date=_UNSET) -> str:
-    """The single exclusive classification (policy v1). See ``EXCLUSION_ORDER``."""
+    """The single exclusive classification (policy v2). See ``EXCLUSION_ORDER``.
+
+    v2 = v1 plus two payout classes right after ``pending_result`` (139 D11), both RACE level:
+    ``payout_race_missing`` — the race has results but no official win payout at all;
+    ``payout_inconsistent`` — the race's payout rows disagree with its result (the 馬番 of its
+    1st-place finishers are not exactly the 馬番 with a payout row): a data defect, counted
+    separately so it stays visible. Excluding a whole race does not depend on which horse won, so
+    it cannot bias the ROI; excluding only the picks a disagreement touches would drop the race's
+    winner and keep its losers at 0 (biased down). The pick-level check (a winner without its own
+    payout, a non-winner with one) stays as a backstop — e.g. a pick whose frozen 馬番 differs
+    from the race's current one."""
     start = PROSPECTIVE_START_DATE if start_date is _UNSET else start_date
     if f.voided:
         return "voided_scratched"
@@ -290,6 +333,14 @@ def classify_pick(f: PickFacts, *, start_date=_UNSET) -> str:
         return "observed_after_post"
     if not f.has_race_result:
         return "pending_result"
+    if not f.race_payout_known:
+        return "payout_race_missing"
+    if (
+        not f.race_payout_consistent
+        or (f.won and f.official_payout_yen is None)
+        or (not f.won and f.official_payout_yen is not None)
+    ):
+        return "payout_inconsistent"
     if not f.horse_has_result:
         return "unsettled_horse"
     if f.dead_heat:
@@ -298,8 +349,37 @@ def classify_pick(f: PickFacts, *, start_date=_UNSET) -> str:
 
 
 def frozen_payout(f: PickFacts) -> float:
-    """Settlement at the judged odds (100 yen stake) — the basis for stages (D13)."""
+    """Settlement at the judged odds (100 yen stake) — policy v1's basis (138 D13), kept as the
+    v1 reference. Reads only ``odds_used`` (frozen on the pick), never the stored/official odds."""
     return 100.0 * float(f.odds_used) if f.won else 0.0
+
+
+def official_payout(f: PickFacts) -> float:
+    """Settlement at the official win payout (100 yen stake) — policy v2's basis for checkpoint
+    decisions and stages (139 D3). A win pays what the parimutuel pool paid, not the judged odds.
+
+    Only counted picks are settled; a winner without a payout is ``payout_inconsistent`` and never
+    reaches here, so it raises instead of inventing a number."""
+    if not f.won:
+        return 0.0
+    if f.official_payout_yen is None:
+        raise ValueError(f"pick {f.pick_id}: a winner without an official payout (classify first)")
+    return float(f.official_payout_yen)
+
+
+#: valuation basis recorded with every checkpoint decision (same names as api's valuation_basis)
+SETTLEMENT_BASES = {
+    "official_win_payout": official_payout,
+    "frozen_pick_odds": frozen_payout,
+}
+
+
+def settlement_basis(payout_of) -> str:
+    """Name of a known settlement function; an unknown one raises (a record never mislabels)."""
+    for name, fn in SETTLEMENT_BASES.items():
+        if payout_of is fn:
+            return name
+    raise ValueError(f"unknown settlement function {payout_of!r}")
 
 
 def order_key(p: PickFacts) -> tuple:
@@ -353,20 +433,30 @@ def ratio_ci(
 
 
 def decide_checkpoint(
-    counted: Iterable[PickFacts], checkpoint: int, *, b: int | None = None, seed: int | None = None
+    counted: Iterable[PickFacts],
+    checkpoint: int,
+    *,
+    b: int | None = None,
+    seed: int | None = None,
+    payout_of=official_payout,
 ) -> tuple[str, dict]:
     """Decide one checkpoint from counted picks (any order; sorted here by CHECKPOINT_ORDER).
 
-    Takes the first ``checkpoint`` picks in post order, settles them at the judged odds and
-    bootstraps the race-day CI: lower bound > 1 → passed, upper bound < 1 → failed, otherwise
-    continue (300) / undecided (600). Returns the decision and everything the record stores."""
+    Takes the first ``checkpoint`` picks in post order, settles them with ``payout_of`` (the
+    official win payout under policy v2; ``frozen_payout`` reproduces v1) and bootstraps the
+    race-day CI: lower bound > 1 → passed, upper bound < 1 → failed, otherwise continue (300) /
+    undecided (600). Returns the decision and everything the record stores.
+
+    The record key ``roi_frozen`` is the 0019 column name and holds the ROI under ``payout_of``;
+    which settlement it was is recorded as ``bootstrap["settlement"]``."""
     if checkpoint not in CHECKPOINTS:
         raise ValueError(f"checkpoint must be one of {CHECKPOINTS}")
+    settlement = settlement_basis(payout_of)
     ordered = _ordered(counted)
     if len(ordered) < checkpoint:
         raise ValueError(f"need {checkpoint} counted picks, got {len(ordered)}")
     head = ordered[:checkpoint]
-    stats = ratio_ci(head, frozen_payout, b=b, seed=seed)
+    stats = ratio_ci(head, payout_of, b=b, seed=seed)
     lo, hi = stats["ci_low"], stats["ci_high"]
     if lo is not None and lo > 1.0:
         decision = "passed"
@@ -389,6 +479,7 @@ def decide_checkpoint(
             **BOOTSTRAP,
             "b": int(BOOTSTRAP["b"] if b is None else b),
             "seed": int(BOOTSTRAP["seed"] if seed is None else seed),
+            "settlement": settlement,
             "n_days": stats["n_days"],
             "day_keys_sha256": stats["day_keys_sha256"],
             "numpy_version": np.__version__,
@@ -562,6 +653,146 @@ RULES: tuple[AttentionRule, ...] = (
     ),
 )
 _RULE_BY_ID: dict[str, AttentionRule] = {r.id: r for r in RULES}
+
+
+#: Buy-time expectation (139 D6/D13): the ROI of buying, at the judged (pre-race) odds, the horses
+#: that matched there. The prospective record is read against THIS, not against the frozen table —
+#: and only until it accumulates: once the official-payout record is long enough it replaces this
+#: conversion (it is a conversion from past data, never a realized figure).
+#:
+#: Version ``buy-time-v2`` (2026-10-04) after the independent adversarial re-derivation
+#: ``specs/139-official-payout-settlement/evidence/r02_verification.md`` (confirmed with caveats):
+#:
+#: * not one 3-digit point — two estimators disagree by about ±0.06 and that spread lies outside
+#:   every CI: E_S = frozen ALL ROI x rho (rho = judged-odds vs closing-odds selection on the
+#:   closing calibration table g) and G_J = g applied to the judged selection's closing state.
+#:   ``range_low``/``range_high`` are the two point values, each rounded to the nearest 0.05;
+#: * ``ci_low``/``ci_high`` = the envelope of both estimators' 95% CIs, rounded OUTWARD to 0.01.
+#:   S1's interval includes 1 (100%); S3/S4/S5's are below 1 — ``interval_includes_one`` says which;
+#: * S2's interval is invalid (its denominator is 2 closing-selected horses) so S2 shows no value of
+#:   its own: S2 ⊂ S1 (same odds band and gap, EV > 1.3 vs EV > 1.2) — ``included_in="S1"``;
+#: * no time-of-day values (the pre-registered contrast was null), version and period attached.
+#:
+#: ``buy-time-v1`` (single point 0.895/... + CI) stays recorded in the evidence file but is no
+#: longer served. Versioned (D13): ``BUY_TIME_EXPECTATION_VERSION`` names exactly these numbers —
+#: the pair is recorded in the evidence file
+#: ``specs/139-official-payout-settlement/evidence/buy_time_expectation.json`` and a test pins
+#: the registry to it, so a changed number without a new version fails. Served only when
+#: ``BUY_TIME_EXPECTATION_VERIFIED`` is True (D6); otherwise ``buy_time_expectation`` returns None
+#: and api/front show nothing but "awaiting verification".
+_BUY_TIME_RANGE_STEP = 0.05
+
+
+@dataclass(frozen=True)
+class BuyTimeExpectation:
+    """One rule's buy-time expectation: either a range with its interval (all four numbers set,
+    ``included_in`` None) or no value of its own (all four None) and the id of the rule whose value
+    covers its horses (``included_in``)."""
+
+    range_low: float | None
+    range_high: float | None
+    ci_low: float | None
+    ci_high: float | None
+    included_in: str | None
+
+    def __post_init__(self) -> None:
+        numbers = (self.range_low, self.range_high, self.ci_low, self.ci_high)
+        if all(v is None for v in numbers):
+            if self.included_in is None:
+                raise ValueError("a buy-time expectation without numbers must name included_in")
+            if self.included_in not in RULE_IDS:
+                raise ValueError(f"included_in names an unknown rule {self.included_in!r}")
+            return
+        if any(v is None for v in numbers):
+            raise ValueError("range and interval are shown whole or not at all")
+        if self.included_in is not None:
+            raise ValueError("a buy-time expectation with its own numbers has no included_in")
+        lo, hi, ci_lo, ci_hi = (float(v) for v in numbers)  # type: ignore[arg-type]
+        if not all(math.isfinite(v) for v in (lo, hi, ci_lo, ci_hi)):
+            raise ValueError("buy-time expectation numbers must be finite")
+        if lo > hi:
+            raise ValueError("range_low must not exceed range_high")
+        if ci_lo > lo or hi > ci_hi:
+            raise ValueError("the interval must contain the range")
+        for v in (lo, hi):
+            steps = v / _BUY_TIME_RANGE_STEP
+            if abs(steps - round(steps)) > 1e-9:
+                raise ValueError(f"range values are multiples of {_BUY_TIME_RANGE_STEP}: {v!r}")
+
+    @property
+    def interval_includes_one(self) -> bool | None:
+        """Does the interval reach 1 (100%)? None when the rule shows no value of its own."""
+        if self.ci_high is None:
+            return None
+        return self.ci_high >= 1.0
+
+
+BUY_TIME_EXPECTATION_VERSION = "buy-time-v2"
+BUY_TIME_EXPECTATION: dict[str, BuyTimeExpectation] = {
+    # E_S 0.895 [0.735, 1.088] / G_J 0.833 [0.74, 0.93]
+    "S1": BuyTimeExpectation(0.85, 0.90, 0.73, 1.09, None),
+    # E_S 0.891 (interval invalid: 2-horse denominator) / G_J 0.883 [0.72, 1.07] — S2 ⊂ S1
+    "S2": BuyTimeExpectation(None, None, None, None, "S1"),
+    # E_S 0.856 [0.763, 0.977] / G_J 0.830 [0.76, 0.90]
+    "S3": BuyTimeExpectation(0.85, 0.85, 0.76, 0.98, None),
+    # E_S 0.831 [0.726, 0.948] / G_J 0.798 [0.73, 0.88]
+    "S4": BuyTimeExpectation(0.80, 0.85, 0.72, 0.95, None),
+    # E_S 0.786 [0.687, 0.898] / G_J 0.848 [0.78, 0.92]
+    "S5": BuyTimeExpectation(0.80, 0.85, 0.68, 0.92, None),
+}
+#: True only after an independent (adversarial) re-derivation reproduced the numbers above; the
+#: verification is then named in ``BUY_TIME_EXPECTATION_SOURCE["status"]`` ("verified — ...") and
+#: a changed number gets a new version instead.
+BUY_TIME_EXPECTATION_VERIFIED = True
+BUY_TIME_EXPECTATION_SOURCE = {
+    "version": BUY_TIME_EXPECTATION_VERSION,
+    "report": "docs/roi-missed-patterns-20261004/report.md R02",
+    "period": "2026-08-02..2026-10-04",
+    "pairs": 564,
+    "races": 444,
+    "race_days": 17,
+    "method": (
+        "range of two estimators (frozen ALL ROI x rho; closing table g applied to the judged "
+        "selection) rounded to 5%; interval = envelope of both 95% CIs rounded outward"
+    ),
+    "computed_on": "2026-10-04",
+    "status": (
+        "verified — independent adversarial re-derivation 2026-10-04 "
+        "(specs/139-official-payout-settlement/evidence/r02_verification.md): "
+        "confirmed with caveats"
+    ),
+    "verification": "specs/139-official-payout-settlement/evidence/r02_verification.md",
+}
+
+
+def _validate_buy_time_registry() -> None:
+    """Every rule has an entry; an ``included_in`` points at ANOTHER rule that shows its own value
+    (never at itself, never at a rule that is itself only included)."""
+    if tuple(BUY_TIME_EXPECTATION) != RULE_IDS:
+        raise ValueError("BUY_TIME_EXPECTATION must list every rule in rank order")
+    for rid, exp in BUY_TIME_EXPECTATION.items():
+        if exp.included_in is None:
+            continue
+        if exp.included_in == rid:
+            raise ValueError(f"{rid}: included_in names the rule itself")
+        if BUY_TIME_EXPECTATION[exp.included_in].included_in is not None:
+            raise ValueError(f"{rid}: included_in names a rule without a value of its own")
+
+
+_validate_buy_time_registry()
+
+
+def buy_time_expectation(rule_id: str) -> BuyTimeExpectation | None:
+    """The rule's buy-time expectation to SERVE, or None while it is not independently verified
+    (D6). Read at call time (the flag flips with a registry change, never at runtime)."""
+    if not BUY_TIME_EXPECTATION_VERIFIED:
+        return None
+    if not str(BUY_TIME_EXPECTATION_SOURCE["status"]).startswith("verified"):
+        raise ValueError("BUY_TIME_EXPECTATION_VERIFIED is set but the source status is not")
+    try:
+        return BUY_TIME_EXPECTATION[rule_id]
+    except KeyError:
+        raise ValueError(f"unknown attention rule {rule_id!r}") from None
 
 
 def rule(rule_id: str) -> AttentionRule:

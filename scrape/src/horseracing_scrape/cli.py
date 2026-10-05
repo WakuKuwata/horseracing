@@ -1,4 +1,4 @@
-"""Operator CLI: scrape-{entries,odds,results,exotic-odds} + capture-fixture.
+"""Operator CLI: scrape-{entries,odds,results,exotic-odds} + capture-fixture + repair-final-odds.
 
 The operator supplies netkeiba page URL(s) with --url (repeatable). The JRA-VAN race_id is
 derived from the page content / URL — pages whose race_id can't be constructed are skipped (no
@@ -44,6 +44,9 @@ from .urls import (
 )
 
 _USER_AGENT = "horseracing-scrape/0.1 (personal use; contact via repo)"
+#: repo root (scrape/src/horseracing_scrape/cli.py -> parents[3]); the fetcher archives here
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_ARCHIVE_DIR = _REPO_ROOT / "artifacts" / "scrape_archive"
 _COMMANDS = {"scrape-entries": scrape_entries, "scrape-odds": scrape_odds,
              "scrape-results": scrape_results, "scrape-exotic-odds": scrape_exotic_odds}
 #: capture-fixture kinds: (url builder, file ext, use_cache, id-arg name on argparse Namespace)
@@ -126,6 +129,48 @@ def _capture_fixture(args) -> int:
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"captured {args.kind} {ident} -> {out / fname} ({len(payload)} bytes)")
     return 0
+
+
+def _repair_final_odds(args) -> int:
+    from .final_odds_repair import repair_final_odds
+
+    archive_dir = Path(args.archive_dir)
+    if not archive_dir.is_absolute():
+        raise SystemExit(f"--archive-dir must be an absolute path: {archive_dir}")
+    if not archive_dir.is_dir():
+        raise SystemExit(f"--archive-dir does not exist: {archive_dir}")
+    try:
+        date_from = datetime.date.fromisoformat(args.from_)
+        date_to = datetime.date.fromisoformat(args.to)
+    except ValueError as exc:
+        raise SystemExit(f"--from/--to must be YYYY-MM-DD: {exc}") from exc
+    if date_from > date_to:
+        raise SystemExit(f"--from {date_from} is after --to {date_to}")
+
+    engine = create_db_engine(args.database_url)
+    with Session(engine) as session:
+        rep = repair_final_odds(session, date_from=date_from, date_to=date_to,
+                                archive_dir=archive_dir, dry_run=args.dry_run)
+    for msg in rep.error_messages[:20]:
+        print(f"error: {msg}")
+    if rep.missing_race_ids:
+        shown = " ".join(rep.missing_race_ids[:20])
+        more = len(rep.missing_race_ids) - 20
+        print(f"missing archive: {shown}" + (f" (+{more} more)" if more > 0 else ""))
+    if rep.odds_missing_race_ids:
+        shown = " ".join(rep.odds_missing_race_ids[:20])
+        more = len(rep.odds_missing_race_ids) - 20
+        print(f"odds missing: {shown}" + (f" (+{more} more)" if more > 0 else ""))
+    print(f"detail: skipped_pre_netkeiba={rep.skipped_pre_netkeiba} "
+          f"race_unknown={rep.race_unknown} payout_missing={rep.payout_missing} "
+          f"odds_missing={rep.odds_missing} odds_unreadable={rep.odds_unreadable} "
+          f"odds_unmatched={rep.odds_unmatched}")
+    if rep.dry_run:
+        print("# dry-run: nothing was written")
+    status = "OK" if rep.errors == 0 else "FAILED"
+    print(f"{status}: races={rep.races} archived={rep.archived} odds_updated={rep.odds_updated} "
+          f"payouts={rep.payouts} missing_archive={rep.missing_archive} errors={rep.errors}")
+    return 0 if rep.errors == 0 else 1
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -229,6 +274,20 @@ def main(argv: list[str] | None = None) -> int:
     rs.add_argument("--limit", type=int, default=None, help="max surrogate->canonical pairs")
     rs.add_argument("--database-url", default=None)
 
+    # Feature 139: FINAL win odds + official 単勝 payouts from ARCHIVED result pages (no network)
+    rf = sub.add_parser(
+        "repair-final-odds",
+        help="re-apply final win odds and official win payouts from archived result pages "
+             "(reads the archive only — no network)")
+    rf.add_argument("--from", dest="from_", required=True, help="race_date >= (YYYY-MM-DD)")
+    rf.add_argument("--to", dest="to", required=True, help="race_date <= (YYYY-MM-DD)")
+    rf.add_argument("--archive-dir", default=str(_DEFAULT_ARCHIVE_DIR),
+                    help="ABSOLUTE path of the fetcher's archive root "
+                         f"(default {_DEFAULT_ARCHIVE_DIR})")
+    rf.add_argument("--dry-run", action="store_true",
+                    help="do the whole pass, print the counts, write nothing")
+    rf.add_argument("--database-url", default=None)
+
     cap = sub.add_parser("capture-fixture", help="one-off: save a real netkeiba page as a fixture")
     cap.add_argument("--kind", required=True, choices=list(_CAPTURE))
     cap.add_argument("--race-id", help="JRA-VAN 12-digit race_id (entries/results/odds)")
@@ -279,6 +338,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"errors({len(rep.errors)}): {rep.errors[:5]}")
         print(f"# repair-splits dry_run={rep.dry_run}")
         return 0 if not rep.errors else 1
+
+    if args.command == "repair-final-odds":
+        return _repair_final_odds(args)
 
     if args.command == "scrape-exotic-quotes":
         fetcher = _fetcher_for(args, None)  # volatile: never cached

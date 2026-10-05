@@ -6,6 +6,11 @@ S5 never), the display sources (``judged`` = frozen pick, ``current`` = displaye
 row, single seed only from the same run), ``chip_now``, the levels, the read-time tally (exclusive
 classification, Σ reconciliation, stage from the records), the memo and the single definition of
 the displayed model version.
+
+Feature 139 (T010): selection policy v2 — the counted picks are settled at the official win payout
+(the stage basis and the prospective level), the judged-odds settlement stays as the v1 reference,
+the two payout classes (``payout_race_missing`` / ``payout_inconsistent``) keep the Σ check, the
+buy-time expectation comes from the registry and v2 counts from its own start date.
 """
 
 from __future__ import annotations
@@ -31,6 +36,8 @@ from horseracing_api.attention import (
 )
 from horseracing_api.schemas import (
     AttentionAvailable,
+    AttentionBuyTimeExpectation,
+    AttentionBuyTimeSource,
     AttentionExclusionCounts,
     AttentionUnavailable,
 )
@@ -126,7 +133,7 @@ def _tallies(**stages):
         if rule_id in stages:
             st = stages[rule_id]
             out[rule_id] = attention.RuleTally(
-                rule_id=rule_id, stage=st, point_roi_frozen=t.point_roi_frozen,
+                rule_id=rule_id, stage=st, point_roi_official=t.point_roi_official,
                 prospective=t.prospective.model_copy(update={"stage": st.stage}),
             )
         else:
@@ -409,10 +416,22 @@ def test_day_items_leave_out_a_horse_scratched_after_its_pick():
 # --- read-time tally -----------------------------------------------------------------------------
 
 
+_AUTO = object()
+
+
 def _row(rule_id="S3", *, race_id="202610030511", n=1, computed=_COMPUTED, post=_POST,
          observed=_OBSERVED, pending=True, voided=False, has_result=True, horse_result=True,
          finish=2, status=ResultStatus.FINISHED, n_winners=1, odds=10.0, stored=10.0,
-         digest=None):
+         digest=None, payout=_AUTO, race_payout=True, race_consistent=_AUTO):
+    """One tally row. ``payout`` = the official win payout of the pick's 馬番 (default: a winner
+    is paid 100 × its judged odds, a non-winner has no row); ``race_payout`` = the race has any
+    official win payout row; ``race_consistent`` = the race's payout rows name exactly its winners
+    (default: as this pick's own payout suggests — a paid winner / an unpaid non-winner)."""
+    won = horse_result and finish == 1 and status == ResultStatus.FINISHED
+    if payout is _AUTO:
+        payout = round(100 * odds) if won and race_payout else None
+    if race_consistent is _AUTO:
+        race_consistent = race_payout and (payout is not None) == won
     return SimpleNamespace(
         pick_id=uuid.uuid4(), race_id=race_id, horse_number=n, rule_id=rule_id,
         computed_at=computed, post_time=post, odds_observed_at=observed,
@@ -422,6 +441,8 @@ def _row(rule_id="S3", *, race_id="202610030511", n=1, computed=_COMPUTED, post=
         finish_order=finish if horse_result else None,
         result_status=status if horse_result else None,
         n_winners=n_winners, stored_odds=None if stored is None else Decimal(str(stored)),
+        official_payout_yen=payout, race_payout_known=race_payout,
+        race_payout_consistent=race_consistent,
     )
 
 
@@ -434,10 +455,13 @@ def _one_of_each_class():
         _row(computed=_POST),                                   # computed_after_post
         _row(pending=False),                                    # result_known_at_compute
         _row(observed=_POST),                                   # observed_after_post
-        _row(has_result=False, horse_result=False, n_winners=0),  # pending_result
+        _row(has_result=False, horse_result=False, n_winners=0,
+             race_payout=False),                                # pending_result
+        _row(finish=1, race_payout=False),                      # payout_race_missing
+        _row(finish=1, payout=None),                            # payout_inconsistent
         _row(horse_result=False),                               # unsettled_horse
         _row(n_winners=2, finish=1),                            # dead_heat
-        _row(finish=1, odds=12.0, stored=11.0),                 # counted (won)
+        _row(finish=1, odds=12.0, stored=11.0, payout=1340),    # counted (won)
         _row(finish=3),                                         # counted (lost)
     ]
 
@@ -452,9 +476,11 @@ def test_tally_classes_are_exclusive_and_reconcile(monkeypatch):
     assert p.n_counted == 2 and p.n_hits == 1
     assert p.n_counted + sum(p.counts.model_dump().values()) == p.n_picks_total == len(rows)
     assert p.flags.field_changed_after_pick == len(rows) - 1          # not part of the Σ
-    assert p.frozen.roi == pytest.approx(12.0 * 100 / 200)
+    assert p.official.roi == pytest.approx(1340 / 200)                # the stage basis (v2)
+    assert p.frozen.roi == pytest.approx(12.0 * 100 / 200)            # v1 reference
     assert p.stored.roi == pytest.approx(11.0 * 100 / 200)
     assert (p.stored.n, p.stored.n_missing_stored_odds) == (2, 0)
+    assert p.official.valuation_basis == "official_win_payout"
     assert p.frozen.valuation_basis == "frozen_pick_odds"
     assert p.stored.valuation_basis == "stored_odds_mutable"
     assert p.start_date == _START and p.policy_version == ar.SELECTION_POLICY_VERSION
@@ -499,17 +525,129 @@ def test_tally_before_go_live_counts_everything_as_before_start(monkeypatch):
     p = build_rule_tallies(["S3"], rows, {}, [])["S3"].prospective
     assert p.n_counted == 0 and p.counts.before_start == 2 and p.counts.voided_scratched == 1
     assert p.stage == "researching" and p.frozen.roi is None and p.frozen.ci is None
+    assert p.official.roi is None and p.official.ci is None
+
+
+def test_official_basis_settles_at_the_payout_not_the_judged_odds(monkeypatch):
+    # A win pays the parimutuel payout, not the judged odds: the stage basis follows the payout
+    # row, the judged-odds figure of the SAME counted picks stays as the v1 reference, and the
+    # freshness bands carry both.
+    monkeypatch.setattr(ar, "PROSPECTIVE_START_DATE", _START)
+    rows = [
+        _row(finish=1, odds=30.0, stored=24.0, payout=2460),   # drifted in: paid less than judged
+        _row(finish=1, odds=8.0, stored=9.0, payout=930),      # drifted out: paid more
+        _row(finish=2, odds=10.0),
+        _row(finish=5, odds=20.0),
+    ]
+    p = build_rule_tallies(["S3"], rows, {}, [])["S3"].prospective
+    assert p.n_counted == 4 and p.n_hits == 2
+    assert p.official.roi == pytest.approx((2460 + 930) / 400)
+    assert p.frozen.roi == pytest.approx((3000 + 800) / 400)
+    assert p.stored.roi == pytest.approx((2400 + 900) / 400)
+    band = p.by_judged_freshness.gt_60m
+    assert (band.n, band.hits) == (4, 2)
+    assert band.roi_official == pytest.approx(p.official.roi)
+    assert band.roi_frozen == pytest.approx(p.frozen.roi)
+    assert p.by_judged_freshness.le_10m.roi_official is None
+
+
+def test_payout_classes_are_race_level_and_keep_the_sum(monkeypatch):
+    # A race with results but no payout row leaves every pick of it out (winner and loser alike,
+    # zero-winner races too) — dropping only the winner would bias the ROI down. A payout row that
+    # disagrees with the result is a separate, visible class. Σ still reconciles.
+    monkeypatch.setattr(ar, "PROSPECTIVE_START_DATE", _START)
+    rows = [
+        _row(finish=1, race_payout=False),                        # payout_race_missing (winner)
+        _row(finish=4, race_payout=False),                        # payout_race_missing (loser)
+        _row(finish=1, n_winners=0, status=ResultStatus.DISQUALIFIED,
+             race_payout=False),                                  # payout_race_missing
+        _row(finish=1, payout=None),                              # payout_inconsistent
+        _row(finish=3, payout=1200),                              # payout_inconsistent
+        _row(finish=1, payout=1100),                              # counted (won)
+        _row(finish=2),                                           # counted (lost)
+    ]
+    p = build_rule_tallies(["S3"], rows, {}, [])["S3"].prospective
+    assert p.counts.payout_race_missing == 3 and p.counts.payout_inconsistent == 2
+    assert p.n_counted == 2 and p.n_hits == 1
+    assert p.n_counted + sum(p.counts.model_dump().values()) == p.n_picks_total == len(rows)
+    assert p.official.roi == pytest.approx(1100 / 200)
+
+
+def test_a_race_whose_payout_disagrees_is_left_out_whole(monkeypatch):
+    # R1 (139 D11): race B's payout row names 馬番 2 although 馬番 1 won. Every pick of race B —
+    # the unpaid winner, the paid loser AND the other losers — is payout_inconsistent; keeping the
+    # other losers counted (at 0) while dropping the winner would bias the ROI down.
+    monkeypatch.setattr(ar, "PROSPECTIVE_START_DATE", _START)
+    a, b = "202610030511", "202610030512"
+    rows = [
+        _row(race_id=a, n=1, finish=1, odds=10.0, payout=1000),       # counted (won)
+        _row(race_id=a, n=2, finish=2),                               # counted (lost)
+        _row(race_id=b, n=1, finish=1, payout=None, race_consistent=False),
+        _row(race_id=b, n=2, finish=2, payout=800, race_consistent=False),
+        _row(race_id=b, n=3, finish=3, race_consistent=False),        # looks fine on its own
+        _row(race_id=b, n=4, finish=4, race_consistent=False),        # looks fine on its own
+    ]
+    p = build_rule_tallies(["S3"], rows, {}, [])["S3"].prospective
+    assert p.counts.payout_inconsistent == 4
+    assert p.n_counted == 2 and p.n_hits == 1
+    assert p.n_counted + sum(p.counts.model_dump().values()) == p.n_picks_total == len(rows)
+    assert p.official.roi == pytest.approx(1000 / 200)
+
+
+def test_prospective_level_follows_the_official_point_roi(monkeypatch):
+    # 100 counted picks (observing). The axis level is decided on the official payout: judged
+    # odds above par with payouts below par is level 1, and the reverse is level 2.
+    monkeypatch.setattr(ar, "PROSPECTIVE_START_DATE", _START)
+    entries = _field()
+    picks = _picks_for("H1", 1, ("S3",), digest=_digest(entries), odds=3.0)
+
+    def level(odds, payout):
+        rows = [
+            _row(race_id=f"20261003{i:04d}", finish=1 if i % 10 == 0 else 2, odds=odds,
+                 payout=payout if i % 10 == 0 else None)
+            for i in range(100)
+        ]
+        tallies = build_rule_tallies(ar.RULE_IDS, rows, {}, [])
+        t = tallies["S3"]
+        assert t.stage.stage == "observing"
+        assert t.point_roi_official == pytest.approx(payout * 10 / 10000)
+        return _horse(_build(entries, picks, tallies=tallies), "H1").levels.prospective
+
+    assert level(12.0, 900) == 1           # frozen 120%, official 90%
+    assert level(9.0, 1300) == 2           # frozen 90%, official 130%
+
+
+def test_v2_counts_from_its_own_start_date():
+    # The real constant (no monkeypatch): v2 starts on 2026-10-05 JST; a pick computed on the last
+    # v1 day is before_start, never mixed into v2 (139 D12).
+    assert ar.SELECTION_POLICY_VERSION == "v2"
+    assert ar.PROSPECTIVE_START_DATE == datetime.date(2026, 10, 5)
+    last_v1 = datetime.datetime(2026, 10, 4, 14, 59, tzinfo=_UTC)     # JST 10-04 23:59
+    first_v2 = datetime.datetime(2026, 10, 4, 15, 0, tzinfo=_UTC)     # JST 10-05 00:00
+    post = datetime.datetime(2026, 10, 5, 6, 0, tzinfo=_UTC)
+    observed = datetime.datetime(2026, 10, 5, 5, 0, tzinfo=_UTC)
+    rows = [
+        _row(computed=last_v1, post=post, observed=observed, finish=1, payout=1500),
+        _row(computed=first_v2, post=post, observed=observed, finish=1, payout=1500),
+    ]
+    p = build_rule_tallies(["S3"], rows, {}, [])["S3"].prospective
+    assert p.start_date == datetime.date(2026, 10, 5) and p.policy_version == "v2"
+    assert p.counts.before_start == 1 and p.n_counted == 1
+    assert p.official.roi == pytest.approx(15.0)
 
 
 def test_exclusion_count_fields_are_the_registry_classes():
     assert tuple(AttentionExclusionCounts.model_fields) == ar.EXCLUSION_ORDER
 
 
-def _record(checkpoint=300, decision="failed", start=_START, rule_id="S3"):
+def _record(checkpoint=300, decision="failed", start=_START, rule_id="S3", settlement=None):
+    boot = {"impl": "x", "b": 20000, "seed": 20260905, "block_universe": "u"}
+    if settlement is not None:
+        boot["settlement"] = settlement
     return SimpleNamespace(
         rule_id=rule_id, checkpoint=checkpoint, decision=decision, n_counted=checkpoint,
         n_hits=10, roi_frozen=Decimal("0.8"), ci_low=Decimal("0.6"), ci_high=Decimal("0.95"),
-        bootstrap={"impl": "x", "b": 20000, "seed": 20260905, "block_universe": "u"},
+        bootstrap=boot,
         counted_pick_ids_sha256="a" * 64, settlement_cutoff=_COMPUTED,
         prospective_start_date=start, skipped_pending_before_last=0, decided_at=_COMPUTED,
     )
@@ -533,6 +671,20 @@ def test_record_under_another_start_date_is_not_used_and_pending(monkeypatch):
     assert t.stage.stage == "researching" and t.stage.checkpoint is None
     assert t.stage.checkpoint_pending is True
     assert t.prospective.decisions[0].prospective_start_date == datetime.date(2026, 9, 1)
+
+
+@pytest.mark.parametrize(
+    ("settlement", "basis"),
+    [("official_win_payout", "official_win_payout"), ("frozen_pick_odds", "frozen_pick_odds"),
+     ("something_else", None), ({"name": "official_win_payout"}, None), (None, None)],
+)
+def test_checkpoint_decision_names_its_settlement(monkeypatch, settlement, basis):
+    # the recorded ROI is shown with the settlement the record names (bootstrap.settlement); a
+    # record without a known one is never labelled as either basis
+    monkeypatch.setattr(ar, "PROSPECTIVE_START_DATE", _START)
+    record = _record(settlement=settlement)
+    d = build_rule_tallies(["S3"], [_row()], {}, [record])["S3"].prospective.decisions[0]
+    assert d.valuation_basis == basis and d.roi_frozen == pytest.approx(0.8)
 
 
 def test_continue_then_600_record(monkeypatch):
@@ -560,6 +712,62 @@ def test_rules_response_is_rank_ordered_with_frozen_values():
     assert s1.levels.backtest == ar.backtest_level(ar.rule("S1"))
     assert [n.sigma for n in s1.price_noise] == [0.1, 0.2, 0.3]
     assert "win_prob" not in resp.model_dump_json() and "p_hat" not in resp.model_dump_json()
+
+
+def test_rules_response_serves_no_buy_time_expectation_while_unverified(monkeypatch):
+    # 139 D6: an unverified registry value is never served (null for every rule)
+    monkeypatch.setattr(ar, "BUY_TIME_EXPECTATION_VERIFIED", False)
+    resp = build_rules_response(_tallies())
+    assert [item.buy_time_expectation for item in resp.items] == [None] * len(resp.items)
+
+
+def test_rules_response_carries_the_registry_buy_time_expectation():
+    # 139 D13 (buy-time-v2, independently verified): copied from the registry with its source and
+    # version, never recomputed — a 5% range with the CI envelope, S2 only "included in S1"
+    assert ar.BUY_TIME_EXPECTATION_VERIFIED is True
+    resp = build_rules_response(_tallies())
+    for item in resp.items:
+        reg = ar.BUY_TIME_EXPECTATION[item.id]
+        exp = item.buy_time_expectation
+        assert exp is not None, item.id
+        assert (exp.range_low, exp.range_high, exp.ci_low, exp.ci_high, exp.included_in) == (
+            reg.range_low, reg.range_high, reg.ci_low, reg.ci_high, reg.included_in)
+        assert exp.interval_includes_100 == reg.interval_includes_one
+        assert exp.source.model_dump() == ar.BUY_TIME_EXPECTATION_SOURCE
+        assert exp.source.version == ar.BUY_TIME_EXPECTATION_VERSION == "buy-time-v2"
+        assert exp.source.status.startswith("verified")
+    by_id = {i.id: i.buy_time_expectation for i in resp.items}
+    assert (by_id["S1"].range_low, by_id["S1"].range_high) == (0.85, 0.90)
+    assert by_id["S1"].interval_includes_100 is True
+    assert [by_id[r].interval_includes_100 for r in ("S3", "S4", "S5")] == [False] * 3
+    s2 = by_id["S2"]
+    assert s2.included_in == "S1" and s2.interval_includes_100 is None
+    assert (s2.range_low, s2.range_high, s2.ci_low, s2.ci_high) == (None,) * 4
+    # the v1 single point is gone from the response
+    dumped = resp.model_dump_json()
+    assert '"roi":0.895' not in dumped and "buy-time-v1" not in dumped
+
+
+def test_buy_time_source_schema_is_the_registry_source():
+    # the response never silently drops (or invents) a key of the frozen source
+    assert set(AttentionBuyTimeSource.model_fields) == set(ar.BUY_TIME_EXPECTATION_SOURCE)
+    assert set(ar.BUY_TIME_EXPECTATION) == set(ar.RULE_IDS)
+
+
+def test_buy_time_expectation_schema_has_no_single_point():
+    # v2 serves a range, never one value (the independent verification rejected a 3-digit point)
+    fields = set(AttentionBuyTimeExpectation.model_fields)
+    assert "roi" not in fields
+    assert fields == {"range_low", "range_high", "ci_low", "ci_high", "interval_includes_100",
+                      "included_in", "source"}
+
+
+def test_rules_disclaimer_does_not_call_the_official_basis_approximate():
+    # FR-007: the official payout figure is not approximate; the backtest one still is
+    text = attention.DISCLAIMER
+    assert "公式の単勝払戻" in text and "回収率はいずれも近似" not in text
+    for bad in ("おすすめ", "推奨", "買い目", "買え", "狙い目", "儲", "妙味"):
+        assert bad not in text
 
 
 def test_backtest_bootstrap_is_the_registry_freeze_provenance():

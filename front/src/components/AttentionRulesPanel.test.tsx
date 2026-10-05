@@ -3,7 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import type { AttentionRulesResponse, RuleId, RuleSummary } from "../api/types";
-import { DECISION_LABELS, EXCLUSION_LABELS, ROI_BASIS_LABELS } from "../lib/attention";
+import {
+  DECISION_LABELS,
+  EXCLUSION_LABELS,
+  formatBuyTimeRange,
+  ROI_BASIS_LABELS,
+} from "../lib/attention";
 import { formatPct } from "../lib/format";
 import {
   assertListDiscipline,
@@ -14,6 +19,7 @@ import {
   ATTENTION_RULE_IDS,
   attentionRulesFixture,
   checkpointDecisionFixture,
+  FROZEN_ATTENTION_RULES,
   happyHandlers,
   http,
   HttpResponse,
@@ -49,24 +55,31 @@ const counts = {
   result_known_at_compute: 5,
   observed_after_post: 6,
   pending_result: 7,
+  payout_race_missing: 3,
+  payout_inconsistent: 2,
   unsettled_horse: 8,
   dead_heat: 9,
 };
 
 /** Every stage and record kind at once: S1 passed, S2 undecided, S3 judgment pending,
- *  S4 failed (the 「300 点不通過」 case of US2-3), S5 (control) still 研究中. */
+ *  S4 failed (the 「300 点不通過」 case of US2-3), S5 (control) still 研究中. Policy v2: the stage
+ *  basis is the official win payout (`official`); the judged-odds settlement (`frozen`, v1) is a
+ *  reference and deliberately differs from it here. */
 function richRules(): AttentionRulesResponse {
   return attentionRulesFixture({
     S1: {
       prospective: {
-        start_date: "2026-10-03",
+        start_date: "2026-10-05",
         stage: "passed",
         checkpoint: 300,
         next_checkpoint: null,
         remaining_to_next: null,
         n_counted: 320,
         n_hits: 15,
-        n_picks_total: 365,
+        n_picks_total: 370,
+        official: {
+          valuation_basis: "official_win_payout", roi: 1.104, ci: [1.006, 1.312], p_one_sided: 0.021,
+        },
         frozen: { valuation_basis: "frozen_pick_odds", roi: 1.231, ci: [1.022, 1.452], p_one_sided: 0.012 },
         stored: {
           valuation_basis: "stored_odds_mutable", roi: 1.187, ci: [0.991, 1.404], n: 318,
@@ -78,22 +91,25 @@ function richRules(): AttentionRulesResponse {
         counts,
         flags: { field_changed_after_pick: 4 },
         by_judged_freshness: {
-          "<=10m": { n: 40, hits: 2, roi_frozen: 1.111 },
-          "<=60m": { n: 80, hits: 4, roi_frozen: 1.222 },
-          ">60m": { n: 200, hits: 9, roi_frozen: 1.333 },
+          "<=10m": { n: 40, hits: 2, roi_official: 1.011, roi_frozen: 1.111 },
+          "<=60m": { n: 80, hits: 4, roi_official: 1.022, roi_frozen: 1.222 },
+          ">60m": { n: 200, hits: 9, roi_official: 1.033, roi_frozen: 1.333 },
         },
         odds_drift: { n: 318, median_log_ratio: -0.041, p10: -0.212, p90: 0.153 },
       },
     },
     S2: {
       prospective: {
-        start_date: "2026-10-03",
+        start_date: "2026-10-05",
         stage: "undecided",
         checkpoint: 600,
         next_checkpoint: null,
         remaining_to_next: null,
         n_counted: 610,
         n_hits: 25,
+        official: {
+          valuation_basis: "official_win_payout", roi: 1.012, ci: [0.861, 1.177], p_one_sided: 0.44,
+        },
         frozen: { valuation_basis: "frozen_pick_odds", roi: 1.044, ci: [0.881, 1.219], p_one_sided: 0.31 },
         decisions: [
           checkpointDecisionFixture({ checkpoint: 300, decision: "continue", roi_frozen: 1.066 }),
@@ -106,7 +122,7 @@ function richRules(): AttentionRulesResponse {
     },
     S3: {
       prospective: {
-        start_date: "2026-10-03",
+        start_date: "2026-10-05",
         stage: "observing",
         checkpoint: null,
         checkpoint_pending: true,
@@ -114,18 +130,24 @@ function richRules(): AttentionRulesResponse {
         remaining_to_next: 0,
         n_counted: 305,
         n_hits: 18,
+        official: {
+          valuation_basis: "official_win_payout", roi: 1.064, ci: [0.893, 1.255], p_one_sided: 0.25,
+        },
         frozen: { valuation_basis: "frozen_pick_odds", roi: 1.088, ci: [0.912, 1.288], p_one_sided: 0.2 },
       },
     },
     S4: {
       prospective: {
-        start_date: "2026-10-03",
+        start_date: "2026-10-05",
         stage: "failed",
         checkpoint: 300,
         next_checkpoint: null,
         remaining_to_next: null,
         n_counted: 320,
         n_hits: 9,
+        official: {
+          valuation_basis: "official_win_payout", roi: 0.874, ci: [0.833, 0.951], p_one_sided: 0.93,
+        },
         frozen: { valuation_basis: "frozen_pick_odds", roi: 0.902, ci: [0.861, 0.982], p_one_sided: 0.9 },
         decisions: [
           checkpointDecisionFixture({ decision: "failed", roi_frozen: 0.911, ci: [0.86, 0.98] }),
@@ -156,7 +178,11 @@ describe("AttentionRulesPanel (138 T036)", () => {
   it("keeps rank order even when the response is shuffled (never re-sorted by results)", async () => {
     const body = attentionRulesFixture({
       // S5 has the best prospective number: still listed last (rank order only)
-      S5: { prospective: { frozen: { valuation_basis: "frozen_pick_odds", roi: 1.9, ci: null, p_one_sided: null } } },
+      S5: {
+        prospective: {
+          official: { valuation_basis: "official_win_payout", roi: 1.9, ci: null, p_one_sided: null },
+        },
+      },
     });
     const shuffled = { ...body, items: [body.items[4], body.items[2], body.items[0], body.items[3], body.items[1]] };
     const { panel } = await renderOpen(shuffled);
@@ -250,7 +276,7 @@ describe("AttentionRulesPanel (138 T036)", () => {
     for (const id of ATTENTION_RULE_IDS) {
       expect(screen.getByTestId(`attention-rule-stage-${id}`).textContent).toBe("研究中");
       expect(screen.getByTestId(`attention-rule-start-${id}`)).toHaveTextContent(
-        "集計開始 集計開始前(集計開始日は未設定)・集計方針 v1",
+        "集計開始 集計開始前(集計開始日は未設定)・集計方針 v2",
       );
       expect(screen.getByTestId(`attention-rule-tally-${id}`)).toHaveTextContent(
         "集計 0 点・0 的中・次のチェックポイント 300 点(あと 300 点)",
@@ -259,9 +285,12 @@ describe("AttentionRulesPanel (138 T036)", () => {
         "判定記録: まだありません",
       );
       expect(screen.getByTestId(`attention-count-${id}-total`)).toHaveTextContent("0");
-      // no value yet: placeholder, never 0%
-      expect(screen.getByTestId(`attention-rule-frozen-${id}`)).toHaveTextContent(
-        "回収率(段階判定の基準) —〔判断時オッズ・近似〕",
+      // no value yet: placeholder, never 0% — the stage basis is the official payout (v2)
+      expect(screen.getByTestId(`attention-rule-official-${id}`).textContent).toBe(
+        "回収率(段階判定の基準) —〔公式払戻〕",
+      );
+      expect(screen.getByTestId(`attention-rule-frozen-${id}`).textContent).toBe(
+        "参考(v1・判断時オッズ) —〔判断時オッズ・近似〕",
       );
       expect(screen.getByTestId(`attention-odds-drift-${id}`)).toHaveTextContent("対象なし");
     }
@@ -279,7 +308,7 @@ describe("AttentionRulesPanel (138 T036)", () => {
     );
     const decisions = screen.getByTestId("attention-rule-decisions-S4");
     expect(within(decisions).getByTestId("attention-decision-300")).toHaveTextContent(
-      "300 点: 不通過(判定 2027/09/20 12:00)・300 点・12 的中・回収率 91.1%(区間 86.0〜98.0%)〔判断時オッズ・近似〕",
+      "300 点: 不通過(判定 2027/09/20 12:00)・300 点・12 的中・回収率 91.1%(区間 86.0〜98.0%)〔公式払戻〕",
     );
     expect(screen.getByTestId("attention-rule-tally-S4")).toHaveTextContent(
       "次のチェックポイント なし(判定は終了)",
@@ -292,13 +321,17 @@ describe("AttentionRulesPanel (138 T036)", () => {
     expect(screen.getByTestId("attention-badge-posthoc-S1")).toBeInTheDocument();
     expect(screen.queryByTestId("attention-badge-unconfirmed-S1")).toBeNull();
     expect(screen.getByTestId("attention-rule-start-S1")).toHaveTextContent(
-      "集計開始 2026-10-03・集計方針 v1",
+      "集計開始 2026-10-05・集計方針 v2",
     );
-    expect(screen.getByTestId("attention-rule-frozen-S1")).toHaveTextContent(
-      "123.1%(区間 102.2〜145.2%)〔判断時オッズ・近似〕・p=0.012",
+    // the stage basis is the official win payout; the judged-odds settlement is the v1 reference
+    expect(screen.getByTestId("attention-rule-official-S1").textContent).toBe(
+      "回収率(段階判定の基準) 110.4%(区間 100.6〜131.2%)〔公式払戻〕・p=0.021",
+    );
+    expect(screen.getByTestId("attention-rule-frozen-S1").textContent).toBe(
+      "参考(v1・判断時オッズ) 123.1%(区間 102.2〜145.2%)〔判断時オッズ・近似〕・p=0.012",
     );
     expect(screen.getByTestId("attention-rule-stored-S1")).toHaveTextContent(
-      "参考の回収率 118.7%(区間 99.1〜140.4%)〔保存オッズ(参考)・近似〕・318 点(保存オッズの無い 2 点は除く",
+      "参考(保存オッズ) 118.7%(区間 99.1〜140.4%)〔保存オッズ(参考)・近似〕・318 点(保存オッズの無い 2 点は除く",
     );
   });
 
@@ -315,7 +348,7 @@ describe("AttentionRulesPanel (138 T036)", () => {
     expect(screen.getByTestId("attention-rule-stage-reason-S3")).toHaveTextContent("判定待ち");
   });
 
-  it("lists the 9 exclusive exclusion classes in Japanese, Σ line, and the field-change flag apart", async () => {
+  it("lists the 11 exclusive exclusion classes in Japanese, Σ line, and the field-change flag apart", async () => {
     await renderOpen(richRules());
     const table = screen.getByTestId("attention-counts-S1");
     const rows = Array.from(table.querySelectorAll("tbody tr")).map((r) => r.textContent);
@@ -328,13 +361,15 @@ describe("AttentionRulesPanel (138 T036)", () => {
       "集計外: 計算時に結果確定済み5",
       "集計外: 発走後のオッズ6",
       "集計外: 結果未確定7",
+      "集計外: 公式払戻なし3",
+      "集計外: 払戻の不整合2",
       "集計外: 自馬の結果なし8",
       "集計外: 同着9",
-      "合計(保存した該当の総数)365",
+      "合計(保存した該当の総数)370",
     ]);
-    expect(Object.values(EXCLUSION_LABELS)).toHaveLength(9);
+    expect(Object.values(EXCLUSION_LABELS)).toHaveLength(11);
     expect(screen.getByTestId("attention-rule-S1")).toHaveTextContent(
-      "集計対象 320 + 集計外 45 = 合計 365",
+      "集計対象 320 + 集計外 50 = 合計 370",
     );
     // the audit flag is shown separately, never one of the exclusive classes
     expect(table).not.toHaveTextContent("出走馬変更");
@@ -345,12 +380,17 @@ describe("AttentionRulesPanel (138 T036)", () => {
 
   it("shows the judged-freshness breakdown and the odds-drift diagnostic as numbers", async () => {
     await renderOpen(richRules());
-    expect(screen.getByTestId("attention-freshness-S1-<=10m")).toHaveTextContent(
-      "10 分以内402111.1%〔判断時オッズ・近似〕",
+    // official payout first (the stage basis), the judged-odds settlement as the v1 reference
+    expect(screen.getByTestId("attention-freshness-S1-<=10m").textContent).toBe(
+      "10 分以内402101.1%〔公式払戻〕111.1%〔判断時オッズ・近似〕",
     );
-    expect(screen.getByTestId("attention-freshness-S1->60m")).toHaveTextContent(
-      "60 分超2009133.3%〔判断時オッズ・近似〕",
+    expect(screen.getByTestId("attention-freshness-S1->60m").textContent).toBe(
+      "60 分超2009103.3%〔公式払戻〕133.3%〔判断時オッズ・近似〕",
     );
+    const head = Array.from(
+      screen.getByTestId("attention-freshness-S1").querySelectorAll("thead th"),
+    ).map((th) => th.textContent);
+    expect(head).toEqual(["判断時鮮度帯", "点数", "的中", "回収率(段階判定の基準)", "参考(v1・判断時オッズ)"]);
     expect(screen.getByTestId("attention-odds-drift-S1")).toHaveTextContent(
       "318 点・中央値 -0.041・10 パーセント点 -0.212・90 パーセント点 0.153",
     );
@@ -362,8 +402,10 @@ describe("AttentionRulesPanel (138 T036)", () => {
     const roiNodes = assertRoiBasisLabels(panel);
 
     const closing = ROI_BASIS_LABELS.closing_odds_approx;
+    const official = ROI_BASIS_LABELS.official_win_payout;
     const frozen = ROI_BASIS_LABELS.frozen_pick_odds;
     const stored = ROI_BASIS_LABELS.stored_odds_mutable;
+    const buyTime = ROI_BASIS_LABELS.buy_time_conversion;
     for (const rule of body.items as RuleSummary[]) {
       const section = screen.getByTestId(`attention-rule-${rule.id}`);
       const nodes = Array.from(section.querySelectorAll<HTMLElement>('[data-kind="roi"]'));
@@ -374,19 +416,185 @@ describe("AttentionRulesPanel (138 T036)", () => {
         [bt.selected.all.realized_roi, closing],
         [bt.selected.c.realized_roi, closing],
         ...rule.price_noise.map((n): [number, string] => [n.roi, closing]),
+        [rule.prospective.official.roi, official],
         [rule.prospective.frozen.roi, frozen],
         [rule.prospective.stored.roi, stored],
-        ...rule.prospective.decisions.map((d): [number, string] => [d.roi_frozen, frozen]),
-        ...Object.values(rule.prospective.by_judged_freshness).map(
-          (b): [number | null, string] => [b.roi_frozen, frozen],
+        // every decision here is a v2 record: settled at the official payout
+        ...rule.prospective.decisions.map((d): [number, string] => {
+          expect(d.valuation_basis).toBe("official_win_payout");
+          return [d.roi_frozen, official];
+        }),
+        ...Object.values(rule.prospective.by_judged_freshness).flatMap(
+          (b): [number | null, string][] => [
+            [b.roi_official, official],
+            [b.roi_frozen, frozen],
+          ],
         ),
       ];
       for (const [value, label] of expected) {
         const shown = value === null ? "—" : pct(value);
         expect(hasRoiWithLabel(nodes, shown, label), `${rule.id} ${shown} 〔${label}〕`).toBe(true);
       }
+      // the buy-time conversion is a 5% range (never one 3-digit point); a rule without a value of
+      // its own (S2, included_in) has no buy-time roi node at all
+      const bte = rule.buy_time_expectation;
+      const buyTimeNodes = nodes.filter((n) => n.textContent?.includes(`〔${buyTime}〕`));
+      if (bte === null || bte.included_in !== null) {
+        expect(buyTimeNodes, `${rule.id} buy-time`).toHaveLength(0);
+      } else {
+        const shown = formatBuyTimeRange(bte.range_low!, bte.range_high!);
+        expect(hasRoiWithLabel(nodes, shown, buyTime), `${rule.id} ${shown} 〔${buyTime}〕`).toBe(true);
+        expect(buyTimeNodes).toHaveLength(1);
+        expect(buyTimeNodes[0].textContent).not.toMatch(/\d+\.\d+%/);
+      }
     }
     expect(roiNodes.length).toBeGreaterThan(0);
+  });
+
+  it("shows the buy-time conversion per rule as a 5% range with its interval (buy-time-v2)", async () => {
+    const { panel } = await renderOpen();
+    const source =
+      "(算出: 2026-08-02〜2026-10-04・564 組・444 レース・17 開催日・算出日 2026-10-04・" +
+      "版 buy-time-v2・独立検証済み)";
+    // S1: a range; its interval includes 100%
+    expect(screen.getByTestId("attention-rule-buy-time-line-S1").textContent).toBe(
+      "過去データで、判断時のオッズで条件を満たした馬を買ったと仮定した換算回収率 " +
+        "約 85〜90%(区間 73〜109%)〔判断時オッズ換算・近似〕 " +
+        "100% を下回る見込みですが、区間は 100% を含みます。 — 参考値・購入を勧めるものではありません" +
+        source,
+    );
+    // S3: both estimators round to the same 5% step → one value; the interval stays below 100%
+    expect(screen.getByTestId("attention-rule-buy-time-line-S3").textContent).toBe(
+      "過去データで、判断時のオッズで条件を満たした馬を買ったと仮定した換算回収率 " +
+        "約 85%(区間 76〜98%)〔判断時オッズ換算・近似〕 " +
+        "100% を下回る推定です(区間の上限も 100% 未満)。 — 参考値・購入を勧めるものではありません" +
+        source,
+    );
+    for (const [id, text] of [
+      ["S4", "約 80〜85%(区間 72〜95%)"],
+      ["S5", "約 80〜85%(区間 68〜92%)"],
+    ] as const) {
+      const line = screen.getByTestId(`attention-rule-buy-time-line-${id}`);
+      expect(line).toHaveTextContent(text);
+      expect(line).toHaveTextContent("区間の上限も 100% 未満");
+      expect(line.textContent).not.toMatch(/区間は 100% を含みます/);
+    }
+    // S2: no value of its own — only that its horses are all in S1 (no %, no roi node)
+    const s2 = screen.getByTestId("attention-rule-buy-time-line-S2");
+    expect(s2.textContent).toBe(
+      "単独の値は出しません(この条件の馬はすべて S1 に含まれます。S1 の見込みを参照してください)" +
+        source,
+    );
+    expect(s2.querySelector('[data-kind="roi"]')).toBeNull();
+    expect(s2.textContent).not.toMatch(/\d\s*%/);
+    expect(screen.getByTestId("attention-rule-buy-time-S2").querySelector('[data-kind="roi"]')).toBeNull();
+    // the v1 single 3-digit point is gone
+    expect(panel.textContent).not.toMatch(/89\.5%|buy-time-v1/);
+    // every rule (the control S5 included) carries it, under the spec heading, before 前向き検証,
+    // with the framing sentence once (conversion, not a realized figure; replaced by the record)
+    for (const id of ATTENTION_RULE_IDS) {
+      const row = screen.getByTestId(`attention-rule-buy-time-${id}`);
+      expect(row).toHaveTextContent("判断時点の見込み(過去データからの換算)");
+      expect(row).toHaveTextContent("版 buy-time-v2・独立検証済み");
+      const framing =
+        "この見込みは、締切オッズでの過去成績を 2026 年の 17 開催日の発走前オッズで換算した値で、" +
+        "実績ではありません。";
+      expect(row.textContent!.split(framing)).toHaveLength(2);
+      expect(row).toHaveTextContent(
+        "前向き検証の回収率(公式払戻)は、記録が溜まるまではこの換算値と比べて読み、" +
+          "溜まればこの換算値ではなく実測で読みます。",
+      );
+      // no time-of-day values
+      expect(row.textContent).not.toMatch(/1 時間以内|前夜|時間帯/);
+      const rows = Array.from(screen.getByTestId(`attention-rule-${id}`).querySelectorAll("dt")).map(
+        (dt) => dt.textContent,
+      );
+      expect(rows.indexOf("判断時点の見込み(過去データからの換算)")).toBe(rows.indexOf("前向き検証") - 1);
+    }
+    assertRoiBasisLabels(panel);
+    assertListDiscipline(panel);
+  });
+
+  it("chooses the interval sentence from the API flag, never from the numbers", async () => {
+    // the flag is the registry's (ci_high >= 1); the front only maps it to a sentence
+    await renderOpen(
+      attentionRulesFixture({
+        S3: {
+          buy_time_expectation: {
+            ...FROZEN_ATTENTION_RULES.S3.buy_time_expectation!,
+            interval_includes_100: true,
+          },
+        },
+      }),
+    );
+    expect(screen.getByTestId("attention-rule-buy-time-line-S3")).toHaveTextContent(
+      "100% を下回る見込みですが、区間は 100% を含みます。",
+    );
+  });
+
+  it("shows no buy-time number before independent verification (API null → pending text, 139 D6)", async () => {
+    const pending = Object.fromEntries(
+      ATTENTION_RULE_IDS.map((id) => [id, { buy_time_expectation: null }]),
+    );
+    await renderOpen(attentionRulesFixture(pending));
+    for (const id of ATTENTION_RULE_IDS) {
+      const row = screen.getByTestId(`attention-rule-buy-time-${id}`);
+      expect(row).toHaveTextContent("判断時点の見込み(過去データからの換算)");
+      expect(screen.getByTestId(`attention-rule-buy-time-line-${id}`).textContent).toBe(
+        "独立検証を通った値だけを表示します(現在は検証待ちのため、換算値は表示していません)",
+      );
+      // no number and no basis label: nothing that reads as a value
+      expect(row.querySelector('[data-kind="roi"]')).toBeNull();
+      expect(row.textContent).not.toMatch(/\d+(\.\d+)?%/);
+      expect(row.textContent).not.toMatch(/判断時オッズ換算/);
+      expect(row).toHaveTextContent("比べる換算値は、独立検証の後に表示します");
+      expect(row.textContent).not.toMatch(/この換算値と比べて読みます/);
+    }
+  });
+
+  it("explains the v2 settlement: official payout = stage basis, the others are approximate references", async () => {
+    const { panel } = await renderOpen();
+    expect(panel).toHaveTextContent("回収率には計算基準を〔 〕で添えています(〔公式払戻〕のほかは近似です)");
+    const s1 = screen.getByTestId("attention-rule-prospective-S1");
+    expect(s1).toHaveTextContent("集計対象を公式の単勝払戻(100 円あたり)で精算した回収率で行います");
+    expect(s1).toHaveTextContent("レース単位で集計外(公式払戻なし)");
+    // the old v1 sentence (「公式の単勝払戻は保存していない」) is gone
+    expect(panel.textContent).not.toMatch(/保存していない/);
+  });
+
+  it("highlights payout inconsistencies apart (only when there are any)", async () => {
+    await renderOpen(richRules());
+    expect(screen.getByTestId("attention-payout-inconsistent-S1")).toHaveTextContent(
+      "払戻の不整合 2 点: 勝ち馬なのに公式払戻が無い、または勝ち馬でない馬に払戻があるレースの該当です",
+    );
+    expect(screen.queryByTestId("attention-payout-inconsistent-S2")).toBeNull();
+  });
+
+  it("labels each checkpoint record by its own settlement basis; an unknown basis shows no number", async () => {
+    await renderOpen(
+      attentionRulesFixture({
+        S3: {
+          prospective: {
+            start_date: "2026-10-05",
+            decisions: [
+              checkpointDecisionFixture({
+                checkpoint: 300, valuation_basis: "frozen_pick_odds", roi_frozen: 1.066,
+                ci: [0.9, 1.2], skipped_pending_before_last: 4,
+              }),
+              checkpointDecisionFixture({ checkpoint: 600, valuation_basis: null, roi_frozen: 1.5 }),
+            ],
+          },
+        },
+      }),
+    );
+    const decisions = screen.getByTestId("attention-rule-decisions-S3");
+    const d300 = within(decisions).getByTestId("attention-decision-300");
+    expect(d300).toHaveTextContent("回収率 106.6%(区間 90.0〜120.0%)〔判断時オッズ・近似〕");
+    expect(d300).toHaveTextContent("材料の前で精算待ち(結果未確定・公式払戻なし) 4 点");
+    const d600 = within(decisions).getByTestId("attention-decision-600");
+    expect(d600).toHaveTextContent("回収率 表示なし(精算の基準が記録にありません)");
+    expect(d600.textContent).not.toMatch(/150\.0%/);
+    expect(d600.querySelector('[data-kind="roi"]')).toBeNull();
   });
 
   it("display discipline: no steering words, no 印/推奨/おすすめ/通常, no profit colours, no win probability", async () => {

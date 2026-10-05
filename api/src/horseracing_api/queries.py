@@ -24,6 +24,7 @@ from horseracing_db.models import (
     Jockey,
     MarketEvPrediction,
     ModelVersion,
+    OfficialWinPayout,
     PredictionRun,
     Race,
     RaceHorse,
@@ -682,20 +683,64 @@ def _rule_pick_races(rule_ids: list[str]):
 def attention_tally_rows(session: Session, rule_ids: list[str]):
     """Every ``kind='pick'`` row of the rules (current rule set, NO date filter) with what is known
     about it now: voided?, the race has any result?, the horse's own result, the race's number of
-    winners (finished at 1st) and the horse's CURRENT stored win odds. Classification happens in
-    the eval registry (``classify_pick``), not here."""
+    winners (finished at 1st), the horse's CURRENT stored win odds, the official win payout of the
+    pick's 馬番 (the number frozen on the pick), whether the race has any official win payout
+    row at all and whether the race's payout rows name exactly its winners (139 D11, race level:
+    the set of 馬番 — ``race_horses.horse_number`` — of its 1st-place finishers equals the set of
+    paid 馬番; a winner without a 馬番 never matches). That last one is the SQL form of
+    ``attention_rules.race_payout_consistent`` (training computes it in Python with that
+    function). Classification happens in the eval registry (``classify_pick``), not here."""
     if not rule_ids:
         return []
     void = aliased(AttentionPick)
     own = aliased(RaceResult)
     anyres = aliased(RaceResult)
     winner = aliased(RaceResult)
+    own_pay = aliased(OfficialWinPayout)
+    anypay = aliased(OfficialWinPayout)
     voided = exists().where(
         void.voids_pick_id == AttentionPick.pick_id,
         void.kind == "void",
         void.rule_set_version == AttentionPick.rule_set_version,
     )
     has_result = exists().where(anyres.race_id == AttentionPick.race_id)
+    payout_known = exists().where(anypay.race_id == AttentionPick.race_id)
+    # race-level consistency = no winner without a payout row on its 馬番 AND no payout row whose
+    # 馬番 is not a winner's (both directions of the set equality)
+    w1 = aliased(RaceResult)
+    w1_entry = aliased(RaceHorse)
+    w1_pay = aliased(OfficialWinPayout)
+    winner_unpaid = (
+        select(w1.horse_id)
+        .select_from(w1)
+        .outerjoin(
+            w1_entry, and_(w1_entry.race_id == w1.race_id, w1_entry.horse_id == w1.horse_id)
+        )
+        .where(w1.race_id == AttentionPick.race_id)
+        .where(w1.finish_order == 1)
+        .where(w1.result_status == ResultStatus.FINISHED)
+        .where(
+            ~exists().where(
+                w1_pay.race_id == w1.race_id, w1_pay.horse_number == w1_entry.horse_number
+            )
+        )
+        .exists()
+    )
+    p2 = aliased(OfficialWinPayout)
+    w2 = aliased(RaceResult)
+    w2_entry = aliased(RaceHorse)
+    paid_non_winner = exists().where(
+        p2.race_id == AttentionPick.race_id,
+        ~select(w2.horse_id)
+        .select_from(w2)
+        .join(w2_entry, and_(w2_entry.race_id == w2.race_id, w2_entry.horse_id == w2.horse_id))
+        .where(w2.race_id == p2.race_id)
+        .where(w2.finish_order == 1)
+        .where(w2.result_status == ResultStatus.FINISHED)
+        .where(w2_entry.horse_number == p2.horse_number)
+        .exists(),
+    )
+    payout_consistent = and_(~winner_unpaid, ~paid_non_winner)
     n_winners = (
         select(func.count())
         .select_from(winner)
@@ -718,10 +763,20 @@ def attention_tally_rows(session: Session, rule_ids: list[str]):
             own.result_status.label("result_status"),
             n_winners.label("n_winners"),
             RaceHorse.odds.label("stored_odds"),
+            own_pay.payout_yen.label("official_payout_yen"),
+            payout_known.label("race_payout_known"),
+            payout_consistent.label("race_payout_consistent"),
         )
         .select_from(AttentionPick)
         .outerjoin(
             own, and_(own.race_id == AttentionPick.race_id, own.horse_id == AttentionPick.horse_id)
+        )
+        .outerjoin(
+            own_pay,
+            and_(
+                own_pay.race_id == AttentionPick.race_id,
+                own_pay.horse_number == AttentionPick.horse_number,
+            ),
         )
         .outerjoin(
             RaceHorse,
@@ -754,7 +809,9 @@ def attention_started_by_race(session: Session, rule_ids: list[str]) -> dict[str
 
 
 def attention_checkpoint_rows(session: Session) -> list[AttentionCheckpoint]:
-    """Recorded checkpoint decisions of the current rule set AND selection policy."""
+    """Recorded checkpoint decisions of the current rule set AND selection policy (read at call
+    time). Under policy v2 (139) a record of another policy — v1 settled at the judged odds — is
+    never listed nor used for a stage."""
     return list(
         session.scalars(
             select(AttentionCheckpoint)
@@ -773,8 +830,10 @@ def attention_memo_key(session: Session) -> dict[str, tuple]:
 
     (rule_id, pick+void rows, max pick computed_at, checkpoint records, max decided_at, result
     rows / max result timestamp of the races holding the rule's picks, entry rows / max entry
-    timestamp of those races, PROSPECTIVE_START_DATE). Result re-ingests and odds re-ingests move
-    the TimestampMixin timestamps (DB trigger), so either invalidates the memo.
+    timestamp of those races, official win payout rows / max payout timestamp of those races,
+    SELECTION_POLICY_VERSION, PROSPECTIVE_START_DATE). Result, odds and payout re-ingests move the
+    TimestampMixin timestamps (DB trigger), so any of them invalidates the memo; a payout row that
+    disappears (a correction) moves the row count.
     """
     rsv = attention_rules.RULE_SET_VERSION
     picks = (
@@ -815,6 +874,17 @@ def attention_memo_key(session: Session) -> dict[str, tuple]:
         .group_by(pick_races.c.rule_id)
         .subquery("rh")
     )
+    payouts = (
+        select(
+            pick_races.c.rule_id,
+            func.count().label("n_payouts"),
+            func.max(OfficialWinPayout.updated_at).label("max_payouts_ts"),
+        )
+        .select_from(pick_races)
+        .join(OfficialWinPayout, OfficialWinPayout.race_id == pick_races.c.race_id)
+        .group_by(pick_races.c.rule_id)
+        .subquery("wp")
+    )
     records = (
         select(
             AttentionCheckpoint.rule_id.label("rule_id"),
@@ -842,18 +912,21 @@ def attention_memo_key(session: Session) -> dict[str, tuple]:
             records.c.n_records, records.c.max_decided_at,
             results.c.n_results, results.c.max_results_ts,
             entries.c.n_entries, entries.c.max_entries_ts,
+            payouts.c.n_payouts, payouts.c.max_payouts_ts,
         )
         .select_from(rules)
         .outerjoin(picks, picks.c.rule_id == rules.c.rule_id)
         .outerjoin(records, records.c.rule_id == rules.c.rule_id)
         .outerjoin(results, results.c.rule_id == rules.c.rule_id)
         .outerjoin(entries, entries.c.rule_id == rules.c.rule_id)
+        .outerjoin(payouts, payouts.c.rule_id == rules.c.rule_id)
     )
+    policy = attention_rules.SELECTION_POLICY_VERSION
     start = attention_rules.PROSPECTIVE_START_DATE
     keys = {
-        rule_id: (rule_id, 0, None, None, None, None, None, None, None, start)
+        rule_id: (rule_id, 0, None, None, None, None, None, None, None, None, None, policy, start)
         for rule_id in attention_rules.RULE_IDS
     }
     for row in session.execute(stmt).all():
-        keys[row.rule_id] = (*tuple(row), start)
+        keys[row.rule_id] = (*tuple(row), policy, start)
     return keys

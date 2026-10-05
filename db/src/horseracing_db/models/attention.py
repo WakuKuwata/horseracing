@@ -189,7 +189,10 @@ class AttentionCheckpoint(Base):
     decision: Mapped[str] = mapped_column(Text, nullable=False)
     n_counted: Mapped[int] = mapped_column(Integer, nullable=False)
     n_hits: Mapped[int] = mapped_column(Integer, nullable=False)
-    #: settled at the judged odds (odds_used × 100 yen)
+    #: ROI under the settlement of the record's selection_policy_version (named in
+    #: ``bootstrap["settlement"]``): v1 = the judged odds (odds_used × 100 yen, "frozen_pick_odds"),
+    #: v2 = the official win payout per 100 yen ("official_win_payout", feature 139). The column
+    #: name is 0019's and is kept.
     roi_frozen: Mapped[Decimal] = mapped_column(Numeric, nullable=False)
     ci_low: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
     ci_high: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)

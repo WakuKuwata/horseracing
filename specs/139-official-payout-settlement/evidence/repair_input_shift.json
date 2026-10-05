@@ -1,0 +1,110 @@
+{
+ "measured_at": "2026-10-04T23:00+09:00",
+ "task": "139 T014 steps 1/5 (plan D14)",
+ "script": "specs/139-official-payout-settlement/evidence/measure_repair_input_shift.py (no DB writes; pre run before alembic 0020 + repair-final-odds, post run after)",
+ "repair_run": "repair-final-odds --from 2026-06-27 --to 2026-10-04 (archive only): races=1003 archived=499 odds_updated=3146 payouts=500 missing_archive=504 errors=0",
+ "models": {
+  "single": "mev-binary-v2",
+  "ensemble": "mev-ens15-v1"
+ },
+ "target_races": "2026-10-03..2026-10-04 (no upcoming entries in DB at measurement time; most recent meeting used)",
+ "past_inputs_only": {
+  "label": "target odds/popularity held at pre-repair values",
+  "horses": 684,
+  "races": 46,
+  "er_diff_abs_mean": 0.004368402301411206,
+  "er_diff_abs_median": 0.0017013915399902713,
+  "er_diff_abs_p90": 0.010275038879982724,
+  "er_diff_abs_max": 0.08283949882875752,
+  "er_diff_mean": -0.0001266189262995034,
+  "rel_diff_abs_median": 0.0024997175736993244,
+  "share_changed_gt_0.01": 0.10380116959064327,
+  "rule_sets": {
+   "S1": {
+    "pre": 1,
+    "post": 1,
+    "both": 1,
+    "only_pre": 0,
+    "only_post": 0
+   },
+   "S2": {
+    "pre": 0,
+    "post": 0,
+    "both": 0,
+    "only_pre": 0,
+    "only_post": 0
+   },
+   "S3": {
+    "pre": 11,
+    "post": 11,
+    "both": 11,
+    "only_pre": 0,
+    "only_post": 0
+   },
+   "S4": {
+    "pre": 3,
+    "post": 4,
+    "both": 3,
+    "only_pre": 0,
+    "only_post": 1
+   },
+   "S5": {
+    "pre": 18,
+    "post": 18,
+    "both": 18,
+    "only_pre": 0,
+    "only_post": 0
+   }
+  }
+ },
+ "raw": {
+  "label": "raw (target races' own odds also repaired)",
+  "horses": 684,
+  "races": 46,
+  "er_diff_abs_mean": 0.034338910069250383,
+  "er_diff_abs_median": 0.0030698767390617276,
+  "er_diff_abs_p90": 0.10853393159432745,
+  "er_diff_abs_max": 0.6735138421556808,
+  "er_diff_mean": -0.023347092048393078,
+  "rel_diff_abs_median": 0.004153363805285658,
+  "share_changed_gt_0.01": 0.3333333333333333,
+  "rule_sets": {
+   "S1": {
+    "pre": 1,
+    "post": 0,
+    "both": 0,
+    "only_pre": 1,
+    "only_post": 0
+   },
+   "S2": {
+    "pre": 0,
+    "post": 0,
+    "both": 0,
+    "only_pre": 0,
+    "only_post": 0
+   },
+   "S3": {
+    "pre": 11,
+    "post": 7,
+    "both": 6,
+    "only_pre": 5,
+    "only_post": 1
+   },
+   "S4": {
+    "pre": 3,
+    "post": 4,
+    "both": 2,
+    "only_pre": 1,
+    "only_post": 2
+   },
+   "S5": {
+    "pre": 18,
+    "post": 14,
+    "both": 12,
+    "only_pre": 6,
+    "only_post": 2
+   }
+  }
+ },
+ "reading": "Shift through past-race inputs only (target races' own odds held at pre-repair values): median |dER| 0.0017, p90 0.010, max 0.083; S1-S5 membership unchanged except S4 +1 horse. The raw comparison also includes the repair of the target races' own (stale pre-race) odds, which is the R05 defect itself, not an input shift."
+}

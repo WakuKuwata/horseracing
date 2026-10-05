@@ -1,0 +1,161 @@
+{
+  "_note": "139 D6/D13: every version of the registry's BUY_TIME_EXPECTATION (eval/src/horseracing_eval/attention_rules.py) with its exact numbers. A version is append-only: changing a number means adding a new version here and bumping BUY_TIME_EXPECTATION_VERSION. eval/tests/unit/test_attention_rules.py pins the registry to the entry of its current version. 'verified' records whether the version passed the independent verification required before it is served (D6).",
+  "versions": {
+    "buy-time-v1": {
+      "values": {
+        "S1": [
+          0.895,
+          0.735,
+          1.088
+        ],
+        "S2": [
+          0.891,
+          null,
+          null
+        ],
+        "S3": [
+          0.856,
+          0.763,
+          0.977
+        ],
+        "S4": [
+          0.831,
+          0.726,
+          0.948
+        ],
+        "S5": [
+          0.786,
+          0.687,
+          0.898
+        ]
+      },
+      "source": {
+        "report": "docs/roi-missed-patterns-20261004/report.md R02",
+        "period": "2026-08-02..2026-10-04",
+        "pairs": 564,
+        "races": 444,
+        "race_days": 17,
+        "method": "frozen ALL ROI x rho (judged vs final odds re-scoring, closing calibration table g)",
+        "computed_on": "2026-10-04",
+        "r02_result_sha256": "baa95a5586a09228befc7df72f3fe862d82a8a065c04d1f2572f127993b6605c"
+      },
+      "verified": false,
+      "verification": "superseded by buy-time-v2: the independent verification (r02_verification.md) rejected the single 3-digit point (estimator spread ±0.06 not in any CI) and S2's interval (2-horse denominator)"
+    },
+    "buy-time-v2": {
+      "values": {
+        "S1": {
+          "range_low": 0.85,
+          "range_high": 0.9,
+          "ci_low": 0.73,
+          "ci_high": 1.09,
+          "included_in": null
+        },
+        "S2": {
+          "range_low": null,
+          "range_high": null,
+          "ci_low": null,
+          "ci_high": null,
+          "included_in": "S1"
+        },
+        "S3": {
+          "range_low": 0.85,
+          "range_high": 0.85,
+          "ci_low": 0.76,
+          "ci_high": 0.98,
+          "included_in": null
+        },
+        "S4": {
+          "range_low": 0.8,
+          "range_high": 0.85,
+          "ci_low": 0.72,
+          "ci_high": 0.95,
+          "included_in": null
+        },
+        "S5": {
+          "range_low": 0.8,
+          "range_high": 0.85,
+          "ci_low": 0.68,
+          "ci_high": 0.92,
+          "included_in": null
+        }
+      },
+      "estimators": {
+        "S1": {
+          "E_S": [
+            0.895,
+            0.735,
+            1.088
+          ],
+          "G_J": [
+            0.833,
+            0.74,
+            0.93
+          ]
+        },
+        "S2": {
+          "E_S": [
+            0.891,
+            null,
+            null
+          ],
+          "G_J": [
+            0.883,
+            0.72,
+            1.07
+          ]
+        },
+        "S3": {
+          "E_S": [
+            0.856,
+            0.763,
+            0.977
+          ],
+          "G_J": [
+            0.83,
+            0.76,
+            0.9
+          ]
+        },
+        "S4": {
+          "E_S": [
+            0.831,
+            0.726,
+            0.948
+          ],
+          "G_J": [
+            0.798,
+            0.73,
+            0.88
+          ]
+        },
+        "S5": {
+          "E_S": [
+            0.786,
+            0.687,
+            0.898
+          ],
+          "G_J": [
+            0.848,
+            0.78,
+            0.92
+          ]
+        }
+      },
+      "source": {
+        "version": "buy-time-v2",
+        "report": "docs/roi-missed-patterns-20261004/report.md R02",
+        "period": "2026-08-02..2026-10-04",
+        "pairs": 564,
+        "races": 444,
+        "race_days": 17,
+        "method": "range of two estimators (frozen ALL ROI x rho; closing table g applied to the judged selection) rounded to 5%; interval = envelope of both 95% CIs rounded outward",
+        "computed_on": "2026-10-04",
+        "verification": "specs/139-official-payout-settlement/evidence/r02_verification.md",
+        "r02_result_sha256": "baa95a5586a09228befc7df72f3fe862d82a8a065c04d1f2572f127993b6605c"
+      },
+      "verified": true,
+      "verification": "specs/139-official-payout-settlement/evidence/r02_verification.md — confirmed with caveats: both estimators reproduced; show their range (5%) with the CI envelope, S1's interval includes 100% and S3-S5's are below it, S2 has no valid interval of its own (included in S1)"
+    }
+  }
+}

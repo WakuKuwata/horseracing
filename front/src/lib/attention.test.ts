@@ -1,21 +1,38 @@
 import { describe, expect, it } from "vitest";
 
+import openapi from "../../openapi.json";
+
 import type { AttentionLevels, RuleSummary, StageDetail } from "../api/types";
+import { BUY_TIME_SOURCE } from "../tests/fixtures";
 import {
   ATTENTION_SCOPE,
   UNMEASURED_ODDS_DRIFT,
 } from "./forbiddenPhrases";
 import {
   BACKTEST_LEVEL_LABELS,
+  BUY_TIME_CAVEAT,
+  BUY_TIME_INTERVAL_BELOW_100,
+  BUY_TIME_INTERVAL_INCLUDES_100,
+  BUY_TIME_LABEL,
+  BUY_TIME_LEAD,
+  BUY_TIME_PENDING,
   CHIP_NOW_LABELS,
   DECISION_LABELS,
   EXCLUSION_LABELS,
   EXCLUSION_ORDER,
   FRESHNESS_LABELS,
+  formatBuyTimeInterval,
+  formatBuyTimeRange,
   PROGRESS_LABEL,
+  PROSPECTIVE_BASIS_LABELS,
   ROI_BASIS_LABELS,
   ROI_BASIS_LABEL_VALUES,
   backtestLevelLabel,
+  buyTimeFramingText,
+  buyTimeIncludedInText,
+  buyTimeIntervalSentence,
+  buyTimeSourceText,
+  decisionRoiBasis,
   chipLabel,
   chipNowLabel,
   emphasisLevel,
@@ -217,20 +234,27 @@ describe("axis wording (FR-006)", () => {
     expect(progressScaleText(3)).toBe("3 段階中 3");
   });
 
-  it("spells the checkpoint decisions and the 9 exclusive exclusion classes (single source)", () => {
+  it("spells the checkpoint decisions and the 11 exclusive exclusion classes (single source)", () => {
     expect(DECISION_LABELS).toEqual({
       passed: "通過", failed: "不通過", continue: "継続", undecided: "判定保留",
     });
-    // classify_pick priority order, 9 exclusive classes
+    // classify_pick priority order, 11 exclusive classes (139: the two payout classes follow
+    // pending_result)
     expect(EXCLUSION_ORDER).toEqual([
       "voided_scratched", "before_start", "post_time_unknown", "computed_after_post",
-      "result_known_at_compute", "observed_after_post", "pending_result", "unsettled_horse",
-      "dead_heat",
+      "result_known_at_compute", "observed_after_post", "pending_result", "payout_race_missing",
+      "payout_inconsistent", "unsettled_horse", "dead_heat",
     ]);
     expect(EXCLUSION_ORDER.map((k) => EXCLUSION_LABELS[k])).toEqual([
       "取消 void", "集計開始前", "発走時刻不明", "発走後の計算", "計算時に結果確定済み",
-      "発走後のオッズ", "結果未確定", "自馬の結果なし", "同着",
+      "発走後のオッズ", "結果未確定", "公式払戻なし", "払戻の不整合", "自馬の結果なし", "同着",
     ]);
+  });
+
+  it("orders the exclusion classes exactly as the API schema (eval EXCLUSION_ORDER) — drift guard", () => {
+    // The committed snapshot sorts object keys but keeps arrays: `required` is the pydantic field
+    // order, which the API pins to eval `EXCLUSION_ORDER`.
+    expect(EXCLUSION_ORDER).toEqual(openapi.components.schemas.AttentionExclusionCounts.required);
   });
 
   it("annotates the chip only when the current values no longer match / are missing", () => {
@@ -241,18 +265,100 @@ describe("axis wording (FR-006)", () => {
     expect(chipNowLabel(undefined)).toBeNull();
   });
 
-  it("freezes the three ROI basis labels, keyed by the API valuation_basis", () => {
+  it("freezes the ROI basis labels, keyed by the API valuation_basis (+ the buy-time conversion)", () => {
     expect(ROI_BASIS_LABELS).toEqual({
+      official_win_payout: "公式払戻",
       closing_odds_approx: "確定オッズ近似",
       frozen_pick_odds: "判断時オッズ・近似",
       stored_odds_mutable: "保存オッズ(参考)・近似",
+      buy_time_conversion: "判断時オッズ換算・近似",
     });
     expect([...ROI_BASIS_LABEL_VALUES].sort()).toEqual(
       Object.values(ROI_BASIS_LABELS).sort(),
     );
-    // every label says it is an approximation (no official win payout is stored)
-    for (const label of ROI_BASIS_LABEL_VALUES) expect(label).toMatch(/近似/);
+    // the official win payout is what a winning ticket was paid — never called an approximation;
+    // every other basis is not the official payout and says so
+    expect(ROI_BASIS_LABELS.official_win_payout).not.toMatch(/近似/);
+    for (const [basis, label] of Object.entries(ROI_BASIS_LABELS)) {
+      if (basis !== "official_win_payout") expect(label, basis).toMatch(/近似/);
+    }
+    // no label contains another one (the ROI invariant counts label substrings: exactly one)
+    for (const a of ROI_BASIS_LABEL_VALUES) {
+      for (const b of ROI_BASIS_LABEL_VALUES) if (a !== b) expect(a.includes(b), `${a} ⊃ ${b}`).toBe(false);
+    }
     expect(roiBasisTag("closing_odds_approx")).toBe("〔確定オッズ近似〕");
+    expect(roiBasisTag("official_win_payout")).toBe("〔公式払戻〕");
+  });
+
+  it("labels the prospective bases: official = the stage basis, judged odds = 参考(v1)", () => {
+    expect(PROSPECTIVE_BASIS_LABELS).toEqual({
+      official: "回収率(段階判定の基準)",
+      frozen: "参考(v1・判断時オッズ)",
+      stored: "参考(保存オッズ)",
+    });
+  });
+
+  it("labels a checkpoint record by its own settlement basis; unknown → no basis (no number)", () => {
+    expect(decisionRoiBasis("official_win_payout")).toBe("official_win_payout");
+    expect(decisionRoiBasis("frozen_pick_odds")).toBe("frozen_pick_odds");
+    expect(decisionRoiBasis(null)).toBeNull();
+    expect(decisionRoiBasis(undefined)).toBeNull();
+  });
+
+  it("spells the buy-time conversion source from the registry (D13: period, pairs, version)", () => {
+    expect(buyTimeSourceText(BUY_TIME_SOURCE)).toBe(
+      "算出: 2026-08-02〜2026-10-04・564 組・444 レース・17 開催日・算出日 2026-10-04・" +
+        "版 buy-time-v2・独立検証済み",
+    );
+    // the version is the name of the numbers: a new version is shown as such
+    expect(buyTimeSourceText({ ...BUY_TIME_SOURCE, version: "buy-time-v3" })).toMatch(
+      /・版 buy-time-v3・独立検証済み$/,
+    );
+    expect(
+      buyTimeSourceText({ ...BUY_TIME_SOURCE, status: "provisional — pending independent verification" }),
+    ).toMatch(/・暫定値\(独立検証前\)$/);
+    // an unknown status is shown as is — never silently dropped
+    expect(buyTimeSourceText({ ...BUY_TIME_SOURCE, status: "withdrawn 2026-10-10" })).toMatch(
+      /・状態 withdrawn 2026-10-10$/,
+    );
+    expect(BUY_TIME_PENDING).toBe(
+      "独立検証を通った値だけを表示します(現在は検証待ちのため、換算値は表示していません)",
+    );
+    expect(BUY_TIME_LABEL).toBe("判断時点の見込み(過去データからの換算)");
+    expect(BUY_TIME_LEAD).toBe(
+      "過去データで、判断時のオッズで条件を満たした馬を買ったと仮定した換算回収率",
+    );
+    expect(BUY_TIME_CAVEAT).toBe("参考値・購入を勧めるものではありません");
+  });
+
+  it("formats the buy-time range in whole 5% steps and the interval in whole percents (v2)", () => {
+    expect(formatBuyTimeRange(0.85, 0.9)).toBe("約 85〜90%");
+    expect(formatBuyTimeRange(0.85, 0.85)).toBe("約 85%");
+    expect(formatBuyTimeRange(0.8, 0.85)).toBe("約 80〜85%");
+    expect(formatBuyTimeInterval(0.73, 1.09)).toBe("(区間 73〜109%)");
+    expect(formatBuyTimeInterval(0.76, 0.98)).toBe("(区間 76〜98%)");
+    // never a decimal point (a 3-digit value would read as a frozen exact figure)
+    expect(formatBuyTimeRange(0.85, 0.9) + formatBuyTimeInterval(0.73, 1.09)).not.toMatch(/\./);
+    expect(buyTimeIntervalSentence(true)).toBe(BUY_TIME_INTERVAL_INCLUDES_100);
+    expect(buyTimeIntervalSentence(false)).toBe(BUY_TIME_INTERVAL_BELOW_100);
+    expect(buyTimeIntervalSentence(null)).toBeNull();
+    expect(BUY_TIME_INTERVAL_INCLUDES_100).toBe("100% を下回る見込みですが、区間は 100% を含みます。");
+    expect(BUY_TIME_INTERVAL_BELOW_100).toBe("100% を下回る推定です(区間の上限も 100% 未満)。");
+    expect(buyTimeIncludedInText("S1")).toBe(
+      "単独の値は出しません(この条件の馬はすべて S1 に含まれます。S1 の見込みを参照してください)",
+    );
+    expect(buyTimeIncludedInText("S1")).not.toMatch(/\d\s*%/);
+    expect(buyTimeFramingText(BUY_TIME_SOURCE)).toBe(
+      "この見込みは、締切オッズでの過去成績を 2026 年の 17 開催日の発走前オッズで換算した値で、" +
+        "実績ではありません。",
+    );
+    // a period across years is spelled out instead of one year
+    expect(
+      buyTimeFramingText({ ...BUY_TIME_SOURCE, period: "2026-12-01..2027-01-31", race_days: 9 }),
+    ).toBe(
+      "この見込みは、締切オッズでの過去成績を 2026-12-01〜2027-01-31 の 9 開催日の発走前オッズで" +
+        "換算した値で、実績ではありません。",
+    );
   });
 
   it("never uses a forbidden phrase, an unmeasured drift claim or 「通常」", () => {
@@ -263,6 +369,16 @@ describe("axis wording (FR-006)", () => {
       ...Object.values(CHIP_NOW_LABELS),
       ...Object.values(DECISION_LABELS),
       ...Object.values(EXCLUSION_LABELS),
+      ...Object.values(PROSPECTIVE_BASIS_LABELS),
+      BUY_TIME_LABEL,
+      BUY_TIME_LEAD,
+      BUY_TIME_CAVEAT,
+      BUY_TIME_PENDING,
+      BUY_TIME_INTERVAL_INCLUDES_100,
+      BUY_TIME_INTERVAL_BELOW_100,
+      buyTimeIncludedInText("S1"),
+      buyTimeFramingText(BUY_TIME_SOURCE),
+      buyTimeSourceText(BUY_TIME_SOURCE),
       PROGRESS_LABEL,
       progressScaleText(1),
       progressScaleText(2),

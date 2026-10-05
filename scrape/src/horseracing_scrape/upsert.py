@@ -7,13 +7,20 @@
   JRA-VAN final odds.
 - results: INSERT-ONLY (ON CONFLICT DO NOTHING) — never overwrite JRA-VAN; no row for
   non-starters; dead heats share finish_order; finished rows must carry a finish_order.
+- final odds (139): the result page's FINAL win odds/popularity overwrite race_horses only for
+  netkeiba-era races (race_date >= NETKEIBA_FINAL_ODDS_FROM), only where a number was read and
+  only where the value changes.
+- official win payouts (139): single latest value per (race, 馬番), rewritten only when the
+  payout changes.
 """
 
 from __future__ import annotations
 
 import datetime
+import hashlib
 import math
 import re
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
 
@@ -23,6 +30,7 @@ from horseracing_db.models import (
     ExoticQuote,
     Horse,
     Jockey,
+    OfficialWinPayout,
     Race,
     RaceHorse,
     RaceLaps,
@@ -30,7 +38,7 @@ from horseracing_db.models import (
     Trainer,
 )
 from horseracing_db.selection import canonical_selection
-from sqlalchemy import exists, func, select, update
+from sqlalchemy import delete, exists, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -43,6 +51,8 @@ from .models import (
     ScrapedLaps,
     ScrapedOdds,
     ScrapedResult,
+    ScrapedResultRow,
+    ScrapedWinPayout,
 )
 from .venues import build_race_id
 
@@ -69,14 +79,19 @@ class Counts:
     skipped: int = 0
     errors: int = 0
     error_messages: list[str] = field(default_factory=list)
+    #: named side counts a job reports next to the totals (e.g. 139's final_odds_updated /
+    #: win_payout_errors); summed by key on merge and copied into the ingestion_jobs summary.
+    extra: dict[str, int] = field(default_factory=dict)
 
     def merge(self, other: Counts) -> Counts:
-        """Fold another Counts in place (same accumulation as pipeline._aggregate)."""
+        """Fold another Counts in place (pipeline._aggregate folds through this)."""
         self.processed += other.processed
         self.written += other.written
         self.skipped += other.skipped
         self.errors += other.errors
         self.error_messages.extend(other.error_messages)
+        for key, value in other.extra.items():
+            self.extra[key] = self.extra.get(key, 0) + value
         return self
 
 
@@ -401,6 +416,209 @@ def backfill_results(session: Session, race_id: str, scraped: ScrapedResult) -> 
             )
         c.written += 1
     return c
+
+
+# --- final odds + official win payouts (Feature 139) --------------------------------------------
+#: First race day of the netkeiba era: the first day an ``nk:`` horse appears in this DB. JRA-VAN
+#: supplied FINAL win odds through 2025-10-05; from this date on ``race_horses.odds`` comes from
+#: netkeiba alone, and for a settled race it is the last PRE-RACE quote (the live odds endpoint
+#: stops serving win odds once a race settles, and ``update_odds`` only fills NULLs then). Final
+#: odds are written for races on or after this date only — an older race keeps its JRA-VAN value
+#: even when someone refreshes it from the result page (plan D8).
+NETKEIBA_FINAL_ODDS_FROM = datetime.date(2025, 10, 11)
+
+
+def page_sha256(html: str) -> str:
+    """sha256 of a page's text as UTF-8 — the provenance stamp stored with a payout (plan D10).
+
+    race.netkeiba.com serves UTF-8, so for those pages this equals the sha256 of the raw bytes."""
+    return hashlib.sha256(html.encode("utf-8")).hexdigest()
+
+
+@dataclass
+class FinalOddsCounts:
+    """What ``apply_final_odds`` did with one race's result page."""
+
+    #: rows whose odds (and popularity, when read) actually changed
+    updated: int = 0
+    #: a number was read but equals what is stored (a re-run lands here)
+    unchanged: int = 0
+    #: no usable win odds on the page for this horse — the stored value is kept, never NULLed
+    unreadable: int = 0
+    #: the horse has no race_horses row in this race (e.g. an nk:/canonical id split) — its stored
+    #: (pre-race) odds stay as they were, so this is surfaced, never silent
+    unmatched: int = 0
+    #: 1 when the race is before NETKEIBA_FINAL_ODDS_FROM: nothing written (JRA-VAN final odds)
+    skipped_pre_netkeiba: int = 0
+    #: 1 when the race has no races row / no race_date: nothing written (fail closed)
+    race_unknown: int = 0
+    #: 1 when the page has result rows but NOT ONE readable win odds (a moved header, a markup
+    #: change): the pre-race odds stay stored — the R05 failure mode, so it is counted per race
+    missing: int = 0
+
+
+def _usable_win_odds(value: float | None) -> Decimal | None:
+    if value is None or not math.isfinite(value) or value < 1.0:  # 1.0 = the payout floor
+        return None
+    return Decimal(str(value))
+
+
+def apply_final_odds(
+    session: Session, race_id: str, rows: Iterable[ScrapedResultRow]
+) -> FinalOddsCounts:
+    """Overwrite ``race_horses.odds`` / ``popularity`` with the result page's FINAL values.
+
+    Why: a win bet pays the final odds, and for a netkeiba-era settled race the stored odds are
+    otherwise the last pre-race quote (R05: 474 + 14 races). Rules (plan D8/D9):
+
+    * only races with ``race_date >= NETKEIBA_FINAL_ODDS_FROM``; an older race gets nothing written
+      and ``skipped_pre_netkeiba = 1``, one whose date is unknown gets nothing written and
+      ``race_unknown = 1`` (fail closed: the JRA-VAN final odds must never be replaced by a
+      re-scrape);
+    * only horses whose page odds are a number >= 1.0 — a blank / "---" / 取消 / 除外 cell never
+      NULLs or lowers a stored value (non-starters carry no result row at all);
+    * popularity is written alongside only when the page gave a number for it;
+    * only rows whose value changes are touched (``IS DISTINCT FROM``), so the same page twice is
+      a no-op and race_horses.updated_at does not move on a re-run;
+    * a page with result rows but not one readable win odds is ``missing = 1`` (the stored odds
+      stay pre-race — surfaced per race, like a missing 単勝 payout).
+    """
+    out = FinalOddsCounts()
+    race_date = session.scalar(select(Race.race_date).where(Race.race_id == race_id))
+    if race_date is None:
+        out.race_unknown = 1
+        return out
+    if race_date < NETKEIBA_FINAL_ODDS_FROM:
+        out.skipped_pre_netkeiba = 1
+        return out
+    rows = list(rows)
+
+    stored = {
+        horse_id: (odds, popularity)
+        for horse_id, odds, popularity in session.execute(
+            select(RaceHorse.horse_id, RaceHorse.odds, RaceHorse.popularity)
+            .where(RaceHorse.race_id == race_id)
+        )
+    }
+    for row in rows:
+        new_odds = _usable_win_odds(row.win_odds)
+        if new_odds is None:
+            out.unreadable += 1
+            continue
+        horse_id = resolve_entity(session, entity_type="horse", netkeiba_id=row.netkeiba_horse_id)
+        if horse_id not in stored:
+            out.unmatched += 1
+            continue
+        old_odds, old_popularity = stored[horse_id]
+        values: dict = {"odds": new_odds}
+        changed = old_odds is None or Decimal(old_odds) != new_odds
+        distinct = RaceHorse.odds.is_distinct_from(new_odds)
+        if row.popularity is not None:
+            values["popularity"] = row.popularity
+            changed = changed or old_popularity != row.popularity
+            distinct = or_(distinct, RaceHorse.popularity.is_distinct_from(row.popularity))
+        if not changed:
+            out.unchanged += 1
+            continue
+        res = session.execute(
+            update(RaceHorse)
+            .where(RaceHorse.race_id == race_id, RaceHorse.horse_id == horse_id, distinct)
+            .values(**values)
+        )
+        out.updated += res.rowcount
+        if not res.rowcount:  # changed under us between the read and the write
+            out.unchanged += 1
+    if rows and out.unreadable == len(rows):
+        out.missing = 1
+    return out
+
+
+@dataclass
+class WinPayoutCounts:
+    """What ``upsert_official_win_payouts`` did with one race's 単勝 payouts."""
+
+    inserted: int = 0
+    updated: int = 0
+    unchanged: int = 0
+    #: stored winners the page no longer lists (an official correction) — deleted
+    removed: int = 0
+    #: 1 when the race has no races row yet (nothing to attach a payout to — upsert_laps rule)
+    no_race: int = 0
+
+    @property
+    def written(self) -> int:
+        return self.inserted + self.updated + self.removed
+
+
+def upsert_official_win_payouts(
+    session: Session,
+    race_id: str,
+    payouts: Sequence[ScrapedWinPayout],
+    *,
+    observed_at: datetime.datetime,
+    html_sha256: str | None = None,
+) -> WinPayoutCounts:
+    """Store the race's official 単勝 payouts (single latest value per 馬番, constitution V).
+
+    A row is (re)written only when its ``payout_yen`` differs from what is stored; ``observed_at``
+    and ``html_sha256`` then record the observation that set the value. Re-reading the same payout
+    — the same page again, or a later fetch of it — changes nothing, so a re-run reports 0.
+
+    When the page lists winners, a stored winner it no longer lists is deleted (an official
+    correction, e.g. a 降着 that changes the winner). An EMPTY list writes nothing and deletes
+    nothing: a page without a 単勝 row is not evidence that the race paid nobody.
+    """
+    if observed_at.tzinfo is None:
+        raise ValueError("observed_at must be timezone-aware")
+    out = WinPayoutCounts()
+    if not payouts:
+        return out
+    by_number: dict[int, int] = {}
+    for p in payouts:
+        if p.horse_number < 1 or p.payout_yen < 100:
+            raise ValueError(f"invalid win payout for {race_id}: {p}")
+        if p.horse_number in by_number and by_number[p.horse_number] != p.payout_yen:
+            raise ValueError(f"conflicting win payouts for {race_id} 馬番 {p.horse_number}")
+        by_number[p.horse_number] = p.payout_yen
+    if not session.scalar(select(exists().where(Race.race_id == race_id))):
+        out.no_race = 1
+        return out
+
+    stored = dict(session.execute(
+        select(OfficialWinPayout.horse_number, OfficialWinPayout.payout_yen)
+        .where(OfficialWinPayout.race_id == race_id)
+    ).tuples().all())
+    stale = sorted(set(stored) - set(by_number))
+    if stale:
+        res = session.execute(
+            delete(OfficialWinPayout).where(
+                OfficialWinPayout.race_id == race_id,
+                OfficialWinPayout.horse_number.in_(stale),
+            )
+        )
+        out.removed += res.rowcount
+
+    for number, payout_yen in sorted(by_number.items()):
+        if stored.get(number) == payout_yen:
+            out.unchanged += 1
+            continue
+        stmt = insert(OfficialWinPayout).values(
+            race_id=race_id, horse_number=number, payout_yen=payout_yen,
+            observed_at=observed_at, html_sha256=html_sha256,
+        )
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["race_id", "horse_number"],
+            set_={"payout_yen": stmt.excluded.payout_yen,
+                  "observed_at": stmt.excluded.observed_at,
+                  "html_sha256": stmt.excluded.html_sha256},
+            where=OfficialWinPayout.payout_yen.is_distinct_from(stmt.excluded.payout_yen),
+        )
+        session.execute(stmt)
+        if number in stored:
+            out.updated += 1
+        else:
+            out.inserted += 1
+    return out
 
 
 def bloodline_for(session: Session, *, line_col: str, name_col: str, name: str) -> str | None:

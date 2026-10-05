@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw";
 
 import type {
   AttentionAvailable,
+  AttentionBuyTimeSource,
   AttentionDayItem,
   AttentionDayResponse,
   AttentionFrozenStats,
@@ -273,7 +274,8 @@ export const attentionNotComputed: AttentionUnavailable = {
 export const ATTENTION_RULES_DISCLAIMER =
   "注目条件は過去データで最も有望だった条件で、検証済みの条件ではありません。" +
   "S1・S2 は結果を見てから見つけた条件で、過去検証の p 値は多重探索を補正していません。" +
-  "回収率はいずれも近似です。的中や利益を保証するものではありません。";
+  "過去検証の回収率は確定オッズからの近似、判断時点の見込みは過去データからの換算です。" +
+  "前向き検証の回収率は公式の単勝払戻で精算しています。的中や利益を保証するものではありません。";
 
 export function stageDetail(
   stage: StageDetail["stage"] = "researching",
@@ -299,6 +301,50 @@ function noise(sigma: number, roi: number, n: number, overlap: number): Attentio
 
 type FrozenRule = Omit<RuleSummary, "prospective">;
 
+/**
+ * 139: the registry's buy-time conversion source (eval `BUY_TIME_EXPECTATION_SOURCE`, version
+ * buy-time-v2) as the API serves it — independently verified (D6: `status` "verified …",
+ * r02_verification.md). The unverified state (API `buy_time_expectation: null`) is covered with
+ * `{ buy_time_expectation: null }` overrides.
+ */
+export const BUY_TIME_SOURCE: AttentionBuyTimeSource = {
+  version: "buy-time-v2",
+  report: "docs/roi-missed-patterns-20261004/report.md R02",
+  period: "2026-08-02..2026-10-04",
+  pairs: 564,
+  races: 444,
+  race_days: 17,
+  method:
+    "range of two estimators (frozen ALL ROI x rho; closing table g applied to the judged " +
+    "selection) rounded to 5%; interval = envelope of both 95% CIs rounded outward",
+  computed_on: "2026-10-04",
+  status:
+    "verified — independent adversarial re-derivation 2026-10-04 " +
+    "(specs/139-official-payout-settlement/evidence/r02_verification.md): confirmed with caveats",
+  verification: "specs/139-official-payout-settlement/evidence/r02_verification.md",
+};
+
+/** A rule's buy-time range (5% steps) with its CI envelope; `interval_includes_100` as the
+ *  registry derives it (ci_high >= 1). */
+function buyTime(range_low: number, range_high: number, ci_low: number, ci_high: number) {
+  return {
+    range_low, range_high, ci_low, ci_high,
+    interval_includes_100: ci_high >= 1.0,
+    included_in: null,
+    source: { ...BUY_TIME_SOURCE },
+  };
+}
+
+/** A rule without a value of its own (S2: invalid interval) — its horses are all in `rule`. */
+function buyTimeIncludedIn(rule: RuleId) {
+  return {
+    range_low: null, range_high: null, ci_low: null, ci_high: null,
+    interval_includes_100: null,
+    included_in: rule,
+    source: { ...BUY_TIME_SOURCE },
+  };
+}
+
 const FROZEN_BACKTEST_BOOTSTRAP = {
   impl: "horseracing_eval.bootstrap.race_block_ratio_bootstrap_ci_v1",
   b: 20000,
@@ -318,6 +364,7 @@ function frozenRule(
   sel: [AttentionSelectedCalibration, AttentionSelectedCalibration],
   priceNoise: AttentionPriceNoise[],
   levels: RuleSummary["levels"],
+  buyTimeExpectation: RuleSummary["buy_time_expectation"],
 ): FrozenRule {
   return {
     id, rank, definition_ja, ...shape,
@@ -329,6 +376,7 @@ function frozenRule(
     },
     price_noise: priceNoise,
     levels,
+    buy_time_expectation: buyTimeExpectation,
   };
 }
 
@@ -346,6 +394,7 @@ export const FROZEN_ATTENTION_RULES: Record<RuleId, FrozenRule> = {
     [noise(0.1, 1.166235, 6432, 0.586), noise(0.2, 1.044695, 9981, 0.3),
       noise(0.3, 0.966821, 14786, 0.165)],
     { backtest: 3, price_noise: 2 },
+    buyTime(0.85, 0.9, 0.73, 1.09),
   ),
   S2: frozenRule(
     "S2", 2, "15 seed 平均の期待回収率が 130% 超、単勝 20 倍以上 40 倍未満、前走から 14〜112 日",
@@ -357,6 +406,7 @@ export const FROZEN_ATTENTION_RULES: Record<RuleId, FrozenRule> = {
     [noise(0.1, 1.227577, 3899, 0.568), noise(0.2, 1.076371, 6620, 0.264),
       noise(0.3, 0.983593, 10844, 0.132)],
     { backtest: 3, price_noise: 2 },
+    buyTimeIncludedIn("S1"),
   ),
   S3: frozenRule(
     "S3", 3, "15 seed 平均の期待回収率が 120% 超(単勝オッズの制限なし)",
@@ -369,6 +419,7 @@ export const FROZEN_ATTENTION_RULES: Record<RuleId, FrozenRule> = {
     [noise(0.1, 1.033016, 28914, 0.62), noise(0.2, 0.956798, 50134, 0.316),
       noise(0.3, 0.907118, 81229, 0.18)],
     { backtest: 2, price_noise: 2 },
+    buyTime(0.85, 0.85, 0.76, 0.98),
   ),
   S4: frozenRule(
     "S4", 4, "15 seed 平均の期待回収率が 110% 超、単勝 20 倍以上 40 倍未満、前走から 14〜112 日",
@@ -380,6 +431,7 @@ export const FROZEN_ATTENTION_RULES: Record<RuleId, FrozenRule> = {
     [noise(0.1, 1.099928, 10611, 0.615), noise(0.2, 1.00851, 14899, 0.349),
       noise(0.3, 0.956266, 19986, 0.213)],
     { backtest: 2, price_noise: 2 },
+    buyTime(0.8, 0.85, 0.72, 0.95),
   ),
   S5: frozenRule(
     "S5", 5, "単 seed(137 のモデル)の期待回収率が 120% 超(対照)",
@@ -392,6 +444,7 @@ export const FROZEN_ATTENTION_RULES: Record<RuleId, FrozenRule> = {
     [noise(0.1, 0.984019, 36553, 0.669), noise(0.2, 0.941295, 56691, 0.381),
       noise(0.3, 0.890056, 85718, 0.233)],
     { backtest: 1, price_noise: 1 },
+    buyTime(0.8, 0.85, 0.68, 0.92),
   ),
 };
 
@@ -403,7 +456,7 @@ export function prospectiveFixture(
 ): AttentionProspective {
   return {
     start_date: null,
-    policy_version: "v1",
+    policy_version: "v2",
     stage: "researching",
     checkpoint: null,
     checkpoint_pending: false,
@@ -413,6 +466,7 @@ export function prospectiveFixture(
     n_counted: 0,
     n_hits: 0,
     n_picks_total: 0,
+    official: { valuation_basis: "official_win_payout", roi: null, ci: null, p_one_sided: null },
     frozen: { valuation_basis: "frozen_pick_odds", roi: null, ci: null, p_one_sided: null },
     stored: {
       valuation_basis: "stored_odds_mutable", roi: null, ci: null, n: 0, n_missing_stored_odds: 0,
@@ -434,21 +488,24 @@ export function prospectiveFixture(
       result_known_at_compute: 0,
       observed_after_post: 0,
       pending_result: 0,
+      payout_race_missing: 0,
+      payout_inconsistent: 0,
       unsettled_horse: 0,
       dead_heat: 0,
     },
     flags: { field_changed_after_pick: 0 },
     by_judged_freshness: {
-      "<=10m": { n: 0, hits: 0, roi_frozen: null },
-      "<=60m": { n: 0, hits: 0, roi_frozen: null },
-      ">60m": { n: 0, hits: 0, roi_frozen: null },
+      "<=10m": { n: 0, hits: 0, roi_official: null, roi_frozen: null },
+      "<=60m": { n: 0, hits: 0, roi_official: null, roi_frozen: null },
+      ">60m": { n: 0, hits: 0, roi_official: null, roi_frozen: null },
     },
     odds_drift: { n: 0, median_log_ratio: null, p10: null, p90: null },
     ...overrides,
   };
 }
 
-/** A recorded checkpoint decision (default: a 300-point `continue` whose CI straddles 100%). */
+/** A recorded checkpoint decision (default: a 300-point `continue` whose CI straddles 100%, recorded
+ *  under policy v2 = settled at the official win payout). */
 export function checkpointDecisionFixture(
   overrides: Partial<CheckpointDecision> = {},
 ): CheckpointDecision {
@@ -461,7 +518,8 @@ export function checkpointDecisionFixture(
     ci: [0.81, 1.29],
     decided_at: "2027-09-20T03:00:00Z",
     settlement_cutoff: "2027-09-17T03:00:00Z",
-    prospective_start_date: "2026-10-03",
+    prospective_start_date: "2026-10-05",
+    valuation_basis: "official_win_payout",
     skipped_pending_before_last: 0,
     counted_pick_ids_sha256: "0".repeat(64),
     bootstrap: {

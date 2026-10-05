@@ -486,6 +486,62 @@ export interface components {
             /** Seed */
             seed: number;
         };
+        /**
+         * AttentionBuyTimeExpectation
+         * @description 判断時点で買った場合の見込み (139 D6/D13): the past ROI of the horses that matched at the
+         *     judged (pre-race) odds — a conversion from past data, frozen in the registry
+         *     (``BUY_TIME_EXPECTATION``, version ``buy-time-v2``). The prospective record is read against
+         *     this, not against the closing-odds backtest, until it accumulates and replaces it.
+         *
+         *     Not one point (the independent verification rejected a 3-digit value): ``range_low`` to
+         *     ``range_high`` is the range of two estimators rounded to 5%, ``ci_low``/``ci_high`` the
+         *     envelope of their 95% CIs and ``interval_includes_100`` whether that interval reaches 100%.
+         *     A rule whose own interval is invalid shows no value: all four numbers null and
+         *     ``included_in`` names the rule whose value covers its horses (S2 ⊂ S1). Served only once
+         *     independently verified (D6) — ``RuleSummary.buy_time_expectation`` is null before that.
+         */
+        AttentionBuyTimeExpectation: {
+            /** Ci High */
+            ci_high: number | null;
+            /** Ci Low */
+            ci_low: number | null;
+            /** Included In */
+            included_in: ("S1" | "S2" | "S3" | "S4" | "S5") | null;
+            /** Interval Includes 100 */
+            interval_includes_100: boolean | null;
+            /** Range High */
+            range_high: number | null;
+            /** Range Low */
+            range_low: number | null;
+            source: components["schemas"]["AttentionBuyTimeSource"];
+        };
+        /**
+         * AttentionBuyTimeSource
+         * @description Where the buy-time expectation comes from (registry ``BUY_TIME_EXPECTATION_SOURCE``).
+         *     ``version`` names exactly the served numbers (139 D13: a changed number gets a new version).
+         */
+        AttentionBuyTimeSource: {
+            /** Computed On */
+            computed_on: string;
+            /** Method */
+            method: string;
+            /** Pairs */
+            pairs: number;
+            /** Period */
+            period: string;
+            /** Race Days */
+            race_days: number;
+            /** Races */
+            races: number;
+            /** Report */
+            report: string;
+            /** Status */
+            status: string;
+            /** Verification */
+            verification: string;
+            /** Version */
+            version: string;
+        };
         /** AttentionCheckpointBootstrap */
         AttentionCheckpointBootstrap: {
             /** B */
@@ -563,6 +619,10 @@ export interface components {
             dead_heat: number;
             /** Observed After Post */
             observed_after_post: number;
+            /** Payout Inconsistent */
+            payout_inconsistent: number;
+            /** Payout Race Missing */
+            payout_race_missing: number;
             /** Pending Result */
             pending_result: number;
             /** Post Time Unknown */
@@ -582,7 +642,11 @@ export interface components {
             /** Field Changed After Pick */
             field_changed_after_pick: number;
         };
-        /** AttentionFreshnessBand */
+        /**
+         * AttentionFreshnessBand
+         * @description Counted picks of one band: official payout ROI (the v2 basis) and the judged-odds ROI (the
+         *     v1 reference) of the same picks.
+         */
         AttentionFreshnessBand: {
             /** Hits */
             hits: number;
@@ -590,10 +654,14 @@ export interface components {
             n: number;
             /** Roi Frozen */
             roi_frozen: number | null;
+            /** Roi Official */
+            roi_official: number | null;
         };
         /**
          * AttentionFrozenBasis
-         * @description Settlement at the judged odds (odds_used × 100 yen) — the basis of the stages.
+         * @description Reference: the SAME counted picks settled at the judged odds (odds_used × 100 yen) — policy
+         *     v1's settlement (138 D13), shown alongside the official basis (139 D3/D12). Never the basis of
+         *     a stage under policy v2.
          */
         AttentionFrozenBasis: {
             /** Ci */
@@ -702,6 +770,28 @@ export interface components {
             /** P90 */
             p90: number | null;
         };
+        /**
+         * AttentionOfficialBasis
+         * @description Settlement at the official win payout (per 100 yen; 139) — the basis of the stages and of
+         *     the prospective level under selection policy v2. A win pays the parimutuel payout, not the
+         *     judged odds, so this figure is what the counted picks actually returned (not approximate).
+         */
+        AttentionOfficialBasis: {
+            /** Ci */
+            ci: [
+                number,
+                number
+            ] | null;
+            /** P One Sided */
+            p_one_sided: number | null;
+            /** Roi */
+            roi: number | null;
+            /**
+             * Valuation Basis
+             * @constant
+             */
+            valuation_basis: "official_win_payout";
+        };
         /** AttentionPriceNoise */
         AttentionPriceNoise: {
             /** N */
@@ -735,6 +825,7 @@ export interface components {
             /** Next Checkpoint */
             next_checkpoint: (300 | 600) | null;
             odds_drift: components["schemas"]["AttentionOddsDrift"];
+            official: components["schemas"]["AttentionOfficialBasis"];
             /** Policy Version */
             policy_version: string;
             /** Remaining To Next */
@@ -977,6 +1068,11 @@ export interface components {
         /**
          * CheckpointDecision
          * @description One recorded checkpoint decision (append-only; the stage follows these records).
+         *
+         *     Only records of the CURRENT selection policy are listed (policy v2: settled at the official
+         *     win payout). ``roi_frozen`` is the recorded ROI (the 0019 column name) under the settlement
+         *     named by ``valuation_basis`` (the record's ``bootstrap.settlement``; null when the record does
+         *     not name a known one).
          */
         CheckpointDecision: {
             bootstrap: components["schemas"]["AttentionCheckpointBootstrap"];
@@ -1020,6 +1116,8 @@ export interface components {
             settlement_cutoff: string;
             /** Skipped Pending Before Last */
             skipped_pending_before_last: number;
+            /** Valuation Basis */
+            valuation_basis: ("official_win_payout" | "frozen_pick_odds") | null;
         };
         /** ComparisonCoverage */
         ComparisonCoverage: {
@@ -2213,6 +2311,7 @@ export interface components {
         /** RuleSummary */
         RuleSummary: {
             backtest: components["schemas"]["AttentionBacktest"];
+            buy_time_expectation: components["schemas"]["AttentionBuyTimeExpectation"] | null;
             /** Control */
             control: boolean;
             /** Definition Ja */
