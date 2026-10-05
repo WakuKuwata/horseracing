@@ -48,8 +48,10 @@ _CHECKS = {
     "ck_market_ev_predictions_expected_return",
 }
 _INDEX = "ix_market_ev_predictions_model_version_computed_at"
-#: created after 0018 — they also disappear when downgrading to 0017 (Feature 138)
-_TABLES_ADDED_AFTER_0018 = {"attention_race_scans", "attention_picks", "attention_checkpoints"}
+#: created after 0018 — they also disappear when downgrading to 0017 (Features 138, 139)
+_TABLES_ADDED_AFTER_0018 = {
+    "attention_race_scans", "attention_picks", "attention_checkpoints", "official_win_payouts",
+}
 
 
 def _seed_race(session: Session) -> None:

@@ -137,6 +137,159 @@
         "title": "AttentionBacktestBootstrap",
         "type": "object"
       },
+      "AttentionBuyTimeExpectation": {
+        "additionalProperties": false,
+        "description": "判断時点で買った場合の見込み (139 D6/D13): the past ROI of the horses that matched at the\njudged (pre-race) odds — a conversion from past data, frozen in the registry\n(``BUY_TIME_EXPECTATION``, version ``buy-time-v2``). The prospective record is read against\nthis, not against the closing-odds backtest, until it accumulates and replaces it.\n\nNot one point (the independent verification rejected a 3-digit value): ``range_low`` to\n``range_high`` is the range of two estimators rounded to 5%, ``ci_low``/``ci_high`` the\nenvelope of their 95% CIs and ``interval_includes_100`` whether that interval reaches 100%.\nA rule whose own interval is invalid shows no value: all four numbers null and\n``included_in`` names the rule whose value covers its horses (S2 ⊂ S1). Served only once\nindependently verified (D6) — ``RuleSummary.buy_time_expectation`` is null before that.",
+        "properties": {
+          "ci_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci High"
+          },
+          "ci_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci Low"
+          },
+          "included_in": {
+            "anyOf": [
+              {
+                "enum": [
+                  "S1",
+                  "S2",
+                  "S3",
+                  "S4",
+                  "S5"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included In"
+          },
+          "interval_includes_100": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Includes 100"
+          },
+          "range_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range High"
+          },
+          "range_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Low"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AttentionBuyTimeSource"
+          }
+        },
+        "required": [
+          "range_low",
+          "range_high",
+          "ci_low",
+          "ci_high",
+          "interval_includes_100",
+          "included_in",
+          "source"
+        ],
+        "title": "AttentionBuyTimeExpectation",
+        "type": "object"
+      },
+      "AttentionBuyTimeSource": {
+        "additionalProperties": false,
+        "description": "Where the buy-time expectation comes from (registry ``BUY_TIME_EXPECTATION_SOURCE``).\n``version`` names exactly the served numbers (139 D13: a changed number gets a new version).",
+        "properties": {
+          "computed_on": {
+            "title": "Computed On",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "pairs": {
+            "title": "Pairs",
+            "type": "integer"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "race_days": {
+            "title": "Race Days",
+            "type": "integer"
+          },
+          "races": {
+            "title": "Races",
+            "type": "integer"
+          },
+          "report": {
+            "title": "Report",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "verification": {
+            "title": "Verification",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "report",
+          "period",
+          "pairs",
+          "races",
+          "race_days",
+          "method",
+          "computed_on",
+          "status",
+          "verification"
+        ],
+        "title": "AttentionBuyTimeSource",
+        "type": "object"
+      },
       "AttentionCheckpointBootstrap": {
         "additionalProperties": false,
         "properties": {
@@ -388,6 +541,14 @@
             "title": "Observed After Post",
             "type": "integer"
           },
+          "payout_inconsistent": {
+            "title": "Payout Inconsistent",
+            "type": "integer"
+          },
+          "payout_race_missing": {
+            "title": "Payout Race Missing",
+            "type": "integer"
+          },
           "pending_result": {
             "title": "Pending Result",
             "type": "integer"
@@ -417,6 +578,8 @@
           "result_known_at_compute",
           "observed_after_post",
           "pending_result",
+          "payout_race_missing",
+          "payout_inconsistent",
           "unsettled_horse",
           "dead_heat"
         ],
@@ -440,6 +603,7 @@
       },
       "AttentionFreshnessBand": {
         "additionalProperties": false,
+        "description": "Counted picks of one band: official payout ROI (the v2 basis) and the judged-odds ROI (the\nv1 reference) of the same picks.",
         "properties": {
           "hits": {
             "title": "Hits",
@@ -459,11 +623,23 @@
               }
             ],
             "title": "Roi Frozen"
+          },
+          "roi_official": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi Official"
           }
         },
         "required": [
           "n",
           "hits",
+          "roi_official",
           "roi_frozen"
         ],
         "title": "AttentionFreshnessBand",
@@ -471,7 +647,7 @@
       },
       "AttentionFrozenBasis": {
         "additionalProperties": false,
-        "description": "Settlement at the judged odds (odds_used × 100 yen) — the basis of the stages.",
+        "description": "Reference: the SAME counted picks settled at the judged odds (odds_used × 100 yen) — policy\nv1's settlement (138 D13), shown alongside the official basis (139 D3/D12). Never the basis of\na stage under policy v2.",
         "properties": {
           "ci": {
             "anyOf": [
@@ -854,6 +1030,68 @@
         "title": "AttentionOddsDrift",
         "type": "object"
       },
+      "AttentionOfficialBasis": {
+        "additionalProperties": false,
+        "description": "Settlement at the official win payout (per 100 yen; 139) — the basis of the stages and of\nthe prospective level under selection policy v2. A win pays the parimutuel payout, not the\njudged odds, so this figure is what the counted picks actually returned (not approximate).",
+        "properties": {
+          "ci": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci"
+          },
+          "p_one_sided": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P One Sided"
+          },
+          "roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi"
+          },
+          "valuation_basis": {
+            "const": "official_win_payout",
+            "title": "Valuation Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valuation_basis",
+          "roi",
+          "ci",
+          "p_one_sided"
+        ],
+        "title": "AttentionOfficialBasis",
+        "type": "object"
+      },
       "AttentionPriceNoise": {
         "additionalProperties": false,
         "properties": {
@@ -957,6 +1195,9 @@
           "odds_drift": {
             "$ref": "#/components/schemas/AttentionOddsDrift"
           },
+          "official": {
+            "$ref": "#/components/schemas/AttentionOfficialBasis"
+          },
           "policy_version": {
             "title": "Policy Version",
             "type": "string"
@@ -1011,6 +1252,7 @@
           "n_counted",
           "n_hits",
           "n_picks_total",
+          "official",
           "frozen",
           "stored",
           "bootstrap",
@@ -1545,7 +1787,7 @@
       },
       "CheckpointDecision": {
         "additionalProperties": false,
-        "description": "One recorded checkpoint decision (append-only; the stage follows these records).",
+        "description": "One recorded checkpoint decision (append-only; the stage follows these records).\n\nOnly records of the CURRENT selection policy are listed (policy v2: settled at the official\nwin payout). ``roi_frozen`` is the recorded ROI (the 0019 column name) under the settlement\nnamed by ``valuation_basis`` (the record's ``bootstrap.settlement``; null when the record does\nnot name a known one).",
         "properties": {
           "bootstrap": {
             "$ref": "#/components/schemas/AttentionCheckpointBootstrap"
@@ -1623,6 +1865,21 @@
           "skipped_pending_before_last": {
             "title": "Skipped Pending Before Last",
             "type": "integer"
+          },
+          "valuation_basis": {
+            "anyOf": [
+              {
+                "enum": [
+                  "official_win_payout",
+                  "frozen_pick_odds"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuation Basis"
           }
         },
         "required": [
@@ -1631,6 +1888,7 @@
           "n_counted",
           "n_hits",
           "roi_frozen",
+          "valuation_basis",
           "ci",
           "decided_at",
           "settlement_cutoff",
@@ -5290,6 +5548,16 @@
           "backtest": {
             "$ref": "#/components/schemas/AttentionBacktest"
           },
+          "buy_time_expectation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttentionBuyTimeExpectation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "control": {
             "title": "Control",
             "type": "boolean"
@@ -5392,6 +5660,7 @@
           "posthoc",
           "control",
           "backtest",
+          "buy_time_expectation",
           "price_noise",
           "levels",
           "prospective"

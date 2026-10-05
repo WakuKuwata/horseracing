@@ -7,9 +7,10 @@ as status=FAILED with completed_at + error_message (codex: never leave a job stu
 from __future__ import annotations
 
 import datetime
+import logging
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from horseracing_db.enums import EntryStatus, JobStatus, ResultStatus, Source
 from horseracing_db.models import Horse, IngestionJob, Race, RaceHorse, RaceResult
@@ -19,24 +20,27 @@ from sqlalchemy.orm import Session
 
 from . import SCRAPE_PARSER_VERSION, SURROGATE_PREFIX
 from .fetch import FetchRefused, PoliteFetcher
-from .models import NotYetPublished, ScrapedRaceList
+from .models import NotYetPublished, ScrapedRaceList, ScrapedResult
 from .odds_adapter import fetch_win_odds
 from .parse._profile import parse_horse_pedigree, parse_horse_profile
 from .parse.entries import parse_entries
-from .parse.exotic_odds import parse_exotic_odds
+from .parse.exotic_odds import parse_exotic_odds, parse_win_payouts
 from .parse.exotic_quotes import parse_exotic_quotes
 from .parse.laps import parse_laps
 from .parse.race_list import parse_race_list
 from .parse.results import parse_results
 from .upsert import (
     Counts,
+    apply_final_odds,
     backfill_results,
     complete_horse_profile,
+    page_sha256,
     update_odds,
     upsert_entries,
     upsert_exotic_odds,
     upsert_exotic_quotes,
     upsert_laps,
+    upsert_official_win_payouts,
 )
 from .urls import (
     exotic_quotes_url,
@@ -48,6 +52,8 @@ from .urls import (
 )
 from .venues import build_race_id
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class JobSummary:
@@ -58,6 +64,8 @@ class JobSummary:
     skipped: int
     errors: int
     status: str
+    #: the job's named side counts (Counts.extra), also stored in ingestion_jobs.summary
+    extra: dict[str, int] = field(default_factory=dict)
 
 
 #: Results appear on the page a few minutes after the race, so a fetch taken right at post time
@@ -148,19 +156,16 @@ def _run_job(
     job.error_count = c.errors
     job.completed_at = _now()
     job.error_message = "\n".join(c.error_messages[:50]) or None
-    job.summary = {"parser_version": SCRAPE_PARSER_VERSION, "written": c.written}
+    job.summary = {"parser_version": SCRAPE_PARSER_VERSION, "written": c.written, **c.extra}
     session.commit()
-    return JobSummary(job_type, scope_value, c.processed, c.written, c.skipped, c.errors, status)
+    return JobSummary(job_type, scope_value, c.processed, c.written, c.skipped, c.errors, status,
+                      dict(c.extra))
 
 
 def _aggregate(parts: list[Counts]) -> Counts:
     agg = Counts()
     for c in parts:
-        agg.processed += c.processed
-        agg.written += c.written
-        agg.skipped += c.skipped
-        agg.errors += c.errors
-        agg.error_messages.extend(c.error_messages)
+        agg.merge(c)
     return agg
 
 
@@ -526,11 +531,86 @@ def scrape_exotic_quotes(
                     scope_value=scope_value, work=work)
 
 
+#: Feature 139 side counts every results job reports (0 when nothing happened, so their absence
+#: from a summary means the job predates 139 rather than "nothing to report").
+#: ``final_odds_missing`` / ``win_payout_missing`` are per RACE (a settled page that yielded no win
+#: odds / no 単勝 payout at all — a markup change would otherwise leave the pre-race odds stored
+#: under a SUCCEEDED job); ``final_odds_unreadable`` / ``final_odds_unmatched`` are per horse.
+SETTLEMENT_COUNT_KEYS = (
+    "final_odds_updated",
+    "final_odds_unreadable",
+    "final_odds_unmatched",
+    "final_odds_missing",
+    "final_odds_skipped_pre_netkeiba",
+    "final_odds_race_unknown",
+    "final_odds_errors",
+    "win_payouts",
+    "win_payout_missing",
+    "win_payout_errors",
+)
+
+
+def apply_result_page_settlement(
+    session: Session, race_id: str, scraped: ScrapedResult, html: str, *,
+    observed_at: datetime.datetime,
+) -> Counts:
+    """Feature 139: write what a settled result page says a win bet paid — the FINAL win odds
+    (``apply_final_odds``) and the official 単勝 payout (``upsert_official_win_payouts``).
+
+    Shared by the results job and the archive repair (``repair-final-odds``), so both write the same
+    thing from the same page. Each half runs in its own SAVEPOINT (the 080 piggyback pattern): a
+    failure rolls back only that half, never the results already stored, and never the other half.
+    A failure is not swallowed — it is logged, counted in ``errors`` (the job turns PARTIAL) and in
+    ``final_odds_errors`` / ``win_payout_errors``. A page that yields no win odds at all
+    (``final_odds_missing``) or no 単勝 payout (``win_payout_missing``) is counted and named in the
+    messages without failing the job (the results themselves were stored).
+    """
+    c = Counts(extra=dict.fromkeys(SETTLEMENT_COUNT_KEYS, 0))
+    try:
+        with session.begin_nested():
+            odds = apply_final_odds(session, race_id, scraped.rows)
+        c.extra["final_odds_updated"] += odds.updated
+        c.extra["final_odds_unreadable"] += odds.unreadable
+        c.extra["final_odds_unmatched"] += odds.unmatched
+        c.extra["final_odds_missing"] += odds.missing
+        c.extra["final_odds_skipped_pre_netkeiba"] += odds.skipped_pre_netkeiba
+        c.extra["final_odds_race_unknown"] += odds.race_unknown
+        if odds.missing:
+            c.error_messages.append(f"final odds missing {race_id}: no readable win odds on the "
+                                    "result page (stored odds left as they were)")
+        if odds.unmatched:
+            c.error_messages.append(f"final odds unmatched {race_id}: {odds.unmatched} horse(s) "
+                                    "without a race_horses row")
+    except Exception as exc:  # noqa: BLE001 — must not break the stored results
+        logger.exception("final odds failed for %s", race_id)
+        c.errors += 1
+        c.extra["final_odds_errors"] += 1
+        c.error_messages.append(f"final odds failed {race_id}: {exc}")
+    try:
+        payouts = parse_win_payouts(html)
+        if not payouts:
+            # a settled page always prints 単勝; count it so a markup change cannot hide
+            c.extra["win_payout_missing"] += 1
+            c.error_messages.append(f"win payout missing {race_id}: no 単勝 row on the result page")
+        with session.begin_nested():
+            written = upsert_official_win_payouts(
+                session, race_id, payouts, observed_at=observed_at,
+                html_sha256=page_sha256(html),
+            )
+        c.extra["win_payouts"] += written.written
+    except Exception as exc:  # noqa: BLE001 — must not break the stored results
+        logger.exception("official win payout failed for %s", race_id)
+        c.errors += 1
+        c.extra["win_payout_errors"] += 1
+        c.error_messages.append(f"win payout failed {race_id}: {exc}")
+    return c
+
+
 def scrape_results(
     session: Session, *, urls: list[str], fetcher: PoliteFetcher, scope_value: str | None = None
 ) -> JobSummary:
     def work() -> Counts:
-        parts: list[Counts] = []
+        parts: list[Counts] = [Counts(extra=dict.fromkeys(SETTLEMENT_COUNT_KEYS, 0))]
         for u in urls:
             html = fetcher.get(u)
             try:
@@ -551,6 +631,9 @@ def scrape_results(
                 parts.append(Counts(skipped=1, error_messages=["race_id not constructible"]))
                 continue
             parts.append(backfill_results(session, race_id, scraped))
+            # Feature 139: the FINAL win odds and the official 単勝 payout from the same page.
+            parts.append(apply_result_page_settlement(session, race_id, scraped, html,
+                                                      observed_at=_now()))
             # Piggyback real exotic dividends on the SAME already-fetched html (0 extra request).
             # SAVEPOINT-isolated: a DB-level upsert failure rolls back only the savepoint, so
             # already-persisted results and the outer transaction survive to the next race (FR-007).

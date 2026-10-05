@@ -75,6 +75,27 @@ function s2Horse(overrides: Partial<AttentionHorse> = {}): AttentionHorse {
 }
 
 describe("AttentionPanel (138 T035)", () => {
+  it("shows no buy-time number before independent verification (API null, 139 D6)", async () => {
+    useRules(
+      attentionRulesFixture({
+        S1: { buy_time_expectation: null },
+        S2: { buy_time_expectation: null },
+        S3: { buy_time_expectation: null },
+        S4: { buy_time_expectation: null },
+        S5: { buy_time_expectation: null },
+      }),
+    );
+    renderPanel(attentionHorseFixture());
+    await panel();
+    const line = screen.getByTestId("attention-buy-time-line");
+    expect(line.textContent).toBe(
+      "独立検証を通った値だけを表示します(現在は検証待ちのため、換算値は表示していません)",
+    );
+    const cell = screen.getByTestId("attention-buy-time");
+    expect(cell.querySelector('[data-kind="roi"]')).toBeNull();
+    expect(cell.textContent).not.toMatch(/\d+(\.\d+)?%/);
+  });
+
   it("S1 horse at zero prospective picks: header, applicable ids, 4 axes, judged vs current", async () => {
     useRules();
     const { container } = renderPanel(attentionHorseFixture());
@@ -106,14 +127,31 @@ describe("AttentionPanel (138 T035)", () => {
       "選ばれた馬の期待回収率の平均 140.6% 推定(実際の回収率 121.1%〔確定オッズ近似〕)",
     );
 
-    // 前向き検証: stage, counts, policy, start date (unset pre-launch), both bases, next checkpoint
+    // 判断時点の見込み: the registry's buy-time conversion (buy-time-v2: a 5% range with the CI
+    // envelope and whether it reaches 100%), before 前向き検証
+    expect(screen.getByTestId("attention-buy-time-line").textContent).toBe(
+      "過去データで、判断時のオッズで条件を満たした馬を買ったと仮定した換算回収率 " +
+        "約 85〜90%(区間 73〜109%)〔判断時オッズ換算・近似〕 " +
+        "100% を下回る見込みですが、区間は 100% を含みます。 — 参考値・購入を勧めるものではありません" +
+        "(算出: 2026-08-02〜2026-10-04・564 組・444 レース・17 開催日・算出日 2026-10-04・版 buy-time-v2・独立検証済み)",
+    );
+    const terms = Array.from(root.querySelectorAll("dt")).map((dt) => dt.textContent);
+    expect(terms.indexOf("判断時点の見込み(過去データからの換算)")).toBe(terms.indexOf("前向き検証") - 1);
+
+    // 前向き検証: stage, counts, policy v2, start date (unset pre-launch), the official payout as the
+    // stage basis and the judged-odds (v1) / stored-odds references, next checkpoint
     const prospective = screen.getByTestId("attention-prospective");
     expect(prospective).toHaveTextContent(
-      "研究中(集計 0 点・0 的中・集計方針 v1・集計開始 未設定)",
+      "研究中(集計 0 点・0 的中・集計方針 v2・集計開始 未設定)",
     );
-    expect(prospective).toHaveTextContent(
-      "回収率 —〔判断時オッズ・近似〕・参考 —〔保存オッズ(参考)・近似〕",
+    expect(screen.getByTestId("attention-prospective-official").textContent).toBe(
+      "回収率(段階判定の基準) —〔公式払戻〕",
     );
+    expect(screen.getByTestId("attention-prospective-reference").textContent).toBe(
+      "参考(v1・判断時オッズ) —〔判断時オッズ・近似〕・参考(保存オッズ) —〔保存オッズ(参考)・近似〕",
+    );
+    // no payout exclusions yet → no line
+    expect(screen.queryByTestId("attention-payout-exclusions")).toBeNull();
     expect(prospective).toHaveTextContent("次のチェックポイント(300 点)まで 300 点");
 
     // 価格ずれ試験: numbers per σ (ROI / n ratio / overlap), no strength words
@@ -277,6 +315,30 @@ describe("AttentionPanel (138 T035)", () => {
     expect(screen.getByTestId("attention-badge-unconfirmed")).toBeInTheDocument();
   });
 
+  it("an S2 chip shows no buy-time value of its own, only that its horses are in S1", async () => {
+    useRules();
+    const applicable = ["S1", "S2", "S3", "S4", "S5"] as AttentionHorse["applicable"];
+    const stages = { S1: stageDetail("failed", 300), S2: stageDetail("observing") };
+    renderPanel(
+      attentionHorseFixture({
+        applicable,
+        chip_rule: "S2",
+        chip_stage: stages.S2,
+        stages: stagesFor(applicable, stages),
+        pick_status: pickStatusFor(applicable),
+      }),
+    );
+    await panel();
+    const line = screen.getByTestId("attention-buy-time-line");
+    expect(line.textContent).toBe(
+      "単独の値は出しません(この条件の馬はすべて S1 に含まれます。S1 の見込みを参照してください)" +
+        "(算出: 2026-08-02〜2026-10-04・564 組・444 レース・17 開催日・算出日 2026-10-04・版 buy-time-v2・独立検証済み)",
+    );
+    const cell = screen.getByTestId("attention-buy-time");
+    expect(cell.querySelector('[data-kind="roi"]')).toBeNull();
+    expect(cell.textContent).not.toMatch(/\d\s*%/);
+  });
+
   it("a failed chip: main label is the stage name, decision record shown with its basis", async () => {
     useRules(
       attentionRulesFixture({
@@ -304,8 +366,9 @@ describe("AttentionPanel (138 T035)", () => {
     expect(screen.getByTestId("attention-panel-title").textContent).toBe(
       "注目条件 S4・300 点不通過",
     );
+    // a v2 record: settled at the official win payout, labelled by the record's own basis
     expect(screen.getByTestId("attention-decision-300").textContent).toBe(
-      "300 点の判定: 不通過(91.2%(区間 86.0〜98.0%)〔判断時オッズ・近似〕・12 的中・判定 2027/09/20 12:00)",
+      "300 点の判定: 不通過(91.2%(区間 86.0〜98.0%)〔公式払戻〕・12 的中・判定 2027/09/20 12:00)",
     );
     expect(screen.getByTestId("attention-prospective")).toHaveTextContent(
       "表示は続け、pick の保存も続けます",
@@ -322,6 +385,8 @@ describe("AttentionPanel (138 T035)", () => {
           prospective: {
             stage: "passed", checkpoint: 300, n_counted: 310,
             decisions: [checkpointDecisionFixture({ decision: "passed", ci: [1.02, 1.4] })],
+            official: { valuation_basis: "official_win_payout", roi: 1.12, ci: [1.01, 1.3],
+              p_one_sided: 0.02 },
             frozen: { valuation_basis: "frozen_pick_odds", roi: 1.21, ci: [1.02, 1.4],
               p_one_sided: 0.01 },
             stored: { valuation_basis: "stored_odds_mutable", roi: 1.19, ci: [1.0, 1.38], n: 310,
@@ -340,8 +405,11 @@ describe("AttentionPanel (138 T035)", () => {
     expect(screen.getByTestId("attention-panel-title").textContent).toBe("注目条件 S1・300 点通過");
     expect(screen.getByTestId("attention-badge-posthoc")).toBeInTheDocument();
     expect(screen.queryByTestId("attention-badge-unconfirmed")).toBeNull();
-    expect(screen.getByTestId("attention-prospective")).toHaveTextContent(
-      "回収率 121.0%(区間 102.0〜140.0%)〔判断時オッズ・近似〕・参考 119.0%〔保存オッズ(参考)・近似〕",
+    expect(screen.getByTestId("attention-prospective-official").textContent).toBe(
+      "回収率(段階判定の基準) 112.0%(区間 101.0〜130.0%)〔公式払戻〕",
+    );
+    expect(screen.getByTestId("attention-prospective-reference").textContent).toBe(
+      "参考(v1・判断時オッズ) 121.0%〔判断時オッズ・近似〕・参考(保存オッズ) 119.0%〔保存オッズ(参考)・近似〕",
     );
   });
 
@@ -451,6 +519,48 @@ describe("AttentionPanel (138 T035)", () => {
     expect(screen.queryByTestId("attention-progress")).toBeNull();
   });
 
+  it("payout exclusions (公式払戻なし・払戻の不整合) are spelled out when there are any", async () => {
+    useRules(
+      attentionRulesFixture({
+        S1: {
+          prospective: {
+            stage: "observing", n_counted: 40, n_hits: 2, n_picks_total: 47,
+            counts: {
+              voided_scratched: 0, before_start: 0, post_time_unknown: 0, computed_after_post: 0,
+              result_known_at_compute: 0, observed_after_post: 0, pending_result: 2,
+              payout_race_missing: 4, payout_inconsistent: 1, unsettled_horse: 0, dead_heat: 0,
+            },
+          },
+        },
+      }),
+    );
+    renderPanel(attentionHorseFixture({ chip_stage: stageDetail("observing") }));
+    await panel();
+    expect(screen.getByTestId("attention-payout-exclusions").textContent).toBe(
+      "集計外: 公式払戻なし 4 点・払戻の不整合 1 点(公式払戻の無いレースはレース単位で集計外にしています)",
+    );
+  });
+
+  it("a checkpoint record without a known settlement basis shows no number (never another label)", async () => {
+    useRules(
+      attentionRulesFixture({
+        S1: {
+          prospective: {
+            stage: "observing", n_counted: 310,
+            decisions: [checkpointDecisionFixture({ valuation_basis: null, roi_frozen: 1.5 })],
+          },
+        },
+      }),
+    );
+    renderPanel(attentionHorseFixture({ chip_stage: stageDetail("observing") }));
+    await panel();
+    const d = screen.getByTestId("attention-decision-300");
+    expect(d.textContent).toBe(
+      "300 点の判定: 継続(回収率は表示なし(精算の基準が記録にありません)・12 的中・判定 2027/09/20 12:00)",
+    );
+    expect(d.querySelector('[data-kind="roi"]')).toBeNull();
+  });
+
   it("rules endpoint failure is shown neutrally (no alert role, no error colour)", async () => {
     server.use(
       http.get("*/api/v1/attention-rules", () =>
@@ -458,7 +568,8 @@ describe("AttentionPanel (138 T035)", () => {
       ),
     );
     const { container } = renderPanel(attentionHorseFixture());
-    expect((await screen.findAllByTestId("attention-rules-error")).length).toBe(3);
+    // 過去検証・判断時点の見込み・前向き検証・価格ずれ試験
+    expect((await screen.findAllByTestId("attention-rules-error")).length).toBe(4);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(container.querySelector(".state--error")).toBeNull();
     // the horse-level facts still render without the registry
@@ -523,7 +634,12 @@ describe("AttentionPanel (138 T035)", () => {
         S1: {
           prospective: {
             stage: "observing", n_counted: 310, n_hits: 14,
-            decisions: [checkpointDecisionFixture()],
+            decisions: [
+              checkpointDecisionFixture(),
+              checkpointDecisionFixture({ checkpoint: 600, valuation_basis: "frozen_pick_odds" }),
+            ],
+            official: { valuation_basis: "official_win_payout", roi: 0.97, ci: [0.78, 1.2],
+              p_one_sided: 0.6 },
             frozen: { valuation_basis: "frozen_pick_odds", roi: 1.04, ci: [0.81, 1.29],
               p_one_sided: 0.3 },
             stored: { valuation_basis: "stored_odds_mutable", roi: 1.02, ci: [0.8, 1.27], n: 310,
@@ -554,8 +670,8 @@ describe("AttentionPanel (138 T035)", () => {
     renderPanel(horse, PRE_POST);
     const root = await panel();
     const n = assertRoiBasisCoverage(root);
-    // backtest 2 + selected 1 + prospective 2 + price noise 3 (+ decisions)
-    expect(n).toBeGreaterThanOrEqual(8);
+    // backtest 2 + selected 1 + buy-time 1 + prospective 3 + price noise 3 (+ decisions)
+    expect(n).toBeGreaterThanOrEqual(10);
     for (const label of Object.values(ROI_BASIS_LABELS)) {
       expect(root.textContent).toContain(label);
     }

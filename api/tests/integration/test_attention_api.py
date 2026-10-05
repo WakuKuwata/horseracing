@@ -5,6 +5,13 @@ the displayed version shown by /market-ev while two versions coexist, stages tha
 recorded checkpoint decisions (not the live points), the exclusive tally with its Σ check, the
 field digest recomputed over the started ids, the post-ordered day list, the memo key (new pick /
 new record / result re-ingest / odds re-ingest) and that every read writes nothing.
+
+Feature 139 (T010): selection policy v2 settles the counted picks at the official win payout
+(``official_win_payouts``; the stage basis and the prospective level), keeps the judged-odds
+settlement as the v1 reference, leaves a race with results but no payout out at race level
+(``payout_race_missing``), surfaces payout rows that disagree with the result
+(``payout_inconsistent``), ignores checkpoint records of another policy, carries the registry's
+buy-time expectation and follows payout re-ingests in the memo key.
 """
 
 from __future__ import annotations
@@ -21,6 +28,7 @@ from horseracing_db.models import (
     AttentionRaceScan,
     Horse,
     MarketEvPrediction,
+    OfficialWinPayout,
     Race,
     RaceHorse,
     RaceResult,
@@ -93,6 +101,16 @@ def _results(session, race_id, finishes: dict[int, int | None]):
     session.commit()
 
 
+def _payouts(session, race_id, payouts: dict[int, int]):
+    """Official win payout rows (per 100 yen) of the race's winning 馬番(s)."""
+    for n, yen in payouts.items():
+        session.merge(OfficialWinPayout(
+            race_id=race_id, horse_number=n, payout_yen=yen,
+            observed_at=datetime.datetime(2026, 10, 4, 12, 0, tzinfo=_UTC),
+        ))
+    session.commit()
+
+
 def _started_digest(session, race_id) -> str:
     """The shared eval digest of the STARTED horse ids — what the training writer is specified to
     store (the writer itself is checked in training/tests/integration/test_attention_picks.py)."""
@@ -146,15 +164,16 @@ def _void(session, target: AttentionPick):
     session.commit()
 
 
-def _record(session, rule_id, checkpoint, decision, *, last_pick_id, start=_START):
+def _record(session, rule_id, checkpoint, decision, *, last_pick_id, start=_START, policy=None):
     session.add(AttentionCheckpoint(
         checkpoint_id=uuid.uuid4(), rule_id=rule_id, checkpoint=checkpoint,
-        selection_policy_version=ar.SELECTION_POLICY_VERSION,
+        selection_policy_version=policy or ar.SELECTION_POLICY_VERSION,
         rule_set_version=ar.RULE_SET_VERSION, decision=decision, n_counted=checkpoint,
         n_hits=checkpoint // 10, roi_frozen=Decimal("0.9"), ci_low=Decimal("0.7"),
         ci_high=Decimal("1.1"),
         bootstrap={"impl": ar.BOOTSTRAP["impl"], "b": 20000, "seed": 20260905,
-                   "block_universe": ar.BOOTSTRAP["block_universe"], "numpy_version": "x"},
+                   "block_universe": ar.BOOTSTRAP["block_universe"], "numpy_version": "x",
+                   "settlement": "official_win_payout"},
         counted_pick_ids_sha256="0" * 64, last_pick_id=last_pick_id,
         settlement_cutoff=datetime.datetime(2026, 12, 1, tzinfo=_UTC),
         prospective_start_date=start, skipped_pending_before_last=0,
@@ -163,10 +182,12 @@ def _record(session, rule_id, checkpoint, decision, *, last_pick_id, start=_STAR
 
 
 def _counted_block(session, rule_id, *, n_races, first_day=_DAY, winner_odds=12.0,
-                   settle=True, horses=10):
+                   settle=True, horses=10, payout="auto"):
     """``n_races`` races of ``horses`` started horses, every horse judged under ``rule_id``
     (counted once settled): one winner per race at ``winner_odds``, the rest at 30.0 —
-    so the frozen ROI is ``winner_odds / horses``. Returns the picks in post order."""
+    so the frozen ROI is ``winner_odds / horses``. A settled race gets the winner's official
+    payout (default 100 × ``winner_odds``, so the official ROI equals the frozen one; ``None`` =
+    no payout row). Returns the picks in post order."""
     picks = []
     for i in range(n_races):
         day = first_day + datetime.timedelta(days=i // 12)
@@ -185,6 +206,9 @@ def _counted_block(session, rule_id, *, n_races, first_day=_DAY, winner_odds=12.
                                odds=winner_odds if n == 1 else 30.0, ens=1.25))
         if settle:
             _results(session, race_id, {n: n for n in range(1, horses + 1)})
+            if payout is not None:
+                _payouts(session, race_id,
+                         {1: round(100 * winner_odds) if payout == "auto" else payout})
     return picks
 
 
@@ -379,12 +403,116 @@ def test_observing_with_points_above_par_gives_prospective_level_two(client, ses
     s3 = _rules(client)["S3"]["prospective"]
     assert s3["n_counted"] == 120 and s3["n_hits"] == 12
     assert s3["stage"] == "observing" and s3["checkpoint_pending"] is False
+    assert s3["official"]["roi"] == pytest.approx(1.2)
     assert s3["frozen"]["roi"] == pytest.approx(1.2)
     assert s3["next_checkpoint"] == 300 and s3["remaining_to_next"] == 180
     race_id = picks[0].race_id
     h1 = next(h for h in client.get(_url(race_id)).json()["horses"] if h["horse_number"] == 1)
     assert h1["chip_rule"] == "S3" and h1["chip_stage"]["stage"] == "observing"
     assert h1["levels"]["prospective"] == 2
+
+
+def test_prospective_level_follows_the_official_payout(client, session, go_live):
+    # judged odds 120% but the pool paid 90%: the axis level follows the payout (v2), the judged
+    # figure is only the v1 reference
+    picks = _counted_block(session, "S3", n_races=12, winner_odds=12.0, payout=900)
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["stage"] == "observing" and s3["n_counted"] == 120
+    assert s3["official"] == {
+        "valuation_basis": "official_win_payout", "roi": pytest.approx(0.9),
+        "ci": s3["official"]["ci"], "p_one_sided": s3["official"]["p_one_sided"],
+    }
+    assert s3["frozen"]["roi"] == pytest.approx(1.2)
+    assert s3["by_judged_freshness"][">60m"]["roi_official"] == pytest.approx(0.9)
+    assert s3["by_judged_freshness"][">60m"]["roi_frozen"] == pytest.approx(1.2)
+    h1 = next(h for h in client.get(_url(picks[0].race_id)).json()["horses"]
+              if h["horse_number"] == 1)
+    assert h1["chip_rule"] == "S3" and h1["levels"]["prospective"] == 1
+
+
+def test_results_without_a_payout_leave_the_race_out_until_it_arrives(client, session, go_live):
+    picks = _counted_block(session, "S3", n_races=2, winner_odds=12.0, payout=None)
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["n_counted"] == 0 and s3["counts"]["payout_race_missing"] == 20
+    assert s3["official"]["roi"] is None and s3["frozen"]["roi"] is None
+
+    _payouts(session, picks[0].race_id, {1: 1340})               # the payout of one race lands
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["n_counted"] == 10 and s3["counts"]["payout_race_missing"] == 10
+    assert s3["official"]["roi"] == pytest.approx(1.34)
+    assert s3["frozen"]["roi"] == pytest.approx(1.2)
+    assert s3["n_counted"] + sum(s3["counts"].values()) == s3["n_picks_total"] == 20
+
+
+def test_a_race_whose_payout_disagrees_with_the_result_is_left_out_whole(client, session,
+                                                                        go_live):
+    """R1 (139 D11, race level): the second race's payout row names 馬番 2 although H1 (馬番 1)
+    won. ALL ten picks of that race are ``payout_inconsistent`` — the eight losers that look fine
+    on their own included — so the ROI is never biased down by keeping only its losers. A dead
+    heat whose two winners are both paid stays consistent (``dead_heat``)."""
+    picks = _counted_block(session, "S3", n_races=3, winner_odds=12.0)
+    races = sorted({p.race_id for p in picks})
+    session.execute(delete(OfficialWinPayout).where(OfficialWinPayout.race_id == races[1]))
+    session.commit()
+    _payouts(session, races[1], {2: 1200})
+    # third race: a dead heat (H1 and H2 both 1st), both paid — consistent
+    session.execute(sa_update(RaceResult).where(RaceResult.race_id == races[2],
+                                                RaceResult.horse_id == "H2")
+                    .values(finish_order=1))
+    session.commit()
+    _payouts(session, races[2], {2: 900})
+
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["counts"]["payout_inconsistent"] == 10
+    assert s3["counts"]["dead_heat"] == 10
+    assert (s3["n_counted"], s3["n_hits"]) == (10, 1)
+    assert s3["official"]["roi"] == pytest.approx(1.2)
+    assert s3["n_counted"] + sum(s3["counts"].values()) == s3["n_picks_total"] == 30
+
+    # the correction lands (the row now names the winner): the whole race counts again
+    session.execute(delete(OfficialWinPayout).where(OfficialWinPayout.race_id == races[1]))
+    session.commit()
+    _payouts(session, races[1], {1: 1500})
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["counts"]["payout_inconsistent"] == 0
+    assert (s3["n_counted"], s3["n_hits"]) == (20, 2)
+    assert s3["official"]["roi"] == pytest.approx((1200 + 1500) / 2000)
+
+
+def test_checkpoint_records_of_another_policy_are_ignored(client, session, go_live):
+    picks = _counted_block(session, "S3", n_races=1)
+    _record(session, "S3", 300, "passed", last_pick_id=picks[-1].pick_id, policy="v1")
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["policy_version"] == ar.SELECTION_POLICY_VERSION == "v2"
+    assert s3["decisions"] == []
+    assert (s3["stage"], s3["checkpoint"], s3["checkpoint_pending"]) == (
+        "researching", None, False)
+
+    _record(session, "S3", 300, "failed", last_pick_id=picks[-1].pick_id)     # a v2 record
+    s3 = _rules(client)["S3"]["prospective"]
+    assert [d["decision"] for d in s3["decisions"]] == ["failed"]
+    assert s3["decisions"][0]["valuation_basis"] == "official_win_payout"
+    assert s3["stage"] == "failed"
+
+
+def test_v2_counts_from_its_own_start_date(client, session):
+    # the real go-live constant (no monkeypatch): a pick computed on the last v1 day (JST 10-04)
+    # stays before_start; one computed on JST 10-05 is counted and settled at the payout
+    day = datetime.date(2026, 10, 5)
+    for race_id, computed in (
+        ("202610050601", datetime.datetime(2026, 10, 4, 14, 59, tzinfo=_UTC)),   # JST 10-04 23:59
+        ("202610050602", datetime.datetime(2026, 10, 4, 15, 0, tzinfo=_UTC)),    # JST 10-05 00:00
+    ):
+        post = _race(session, race_id, day=day, number=int(race_id[-2:]), odds={1: 15.0})
+        _pick(session, race_id, 1, "S4", computed_at=computed, post_time=post,
+              digest=_started_digest(session, race_id), odds=15.0)
+        _results(session, race_id, {n: n for n in range(1, 7)})
+        _payouts(session, race_id, {1: 1480})
+    s4 = _rules(client)["S4"]["prospective"]
+    assert s4["start_date"] == "2026-10-05" and s4["policy_version"] == "v2"
+    assert s4["counts"]["before_start"] == 1 and s4["n_counted"] == 1
+    assert s4["official"]["roi"] == pytest.approx(14.8)
+    assert s4["frozen"]["roi"] == pytest.approx(15.0)
 
 
 def test_stage_transitions_follow_the_records(client, session, go_live):
@@ -433,8 +561,10 @@ def test_late_result_does_not_change_a_recorded_stage(client, session, go_live):
 
     for race_id in sorted({p.race_id for p in early}):
         _results(session, race_id, {n: n for n in range(1, 11)})
+        _payouts(session, race_id, {1: 5000})
     after = _rules(client)["S3"]["prospective"]
     assert after["n_counted"] == before["n_counted"] + 20
+    assert after["official"]["roi"] > before["official"]["roi"]
     assert after["frozen"]["roi"] > before["frozen"]["roi"]
     assert (after["stage"], after["checkpoint"]) == ("failed", 300)
 
@@ -466,6 +596,7 @@ def test_exclusion_counts_reconcile_and_flags_stay_out_of_the_sum(client, sessio
     rid, post = race(1)                                          # counted (won)
     judged(rid, post, odds=12.0)
     _results(session, rid, {n: n for n in range(1, 7)})
+    _payouts(session, rid, {1: 1340})
     rid, post = race(2)                                          # voided_scratched
     p = judged(rid, post)
     _void(session, p)
@@ -484,12 +615,22 @@ def test_exclusion_counts_reconcile_and_flags_stay_out_of_the_sum(client, sessio
     rid, post = race(9)                                          # unsettled_horse
     judged(rid, post)
     _results(session, rid, {n: n - 1 for n in range(2, 7)})
+    _payouts(session, rid, {2: 500})
     rid, post = race(10)                                         # dead_heat
     judged(rid, post)
     _results(session, rid, {1: 1, 2: 1, 3: 3})
+    _payouts(session, rid, {1: 700, 2: 800})
+    rid, post = race(12)                                         # payout_race_missing
+    judged(rid, post)
+    _results(session, rid, {n: n for n in range(1, 7)})
+    rid, post = race(13)                                         # payout_inconsistent
+    judged(rid, post)                                            # H1 won; the row names H2
+    _results(session, rid, {n: n for n in range(1, 7)})
+    _payouts(session, rid, {2: 900})
     rid, post = race(11)                                         # counted (lost), field changed
     judged(rid, post, n=2)
     _results(session, rid, {n: n for n in range(1, 7)})
+    _payouts(session, rid, {1: 3000})
     session.execute(sa_update(RaceHorse).where(RaceHorse.race_id == rid,
                                                RaceHorse.horse_id == "H6")
                     .values(entry_status=EntryStatus.EXCLUDED))
@@ -498,8 +639,10 @@ def test_exclusion_counts_reconcile_and_flags_stay_out_of_the_sum(client, sessio
     s3 = _rules(client)["S3"]["prospective"]
     assert s3["counts"] == dict.fromkeys(ar.EXCLUSION_ORDER, 1)
     assert s3["n_counted"] == 2 and s3["n_hits"] == 1
-    assert s3["n_counted"] + sum(s3["counts"].values()) == s3["n_picks_total"] == 11
+    assert s3["n_counted"] + sum(s3["counts"].values()) == s3["n_picks_total"] == 13
     assert s3["flags"] == {"field_changed_after_pick": 1}
+    assert s3["official"]["roi"] == pytest.approx(6.7)
+    assert s3["official"]["valuation_basis"] == "official_win_payout"
     assert s3["frozen"]["roi"] == pytest.approx(6.0)
     assert s3["frozen"]["valuation_basis"] == "frozen_pick_odds"
     assert s3["stored"]["valuation_basis"] == "stored_odds_mutable"
@@ -520,6 +663,36 @@ def test_rules_listing_is_rank_ordered_and_carries_the_frozen_values(client):
     assert s1["odds_band"] == [20.0, 40.0] and s1["gap_days"] == [14, 112]
     assert body["items"][4]["control"] is True
     assert "win_prob" not in str(body) and "p_hat" not in str(body)
+    for item in body["items"]:
+        assert item["prospective"]["official"]["valuation_basis"] == "official_win_payout"
+
+
+def test_rules_listing_serves_the_verified_buy_time_expectation(client):
+    # 139 D13: buy-time-v2 passed the independent verification — served as registered (a 5% range
+    # with the CI envelope; S2 has no value of its own and points at S1)
+    assert ar.BUY_TIME_EXPECTATION_VERIFIED is True
+    for item in client.get("/api/v1/attention-rules").json()["items"]:
+        reg = ar.BUY_TIME_EXPECTATION[item["id"]]
+        assert item["buy_time_expectation"] == {
+            "range_low": reg.range_low, "range_high": reg.range_high,
+            "ci_low": reg.ci_low, "ci_high": reg.ci_high,
+            "interval_includes_100": reg.interval_includes_one,
+            "included_in": reg.included_in,
+            "source": ar.BUY_TIME_EXPECTATION_SOURCE,
+        }
+        assert item["buy_time_expectation"]["source"]["version"] == "buy-time-v2"
+    by_id = {i["id"]: i["buy_time_expectation"]
+             for i in client.get("/api/v1/attention-rules").json()["items"]}
+    assert by_id["S1"]["interval_includes_100"] is True
+    assert by_id["S2"]["included_in"] == "S1" and by_id["S2"]["range_low"] is None
+    assert by_id["S3"]["interval_includes_100"] is False
+
+
+def test_rules_listing_serves_no_buy_time_expectation_while_unverified(client, monkeypatch):
+    # 139 D6: an unverified registry value is never served (null), for every rule
+    monkeypatch.setattr(ar, "BUY_TIME_EXPECTATION_VERIFIED", False)
+    for item in client.get("/api/v1/attention-rules").json()["items"]:
+        assert item["buy_time_expectation"] is None
 
 
 # --- day list ------------------------------------------------------------------------------------
@@ -584,13 +757,16 @@ def test_memo_follows_new_picks_records_results_and_odds(client, session, go_liv
     _record(session, "S3", 300, "failed", last_pick_id=picks[-1].pick_id)   # new record
     assert _rules(client)["S3"]["prospective"]["stage"] == "failed"
 
-    # result re-ingest: the first race loses its winner (no 1st place → every pick there is a
-    # dead heat by the race-level definition)
+    # result re-ingest: the first race loses its winner (no 1st place) while its payout row still
+    # names H1 — the race's payout disagrees with its result, so EVERY pick of it (H11's included)
+    # is a payout inconsistency (race level, it precedes dead_heat / unsettled_horse), never settled
     session.execute(sa_update(RaceResult).where(RaceResult.race_id == race_id)
                     .values(finish_order=RaceResult.finish_order + 1))
     session.commit()
     s3 = _rules(client)["S3"]["prospective"]
-    assert (s3["n_counted"], s3["n_hits"], s3["counts"]["dead_heat"]) == (10, 1, 10)
+    assert (s3["n_counted"], s3["n_hits"], s3["counts"]["dead_heat"]) == (10, 1, 0)
+    assert s3["counts"]["payout_inconsistent"] == 11
+    assert s3["counts"]["unsettled_horse"] == 0
 
     other = picks[-1].race_id                                   # odds re-ingest
     session.execute(sa_update(RaceHorse).where(RaceHorse.race_id == other,
@@ -612,13 +788,31 @@ def test_memo_follows_new_picks_records_results_and_odds(client, session, go_liv
     assert s3["frozen"]["roi"] == pytest.approx(1.2) and s3["n_counted"] == 10
     assert (s3["stored"]["n"], s3["stored"]["n_missing_stored_odds"]) == (9, 1)
     assert s3["stored"]["roi"] == pytest.approx(0.0)
+    assert s3["official"]["roi"] == pytest.approx(1.2)        # the payout row did not move
+
+    # payout re-ingest (an official correction): the stage basis follows, the judged odds do not
+    session.execute(sa_update(OfficialWinPayout).where(OfficialWinPayout.race_id == other)
+                    .values(payout_yen=1500))
+    session.commit()
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["official"]["roi"] == pytest.approx(1.5)
+    assert s3["frozen"]["roi"] == pytest.approx(1.2)
+
+    # the stale payout row of the first race is withdrawn: that race now has no payout at all, so
+    # every pick of it (H11 included) leaves at race level — the memo follows the row count
+    session.execute(delete(OfficialWinPayout).where(OfficialWinPayout.race_id == race_id))
+    session.commit()
+    s3 = _rules(client)["S3"]["prospective"]
+    assert s3["counts"]["payout_race_missing"] == 11
+    assert s3["counts"]["payout_inconsistent"] == s3["counts"]["dead_heat"] == 0
+    assert s3["counts"]["unsettled_horse"] == 0 and s3["n_counted"] == 10
 
 
 def test_attention_reads_write_nothing(client, session, go_live):
     _judged_race(session)
     _counted_block(session, "S3", n_races=1)
     tables = (AttentionPick, AttentionRaceScan, AttentionCheckpoint, MarketEvPrediction,
-              RaceHorse, RaceResult)
+              RaceHorse, RaceResult, OfficialWinPayout)
 
     def counts():
         return tuple(session.scalar(select(func.count()).select_from(t)) for t in tables)

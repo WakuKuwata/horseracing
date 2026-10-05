@@ -110,6 +110,7 @@
 - **凍結保存**: 最初の計算で、該当馬(S1〜S5 のそれぞれ該当分)を `attention_picks`(新テーブル・append-only)に保存する。対象は**計算した全レース**(結果確定済みの埋め戻しも含む・集計には入らない)。列: race_id・horse_id・horse_number(計算時点・発走順の並びに使う)・rule_id・ens EV・単 seed EV・odds_used・odds_observed_at・days_since_last・computed_at・post_time(計算時点の値)・seconds_to_post(発走時刻が分かる場合)・result_pending_at_compute(= 計算時点で `race_results` 無し かつ(post_time 不明 または computed_at < post_time))・field_digest(計算時点の出走馬集合のハッシュ)・ensemble_model_version・single_model_version(S5 の判定に使った単 seed 版)・logic_version・run_id(同じ実行で書いた期待回収率 2 版・scan 行の run_id と同一)・selection_policy_version・rule_set_version・kind(`pick` | `void`)・void_reason・voids_pick_id。pick の値は**同じ実行のメモリ上の予測**から作り、DB を読み直さない(別時点の値が混ざらない)。
 - **1 レース 1 馬 1 rule につき `pick` 行は生涯 1 件**(rule set の版ごと・UNIQUE 部分 index・plan D25)。2 回目以降の計算は書かない(086 と同型。オッズ更新ごとの多点保存は憲法 V のオッズ履歴に当たるので行わない)。無効化は `kind='void'` の行を追記(更新・削除は DB トリガで拒否・106 と同型)。void 理由は **`scratched`(pick 馬が出走取消・競走除外になった=race_horses の同じ馬の行が取消・除外)のみ**で、void の判定はその後のどの計算でも行う(行が見つからない場合=067 の ID 付け替えなどは void を書かない。その pick は結果と結合できず「自馬の結果なし」で集計外になる。限界として記す・plan D26)。出走馬集合の変化は void にせず、読み取り時に `field_digest` と現在の集合を比べた監査フラグ(`field_changed_after_pick`)として表示・件数化する(単勝 pick の精算は自馬の結果だけで決まる・plan D11)。1 つの pick への void は 1 件(部分 UNIQUE)。**void 後に撮り直さない**(plan D12・D16)。
 - **集計方針 v1**(`selection_policy_version='v1'`・pick と現況に保存): 前向き成績に数えるのは「計算時点で結果未確定(`result_pending_at_compute`)かつ computed_at < post_time かつ odds_observed_at < post_time かつ computed_at の日付(日本時間)≥ 集計開始日」の `pick` 行で void されていないもの(= **発走前の最初の判断の記録**。065/086 と同じ「決定時点」の意味論)。分類(集計対象/各除外理由)は eval の 1 関数で決め、API の現況とチェックポイントの判定の両方がそれを使う。採用 pick の鮮度は運用(ジョブ頻度・利用者の操作時刻)で決まるので、**現況は判断時鮮度帯(発走時刻 − 判断時のオッズ取得時刻が 10 分以内/60 分以内/60 分超)別の内訳を必ず併記**する。方針を変えるときは v2 を切り、v1 の数字を書き換えずに並記する。
+- **集計方針 v2(feature 139・2026-10-04 追記)**: v1 と同じ分類に `payout_race_missing`・`payout_inconsistent`(どちらもレース単位)を加え、段階の判定と現況の主指標を公式単勝払戻で精算する。開始日 2026-10-05。v1 の判断時オッズ精算は参考として並記する。下の「精算」節の (a) は v1 の規約として残す(plan D27)。前向き成績は凍結表ではなく「判断時点の見込み」(139 `buy-time-v2`)と比べて読む(plan D28)。
 - **精算(2 基準を併記・段階判定は凍結基準)**: (a) **凍結基準** = pick 時点の `odds_used` × 100 円(append-only の値だけで決まり、後から動かない。065 の凍結オッズ精算と同じ規約=`valuation_basis='frozen_pick_odds'`)。**段階の判定はこの基準で行う**。(b) **参考基準** = 現在の `race_horses.odds` × 100 円(保存オッズは再取込で変わりうる・2025 年以降は発走前の値が混ざる=可変の近似。`valuation_basis='stored_odds_mutable'`)。公式単勝払戻は未保存なのでどちらも近似と明記する(080 の parser は単勝を読み飛ばしている。公式払戻の取込は別 feature)。同着(そのレースの 1 着が 1 頭でない=勝ち馬 0 頭を含む・凍結の過去検証と同じ定義)は除外し件数を出す。pick 馬の結果行が無い(取消等)pick は `unsettled_horse` として集計外に数える。出走馬がその後変わったレースの pick は集計に残り、件数(`field_changed_after_pick`)を併記する。
 - **段階**(各 rule 独立・自動・ラチェット=戻らない。名称は価値判断を避ける):
   - 研究中: 集計対象 100 点未満
@@ -253,7 +254,7 @@
 
 - 自動購入・Kelly への組み込み・買い目(recommendations)の変更
 - オッズ変動分布の測定(別 feature。測るまで鮮度の区切りは約束にすぎない)
-- 公式単勝払戻の取込
+- 公式単勝払戻の取込(→ feature 139 で実施・plan D27)
 - S1・S2 の優位の証明(前向きで測る)
 - 本番勝率モデル(mix-129)の変更
 

@@ -239,7 +239,10 @@ def test_downgrade_to_0018_removes_tables_and_function(alembic_cfg, engine, _mig
     assert set(_TABLES) <= tables_at_head
     try:
         command.downgrade(alembic_cfg, "0018_market_ev_predictions")
-        assert set(inspect(engine).get_table_names()) == tables_at_head - set(_TABLES)
+        # Feature 139's official_win_payouts (0020) goes down with them
+        assert set(inspect(engine).get_table_names()) == (
+            tables_at_head - set(_TABLES) - {"official_win_payouts"}
+        )
         with engine.connect() as conn:
             fn = conn.execute(text(
                 "SELECT count(*) FROM pg_proc WHERE proname = 'reject_attention_mutation'"

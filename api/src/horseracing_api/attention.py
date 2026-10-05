@@ -22,6 +22,10 @@ Prospective tally (plan 0.5, FR-005): computed at read time from every pick of a
 filter), memoised per rule in ``TALLY_MEMO`` under the key from ``queries.attention_memo_key``
 (D22), so a race-detail or day read reuses the tally and its bootstrap instead of re-running them.
 Win probabilities and p̂ are never returned (constitution IV).
+
+Settlement (selection policy v2, 139): the counted picks are settled at the OFFICIAL win payout
+(``official`` = the stage basis and the prospective level); the same picks at the judged odds
+(``frozen`` = policy v1's settlement) and at the current stored odds (``stored``) are references.
 """
 
 from __future__ import annotations
@@ -44,6 +48,8 @@ from .schemas import (
     AttentionAvailable,
     AttentionBacktest,
     AttentionBacktestBootstrap,
+    AttentionBuyTimeExpectation,
+    AttentionBuyTimeSource,
     AttentionCheckpointBootstrap,
     AttentionDayItem,
     AttentionDayResponse,
@@ -56,6 +62,7 @@ from .schemas import (
     AttentionJudgedFreshness,
     AttentionLevels,
     AttentionOddsDrift,
+    AttentionOfficialBasis,
     AttentionPriceNoise,
     AttentionProspective,
     AttentionProspectiveBootstrap,
@@ -75,7 +82,8 @@ from .schemas import (
 DISCLAIMER = (
     "注目条件は過去データで最も有望だった条件で、検証済みの条件ではありません。"
     "S1・S2 は結果を見てから見つけた条件で、過去検証の p 値は多重探索を補正していません。"
-    "回収率はいずれも近似です。的中や利益を保証するものではありません。"
+    "過去検証の回収率は確定オッズからの近似、判断時点の見込みは過去データからの換算です。"
+    "前向き検証の回収率は公式の単勝払戻で精算しています。的中や利益を保証するものではありません。"
 )
 
 #: 判断時鮮度帯 edges (seconds between the pick's odds observation and the post time)
@@ -136,6 +144,13 @@ class TallyRow(Protocol):
     result_status: str | None
     n_winners: int | None
     stored_odds: Decimal | None
+    #: the official win payout (per 100 yen) of the pick's 馬番; None when the race has no row
+    #: for it
+    official_payout_yen: int | None
+    #: the race has at least one official win payout row
+    race_payout_known: bool
+    #: the race's payout rows name exactly its winners (139 D11, race level)
+    race_payout_consistent: bool
 
 
 class CheckpointRecord(Protocol):
@@ -168,14 +183,17 @@ class RuleTally:
 
     rule_id: str
     stage: StageDetail
-    #: pooled ROI of the counted picks at the judged odds (None when nothing is counted)
-    point_roi_frozen: float | None
+    #: pooled ROI of the counted picks at the official win payout — the prospective level's input
+    #: under policy v2 (None when nothing is counted)
+    point_roi_official: float | None
     prospective: AttentionProspective
 
 
 def pick_facts(row: TallyRow) -> ar.PickFacts:
     """``PickFacts`` of one stored pick. ``dead_heat`` is race level (winners != 1, zero winners
-    included) — the frozen backtest's definition."""
+    included) — the frozen backtest's definition. The official payout and the race-level
+    "payout known" / "payout consistent" flags are passed through as read; classifying a missing
+    or inconsistent payout is the registry's job (``classify_pick``)."""
     won = row.finish_order == 1 and row.result_status == ResultStatus.FINISHED
     return ar.PickFacts(
         pick_id=str(row.pick_id),
@@ -192,6 +210,9 @@ def pick_facts(row: TallyRow) -> ar.PickFacts:
         dead_heat=int(row.n_winners or 0) != 1,
         odds_used=float(row.odds_used),
         stored_odds=_f(row.stored_odds),
+        official_payout_yen=_f(row.official_payout_yen),
+        race_payout_known=bool(row.race_payout_known),
+        race_payout_consistent=bool(row.race_payout_consistent),
     )
 
 
@@ -218,6 +239,7 @@ def _ci(low, high) -> tuple[float, float] | None:
 
 def _decision_view(record: CheckpointRecord) -> CheckpointDecision:
     boot = record.bootstrap if isinstance(record.bootstrap, dict) else {}
+    settlement = boot.get("settlement")
 
     def _opt_int(value) -> int | None:
         return None if value is None else int(value)
@@ -231,6 +253,11 @@ def _decision_view(record: CheckpointRecord) -> CheckpointDecision:
         n_counted=int(record.n_counted),
         n_hits=int(record.n_hits),
         roi_frozen=float(record.roi_frozen),
+        valuation_basis=(
+            settlement
+            if isinstance(settlement, str) and settlement in ar.SETTLEMENT_BASES
+            else None
+        ),
         ci=_ci(record.ci_low, record.ci_high),
         decided_at=record.decided_at,
         settlement_cutoff=record.settlement_cutoff,
@@ -273,10 +300,16 @@ def _by_judged_freshness(counted: Sequence[ar.PickFacts]) -> AttentionJudgedFres
     for f in counted:
         groups[_freshness_band(f)].append(f)
 
+    def roi(rows: list[ar.PickFacts], payout_of) -> float | None:
+        return sum(payout_of(f) for f in rows) / (100.0 * len(rows)) if rows else None
+
     def band(rows: list[ar.PickFacts]) -> AttentionFreshnessBand:
-        roi = sum(ar.frozen_payout(f) for f in rows) / (100.0 * len(rows)) if rows else None
-        hits = sum(1 for f in rows if f.won)
-        return AttentionFreshnessBand(n=len(rows), hits=hits, roi_frozen=roi)
+        return AttentionFreshnessBand(
+            n=len(rows),
+            hits=sum(1 for f in rows if f.won),
+            roi_official=roi(rows, ar.official_payout),
+            roi_frozen=roi(rows, ar.frozen_payout),
+        )
 
     return AttentionJudgedFreshness(
         le_10m=band(groups["<=10m"]), le_60m=band(groups["<=60m"]), gt_60m=band(groups[">60m"])
@@ -320,7 +353,8 @@ def build_rule_tally(
     records: Iterable[CheckpointRecord],
 ) -> RuleTally:
     """Classify every pick of the rule (exclusive, ``classify_pick``), settle the counted ones on
-    both bases and take the stage from the recorded decisions.
+    every basis (official payout = the stage basis; judged odds and stored odds = references) and
+    take the stage from the recorded decisions.
 
     ``rows`` = the rule's ``kind='pick'`` rows (all dates, voided ones included); ``records`` = the
     recorded checkpoint decisions (current policy and rule set; other rules are ignored).
@@ -350,6 +384,7 @@ def build_rule_tally(
         (r for r in records if r.rule_id == rule_id), key=lambda r: int(r.checkpoint)
     )
     stage = _stage(own_records, len(counted), start)
+    official = ar.ratio_ci(counted, ar.official_payout)
     frozen = ar.ratio_ci(counted, ar.frozen_payout)
     # the reference basis settles only the counted picks that still have stored odds (numerator and
     # denominator alike); the rest are surfaced as a count, never valued at the judged odds
@@ -368,6 +403,12 @@ def build_rule_tally(
         n_counted=len(counted),
         n_hits=sum(1 for f in counted if f.won),
         n_picks_total=n_total,
+        official=AttentionOfficialBasis(
+            valuation_basis="official_win_payout",
+            roi=official["roi"],
+            ci=_ci(official["ci_low"], official["ci_high"]),
+            p_one_sided=official["p_one_sided"],
+        ),
         frozen=AttentionFrozenBasis(
             valuation_basis="frozen_pick_odds",
             roi=frozen["roi"],
@@ -388,7 +429,7 @@ def build_rule_tally(
         odds_drift=_odds_drift(counted),
     )
     return RuleTally(
-        rule_id=rule_id, stage=stage, point_roi_frozen=frozen["roi"], prospective=prospective
+        rule_id=rule_id, stage=stage, point_roi_official=official["roi"], prospective=prospective
     )
 
 
@@ -407,8 +448,9 @@ class TallyMemo:
     """Per-rule memo of ``RuleTally`` keyed by ``queries.attention_memo_key`` (plan D7/D22).
 
     One entry per rule (bounded); a rule is recomputed only when its key changed (a new pick or
-    void, a new checkpoint record, a result or odds re-ingest of a race holding its picks, or a
-    different PROSPECTIVE_START_DATE). Thread-safe: request handlers run in a thread pool."""
+    void, a new checkpoint record, a result, odds or official payout re-ingest of a race holding
+    its picks, or a different selection policy / PROSPECTIVE_START_DATE). Thread-safe: request
+    handlers run in a thread pool."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -468,6 +510,24 @@ def _backtest_bootstrap() -> AttentionBacktestBootstrap:
     )
 
 
+def _buy_time_expectation(rule_id: str) -> AttentionBuyTimeExpectation | None:
+    """The registry's buy-time expectation of the rule with its source and version (139 D13) —
+    copied, never recomputed here. None until the registry marks it independently verified (D6):
+    an unverified conversion is never served."""
+    served = ar.buy_time_expectation(rule_id)
+    if served is None:
+        return None
+    return AttentionBuyTimeExpectation(
+        range_low=served.range_low,
+        range_high=served.range_high,
+        ci_low=served.ci_low,
+        ci_high=served.ci_high,
+        interval_includes_100=served.interval_includes_one,
+        included_in=served.included_in,
+        source=AttentionBuyTimeSource(**ar.BUY_TIME_EXPECTATION_SOURCE),
+    )
+
+
 def rule_summary(rule: ar.AttentionRule, tally: RuleTally) -> RuleSummary:
     d = rule.definition
     return RuleSummary(
@@ -490,6 +550,7 @@ def rule_summary(rule: ar.AttentionRule, tally: RuleTally) -> RuleSummary:
             valuation_basis="closing_odds_approx",
             bootstrap=_backtest_bootstrap(),
         ),
+        buy_time_expectation=_buy_time_expectation(d.id),
         price_noise=[
             AttentionPriceNoise(sigma=n.sigma, roi=n.roi, n=n.n, overlap=n.overlap)
             for n in rule.price_noise
@@ -519,7 +580,7 @@ def _levels(chip: str, tallies: Mapping[str, RuleTally]) -> AttentionLevels:
     tally = tallies[chip]
     return AttentionLevels(
         backtest=ar.backtest_level(rule),
-        prospective=ar.prospective_level(tally.stage.stage, tally.point_roi_frozen),
+        prospective=ar.prospective_level(tally.stage.stage, tally.point_roi_official),
         price_noise=ar.price_noise_level(rule),
     )
 

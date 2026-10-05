@@ -132,12 +132,26 @@ class ScrapedResultRow:
     finish_time: str | None
     last_3f: float | None = None                    # 後3F / 上がり3ハロン
     corner_orders: tuple[str, ...] | None = None     # コーナー通過順 ("7-7-4-3" -> (7,7,4,3))
+    #: Feature 139: the FINAL win odds / popularity printed on the result page (列 10 / 9). None
+    #: when the cell is not a number ("---", blank). Market data — never a model feature (II).
+    win_odds: float | None = None
+    popularity: int | None = None
 
 
 @dataclass(frozen=True)
 class ScrapedResult:
     key: ScrapedRaceKey
     rows: tuple[ScrapedResultRow, ...]
+
+
+@dataclass(frozen=True)
+class ScrapedWinPayout:
+    """Feature 139: one official 単勝 payout from the result page (dead heat = one per winner).
+
+    ``payout_yen`` is per 100 yen staked, exactly as printed ("340円" -> 340; 元返し = 100)."""
+
+    horse_number: int
+    payout_yen: int
 
 
 @dataclass(frozen=True)

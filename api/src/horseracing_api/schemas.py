@@ -1193,7 +1193,12 @@ class AttentionCheckpointBootstrap(BaseModel):
 
 
 class CheckpointDecision(BaseModel):
-    """One recorded checkpoint decision (append-only; the stage follows these records)."""
+    """One recorded checkpoint decision (append-only; the stage follows these records).
+
+    Only records of the CURRENT selection policy are listed (policy v2: settled at the official
+    win payout). ``roi_frozen`` is the recorded ROI (the 0019 column name) under the settlement
+    named by ``valuation_basis`` (the record's ``bootstrap.settlement``; null when the record does
+    not name a known one)."""
 
     model_config = {"extra": "forbid"}
 
@@ -1202,6 +1207,7 @@ class CheckpointDecision(BaseModel):
     n_counted: int
     n_hits: int
     roi_frozen: float
+    valuation_basis: Literal["official_win_payout", "frozen_pick_odds"] | None
     #: [low, high]; null when the record has no interval (too few race days)
     ci: tuple[float, float] | None
     decided_at: datetime.datetime
@@ -1212,8 +1218,23 @@ class CheckpointDecision(BaseModel):
     bootstrap: AttentionCheckpointBootstrap
 
 
+class AttentionOfficialBasis(BaseModel):
+    """Settlement at the official win payout (per 100 yen; 139) — the basis of the stages and of
+    the prospective level under selection policy v2. A win pays the parimutuel payout, not the
+    judged odds, so this figure is what the counted picks actually returned (not approximate)."""
+
+    model_config = {"extra": "forbid"}
+
+    valuation_basis: Literal["official_win_payout"]
+    roi: float | None
+    ci: tuple[float, float] | None
+    p_one_sided: float | None
+
+
 class AttentionFrozenBasis(BaseModel):
-    """Settlement at the judged odds (odds_used × 100 yen) — the basis of the stages."""
+    """Reference: the SAME counted picks settled at the judged odds (odds_used × 100 yen) — policy
+    v1's settlement (138 D13), shown alongside the official basis (139 D3/D12). Never the basis of
+    a stage under policy v2."""
 
     model_config = {"extra": "forbid"}
 
@@ -1264,6 +1285,10 @@ class AttentionExclusionCounts(BaseModel):
     result_known_at_compute: int
     observed_after_post: int
     pending_result: int
+    #: the race has results but no official win payout row yet (race level)
+    payout_race_missing: int
+    #: the payout rows disagree with the result (a winner without one / a non-winner with one)
+    payout_inconsistent: int
     unsettled_horse: int
     dead_heat: int
 
@@ -1277,10 +1302,14 @@ class AttentionFlags(BaseModel):
 
 
 class AttentionFreshnessBand(BaseModel):
+    """Counted picks of one band: official payout ROI (the v2 basis) and the judged-odds ROI (the
+    v1 reference) of the same picks."""
+
     model_config = {"extra": "forbid"}
 
     n: int
     hits: int
+    roi_official: float | None
     roi_frozen: float | None
 
 
@@ -1320,6 +1349,9 @@ class AttentionProspective(BaseModel):
     n_counted: int
     n_hits: int
     n_picks_total: int
+    #: the stage basis (policy v2): official win payout
+    official: AttentionOfficialBasis
+    #: reference: the same counted picks at the judged odds (policy v1's settlement)
     frozen: AttentionFrozenBasis
     stored: AttentionStoredBasis
     bootstrap: AttentionProspectiveBootstrap
@@ -1327,6 +1359,49 @@ class AttentionProspective(BaseModel):
     flags: AttentionFlags
     by_judged_freshness: AttentionJudgedFreshness
     odds_drift: AttentionOddsDrift
+
+
+class AttentionBuyTimeSource(BaseModel):
+    """Where the buy-time expectation comes from (registry ``BUY_TIME_EXPECTATION_SOURCE``).
+    ``version`` names exactly the served numbers (139 D13: a changed number gets a new version)."""
+
+    model_config = {"extra": "forbid"}
+
+    version: str
+    report: str
+    period: str
+    pairs: int
+    races: int
+    race_days: int
+    method: str
+    computed_on: str
+    status: str
+    #: the independent verification the served numbers passed (a repository path)
+    verification: str
+
+
+class AttentionBuyTimeExpectation(BaseModel):
+    """判断時点で買った場合の見込み (139 D6/D13): the past ROI of the horses that matched at the
+    judged (pre-race) odds — a conversion from past data, frozen in the registry
+    (``BUY_TIME_EXPECTATION``, version ``buy-time-v2``). The prospective record is read against
+    this, not against the closing-odds backtest, until it accumulates and replaces it.
+
+    Not one point (the independent verification rejected a 3-digit value): ``range_low`` to
+    ``range_high`` is the range of two estimators rounded to 5%, ``ci_low``/``ci_high`` the
+    envelope of their 95% CIs and ``interval_includes_100`` whether that interval reaches 100%.
+    A rule whose own interval is invalid shows no value: all four numbers null and
+    ``included_in`` names the rule whose value covers its horses (S2 ⊂ S1). Served only once
+    independently verified (D6) — ``RuleSummary.buy_time_expectation`` is null before that."""
+
+    model_config = {"extra": "forbid"}
+
+    range_low: float | None
+    range_high: float | None
+    ci_low: float | None
+    ci_high: float | None
+    interval_includes_100: bool | None
+    included_in: RuleId | None
+    source: AttentionBuyTimeSource
 
 
 class RuleSummary(BaseModel):
@@ -1347,6 +1422,9 @@ class RuleSummary(BaseModel):
     #: the comparison condition (S5): never a chip
     control: bool
     backtest: AttentionBacktest
+    #: the buy-time expectation (past data, judged-odds selection) the prospective ROI is read
+    #: against; null until the registry's value is independently verified (139 D6)
+    buy_time_expectation: AttentionBuyTimeExpectation | None
     price_noise: list[AttentionPriceNoise]
     levels: AttentionRuleLevels
     prospective: AttentionProspective

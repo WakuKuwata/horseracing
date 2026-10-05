@@ -11,13 +11,17 @@ import type {
 } from "../api/types";
 import {
   backtestLevelLabel,
+  BUY_TIME_LABEL,
   CHIP_NOW_LABELS,
   chipLabel,
   DECISION_LABELS,
+  decisionRoiBasis,
   emphasisLevel,
+  EXCLUSION_LABELS,
   freshnessLevel,
   isClosedStage,
   type Level,
+  PROSPECTIVE_BASIS_LABELS,
   ruleFlags,
   ruleIdText,
   stageLabel,
@@ -32,6 +36,7 @@ import {
   RoiValue,
 } from "./AttentionRoi";
 import { AttentionProgress } from "./AttentionProgress";
+import { BuyTimeExpectationLine } from "./AttentionRulesPanel";
 import { PseudoValue } from "./PseudoValue";
 
 /**
@@ -44,6 +49,9 @@ import { PseudoValue } from "./PseudoValue";
  * 凍結した過去検証・価格ずれ試験・前向きの現況は `GET /attention-rules`(`useAttentionRules`)から
  * チップの条件の分を引く。回収率の数値はすべて `RoiValue` を通し計算基準のラベルを添える。
  * 期待回収率(判断時点・現在値・選ばれた馬の平均)は推定値なので `PseudoValue` を通す。
+ * 前向き検証は公式の単勝払戻での回収率が段階判定の基準(集計方針 v2・139)で、判断時オッズでの精算
+ * (v1)と保存オッズでの値は参考として並べる。判断時点の見込み(過去データからの換算)は一覧と同じ
+ * `BuyTimeExpectationLine` で描く。
  *
  * 表示しないもの: 勝率・p̂・強弱の語・損益色・成績順の並び替え・購入を勧める表現。
  */
@@ -231,6 +239,18 @@ function ChipPanel({
           </RuleSection>
         </dd>
 
+        <dt>{BUY_TIME_LABEL}</dt>
+        <dd data-testid="attention-buy-time">
+          <RuleSection query={rulesQuery} rule={rule}>
+            {(r) => (
+              <BuyTimeExpectationLine
+                expectation={r.buy_time_expectation}
+                testId="attention-buy-time-line"
+              />
+            )}
+          </RuleSection>
+        </dd>
+
         <dt>前向き検証</dt>
         <dd data-testid="attention-prospective">
           <RuleSection query={rulesQuery} rule={rule}>
@@ -410,7 +430,9 @@ function BacktestRows({ rule, level }: { rule: RuleSummary; level: Level | null 
 
 function ProspectiveRows({ rule, stage }: { rule: RuleSummary; stage: StageDetail | null }) {
   const p = rule.prospective;
-  const frozenCi = formatCi(p.frozen.ci);
+  const officialCi = formatCi(p.official.ci);
+  const awaitingPayout = p.counts.payout_race_missing;
+  const inconsistent = p.counts.payout_inconsistent;
   return (
     <>
       <div>
@@ -418,23 +440,40 @@ function ProspectiveRows({ rule, stage }: { rule: RuleSummary; stage: StageDetai
           `${formatCount(p.n_hits)} 的中・集計方針 ${p.policy_version}・` +
           `集計開始 ${p.start_date ?? "未設定"})`}
       </div>
-      <div>
-        回収率{" "}
-        <RoiValue basis={p.frozen.valuation_basis}>
-          {formatRoi(p.frozen.roi)}
-          {frozenCi ? `(${frozenCi})` : ""}
+      <div data-testid="attention-prospective-official">
+        {PROSPECTIVE_BASIS_LABELS.official}{" "}
+        <RoiValue basis={p.official.valuation_basis}>
+          {formatRoi(p.official.roi)}
+          {officialCi ? `(${officialCi})` : ""}
         </RoiValue>
-        ・参考 <RoiValue basis={p.stored.valuation_basis}>{formatRoi(p.stored.roi)}</RoiValue>
       </div>
+      <div data-testid="attention-prospective-reference">
+        {PROSPECTIVE_BASIS_LABELS.frozen}{" "}
+        <RoiValue basis={p.frozen.valuation_basis}>{formatRoi(p.frozen.roi)}</RoiValue>・
+        {PROSPECTIVE_BASIS_LABELS.stored}{" "}
+        <RoiValue basis={p.stored.valuation_basis}>{formatRoi(p.stored.roi)}</RoiValue>
+      </div>
+      {(awaitingPayout > 0 || inconsistent > 0) && (
+        <div data-testid="attention-payout-exclusions">
+          {`集計外: ${EXCLUSION_LABELS.payout_race_missing} ${formatCount(awaitingPayout)} 点・` +
+            `${EXCLUSION_LABELS.payout_inconsistent} ${formatCount(inconsistent)} 点` +
+            "(公式払戻の無いレースはレース単位で集計外にしています)"}
+        </div>
+      )}
       {p.decisions.map((d) => {
         const ci = formatCi(d.ci);
+        const basis = decisionRoiBasis(d.valuation_basis);
         return (
           <div key={d.checkpoint} data-testid={`attention-decision-${d.checkpoint}`}>
             {d.checkpoint} 点の判定: {DECISION_LABELS[d.decision]}(
-            <RoiValue basis="frozen_pick_odds">
-              {formatRoi(d.roi_frozen)}
-              {ci ? `(${ci})` : ""}
-            </RoiValue>
+            {basis === null ? (
+              "回収率は表示なし(精算の基準が記録にありません)"
+            ) : (
+              <RoiValue basis={basis}>
+                {formatRoi(d.roi_frozen)}
+                {ci ? `(${ci})` : ""}
+              </RoiValue>
+            )}
             ・{formatCount(d.n_hits)} 的中・判定 {formatJstDateTime(d.decided_at) ?? PLACEHOLDER})
           </div>
         );

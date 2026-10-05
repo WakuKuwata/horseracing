@@ -6,12 +6,22 @@ not re-derived). Called at the end of every ensemble market-ev run (``compute_an
 separate transaction whose failure never undoes the computed rows) and by the CLI
 ``attention-checkpoints``.
 
-Material = the rule's picks (current rule set, voids resolved) × ``race_results`` only — never
-``race_horses``, whose odds and statuses keep changing. Each pick is classified by
-``attention_rules.classify_pick`` (the same function the API uses); a decision uses only the
-``counted`` picks whose post time is at least ``CHECKPOINT_SETTLEMENT_LAG`` old, and
-``attention_rules.decide_checkpoint`` orders them and takes the first N itself. Settlement is at
-the judged odds (``odds_used`` × 100 yen, D13).
+Material = the rule's picks (current rule set, voids resolved) × ``race_results`` ×
+``official_win_payouts``, plus the 馬番 (``race_horses.horse_number``, fixed at the draw) of each
+race's 1st-place finishers for the race-level payout check — never ``race_horses``' odds or
+statuses, which keep changing. Each
+pick is classified by ``attention_rules.classify_pick`` (the same function the API uses); a
+decision uses only the ``counted`` picks whose post time is at least ``CHECKPOINT_SETTLEMENT_LAG``
+old, and ``attention_rules.decide_checkpoint`` orders them and takes the first N itself.
+
+Selection policy v2 (feature 139 D3/D11/D12): settlement is at the official win payout
+(``attention_rules.official_payout``, per 100 yen) — what a win bet actually pays — instead of
+v1's judged odds (``odds_used`` × 100 yen, 138 D13). A race with results but no official win
+payout at all is ``payout_race_missing`` and a race whose payout rows disagree with its result
+(the 馬番 of its winners are not exactly the paid 馬番) is ``payout_inconsistent`` — both at race
+level, so every pick of such a race is left out (never only its winner): neither is material.
+Only v2 records are read and written, and v2 counts from its own start date (the v1-period picks
+are ``before_start``).
 """
 
 from __future__ import annotations
@@ -22,7 +32,13 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from horseracing_db.enums import ResultStatus
-from horseracing_db.models import AttentionCheckpoint, AttentionPick, RaceResult
+from horseracing_db.models import (
+    AttentionCheckpoint,
+    AttentionPick,
+    OfficialWinPayout,
+    RaceHorse,
+    RaceResult,
+)
 from horseracing_eval import attention_rules as ar
 from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -40,10 +56,23 @@ class _Record:
 
 #: the decision's own post order (``attention_rules.order_key`` over CHECKPOINT_ORDER)
 _order_key = ar.order_key
+#: policy v2 settles every decision at the official win payout (passed explicitly: the record's
+#: ``bootstrap["settlement"]`` names it, so a changed default can never relabel a decision)
+SETTLEMENT = ar.official_payout
+#: classes of picks that are not settleable YET (their material may still arrive): counted in
+#: ``skipped_pending_before_last`` when they precede the decision's last pick
+_AWAITING_SETTLEMENT = frozenset({"pending_result", "payout_race_missing"})
 
 
 def load_pick_facts(session: Session) -> dict[str, list[ar.PickFacts]]:
-    """rule_id → PickFacts of every ``kind='pick'`` row of the current rule set."""
+    """rule_id → PickFacts of every ``kind='pick'`` row of the current rule set.
+
+    The official win payout is looked up by the pick's 馬番 (``official_payout_yen``),
+    ``race_payout_known`` is whether the race has any payout row and ``race_payout_consistent``
+    is ``attention_rules.race_payout_consistent`` over the 馬番 of the race's 1st-place finishers
+    (``race_horses.horse_number`` — a winner without one never matches) and its paid 馬番. A pick
+    of a race without a payout keeps the defaults (no payout, race unknown), so it can never be
+    counted."""
     pick = aliased(AttentionPick)
     void = aliased(AttentionPick)
     voided = set(
@@ -68,17 +97,43 @@ def load_pick_facts(session: Session) -> dict[str, list[ar.PickFacts]]:
     results = session.execute(
         select(
             RaceResult.race_id, RaceResult.horse_id, RaceResult.result_status,
-            RaceResult.finish_order,
-        ).where(RaceResult.race_id.in_(picked_races))
+            RaceResult.finish_order, RaceHorse.horse_number,
+        )
+        .select_from(RaceResult)
+        .outerjoin(
+            RaceHorse,
+            (RaceHorse.race_id == RaceResult.race_id) & (RaceHorse.horse_id == RaceResult.horse_id),
+        )
+        .where(RaceResult.race_id.in_(picked_races))
     ).all()
+    payouts = session.execute(
+        select(
+            OfficialWinPayout.race_id, OfficialWinPayout.horse_number, OfficialWinPayout.payout_yen,
+        ).where(OfficialWinPayout.race_id.in_(picked_races))
+    ).all()
+    payout_by_number: dict[tuple[str, int], float] = {
+        (p.race_id, int(p.horse_number)): float(p.payout_yen) for p in payouts
+    }
+    paid_numbers: dict[str, list[int]] = {}
+    for p in payouts:
+        paid_numbers.setdefault(p.race_id, []).append(int(p.horse_number))
     has_result: set[str] = set()
     winners: dict[str, int] = {}
+    winner_numbers: dict[str, list[int | None]] = {}
     horse_result: dict[tuple[str, str], bool] = {}
     for r in results:
         won = r.result_status == ResultStatus.FINISHED and r.finish_order == 1
         has_result.add(r.race_id)
         winners[r.race_id] = winners.get(r.race_id, 0) + int(won)
+        if won:
+            winner_numbers.setdefault(r.race_id, []).append(
+                None if r.horse_number is None else int(r.horse_number)
+            )
         horse_result[(r.race_id, r.horse_id)] = won
+    consistent = {
+        race_id: ar.race_payout_consistent(winner_numbers.get(race_id, ()), numbers)
+        for race_id, numbers in paid_numbers.items()
+    }
     by_rule: dict[str, list[ar.PickFacts]] = {}
     for row in rows:
         key = (row.race_id, row.horse_id)
@@ -98,6 +153,9 @@ def load_pick_facts(session: Session) -> dict[str, list[ar.PickFacts]]:
                 # race level, zero winners included (the frozen backtest's n_winners != 1)
                 dead_heat=row.race_id in has_result and winners.get(row.race_id, 0) != 1,
                 odds_used=float(row.odds_used),
+                official_payout_yen=payout_by_number.get((row.race_id, int(row.horse_number))),
+                race_payout_known=row.race_id in paid_numbers,
+                race_payout_consistent=consistent.get(row.race_id, False),
             )
         )
     return by_rule
@@ -136,6 +194,11 @@ def evaluate_checkpoints(
     lag). A 600 decision is written only after a 300 ``continue`` taken under the CURRENT
     prospective start date; a record taken under another start date is never extended and is
     reported as ``error`` (fail-closed). With no start date nothing is counted or written.
+
+    Decisions settle at the official win payout (policy v2) and are recorded with
+    ``selection_policy_version = attention_rules.SELECTION_POLICY_VERSION``.
+    ``skipped_pending_before_last`` counts the picks before the last material one that were not
+    settleable yet (``pending_result`` or ``payout_race_missing``).
     """
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
@@ -160,7 +223,7 @@ def evaluate_checkpoints(
             classes = [(f, ar.classify_pick(f, start_date=start)) for f in facts]
             counted = [f for f, c in classes if c == "counted"]
             material = [f for f in counted if f.post_time <= cutoff]
-            pending = [f for f, c in classes if c == "pending_result"]
+            awaiting = [f for f, c in classes if c in _AWAITING_SETTLEMENT]
             for checkpoint in ar.CHECKPOINTS:
                 rec = records.get((rule_id, checkpoint))
                 if rec is not None:
@@ -183,9 +246,11 @@ def evaluate_checkpoints(
                     if len(counted) >= checkpoint:
                         out["pending"].append((rule_id, checkpoint))
                     break
-                decision, rec_values = ar.decide_checkpoint(material, checkpoint)
+                decision, rec_values = ar.decide_checkpoint(
+                    material, checkpoint, payout_of=SETTLEMENT
+                )
                 last = next(f for f in material if f.pick_id == rec_values["last_pick_id"])
-                skipped = sum(1 for f in pending if _order_key(f) < _order_key(last))
+                skipped = sum(1 for f in awaiting if _order_key(f) < _order_key(last))
                 row = {
                     "checkpoint_id": uuid.uuid4(),
                     "rule_id": rule_id,

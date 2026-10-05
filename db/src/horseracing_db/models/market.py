@@ -22,6 +22,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     Numeric,
+    PrimaryKeyConstraint,
     Text,
     UniqueConstraint,
     Uuid,
@@ -29,6 +30,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.schema import conv
 
 from ..base import Base
 from ..constraints import COVERAGE_SCOPE, EXOTIC_BET_TYPE, JOB_SOURCE
@@ -117,3 +119,46 @@ class ExoticQuote(TimestampMixin, Base):
     official_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True))
     observed_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'netkeiba'"))
+
+
+#: the only source of an official win payout so far (CHECK on the column, migration 0020)
+OFFICIAL_WIN_PAYOUT_SOURCE = "netkeiba_result"
+
+
+class OfficialWinPayout(TimestampMixin, Base):
+    """Feature 139: the official 単勝 payout of a race's winning horse(s) (migration 0020).
+
+    What a win bet actually pays is the FINAL odds; this row is that figure as printed on the
+    result page (``Payout_Detail_Table`` / ``tr.Tansho``), per 100 yen staked (元返し = 100). A dead
+    heat is one row per winning horse. Kept apart from :class:`ExoticOdds` on purpose: that table's
+    readers assume combination bets (plan D1).
+
+    Overwritable so an official correction can be followed; the writer only touches a row when a
+    value changed. ``html_sha256`` names the page the value was read from (plan D10).
+    """
+
+    __tablename__ = "official_win_payouts"
+    __table_args__ = (
+        # conv(): the names are already final (migration 0020 writes them verbatim with op.f()),
+        # so the naming convention must not prefix them a second time.
+        PrimaryKeyConstraint("race_id", "horse_number", name=conv("pk_official_win_payouts")),
+        CheckConstraint("horse_number >= 1", name=conv("ck_official_win_payouts_horse_number")),
+        CheckConstraint("payout_yen >= 100", name=conv("ck_official_win_payouts_payout_yen")),
+        CheckConstraint(
+            f"source IN ('{OFFICIAL_WIN_PAYOUT_SOURCE}')",
+            name=conv("ck_official_win_payouts_source"),
+        ),
+    )
+
+    race_id: Mapped[str] = mapped_column(Text, ForeignKey("races.race_id"))
+    #: race-local 馬番 of a winning horse (no id-mapping needed)
+    horse_number: Mapped[int] = mapped_column(Integer)
+    #: official payout per 100 yen staked (元返し = 100)
+    payout_yen: Mapped[int] = mapped_column(Integer, nullable=False)
+    source: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text(f"'{OFFICIAL_WIN_PAYOUT_SOURCE}'")
+    )
+    #: when the result page was fetched (an archive repair uses the archive file's timestamp)
+    observed_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    #: sha256 of the result page text (UTF-8) the value was read from
+    html_sha256: Mapped[str | None] = mapped_column(Text, nullable=True)

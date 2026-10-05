@@ -60,6 +60,9 @@ export type AttentionSelectedCalibration = S["AttentionSelectedCalibration"];
 export type AttentionPriceNoise = S["AttentionPriceNoise"];
 export type AttentionRuleLevels = S["AttentionRuleLevels"];
 export type AttentionProspective = S["AttentionProspective"];
+// Feature 139: the prospective tally is settled at the official win payout (policy v2, the stage
+// basis); the judged-odds settlement (v1) stays alongside as a reference.
+export type AttentionOfficialBasis = S["AttentionOfficialBasis"];
 export type AttentionFrozenBasis = S["AttentionFrozenBasis"];
 export type AttentionStoredBasis = S["AttentionStoredBasis"];
 export type AttentionExclusionCounts = S["AttentionExclusionCounts"];
@@ -68,6 +71,9 @@ export type AttentionJudgedFreshness = S["AttentionJudgedFreshness"];
 export type AttentionFreshnessBand = S["AttentionFreshnessBand"];
 export type AttentionOddsDrift = S["AttentionOddsDrift"];
 export type CheckpointDecision = S["CheckpointDecision"];
+// Feature 139: the registry's frozen buy-time conversion (過去データからの換算・参考値) and its source.
+export type AttentionBuyTimeExpectation = S["AttentionBuyTimeExpectation"];
+export type AttentionBuyTimeSource = S["AttentionBuyTimeSource"];
 export type AttentionDayResponse = S["AttentionDayResponse"];
 export type AttentionDayItem = S["AttentionDayItem"];
 /** "S1".."S5" (S5 = control: never a chip). */
