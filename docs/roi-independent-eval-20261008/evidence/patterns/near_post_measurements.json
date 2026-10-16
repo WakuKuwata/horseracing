@@ -1,0 +1,197 @@
+{
+ "chaos_snapshots": {
+  "n": 528,
+  "trigger": {
+   "predict_auto": 512,
+   "predict_manual": 16
+  },
+  "stp_min_quantiles": {
+   "0.01": 16.9,
+   "0.05": 48.8,
+   "0.25": 203.8,
+   "0.5": 444.0,
+   "0.75": 933.2
+  },
+  "n_le_seconds": {
+   "120": 0,
+   "300": 0,
+   "600": 1,
+   "1800": 17,
+   "3600": 33
+  }
+ },
+ "attention_picks": {
+  "n": 2717,
+  "pending_picks": 21,
+  "pending_races": 5,
+  "pending_n_le_seconds": {
+   "120": 0,
+   "300": 2,
+   "600": 2,
+   "1800": 6,
+   "3600": 6
+  }
+ },
+ "official_win_payouts": {
+  "n": 505,
+  "races": 504,
+  "mn": "2026-08-15",
+  "mx": "2026-10-04"
+ },
+ "exotic_odds_dividends": [
+  {
+   "bet_type": "exacta",
+   "races": 3423,
+   "mn": "2025-01-05"
+  },
+  {
+   "bet_type": "place",
+   "races": 3423,
+   "mn": "2025-01-05"
+  },
+  {
+   "bet_type": "quinella",
+   "races": 3423,
+   "mn": "2025-01-05"
+  },
+  {
+   "bet_type": "trifecta",
+   "races": 3423,
+   "mn": "2025-01-05"
+  },
+  {
+   "bet_type": "trio",
+   "races": 3423,
+   "mn": "2025-01-05"
+  },
+  {
+   "bet_type": "wide",
+   "races": 3423,
+   "mn": "2025-01-05"
+  }
+ ],
+ "place_quotes": {
+  "races": 610,
+  "pre_post": 159,
+  "api_staleness_min_quantiles_prepost": {
+   "0.1": 0.26,
+   "0.5": 0.6,
+   "0.9": 2.22
+  },
+  "pre_post_n_le_min": {
+   "5": 2,
+   "10": 8,
+   "30": 80,
+   "60": 112
+  }
+ },
+ "exotic_quotes_pre_post_races": {
+  "quinella": 198,
+  "trio": 198,
+  "wide": 198
+ },
+ "race_days_2026": {
+  "days": 84,
+  "races_per_day_mean": 31.6,
+  "span_h_mean": 6.96,
+  "post_gaps_lt2min_total": 6,
+  "min_gap_median_min": 9.0
+ },
+ "r02_pairs": {
+  "pairs": 564,
+  "races": 444,
+  "days": 17,
+  "races_within_min": {
+   "1": 0,
+   "2": 0,
+   "5": 3,
+   "10": 8,
+   "30": 99,
+   "60": 141
+  }
+ },
+ "r02_by_band": [
+  {
+   "band_min": "(0, 10]",
+   "races": 8,
+   "S1_J": 1,
+   "S1_keep": 1.0,
+   "S3_J": 1,
+   "S3_keep": 1.0,
+   "logOdds_drift_sd": 0.314,
+   "EVratio_median": 0.966
+  },
+  {
+   "band_min": "(10, 30]",
+   "races": 91,
+   "S1_J": 9,
+   "S1_keep": 0.333,
+   "S3_J": 17,
+   "S3_keep": 0.353,
+   "logOdds_drift_sd": 0.413,
+   "EVratio_median": 0.957
+  },
+  {
+   "band_min": "(30, 60]",
+   "races": 42,
+   "S1_J": 5,
+   "S1_keep": 0.2,
+   "S3_J": 7,
+   "S3_keep": 0.143,
+   "logOdds_drift_sd": 0.486,
+   "EVratio_median": 0.954
+  },
+  {
+   "band_min": "(60, 180]",
+   "races": 72,
+   "S1_J": 2,
+   "S1_keep": 0.0,
+   "S3_J": 5,
+   "S3_keep": 0.0,
+   "logOdds_drift_sd": 0.556,
+   "EVratio_median": 0.941
+  },
+  {
+   "band_min": "(180, 600]",
+   "races": 189,
+   "S1_J": 16,
+   "S1_keep": 0.0,
+   "S3_J": 33,
+   "S3_keep": 0.152,
+   "logOdds_drift_sd": 0.57,
+   "EVratio_median": 0.945
+  },
+  {
+   "band_min": "(600, 1440]",
+   "races": 138,
+   "S1_J": 12,
+   "S1_keep": 0.0,
+   "S3_J": 30,
+   "S3_keep": 0.2,
+   "logOdds_drift_sd": 0.939,
+   "EVratio_median": 0.946
+  },
+  {
+   "band_min": "(1440, 2000]",
+   "races": 21,
+   "S1_J": 1,
+   "S1_keep": 0.0,
+   "S3_J": 4,
+   "S3_keep": 0.0,
+   "logOdds_drift_sd": 0.568,
+   "EVratio_median": 0.964
+  }
+ ],
+ "r02_drift_picks_vs_rest": {
+  "S1": {
+   "picks": 39,
+   "median_logdrift_picks": 0.612,
+   "median_logdrift_nonpicks": 0.24
+  },
+  "S3": {
+   "picks": 83,
+   "median_logdrift_picks": 0.581,
+   "median_logdrift_nonpicks": 0.239
+  }
+ }
+}

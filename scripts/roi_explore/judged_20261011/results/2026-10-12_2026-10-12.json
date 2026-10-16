@@ -1,0 +1,1909 @@
+{
+ "window": {
+  "from": "2026-10-12",
+  "to": "2026-10-12"
+ },
+ "computed_at": "2026-10-16T00:47:55.103504+00:00",
+ "dry_run": false,
+ "dry_run_days": [],
+ "provenance": {
+  "column_present": true,
+  "races_by_source": {
+   "quote": 23
+  },
+  "note": "quote = every row's logic_version carries oddsobs=quote (A3-era compute with the race's win-quote provenance); proxy = oddsobs=proxy (fallback to race_horses.updated_at) or no token (pre-A3 compute). Days with any proxy race are dry_run. races.win_odds_observed_at is not used for this (overwritten by the final-odds write once results land)."
+ },
+ "n_races": 23,
+ "n_days": 1,
+ "days": [
+  "2026-10-12"
+ ],
+ "n_rows": 307,
+ "n_won": 23,
+ "n_races_with_official_payout": 23,
+ "exclusions": {
+  "no_results": {
+   "n": 0,
+   "race_ids": []
+  },
+  "results_incomplete": {
+   "n": 0,
+   "race_ids": []
+  },
+  "dead_heat_or_no_winner": {
+   "n": 0,
+   "race_ids": []
+  },
+  "prediction_rows_mismatch": {
+   "n": 0,
+   "race_ids": []
+  },
+  "odds_used_missing": {
+   "n": 0,
+   "race_ids": []
+  },
+  "post_time_missing": {
+   "n": 0,
+   "race_ids": []
+  },
+  "odds_observed_at_missing": {
+   "n": 0,
+   "race_ids": []
+  },
+  "odds_observed_at_mixed_within_race": {
+   "n": 0,
+   "race_ids": []
+  }
+ },
+ "inputs": {
+  "ens15": {
+   "manifest": "ensemble_2026.json",
+   "manifest_sha256": "6a4f42895b7c7b622559fc30458f84eff39744099a3a80778c7d1a541de1c7d9"
+  },
+  "judged": {
+   "dir": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/judged/mev-ens15-judged-v0",
+   "seeds_found": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "seeds_missing": [],
+   "partial": false,
+   "generator_sha256": "8b760a777f5dd3dffb97dd0b365d0f1a8470e1b16fb692862848fda3dbd56ae7",
+   "model_sha256": {
+    "seed_01": "72484c421fc29318bc7276d10ac2146440a7ab9ddf00968f6bf840f981f803d7",
+    "seed_02": "34efd4460c97cd5fb6eb7c853cec8027b6cb6e24fd8f51345e176096238944a3",
+    "seed_03": "685554db0aa015d501ded8a9c3581cea817aad4880d960271cf15f2b5c8b2e01",
+    "seed_04": "4b0f5be79ed0c67cf3c340414188db47759aafdbffc1e9817d51fbceaa61f65b",
+    "seed_05": "9e245f395a0855c9bb5f60246b2e7f777c60fc10723fbf6737062e750ed5dd9a",
+    "seed_06": "7b5aa5c8eb3a3de8d554b22a8a475ffdcd4eb690389bc82d4a297e0738782a62",
+    "seed_07": "161815c03814530de8bbe42bf85bf15cb174233a25dcc196750d87892daab71b",
+    "seed_08": "673389d3602f29f81f22667240cd691586d75e4ef9a0a8decba02db1f685cf89",
+    "seed_09": "be0c8f8ce80bd3a94d4daf29326a76d17010b1ed655125a806d2e521786af236",
+    "seed_10": "2db95acce066c38f824bd6c7cbda26ddba7bdd4267b2192eca262c3fa32be6c9",
+    "seed_11": "a297ccbd690f0aefbfd503e891c14d6587ef17d94feb6e6ffaa653b2a4c3c9cb",
+    "seed_12": "cdd58d31ca035d030fa78c17eac6bc3532b27cce5410a8ccbbdd95fb3bb6c4d8",
+    "seed_13": "7020a8d8ce1e67d3cea5203cfc5c67474c85750bdb44d7269e245bdd19184c35",
+    "seed_14": "902cbfc27268b67828798e02d9b1ea40a920d43d56f4de3088a3b879755853ef",
+    "seed_15": "bb3e7b3369b0edb3578c0fc090cba59341b34c4a4bf3ea81c37d0674dfd5097a"
+   }
+  },
+  "coefficients_sha256": "4eab2f90629158696cf45171c636593602dee6b3f0564fd1027e4f58d4b102be",
+  "generator_sha256": "8b760a777f5dd3dffb97dd0b365d0f1a8470e1b16fb692862848fda3dbd56ae7",
+  "protocol_sha256": "c4378bc61f6b4bce0dccdcac8fe7e95599f0008264e07d0fd57351b6bd8ee084",
+  "db_url_host": "localhost:15432/horseracing",
+  "feature_builder": "horseracing_training.market_ev.load_rows/build_features (as-of) + r02_drift.market_block on odds_used; weather/going = current DB values (D9)"
+ },
+ "arms_scored": [
+  "ens15",
+  "judged",
+  "c1",
+  "c2"
+ ],
+ "arm_notes": {},
+ "ens15_parity_vs_stored_win_prob": {
+  "available": true,
+  "n": 307,
+  "max_abs_diff": 0.0,
+  "median_abs_diff": 0.0,
+  "n_within_1e-6": 307,
+  "note": "stored win_prob was computed on the same odds_used; residual differences come from as-of inputs that moved since compute (weather/going current values, D9)"
+ },
+ "evaluation_all_days": {
+  "n_rows": 307,
+  "n_races": 23,
+  "n_days": 1,
+  "days": [
+   "2026-10-12"
+  ],
+  "won": 23,
+  "h_distribution": {
+   "quantiles_min": {
+    "0.1": 18.5077917,
+    "0.25": 19.8299073,
+    "0.5": 20.725387716666667,
+    "0.75": 23.5938882,
+    "0.9": 24.574801633333333
+   },
+   "by_band": {
+    "(0,10]": 0,
+    "(10,30]": 307,
+    "(30,60]": 0,
+    "(60,180]": 0,
+    "(180,600]": 0,
+    ">600": 0
+   }
+  },
+  "ev_gt1_counts_by_h_band": {
+   "(0,10]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   "(10,30]": {
+    "ens15": 35,
+    "judged": 6,
+    "c1": 0,
+    "c2": 0
+   },
+   "(30,60]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   "(60,180]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   "(180,600]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   ">600": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   }
+  },
+  "arms": {
+   "ens15": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.18335760791411934,
+     "winner_nll_J": 1.6217013504415723,
+     "sum_p": 23.412036255565475,
+     "calib_ratio_all": 0.9824006655778381,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 272,
+       "won": 21,
+       "sum_p": 21.256530843004633,
+       "calib_ratio": 0.9879316693349773
+      },
+      "(1.0,1.2]": {
+       "n": 26,
+       "won": 1,
+       "sum_p": 1.6655476853110625,
+       "calib_ratio": 0.6004031039274851
+      },
+      ">1.2": {
+       "n": 9,
+       "won": 1,
+       "sum_p": 0.48995772724978215,
+       "calib_ratio": 2.0409924048206642
+      }
+     },
+     "ev_gt1": {
+      "n": 35,
+      "won": 2,
+      "sum_p": 2.1555054125608444,
+      "calib_ratio": 0.9278566355460475
+     },
+     "ev_gt12": {
+      "n": 9,
+      "won": 1,
+      "n_settled_official": 9,
+      "n_without_official_payout": 0,
+      "roi_official": 2.411111111111111,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18335760791411934,
+      "winner_nll_J": 1.6217013504415723,
+      "sum_p": 23.412036255565475,
+      "calib_ratio_all": 0.9824006655778381,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 272,
+        "won": 21,
+        "sum_p": 21.256530843004633,
+        "calib_ratio": 0.9879316693349773
+       },
+       "(1.0,1.2]": {
+        "n": 26,
+        "won": 1,
+        "sum_p": 1.6655476853110625,
+        "calib_ratio": 0.6004031039274851
+       },
+       ">1.2": {
+        "n": 9,
+        "won": 1,
+        "sum_p": 0.48995772724978215,
+        "calib_ratio": 2.0409924048206642
+       }
+      },
+      "ev_gt1": {
+       "n": 35,
+       "won": 2,
+       "sum_p": 2.1555054125608444,
+       "calib_ratio": 0.9278566355460475
+      },
+      "ev_gt12": {
+       "n": 9,
+       "won": 1,
+       "n_settled_official": 9,
+       "n_without_official_payout": 0,
+       "roi_official": 2.411111111111111,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18335760791411934,
+      "winner_nll_J": 1.6217013504415723,
+      "sum_p": 23.412036255565475,
+      "calib_ratio_all": 0.9824006655778381,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 272,
+        "won": 21,
+        "sum_p": 21.256530843004633,
+        "calib_ratio": 0.9879316693349773
+       },
+       "(1.0,1.2]": {
+        "n": 26,
+        "won": 1,
+        "sum_p": 1.6655476853110625,
+        "calib_ratio": 0.6004031039274851
+       },
+       ">1.2": {
+        "n": 9,
+        "won": 1,
+        "sum_p": 0.48995772724978215,
+        "calib_ratio": 2.0409924048206642
+       }
+      },
+      "ev_gt1": {
+       "n": 35,
+       "won": 2,
+       "sum_p": 2.1555054125608444,
+       "calib_ratio": 0.9278566355460475
+      },
+      "ev_gt12": {
+       "n": 9,
+       "won": 1,
+       "n_settled_official": 9,
+       "n_without_official_payout": 0,
+       "roi_official": 2.411111111111111,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    }
+   },
+   "judged": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.180149614482556,
+     "winner_nll_J": 1.5919082436251042,
+     "sum_p": 22.351473403836792,
+     "calib_ratio_all": 1.0290149371563078,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 301,
+       "won": 21,
+       "sum_p": 21.132311057655112,
+       "calib_ratio": 0.9937389215361193
+      },
+      "(1.0,1.2]": {
+       "n": 6,
+       "won": 2,
+       "sum_p": 1.2191623461816812,
+       "calib_ratio": 1.6404706118621855
+      },
+      ">1.2": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      }
+     },
+     "ev_gt1": {
+      "n": 6,
+      "won": 2,
+      "sum_p": 1.2191623461816812,
+      "calib_ratio": 1.6404706118621855
+     },
+     "ev_gt12": {
+      "n": 0,
+      "won": 0,
+      "n_settled_official": 0,
+      "n_without_official_payout": 0,
+      "roi_official": null,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.180149614482556,
+      "winner_nll_J": 1.5919082436251042,
+      "sum_p": 22.351473403836792,
+      "calib_ratio_all": 1.0290149371563078,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 301,
+        "won": 21,
+        "sum_p": 21.132311057655112,
+        "calib_ratio": 0.9937389215361193
+       },
+       "(1.0,1.2]": {
+        "n": 6,
+        "won": 2,
+        "sum_p": 1.2191623461816812,
+        "calib_ratio": 1.6404706118621855
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 6,
+       "won": 2,
+       "sum_p": 1.2191623461816812,
+       "calib_ratio": 1.6404706118621855
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.180149614482556,
+      "winner_nll_J": 1.5919082436251042,
+      "sum_p": 22.351473403836792,
+      "calib_ratio_all": 1.0290149371563078,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 301,
+        "won": 21,
+        "sum_p": 21.132311057655112,
+        "calib_ratio": 0.9937389215361193
+       },
+       "(1.0,1.2]": {
+        "n": 6,
+        "won": 2,
+        "sum_p": 1.2191623461816812,
+        "calib_ratio": 1.6404706118621855
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 6,
+       "won": 2,
+       "sum_p": 1.2191623461816812,
+       "calib_ratio": 1.6404706118621855
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    },
+    "paired_vs_ens15": {
+     "overall": {
+      "nll_J": {
+       "point": -0.003207993431563333,
+       "ci_low": -0.003207993431563333,
+       "ci_high": -0.003207993431563333,
+       "n_replicates_valid": 4000,
+       "arm_value": 0.18014961448255604,
+       "ref_value": 0.18335760791411937
+      },
+      "winner_nll_J": {
+       "point": -0.029793106816468073,
+       "ci_low": -0.029793106816468073,
+       "ci_high": -0.029793106816468073,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.5919082436251042,
+       "ref_value": 1.6217013504415723
+      },
+      "calib_ratio_ev_gt1": {
+       "point": 0.712613976316138,
+       "ci_low": 0.712613976316138,
+       "ci_high": 0.712613976316138,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.6404706118621855,
+       "ref_value": 0.9278566355460475
+      }
+     },
+     "by_h_band": {
+      "(10,30]": {
+       "nll_J": {
+        "point": -0.003207993431563333,
+        "ci_low": -0.003207993431563333,
+        "ci_high": -0.003207993431563333,
+        "n_replicates_valid": 4000,
+        "arm_value": 0.18014961448255604,
+        "ref_value": 0.18335760791411937
+       },
+       "winner_nll_J": {
+        "point": -0.029793106816468073,
+        "ci_low": -0.029793106816468073,
+        "ci_high": -0.029793106816468073,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.5919082436251042,
+        "ref_value": 1.6217013504415723
+       },
+       "calib_ratio_ev_gt1": {
+        "point": 0.712613976316138,
+        "ci_low": 0.712613976316138,
+        "ci_high": 0.712613976316138,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.6404706118621855,
+        "ref_value": 0.9278566355460475
+       }
+      }
+     }
+    }
+   },
+   "c1": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.18391883154522806,
+     "winner_nll_J": 1.6322016448042727,
+     "sum_p": 22.673308186766963,
+     "calib_ratio_all": 1.014408652259387,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 307,
+       "won": 23,
+       "sum_p": 22.673308186766963,
+       "calib_ratio": 1.014408652259387
+      },
+      "(1.0,1.2]": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      ">1.2": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      }
+     },
+     "ev_gt1": {
+      "n": 0,
+      "won": 0,
+      "sum_p": 0.0,
+      "calib_ratio": null
+     },
+     "ev_gt12": {
+      "n": 0,
+      "won": 0,
+      "n_settled_official": 0,
+      "n_without_official_payout": 0,
+      "roi_official": null,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18391883154522806,
+      "winner_nll_J": 1.6322016448042727,
+      "sum_p": 22.673308186766963,
+      "calib_ratio_all": 1.014408652259387,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.673308186766963,
+        "calib_ratio": 1.014408652259387
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18391883154522806,
+      "winner_nll_J": 1.6322016448042727,
+      "sum_p": 22.673308186766963,
+      "calib_ratio_all": 1.014408652259387,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.673308186766963,
+        "calib_ratio": 1.014408652259387
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    },
+    "paired_vs_ens15": {
+     "overall": {
+      "nll_J": {
+       "point": 0.0005612236311086094,
+       "ci_low": 0.0005612236311086094,
+       "ci_high": 0.0005612236311086094,
+       "n_replicates_valid": 4000,
+       "arm_value": 0.18391883154522798,
+       "ref_value": 0.18335760791411937
+      },
+      "winner_nll_J": {
+       "point": 0.01050029436270039,
+       "ci_low": 0.01050029436270039,
+       "ci_high": 0.01050029436270039,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.6322016448042727,
+       "ref_value": 1.6217013504415723
+      },
+      "calib_ratio_ev_gt1": {
+       "point": null,
+       "ci_low": null,
+       "ci_high": null,
+       "n_replicates_valid": 0,
+       "arm_value": null,
+       "ref_value": 0.9278566355460475
+      }
+     },
+     "by_h_band": {
+      "(10,30]": {
+       "nll_J": {
+        "point": 0.0005612236311086094,
+        "ci_low": 0.0005612236311086094,
+        "ci_high": 0.0005612236311086094,
+        "n_replicates_valid": 4000,
+        "arm_value": 0.18391883154522798,
+        "ref_value": 0.18335760791411937
+       },
+       "winner_nll_J": {
+        "point": 0.01050029436270039,
+        "ci_low": 0.01050029436270039,
+        "ci_high": 0.01050029436270039,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.6322016448042727,
+        "ref_value": 1.6217013504415723
+       },
+       "calib_ratio_ev_gt1": {
+        "point": null,
+        "ci_low": null,
+        "ci_high": null,
+        "n_replicates_valid": 0,
+        "arm_value": null,
+        "ref_value": 0.9278566355460475
+       }
+      }
+     }
+    }
+   },
+   "c2": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.1828863425831582,
+     "winner_nll_J": 1.6208402168914045,
+     "sum_p": 22.58452790598074,
+     "calib_ratio_all": 1.018396315200781,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 307,
+       "won": 23,
+       "sum_p": 22.58452790598074,
+       "calib_ratio": 1.018396315200781
+      },
+      "(1.0,1.2]": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      ">1.2": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      }
+     },
+     "ev_gt1": {
+      "n": 0,
+      "won": 0,
+      "sum_p": 0.0,
+      "calib_ratio": null
+     },
+     "ev_gt12": {
+      "n": 0,
+      "won": 0,
+      "n_settled_official": 0,
+      "n_without_official_payout": 0,
+      "roi_official": null,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.1828863425831582,
+      "winner_nll_J": 1.6208402168914045,
+      "sum_p": 22.58452790598074,
+      "calib_ratio_all": 1.018396315200781,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.58452790598074,
+        "calib_ratio": 1.018396315200781
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.1828863425831582,
+      "winner_nll_J": 1.6208402168914045,
+      "sum_p": 22.58452790598074,
+      "calib_ratio_all": 1.018396315200781,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.58452790598074,
+        "calib_ratio": 1.018396315200781
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    },
+    "paired_vs_ens15": {
+     "overall": {
+      "nll_J": {
+       "point": -0.0004712653309610626,
+       "ci_low": -0.0004712653309610626,
+       "ci_high": -0.0004712653309610626,
+       "n_replicates_valid": 4000,
+       "arm_value": 0.1828863425831583,
+       "ref_value": 0.18335760791411937
+      },
+      "winner_nll_J": {
+       "point": -0.0008611335501678141,
+       "ci_low": -0.0008611335501678141,
+       "ci_high": -0.0008611335501678141,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.6208402168914045,
+       "ref_value": 1.6217013504415723
+      },
+      "calib_ratio_ev_gt1": {
+       "point": null,
+       "ci_low": null,
+       "ci_high": null,
+       "n_replicates_valid": 0,
+       "arm_value": null,
+       "ref_value": 0.9278566355460475
+      }
+     },
+     "by_h_band": {
+      "(10,30]": {
+       "nll_J": {
+        "point": -0.0004712653309610626,
+        "ci_low": -0.0004712653309610626,
+        "ci_high": -0.0004712653309610626,
+        "n_replicates_valid": 4000,
+        "arm_value": 0.1828863425831583,
+        "ref_value": 0.18335760791411937
+       },
+       "winner_nll_J": {
+        "point": -0.0008611335501678141,
+        "ci_low": -0.0008611335501678141,
+        "ci_high": -0.0008611335501678141,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.6208402168914045,
+        "ref_value": 1.6217013504415723
+       },
+       "calib_ratio_ev_gt1": {
+        "point": null,
+        "ci_low": null,
+        "ci_high": null,
+        "n_replicates_valid": 0,
+        "arm_value": null,
+        "ref_value": 0.9278566355460475
+       }
+      }
+     }
+    }
+   }
+  },
+  "bootstrap": {
+   "method": "race-day block bootstrap, shared draws across arms/series",
+   "B": 4000,
+   "seed": 20261011,
+   "n_blocks": 1
+  }
+ },
+ "evaluation_eligible_days": {
+  "n_rows": 307,
+  "n_races": 23,
+  "n_days": 1,
+  "days": [
+   "2026-10-12"
+  ],
+  "won": 23,
+  "h_distribution": {
+   "quantiles_min": {
+    "0.1": 18.5077917,
+    "0.25": 19.8299073,
+    "0.5": 20.725387716666667,
+    "0.75": 23.5938882,
+    "0.9": 24.574801633333333
+   },
+   "by_band": {
+    "(0,10]": 0,
+    "(10,30]": 307,
+    "(30,60]": 0,
+    "(60,180]": 0,
+    "(180,600]": 0,
+    ">600": 0
+   }
+  },
+  "ev_gt1_counts_by_h_band": {
+   "(0,10]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   "(10,30]": {
+    "ens15": 35,
+    "judged": 6,
+    "c1": 0,
+    "c2": 0
+   },
+   "(30,60]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   "(60,180]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   "(180,600]": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   },
+   ">600": {
+    "ens15": 0,
+    "judged": 0,
+    "c1": 0,
+    "c2": 0
+   }
+  },
+  "arms": {
+   "ens15": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.18335760791411934,
+     "winner_nll_J": 1.6217013504415723,
+     "sum_p": 23.412036255565475,
+     "calib_ratio_all": 0.9824006655778381,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 272,
+       "won": 21,
+       "sum_p": 21.256530843004633,
+       "calib_ratio": 0.9879316693349773
+      },
+      "(1.0,1.2]": {
+       "n": 26,
+       "won": 1,
+       "sum_p": 1.6655476853110625,
+       "calib_ratio": 0.6004031039274851
+      },
+      ">1.2": {
+       "n": 9,
+       "won": 1,
+       "sum_p": 0.48995772724978215,
+       "calib_ratio": 2.0409924048206642
+      }
+     },
+     "ev_gt1": {
+      "n": 35,
+      "won": 2,
+      "sum_p": 2.1555054125608444,
+      "calib_ratio": 0.9278566355460475
+     },
+     "ev_gt12": {
+      "n": 9,
+      "won": 1,
+      "n_settled_official": 9,
+      "n_without_official_payout": 0,
+      "roi_official": 2.411111111111111,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18335760791411934,
+      "winner_nll_J": 1.6217013504415723,
+      "sum_p": 23.412036255565475,
+      "calib_ratio_all": 0.9824006655778381,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 272,
+        "won": 21,
+        "sum_p": 21.256530843004633,
+        "calib_ratio": 0.9879316693349773
+       },
+       "(1.0,1.2]": {
+        "n": 26,
+        "won": 1,
+        "sum_p": 1.6655476853110625,
+        "calib_ratio": 0.6004031039274851
+       },
+       ">1.2": {
+        "n": 9,
+        "won": 1,
+        "sum_p": 0.48995772724978215,
+        "calib_ratio": 2.0409924048206642
+       }
+      },
+      "ev_gt1": {
+       "n": 35,
+       "won": 2,
+       "sum_p": 2.1555054125608444,
+       "calib_ratio": 0.9278566355460475
+      },
+      "ev_gt12": {
+       "n": 9,
+       "won": 1,
+       "n_settled_official": 9,
+       "n_without_official_payout": 0,
+       "roi_official": 2.411111111111111,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18335760791411934,
+      "winner_nll_J": 1.6217013504415723,
+      "sum_p": 23.412036255565475,
+      "calib_ratio_all": 0.9824006655778381,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 272,
+        "won": 21,
+        "sum_p": 21.256530843004633,
+        "calib_ratio": 0.9879316693349773
+       },
+       "(1.0,1.2]": {
+        "n": 26,
+        "won": 1,
+        "sum_p": 1.6655476853110625,
+        "calib_ratio": 0.6004031039274851
+       },
+       ">1.2": {
+        "n": 9,
+        "won": 1,
+        "sum_p": 0.48995772724978215,
+        "calib_ratio": 2.0409924048206642
+       }
+      },
+      "ev_gt1": {
+       "n": 35,
+       "won": 2,
+       "sum_p": 2.1555054125608444,
+       "calib_ratio": 0.9278566355460475
+      },
+      "ev_gt12": {
+       "n": 9,
+       "won": 1,
+       "n_settled_official": 9,
+       "n_without_official_payout": 0,
+       "roi_official": 2.411111111111111,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    }
+   },
+   "judged": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.180149614482556,
+     "winner_nll_J": 1.5919082436251042,
+     "sum_p": 22.351473403836792,
+     "calib_ratio_all": 1.0290149371563078,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 301,
+       "won": 21,
+       "sum_p": 21.132311057655112,
+       "calib_ratio": 0.9937389215361193
+      },
+      "(1.0,1.2]": {
+       "n": 6,
+       "won": 2,
+       "sum_p": 1.2191623461816812,
+       "calib_ratio": 1.6404706118621855
+      },
+      ">1.2": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      }
+     },
+     "ev_gt1": {
+      "n": 6,
+      "won": 2,
+      "sum_p": 1.2191623461816812,
+      "calib_ratio": 1.6404706118621855
+     },
+     "ev_gt12": {
+      "n": 0,
+      "won": 0,
+      "n_settled_official": 0,
+      "n_without_official_payout": 0,
+      "roi_official": null,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.180149614482556,
+      "winner_nll_J": 1.5919082436251042,
+      "sum_p": 22.351473403836792,
+      "calib_ratio_all": 1.0290149371563078,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 301,
+        "won": 21,
+        "sum_p": 21.132311057655112,
+        "calib_ratio": 0.9937389215361193
+       },
+       "(1.0,1.2]": {
+        "n": 6,
+        "won": 2,
+        "sum_p": 1.2191623461816812,
+        "calib_ratio": 1.6404706118621855
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 6,
+       "won": 2,
+       "sum_p": 1.2191623461816812,
+       "calib_ratio": 1.6404706118621855
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.180149614482556,
+      "winner_nll_J": 1.5919082436251042,
+      "sum_p": 22.351473403836792,
+      "calib_ratio_all": 1.0290149371563078,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 301,
+        "won": 21,
+        "sum_p": 21.132311057655112,
+        "calib_ratio": 0.9937389215361193
+       },
+       "(1.0,1.2]": {
+        "n": 6,
+        "won": 2,
+        "sum_p": 1.2191623461816812,
+        "calib_ratio": 1.6404706118621855
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 6,
+       "won": 2,
+       "sum_p": 1.2191623461816812,
+       "calib_ratio": 1.6404706118621855
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    },
+    "paired_vs_ens15": {
+     "overall": {
+      "nll_J": {
+       "point": -0.003207993431563333,
+       "ci_low": -0.003207993431563333,
+       "ci_high": -0.003207993431563333,
+       "n_replicates_valid": 4000,
+       "arm_value": 0.18014961448255604,
+       "ref_value": 0.18335760791411937
+      },
+      "winner_nll_J": {
+       "point": -0.029793106816468073,
+       "ci_low": -0.029793106816468073,
+       "ci_high": -0.029793106816468073,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.5919082436251042,
+       "ref_value": 1.6217013504415723
+      },
+      "calib_ratio_ev_gt1": {
+       "point": 0.712613976316138,
+       "ci_low": 0.712613976316138,
+       "ci_high": 0.712613976316138,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.6404706118621855,
+       "ref_value": 0.9278566355460475
+      }
+     },
+     "by_h_band": {
+      "(10,30]": {
+       "nll_J": {
+        "point": -0.003207993431563333,
+        "ci_low": -0.003207993431563333,
+        "ci_high": -0.003207993431563333,
+        "n_replicates_valid": 4000,
+        "arm_value": 0.18014961448255604,
+        "ref_value": 0.18335760791411937
+       },
+       "winner_nll_J": {
+        "point": -0.029793106816468073,
+        "ci_low": -0.029793106816468073,
+        "ci_high": -0.029793106816468073,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.5919082436251042,
+        "ref_value": 1.6217013504415723
+       },
+       "calib_ratio_ev_gt1": {
+        "point": 0.712613976316138,
+        "ci_low": 0.712613976316138,
+        "ci_high": 0.712613976316138,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.6404706118621855,
+        "ref_value": 0.9278566355460475
+       }
+      }
+     }
+    }
+   },
+   "c1": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.18391883154522806,
+     "winner_nll_J": 1.6322016448042727,
+     "sum_p": 22.673308186766963,
+     "calib_ratio_all": 1.014408652259387,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 307,
+       "won": 23,
+       "sum_p": 22.673308186766963,
+       "calib_ratio": 1.014408652259387
+      },
+      "(1.0,1.2]": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      ">1.2": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      }
+     },
+     "ev_gt1": {
+      "n": 0,
+      "won": 0,
+      "sum_p": 0.0,
+      "calib_ratio": null
+     },
+     "ev_gt12": {
+      "n": 0,
+      "won": 0,
+      "n_settled_official": 0,
+      "n_without_official_payout": 0,
+      "roi_official": null,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18391883154522806,
+      "winner_nll_J": 1.6322016448042727,
+      "sum_p": 22.673308186766963,
+      "calib_ratio_all": 1.014408652259387,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.673308186766963,
+        "calib_ratio": 1.014408652259387
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.18391883154522806,
+      "winner_nll_J": 1.6322016448042727,
+      "sum_p": 22.673308186766963,
+      "calib_ratio_all": 1.014408652259387,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.673308186766963,
+        "calib_ratio": 1.014408652259387
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    },
+    "paired_vs_ens15": {
+     "overall": {
+      "nll_J": {
+       "point": 0.0005612236311086094,
+       "ci_low": 0.0005612236311086094,
+       "ci_high": 0.0005612236311086094,
+       "n_replicates_valid": 4000,
+       "arm_value": 0.18391883154522798,
+       "ref_value": 0.18335760791411937
+      },
+      "winner_nll_J": {
+       "point": 0.01050029436270039,
+       "ci_low": 0.01050029436270039,
+       "ci_high": 0.01050029436270039,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.6322016448042727,
+       "ref_value": 1.6217013504415723
+      },
+      "calib_ratio_ev_gt1": {
+       "point": null,
+       "ci_low": null,
+       "ci_high": null,
+       "n_replicates_valid": 0,
+       "arm_value": null,
+       "ref_value": 0.9278566355460475
+      }
+     },
+     "by_h_band": {
+      "(10,30]": {
+       "nll_J": {
+        "point": 0.0005612236311086094,
+        "ci_low": 0.0005612236311086094,
+        "ci_high": 0.0005612236311086094,
+        "n_replicates_valid": 4000,
+        "arm_value": 0.18391883154522798,
+        "ref_value": 0.18335760791411937
+       },
+       "winner_nll_J": {
+        "point": 0.01050029436270039,
+        "ci_low": 0.01050029436270039,
+        "ci_high": 0.01050029436270039,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.6322016448042727,
+        "ref_value": 1.6217013504415723
+       },
+       "calib_ratio_ev_gt1": {
+        "point": null,
+        "ci_low": null,
+        "ci_high": null,
+        "n_replicates_valid": 0,
+        "arm_value": null,
+        "ref_value": 0.9278566355460475
+       }
+      }
+     }
+    }
+   },
+   "c2": {
+    "overall": {
+     "n": 307,
+     "n_races": 23,
+     "won": 23,
+     "nll_J": 0.1828863425831582,
+     "winner_nll_J": 1.6208402168914045,
+     "sum_p": 22.58452790598074,
+     "calib_ratio_all": 1.018396315200781,
+     "median_O_F": 20.2,
+     "median_O_J": 18.5,
+     "median_log_OF_over_OJ": 0.20668227426013774,
+     "ev_bands": {
+      "<=1.0": {
+       "n": 307,
+       "won": 23,
+       "sum_p": 22.58452790598074,
+       "calib_ratio": 1.018396315200781
+      },
+      "(1.0,1.2]": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      ">1.2": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      }
+     },
+     "ev_gt1": {
+      "n": 0,
+      "won": 0,
+      "sum_p": 0.0,
+      "calib_ratio": null
+     },
+     "ev_gt12": {
+      "n": 0,
+      "won": 0,
+      "n_settled_official": 0,
+      "n_without_official_payout": 0,
+      "roi_official": null,
+      "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+     }
+    },
+    "by_h_band": {
+     "(0,10]": {
+      "n": 0
+     },
+     "(10,30]": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.1828863425831582,
+      "winner_nll_J": 1.6208402168914045,
+      "sum_p": 22.58452790598074,
+      "calib_ratio_all": 1.018396315200781,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.58452790598074,
+        "calib_ratio": 1.018396315200781
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      }
+     },
+     "(30,60]": {
+      "n": 0
+     },
+     "(60,180]": {
+      "n": 0
+     },
+     "(180,600]": {
+      "n": 0
+     },
+     ">600": {
+      "n": 0
+     }
+    },
+    "by_day": {
+     "2026-10-12": {
+      "n": 307,
+      "n_races": 23,
+      "won": 23,
+      "nll_J": 0.1828863425831582,
+      "winner_nll_J": 1.6208402168914045,
+      "sum_p": 22.58452790598074,
+      "calib_ratio_all": 1.018396315200781,
+      "median_O_F": 20.2,
+      "median_O_J": 18.5,
+      "median_log_OF_over_OJ": 0.20668227426013774,
+      "ev_bands": {
+       "<=1.0": {
+        "n": 307,
+        "won": 23,
+        "sum_p": 22.58452790598074,
+        "calib_ratio": 1.018396315200781
+       },
+       "(1.0,1.2]": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       },
+       ">1.2": {
+        "n": 0,
+        "won": 0,
+        "sum_p": 0.0,
+        "calib_ratio": null
+       }
+      },
+      "ev_gt1": {
+       "n": 0,
+       "won": 0,
+       "sum_p": 0.0,
+       "calib_ratio": null
+      },
+      "ev_gt12": {
+       "n": 0,
+       "won": 0,
+       "n_settled_official": 0,
+       "n_without_official_payout": 0,
+       "roi_official": null,
+       "roi_note": "ROI の改善を示すものではない(記録のみ・採否に使わない)"
+      },
+      "dry_run": false
+     }
+    },
+    "paired_vs_ens15": {
+     "overall": {
+      "nll_J": {
+       "point": -0.0004712653309610626,
+       "ci_low": -0.0004712653309610626,
+       "ci_high": -0.0004712653309610626,
+       "n_replicates_valid": 4000,
+       "arm_value": 0.1828863425831583,
+       "ref_value": 0.18335760791411937
+      },
+      "winner_nll_J": {
+       "point": -0.0008611335501678141,
+       "ci_low": -0.0008611335501678141,
+       "ci_high": -0.0008611335501678141,
+       "n_replicates_valid": 4000,
+       "arm_value": 1.6208402168914045,
+       "ref_value": 1.6217013504415723
+      },
+      "calib_ratio_ev_gt1": {
+       "point": null,
+       "ci_low": null,
+       "ci_high": null,
+       "n_replicates_valid": 0,
+       "arm_value": null,
+       "ref_value": 0.9278566355460475
+      }
+     },
+     "by_h_band": {
+      "(10,30]": {
+       "nll_J": {
+        "point": -0.0004712653309610626,
+        "ci_low": -0.0004712653309610626,
+        "ci_high": -0.0004712653309610626,
+        "n_replicates_valid": 4000,
+        "arm_value": 0.1828863425831583,
+        "ref_value": 0.18335760791411937
+       },
+       "winner_nll_J": {
+        "point": -0.0008611335501678141,
+        "ci_low": -0.0008611335501678141,
+        "ci_high": -0.0008611335501678141,
+        "n_replicates_valid": 4000,
+        "arm_value": 1.6208402168914045,
+        "ref_value": 1.6217013504415723
+       },
+       "calib_ratio_ev_gt1": {
+        "point": null,
+        "ci_low": null,
+        "ci_high": null,
+        "n_replicates_valid": 0,
+        "arm_value": null,
+        "ref_value": 0.9278566355460475
+       }
+      }
+     }
+    }
+   }
+  },
+  "bootstrap": {
+   "method": "race-day block bootstrap, shared draws across arms/series",
+   "B": 4000,
+   "seed": 20261011,
+   "n_blocks": 1
+  }
+ },
+ "verdict": {
+  "eligible_days": 1,
+  "eligible_races": 23,
+  "min_days": 8,
+  "min_races": 200,
+  "verdict": "recorded_only",
+  "rules": {
+   "threshold": "no verdict until >= 8 eligible (non-dry-run) race days AND >= 200 eligible races; below that verdict='recorded_only'",
+   "i": "judged arm only: closing-odds 2026 OOS (<= 2026-06-26) NLL <= ens15 + 0.0002 and race-normalised winner NLL not worse (checked separately, T012)",
+   "ii": "paired difference in nll_J vs ens15: 95% interval upper bound < 0",
+   "iii": "EV_J>1.0 band sum won / sum p_hat closer to 1 than ens15 (direction only while hits are few)",
+   "not_used": [
+    "retention rate",
+    "EV_F/EV_J",
+    "ROI"
+   ]
+  },
+  "diagnostic_arms_not_judged": [],
+  "reason": "eligible (non-dry-run) days 1 < 8 or races 23 < 200"
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "判断時専用版(mev-ens15-judged)は表示・確定側に接続しない(研究 artifact・本番非結線)"
+ ],
+ "elapsed_s": 16.6
+}

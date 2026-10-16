@@ -208,6 +208,6 @@ def test_downgrade_to_0019_removes_the_table_and_upgrade_restores_it(
         assert set(inspect(engine).get_table_names()) == tables_at_head
         with engine.connect() as conn:
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        assert version == "0020_official_win_payouts"
+        assert version == "0021_win_odds_provenance"  # head moved past 0020 (140 columns)
     finally:
         command.upgrade(alembic_cfg, "head")

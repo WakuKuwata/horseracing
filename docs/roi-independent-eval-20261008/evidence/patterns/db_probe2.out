@@ -1,0 +1,292 @@
+## chaos_snapshots seconds_to_post distribution (status, trigger)
+   status capture_trigger    n          d0          d1  le1m  le2m  le5m  le10m  le30m  le60m  null_stp      med_h
+0  active    predict_auto  511  2026-07-31  2026-10-03     0     0     0      0      6     21         0   7.672500
+1  active  predict_manual   16  2026-08-01  2026-09-06     0     0     0      1     11     12         0   0.439583
+2    void    predict_auto    1  2026-07-31  2026-07-31     0     0     0      0      0      0         0  21.601667
+                                     percentile_cont
+0  [2907.4, 5637.6, 12160.5, 26496.0, 55986.5, 70...
+## chaos distinct races and days
+   races  days
+0    528    19
+## attention_picks seconds_to_post
+     rule_set_version  kind     n  races  le5m  le10m  le30m  le60m  null_stp     med_h          d0          d1
+0  attention-S1-S5-v1  pick  2717   1289  1458   1458   1462   1462      1240 -3817.655  2026-10-02  2026-10-04
+## attention_race_scans: first scan per race seconds_to_post
+   races  le10m  le30m  le60m     med_h
+0     18      1      2      3  6.098021
+## market_ev_predictions: result_pending rows seconds to post (via races.post_time)
+   races  le10m  le30m  le60m  after_post
+0     18      1      4      7           0
+## official_win_payouts coverage
+   rows  races            r0            r1
+0   505    504  202601010701  202609040912
+            m  races_with_result  races_with_payout
+0  2026-06-01                264                  0
+1  2026-07-01                288                  0
+2  2026-08-01                360                216
+3  2026-09-01                240                240
+4  2026-10-01                 48                 48
+## exotic_odds coverage by bet_type and month (confirmed dividends, 080)
+     bet_type           m  races  rows
+0      exacta  2025-01-01     39    39
+1       place  2025-01-01     39   116
+2    quinella  2025-01-01     39    39
+3    trifecta  2025-01-01     39    39
+4        trio  2025-01-01     39    39
+5        wide  2025-01-01     39   117
+6      exacta  2025-02-01     41    41
+7       place  2025-02-01     41   122
+8    quinella  2025-02-01     41    41
+9    trifecta  2025-02-01     41    41
+10       trio  2025-02-01     41    41
+11       wide  2025-02-01     41   123
+12     exacta  2025-03-01     47    47
+13      place  2025-03-01     47   141
+14   quinella  2025-03-01     47    47
+15   trifecta  2025-03-01     47    47
+16       trio  2025-03-01     47    47
+17       wide  2025-03-01     47   141
+18     exacta  2025-04-01     40    40
+19      place  2025-04-01     40   118
+20   quinella  2025-04-01     40    40
+21   trifecta  2025-04-01     40    40
+22       trio  2025-04-01     40    40
+23       wide  2025-04-01     40   120
+24     exacta  2025-05-01     38    38
+25      place  2025-05-01     38   114
+26   quinella  2025-05-01     38    38
+27   trifecta  2025-05-01     38    38
+28       trio  2025-05-01     38    38
+29       wide  2025-05-01     38   114
+30     exacta  2025-06-01     49    49
+31      place  2025-06-01     49   147
+32   quinella  2025-06-01     49    49
+33   trifecta  2025-06-01     49    49
+34       trio  2025-06-01     49    49
+35       wide  2025-06-01     49   147
+36     exacta  2025-07-01     59    59
+37      place  2025-07-01     59   174
+38   quinella  2025-07-01     59    59
+39   trifecta  2025-07-01     59    59
+40       trio  2025-07-01     59    59
+41       wide  2025-07-01     59   177
+42     exacta  2025-08-01     44    44
+43      place  2025-08-01     44   130
+44   quinella  2025-08-01     44    44
+45   trifecta  2025-08-01     44    44
+46       trio  2025-08-01     44    44
+47       wide  2025-08-01     44   132
+48     exacta  2025-09-01     31    31
+49      place  2025-09-01     31    90
+50   quinella  2025-09-01     31    31
+51   trifecta  2025-09-01     31    31
+52       trio  2025-09-01     31    31
+53       wide  2025-09-01     31    93
+54     exacta  2025-10-01     40    41
+55      place  2025-10-01     40   118
+56   quinella  2025-10-01     40    41
+57   trifecta  2025-10-01     40    41
+58       trio  2025-10-01     40    40
+59       wide  2025-10-01     40   120
+60     exacta  2025-11-01    127   128
+61      place  2025-11-01    127   381
+62   quinella  2025-11-01    127   128
+63   trifecta  2025-11-01    127   131
+64       trio  2025-11-01    127   130
+65       wide  2025-11-01    127   387
+66     exacta  2025-12-01    264   266
+67      place  2025-12-01    264   789
+68   quinella  2025-12-01    264   266
+69   trifecta  2025-12-01    264   267
+70       trio  2025-12-01    264   265
+71       wide  2025-12-01    264   794
+72     exacta  2026-01-01    276   276
+73      place  2026-01-01    276   827
+74   quinella  2026-01-01    276   276
+75   trifecta  2026-01-01    276   277
+76       trio  2026-01-01    276   277
+77       wide  2026-01-01    276   830
+78     exacta  2026-02-01    282   282
+79      place  2026-02-01    282   841
+80   quinella  2026-02-01    282   282
+81   trifecta  2026-02-01    282   282
+82       trio  2026-02-01    282   282
+83       wide  2026-02-01    282   846
+84     exacta  2026-03-01    300   302
+85      place  2026-03-01    300   893
+86   quinella  2026-03-01    300   302
+87   trifecta  2026-03-01    300   302
+88       trio  2026-03-01    300   300
+89       wide  2026-03-01    300   900
+90     exacta  2026-04-01    264   264
+91      place  2026-04-01    264   789
+92   quinella  2026-04-01    264   264
+93   trifecta  2026-04-01    264   266
+94       trio  2026-04-01    264   266
+95       wide  2026-04-01    264   796
+96     exacta  2026-05-01    336   338
+97      place  2026-05-01    336  1008
+98   quinella  2026-05-01    336   337
+99   trifecta  2026-05-01    336   340
+100      trio  2026-05-01    336   338
+101      wide  2026-05-01    336  1012
+102    exacta  2026-06-01    264   265
+103     place  2026-06-01    264   785
+104  quinella  2026-06-01    264   265
+105  trifecta  2026-06-01    264   265
+106      trio  2026-06-01    264   264
+107      wide  2026-06-01    264   792
+108    exacta  2026-07-01    234   234
+109     place  2026-07-01    234   696
+110  quinella  2026-07-01    234   234
+111  trifecta  2026-07-01    234   236
+112      trio  2026-07-01    234   236
+113      wide  2026-07-01    234   706
+114    exacta  2026-08-01    360   361
+115     place  2026-08-01    360  1068
+116  quinella  2026-08-01    360   360
+117  trifecta  2026-08-01    360   361
+118      trio  2026-08-01    360   360
+119      wide  2026-08-01    360  1080
+120    exacta  2026-09-01    240   240
+121     place  2026-09-01    240   705
+122  quinella  2026-09-01    240   240
+123  trifecta  2026-09-01    240   240
+124      trio  2026-09-01    240   240
+125      wide  2026-09-01    240   720
+126    exacta  2026-10-01     48    48
+127     place  2026-10-01     48   145
+128  quinella  2026-10-01     48    48
+129  trifecta  2026-10-01     48    49
+130      trio  2026-10-01     48    49
+131      wide  2026-10-01     48   146
+## exotic_quotes coverage
+       column_name                 data_type
+0  exotic_quote_id                      uuid
+1          race_id                      text
+2         bet_type                      text
+3           quotes                     jsonb
+4   n_combinations                   integer
+5      official_at  timestamp with time zone
+6      observed_at  timestamp with time zone
+7           source                      text
+8       created_at  timestamp with time zone
+9       updated_at  timestamp with time zone
+    bet_type           m  races  rows
+0   quinella  2024-01-01    252   252
+1   quinella  2024-02-01    258   258
+2   quinella  2024-03-01    288   288
+3   quinella  2024-04-01    250   250
+4   quinella  2024-05-01    222   222
+5   quinella  2024-06-01    291   291
+6   quinella  2024-07-01    224   224
+7   quinella  2024-08-01    262   262
+8   quinella  2024-09-01    223   223
+9   quinella  2024-10-01    235   235
+10  quinella  2024-11-01    264   264
+11  quinella  2024-12-01    214   214
+12  quinella  2025-01-01    215   215
+13      trio  2025-01-01     39    39
+14      wide  2025-01-01     39    39
+15  quinella  2025-02-01    252   252
+16      trio  2025-02-01     41    41
+17      wide  2025-02-01     41    41
+18  quinella  2025-03-01    300   300
+19      trio  2025-03-01     47    47
+20      wide  2025-03-01     47    47
+21  quinella  2025-04-01    241   241
+22      trio  2025-04-01     40    40
+23      wide  2025-04-01     40    40
+24  quinella  2025-05-01    285   285
+25      trio  2025-05-01     38    38
+26      wide  2025-05-01     38    38
+27  quinella  2025-06-01    254   254
+28      trio  2025-06-01     49    49
+29      wide  2025-06-01     49    49
+30  quinella  2025-07-01    259   259
+31      trio  2025-07-01     59    59
+32      wide  2025-07-01     59    59
+33  quinella  2025-08-01    320   320
+34      trio  2025-08-01     44    44
+35      wide  2025-08-01     44    44
+36  quinella  2025-09-01    212   212
+37      trio  2025-09-01     31    31
+38      wide  2025-09-01     31    31
+39  quinella  2025-10-01    227   227
+40      trio  2025-10-01     39    39
+41      wide  2025-10-01     39    39
+42  quinella  2025-11-01    282   282
+43      trio  2025-11-01     50    50
+44      wide  2025-11-01     50    50
+45  quinella  2025-12-01    238   238
+46      trio  2025-12-01     44    44
+47      wide  2025-12-01     44    44
+48  quinella  2026-01-01    243   243
+49      trio  2026-01-01     61    61
+50      wide  2026-01-01     61    61
+51  quinella  2026-02-01    241   241
+52      trio  2026-02-01     36    36
+53      wide  2026-02-01     36    36
+54  quinella  2026-03-01    268   268
+55      trio  2026-03-01     74    74
+56      wide  2026-03-01     74    74
+57  quinella  2026-04-01    235   235
+58      trio  2026-04-01     69    69
+59      wide  2026-04-01     69    69
+60  quinella  2026-05-01    300   300
+61      trio  2026-05-01     76    76
+62      wide  2026-05-01     76    76
+63  quinella  2026-06-01    236   236
+64      trio  2026-06-01     75    75
+65      wide  2026-06-01     75    75
+66  quinella  2026-07-01    265   265
+67      trio  2026-07-01     89    89
+68      wide  2026-07-01     89    89
+69  quinella  2026-08-01     94    94
+70      trio  2026-08-01     94    94
+71      wide  2026-08-01     94    94
+72  quinella  2026-09-01     91    91
+73      trio  2026-09-01     91    91
+74      wide  2026-09-01     91    91
+75  quinella  2026-10-01     13    13
+76      trio  2026-10-01     13    13
+77      wide  2026-10-01     13    13
+## purchase_records
+                kind  n  races          d0          d1
+0       as_presented  1      1  2026-09-02  2026-09-02
+1         correction  1      1  2026-09-02  2026-09-02
+2           freeform  1      1  2026-09-02  2026-09-02
+3  skipped_presented  1      1  2026-09-02  2026-09-02
+4               void  3      2  2026-09-02  2026-09-02
+## post_time coverage by year, races per year (flat only?)
+       y  races  with_post_time  jump
+0   2007   3453               0     0
+1   2008   3452               0     0
+2   2009   3453               0     0
+3   2010   3454               0     0
+4   2011   3453               0     0
+5   2012   3454               0     0
+6   2013   3454               0     0
+7   2014   3451               0     0
+8   2015   3454               0     0
+9   2016   3454               0     0
+10  2017   3455               0     0
+11  2018   3454               0     0
+12  2019   3452               0     0
+13  2020   3456               0     0
+14  2021   3456               0     0
+15  2022   3456               0     0
+16  2023   3456               0     0
+17  2024   3454               0     0
+18  2025   3455             792     0
+19  2026   2658            2658     0
+  track_type  count
+0          芝   4642
+1          ダ   4587
+2          障    338
+## race days per year
+      y  days  races_per_day
+0  2023   107           32.3
+1  2024   106           32.6
+2  2025   109           31.7
+3  2026    84           31.6

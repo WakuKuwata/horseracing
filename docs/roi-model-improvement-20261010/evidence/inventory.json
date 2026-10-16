@@ -1,0 +1,129 @@
+{
+ "summary_ja": "mev-binary/ens15 系統で試されたモデル側の変更を docs(roi-recheck/strict2007/pattern-exploration-20260930/followup-20261001/missed-20261004/comprehensive-20261005/independent-eval-20261008)と scripts/roi_explore(direct_return_model.py・strict2007_market_models.py・patterns_2007.py・residual_context_model_20261001.py・comprehensive_20261005/*)から台帳化した(試行 20 項目・未試行 12 項目・本番レバー対応 7 項目)。結論: (1) 試されたのは seed 数・rounds 600・学習窓・本番 p 追加・目的関数(回帰/Huber)・2 段目 context・R11 offset 残差・年次較正・レース内正規化・メタ補正・特徴追加(20 文脈+13 セル)・選択後 isotonic/logistic・価格ノイズ診断で、採用に至ったのは seed 平均(15 本)だけ。それも ROI は非有意(確認窓 1.113 p=0.10)で、採用根拠は全馬 LogLoss 0.201584→0.201204・ECE 0.00111→0.00066 の較正条件。(2) 本番勝率モデルで効いた 036 TE+isotonic(−0.014)・039/042 race-softmax/PL(−0.00057/−0.00085)・085 OOF 校正(−0.0128)・094 rounds900(−0.0067)・091 skew mask(−0.0106)は、seed 平均を除きどれも市場モデルに未移植。ハイパラ探索・target encoding・全馬 NLL での校正器評価も未実施。(3) モデル側で唯一「機構が実測され、未実施」なのは判断時→確定の価格 skew(S3 該当馬 log(O_F/O_J) 中央値 0.58・EV_F/EV_J 0.81・保持率 0.17〜0.20)を学習に取り込むオッズノイズ注入で、受入は ROI でなく保持率・EV_F/EV_J で測れる。(4) NLL 側で未使用の大玉は race-softmax 目的関数と rounds 900/容量だが、市場モデルの ROI は NLL 改善に鈍感(rounds 600・N1 正規化・較正いずれも ROI を有意に動かしていない)なので「確定オッズでの NLL/較正」と「保存価格 ROI」を同じ受入基準にしてはいけない。",
+ "findings": [
+  {
+   "id": "L01",
+   "title_ja": "採用に至ったモデル側の変更は seed 平均(15 本)だけで、根拠は較正条件であって ROI ではない",
+   "claim_ja": "確認窓 2019–26 の EV>1.2 ROI は k=1 1.006 → k=7 1.107(p=0.070)→ k=15 1.113([0.934,1.308] p=0.101)で k≈9 で頭打ち。全馬 LogLoss は単 seed 0.201584 → ens15 0.201204、ECE(等質量)0.00111 → 0.00066。製品切替は FR-015(LogLoss ≤ 単 seed かつ ECE ≤ +0.001)で判定された。NLL 側の seed 曲線(k=3,5,7…)は計測されていない。",
+   "evidence_ja": "docs/roi-pattern-exploration-20260930/followup-20261001.md:71-82・specs/138-attention-conditions/spec.md:76-83・refreeze-diff.md(予測は研究 fit とビット一致)・artifacts/roi_explore/results/patterns_2007/seed_curve.json",
+   "status": "measured",
+   "implication_ja": "seed 平均は市場モデルで唯一移植済みの本番レバー。ROI は非有意なので『15 で飽和』は ROI 曲線の読みであり、NLL の飽和点と seed 相関 ρ(本番は 0.234)は未計測。"
+  },
+  {
+   "id": "L02",
+   "title_ja": "容量(rounds 600)・学習窓(直近 8 年)・本番 p 追加・目的関数(回帰/Huber)は全て ROI を動かさなかった",
+   "claim_ja": "rounds 600: EV>1.2 確認窓 1.008(n=15,437・該当 2 倍)、seed2 0.981・seed3 1.026・3seed 平均 1.073 p=0.12。直近 8 年: 確認 0.989(n=12,389)・top_decile 0.917(全期間 0.967 より悪化)。本番 p 追加: 確認 1.054 だが発見 0.997 で落ち、R04 ΔR²(prod|q,ens15)=+0.000171・2019+ −0.000037。回帰 τ>20 は 0.847/0.783/0.841・Huber は該当 11〜31 頭。NLL はいずれも未報告(ROI だけで評価)。",
+   "evidence_ja": "docs/roi-pattern-exploration-20260930/report.md:95-109(§2.4-2.5)・artifacts/roi_explore/results/patterns_2007/r600_seed_check.json・docs/roi-strict2007-20260930/report.md:60-71・docs/roi-missed-patterns-20261004/report.md:123-129・artifacts/roi_explore/results/{..._r600,..._win8,armC_withp...,armC_huber...}/result.json",
+   "status": "measured",
+   "implication_ja": "rounds 900・leaves/lr 探索は未試行だが、600 で該当頭数が倍増し ROI が 1.0 に収束したことから、容量は p̂ の散らばりを増やすだけで ROI には効かない見込み。NLL 側の効果は別に測る必要がある。"
+  },
+  {
+   "id": "L03",
+   "title_ja": "2 段目(context 残差)・R11 市場 offset 残差・年次較正・レース内正規化は『増分未検出』で閉じている",
+   "claim_ja": "2 段目 EV2>1.2 確認 1.044 [0.880,1.219] vs 文脈なし 0.957・シャッフル 0.971。R11 単体 NLL は ens15 比 −0.00445 [−0.00671,−0.00228](悪化・1 seed vs 15 seed・bagging 差あり)、混合増分 +0.000157 [−0.000578,+0.000884]。年次較正 q+ens は固定 EV>1.2 で 93.97%(操作点混同)、同点数で 111.96% だが paired 差 +5.0pt [−1.4,+11.4]・固定閾値 1.04 で R 窓 107.1%<S3。N1 正規化は 112.46% vs S3 106.98%、差 +5.48pt [−1.12,+12.77]、うち 1.3pt は点数減・4.2pt は Σp̄≥1.05 レース除外の 1 塊、判断時価格の保持率は 17.0%(S3 17.1% と同じ)。",
+   "evidence_ja": "followup-20261001.md:58-69・docs/roi-comprehensive-review-20261005/{report.md:42-64,calibration-roi.md,online-normalization.md,residual-protocol.md}・artifacts/roi_comprehensive_20261005/residual_spike/results.json・docs/roi-independent-eval-20261008/report.md:36-62・evidence/verdicts.json(NP-03・F3)",
+   "status": "measured",
+   "implication_ja": "確率の後処理(正規化・較正・残差)でも ROI は ±5pt の非有意帯しか動かない。R11 の公平比較(15 seed・市場列を特徴に残し自馬 log q だけ offset)は未実施だが、期待は seed 床(0.001〜0.002)以下と独立評価が判定。"
+  },
+  {
+   "id": "L04",
+   "title_ja": "特徴の追加(20 文脈列・R09 13 セル)は帰無と区別できず、drop_groups の除外理由は serving 可用性で ablation 裏付けあり",
+   "claim_ja": "480 条件の『100% 以上』観測 76 vs 帰無期待 80.9・Bonferroni 通過 0。R09 13 セル通過 0/13・検出最小効果 ±8〜34%・X04 東西遠征のみ一貫(残差 +5.8%/−9.3% 事後)。sameday 6 列・weightlive 3 列の除外は 1986 版 ablation で『不要』(同日除去 1.163/1.085/1.040 vs 全列 1.140/1.126/1.129)と可用性(体重は発走約 50 分前まで欠損・同日は公開時刻未保存)が根拠。2007 版で込みの対照は未学習。",
+   "evidence_ja": "followup-20261001.md:19-56・docs/roi-missed-patterns-20261004/report.md:52-54,176-179・method-review.md §1(X09 行順バグ・修正後も通過 0)・docs/roi-pattern-exploration-20260923/report.md §2.4.2・scripts/roi_explore/direct_return_model.py:45-66・specs/137-market-ev-display/spec.md:47",
+   "status": "measured",
+   "implication_ja": "手元 DB の新特徴で市場モデルを動かす余地は小さい。weightlive は『直前捕捉版』として再入力する案だけが未試行。"
+  },
+  {
+   "id": "L05",
+   "title_ja": "本番勝率モデルで効いたレバーのうち市場モデルに移植済みなのは seed 平均のみ",
+   "claim_ja": "036 OOF TE+isotonic(−0.014)=未(cat_maps 整数化・校正なし)/039 cond_logit(−0.00057)・042 pl_topk(−0.00085)=未(binary のまま。R11 の offset race-softmax は市場列除外の別モデル)/085 arm E OOF 校正(−0.0128)=未(F5 isotonic は選択後 ROI だけ)/094 rounds 900(−0.0067)=600 のみ/091 体重 mask(−0.0106)=同型のオッズ skew は未修正。ハイパーパラメータは設計で『既定値固定・チューニングしない』。",
+   "evidence_ja": "CLAUDE.md の各 feature 要約・scripts/roi_explore/direct_return_model.py:158-175・docs/roi-pattern-exploration-20260930/design.md:14・patterns_2007.py:93-106・artifacts/market_ev/mev-ens15-v1/seed_01/model.spec.json",
+   "status": "confirmed",
+   "implication_ja": "『確定オッズでの NLL/較正』を良くする未使用レバーは race-softmax/PL・rounds 900・OOF 校正・TE の 4 本。ただし市場モデルの ROI は NLL 改善に鈍感なので受入は NLL/ECE で設計し ROI を約束しない。"
+  },
+  {
+   "id": "L06",
+   "title_ja": "学習=確定オッズ・適用=判断時オッズの skew は実測済みで、モデル側の対処(オッズノイズ注入学習)は未実施",
+   "claim_ja": "R02: 保持率 S1 0.109・S3 0.196、EV_F/EV_J 中央値 0.78〜0.81、該当馬の log(O_F/O_J) 中央値 0.58 vs 非該当 0.24、自馬オッズ弾力性 −1.3〜−1.4。p̂ 固定の選定ノイズ診断では σ0.2 で S1 1.045・S3 ≈0.96。独立評価は『学習時に捕捉 horizon と同分布のオッズノイズを注入して再学習』を候補 B(優先 4)とし、受入を保持率 ≥0.5・EV_F/EV_J ≥0.95 に置いた。再学習は 15 seed で 17 分。",
+   "evidence_ja": "docs/roi-missed-patterns-20261004/report.md:103-112・docs/roi-comprehensive-review-20261005/report.md:66-88・docs/roi-independent-eval-20261008/report.md:14,76-83,101・evidence/audit_levers_33309.json・followup-20261001.md:114-125",
+   "status": "measured",
+   "implication_ja": "『判断時 EV の較正・保持率』を良くするレバーとして唯一、機構が実測され費用も小さい。ROI では測れないので保持率と EV_F/EV_J を受入にする。"
+  },
+  {
+   "id": "L07",
+   "title_ja": "1986→2007 の学習起点変更が最大の ROI 変化で、ΔR² は 24% 減",
+   "claim_ja": "EV>1.2 2019+: 1986 二値 112.9% → 2007 v2 99.5% [86.8,113.4]・通算 100.8%。ΔR²(v1_1986|q)=0.00401 vs mev2007 0.00305、v1|q,mev2007 +0.00127 [0.00096,0.00159]。憲法 I でユーザー決定済み(例外なし)。",
+   "evidence_ja": "docs/roi-recheck-20260930/report.md:51-66・specs/137-market-ev-display/spec.md:67・artifacts/roi_explore/missed_20261004/R04_delta_r2/posthoc_oddsonly.json",
+   "status": "measured",
+   "implication_ja": "2007+ の行数は 931,017 で固定。データ量を増やす軸は閉じているので、残るのは学習法と skew 修正。"
+  }
+ ],
+ "levers": [
+  {
+   "name_ja": "学習時オッズノイズ注入(判断時 horizon 条件付き・15 seed 再学習)",
+   "what_improves": "判断時 EV 較正・保持率",
+   "tried_before": "未試行。類似は followup §5.3(p̂ 固定の選定ノイズ診断)・R10 V2/±10% 価格 gate(事後補正・差なし)。独立評価 20261008 が候補 B として設計(優先 4)",
+   "expected_magnitude_ja": "保持率 0.17〜0.20 → 0.5 以上・該当馬 EV_F/EV_J 0.81 → 0.95 以上を狙う(推測)。該当頭数は縮む。保存価格 ROI は凍結代理で参考値のみ",
+   "cost_ja": "R02 pairs の帯別 μ(h)/σ(h) 推定+既存チェーン(direct_return_model.py)への注入オプション追加+15 seed 17 分。2〜3 日",
+   "acceptance_ja": "R02 443 集合で判断時該当の締切保持率 ≥0.5・該当馬 EV_F/EV_J 中央値 ≥0.95。全馬 LogLoss/ECE は確定オッズ評価で非劣化(ens15 0.201204/0.00066 比)",
+   "risk_ja": "T−3 分の直前捕捉が実現すれば skew が小さく不要になりうる。ノイズ分布は 17 日・T−10 分〜24 時間の観測に依存し直前帯は外挿"
+  },
+  {
+   "name_ja": "race-softmax(cond_logit)/PL top-k 目的関数への置換(市場列を特徴に残したまま)",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "未試行。R11 は市場 12 列を除外した log q offset 版を 1 seed で試し単体 NLL 悪化(−0.00445)・混合増分 null。本番 039 −0.00057・042 −0.00085",
+   "expected_magnitude_ja": "本番の例から winner NLL −0.0005〜−0.001 程度(推測)。レース内正規化 N1 が ROI +5pt(非有意)だったことから ROI は動かない見込み",
+   "cost_ja": "training の cond_logit/pl_topk 実装を研究チェーンに流用。15 seed で 1〜2 時間",
+   "acceptance_ja": "15 seed 同士の paired race NLL 差の開催日 bootstrap CI 上限 <0(seed 床 0.001〜0.002 を超えること)・ECE 非劣化",
+   "risk_ja": "EV=p̂×odds の p̂ が Σ=1 に変わるので S1〜S5 の凍結定義と系列が切れる(138 の前向き記録と比較不能)"
+  },
+  {
+   "name_ja": "rounds 900・容量探索(NLL で評価)",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "300/600 のみ(ROI 評価のみ・600 は ROI 不変・該当頭数 2 倍)。NLL は未報告。本番 094 −0.0067",
+   "expected_magnitude_ja": "不明(600 の NLL が未計測)。ROI は動かないと見込む",
+   "cost_ja": "既存チェーン --rounds 変更のみ・15 seed で 30〜50 分",
+   "acceptance_ja": "paired race NLL 差 CI 上限 <0 かつ ECE 非劣化。EV>1.2 該当頭数の変化を併記",
+   "risk_ja": "該当頭数が増え勝者の呪いが強まる(600 で観測)"
+  },
+  {
+   "name_ja": "OOF 校正器(isotonic/温度・全馬 NLL/ECE で評価・085 型)",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "F5 isotonic/logistic は EV>1.0 候補行だけで fit し ROI だけで評価(差なし・後知恵)。全馬評価は無い",
+   "expected_magnitude_ja": "全馬 ECE は既に 0.00066 で小さく期待は小。選ばれた馬の過大評価(S3 138%→107%)は選択条件つきの問題で全馬校正では直らない",
+   "cost_ja": "小(保存 OOF 予測で fit 可能・新規学習なし)",
+   "acceptance_ja": "全馬 LogLoss/ECE 非劣化+選ばれた馬の『平均 EV と実現 ROI』の差の縮小",
+   "risk_ja": "a+b≈1 への圧縮で固定 EV>1.2 の操作点が変わる(較正 q+ens で観測)"
+  },
+  {
+   "name_ja": "OOF target encoding(036 型)",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "未試行(cat_maps 整数化のみ)",
+   "expected_magnitude_ja": "小。カテゴリ 11 列は低カーディナリティで、騎手/調教師は既に勝率スカラー 13 列で入力済み",
+   "cost_ja": "中(OOF 符号化の配線)",
+   "acceptance_ja": "paired race NLL 差 CI 上限 <0",
+   "risk_ja": "期待に対し費用が大きい"
+  },
+  {
+   "name_ja": "異質メンバー混合(特徴サブセット・目的関数違いの平均)",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "未試行(seed 平均のみ)。本番 129/134 は異質混合で −0.0090",
+   "expected_magnitude_ja": "seed 平均の飽和(k≈9)の先。NLL 側の seed 相関 ρ が未計測で見積もれない",
+   "cost_ja": "中",
+   "acceptance_ja": "15 seed 平均比の paired NLL 差 CI 上限 <0",
+   "risk_ja": "メンバー選択の自由度が増え事後選択の罠"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/ledger/ledger_tried.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/ledger/ledger_untried.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/ledger/prod_lever_map.csv"
+ ],
+ "open_questions_ja": [
+  "rounds 600・直近 8 年・withp・回帰の各変種は ROI だけで評価され winner NLL/ECE が未報告。NLL 側の台帳を埋めるには保存 predictions.parquet(p̂=EV/odds)から再計算が要る(予測は全て保存済みなので新規学習なし)",
+  "seed 数 k に対する NLL 曲線と seed 相関 ρ が未計測(k=1 と 15 の 2 点のみ)。『15 で飽和』は ROI 曲線の読み",
+  "R11(offset race-softmax)の公平比較(15 seed・bagging 0.8・市場列を特徴に残し自馬 log q のみ offset)は未実施。独立評価は期待 seed 床以下と判定したが測っていない",
+  "sameday 6 列を 2007 版で入れた対照が無い(1986 版 ablation のみ)。serving では公開時刻未保存のため入れられないので実用上は閉じている",
+  "オッズノイズ注入学習の受入基準(保持率 ≥0.5・EV_F/EV_J ≥0.95)は R02 の 17 日・443 レースに依存し、直前帯(T−2〜3 分)の σ は外挿のまま"
+ ]
+}

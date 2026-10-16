@@ -44,6 +44,14 @@ DAY = datetime.date(2026, 9, 27)
 HISTORY_DAY = datetime.date(2025, 12, 6)
 NEXT_DAY = datetime.date(2026, 9, 28)
 
+
+@pytest.fixture(autouse=True)
+def _monitor_covers_the_fixture_era(monkeypatch):
+    """The fixtures are dated 2025-12/2026-09, before the real monitor start (2026-10-13, the day
+    after A3 went live). Start the monitor at the netkeiba final-odds era here so the counting
+    logic is exercised; the real constant is pinned by the unit test."""
+    monkeypatch.setattr(market_ev, "FINAL_ODDS_PROVENANCE_FROM", datetime.date(2025, 10, 11))
+
 HIST = "202512060501"
 A = "202609270501"  # result-pending, all priced
 B = "202609270502"  # result-pending, all priced
@@ -137,9 +145,19 @@ def test_compute_and_persist_fills_every_column_and_replaces_race_atomically(ses
         assert r.odds_observed_at == entry.updated_at
         assert r.result_pending_at_compute is (r.race_id != D)
         assert (r.booster, r.booster_sha256) == ("model_2025.txt", sha)
-        assert r.logic_version == market_ev.LOGIC_VERSION
+        # Feature 140: no race has a quote provenance -> every row is stamped oddsobs=proxy
+        assert r.logic_version == market_ev.row_logic_version(market_ev.LOGIC_VERSION, True)
+        assert r.logic_version.endswith("oddsobs=proxy")
         assert str(r.run_id) == first["run_id"]
         assert r.computed_at is not None
+
+    # Feature 140: no race has a quote provenance yet -> every in-range started row (A4+B3+C3+D3)
+    # fell back to the updated_at proxy, and the two settled races with odds in the netkeiba era
+    # (HIST, D) have no final-odds provenance — both reported, never hidden
+    assert (first["odds_observed_fallback_rows"], first["odds_observed_fallback_races"]) == (13, 4)
+    assert first["final_odds_provenance_missing"] == 2
+    # ... and of the 10 rows actually written, all 10 carry oddsobs=proxy (per-version count)
+    assert first["versions"]["mev-it-v1"]["odds_observed_proxy_rows"] == 10
 
     # a row of ANOTHER model version for race A must survive the recompute
     keep = MarketEvPrediction(
@@ -292,8 +310,14 @@ def test_two_versions_share_one_run_and_one_time(session, ens_dirs):
     assert {(str(r.run_id), r.computed_at) for r in single_rows + ens_rows} == {
         (out["run_id"], single_rows[0].computed_at)
     }
-    assert {r.logic_version for r in ens_rows} == {market_ev.ENSEMBLE_LOGIC_VERSION}
-    assert {r.logic_version for r in single_rows} == {market_ev.LOGIC_VERSION}
+    # Feature 140: the fixtures carry no win-quote provenance, so every row is the proxy variant
+    assert {r.logic_version for r in ens_rows} == {
+        market_ev.row_logic_version(market_ev.ENSEMBLE_LOGIC_VERSION, True)
+    }
+    assert {r.logic_version for r in single_rows} == {
+        market_ev.row_logic_version(market_ev.LOGIC_VERSION, True)
+    }
+    assert {v["odds_observed_proxy_rows"] for v in out["versions"].values()} == {10}
     assert {r.booster for r in ens_rows} == {"ensemble_2025.json"}
     assert {r.booster for r in single_rows} == {"model_2025.txt"}
     for r in ens_rows:
@@ -435,6 +459,12 @@ def test_cli_end_to_end_with_the_ensemble(session, database_url, ens_dirs, capsy
         "checkpoints=ok"
     )
     assert lines[-2].startswith("attention-checkpoints: written=- pending=- ")
+    # Feature 140: the provenance counters are on stdout (no quote provenance in the fixtures →
+    # every in-range started row fell back; both versions wrote 10 proxy rows each)
+    (prov,) = [ln for ln in lines if ln.startswith("market-ev-provenance: ")]
+    assert prov.startswith("market-ev-provenance: fallback_rows=")
+    assert "fallback_races=" in prov and "final_odds_provenance_missing=" in prov
+    assert prov.endswith(" proxy_rows_written=20")
 
     assert main(["market-ev", "--date", att.DAY.isoformat(), "--ensemble-only", *base]) == 0
     assert capsys.readouterr().out.strip().splitlines()[-1] == (
@@ -445,3 +475,68 @@ def test_cli_end_to_end_with_the_ensemble(session, database_url, ens_dirs, capsy
            "mev-ens15-v9", "--database-url", database_url]
     assert main(["market-ev", "--date", att.DAY.isoformat(), *bad]) == 1
     assert "ERROR: market-ev failed" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------- Feature 140: provenance
+
+
+def test_odds_observed_at_is_the_quote_time_when_the_race_has_one(session, model_dir):
+    """A race whose win quote has provenance (races.win_odds_observed_at) stamps its rows with
+    THAT time; a race without one keeps the updated_at proxy and is counted as a fallback."""
+    _seed(session)
+    quote_time = datetime.datetime(2026, 9, 27, 4, 12, 30, tzinfo=datetime.UTC)
+    session.execute(update(Race).where(Race.race_id == A).values(
+        win_odds_observed_at=quote_time,
+        win_odds_official_at=quote_time - datetime.timedelta(seconds=45),
+    ))
+    # D is settled: give it a final-odds provenance so it drops out of the missing count
+    final_time = datetime.datetime(2026, 9, 27, 7, 0, tzinfo=datetime.UTC)
+    session.execute(update(Race).where(Race.race_id == D).values(
+        win_odds_observed_at=final_time, win_odds_official_at=None,
+    ))
+    session.commit()
+
+    out = market_ev.compute_and_persist(session, race_date_from=DAY, race_date_to=DAY,
+                                        model_dir=model_dir)
+
+    assert out["status"] == "ok"
+    rows = _rows(session, "mev-it-v1")
+    entries = _entries(session)
+    for r in rows:
+        if r.race_id == A:
+            assert r.odds_observed_at == quote_time
+            assert r.odds_observed_at != entries[(r.race_id, r.horse_id)].updated_at
+            assert r.logic_version == market_ev.LOGIC_VERSION            # oddsobs=quote
+        elif r.race_id == D:
+            assert r.odds_observed_at == final_time   # a final value's observation time
+            assert r.logic_version == market_ev.LOGIC_VERSION            # provenance present
+        else:
+            assert r.odds_observed_at == entries[(r.race_id, r.horse_id)].updated_at
+            assert r.logic_version.endswith("oddsobs=proxy")            # the proxy, row by row
+    # B3 + C3 (not race_ok but in range) fell back; A4 and D3 did not
+    assert (out["odds_observed_fallback_rows"], out["odds_observed_fallback_races"]) == (6, 2)
+    # written rows: A4 + B3 + D3 = 10, of which only B's 3 are proxy (C was never written)
+    assert out["versions"]["mev-it-v1"]["odds_observed_proxy_rows"] == 3
+    # HIST (2025-12-06, settled, odds, no provenance) is the only one left
+    assert out["final_odds_provenance_missing"] == 1
+
+
+def test_provenance_counters_are_reported_even_when_nothing_is_computed(session, model_dir):
+    _seed(session)
+    far = datetime.date(2030, 1, 1)
+    out = market_ev.compute_and_persist(session, race_date_from=far, race_date_to=far,
+                                        model_dir=model_dir)
+    assert out["status"] == "skipped"
+    assert (out["odds_observed_fallback_rows"], out["odds_observed_fallback_races"]) == (0, 0)
+    assert out["final_odds_provenance_missing"] == 2   # HIST and D, whole table
+
+
+def test_provenance_missing_ignores_pre_netkeiba_and_unsettled_races(session, model_dir):
+    _seed(session)
+    # HIST moved before the netkeiba final-odds era: its stored odds are JRA-VAN's, not 139's
+    session.execute(update(Race).where(Race.race_id == HIST).values(
+        race_date=datetime.date(2025, 10, 10)))
+    session.commit()
+    out = market_ev.compute_and_persist(session, race_date_from=DAY, race_date_to=DAY,
+                                        model_dir=model_dir)
+    assert out["final_odds_provenance_missing"] == 1   # D only (A/B/C are not settled)

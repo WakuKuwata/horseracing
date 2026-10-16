@@ -231,10 +231,113 @@ def test_validate_model_dir(tmp_path):
 
 def test_logic_version_is_the_contract_value():
     assert market_ev.LOGIC_VERSION == (
-        "mev-v1;features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007"
+        "mev-v1;features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007;oddsobs=quote"
     )
     assert market_ev.DATA_START == "2007-01-01"
     assert not hasattr(market_ev, "HIGHLIGHT_THRESHOLD")  # the threshold lives in the API only
+
+
+# --------------------------------------------------------------------- Feature 140: provenance
+def test_rows_sql_reads_the_quote_provenance_and_flags_the_proxy():
+    """odds_observed_at is races.win_odds_observed_at when present, else the updated_at proxy —
+    and the SQL says which one it was, so the proxy can be counted, never mistaken for provenance."""
+    sql = " ".join(market_ev.ROWS_SQL.split())
+    assert "coalesce(r.win_odds_observed_at, rh.updated_at) as horse_row_updated_at" in sql
+    assert "(r.win_odds_observed_at is null) as odds_observed_fallback" in sql
+    assert "rh.updated_at as horse_row_updated_at" not in sql
+    # the monitor starts the day after A3 went live; the 139 era before it is not backfilled (D11)
+    assert market_ev.FINAL_ODDS_PROVENANCE_FROM == datetime.date(2026, 10, 13)
+
+
+def test_row_logic_version_marks_proxy_rows_and_is_fail_closed():
+    lv = market_ev.LOGIC_VERSION
+    assert market_ev.row_logic_version(lv, False) == lv
+    assert market_ev.row_logic_version(lv, True) == lv.replace("oddsobs=quote", "oddsobs=proxy")
+    assert market_ev.row_logic_version(lv, None).endswith("oddsobs=proxy")
+    assert market_ev.row_logic_version(lv, float("nan")).endswith("oddsobs=proxy")
+    ens = market_ev.row_logic_version(market_ev.ENSEMBLE_LOGIC_VERSION, True)
+    assert ens.startswith("mev-ens15-v1;") and ens.endswith("oddsobs=proxy")
+    assert "oddsobs=quote" not in ens
+
+
+def test_predict_carries_the_fallback_flag_and_rows_inherit_it():
+    """predict/predict_ensemble pass ``odds_observed_fallback`` through (a frame without the column
+    is all-proxy), and ``_row_values`` turns it into the per-row oddsobs token."""
+    import uuid
+
+    raw = raw_frame()
+    feats = market_ev.build_features(raw)
+    assert "odds_observed_fallback" not in feats.columns or True
+    model_dir = None
+    # frame without the column -> every row is a proxy row
+    feats_no = feats.drop(columns=[c for c in ("odds_observed_fallback",) if c in feats.columns])
+    flags = market_ev._fallback_flags(feats_no)
+    assert flags.all() and len(flags) == len(feats_no)
+    # frame with the column -> passed through, NaN is proxy
+    feats_yes = feats.copy()
+    feats_yes["odds_observed_fallback"] = [False] + [None] + [True] * (len(feats_yes) - 2)
+    flags = market_ev._fallback_flags(feats_yes)
+    assert list(flags[:3]) == [False, True, True]
+    rec = {
+        "race_id": "R", "horse_id": "H", "horse_number": 1, "win_prob": 0.2, "odds_used": 5.0,
+        "odds_observed_at": pd.Timestamp("2026-10-12", tz="UTC"), "booster": "b",
+        "booster_sha256": "0" * 64, "odds_observed_fallback": False,
+    }
+    row = market_ev._row_values(rec, model_version="m", pending=True, run_id=uuid.uuid4(),
+                                computed_at=datetime.datetime(2026, 10, 12, tzinfo=datetime.UTC))
+    assert row["logic_version"] == market_ev.LOGIC_VERSION
+    row = market_ev._row_values(dict(rec, odds_observed_fallback=True), model_version="m",
+                                pending=True, run_id=uuid.uuid4(),
+                                computed_at=datetime.datetime(2026, 10, 12, tzinfo=datetime.UTC))
+    assert row["logic_version"].endswith("oddsobs=proxy")
+    del model_dir
+
+
+def _fallback_frame(flags: list[bool | None], race_ids: list[str]) -> pd.DataFrame:
+    return pd.DataFrame({
+        "race_id": race_ids,
+        "horse_row_updated_at": pd.Timestamp("2026-10-10", tz="UTC"),
+        "odds_observed_fallback": flags,
+    })
+
+
+def test_proxy_rows_written_counts_the_rows_actually_stamped_proxy():
+    """Feature 140 (reviews training-token-4/-5): the per-version count of WRITTEN proxy rows,
+    distinct from the input-row fallback counters; a frame without the flag is all-proxy."""
+    pred = pd.DataFrame({"race_id": ["a", "a", "b"],
+                         "odds_observed_fallback": [False, True, None]})
+    assert market_ev._proxy_rows_written(pred) == 2
+    assert market_ev._proxy_rows_written(pred.drop(columns=["odds_observed_fallback"])) == 3
+    assert market_ev._proxy_rows_written(pred.iloc[:0]) == 0
+
+
+def test_odds_observed_fallback_counts_rows_and_races_in_range_only():
+    raw = _fallback_frame([False, False, True, True, True, False],
+                          ["R1", "R1", "R2", "R2", "R3", "R4"])
+    everything = pd.Series(True, index=raw.index)
+    assert market_ev.odds_observed_fallback_counts(raw, everything) == (3, 2)
+    # a race with provenance for all its rows (R1, R4) is not a fallback race
+    only_r1_r2 = raw["race_id"].isin(["R1", "R2"])
+    assert market_ev.odds_observed_fallback_counts(raw, only_r1_r2) == (2, 1)
+    assert market_ev.odds_observed_fallback_counts(raw, ~everything) == (0, 0)
+
+
+def test_odds_observed_fallback_counts_fail_closed_without_the_flag():
+    """A frame that does not carry the flag (or carries NULL) is all proxy."""
+    raw = _fallback_frame([None, None], ["R1", "R2"])
+    all_rows = pd.Series(True, index=raw.index)
+    assert market_ev.odds_observed_fallback_counts(raw, all_rows) == (2, 2)
+    no_flag = raw.drop(columns=["odds_observed_fallback"])
+    assert market_ev.odds_observed_fallback_counts(no_flag, all_rows) == (2, 2)
+
+
+def test_build_features_tolerates_the_extra_provenance_flag_column():
+    raw = raw_frame()
+    raw["odds_observed_fallback"] = False
+    with_flag = market_ev.build_features(raw)
+    without = market_ev.build_features(raw.drop(columns=["odds_observed_fallback"]))
+    assert "odds_observed_fallback" in with_flag.columns
+    pd.testing.assert_frame_equal(with_flag.drop(columns=["odds_observed_fallback"]), without)
 
 
 # --------------------------------------------------------------------------- CLI
@@ -317,6 +420,9 @@ def fake_run(monkeypatch):
             "logic_version": market_ev.LOGIC_VERSION, "run_id": "r" if ok else None,
             "races_in_range": 3, "races_invalid_odds": 0, "result_pending_races": 3,
             "boosters": {"model_2026.txt": "ab" * 32} if ok else {},
+            "versions": {"mev-it-v1": {"odds_observed_proxy_rows": 7}} if ok else {},
+            "odds_observed_fallback_rows": 7, "odds_observed_fallback_races": 2,
+            "final_odds_provenance_missing": outcome.get("missing", 0),
         }
 
     monkeypatch.setattr(market_ev, "compute_and_persist", _compute)
@@ -369,6 +475,37 @@ def test_cli_skipped_marker(fake_run, model_dir, capsys):
     assert _last_line(capsys) == "SKIPPED: no_races_with_odds"
 
 
+def test_cli_prints_the_provenance_counters_on_their_own_line(fake_run, model_dir, capsys):
+    """Feature 140 (review training-token-1): the summary's three provenance keys reach stdout —
+    production's only caller is ops → this CLI, so a key that stays in the Python return value
+    is a monitor nobody sees. Its own line keeps the OK:/SKIPPED: last-line contract."""
+    _, outcome = fake_run
+    outcome["missing"] = 2
+    assert cli.main(["market-ev", "--date", "2026-09-27", "--model-dir", str(model_dir)]) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[-1] == "OK: races=3 horses=42 from=2026-09-27 to=2026-09-27"
+    assert lines[-2] == ("market-ev-provenance: fallback_rows=7 fallback_races=2 "
+                         "final_odds_provenance_missing=2 proxy_rows_written=7")
+    assert lines[-3].startswith("market-ev: model_version=")
+    # the ops runner's tokenizer reads it as ints
+    tokens = dict(t.split("=") for t in lines[-2].split(":", 1)[1].split())
+    assert tokens == {"fallback_rows": "7", "fallback_races": "2",
+                      "final_odds_provenance_missing": "2", "proxy_rows_written": "7"}
+
+    outcome["status"] = "skipped"
+    assert cli.main(["market-ev", "--date", "2026-09-27", "--model-dir", str(model_dir)]) == 0
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[-1] == "SKIPPED: no_races_with_odds"
+    assert lines[-2] == ("market-ev-provenance: fallback_rows=7 fallback_races=2 "
+                         "final_odds_provenance_missing=2 proxy_rows_written=-")
+
+
+def test_cli_provenance_line_requires_the_summary_keys():
+    """Indexing, not .get: a result without the monitor keys is a defect, never a quiet zero."""
+    with pytest.raises(KeyError):
+        cli._provenance_line({"versions": {}})
+
+
 def test_cli_exception_exits_nonzero_without_a_marker(fake_run, model_dir, capsys):
     _, outcome = fake_run
     outcome["raise"] = RuntimeError("boom")
@@ -388,7 +525,7 @@ SINGLE = "mev-binary-v2"
 def test_ensemble_logic_version_is_the_contract_value():
     assert market_ev.ENSEMBLE_LOGIC_VERSION == (
         "mev-ens15-v1;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;"
-        "drop=sameday,weightlive;data>=2007"
+        "drop=sameday,weightlive;data>=2007;oddsobs=quote"
     )
     assert market_ev.ENSEMBLE_SEEDS == tuple(range(1, 16))
     # the single-version contract is untouched
@@ -493,6 +630,20 @@ def test_ensemble_spec_must_match_the_logic_version(tmp_path, patch):
         market_ev.EnsembleMarketEvModel.load(ens_dir, ENS)
 
 
+def test_ensemble_loader_refuses_a_judged_research_spec(tmp_path):
+    """Feature 140 (review harness-leak-protocol-1): the judged-EV artifact marks its spec
+    ``judged: true``; even with the production version string it must be refused at load time,
+    not fail later with a KeyError on the missing ``log_min`` input."""
+    ens_dir = write_ensemble_dir(tmp_path / ENS)
+    spec_path = ens_dir / "ensemble.spec.json"
+    spec = json.loads(spec_path.read_text()) | {"judged": True}
+    spec_path.write_text(json.dumps(spec))
+    with pytest.raises(market_ev.EnsembleIntegrityError, match="judged"):
+        market_ev.EnsembleMarketEvModel.load(ens_dir, ENS)
+    spec_path.write_text(json.dumps(spec | {"judged": False}))
+    assert market_ev.EnsembleMarketEvModel.load(ens_dir, ENS).version == ENS
+
+
 def test_ensemble_spec_drop_group_order_is_irrelevant(tmp_path):
     ens_dir = write_ensemble_dir(tmp_path / ENS)
     spec_path = ens_dir / "ensemble.spec.json"
@@ -565,10 +716,10 @@ def fake_ens_run(monkeypatch):
         only = kwargs.get("ensemble_only", False)
         single = {"races": 3, "horses": 42, "result_pending_races": 3,
                   "logic_version": market_ev.LOGIC_VERSION,
-                  "boosters": {"model_2026.txt": "ab" * 32}}
+                  "boosters": {"model_2026.txt": "ab" * 32}, "odds_observed_proxy_rows": 4}
         ens = {"races": 3, "horses": 42, "result_pending_races": 3,
                "logic_version": market_ev.ENSEMBLE_LOGIC_VERSION,
-               "boosters": {"ensemble_2026.json": "cd" * 32}}
+               "boosters": {"ensemble_2026.json": "cd" * 32}, "odds_observed_proxy_rows": 4}
         versions = {ENS: ens} if only else {SINGLE: single, ENS: ens}
         top = ens if only else single
         return {
@@ -580,6 +731,8 @@ def fake_ens_run(monkeypatch):
             "picks": {"races_first_computed": 3, "races_already_scanned": 0, "written": 5,
                       "voided_scratched": 1, "skipped_no_horse_number": 0},
             "checkpoints": outcome["checkpoints"],
+            "odds_observed_fallback_rows": 4, "odds_observed_fallback_races": 1,
+            "final_odds_provenance_missing": 0,
         }
 
     monkeypatch.setattr(market_ev, "compute_and_persist", _compute)
@@ -654,13 +807,18 @@ def test_cli_ensemble_skipped_prints_the_void_pass_before_the_marker(
                 "from": "2026-09-27", "to": "2026-09-27", "model_version": SINGLE,
                 "logic_version": market_ev.LOGIC_VERSION, "run_id": None, "races_in_range": 3,
                 "races_invalid_odds": 0, "result_pending_races": 0, "boosters": {},
-                "versions": {}, "picks": picks, "checkpoints": None}
+                "versions": {}, "picks": picks, "checkpoints": None,
+                "odds_observed_fallback_rows": 0, "odds_observed_fallback_races": 0,
+                "final_odds_provenance_missing": 3}
 
     monkeypatch.setattr(market_ev, "compute_and_persist", _compute)
     assert cli.main(_ens_argv(model_dir, ensemble_dir, "--pending-only")) == 0
     lines = capsys.readouterr().out.strip().splitlines()
     assert lines[-1] == "SKIPPED: no_pending_races"  # the marker ops reads is unchanged
     assert lines[-2].startswith("attention-picks: ") and "voided_scratched=2" in lines[-2]
+    # Feature 140: the monitor is printed even when nothing was computed (nothing written → "-")
+    assert lines[-3] == ("market-ev-provenance: fallback_rows=0 fallback_races=0 "
+                         "final_odds_provenance_missing=3 proxy_rows_written=-")
 
 
 def test_cli_without_ensemble_dir_passes_no_ensemble_arguments(fake_run, model_dir, capsys):

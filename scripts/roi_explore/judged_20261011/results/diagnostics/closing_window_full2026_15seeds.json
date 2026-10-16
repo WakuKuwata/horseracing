@@ -1,0 +1,114 @@
+{
+ "n_rows": 34179,
+ "n_races": 2473,
+ "n_days": 80,
+ "window": {
+  "from": "2026-01-04",
+  "to": "2026-09-22"
+ },
+ "ens15": {
+  "nll": 0.20392357646407933,
+  "winner_nll": 1.9347540368600225,
+  "ev_gt12_n": 301
+ },
+ "judged_h0": {
+  "nll": 0.20400172105199763,
+  "winner_nll": 1.9348090822366446,
+  "ev_gt12_n": 100
+ },
+ "paired_judged_minus_ens15": {
+  "nll_J": {
+   "point": 7.814458791829959e-05,
+   "ci_low": -0.00023366390696961115,
+   "ci_high": 0.00036750273275114185,
+   "n_replicates_valid": 4000,
+   "arm_value": 0.20400172105199763,
+   "ref_value": 0.20392357646407933
+  },
+  "winner_nll_J": {
+   "point": 5.50453766221537e-05,
+   "ci_low": -0.003572552663047185,
+   "ci_high": 0.0034705741030725385,
+   "n_replicates_valid": 4000,
+   "arm_value": 1.9348090822366446,
+   "ref_value": 1.9347540368600225
+  },
+  "calib_ratio_ev_gt1": {
+   "point": 0.050991671701086205,
+   "ci_low": -0.09863334852734693,
+   "ci_high": 0.20516741914570907,
+   "n_replicates_valid": 4000,
+   "arm_value": 0.9596857089922981,
+   "ref_value": 0.9086940372912119
+  }
+ },
+ "bootstrap": {
+  "method": "race-day block bootstrap",
+  "B": 4000,
+  "seed": 20261011,
+  "n_blocks": 80
+ },
+ "rule_i": {
+  "nll_within_tolerance": true,
+  "winner_nll_not_worse": false,
+  "tolerance_nll": 0.0002,
+  "pass": false,
+  "note": "FR-010 (i): closing-odds 2026 OOS (<= 2026-06-26), judged scored with log_min=0"
+ },
+ "diagnostic_only": true,
+ "diagnostic_note": "window and/or seeds differ from the registered rule (i) check; not usable for the verdict",
+ "computed_at": "2026-10-11T22:52:04.603764+00:00",
+ "inputs": {
+  "rows": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/rows_2007.parquet",
+  "rows_sha256": "99f699502424c65a4f2dcd998bd105c2537551952b931b2c4a19f28399468b2b",
+  "ens15": {
+   "manifest": "ensemble_2026.json",
+   "manifest_sha256": "6a4f42895b7c7b622559fc30458f84eff39744099a3a80778c7d1a541de1c7d9"
+  },
+  "judged": {
+   "dir": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/judged/mev-ens15-judged-v0",
+   "seeds_found": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "seeds_missing": [],
+   "partial": false,
+   "generator_sha256": "8b760a777f5dd3dffb97dd0b365d0f1a8470e1b16fb692862848fda3dbd56ae7",
+   "model_sha256": {
+    "seed_01": "72484c421fc29318bc7276d10ac2146440a7ab9ddf00968f6bf840f981f803d7",
+    "seed_02": "34efd4460c97cd5fb6eb7c853cec8027b6cb6e24fd8f51345e176096238944a3",
+    "seed_03": "685554db0aa015d501ded8a9c3581cea817aad4880d960271cf15f2b5c8b2e01",
+    "seed_04": "4b0f5be79ed0c67cf3c340414188db47759aafdbffc1e9817d51fbceaa61f65b",
+    "seed_05": "9e245f395a0855c9bb5f60246b2e7f777c60fc10723fbf6737062e750ed5dd9a",
+    "seed_06": "7b5aa5c8eb3a3de8d554b22a8a475ffdcd4eb690389bc82d4a297e0738782a62",
+    "seed_07": "161815c03814530de8bbe42bf85bf15cb174233a25dcc196750d87892daab71b",
+    "seed_08": "673389d3602f29f81f22667240cd691586d75e4ef9a0a8decba02db1f685cf89",
+    "seed_09": "be0c8f8ce80bd3a94d4daf29326a76d17010b1ed655125a806d2e521786af236",
+    "seed_10": "2db95acce066c38f824bd6c7cbda26ddba7bdd4267b2192eca262c3fa32be6c9",
+    "seed_11": "a297ccbd690f0aefbfd503e891c14d6587ef17d94feb6e6ffaa653b2a4c3c9cb",
+    "seed_12": "cdd58d31ca035d030fa78c17eac6bc3532b27cce5410a8ccbbdd95fb3bb6c4d8",
+    "seed_13": "7020a8d8ce1e67d3cea5203cfc5c67474c85750bdb44d7269e245bdd19184c35",
+    "seed_14": "902cbfc27268b67828798e02d9b1ea40a920d43d56f4de3088a3b879755853ef",
+    "seed_15": "bb3e7b3369b0edb3578c0fc090cba59341b34c4a4bf3ea81c37d0674dfd5097a"
+   }
+  }
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "判断時専用版(mev-ens15-judged)は表示・確定側に接続しない(研究 artifact・本番非結線)"
+ ],
+ "elapsed_s": 13.9
+}

@@ -1,0 +1,196 @@
+{
+ "summary_ja": "担当範囲(会計・来歴・現行コード状態)の結論:\n1. Codex data-audit の A1/A2/A3/B1/B3 は 2026-10-07 の main(adfc65ce)でも**すべて未修正**。他 worktree(codex/existing-logic-fixes 等)は 137 以前の古い枝で修正を含まない。B2 は 139 で**部分修正**(official_win_payouts 505 行/504 レース・2026-08-15〜10-04 のみ。結果ありの 06-20〜08-09 の 16 開催日 576 レースは払戻なし、うち 07-04〜08-09 の 504 レースは保存オッズも発走前値のまま)。\n2. A2 は api/betting 両方で純関数再現(API: 3着同着ペアのワイド→True、betting: 6頭で1着-3着ワイド→False)。実データ規模は 3着同着 167 レース/68,283、5〜7頭 981 レース(1.4%)。\n3. A3 は構造的に成立(トリガは WHEN なし・upsert_entries の ON CONFLICT で毎回 updated_at が進む。発走前 entries 1,687 run のうち 51% は同時間帯に odds 書込なし)が、**実害は現状ほぼゼロ**(前向き pick 21 件は全て odds 書込の 24 秒後、mev 結果未確定 18 レース中 17 が整合)。Codex は「件数未測定」としたが測定した。\n4. 逆オッズ和<1 は 2007〜2025 の JRA-VAN 期に 123 レース(Codex の 40 は評価母集団限定)、netkeiba 期 0。**氷山の一角**: 取消馬にオッズが残る JRA-VAN 期 1,323 レース(1.9%)は started 逆数和の中央値が 1.2155(対 1.2594)で取消前価格が残る。ROI への影響は ≈+0.07pt(上振れ方向)と小さく、学習への歪みも q の約 3%。\n5. 研究 parquet(09-30 ビルド)と現 DB の差は 2026-08/09 のみ 2,855 行・221 レース。公式払戻がある 396 勝者で parquet の発走前オッズは払戻の**平均 1.075 倍**(修復後 DB は 1.005 倍)。Codex 10-05 の主計算は修復前 parquet(SHA 0434ab0c)を使うが max_date 2026-06-26 で汚染尾を切っているので S3 107%/N1 112% は 139 修復の影響を受けない。\n6. 精算器不一致が過去 ROI 研究を動かす幅は ±0.1pt 程度で向きは一貫して上振れ(取消前価格・R05 期の発走前オッズ)。同着除外・返還は中立。結論「S3 107/N1 112 は精算器問題では覆らないが、採用根拠にもならない」は Codex と一致。\n7. B1 の代替として Codex が触れていない chaos_snapshots(527 レース・全馬オッズ+人気 JSON・2026-07-31〜10-03)が存在するが、pick 時刻と中央値 1,353 秒ずれ・予測/特徴なしで半分の代替にしかならない。\n8. 実購入記録は 7 行すべて void 済みで A1 の既存実害は 0。A1/A2 は「正しさ」の修正、ROI 研究に直接効くのは B1(同一 run での全馬 snapshot)と 07-04〜08-09 の公式払戻再取得(504 レース・netkeiba 予算要判断)。",
+ "agree_with_codex": [
+  {
+   "point": "A1: 実購入の単勝精算が official_win_payouts に未接続(main でも未修正)",
+   "evidence": "api/src/horseracing_api/purchase_view.py は OfficialWinPayout を import せず、settle_bet は amount*RaceHorse.odds を status='settled_real' で返す(L138-142)。git log で同ファイルの最終変更は 106(dccae036)。purchase_records は 7 行・全て void 済み・有効例 202607030406 win#6 odds 1.9 vs 公式 130 円=既に不一致が起こる構造"
+  },
+  {
+   "point": "A2: ワイド的中判定の同着バグ(API)と betting 側の 5〜7 頭不一致",
+   "evidence": "api settlement.py L65 `set(selection).issubset(top3)`: is_hit('wide',[3,4],{1:1,2:2,3:3,4:3},8)→True(正は False)。betting exotic_selection.py L82 は place_top_n を流用: is_hit('wide',[1,3],{...6頭},field_size=6)→False(正は True)かつ同着 3-3 も True。Codex の settlement_pure_followup.json と同結果"
+  },
+  {
+   "point": "A3: odds_observed_at が race_horses.updated_at で、オッズ非更新の出走表再取込でも進む",
+   "evidence": "training/market_ev.py L50 `rh.updated_at as horse_row_updated_at`→L491/518 で odds_observed_at に改名。DB: trg_race_horses_set_updated_at は BEFORE UPDATE FOR EACH ROW・WHEN 句なし、関数は NEW.updated_at=now()。upsert_entries(upsert.py L201)は毎回 ON CONFLICT DO UPDATE を発行"
+  },
+  {
+   "point": "B1: 初回計算の全馬 snapshot が残らない",
+   "evidence": "market_ev_predictions は 161,544 行・5,827 レース・run_id は 8 種のみ(レース単位 DELETE/INSERT)。結果前 scan 18 件のうち run_id が現表に残るのは 3、前向き pick 21 件のうち 2(Codex 監査時は 0/18・その後の再計算で変動)"
+  },
+  {
+   "point": "B2: 公式払戻の欠落期間と、2026-06-26 cutoff で汚染尾を切った判断は正しい",
+   "evidence": "official_win_payouts: 505 行/504 レース・2026-08-15〜10-04。結果あり日別で 06-20〜08-09 の 16 開催日は n_pay=0。calibration_roi/freeze.json の max_date=2026-06-26・rows.parquet SHA 0434ab0c(09-30 ビルド)。parquet と DB の差は 2026-08/09 のみ(07 以前は 0 行差)"
+  },
+  {
+   "point": "B3: ExpectedReturnNote の固定文",
+   "evidence": "front/src/components/ExpectedReturnNote.tsx L22 に 106.4%/111.3%、L30 に「前向きの検証はまだ行っていません」が定数文字列"
+  },
+  {
+   "point": "逆オッズ和<1 の原因=取消馬を除いた出走集合と取消前の保存オッズの混在",
+   "evidence": "2007〜2025 の sum(1/odds)<1 レース 123 件は全件 cancelled 馬が odds 付きで存在し、含めると全件 ≥1(underround.txt)。netkeiba 期は 0 件"
+  },
+  {
+   "point": "研究 scorer の精算規約(won×保存 odds×100・同着除外・started のみ)は内部整合しており、S3/N1 の数値は精算器の問題では覆らない",
+   "evidence": "scripts/roi_explore/comprehensive_20261005/calibration_roi.py L123/L180、online_normalization.py L128/L165、build_dataset.py L146(race_ok=全馬オッズ>0)、export_rows_2007.py L15(dead_heat=n_winners!=1)。影響幅の試算は findings F8"
+  }
+ ],
+ "disagree_with_codex": [
+  {
+   "point": "A3 の実害は「未測定」ではなく測定可能で、現状ほぼゼロ。優先度 P2 は妥当だが、修正範囲は「quote 固有の official 時刻」より先に「odds 書込ジョブの時刻を記録する」で足りる",
+   "evidence": "前向き pick 21 件(5 レース)は全て odds ジョブ書込(written>0)の約 1 秒後に entries、約 24 秒後に computed_at(a3_picks.txt)。mev 結果未確定 18 レース中 17 は odds_observed_at ≤ 最終 odds 書込+5 分、超過は 1 件(a3_mev.txt)。構造的なチャネル(発走前 entries 1,687 run 中 856=51% が同時間帯に odds 書込なし)は実在するが、expected_return 再計算が「単勝オッズが書かれたとき」にしか enqueue されないため pick には伝播しにくい",
+   "severity": "medium"
+  },
+  {
+   "point": "逆オッズ和<1 の 40 レースは氷山の一角で、学習データには取消前価格が残るレースが 1,323 件(JRA-VAN 期・1.9%)ある。sum<1 の除外では大半を検出できない。ただし影響は小さく、「学習への影響が未修復」は修復不能に近いので、対処はフラグ化+感度確認に限るべき",
+   "evidence": "era別・取消有無別の started 逆数和(underround2.txt): JRA-VAN 期 cancel_with_odds 1,323 レースの p50=1.2155・p10=1.0166、no_cancel 60,331 レースの p50=1.2594。取消馬を含めた s_all の p50 は 1.2592 で一致=取消前価格。歪み ≈×1.036 を 1.9% のレースに掛けると ROI ≈+0.07pt(上限)。JRA-VAN データに取消時刻が無いので「取消後価格」は復元不能",
+   "severity": "medium"
+  },
+  {
+   "point": "B1 の既存代替として chaos_snapshots を評価していない。全馬オッズ+人気の JSON が 527 レース分あり「判断時点の全馬オッズ」には部分的に使えるが、予測・特徴は無く時刻も pick とずれる",
+   "evidence": "chaos_snapshots active 527 行=527 レース(2026-07-31〜10-03・capture_trigger predict_auto 511/predict_manual 16)、field JSON に odds/popularity/horse_number/horse_id、seconds_to_post 中央値 26,496 秒・窓内 526。前向き pick 5 レースは全て snapshot ありだが captured_at と computed_at の差は中央値 1,353 秒、2 分以内は 21 件中 6",
+   "severity": "low"
+  },
+  {
+   "point": "B2 の欠落期間は「07-04〜08-09 の 419 レース」より広く、結果ありの 06-20〜08-09 全 16 開催日 576 レースに公式払戻がない。06-20〜07-03 の 144 レースは R05 発生前なので保存オッズは確定値と見込めるが、公式が無い以上検証はできない",
+   "evidence": "日別 n_res/n_pay(06-20〜08-16): 06-20,21,27,28,07-04〜08-09 がすべて n_pay=0、08-15 から 36/36。139 evidence repair_input_shift.json: archived=499・missing_archive=504(=07-04〜08-09 の 14 開催日×36)",
+   "severity": "low"
+  },
+  {
+   "point": "修復前 parquet の発走前オッズが払戻を過大評価する大きさは Codex 資料に定量が無い。勝者側で平均 +7.5% という向きの強い偏りで、138 凍結表(〜09-22)の 2026 年尾部はこの分だけ上振れしている",
+   "evidence": "parquet_drift.json: 公式払戻のある 396 勝者で parquet odds×100≠payout が 208 件、平均比 1.0748。修復後 DB は 1.0050(残差 2 件は同着 202607020811)。07-04〜08-09 は DB も parquet も発走前値のまま(差 0 行)=両方が同じ向きに誤っている",
+   "severity": "medium"
+  },
+  {
+   "point": "Codex の順序(公式精算→来歴保存→S3 vs N1 比較)は妥当だが、A1/A2 の修正は ROI 研究の数値をほぼ動かさない「正しさ」案件(実購入 7 行は全 void)。ROI 検証に直接効くのは B1(同一 run の全馬 snapshot)と 07-04〜08-09 の公式払戻再取得の可否判断で、後者は 504 req の netkeiba 予算判断を利用者に先に求めるべき",
+   "evidence": "purchase_records 7 行(2026-09-02)は as_presented/correction/freeform がすべて void で有効記録 0。研究 scorer は api/betting の is_hit を使っておらず(won×odds×100 の単勝のみ)、A1/A2 は研究数値に無関係。欠落 504 レースはアーカイブ無しで再取得のみが手段(139 spec「利用者の許可待ち」)",
+   "severity": "low"
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "title_ja": "A1 未修正: 実購入の単勝精算が公式払戻に未接続",
+   "claim_ja": "main の purchase_view.py は OfficialWinPayout を参照せず、単勝的中を amount×race_horses.odds で settled_real として返す",
+   "evidence_ja": "api/src/horseracing_api/purchase_view.py L138-142(`amount * float(odds)`・SETTLED_REAL・is_estimated=False)、import 行に OfficialWinPayout なし。git log -- purchase_view.py の最終コミットは dccae036(106)。git grep OfficialWinPayout は api/queries.py・db/models/market.py 等 10 ファイルのみ",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "実購入 7 行は全 void で現在の実害 0 だが、記録が始まれば同着(2007〜で 1 着同着 89 レース)と 2025-10-11 以降の netkeiba 期で払戻と乖離する。修正対象: purchase_view.race_context に official_win_payouts を結線し、無いときは UNSETTLEABLE。受入: 202607020811 #5 100 円→1,340 円、公式なし→unsettleable、公式訂正後の再 GET で反映"
+  },
+  {
+   "id": "F2",
+   "title_ja": "A2 未修正: ワイド的中判定(API・betting 両方)",
+   "claim_ja": "API は 3 着同着ペアを的中にし、betting は 5〜7 頭で 3 着を対象外にする",
+   "evidence_ja": "api settlement.py L65 `issubset(_top_finishers(…,3))`→is_hit('wide',[3,4],{1:1,2:2,3:3,4:3},8)=True。betting exotic_selection.py L82 `place_top_n(field_size)`→is_hit('wide',[1,3],6頭,field_size=6)=False、同着 3-3 n=8→True。DB 規模: 3 着同着 167 レース・5〜7 頭 981 レース(1.4%)/68,283",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "api/betting/研究(080 ゲート)でワイドの定義が 3 通り。修正は「同じ述語を単一実装」(exacta/trio と同じ『選択外の馬が境界順位より厳密に前にいない』型)+ 固定例テスト族(1+3/2+3=的中、3+3=不的中、6 頭 1+3=的中)。研究 scorer(単勝のみ)には無関係"
+  },
+  {
+   "id": "F3",
+   "title_ja": "A3 構造的に未修正・実害は現状ほぼゼロ",
+   "claim_ja": "odds_observed_at は race_horses.updated_at で、WHEN なしトリガ+毎回の ON CONFLICT upsert により出走表再取込でも進むが、既存 pick/mev 行では誤分類はほぼ起きていない",
+   "evidence_ja": "market_ev.py L50/491/518、pg_trigger: BEFORE UPDATE FOR EACH ROW・WHEN なし、set_updated_at は NEW.updated_at=now()。a3_picks.txt: 前向き pick 5 レース全てで最終 odds 書込→entries→computed_at が 1 秒/24 秒以内。a3_mev.txt: 結果未確定 18 レース中 17 整合・1 件が 5 分超。構造チャネル: 発走前 entries 1,687 run 中 856(51%)が同時間帯 odds 書込なし",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "修正は小さく済む: refresh の odds ジョブ書込時刻(ingestion_jobs.completed_at・written>0)を market_ev_predictions/attention_picks の odds_observed_at に使う(upsert_entries 由来の更新を切り離す)。受入: entries のみ再取込後も odds_observed_at 不変、odds 書込後は進む"
+  },
+  {
+   "id": "F4",
+   "title_ja": "B1 未修正: 初回全馬 snapshot は残らず、chaos_snapshots は半分の代替",
+   "claim_ja": "market_ev_predictions は最新 run のみ保持し、結果前 scan の run_id は 18 件中 3 件しか残らない。chaos_snapshots に全馬オッズはあるが pick 時刻とずれ予測が無い",
+   "evidence_ja": "b1_a1.txt: scans_rp 18/run 残 3、picks_rp 21/run 残 2。market_ev_predictions 161,544 行・8 run。chaos_snapshots active 527 レース(07-31〜10-03)・field JSON に odds/popularity/horse_number・seconds_to_post 中央値 26,496 秒・窓内 526。pick 5 レースは全て snapshot ありだが |captured_at−computed_at| 中央値 1,353 秒・2 分以内 6/21",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "S3 vs N1 の同一時刻比較や『条件から漏れた馬』の検証は保存データでは不可能。必要なのは market-ev 計算ごとに全馬(予測・odds・odds 取得時刻・入力 hash・booster sha・run_id)を append-only で凍結する表(または parquet)。chaos_snapshots は『判断時点の全馬オッズ』の過去 527 レース分の補助資料として使える(予測は再推論が必要=天候等の非価格入力は当時値でない)"
+  },
+  {
+   "id": "F5",
+   "title_ja": "B2 部分修正: 公式払戻は 2026-08-15 以降のみ",
+   "claim_ja": "official_win_payouts は 505 行/504 レース(08-15〜10-04)。結果ありの 06-20〜08-09 の 16 開催日 576 レースに払戻がなく、うち 07-04〜08-09 の 504 レースは保存オッズも発走前値のまま",
+   "evidence_ja": "DB 集計(日別 n_res/n_pay)。139 evidence repair_input_shift.json: archived=499・odds_updated=3,146・payouts=500・missing_archive=504。R05 アーカイブ CSV(missed_20261004)は 08-15〜10-04・504 レース・勝者 500 で同範囲",
+   "status": "confirmed",
+   "critical": true,
+   "implication_ja": "07-04〜08-09 の 504 レースは結果ページ再取得(504 req)でしか直らない=netkeiba 予算と利用者許可が前提。06-20〜07-03 の 144 レースは R05 前なので保存オッズ=確定値と見込めるが公式が無く検証不能(前向き集計は 10-05 開始なので影響なし)"
+  },
+  {
+   "id": "F6",
+   "title_ja": "B3 未修正: 常設注記の固定文",
+   "claim_ja": "ExpectedReturnNote.tsx は 106.4%/111.3% と「前向き検証はまだ」を定数で持ち、v2 実績や判断時換算(約 85〜90%)に自動追随しない",
+   "evidence_ja": "front/src/components/ExpectedReturnNote.tsx L22・L30",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "表示のみ。/attention-rules の buy_time_expectation と前向き件数を読んで文言を切り替えるか、少なくとも判断時換算への導線を足す。ROI には無関係"
+  },
+  {
+   "id": "F7",
+   "title_ja": "逆オッズ和<1 は 123 レース(JRA-VAN 期のみ)で、取消前価格の混在は 1,323 レースに及ぶ",
+   "claim_ja": "sum(1/odds)<1 は 2007〜2025 に 123 件(年 2〜14)、netkeiba 期 0 件、全件取消馬のオッズを含めると ≥1。取消馬にオッズが残る JRA-VAN 期 1,323 レース(1.9%)は started 逆数和中央値 1.2155(対 1.2594)で、sum<1 にならなくても取消前価格が残っている",
+   "evidence_ja": "underround.txt / underround2.txt(q.py・READ ONLY)。era 別: jravan cancel_with_odds 1,323 件 p10 1.0166/p50 1.2155/p90 1.2565、s_all p50 1.2592。netkeiba cancel_with_odds 17 件 p50 1.2392。Codex の 40 件は評価母集団(2010+・≤06-26・全馬オッズ・同着なし・15 seed 一致)限定で、私の 123 件(2007+・結果あり全体)と整合",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "ROI への影響 ≈ ×1.036 × 1.9% ≈ +0.07pt(上振れ方向・上限)。学習(q=1/odds 正規化)への歪みは当該 1.9% のレースで約 3%。修復は JRA-VAN に取消時刻が無く不可能に近いので、対処は『取消馬にオッズが残るレース』フラグを parquet に持ち感度確認(除外/含めた逆数和で再正規化の 2 通り)に限る"
+  },
+  {
+   "id": "F8",
+   "title_ja": "精算器不一致が過去 ROI 研究を動かす幅と向き",
+   "claim_ja": "研究 scorer(won×保存 odds×100・同着除外・started のみ・2026-06-26 cutoff)に対し、取消前価格(+0.07pt 上限)と R05 期の発走前オッズ(窓外)以外に系統誤差はなく、S3 107%/N1 112% は ±0.1pt 程度しか動かない。向きは一貫して上振れ",
+   "evidence_ja": "calibration_roi.py L123(race_ok & ~dead_heat)/L180、online_normalization.py L76「won*stored odds*100…R05 tail excluded by 2026-06-26」、build_dataset.py L146。同着除外は 2010〜06-26 で 77 レース/1,077 行(data_audit.json)。同着は払戻<オッズなので除外は上振れさせない。返還は started 行のみで非発生。R05 の向き: 勝者 396 件で parquet/払戻 平均 1.075",
+   "status": "inferred",
+   "critical": false,
+   "implication_ja": "『精算器を直せば N1 が 100% を割る/超える』という筋はない。N1 の区間下限 101.96% が採用根拠にならない理由は精算器でなく既読窓・多重探索(Codex と同意見)"
+  },
+  {
+   "id": "F9",
+   "title_ja": "139 修復による研究 parquet と DB の乖離は 2026-08/09 の 221 レースのみ",
+   "claim_ja": "rows_2007.parquet と strict2007 rows.parquet(同一内容)は 2025-10-11 以降 44,966 行・3,239 レースのうち 2,855 行・221 レースが現 DB と異なり、すべて 2026-08/09(アーカイブ修復窓)。07-04〜08-09 は DB も発走前値のままで差 0",
+   "evidence_ja": "parquet_drift.json(parquet_drift.py・READ ONLY)。diff_by_month: 2025-10〜2026-07 は 0、2026-08 1,585、2026-09 1,270。rows_db_missing 14。Codex 10-05 は freeze.json の rows.parquet SHA 0434ab0c(mtime 09-30・修復前)を使用、max_date 2026-06-26",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "Codex の主結果は修復の影響を受けない。138 凍結表(〜09-22)と 10-04 の R05 報告は 08-15〜09-22 で修復前値を使っている(R05 で補正済み)。次の研究は修復後 DB から parquet を再ビルドし、07-04〜08-09 を『発走前値』フラグで区別する"
+  },
+  {
+   "id": "F10",
+   "title_ja": "修復前 parquet の発走前オッズは勝者の払戻を平均 7.5% 過大評価",
+   "claim_ja": "公式払戻がある 396 勝者で parquet の odds×100≠payout が 208 件、平均比 1.0748。修復後 DB は 1.0050(残り 2 件は 202607020811 の 1 着同着)",
+   "evidence_ja": "parquet_drift.json winner_mean_ratio_pq_over_pay=1.0748、winner_db_odds_ne_payout=2",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "発走前オッズでの近似精算は勝者側に系統的な上振れ(締切に向けて勝ち馬の支持が集まる)を持つ。07-04〜08-09 の 504 レースは現在もこの状態。『同じ公式払戻で比較』を前向き検証の前提にする Codex の順序に賛成する最も強い根拠"
+  },
+  {
+   "id": "F11",
+   "title_ja": "他 worktree に修正は存在しない",
+   "claim_ja": "codex/existing-logic-fixes(3455a401)・rerun/070-staged-eval は 137 以前の枝で、market_ev.py/0018-0020/ExpectedReturnNote を持たず A1〜B3 の修正を含まない",
+   "evidence_ja": "git log main..codex/existing-logic-fixes=1 コミット、git diff --stat main codex/existing-logic-fixes は 0018/0019/0020/market_ev.py/ExpectedReturnNote.tsx の削除のみ。git grep OfficialWinPayout は main 以外 0 件",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "修正はすべて新規作業"
+  },
+  {
+   "id": "F12",
+   "title_ja": "修正済み/未修正の表と受入基準案",
+   "claim_ja": "修正済み: 139(確定オッズ上書き 2025-10-11 以降・official_win_payouts・138 の公式精算 v2)。部分修正: B2(08-15 以降のみ)。未修正: A1・A2(api+betting)・A3・B1・B3・取消前価格混在(修復不能・フラグ化のみ)",
+   "evidence_ja": "F1〜F11 の総合",
+   "status": "confirmed",
+   "critical": true,
+   "implication_ja": "受入基準案: [A1] purchase_view: 公式行あり→payout_yen×amount/100、公式なし→unsettleable、同着 2 行→各馬番の行、訂正後再 GET で反映、テスト 4 件。[A2] api/settlement.py と betting/exotic_selection.py のワイド述語を同一化し固定例テスト(1+3/2+3 的中・3+3 不的中・6 頭 1+3 的中・<5 頭は None)、080 ゲート scorer と一致確認。[A3] odds_observed_at を odds ジョブの completed_at(written>0)から取る/entries のみ再取込で不変のテスト。[B1] market-ev 計算ごとの全馬行(予測・odds・odds 時刻・入力 hash・booster sha・run_id)を append-only 保存し、18 結果前 scan 相当が後から再現できること。[B2] 07-04〜08-09 の 504 レース結果ページ再取得(許可後)→payouts 504 行・final_odds_updated>0・再実行 0 件。[混在] parquet に cancel_with_odds フラグ列を追加し S3/N1 を除外/再正規化の 2 通りで再集計して差 <0.2pt を確認"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/q.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/parquet_drift.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/parquet_drift.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/underround.txt",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/underround2.txt",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/a3_picks.txt",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/a3_mev.txt",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/accounting/b1_a1.txt"
+ ],
+ "open_questions_ja": [
+  "2026-07-04〜08-09 の 504 レース(結果ページ 504 req)の再取得を許可するか。これ無しに同期間の公式払戻は得られない(アーカイブ無し)",
+  "JRA のワイド発売条件(5〜7 頭でも 3 着まで対象、≤4 頭は発売なし)を公式ページで再確認する。Codex の読みと私の記憶は一致するが、betting 側の place_top_n 流用が意図的だった可能性は 011 spec で確認していない",
+  "2026-06-20〜07-03 の 144 レースの保存オッズが確定値か(R05 発生前だが公式払戻が無く検証不能)。139 の確定オッズ上書きは 2025-10-11 以降のみ適用で、この期間のアーカイブ有無は未確認",
+  "JRA-VAN 期の取消馬オッズ(1,323 レース)が『取消前の最終オッズ』なのか『JRA-VAN が再計算後も残した値』なのか=取消時刻が無いので判別できない。影響 +0.07pt の上限試算は買い目が一様分布の仮定",
+  "market_ev_predictions の run_id が 8 種しかない(5,827 レース)のは 137 の『レース単位置換』仕様どおりだが、B1 を直す際に既存表を append-only 化するか別表にするかは 137/138 の契約(最新のみ)と衝突するので設計判断が要る"
+ ]
+}

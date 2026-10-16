@@ -1,0 +1,143 @@
+{
+ "summary_ja": "15 seed の OOF(2010〜2026-06-26・race_ok∧非同着=774,482 頭/54,753 レース、主評価 2013 年以降 631,151 頭/44,791 レース)で誤差構造を測った。結論: (1) p̄ の全体較正は健全(レース内 Σp̄ 平均 1.0001・オッズ帯別 Σwon/Σp̄ 0.98〜1.04・ECE 0.0009 で市場 q の 0.0017 より良い)。較正損失成分は馬単位 logloss の 0.5%(0.0010/0.2015)しかなく、1 次元の事後較正(isotonic・べき γ・オッズ帯切片)は walk-forward で NLL をほぼ動かさず(−0.004〜+0.002)、EV>1.2 の過大(Σwon/Σp̄ 0.74〜0.81)も直らない。(2) 過大評価は「選択条件つき」の構造=EV で選ぶほど真値が市場側に回帰する(Σwon/Σp̄: EV 1.0–1.1 0.92 → 1.2–1.5 0.78 → >1.5 0.57 → >2.0 0.32。市場 q は同じ帯で 1.20〜1.27 の過小)。EV>1.2 集合では真値 ≈ p̄^0.45·q^0.55(対数内挿)で、2 次元較正 softmax(a·log q+b·log p̄) を walk-forward で当てると係数は a 0.37→0.28・b 0.63→0.73 と安定、S3 集合の Σwon/Σp_cal は 0.75→0.92・S3 の較正後平均 EV は 1.11(実測 ROI 1.07 と整合)。つまり表示 1.36 は約 25% の過大で、真の EV は 1.05〜1.11。(3) 帯別では 10〜20 倍が唯一の一貫した損失源(EV 1.2–1.5: Σwon/Σp̄ 0.74 [0.65,0.82]・ROI 0.94 / EV>1.5: 0.48・ROI 0.79。真値の重み w_model=0.30=市場寄り)、20〜40 倍はモデル寄り(w 0.64・Σwon/Σp̄ 0.86 [0.73,1.00]・ROI 1.14、市場は 41% 過小)。(4) 判別: レース内正規化 p̄ の winner NLL は市場 q より −0.0090/レース [−0.0106,−0.0074]・全 17 年で負。正規化だけで −0.0012(race-softmax の粗い上限)。seed 平均は単 seed 比 −0.0034(正規化)・15→∞ の残りは ≤0.0003、seed 一致度・seed 間分散は EV>1.2 の信頼度信号にならない(EV 1.2–1.5 内で 0.78/0.80/0.77)。次に効くのは「較正器を直す」でなく、(a) 表示・判断の EV を市場との混合で縮める(判断時 EV 較正)、(b) NLL を動かすなら判別(新情報)側、(c) 帯なら 10〜20 倍の扱い。",
+ "findings": [
+  {
+   "id": "F1",
+   "title_ja": "全体較正は健全で市場より良い(較正損失は logloss の 0.5%)",
+   "claim_ja": "p̄ は無条件・オッズ帯条件では過大でも過小でもなく、ECE は市場 q より小さい。較正成分(in-sample isotonic との差)は馬単位 logloss 0.2015 のうち 0.0010 で、市場 q(0.0011/0.2021)と同水準。",
+   "evidence_ja": "2013+: レース内 Σp̄ 平均 1.0001(中央値 0.9992)。オッズ帯別 Σwon/Σp̄: <5 1.008 [1.000,1.016]・5–10 0.991・10–20 0.980・20–40 0.999・40–100 0.976・100+ 1.037(いずれも CI がほぼ 1 を含む)。ECE(等質量 20 bin)p̄ 0.0009 / 正規化 p̄ 0.0011 / q 0.0017。年別 ECE p̄ 0.0021〜0.0048。2011・2017 だけ Σp̄ 0.975 の水準ずれ(生 NLL が正規化版より +0.026/+0.021 悪い)。",
+   "status": "measured",
+   "implication_ja": "「較正を直せば良くなる」という筋は 1 次元では閉じている。年ごとの水準ずれ(2011/2017)はレース内正規化で消えるので、生 p̄ でなく正規化値を使うのは正当。"
+  },
+  {
+   "id": "F2",
+   "title_ja": "EV>1.2 の過大評価は選択条件つき(EV が高いほど市場側へ回帰)",
+   "claim_ja": "p̄×odds で選ぶと真の勝率は p̄ と q の間(対数内挿で w_model≈0.45)に落ち、EV が極端なほど過大率が増す。これは全体較正の問題ではなく選択(勝者の呪い)の構造。",
+   "evidence_ja": "2013+ の Σwon/Σp̄(EV 帯別): <0.8 1.046 [1.037,1.055] / 0.8–1.0 0.981 / 1.0–1.2 0.908 [0.881,0.933] / 1.2–1.5 0.783 [0.730,0.837] / >1.5 0.572 [0.457,0.687]。細分: 1.0–1.1 0.92・1.1–1.2 0.88・1.2–1.3 0.78・1.3–1.4 0.76・1.4–1.5 0.84・1.5–1.7 0.62・1.7–2.0 0.54・>2.0 0.32。同じ帯の市場 q は Σwon/Σq 0.91/1.08/1.22/1.27/1.20(過小)。EV>1.2 集合(14,946 頭・821 勝)で Σwon=Σp̄^w q^(1−w) を満たす w は 0.45(EV 1.0–1.2 では 0.67、0.8–1.0 では 0.80)。年別 EV>1.2 の Σwon/Σp̄ は 2013〜2026 すべて 0.68〜0.85(1 年も 0.86 以上なし)。",
+   "status": "measured",
+   "implication_ja": "表示 EV(S3 平均 1.36)は約 25% 過大で、真の EV は 1.05〜1.11 の帯。ROI 107% はこの真値と整合する。過大の向きは安定で予測可能=市場との混合で縮められる(F5)。"
+  },
+  {
+   "id": "F3",
+   "title_ja": "損失源は 10〜20 倍帯、利得源は 20〜40 倍帯(市場との相対的な正しさが帯で逆転)",
+   "claim_ja": "EV>1.2 の中で 10〜20 倍だけが一貫して回収 1 未満で、真値は市場寄り(w_model 0.30)。20〜40 倍はモデル寄り(w 0.64)で市場の過小(Σwon/Σq 1.41)が大きい。",
+   "evidence_ja": "2013+ セル(Σwon/Σp̄ / Σwon/Σq / ROI / 純損益): EV1.2–1.5×10–20: 0.738 [0.652,0.819] / 1.20 / 0.941 [0.839,1.047] / −24,620 円(4,188 頭)。EV>1.5×10–20: 0.478 [0.332,0.628] / 0.99 / 0.791 / −15,190 円(728 頭)。EV1.2–1.5×20–40: 0.862 [0.730,0.997] / 1.409 / 1.141 [0.963,1.364] / +50,940 円(3,619 頭)。EV>1.5×20–40: 0.685 / 1.46 / 1.256 / +22,000 円(860 頭)。EV1.2–1.5×40–100: 0.837 / 1.37 / 1.140 / +39,540 円。帯別 w_model(EV>1.2): 5–10 0.48・10–20 0.30・20–40 0.64・40–100 0.55。10〜20 倍(4,916 頭)を除くと EV>1.2 の事後 ROI は 1.07→1.14(算術)。S1 相当(20–40×間隔 14–112 日・2013+): 3,734 頭・157 勝・Σwon/Σp̄ 0.846 [0.714,0.976]・Σwon/Σq 1.46・ROI 1.21 [1.02,1.40]。",
+   "status": "measured",
+   "implication_ja": "S1 が残った理由は「20〜40 倍帯では市場の過小がモデルの過大を上回る」こと。ただし帯の選別は事後で、20〜40 の CI は 1.0 を含む。10〜20 倍の扱い(表示上の減衰・閾値引き上げ)は判断時 EV 較正の改善候補。"
+  },
+  {
+   "id": "F4",
+   "title_ja": "1 次元の事後較正は NLL も EV>1.2 の過大も直さない",
+   "claim_ja": "walk-forward(年 y は 2010..y−1 で fit)の isotonic・べき γ・オッズ帯ロジット切片は、winner NLL をほぼ動かさず、EV>1.2 集合の Σwon/Σp は 0.74〜0.81 のまま。選択条件つきの過大は p̄ だけの関数では補正できない。",
+   "evidence_ja": "2013+ 正規化 winner NLL: 無補正 1.9517 / isotonic 1.9534(+0.0017 悪化・ECE 0.0011→0.0014)/ γ 1.9518(γ̂ 0.977→1.000 でほぼ恒等)/ 帯切片 1.9518(生 NLL は 1.9529→1.9490、切片 |b|≤0.06)。EV>1.2 の件数/ROI/Σwon/Σp: 無補正 14,946/1.070/0.751、isotonic 18,992/1.031/0.739、γ 14,532/1.141/0.807(実質 N1=正規化効果)、帯切片 14,432/1.103/0.778。EV×オッズのセル倍率(WF・倍率は年をまたいで安定: EV1.2–1.5 の 10–20 0.74〜0.80・20–40 0.78〜0.88)を掛けても、残る EV'>1.2(1,863 頭)の Σwon/Σp' は 0.68=極端側を再選択すると過大が再発する。in-sample isotonic の winner NLL −0.0128 は過学習(馬単位の較正成分 0.0010 と不整合)。",
+   "status": "measured",
+   "implication_ja": "較正器の追加(isotonic・温度・帯切片)は不採用でよい。EV の過大を直すには市場 q を較正の入力に入れる 2 次元化が必要(F5)。"
+  },
+  {
+   "id": "F5",
+   "title_ja": "市場との混合較正は EV の過大をほぼ消す(S3 集合の真の EV≈1.1)が、EV>1.2 の件数は 6 分の 1 になる",
+   "claim_ja": "softmax(a·log q + b·log p̄) を walk-forward で当てると係数は安定(a 0.37→0.28、b 0.63→0.73 と年々モデル重みが増す)、NLL は −0.0007、S3 集合の Σwon/Σp_cal は 0.75→0.92、較正後の平均 EV は 1.11。較正後 EV>1.2 は 2,330 頭・ROI 0.94 [0.73,1.19] に縮む。",
+   "evidence_ja": "2013+: nll_norm 無補正 1.9517 → 混合 1.9510 → logistic(logit p̄, logit q) 1.9515。S3(元 EV>1.2・14,946 頭)の Σwon/Σp_cal: 混合 0.921・logistic 0.930・セル倍率 0.977。S3 の較正後平均 EV: 混合 1.110・logistic 1.089・セル 1.054(実測 ROI 1.070)。較正後 EV_cal>1.2: 混合 2,330 頭/96 勝/ROI 0.940 [0.726,1.189]・Σwon/Σp_cal 0.765(なお過大)、logistic 1,228 頭/0.772。較正後 EV_cal>1.0: 混合 24,737 頭/ROI 1.061 [0.984,1.136]/Σwon/Σp_cal 0.953・S3 との重なり 90.7%。Codex 10/05 の q+ens 較正(2,330 点 93.97%)と件数一致。",
+   "status": "measured",
+   "implication_ja": "混合は「判断時に見せる EV の較正」としては正しい(1.36→1.11 が実測に合う)。ただし閾値 1.2 を据え置くと極端側を再選択して過大が残る(勝者の呪いの再発)ので、較正後 EV の閾値は 1.0〜1.05 付近に移す必要がある(較正後 EV>1.0 ≈ S3 とほぼ同じ集合)。ROI 改善の証拠ではない。"
+  },
+  {
+   "id": "F6",
+   "title_ja": "判別: 市場 q より −0.009/レース、レース内正規化の効果は −0.0012",
+   "claim_ja": "正規化 p̄ の winner NLL は市場 q を全 17 年で上回り、2013+ で −0.0090 [−0.0106,−0.0074](開催日 paired bootstrap)。レース内正規化(p̄/Σp̄)だけで生 p̄ より −0.0012 動く=race-softmax 目的関数に替えた場合の利得の粗い上限。",
+   "evidence_ja": "2013+: nll_raw 1.9529 / nll_norm 1.9517 / nll_q 1.9607。年別 Δ(norm−q) −0.0046(2017)〜−0.0122(2026)、全年負。正規化で ECE は 0.0009→0.0011 とわずかに悪化。Codex 10/05 の「q のみ比 NLL −0.010/レース」と整合。",
+   "status": "measured",
+   "implication_ja": "NLL を動かす余地は較正でなく判別(新情報)側にある。race-softmax 化は上限 −0.0012 で、seed 平均の −0.0034 より小さい=優先度は低い。"
+  },
+  {
+   "id": "F7",
+   "title_ja": "seed: 平均の利得は −0.0034、残りは ≤0.0003、seed 一致度は信頼度信号にならない",
+   "claim_ja": "15 seed 平均は単 seed 比で正規化 NLL −0.0034(生 −0.0040)。曲線は k=7 で頭打ち(15→∞ の残り ≤0.0003)。EV>1.2 の判定は 87% が非全会一致だが、EV 帯を固定すると一致度も seed 間分散も Σwon/Σp̄ を分けない。",
+   "evidence_ja": "2013+: 単 seed 正規化 NLL 平均 1.9551(sd 0.00034)/ 15 seed 1.9517。seed 曲線 k=1/3/5/7/10/15: 1.9552/1.9527/1.9522/1.9520/1.9518/1.9517。p_s の相対 sd 中央値 0.116(EV>1.2 内 0.138)。EV>1.2(14,946 頭)のうち 15 seed 全会一致 1,887(12.6%)・≤10 seed 47%。全会一致群の Σwon/Σp̄ 0.585 [0.465,0.702] vs 1〜7 seed 群 0.892 [0.722,1.076] だが、これは平均 EV(1.69 vs 1.22)の差=F2 の用量反応。EV 1.2–1.5 内で一致 1–9/10–12/13–15 seed: 0.776/0.799/0.768。seed 間相対 sd の三分位(EV>1.2 内): 0.726/0.736/0.772=単調でない。単 seed の EV>1.2 は平均 20,841 頭・Σwon/Σp 0.735、ensemble は 14,946 頭・0.751。",
+   "status": "measured",
+   "implication_ja": "seed 増は閉じてよい。seed 一致度を「確信度」として表示・選定に使うのは誤り(高一致=高 EV=より過大)。"
+  },
+  {
+   "id": "F8",
+   "title_ja": "EV>1.2 の件数は年々減り、過大率は改善しない",
+   "claim_ja": "学習データの増加でモデルは市場に近づき(EV>1.2 の件数 2013 年 2,429 → 2025 年 413)、混合の市場重み a も 0.37→0.28 と下がるが、EV>1.2 集合の Σwon/Σp̄ は 0.70〜0.85 で横ばい。",
+   "evidence_ja": "年別 EV>1.2: 2013 2,429 頭/0.777、2016 1,449/0.681、2019 825/0.830、2022 571/0.800、2024 422/0.831、2025 413/0.850、2026(〜06-26)186/0.717。平均オッズ 30→37〜50 倍へ上昇。混合係数 b(モデル)0.625(2013 fit)→0.732(2026 fit)。",
+   "status": "measured",
+   "implication_ja": "データ量で過大が自然に消える見込みは薄い。前向きの件数(年 400 頭前後)は検出力の限界をさらに下げる。"
+  }
+ ],
+ "levers": [
+  {
+   "name_ja": "判断時 EV の市場混合較正(softmax(a·log q + b·log p̄)・walk-forward 係数)で表示/判定の EV を縮め、閾値を較正後 EV で再設定",
+   "what_improves": "判断時 EV 較正・保持率",
+   "tried_before": "Codex 10/05 が q+ens 較正を「EV>1.2 固定の買い方」として測り 2,330 点 93.97% で改善なしと判定。本計測は同じ係数を「較正器」として評価し、S3 集合の Σwon/Σp を 0.75→0.92・平均 EV 1.36→1.11(実測 1.07 と整合)まで直すことを確認。閾値を較正後 EV で移す評価は未実施",
+   "expected_magnitude_ja": "表示 EV の過大 約 25% を 8% 以内へ(S3 集合 Σwon/Σp_cal 0.92)。NLL −0.0007。ROI は変わらない(選ぶ集合を変えなければ同じ馬)。較正後 EV>1.0 は 24,737 頭・ROI 1.06 [0.98,1.14]・S3 との重なり 91%",
+   "cost_ja": "低(OOF から 2 係数を年次 fit・市場 q は既に入力にある・表示層の定数 1.2 の意味変更)。再学習なし",
+   "acceptance_ja": "walk-forward で、表示する較正後 EV 帯ごとの Σwon/Σp_cal が [0.90,1.10] に入る(現状 EV>1.2 で 0.75)。NLL 非悪化。較正後 EV の帯別 ROI が較正後 EV と単調に整合(EV_cal 1.0–1.1 で ROI≈1.0 など)",
+   "risk_ja": "極端側を閾値 1.2 のまま再選択すると過大が再発(較正後 EV>1.2 の Σwon/Σp 0.77)。表示上「120% 超」が激減し製品の見え方が変わる。判断時オッズでの係数は未測定(本計測は確定オッズ)"
+  },
+  {
+   "name_ja": "10〜20 倍帯の EV を帯別に減衰(または除外)し、20〜40 倍帯を据え置く",
+   "what_improves": "判断時 EV 較正・保持率(事後では保存価格 ROI も)",
+   "tried_before": "S1(20–40 倍限定)として事後に発見済み・前向き中。10〜20 倍を落とす形は未評価",
+   "expected_magnitude_ja": "事後: EV>1.2 の ROI 1.07→1.14(10〜20 倍 4,916 頭・純損 −39,810 円を除去)。10〜20 倍の真値の重みは市場寄り(w 0.30)なので、帯別の混合係数にすれば自然に減衰する",
+   "cost_ja": "低〜中(帯別係数の fit は OOF のみ。表示は帯別の EV 補正を説明する注記が必要)",
+   "acceptance_ja": "walk-forward で帯別混合係数が年をまたいで安定(10〜20 倍の b が他帯より低いことが毎年成立)かつ 10〜20 倍の Σwon/Σp_cal が [0.9,1.1]。ROI では判定しない",
+   "risk_ja": "帯の選別は事後(20〜40 の ROI CI は 1.0 を含む・10〜20 の損失も CI 上限 1.05)。帯の境界で不連続。価格ずれ(判断時→確定)で帯がずれる"
+  },
+  {
+   "name_ja": "判別側の新情報(入力追加・別モデル族)で NLL を動かす",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "本番 p 追加 ≈0(R04)、rounds600・直近 8 年学習・回帰・residual context は ROI 側で評価済み(NLL では増分 +0.00016=seed 床未満)。seed は飽和",
+   "expected_magnitude_ja": "現状 Δ(モデル−市場)=−0.0090/レース。較正成分は 0.0010(馬単位 logloss)しかなく、残りはすべて判別。1 レバーで動く帯は過去例から −0.002〜−0.005",
+   "cost_ja": "高(特徴生成+15 seed 再学習+walk-forward 17 年)",
+   "acceptance_ja": "開催日 paired bootstrap で正規化 winner NLL の改善 CI 上限<0、かつ EV>1.2 集合の Σwon/Σp が悪化しない(判別が上がると選択の極端化で過大が増える可能性があるため必須)",
+   "risk_ja": "NLL が上がっても ROI に変換されない(精度→ROI の橋の不在が本リポジトリで繰り返し確定)。選択条件つき過大は判別が上がっても残る(F2 の構造)"
+  },
+  {
+   "name_ja": "race-softmax(レース内 softmax)目的関数への置換",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "未実施(ens15 は binary)。正規化効果の代理のみ本計測",
+   "expected_magnitude_ja": "上限 −0.0012(正規化だけの効果)。ECE はわずかに悪化(0.0009→0.0011)。seed 平均の −0.0034 より小さい",
+   "cost_ja": "中(目的関数実装は 039 で既存・15 seed 再学習 数時間)",
+   "acceptance_ja": "正規化 winner NLL −0.002 以上(seed 床 0.0003 の 6 倍)かつ ECE 非悪化・EV>1.2 の Σwon/Σp 非悪化",
+   "risk_ja": "利得が上限 −0.0012 で受入基準に届かない見込みが高い。優先度低"
+  },
+  {
+   "name_ja": "1 次元の事後較正(isotonic・温度/べき・オッズ帯切片)・seed 追加・seed 一致度の信頼度利用",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "本計測で walk-forward 実施: isotonic +0.0017 悪化、γ≈1.0 で恒等、帯切片 ±0.0001、EV>1.2 の Σwon/Σp は 0.74〜0.81 のまま。seed 曲線は k=7 で頭打ち、一致度は EV 帯内で無効",
+   "expected_magnitude_ja": "≈0(閉じる)",
+   "cost_ja": "—",
+   "acceptance_ja": "—(不採用の記録として)",
+   "risk_ja": "seed 一致度を確信度として表示すると逆向き(高一致=高 EV=より過大)"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/measure.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/measure2.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/measure3.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/measure.log",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/measure2.log",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/report.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/report2.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/report3.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t1_calibration_cells_2013plus.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t1_marginal_ev_band.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t1_marginal_odds_band.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t1_ev12_by_year.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t2_yearly_nll_ece.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t3_posthoc_calibration_2013plus.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t3_posthoc_by_year.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t3b_2d_calibration_2013plus.csv",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/oof_error/t3b_by_year.csv"
+ ],
+ "open_questions_ja": [
+  "本計測は確定(保存)オッズ上の OOF。判断時オッズでは q が違うので、混合係数 a/b と帯別の w_model が同じかは未測定(R02 pairs 564 組・scored_pairs 5,967 頭で確認可能だが小標本)。",
+  "混合較正後の閾値をどこに置くか(較正後 EV>1.0 は S3 と 91% 重なり ROI 1.06、>1.2 は 2,330 頭で 0.94)。閾値の決め方自体が事後選択にならない手続き(例: 較正後 EV の帯ごとに Σwon/Σp_cal≈1 を要求し、閾値は「表示上 100% 超」と定義する)が要る。",
+  "市場重み a が年々下がる(0.37→0.28)傾向は続くのか、学習データ増による自然な収束か。2026 年以降の 1 年ごとの再 fit で追う。",
+  "2011・2017 の Σp̄ 0.975 の水準ずれの原因(その年の市場構造か学習窓の境界か)。生 p̄ を使う経路(本番の market_ev.predict は生 p̂×odds)はこの年次ずれを受けるので、本番でもレース内正規化または混合を通すべきかの判断。",
+  "race-softmax 化の真の利得は上限 −0.0012 の代理でしか測っていない。実装して測るか、優先度が低いと決めて閉じるか。",
+  "EV 帯別の過大率が年をまたいで安定(セル倍率 0.74〜0.88)なのに、それを掛けた後に極端側を再選択すると過大が再発する(0.68)。較正後の値で「選ばない」帯(例: 較正後 EV>1.5 は信じない)を事前登録する必要があるか。"
+ ]
+}

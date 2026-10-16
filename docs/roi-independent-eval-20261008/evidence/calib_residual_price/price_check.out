@@ -1,0 +1,61 @@
+['pair_id', 'race_id', 'horse_id', 'horse_number', 'O_J', 'EVe_J', 'EVs_J', 'days_since_last', 'race_date', 'source', 'tb', 'hours', 'O_F', 'EVe_F', 'EVs_F', 'q_F', 'final_src', 'official_payout_yen', 'd', 'bJ', 'bF', 'J_S1', 'F_S1', 'J_S2', 'F_S2', 'J_S3', 'F_S3', 'J_S4', 'F_S4', 'J_S5', 'F_S5', 'won', 'dead_heat', 'O_settle', 'ret', 'gapf']
+pairs 564 races 444
+source      tb
+CHAOS       T1     27
+            T2    110
+            T3    141
+            T4    133
+STORED_PRE  T1    114
+            T2      8
+            T3      5
+            T4     26
+dtype: int64
+chosen by source/tb:
+ source      tb
+CHAOS       T1     27
+            T2     85
+            T3    106
+            T4     73
+STORED_PRE  T1    114
+            T2      8
+            T3      5
+            T4     26
+dtype: int64
+chosen hours quantiles {0.0: 0.04, 0.25: 0.56, 0.5: 3.69, 0.75: 8.77, 1.0: 31.67}
+races with >1 snapshot: 120
+other S3 judged 14 retention 0.357 S1 ret 0.0 n_pairs 120
+chosen S3 judged 83 retention 0.169 S1 ret 0.128 n_pairs 444
+tb T1 S3 judged 25 retention 0.32
+tb T2 S3 judged 10 retention 0.0
+tb T3 S3 judged 28 retention 0.179
+tb T4 S3 judged 34 retention 0.176
+scored races 443 official races 232
+archive-confirmed races in scored set: 389
+non-confirmed races: 54 dates: ['2026-08-02', '2026-08-09']
+S3 bets 82 hits 2
+           race_id   race_date  horse_number  ...      source  tb     hours
+1625  202604020609  2026-08-09          15.0  ...       CHAOS  T3  8.742222
+5748  202609040607  2026-09-20           9.0  ...  STORED_PRE  T1  0.404554
+
+[2 rows x 12 columns]
+S1 bets 39 hits 2
+           race_id   race_date  ...  settle_multiplier  arc_ok
+1625  202604020609  2026-08-09  ...               40.3   False
+5748  202609040607  2026-09-20  ...               20.8    True
+
+[2 rows x 9 columns]
+443 all S3 n 82 hits 2 roi(settle_mult) 0.7451 roi(O_F) 0.7451
+389 arc S3 n 75 hits 1 roi(settle_mult) 0.2773 roi(O_F) 0.2773
+54 non-arc S3 n 7 hits 1 roi(settle_mult) 5.7571 roi(O_F) 5.7571
+non-arc rows: O_settle==O_F? True
+       race_date source  tb
+0     2026-08-02  CHAOS  T2
+52    2026-08-02  CHAOS  T3
+138   2026-08-09  CHAOS  T2
+162   2026-08-09  CHAOS  T3
+1511  2026-08-02  CHAOS  T4
+1651  2026-08-09  CHAOS  T4
+race_date
+2026-08-02    31
+2026-08-09    23
+Name: race_id, dtype: int64

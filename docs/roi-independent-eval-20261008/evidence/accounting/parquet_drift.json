@@ -1,0 +1,212 @@
+{
+ "rows_2007": {
+  "columns": [
+   "race_id",
+   "horse_id",
+   "horse_number",
+   "frame",
+   "sex",
+   "age",
+   "weight",
+   "weight_diff",
+   "jockey_weight",
+   "odds",
+   "popularity",
+   "running_style",
+   "jockey_id",
+   "trainer_id",
+   "race_date",
+   "venue_code",
+   "race_number",
+   "distance",
+   "track_type",
+   "going",
+   "weather",
+   "race_class",
+   "grade",
+   "prize_money",
+   "finish_order",
+   "result_status",
+   "margin_sec",
+   "last_3f",
+   "sire_line",
+   "damsire_line",
+   "finished",
+   "won",
+   "year",
+   "month",
+   "dow",
+   "dist_band",
+   "race_class_canon",
+   "class_rank",
+   "is_graded",
+   "field_size"
+  ],
+  "rows_ge_20251011": 44966,
+  "races": 3239,
+  "max_race_date": "2026-09-22",
+  "rows_odds_differ": 2855,
+  "races_with_any_diff": 221,
+  "rows_db_missing": 14,
+  "diff_by_month": {
+   "2025-10": {
+    "sum": 0,
+    "count": 2793
+   },
+   "2025-11": {
+    "sum": 0,
+    "count": 4267
+   },
+   "2025-12": {
+    "sum": 0,
+    "count": 3695
+   },
+   "2026-01": {
+    "sum": 0,
+    "count": 3839
+   },
+   "2026-02": {
+    "sum": 0,
+    "count": 3873
+   },
+   "2026-03": {
+    "sum": 0,
+    "count": 4107
+   },
+   "2026-04": {
+    "sum": 0,
+    "count": 3624
+   },
+   "2026-05": {
+    "sum": 0,
+    "count": 4580
+   },
+   "2026-06": {
+    "sum": 0,
+    "count": 3473
+   },
+   "2026-07": {
+    "sum": 0,
+    "count": 3631
+   },
+   "2026-08": {
+    "sum": 1585,
+    "count": 4645
+   },
+   "2026-09": {
+    "sum": 1270,
+    "count": 2439
+   }
+  },
+  "winner_rows_with_payout": 396,
+  "winner_parquet_odds_ne_payout": 208,
+  "winner_db_odds_ne_payout": 2,
+  "winner_mean_ratio_pq_over_pay": 1.0748207585012992,
+  "winner_mean_ratio_db_over_pay": 1.0050455053120297
+ },
+ "strict2007_rows": {
+  "columns": [
+   "race_id",
+   "horse_id",
+   "horse_number",
+   "frame",
+   "sex",
+   "age",
+   "weight",
+   "weight_diff",
+   "jockey_weight",
+   "odds",
+   "popularity",
+   "running_style",
+   "jockey_id",
+   "trainer_id",
+   "race_date",
+   "venue_code",
+   "race_number",
+   "distance",
+   "track_type",
+   "going",
+   "weather",
+   "race_class",
+   "grade",
+   "prize_money",
+   "finish_order",
+   "result_status",
+   "margin_sec",
+   "last_3f",
+   "sire_line",
+   "damsire_line",
+   "finished",
+   "won",
+   "year",
+   "month",
+   "dow",
+   "dist_band",
+   "race_class_canon",
+   "class_rank",
+   "is_graded",
+   "field_size"
+  ],
+  "rows_ge_20251011": 44966,
+  "races": 3239,
+  "max_race_date": "2026-09-22",
+  "rows_odds_differ": 2855,
+  "races_with_any_diff": 221,
+  "rows_db_missing": 14,
+  "diff_by_month": {
+   "2025-10": {
+    "sum": 0,
+    "count": 2793
+   },
+   "2025-11": {
+    "sum": 0,
+    "count": 4267
+   },
+   "2025-12": {
+    "sum": 0,
+    "count": 3695
+   },
+   "2026-01": {
+    "sum": 0,
+    "count": 3839
+   },
+   "2026-02": {
+    "sum": 0,
+    "count": 3873
+   },
+   "2026-03": {
+    "sum": 0,
+    "count": 4107
+   },
+   "2026-04": {
+    "sum": 0,
+    "count": 3624
+   },
+   "2026-05": {
+    "sum": 0,
+    "count": 4580
+   },
+   "2026-06": {
+    "sum": 0,
+    "count": 3473
+   },
+   "2026-07": {
+    "sum": 0,
+    "count": 3631
+   },
+   "2026-08": {
+    "sum": 1585,
+    "count": 4645
+   },
+   "2026-09": {
+    "sum": 1270,
+    "count": 2439
+   }
+  },
+  "winner_rows_with_payout": 396,
+  "winner_parquet_odds_ne_payout": 208,
+  "winner_db_odds_ne_payout": 2,
+  "winner_mean_ratio_pq_over_pay": 1.0748207585012992,
+  "winner_mean_ratio_db_over_pay": 1.0050455053120297
+ }
+}

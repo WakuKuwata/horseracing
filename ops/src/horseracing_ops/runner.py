@@ -817,6 +817,20 @@ def _parse_marker(line: str) -> dict:
 
 _CHECKPOINTS_ERROR_PREFIX = "attention-checkpoints: error="
 
+#: Feature 140: the CLI line carrying the odds-provenance counters (``market-ev-provenance:
+#: fallback_rows=N fallback_races=M final_odds_provenance_missing=K proxy_rows_written=P``).
+_PROVENANCE_PREFIX = "market-ev-provenance:"
+_PROVENANCE_MISSING_KEY = "final_odds_provenance_missing"
+
+
+def _provenance(lines: list[str]) -> dict | None:
+    """The parsed ``market-ev-provenance:`` line (the last one wins), or None when the CLI did
+    not print one. Parsed with ``_parse_marker``'s tokenizer, so the counters stay ints."""
+    for line in reversed(lines):
+        if line.startswith(_PROVENANCE_PREFIX):
+            return _parse_marker(line)
+    return None
+
 
 def _checkpoints_error(lines: list[str], stderr: str, tail: str) -> str:
     """The cause the CLI printed before ``OK: … checkpoints=error`` (``attention-checkpoints:
@@ -841,6 +855,15 @@ def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) ->
     out again, so a worker retry would only repeat ten minutes of compute. None of these are
     worker-retried. The CLI persists market_ev_predictions itself (run_id / booster / sha256 per
     row); the job keeps the enqueue-time source label and a short output tail, assigned once.
+
+    Feature 140: the CLI's ``market-ev-provenance:`` line (how often ``odds_observed_at`` fell
+    back to the ``updated_at`` proxy, and ``final_odds_provenance_missing`` = settled netkeiba-era
+    races whose final odds carry no observation time) is kept as ``summary['provenance']`` on both
+    the OK and the SKIPPED outcome. ``final_odds_provenance_missing > 0`` is the fail-closed monitor
+    of spec FR-004a (the 139 final-odds write did not run for some race), so — like a checkpoint
+    error — it is also set as ``error_message`` (``provenance: …``) with ``error_count=1`` while
+    the job stays SUCCEEDED/SKIPPED: the computed values are fine, the gap is in the stored
+    provenance and must be visible on the jobs pages (review training-token-1).
 
     Feature 138: a failed checkpoint judgement does NOT fail the job — the CLI commits both
     versions and the picks first and judges in a separate transaction, so the computed values are
@@ -879,7 +902,9 @@ def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) ->
         job.summary = {**audit, "error": tail}
     elif marker.startswith("SKIPPED:"):
         job.status = JobStatus.SKIPPED
-        job.summary = {**audit, "reason": marker.split(":", 1)[1].strip()[:200]}
+        summary = {**audit, "reason": marker.split(":", 1)[1].strip()[:200]}
+        _record_provenance(job, summary, lines[:-1])
+        job.summary = summary
     elif marker.startswith("OK:"):
         result = _parse_marker(marker)
         job.status = JobStatus.SUCCEEDED
@@ -887,14 +912,20 @@ def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) ->
         if isinstance(horses, int):
             job.processed_rows = horses
         summary = {**audit, "output": marker[:500], "result": result}
+        errors: list[str] = []
         if result.get("checkpoints") == "error":
             cause = _checkpoints_error(lines[:-1], proc.stderr or "", tail)
             summary["checkpoints_error"] = cause
             # still SUCCEEDED (the values are persisted), but the jobs pages show only
             # error_message / error_count, never the summary — without these a judgement that
             # fails on every job would look like an ordinary success and 300/600 never get written
-            job.error_count = 1
-            job.error_message = f"checkpoints: {cause}"[:500]
+            errors.append(f"checkpoints: {cause}")
+        prov_error = _record_provenance(job, summary, lines[:-1], apply_error=False)
+        if prov_error:
+            errors.append(prov_error)
+        if errors:
+            job.error_count = len(errors)
+            job.error_message = "; ".join(errors)[:500]
         job.summary = summary
     else:
         job.status = JobStatus.FAILED
@@ -903,6 +934,26 @@ def run_expected_return(session: Session, job: IngestionJob, *, fetcher=None) ->
     session.add(job)
     session.commit()
     return job
+
+
+def _record_provenance(
+    job: IngestionJob, summary: dict, lines: list[str], *, apply_error: bool = True
+) -> str | None:
+    """Feature 140: copy the CLI's provenance counters into ``summary['provenance']``. Returns
+    the error text when ``final_odds_provenance_missing > 0`` (and, with ``apply_error``, sets
+    ``error_count`` / ``error_message`` on the job itself); None otherwise."""
+    prov = _provenance(lines)
+    if prov is None:
+        return None
+    summary["provenance"] = prov
+    missing = prov.get(_PROVENANCE_MISSING_KEY)
+    if not (isinstance(missing, int) and missing > 0):
+        return None
+    error = f"provenance: {_PROVENANCE_MISSING_KEY}={missing}"
+    if apply_error:
+        job.error_count = 1
+        job.error_message = error[:500]
+    return error
 
 
 def run_day(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:

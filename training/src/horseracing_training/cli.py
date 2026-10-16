@@ -1581,6 +1581,11 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
         f"races_invalid_odds={result['races_invalid_odds']} "
         f"result_pending_races={result['result_pending_races']} boosters={boosters or '-'}"
     )
+    # Feature 140: the provenance counters on their own line (the ops runner reads this line into
+    # the job summary; the final OK:/SKIPPED: marker contract is untouched). Always printed —
+    # ``final_odds_provenance_missing`` is the fail-closed monitor of spec FR-004a and must be
+    # visible in production, whose only caller is ops → this CLI (review training-token-1).
+    print(_provenance_line(result))
     if result["status"] != "ok":
         if ensemble_dir is not None and result.get("picks") is not None:
             # the void pass of a run that computed nothing (the marker below stays the last line)
@@ -1603,6 +1608,7 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
         print(
             f"market-ev: model_version={name} logic_version={info['logic_version']} "
             f"run_id={result['run_id']} races={info['races']} horses={info['horses']} "
+            f"proxy_rows={info.get('odds_observed_proxy_rows', '-')} "
             f"boosters={ens_boosters or '-'}"
         )
     picks = result.get("picks") or {}
@@ -1620,6 +1626,27 @@ def _market_ev(args, parser: argparse.ArgumentParser) -> int:
         f"{ok} versions={marker_versions} picks={picks.get('written', 0)} checkpoints={state}"
     )
     return 0
+
+
+#: Feature 140: the stdout line that carries the provenance counters of a market-ev run. The ops
+#: runner parses it with the same ``key=value`` tokenizer as the OK: marker (``_parse_marker``).
+MARKET_EV_PROVENANCE_PREFIX = "market-ev-provenance:"
+
+
+def _provenance_line(result: dict) -> str:
+    """``market-ev-provenance: fallback_rows=N fallback_races=M final_odds_provenance_missing=K
+    proxy_rows_written=P`` — the three summary keys of spec FR-004/FR-004a plus the proxy rows
+    actually written (summed over the versions; ``-`` when nothing was written). Indexing, not
+    ``.get``: a run result without these keys is a defect, not a quiet zero."""
+    versions = result.get("versions") or {}
+    written = [info.get("odds_observed_proxy_rows") for info in versions.values()]
+    proxy_written = sum(w for w in written if isinstance(w, int)) if versions else "-"
+    return (
+        f"{MARKET_EV_PROVENANCE_PREFIX} fallback_rows={result['odds_observed_fallback_rows']} "
+        f"fallback_races={result['odds_observed_fallback_races']} "
+        f"final_odds_provenance_missing={result['final_odds_provenance_missing']} "
+        f"proxy_rows_written={proxy_written}"
+    )
 
 
 def _checkpoint_state(checkpoints: dict) -> str:

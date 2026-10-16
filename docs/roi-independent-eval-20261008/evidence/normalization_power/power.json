@@ -1,0 +1,396 @@
+{
+ "settings": {
+  "B_sim": 3000,
+  "n_sim": 1000,
+  "seed": 2026107,
+  "targets": [
+   0.85,
+   1.0,
+   1.12,
+   1.21
+  ],
+  "scaling": "payout * r / ROI_source (hit rate unchanged)"
+ },
+ "S3_ALL_empirical": {
+  "n": 14946,
+  "days": 1441,
+  "bets_per_day": 10.371963913948647,
+  "mean_payout_per_100": 1.0698046300013382,
+  "sd_payout_per_100": 6.063094391908061,
+  "hit_rate": 0.054931085240198047,
+  "mean_winning_payout_per_100": 19.475395858708893,
+  "max_payout_per_100": 189.0,
+  "roi": 1.0698046300013382,
+  "se_iid": 0.04959430865164621,
+  "se_dayboot": 0.049296096583533476,
+  "design_effect": 0.9880100964351357,
+  "n_needed_true112_lower_gt_100_50pct_iid": 9807.048196228216,
+  "n_needed_true112_lower_gt_100_50pct_deff": 9689.462634099464,
+  "n_needed_true112_lower_gt_100_80pct_iid": 20037.264191043007,
+  "n_needed_true112_lower_gt_100_80pct_deff": 19797.019325688692
+ },
+ "S3_POST_empirical": {
+  "n": 4733,
+  "days": 786,
+  "bets_per_day": 6.021628498727735,
+  "mean_payout_per_100": 1.134396788506233,
+  "sd_payout_per_100": 6.789030113518065,
+  "hit_rate": 0.0574688358335094,
+  "mean_winning_payout_per_100": 19.73933823529412,
+  "max_payout_per_100": 189.0,
+  "roi": 1.134396788506233,
+  "se_iid": 0.09868234992554452,
+  "se_dayboot": 0.09854331905616608,
+  "design_effect": 0.9971842395102126,
+  "n_needed_true112_lower_gt_100_50pct_iid": 12296.035849699392,
+  "n_needed_true112_lower_gt_100_50pct_deff": 12261.4131577728,
+  "n_needed_true112_lower_gt_100_80pct_iid": 25122.63770843094,
+  "n_needed_true112_lower_gt_100_80pct_deff": 25051.898377772297
+ },
+ "N1_ALL_empirical": {
+  "n": 13574,
+  "days": 1432,
+  "bets_per_day": 9.47905027932961,
+  "mean_payout_per_100": 1.1246353322528362,
+  "sd_payout_per_100": 6.5291209450960945,
+  "hit_rate": 0.05245321939001031,
+  "mean_winning_payout_per_100": 21.44073033707865,
+  "max_payout_per_100": 192.8,
+  "roi": 1.1246353322528362,
+  "se_iid": 0.05604034381796681,
+  "se_dayboot": 0.05553411049700114,
+  "design_effect": 0.9820148561032691,
+  "n_needed_true112_lower_gt_100_50pct_iid": 11372.582019775306,
+  "n_needed_true112_lower_gt_100_50pct_deff": 11168.044495672271,
+  "n_needed_true112_lower_gt_100_80pct_iid": 23235.883611970417,
+  "n_needed_true112_lower_gt_100_80pct_deff": 22817.982901641437
+ },
+ "N1_POST_empirical": {
+  "n": 3978,
+  "days": 777,
+  "bets_per_day": 5.11969111969112,
+  "mean_payout_per_100": 1.206385118149824,
+  "sd_payout_per_100": 7.19411372373641,
+  "hit_rate": 0.05178481649069885,
+  "mean_winning_payout_per_100": 23.296116504854368,
+  "max_payout_per_100": 189.0,
+  "roi": 1.206385118149824,
+  "se_iid": 0.1140630313937525,
+  "se_dayboot": 0.1143737581464655,
+  "design_effect": 1.0054557552031183,
+  "n_needed_true112_lower_gt_100_50pct_iid": 13807.156524488466,
+  "n_needed_true112_lower_gt_100_50pct_deff": 13882.484990537212,
+  "n_needed_true112_lower_gt_100_80pct_iid": 28210.08293960061,
+  "n_needed_true112_lower_gt_100_80pct_deff": 28363.990246378733
+ },
+ "S3_checkpoint_sim_from_POST": {
+  "source_roi": 1.1343967885062327,
+  "source_days": 786,
+  "source_bets": 4733,
+  "validation_vs_eval_fn": {
+   "0.85": {
+    "mine": [
+     0.49010879062003193,
+     1.6837791797216075
+    ],
+    "eval_fn_b20000": [
+     0.48195355842491416,
+     1.679376383649781
+    ]
+   },
+   "1.0": {
+    "mine": [
+     0.3895727199256739,
+     1.2755847024546834
+    ],
+    "eval_fn_b20000": [
+     0.38500030288691983,
+     1.256398662519877
+    ]
+   },
+   "1.12": {
+    "mine": [
+     0.4471207441361238,
+     0.9687714913058701
+    ],
+    "eval_fn_b20000": [
+     0.4424891808222677,
+     0.963280864019555
+    ]
+   },
+   "1.21": {
+    "mine": [
+     0.9326470137795503,
+     2.372773234815435
+    ],
+    "eval_fn_b20000": [
+     0.9285432040472851,
+     2.3793568219096795
+    ]
+   }
+  },
+  "0.85": {
+   "at_300": {
+    "passed": 0.002,
+    "failed": 0.205,
+    "continue": 0.793
+   },
+   "at_600_given_continue": {
+    "passed": 0.0,
+    "failed": 0.10718789407313997,
+    "undecided": 0.89281210592686
+   },
+   "at_600_unconditional": {
+    "passed": 0.0,
+    "failed": 0.085,
+    "undecided": 0.708,
+    "not_reached": 0.207
+   },
+   "overall": {
+    "passed": 0.002,
+    "failed": 0.29,
+    "undecided_after_600": 0.708
+   },
+   "mean_ci_low_300": 0.3766891630292204,
+   "mean_ci_low_600": 0.5272138790473454,
+   "sd_point_roi_300": 0.2831496091972602,
+   "sd_point_roi_600": 0.18947726111447769
+  },
+  "1.0": {
+   "at_300": {
+    "passed": 0.013,
+    "failed": 0.095,
+    "continue": 0.892
+   },
+   "at_600_given_continue": {
+    "passed": 0.005605381165919282,
+    "failed": 0.042600896860986545,
+    "undecided": 0.9517937219730942
+   },
+   "at_600_unconditional": {
+    "passed": 0.005,
+    "failed": 0.038,
+    "undecided": 0.849,
+    "not_reached": 0.108
+   },
+   "overall": {
+    "passed": 0.018,
+    "failed": 0.133,
+    "undecided_after_600": 0.849
+   },
+   "mean_ci_low_300": 0.45026601584633613,
+   "mean_ci_low_600": 0.5980947246169147,
+   "sd_point_roi_300": 0.3432674749487215,
+   "sd_point_roi_600": 0.23104900926163915
+  },
+  "1.12": {
+   "at_300": {
+    "passed": 0.026,
+    "failed": 0.055,
+    "continue": 0.919
+   },
+   "at_600_given_continue": {
+    "passed": 0.022850924918389554,
+    "failed": 0.022850924918389554,
+    "undecided": 0.9542981501632208
+   },
+   "at_600_unconditional": {
+    "passed": 0.021,
+    "failed": 0.021,
+    "undecided": 0.877,
+    "not_reached": 0.081
+   },
+   "overall": {
+    "passed": 0.047,
+    "failed": 0.076,
+    "undecided_after_600": 0.877
+   },
+   "mean_ci_low_300": 0.5134751744049795,
+   "mean_ci_low_600": 0.6638989272377722,
+   "sd_point_roi_300": 0.3838819671586527,
+   "sd_point_roi_600": 0.2555933066180699
+  },
+  "1.21": {
+   "at_300": {
+    "passed": 0.035,
+    "failed": 0.041,
+    "continue": 0.924
+   },
+   "at_600_given_continue": {
+    "passed": 0.05194805194805195,
+    "failed": 0.015151515151515152,
+    "undecided": 0.9329004329004329
+   },
+   "at_600_unconditional": {
+    "passed": 0.048,
+    "failed": 0.014,
+    "undecided": 0.862,
+    "not_reached": 0.076
+   },
+   "overall": {
+    "passed": 0.083,
+    "failed": 0.055,
+    "undecided_after_600": 0.862
+   },
+   "mean_ci_low_300": 0.5436457648397828,
+   "mean_ci_low_600": 0.7010542497216015,
+   "sd_point_roi_300": 0.41968772270565596,
+   "sd_point_roi_600": 0.27541613905808715
+  }
+ },
+ "N1_checkpoint_sim_from_POST": {
+  "source_roi": 1.2063851181498242,
+  "source_days": 777,
+  "source_bets": 3978,
+  "validation_vs_eval_fn": {
+   "0.85": {
+    "mine": [
+     0.5170224085579957,
+     1.241721330429274
+    ],
+    "eval_fn_b20000": [
+     0.5235976880102443,
+     1.2607694495287796
+    ]
+   },
+   "1.0": {
+    "mine": [
+     0.9187516749651792,
+     1.8942912733566337
+    ],
+    "eval_fn_b20000": [
+     0.911814961450302,
+     1.8569470701567377
+    ]
+   },
+   "1.12": {
+    "mine": [
+     0.5801216617020711,
+     2.0329237493332353
+    ],
+    "eval_fn_b20000": [
+     0.5765278021468878,
+     2.0294887872979164
+    ]
+   },
+   "1.21": {
+    "mine": [
+     0.7811916663624784,
+     1.9379904733243303
+    ],
+    "eval_fn_b20000": [
+     0.7631641264198111,
+     1.9413033542124745
+    ]
+   }
+  },
+  "0.85": {
+   "at_300": {
+    "passed": 0.004,
+    "failed": 0.158,
+    "continue": 0.838
+   },
+   "at_600_given_continue": {
+    "passed": 0.0011933174224343676,
+    "failed": 0.12529832935560858,
+    "undecided": 0.8735083532219571
+   },
+   "at_600_unconditional": {
+    "passed": 0.001,
+    "failed": 0.105,
+    "undecided": 0.732,
+    "not_reached": 0.162
+   },
+   "overall": {
+    "passed": 0.005,
+    "failed": 0.263,
+    "undecided_after_600": 0.732
+   },
+   "mean_ci_low_300": 0.38583326741323515,
+   "mean_ci_low_600": 0.5180992625446343,
+   "sd_point_roi_300": 0.28944727630192807,
+   "sd_point_roi_600": 0.1935276280133936
+  },
+  "1.0": {
+   "at_300": {
+    "passed": 0.011,
+    "failed": 0.107,
+    "continue": 0.882
+   },
+   "at_600_given_continue": {
+    "passed": 0.01473922902494331,
+    "failed": 0.035147392290249435,
+    "undecided": 0.9501133786848073
+   },
+   "at_600_unconditional": {
+    "passed": 0.013,
+    "failed": 0.031,
+    "undecided": 0.838,
+    "not_reached": 0.118
+   },
+   "overall": {
+    "passed": 0.024,
+    "failed": 0.138,
+    "undecided_after_600": 0.838
+   },
+   "mean_ci_low_300": 0.44917926306625494,
+   "mean_ci_low_600": 0.6041521207062891,
+   "sd_point_roi_300": 0.34685644803058047,
+   "sd_point_roi_600": 0.22592571380659304
+  },
+  "1.12": {
+   "at_300": {
+    "passed": 0.02,
+    "failed": 0.051,
+    "continue": 0.929
+   },
+   "at_600_given_continue": {
+    "passed": 0.04090419806243272,
+    "failed": 0.012917115177610334,
+    "undecided": 0.946178686759957
+   },
+   "at_600_unconditional": {
+    "passed": 0.038,
+    "failed": 0.012,
+    "undecided": 0.879,
+    "not_reached": 0.071
+   },
+   "overall": {
+    "passed": 0.057999999999999996,
+    "failed": 0.063,
+    "undecided_after_600": 0.879
+   },
+   "mean_ci_low_300": 0.49799258539239794,
+   "mean_ci_low_600": 0.6625526615194488,
+   "sd_point_roi_300": 0.37446158053125006,
+   "sd_point_roi_600": 0.25054051469489746
+  },
+  "1.21": {
+   "at_300": {
+    "passed": 0.049,
+    "failed": 0.036,
+    "continue": 0.915
+   },
+   "at_600_given_continue": {
+    "passed": 0.06557377049180328,
+    "failed": 0.006557377049180328,
+    "undecided": 0.9278688524590164
+   },
+   "at_600_unconditional": {
+    "passed": 0.06,
+    "failed": 0.006,
+    "undecided": 0.849,
+    "not_reached": 0.085
+   },
+   "overall": {
+    "passed": 0.109,
+    "failed": 0.041999999999999996,
+    "undecided_after_600": 0.849
+   },
+   "mean_ci_low_300": 0.5528933384696608,
+   "mean_ci_low_600": 0.713172762573731,
+   "sd_point_roi_300": 0.416543486931299,
+   "sd_point_roi_600": 0.27096962829838167
+  }
+ }
+}

@@ -1,0 +1,95 @@
+{
+ "name": "140 judged-EV alignment parallel evaluation protocol",
+ "version": "v2",
+ "frozen_at": "2026-10-12",
+ "spec": "specs/140-judged-ev-alignment/spec.md (FR-006, FR-009, FR-009a, FR-010, FR-011)",
+ "population": [
+  "races with race_date in [from, to]",
+  "race_results present for every started horse",
+  "market_ev_predictions rows (model_version='mev-ens15-v1', result_pending_at_compute=true) for exactly the started horses",
+  "odds_used > 0 for every started horse",
+  "exactly one winner (no dead heat)",
+  "track_type <> '障'",
+  "odds_observed_at is a single value within the race (a quote is one payload per race; a per-horse proxy time that differs across the field would split one race across h bands and normalise its winner NLL over a partial race) - otherwise excluded and counted (odds_observed_at_mixed_within_race)"
+ ],
+ "fit_period_refused": {
+  "from": "2026-08-02",
+  "to": "2026-10-04",
+  "rule": "--from must be > 2026-10-04 (generator and c1 fit period)"
+ },
+ "odds_observed_at_provenance": {
+  "quote": "every market_ev_predictions row of the race carries the per-row token oddsobs=quote in logic_version (A3-era compute that read races.win_odds_observed_at)",
+  "proxy": "any row carries oddsobs=proxy (fallback to race_horses.updated_at), no oddsobs token (pre-A3 compute) or NULL; a day containing any proxy race is dry_run=true and is not counted toward the judgement denominator",
+  "not_used": "races.win_odds_observed_at at scoring time (overwritten by the final-odds write once results land, so it cannot say which source a compute used)"
+ },
+ "h_definition": "h = max(1, (races.post_time - odds_observed_at) / 60 s) minutes",
+ "h_bands_minutes": [
+  "(0,10]",
+  "(10,30]",
+  "(30,60]",
+  "(60,180]",
+  "(180,600]",
+  ">600"
+ ],
+ "features": "production as-of columns (horseracing_training.market_ev.load_rows -> build_features, history since 2007) with the 12 market columns recomputed from odds_used by r02_drift.market_block (popularity := odds_rank); weather/going are current DB values (D9)",
+ "arms": {
+  "ens15": "current 15-seed average, 2026 boosters (mev-ens15-v1)",
+  "judged": "mev-ens15-judged-v0, 15-seed average of 2026 boosters, log_min = log h; skipped (recorded) if the artifact is incomplete. A --judged-seeds partial average is a diagnostic arm: scored and recorded under the same name but never judged (verdict.diagnostic_arms_not_judged)",
+  "c1": "logit correction (4 coefficients, coefficients.json c1 = R02 real pairs) applied to ens15 p_hat_J",
+  "c2": "logit correction (4 coefficients, coefficients.json c2 = simulated 2025 OOF rows) applied to ens15 p_hat_J"
+ },
+ "metrics": [
+  "nll_J (per horse, binary)",
+  "winner_nll_J (race-normalised)",
+  "EV_J bands <=1.0 / (1.0,1.2] / >1.2: n, won, sum p_hat, sum won / sum p_hat",
+  "EV_J>1.2: count and official-payout ROI (official_win_payouts; races without a payout excluded and counted) - recorded only",
+  "median O_F (race_horses.odds current value) / O_J (odds_used)",
+  "all of the above per h band and per day"
+ ],
+ "paired_differences": {
+  "vs": "ens15",
+  "series": [
+   "nll_J",
+   "winner_nll_J",
+   "calib_ratio_ev_gt1 (each arm's own EV_J>1.0 set)"
+  ],
+  "bootstrap": "race-day block bootstrap, B=4000, seed=20261011, the same draws for every arm and series; 95% percentile interval",
+  "also_by_h_band": true
+ },
+ "judgement_rules": {
+  "threshold": "no verdict until >= 8 eligible (non-dry-run) race days AND >= 200 eligible races; below that verdict='recorded_only'",
+  "i": "judged arm only: closing-odds 2026 OOS (<= 2026-06-26) NLL <= ens15 + 0.0002 and race-normalised winner NLL not worse (checked separately, T012)",
+  "ii": "paired difference in nll_J vs ens15: 95% interval upper bound < 0",
+  "iii": "EV_J>1.0 band sum won / sum p_hat closer to 1 than ens15 (direction only while hits are few)",
+  "not_used": [
+   "retention rate",
+   "EV_F/EV_J",
+   "ROI"
+  ]
+ },
+ "outputs": {
+  "path": "results/<from>_<to>.json",
+  "append_only": true
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "判断時専用版(mev-ens15-judged)は表示・確定側に接続しない(研究 artifact・本番非結線)"
+ ],
+ "revisions": [
+  {
+   "version": "v0",
+   "frozen_at": "2026-10-11",
+   "note": "initial freeze; provenance decided from races.win_odds_observed_at (defective: that column is overwritten by apply_final_odds after results). No eligible (non-dry-run) scoring was done under v0; the single v0 dry-run output was discarded."
+  },
+  {
+   "version": "v1",
+   "frozen_at": "2026-10-12",
+   "note": "provenance decided from the per-row oddsobs token; generator rho switched to the ICC estimator (the race-mean estimator is biased up by (1-rho)/n). Judgement rules, arms, metrics, bootstrap seed/B unchanged."
+  },
+  {
+   "version": "v2",
+   "frozen_at": "2026-10-12",
+   "note": "independent review (statistics-4, harness-leak-protocol-2): (a) population rule added - a race whose rows carry more than one odds_observed_at is excluded and counted (fail-closed; the 2026-10-05..10-12 pending runs all have exactly one value per race, so no scored race is affected); (b) a partial (--judged-seeds) judged average is recorded but excluded from the judgement checks. Judgement rules, metrics, bootstrap seed/B, fit-period refusal unchanged. The only v1 output (results/2026-10-10_2026-10-11.json) was a dry_run recording with no eligible day and is kept as recorded under v1's sha."
+  }
+ ]
+}

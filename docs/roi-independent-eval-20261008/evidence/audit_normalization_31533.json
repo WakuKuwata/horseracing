@@ -1,0 +1,152 @@
+{
+ "summary_ja": "担当範囲(レース内正規化 N1/N2 の再導出・機構分解・統計解釈・前向き検証の検出力)の結論。\n\n1. 再計算: 15 seed の保存予測から自分の別実装(pandas groupby/merge・独自 bootstrap)で S3/N1/N2 を再導出し、Codex の表と**全窓で完全一致**(ALL: S3 14,946/821/106.98%・N1 13,574/712/112.46%・N2 13,528/711/112.76%。R: S3 1,564/94/109.66%・N1 1,237/68/117.15%)。paired 開催日 bootstrap(B=4000・seed 7)も N2 差 +5.78pt [−0.93, +12.89](Codex −0.81〜+13.08)で一致。実装・分割・精算に誤りは見つからなかった。\n\n2. 機構: N1 ≡ EV_ens > 1.2×Σp̄(レース定数で閾値を伸縮するだけ)。改善は「Σp̄≥1 のレースで S3 の 4,288 点(ROI 94.5%)を落とし、Σp̄<1 のレースで 2,916 点(114.2%)を足す」の差。頭数・平均オッズ・市場期待回収(q×odds 平均 0.799 vs 0.803)はほぼ同じで、頭数やオッズ構成では説明されない(corr(Σp̄,頭数)=0.015)。ただし S3 の ROI は Σp̄ 帯で単調でなく(0.95–1.00 帯 93%・1.00–1.05 帯 116%)、「S3 かつ Σp̄<1.05」という粗い除外だけで ALL 112.5%(8,132 点)・POST 128.7% に達する=効果の大半は「Σp̄≥1.05 の 6,814 点が 100.4%」という 1 塊(差 12pt・概算 1.2 SE)に依存。\n\n3. 統計解釈: 点数を N1 と揃えた素の閾値(EV_ens≥1.21413)で 108.3% なので、+5.5pt のうち約 1.3pt は「点数を減らした」効果、残り約 4.2pt が正規化固有。レース間で Σp̄ をシャッフルした点数一致の順列ヌル(R=500)は ALL 106.1%±2.8(p=0.006)・POST 111.2%±6.4(p=0.07・R10 の p_IUT 0.077 と整合)。ただし閾値を 1.22→1.25→1.35 と動かすだけで ROI が 108→106→115% と±4pt 揺れ、2013–2026 は S3 凍結と R10 で既読。N1 の固定閾値 1.2 は R10 V1(年内 top-N・Δ+0.187・p 0.077)の結果を見てから 10/05 に定義されたと online-normalization.md 冒頭と protocol.json(`outcomes_previously_seen: true`, `can_adopt: false`)に明記されている(report.md 本文には「事後定義」の語は無く「参考候補」とだけ書かれている)。\n\n4. 検出力(最重要): 1 点あたり払戻の SD は 6.1〜7.2(100 円あたり・平均 1.07〜1.21・的中率 5.2〜5.7%・設計効果 ≈1.0)。真の ROI 112% で区間下限が 100% を超える(50% 検出力)には **S3 で約 9,700〜12,300 点、N1 で 11,200〜13,900 点**、80% 検出力なら 2 万〜2.8 万点。年間 418 点(S3)/321 点(N1)なので **23〜43 年 / 47〜88 年**。138 の 300/600 点規則を実払戻列の日ブロック再抽出でシミュレートすると(1,000 回×4 水準・自作 CI は eval 関数 B=20000 と一致確認)、真 ROI 85% で「不通過」26〜29%・真 121% でも「通過」8〜11%、**真 112% では通過 5〜6%・不通過 6〜8%・判定保留 88%**。600 点で判定が付くのは点推定が約 155% 超か約 45% 未満のときだけ。S3 対 N1 の paired 差(+5.5pt)を前向きに有意化するにも 22 年(50%)〜45 年(80%)。\n\n5. 結論: 138 の 300/600 点では「112% と 100% の区別」も「S3 と N1 の優劣」も判定できず、ほぼ確実に「判定保留(終了)」で終わる。spec 138 §250 は「300/600 は検出力でなく運用上の区切り」と自己申告しているが、Codex の method-review 3.7 とロードマップ④(S3 対照・N1 主候補・判定日固定)はこの不可能性に触れておらず、必要点数・判定日・中止条件の数値が無い。前向きで半年〜1 年に本当に測れるのは「購入時価格での N1 の点数・保持率・購入時 EV_norm と確定 EV_norm の差・Σp̄ の分布」といった価格ずれ・選定の診断であって回収率の真偽ではない。",
+ "agree_with_codex": [
+  {
+   "point": "S3/N1/N2 の点数・的中・払戻・ROI と paired bootstrap 区間は正しく計算されている",
+   "evidence": "scratchpad recompute.py(独立実装)で ALL/D/Q/R/POST 全窓の n/hits/payout/ROI が results.json とバイト一致。paired 開催日 bootstrap(B=4000, seed 7, 全日母集団)で N1 差 +5.48 [−1.22,+12.58]・N2 +5.78 [−0.93,+12.89]=Codex [−1.12,+12.77]/[−0.81,+13.08] と MC 誤差内で一致"
+  },
+  {
+   "point": "改善は未確定(差の区間が 0 を含む)・can_adopt=false・事後探索であるという位置づけ",
+   "evidence": "online-normalization.md 冒頭「2026-10-05 に既存報告を見た後で定義した探索」、protocol.json `outcomes_previously_seen: true` `can_adopt: false`。自分の順列ヌル(点数一致・Σp̄ をレース間でシャッフル)でも POST 窓は p=0.07 で有意でない"
+  },
+  {
+   "point": "N1 と N2 はほぼ同一集合で独立な 2 本ではない",
+   "evidence": "ALL で N1\\N2 は 46 点(EV_ens≤1 かつ EV_norm>1.2)、的中差 1、ROI 差 0.3pt"
+  },
+  {
+   "point": "保存価格の精算は購入時価格の検証ではない(R02 の保持率 17%)",
+   "evidence": "report.md:84 N1 の締切価格への選択保持率 17.0%・S3 17.1%。EV_norm は odds を分子(pred の入力)と分母の両方に持つので購入時価格では集合が大きく入れ替わる"
+  }
+ ],
+ "disagree_with_codex": [
+  {
+   "point": "次手④「S3 を対照・N1 を主候補として前向きに仮想購入比較し、観測期間・判定日・中止条件を固定する」は、必要点数を出していないので実行計画として未完成。138 の 300/600 点規則では真の ROI が 121% でも通過確率 8〜11%、85% でも不通過 26〜29%、112% では 88% が『判定保留』で終わる",
+   "evidence": "power.json: S3 POST 系列からの再抽出 1,000 回×4 水準(自作 CI を horseracing_eval.bootstrap.race_block_ratio_bootstrap_ci_v1 B=20000 と照合済)。真 1.12 で overall passed 0.047/failed 0.076/undecided 0.877(S3)、0.058/0.063/0.879(N1)。真 1.21 で passed 0.083/0.109。真 0.85 で failed 0.29/0.263。method-review 3.7 とロードマップには必要点数・年数の記載なし(docs 全体で『検出力』の語は missed report 1 箇所のみ)",
+   "severity": "high"
+  },
+  {
+   "point": "『N1 の 112%』の読みは機構面で割り引くべき。+5.5pt のうち約 1.3pt は点数減(閾値上げ)で説明され、残り約 4.2pt は『Σp̄≥1.05 のレースの S3 購入(6,814 点)が 100.4%』という 1 塊に依存し、S3 の ROI は Σp̄ 帯で単調でない(0.95–1.00 帯 93%・1.00–1.05 帯 116%)",
+   "evidence": "perm.json: 点数一致閾値 EV_ens≥1.21413 → ALL 108.3%/POST 118.3%。recompute.json by_sum_p_bin・sets_ALL: S3∧Σp̄<1.05 = 112.5%(8,132 点)、S3∧Σp̄≥1.05 = 100.4%(6,814 点)、N1∧Σp̄≥1.05(R 窓)= 48.3%(235 点)。閾値グリッド 1.22/1.25/1.30/1.35 で 108.1/106.1/105.5/114.6% と±4pt 揺れる",
+   "severity": "medium"
+  },
+  {
+   "point": "report.md 本文は N1 を『参考候補』『次の優先候補』と書くだけで、N1 の固定閾値が R10 V1 の結果(Δ+0.187・111.5% 対 107.0%)を見た後に定義されたこと、および ALL 窓が S3 凍結と R10 で既読であることを本文に明示していない(online-normalization.md と protocol.json にはある)",
+   "evidence": "report.md:3,26,105 と grep(『見た後』『事後』は method-review のみ)。R10 prereg は V1=年内 top-N・事前開示は選定量のみで『勝敗・払戻・ROI は見ていない』と記載 → 固定 1.2 の N1 は 10/04 の V1 結果を見た後の 10/05 定義",
+   "severity": "low"
+  }
+ ],
+ "findings": [
+  {
+   "id": "NP-01",
+   "title_ja": "S3/N1/N2 の再導出は Codex と完全一致",
+   "claim_ja": "独立実装で ALL(2013〜2026-06-26)S3 14,946/821/106.98%・N1 13,574/712/112.46%・N2 13,528/711/112.76%、R(2023〜)S3 1,564/94/109.66%・N1 1,237/68/117.15% を再現し、paired 開催日 bootstrap も一致した。",
+   "evidence_ja": "scratchpad/eval1007/normalization_power/recompute.py → recompute.json windows/bootstrap。精算 won×stored_odds×100・同着 77 レース除外・started のみ(rows_2007 race_ok&~dead_heat)。Σ正規化後の確率和誤差 <1e-12。",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "Codex の表の数値と実装・精算・時系列(年 y は y−1 までの OOF 保存予測)に誤りはない。争点は解釈と検出力。"
+  },
+  {
+   "id": "NP-02",
+   "title_ja": "N1 の改善は『落とした 4,288 点が 94.5%・足した 2,916 点が 114.2%』で、頭数・オッズ構成では説明されない",
+   "claim_ja": "N1≡EV_ens>1.2×Σp̄ なので Σp̄>1 のレースでは S3 の部分集合、Σp̄<1 では上位集合になる。重複 10,658 点は 112.0%、除外 4,288 点(Σp̄ 平均 1.106)は 94.5%、追加 2,916 点(Σp̄ 平均 0.910)は 114.2%。頭数平均 14.92 vs 14.90、q×odds 平均 0.799 vs 0.803、corr(Σp̄,頭数)=0.015。",
+   "evidence_ja": "recompute.json mechanism.sets_ALL / corr_sum_p_field_size / mean_q_odds_*。Σp̄ のレース分位 1/25/50/75/99% = 0.839/0.954/1.001/1.047/1.175。",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "『人気薄や多頭数レースを選んでいるだけ』という説明は否定できる。一方で改善の源泉は『モデルの総和が大きいレースで買わない』ことに集中している。"
+  },
+  {
+   "id": "NP-03",
+   "title_ja": "改善の約 1.3pt は点数減、残り約 4.2pt は Σp̄≥1.05 レースの 1 塊に依存し、S3 の ROI は Σp̄ 帯で単調でない",
+   "claim_ja": "点数を N1 と揃えた素の閾値(EV_ens≥1.21413)は ALL 108.3%。S3∧Σp̄<1.05 は 112.5%(8,132 点)で N1 と同じ ROI に達し、S3∧Σp̄≥1.05 は 100.4%(6,814 点)。だが S3 の帯別 ROI は <0.90:124%・0.90–0.95:137%・0.95–1.00:93%・1.00–1.05:116%・1.05–1.10:108%・>1.10:93% と単調でなく、N1∧Σp̄≥1.05 は R 窓で 48.3%(235 点)。",
+   "evidence_ja": "perm.json threshold_grid / S3_race_filter、recompute.json mechanism.by_sum_p_bin・sets_R。12pt 差の概算 SE ≈ 0.099(SD 6.1・n 8,132/6,814)=約 1.2 SE。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "正規化が『較正の筋の通った修正』として効いている証拠は弱く、帯間の非単調性はノイズの兆候。前向きで追うなら『Σp̄≥1.05 で買わない』という粗い対照腕も同時に記録しないと機構を切り分けられない。"
+  },
+  {
+   "id": "NP-04",
+   "title_ja": "点数一致の順列ヌルは ALL p=0.006・POST p=0.07、閾値の刻みだけで±4pt 揺れる",
+   "claim_ja": "レース間で Σp̄ をシャッフル(年内)し top-13,574 を取るヌルは ALL 106.1%±2.8、POST 111.2%±6.4。観測 112.5%/120.6% は ALL で 2.3sd、POST で 1.5sd。閾値 1.22/1.24/1.25/1.30/1.35 の ROI は 108.1/108.1/106.1/105.5/114.6%。",
+   "evidence_ja": "perm2.json(R=500, seed 23)、perm.json threshold_grid。R10 の p_IUT 0.077 と POST の p=0.072 は整合。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "ALL の有意性は S3 凍結・R10 の既読窓上の事後値で、確認窓に相当する POST では有意でない。『112% を信用しすぎ』の懸念は妥当。"
+  },
+  {
+   "id": "NP-05",
+   "title_ja": "N1 の固定閾値は R10 V1 の結果を見た後の定義で、Codex 自身がそう記録している",
+   "claim_ja": "R10 prereg(10/04)の V1 は年内 top-N で、事前開示は選定量のみ。固定 EV_norm>1.2 の N1 は 10/05 の protocol.json に outcomes_previously_seen=true・can_adopt=false、online-normalization.md 冒頭に『既存報告を見た後で定義した探索』と明記。report.md 本文には『参考候補』とあるのみ。",
+   "evidence_ja": "artifacts/roi_explore/missed_20261004/R10_norm_meta/prereg.json prior_exposure_disclosure・variants.V1、artifacts/roi_comprehensive_20261005/online_normalization/protocol.json、docs/.../online-normalization.md L5、report.md L3/26/105。",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "2013〜2026 の 112% は『事後の記述統計』として読み、前向き比較の基準値にするなら buy-time 換算(保持率 17%)込みで下げる必要がある。"
+  },
+  {
+   "id": "NP-06",
+   "title_ja": "真 ROI 112% で区間下限>100% に要る点数は 1 万〜1.4 万点(50%)・2〜2.8 万点(80%)=23〜88 年",
+   "claim_ja": "1 点あたり払戻(100 円)の SD は S3 ALL 6.06/POST 6.79、N1 6.53/7.19、設計効果 0.98〜1.01。n=(1.96·SD/0.12)²=S3 9,689〜12,261、N1 11,168〜13,882。80% 検出力は 19,797〜28,364。年 418 点(S3)/321 点(N1)で 23〜29 年/35〜43 年(50%)、47〜60 年/71〜88 年(80%)。",
+   "evidence_ja": "power.json *_empirical、years_to_reach.json。年間点数は per_year.csv 2024/2025(422/413・334/308)と attention_picks バックフィル(S3 2026 年 308 点/79 日・9/22 まで)で整合。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "単勝 100 円均等買いの単一ルールの ROI>100% は、前向きでは人の寿命内に区間で示せない。『判定日を固定』しても判定は構造的に出ない。"
+  },
+  {
+   "id": "NP-07",
+   "title_ja": "138 の 300/600 点規則は真 121% でも通過 8〜11%、真 85% でも不通過 26〜29%、真 112% は 88% が判定保留",
+   "claim_ja": "S3(POST 4,733 点/786 日)・N1(3,978 点/777 日)の実払戻列を開催日ブロックで再抽出し払戻を倍率調整、300 点/600 点で日ブロック百分位 CI(下限>1 通過・上限<1 不通過・跨げば継続/保留)を 1,000 回×4 水準で適用。真 0.85: 不通過 0.29/0.263・真 1.00: 通過 0.018/0.024・真 1.12: 通過 0.047/0.058 不通過 0.076/0.063 保留 0.877/0.879・真 1.21: 通過 0.083/0.109。600 点の判定は点推定 ≳155% か ≲45% でしか付かない。",
+   "evidence_ja": "power.py(自作 CI を horseracing_eval.bootstrap.race_block_ratio_bootstrap_ci_v1 B=20000 と 1 ケース照合: 例 [0.447,0.969] vs [0.442,0.963])、power.json *_checkpoint_sim_from_POST、years_to_reach.json roi_needed_*。規則は eval/attention_rules.py decide_checkpoint/ratio_ci(CHECKPOINTS=(300,600)・b=20000・race_day ブロック)から写した。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "前向き 300/600 点は『回収率の真偽』を判定する装置ではない(spec 138 §250 も自己申告)。Codex のロードマップ④はこの事実を踏まえた必要点数・中止条件を書いていない。"
+  },
+  {
+   "id": "NP-08",
+   "title_ja": "S3 対 N1 の paired 差(+5.5pt)の前向き有意化にも 22〜45 年",
+   "claim_ja": "ALL 窓の paired 差 SE は 0.0352(1,463 開催日)。年 105 開催日として真差 5.5pt で 50% 検出力に 21.9 年、80% に 44.8 年。真差 3pt なら 74〜150 年。",
+   "evidence_ja": "years_to_reach.json paired_S3_vs_N1_years_*(SE を日数の平方根で外挿)。",
+   "status": "inferred",
+   "critical": true,
+   "implication_ja": "『S3 を対照に N1 を同条件で比較する』設計は正しいが、差の判定を前向きの ROI 比較に委ねるのは成立しない。前向きで測れるのは価格ずれ・保持率・Σp̄ 分布などの選定診断。"
+  },
+  {
+   "id": "NP-09",
+   "title_ja": "前向き記録の現状: 10/05 以降の counted pick は 0、チェックポイント記録 0、S3 は 1 週末 7 点",
+   "claim_ja": "attention_picks の 10/02 以降は S3 7 点(10/3・10/4 の 2 日)、10/05 以降は 0(開催なし)。attention_checkpoints は空。official_win_payouts は 505 行。",
+   "evidence_ja": "読み取り専用クエリ(SET TRANSACTION READ ONLY)。",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "方針 v2 の前向き計器は始まったばかりで、300 点到達は S3 で約 0.7 年・N1 で約 0.9 年先。"
+  },
+  {
+   "id": "NP-10",
+   "title_ja": "EV_norm は購入時には分子・分母ともオッズ依存で、保存価格の集合は購入時の集合と大きく異なる",
+   "claim_ja": "p_s=EV_s/odds の EV_s 自体が odds を入力とする mev-binary の出力で、EV_norm=p̄/Σp̄×odds は odds を 3 箇所で使う。R02 の締切価格保持率は N1 17.0%・S3 17.1%。また Σp̄ は started 集合で計算されており、購入時点の出走集合(後に取消される馬を含む)とは異なる。",
+   "evidence_ja": "report.md:84、protocol.json scores、rows_2007 の population=started のみ。",
+   "status": "inferred",
+   "critical": false,
+   "implication_ja": "前向き比較では『購入時の全馬 p̄・Σp̄・odds』を保存しないと N1 を再現できない(Codex の『判断時点の全馬保存』に同意)。"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/recompute.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/recompute.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/bets_S3.parquet",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/bets_N1.parquet",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/perm.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/perm.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/pop_applied.parquet",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/perm2.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/perm2.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/power.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/power.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/power.log",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/normalization_power/years_to_reach.json"
+ ],
+ "open_questions_ja": [
+  "検出力シミュレーションは払戻を倍率で調整して真 ROI を動かしている(的中率不変)。的中率を動かす形(オッズ分布固定・勝率を変える)でも同じ結論になるかは未確認だが、SD は的中率側でも同程度なので結論が変わる見込みは低い。",
+  "『S3 かつ Σp̄<1.05 のレースでは買わない』という粗い対照腕が N1 と同等(ALL 112.5%・POST 128.7%)なのは、正規化そのものより『モデル総和が大きいレースの回避』が本体である可能性を示す。これが較正(Σp̄>1 のレースで p̄ が過大)の問題なのか、特定年・特定レース群のノイズなのかは、年別・開催日ブロックでの分解を追加しないと切り分けられない。",
+  "前向きの N1 再現には判断時点の全馬 p̄・Σp̄・odds の保存が前提(Codex 指摘と同じ)。現行 attention_picks は該当馬の ens_expected_return と odds_used のみで、Σp̄ の復元に必要な非該当馬の値を持たない(読み取りでは確認したが、market_ev_predictions 側に全馬の値が残るかは未確認)。",
+  "必要点数が数十年規模である以上、前向き検証の目的を『回収率の真偽判定』から『購入時価格での選定診断(保持率・価格ずれ・Σp̄ 分布)』に書き換えるか、点数を増やす方向(複数ルールの統合・複勝/他券種は別問題)を考えるかは利用者の判断事項。",
+  "ALL 窓の順列ヌル p=0.006 は既読窓上の値なので、独立な評価データ(2026-10-05 以降)での同等の検定は数十年先まで不可能。『N1 は S3 より良い』はこの先も統計的には決着しない前提で運用方針を決める必要がある。"
+ ]
+}

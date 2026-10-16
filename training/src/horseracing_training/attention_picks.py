@@ -39,10 +39,20 @@ from sqlalchemy import and_, exists, insert, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, aliased
 
-from .market_ev import ENSEMBLE_LOGIC_VERSION, stored_values
+from .market_ev import ENSEMBLE_LOGIC_VERSION, ODDSOBS_QUOTE, stored_values
 
-#: recorded on every pick / void row: the ensemble logic + the selection policy it was taken under
-PICK_LOGIC_VERSION = f"{ENSEMBLE_LOGIC_VERSION};policy={ar.SELECTION_POLICY_VERSION}"
+#: recorded on every pick / void row: the ensemble logic + the selection policy it was taken under.
+#: Feature 140: WITHOUT the ensemble constant's per-row provenance token (``oddsobs=quote``) — a
+#: pick copies ``odds_observed_at`` from its market_ev row, which may be the ``updated_at`` proxy
+#: (``oddsobs=proxy`` on THAT row); a constant ``oddsobs=quote`` here would label such a pick as
+#: quote-provenanced while it carries a proxy time (review training-token-3). The provenance of a
+#: pick's time is read from the market_ev row of the same (run_id, race, horse); this string is
+#: the selection policy's version only. Existing rows are append-only and are not rewritten.
+PICK_LOGIC_VERSION = (
+    ENSEMBLE_LOGIC_VERSION.replace(f";{ODDSOBS_QUOTE}", "")
+    + f";policy={ar.SELECTION_POLICY_VERSION}"
+)
+assert ODDSOBS_QUOTE not in PICK_LOGIC_VERSION, PICK_LOGIC_VERSION
 VOID_SCRATCHED = "scratched"
 
 

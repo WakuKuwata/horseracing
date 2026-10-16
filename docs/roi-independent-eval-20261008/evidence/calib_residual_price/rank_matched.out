@@ -1,0 +1,12 @@
+rank-matched (top-N by each score, N = S3 EV>1.2 count = 14946 ) -- post-hoc diagnostic, not a policy
+  q-only cal N=  2330 roi=0.8621 hits=276 threshold_ev=0.849
+  q-only cal N= 14946 roi=0.8409 hits=2663 threshold_ev=0.830
+  q+ens cal  N=  2330 roi=0.9397 hits=96 threshold_ev=1.200
+  q+ens cal  N= 14946 roi=1.1196 hits=842 threshold_ev=1.041
+  S3 raw     N=  2330 roi=1.0776 hits=97 threshold_ev=1.500
+  S3 raw     N= 14946 roi=1.0698 hits=821 threshold_ev=1.200
+  N1 norm    N=  2330 roi=0.9968 hits=95 threshold_ev=1.470
+  N1 norm    N= 14946 roi=1.1019 hits=790 threshold_ev=1.186
+D N= 10213 q+ens 1.0937 S3 1.0399 N1 1.0761
+Q N= 3169 q+ens 1.2101 S3 1.1530 N1 1.1842
+R N= 1564 q+ens 1.1442 S3 1.0966 N1 1.0118
