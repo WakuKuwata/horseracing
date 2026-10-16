@@ -1,0 +1,47 @@
+======== -- s_started distribution: races with priced cancelled horse vs without (by era)
+     era              grp     n    p10    p50    p90  p50_all
+  jravan   cancel_no_odds  3180 1.2398 1.2594 1.2712   1.2594
+  jravan cancel_with_odds  1323 1.0166 1.2155 1.2565   1.2592
+  jravan        no_cancel 60331 1.2398 1.2594 1.2711   1.2594
+netkeiba   cancel_no_odds   143 1.2571 1.2635 1.2739   1.2635
+netkeiba cancel_with_odds    17 1.1359 1.2392 1.2722   1.2673
+netkeiba        no_cancel  3289 1.2563 1.2634 1.2773   1.2634
+======== -- A3 channel: refresh_race partial summaries sample
+ status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    s error_message
+partial {"kind": "entries+results+odds", "calls": [{"errors": 0, "status": "succeeded", "skipped": 0, "written": 18, "job_type": "entries"}, {"errors": 0, "status": "skipped", "skipped": 1, "written": 0, "job_type": "results"}, {"errors": 0, "status": "skipped", "skipped": 1, "written": 0, "job_type": "odds"}, {"errors": 3, "status": "partial", "skipped": 0, "written": 0, "job_type": "exotic_quotes"}], "written": 18, "profiles": {"errors": 0, "status": "succeeded", "skipped": 0, "written": 0}, "refresh_          None
+partial {"kind": "entries+results+odds", "calls": [{"errors": 0, "status": "succeeded", "skipped": 0, "written": 17, "job_type": "entries"}, {"errors": 0, "status": "skipped", "skipped": 1, "written": 0, "job_type": "results"}, {"errors": 0, "status": "succeeded", "skipped": 0, "written": 34, "job_type": "odds"}, {"errors": 3, "status": "partial", "skipped": 0, "written": 0, "job_type": "exotic_quotes"}], "written": 51, "profiles": {"errors": 0, "status": "succeeded", "skipped": 0, "written": 0}, "refre          None
+partial {"kind": "entries+results+odds", "calls": [{"errors": 0, "status": "succeeded", "skipped": 0, "written": 16, "job_type": "entries"}, {"errors": 0, "status": "skipped", "skipped": 1, "written": 0, "job_type": "results"}, {"errors": 0, "status": "succeeded", "skipped": 0, "written": 32, "job_type": "odds"}, {"errors": 3, "status": "partial", "skipped": 0, "written": 0, "job_type": "exotic_quotes"}], "written": 48, "profiles": {"errors": 0, "status": "succeeded", "skipped": 0, "written": 0}, "refre          None
+partial {"kind": "entries+results+odds", "calls": [{"errors": 0, "status": "succeeded", "skipped": 0, "written": 14, "job_type": "entries"}, {"errors": 0, "status": "skipped", "skipped": 1, "written": 0, "job_type": "results"}, {"errors": 0, "status": "skipped", "skipped": 1, "written": 0, "job_type": "odds"}, {"errors": 3, "status": "partial", "skipped": 0, "written": 0, "job_type": "exotic_quotes"}], "written": 14, "profiles": {"errors": 0, "status": "succeeded", "skipped": 0, "written": 0}, "predict_          None
+======== -- A3 channel: result-pending odds failures: odds jobs failed/skipped written=0 on races that had no results at that time (approx: completed_at < race post_time)
+   status   n
+   failed 694
+  skipped 417
+succeeded 727
+======== -- entries jobs on pre-post races (would bump updated_at)
+ n_entries_prepost
+              1687
+======== -- market_ev_predictions state
+     n  races  runs                              min                              max
+161544   5827     8 2026-09-30 00:44:29.125469+00:00 2026-10-04 06:49:48.388660+00:00
+======== -- market_ev_predictions columns
+              column_name
+                  race_id
+                 horse_id
+            model_version
+             horse_number
+                 win_prob
+                odds_used
+          expected_return
+         odds_observed_at
+result_pending_at_compute
+                  booster
+           booster_sha256
+            logic_version
+                   run_id
+              computed_at
+======== -- attention_race_scans count & result-pending
+   n  rp
+5827  18
+======== -- purchase_records count
+ n                              min                              max
+ 7 2026-09-02 00:34:59.455715+00:00 2026-09-02 00:47:10.838205+00:00

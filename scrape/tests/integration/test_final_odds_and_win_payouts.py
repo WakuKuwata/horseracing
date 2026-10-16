@@ -138,6 +138,12 @@ def test_pre_race_odds_are_overwritten_by_final_and_payout_is_stored(session):
     assert summary.extra["final_odds_errors"] == 0 and summary.extra["win_payout_errors"] == 0
     job = _last_results_job(session)
     assert job.summary["final_odds_updated"] == 16 and job.summary["win_payouts"] == 1
+    # Feature 140: the race now says WHEN its stored (final) odds were observed and that they
+    # are not a quote (official_at NULL); the observation time is the payout's (same page fetch)
+    session.expire_all()
+    race = session.get(Race, RID)
+    assert race.win_odds_official_at is None
+    assert race.win_odds_observed_at == stored.observed_at
 
 
 def test_running_twice_changes_nothing(session):
@@ -187,6 +193,8 @@ def test_jra_van_era_race_is_never_touched(session):
     assert summary.extra["final_odds_updated"] == 0
     assert summary.extra["final_odds_skipped_pre_netkeiba"] == 1
     assert _payouts(session) == [(1, 340, "netkeiba_result")]   # a payout is a fact either way
+    race = session.get(Race, RID)
+    assert (race.win_odds_official_at, race.win_odds_observed_at) == (None, None)  # 140: untouched
 
 
 def test_real_jra_van_race_keeps_its_odds(session):
@@ -366,13 +374,19 @@ def test_apply_final_odds_counts(session):
     from horseracing_scrape.parse.results import parse_results
     rows = parse_results(real_fixture(FIXTURE)).rows
 
-    first = apply_final_odds(session, RID, rows)
-    again = apply_final_odds(session, RID, rows)
+    seen = datetime.datetime(2026, 7, 19, 8, 0, tzinfo=datetime.UTC)
+    first = apply_final_odds(session, RID, rows, observed_at=seen)
+    again = apply_final_odds(session, RID, rows,
+                             observed_at=seen + datetime.timedelta(hours=1))
 
     assert (first.updated, first.unchanged, first.unreadable, first.unmatched) == (16, 0, 0, 0)
     assert (again.updated, again.unchanged) == (0, 16)
     assert first.skipped_pre_netkeiba == again.skipped_pre_netkeiba == 0
     assert first.missing == first.race_unknown == 0
+    # Feature 140: the final value's provenance — observed when the page was read, no quote time;
+    # the no-op re-run did not move it
+    race = session.get(Race, RID)
+    assert (race.win_odds_official_at, race.win_odds_observed_at) == (None, seen)
 
 
 # --- R4: a page that yields no final odds is surfaced, never a silent SUCCEEDED ----------------
@@ -427,7 +441,8 @@ def test_race_without_a_date_is_race_unknown_not_pre_netkeiba(session):
     from horseracing_scrape.parse.results import parse_results
     rows = parse_results(real_fixture(FIXTURE)).rows
 
-    out = apply_final_odds(session, "209912319912", rows)   # no races row at all
+    out = apply_final_odds(session, "209912319912", rows,   # no races row at all
+                           observed_at=datetime.datetime(2026, 7, 19, tzinfo=datetime.UTC))
 
     assert (out.race_unknown, out.skipped_pre_netkeiba, out.updated, out.missing) == (1, 0, 0, 0)
 

@@ -176,7 +176,12 @@ def test_row_columns():
     assert cols["seconds_to_post"] == 1801
     assert cols["field_digest"] == ar.field_digest(["h1", "h2", "h3"])
     # Feature 139: picks are written under selection policy v2 (official-payout settlement)
-    assert cols["logic_version"] == market_ev.ENSEMBLE_LOGIC_VERSION + ";policy=v2"
+    # Feature 140: the policy version only — the ensemble constant's oddsobs token is dropped
+    # (a pick's odds_observed_at may be the proxy; its provenance lives on the market_ev row)
+    assert cols["logic_version"] == (
+        market_ev.ENSEMBLE_LOGIC_VERSION.replace(";oddsobs=quote", "") + ";policy=v2"
+    )
+    assert "oddsobs=" not in cols["logic_version"]
     assert cols["selection_policy_version"] == ar.SELECTION_POLICY_VERSION == "v2"
     assert cols["rule_set_version"] == ar.RULE_SET_VERSION
     assert cols["run_id"] == ctx.run_id and cols["computed_at"] == T0

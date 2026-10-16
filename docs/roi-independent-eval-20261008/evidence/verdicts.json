@@ -1,0 +1,401 @@
+[
+ {
+  "finding": {
+   "dim": "normalization",
+   "id": "NP-03",
+   "title_ja": "改善の約 1.3pt は点数減、残り約 4.2pt は Σp̄≥1.05 レースの 1 塊に依存し、S3 の ROI は Σp̄ 帯で単調でない",
+   "claim_ja": "点数を N1 と揃えた素の閾値(EV_ens≥1.21413)は ALL 108.3%。S3∧Σp̄<1.05 は 112.5%(8,132 点)で N1 と同じ ROI に達し、S3∧Σp̄≥1.05 は 100.4%(6,814 点)。だが S3 の帯別 ROI は <0.90:124%・0.90–0.95:137%・0.95–1.00:93%・1.00–1.05:116%・1.05–1.10:108%・>1.10:93% と単調でなく、N1∧Σp̄≥1.05 は R 窓で 48.3%(235 点)。",
+   "evidence_ja": "perm.json threshold_grid / S3_race_filter、recompute.json mechanism.by_sum_p_bin・sets_R。12pt 差の概算 SE ≈ 0.099(SD 6.1・n 8,132/6,814)=約 1.2 SE。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "正規化が『較正の筋の通った修正』として効いている証拠は弱く、帯間の非単調性はノイズの兆候。前向きで追うなら『Σp̄≥1.05 で買わない』という粗い対照腕も同時に記録しないと機構を切り分けられない。"
+  },
+  "verdict": {
+   "finding_id": "NP-03",
+   "refuted": false,
+   "verdict_ja": "confirmed — 主要数値(点数揃え閾値 1.21413 の ALL 108.3%・S3∧Σp̄<1.05 112.5%/8,132 点・S3∧Σp̄≥1.05 100.4%/6,814 点・S3 の Σp̄ 帯別 ROI 6 値・N1∧Σp̄≥1.05 の R 窓 48.3%/235 点)を、調査員のコードを使わない別実装(MultiIndex reindex・np.add.at による Σp̄・race-day クラスタ bootstrap)で再計算し、点数・的中数・ROI がすべて小数桁まで一致した。Codex の results.json の S3 106.98%/N1 112.46%(14,946/13,574 点)とも一致。追加で開催日クラスタの SE を出すと、12.1pt 差の SE は 0.095(≈1.3 SE・95% 区間 −6〜+31pt)で調査員の iid 概算 0.099 と同程度、N1−点数揃え閾値の 4.1pt 差も SE 0.037・区間 [−3.0, +11.6] でゼロを含む。S3 の帯別 ROI の帯内 SE は 0.08〜0.26 で、124→137→93→116→108→93 の非単調は全てノイズ幅内。主張の数値・解釈(正規化が較正の筋の通った修正である証拠は弱い)はいずれも覆せなかった。",
+   "corrected_claim_ja": "点数を N1 と揃えた素の閾値(EV_ens≥1.21413・13,574 点)は ALL 108.3%(S3 107.0% から +1.3pt)。S3∧Σp̄<1.05 は 112.5%(8,132 点・414 的中)で N1 の 112.5% と同じ ROI、S3∧Σp̄≥1.05 は 100.4%(6,814 点・407 的中)。両者の 12.1pt 差は開催日クラスタ SE 0.095(≈1.3 SE・95% 区間 −6〜+31pt)で有意ではなく、N1−点数揃え閾値の 4.1pt 差も SE 0.037・区間 [−3.0, +11.6] でゼロを含む。S3 の Σp̄ 帯別 ROI は <0.90:124%・0.90–0.95:137%・0.95–1.00:93%・1.00–1.05:116%・1.05–1.10:108%・>1.10:93% と単調でなく、帯内クラスタ SE が 8〜26pt あるため非単調性はノイズで説明できる。N1∧Σp̄≥1.05 は R 窓(2023–26)で 48.3%(235 点・9 的中)。これらは全て保存オッズ精算(公式払戻ではない)かつ既読期間 2013–2026 上の数値で、正規化が『較正の修正』として効いている証拠は弱い。前向きで追う場合は『Σp̄≥1.05 のレースを買わない』対照腕を同時記録しないと点数減・レース除外・再順位付けの機構を切り分けられない。",
+   "evidence_ja": "再計算スクリプト: /private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/adv_normalization/np03.py、出力 np03.json。入力は artifacts/market_ev/rows_2007.parquet(2010-01-01〜2026-06-26・race_ok∧¬dead_heat)と 15 seed の artifacts/roi_explore/results/armC_binary_*drop-sameday+weightlive_from2007_ens15/predictions.parquet、適用期間 2013–2026、精算は won×odds×100。再現値: S3 14,946 点/821 的中/106.98%、N1 13,574/712/112.46%、点数揃え閾値 t=1.2141332 で 13,574/744/108.32%、S3∧Σp̄<1.05 8,132/414/112.50%、S3∧Σp̄≥1.05 6,814/407/100.39%、S3 帯別 0.0-0.9:491/27/123.6%・0.9-0.95:1,303/67/137.5%・0.95-1.0:2,622/109/93.2%・1.0-1.05:3,716/211/115.9%・1.05-1.1:3,367/206/107.7%・>1.1:3,447/201/93.3%、N1∧Σp̄≥1.05∧R 235/9/48.26%、N1∧Σp̄<1.05∧R 1,002/59/133.3%。調査員の perm.json threshold_grid・S3_race_filter、recompute.json mechanism.by_sum_p_bin・sets_R、Codex の artifacts/roi_comprehensive_20261005/online_normalization/results.json(S3 106.98%/N1 112.46%)と全件一致。追加検証: S3 内の 1 点あたり回収 SD 6.06、12pt 差の iid SE 0.097・開催日クラスタ bootstrap(B=4,000・seed 7)SE 0.095・95% 区間 [−0.061, +0.310]。N1−点数揃え閾値の差 +0.0415・クラスタ SE 0.037・区間 [−0.030, +0.116]。S3 帯別のクラスタ SE: 0.259/0.229/0.139/0.100/0.099/0.078。確認済み: 母集団・期間・精算(保存オッズ)は全腕で同一、Σp̄ は当該レース全頭の 15 seed 平均確率の和で未来情報なし。注意点(推測でなく構造): 2013–2026 はすべて既読期間であり独立確認ではない。",
+   "numbers": {
+    "S3_ALL": {
+     "n": 14946,
+     "hits": 821,
+     "roi": 1.0698
+    },
+    "N1_ALL": {
+     "n": 13574,
+     "hits": 712,
+     "roi": 1.1246
+    },
+    "count_matched_threshold": {
+     "t": 1.2141332,
+     "n": 13574,
+     "hits": 744,
+     "roi": 1.0832
+    },
+    "S3_sum_p_lt_1.05": {
+     "n": 8132,
+     "hits": 414,
+     "roi": 1.125
+    },
+    "S3_sum_p_ge_1.05": {
+     "n": 6814,
+     "hits": 407,
+     "roi": 1.0039
+    },
+    "S3_by_sum_p_bin_roi": {
+     "<0.90": 1.2363,
+     "0.90-0.95": 1.3746,
+     "0.95-1.00": 0.9322,
+     "1.00-1.05": 1.1589,
+     "1.05-1.10": 1.0769,
+     ">1.10": 0.9326
+    },
+    "S3_bin_cluster_se": {
+     "<0.90": 0.259,
+     "0.90-0.95": 0.229,
+     "0.95-1.00": 0.139,
+     "1.00-1.05": 0.1,
+     "1.05-1.10": 0.099,
+     ">1.10": 0.078
+    },
+    "N1_sum_p_ge_1.05_R": {
+     "n": 235,
+     "hits": 9,
+     "roi": 0.4826
+    },
+    "gap_S3_lt_vs_ge_1.05": {
+     "diff": 0.1211,
+     "sd_ret": 6.06,
+     "se_iid": 0.097,
+     "se_cluster_day": 0.095,
+     "ci95_cluster_day": [
+      -0.061,
+      0.31
+     ]
+    },
+    "N1_minus_count_matched": {
+     "diff": 0.0415,
+     "se_cluster_day": 0.037,
+     "ci95": [
+      -0.03,
+      0.116
+     ]
+    }
+   }
+  }
+ },
+ {
+  "finding": {
+   "dim": "methods",
+   "id": "F3",
+   "title_ja": "固定 EV>1.2 の 1 点比較は操作点の混同",
+   "claim_ja": "同一購入数(14,946)で上位を取ると較正 q+ens が 3 窓すべてで S3・N1 を上回るが、較正スコアの極端上位 2,330 点は 94% と最悪",
+   "evidence_ja": "rank_matched.out: N=14,946 で q+ens 111.96%/N1 110.19%/S3 106.98%、D 109.4/107.6/104.0・Q 121.0/118.4/115.3・R 114.4/101.2/109.7。N=2,330 で q+ens 94.0%/S3 107.8%/N1 99.7%。較正 EV の閾値換算は 1.041",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "Codex の「較正は改善を支持せず」は閾値固定の副作用で未検出を効果なしと扱っている。ただし事後・保存価格・年内 top-N は実装不能なので採用根拠ではなく、再検証なら固定閾値 1.04 前後を事前登録する形になる"
+  },
+  "verdict": {
+   "finding_id": "F3",
+   "refuted": true,
+   "verdict_ja": "weakened。数値はすべて別実装(np.partition による第 N 位閾値選択)で小数第 4 位まで一致し、「固定 EV>1.2 は較正スコアでは極端上位 2,330 点しか拾わず操作点が違う」という指摘自体は正しい。しかし (1) 同一購入数での q+ens 対 S3 の差は開催日 paired bootstrap(4,000 回)で 3 窓すべてと ALL で CI がゼロを跨ぐ(ALL +5.0pt CI[−1.4,+11.4]・D[−1.9,+13.2]・Q[−8.4,+19.4]・R[−21.6,+31.2])ので「上回る」は点推定の話に留まる。(2) 窓別の一致閾値(D 1.038 / Q 1.044 / R 1.049)は各窓の S3 購入数を見てから決めた事後値で、事前固定の単一閾値 1.04(ALL 換算値)に置き換えると R 窓は 107.1%(n=1,789)で S3 EV>1.2 の 109.7% を下回り、「3 窓すべてで上回る」は崩れる。(3) 年別では q+ens>S3 は 14 年中 9 年(2018・2020・2022・2024・2026 は S3 が上)。(4) N1 に対しては D[+0.2,+3.3]・R[+6.8,+20.3] で CI がゼロを外れるが Q・ALL([−0.9,+4.2])では跨ぐ。よって「Codex の『較正は改善を支持せず』は閾値固定の副作用」という含意は半分だけ正しい — 固定閾値比較が較正を不利に見せているのは事実だが、操作点を揃えても較正が S3 より良いとは統計的に言えない。",
+   "corrected_claim_ja": "固定 EV>1.2 の 1 点比較は操作点の混同であり、較正スコア(a+b≈1 に圧縮)では EV>1.2 は極端上位 2,330 点(回収率 94.0%・最悪)しか拾わない。同一購入数 14,946 で上位を取ると q+ens は点推定で S3・N1 を上回る(ALL 111.96 / 106.98 / 110.19%、D 109.4/104.0/107.6、Q 121.0/115.3/118.4、R 114.4/109.7/101.2)が、S3 との差は 3 窓・ALL いずれも開催日 bootstrap CI がゼロを跨ぎ、N1 との差も ALL・Q では跨ぐ。窓別の一致閾値は事後値で、事前固定 1.04 に置き換えると R 窓は 107.1% と S3 を下回る。年別で q+ens が S3 を上回るのは 14 年中 9 年。したがって Codex の「較正は改善を支持せず」は閾値固定という測り方の副作用を含むが、操作点を揃えても「較正が ROI を改善する」とは検出できておらず、結論は「未検出」であって「改善あり」ではない。再検証するなら固定閾値 1.04 前後を事前登録し、既読 2013〜2026 は使えない。",
+   "evidence_ja": "再計算スクリプトと出力: /private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/verify_F3/{recheck.py,recheck.out}。入力は Codex 凍結成果物 artifacts/roi_comprehensive_20261005/calibration_roi/predictions.parquet(631,151 行・重複キー 0・race_ok 全 True・dead_heat なし・2013-01-05〜2026-06-21)。較正係数は recipes.json のとおり各年 y を 2010..y−1 で fit(未来情報なし・OOF)。再現値: q+ens N=2,330 → 93.97%(hits 96・閾値 1.2001)/N=14,946 → 111.96%(hits 842・閾値 1.0413)、S3 N=14,946 → 106.98%、N1 → 110.19%、窓別 D 109.37/103.99/107.61、Q 121.01/115.30/118.42、R 114.42/109.66/101.18 — 調査員の rank_matched.out と完全一致。追加検証: 開催日単位 paired bootstrap(4,000 回・seed 20261007)で qe−S3 は ALL[−0.014,+0.114]・D[−0.019,+0.132]・Q[−0.084,+0.194]・R[−0.216,+0.312]、qe−N1 は ALL[−0.009,+0.042]・D[+0.002,+0.033]・Q[−0.054,+0.101]・R[+0.068,+0.203]。事前固定閾値感度: qe>1.04 → ALL 111.04%(n=15,183)/D 109.33/Q 118.27/R 107.05(n=1,789)、qe>1.05 → R 115.1%(n=1,528)=R 窓の優劣は閾値 0.01 の違いで入れ替わる。年別 ROI(pooled top-N): q+ens が S3 を上回るのは 2013-17・2019・2021・2023・2025 の 9 年、下回るのは 2018(83.7 vs 94.6)・2020・2022・2024・2026。精算は保存オッズ×won の近似で Codex と同一(公式払戻ではない)。Codex 報告 calibration-roi.md の表値(2,330/93.97%・14,946/106.98%・13,574/112.46%)とも整合。",
+   "numbers": {
+    "N_matched": 14946,
+    "roi_qens_all": 1.1196,
+    "roi_s3_all": 1.0698,
+    "roi_n1_all": 1.1019,
+    "roi_qens_top2330": 0.9397,
+    "threshold_qens_matched": 1.0413,
+    "ci_qens_minus_s3_all": [
+     -0.0137,
+     0.1144
+    ],
+    "ci_qens_minus_n1_all": [
+     -0.0088,
+     0.042
+    ],
+    "ci_qens_minus_s3_D": [
+     -0.019,
+     0.1316
+    ],
+    "ci_qens_minus_s3_Q": [
+     -0.084,
+     0.1939
+    ],
+    "ci_qens_minus_s3_R": [
+     -0.2161,
+     0.3118
+    ],
+    "fixed_thr_1.04_R_roi": 1.0705,
+    "fixed_thr_1.04_R_n": 1789,
+    "s3_ev1.2_R_roi": 1.0966,
+    "years_qens_beats_s3": "9/14"
+   }
+  }
+ },
+ {
+  "finding": {
+   "dim": "methods",
+   "id": "F8",
+   "title_ja": "443 集合と 389 集合の差は公式払戻でなく検証不能な 1 的中",
+   "claim_ja": "389 集合では精算変更 0 頭で、443 集合の S3 74.5%・S1 156.7% は 08-02/08-09 の 54 レースにある 1 的中(40.3 倍・アーカイブ無し・公式払戻無し)に依存する",
+   "evidence_ja": "price_check.out: 54 レースの S3 7 点中 1 的中=575.7%。hit_check.out: 202604020609 馬 15 O_J 33.4(8.7h 前)→O_F 40.3・final_src db_stored・official NaN・timing_class FILLED_AFTER_RESULTS・archive_available False。08-09 は 36 レース中 9 affected・correctable 0。DB: 同レース odds 40.3・updated_at 08-12。検証済 389: S1 61.2%・S3 27.7%・N1 26.3%",
+   "status": "confirmed",
+   "critical": true,
+   "implication_ja": "判断時価格での S1/S3 の成績として引用してよいのは 389 集合の値。443 集合の表を主表に置くのは「探索で高かった値を信用しすぎ」の側"
+  },
+  "verdict": {
+   "finding_id": "F8",
+   "refuted": false,
+   "verdict_ja": "confirmed(含意のみ一部修正)。数値は自前コード(scored_pairs.parquet から won×O_settle を直接合計)で全件ビット一致: 443 集合 S1 39点/2的中/156.67%・S3 82/2/74.51%・N1 88/2/69.43%、389 集合 S1 34/1/61.18%・S3 75/1/27.73%・N1 79/1/26.33%、差分の 54 レース(08-02 31・08-09 23)は S3 7/1/575.7%・S1 5/1/806%。389 集合の勝ち馬 389 頭を R05 アーカイブ払戻と突き合わせて精算変更 0 頭も再現。両集合の差は 202604020609 馬 15(O_J 33.4・発走 8.74h 前 CHAOS T3 → O_F 40.3・final_src db_stored)の 1 的中だけで、official_win_payouts は 08-15〜10-04 の 505 行のみ=08-02/08-09 は 72 レース全て公式払戻ゼロ、DB の odds 40.3 は 2026-08-12 09:36 UTC の entries 再取得ジョブ(同日 165 本)が書いた値=「公式でも アーカイブでも検証不能」は正しい。Codex 自身も report.md L70 で「443 集合は全件公式精算ではない」と開示し表を併記している。ただし「検証不能」を「怪しい値」と読むのは行き過ぎ: R05 の分類でこのレースは FILLED_AFTER_RESULTS・affected=0 で、同分類のアーカイブ有り 259 レースでは保存オッズが結果ページ値と全頭一致 99.2%(257/259・payout_ratio 中央値 1.0・平均 0.998)。40.3 が確定値である蓋然性は高く、問題は精算の正否ではなく的中 1〜2 件という標本サイズ。",
+   "corrected_claim_ja": "389 集合は公式払戻で精算変更 0 頭。443 集合の S1 156.7%・S3 74.5% と 389 集合の 61.2%・27.7% の差は、公式払戻もアーカイブも無い 08-02/08-09 の 54 レースにある 1 的中(202604020609 馬 15・保存オッズ 40.3・08-12 の entries 再取得で書かれた値)に全て依存する。この 40.3 は R05 の同分類(FILLED_AFTER_RESULTS)が他日付で 99.2% 結果ページ値と一致するため確定値である蓋然性は高く「汚染」ではないが、公式精算では確認できない。したがって 443 集合の表は「全件公式精算」として主表に置けないのは正しい一方、389 集合の値も既読期間・的中 1 件・95% 区間下限 0 であり、どちらも判断時価格での S1/S3 の成績推定として引用できる水準にない。引用するなら「的中 1〜2 件・区間下限 0・公式精算は 389 レースのみ」と両方を併記する。",
+   "evidence_ja": "再計算: /private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/verify_F8/recompute.py(.out)— artifacts/roi_comprehensive_20261005/price_robustness/scored_pairs.parquet(5,967 行・443 レース・17 日)から J_S1/J_S3/N1_J の won×O_settle を直接集計、archive 判定は artifacts/roi_explore/missed_20261004/R05_settlement/archived_final_odds.csv の official_payout_yen>0 で独立に定義(389/54 一致)。389 集合の勝ち馬 389 頭を archive 払戻÷100 と比較し O_settle と異なる行 0。的中 2 件は 202604020609 #15(O_J 33.4→O_F 40.3・arc False)と 202609040607 #9(25.7→20.8・archive)。DB(READ ONLY): dbcheck2.out/dbcheck3.out — official_win_payouts 505 行・min 2026-08-15・max 10-04、08-02/08-09 は 36/36 レースとも with_payout 0;race_horses 202604020609 は 15 頭全て updated_at 2026-08-12 09:36:26 UTC・#15 odds 40.3 popularity 10、race_results #15=2022105495 finish_order 1 finished;ingestion_jobs 2026-08-12 09:36:26 に job_type=entries scope_value=202604020609 written 15(同日 entries ジョブ 165 本)。R05 affected_races.csv: 当該レース timing_class FILLED_AFTER_RESULTS・affected 0・archive_available False・correctable False;08-09 は 36 レース中 PRE_RACE_SNAPSHOT 9(affected 9)・FILLED_AFTER_RESULTS 27(affected 0);FILLED_AFTER_RESULTS×archive_available=True は 259 レースで affected 2・gt_all_horse_match 0.992・payout_ratio mean 0.9978/median 1.0。Codex 側: docs/roi-comprehensive-review-20261005/report.md L68-88・artifacts/.../price_official_supplement.json(settlement_changed_horses 0・archive_unconfirmed_races 54・各政策 ci95 lo 0.0)。",
+   "numbers": {
+    "set443": {
+     "S1": [
+      39,
+      2,
+      1.5667
+     ],
+     "S3": [
+      82,
+      2,
+      0.7451
+     ],
+     "N1": [
+      88,
+      2,
+      0.6943
+     ]
+    },
+    "set389": {
+     "S1": [
+      34,
+      1,
+      0.6118
+     ],
+     "S3": [
+      75,
+      1,
+      0.2773
+     ],
+     "N1": [
+      79,
+      1,
+      0.2633
+     ]
+    },
+    "set54": {
+     "S1": [
+      5,
+      1,
+      8.06
+     ],
+     "S3": [
+      7,
+      1,
+      5.7571
+     ],
+     "N1": [
+      9,
+      1,
+      4.4778
+     ],
+     "dates": {
+      "2026-08-02": 31,
+      "2026-08-09": 23
+     }
+    },
+    "settlement_changed_horses_389": 0,
+    "hit_race": {
+     "race_id": "202604020609",
+     "horse_number": 15,
+     "O_J": 33.4,
+     "hours_before_post": 8.74,
+     "O_F": 40.3,
+     "final_src": "db_stored",
+     "odds_updated_at_utc": "2026-08-12T09:36:26",
+     "writer_job": "entries",
+     "official_payout_rows": 0,
+     "timing_class": "FILLED_AFTER_RESULTS",
+     "affected": 0
+    },
+    "official_win_payouts": {
+     "rows": 505,
+     "min_date": "2026-08-15",
+     "max_date": "2026-10-04",
+     "coverage_0802_0809": 0
+    },
+    "filled_after_results_reliability_with_archive": {
+     "n_races": 259,
+     "affected": 2,
+     "gt_all_horse_match_rate": 0.9923,
+     "payout_ratio_mean": 0.9978,
+     "payout_ratio_median": 1
+    }
+   }
+  }
+ },
+ {
+  "finding": {
+   "dim": "levers",
+   "id": "P2",
+   "title_ja": "価格ずれの大きさは発走に近づくほど縮むが、T−30 分でも利益が消える帯",
+   "claim_ja": "自馬 log オッズずれの sd は T−10 分以内 0.31・10〜30 分 0.41・30〜60 分 0.49・1〜3 時間 0.56・3〜10 時間 0.57・10〜24 時間 0.94。followup §5.3 の代理(σ0.1→117%・0.2→105%・0.3→97%)に当てると σ≤0.2 は T−2 分前後以降でしか見込めない。",
+   "evidence_ja": "R02 pairs 再集計(near_post_measurements.json r02_by_band)。保持率は (10,30] 分で S1 0.33/S3 0.35、それ以遠で 0〜0.20。EV_F/EV_J 中央値はどの帯も 0.94〜0.97(全馬)、該当馬は 0.81。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "直前捕捉を T−10〜30 分で妥協すると『利益が消える帯』しか測れない。捕捉は T−2〜3 分に置く設計が要る(API 鮮度 0.6 分を含めると実質 T−3 の価格)。ただし σ(h) の最終 2 分は未観測の外挿。"
+  },
+  "verdict": {
+   "finding_id": "P2",
+   "refuted": false,
+   "verdict_ja": "confirmed(細部は weakened)。帯別 sd・保持率・EV 比は pairs.parquet から独立実装で桁まで一致し、「T−10〜30 分の帯は §5.3 代理で利益が消える σ 域(0.41>0.3)」という中核は成立する。該当馬だけ見ると sd はさらに大きい(S3 該当馬 0.49・該当馬の中央値ずれ 0.58〜0.61 対 非該当 0.24)ので結論は弱まらず強まる。ただし 4 点を是正すべき: (1) 単調な時間トレンドは出所の混在が作っている。10〜24 時間の 0.94 は CHAOS(前夜の薄いプール)だけの値で、同帯の STORED_PRE は 0.52、24〜33 時間の STORED_PRE は 0.57。STORED_PRE 単独では ≤10 分 0.30〜0.32 / 10〜30 分 0.41〜0.43 / 30〜60 分 0.44 / 1〜50 時間 0.50〜0.56 と緩やかで、「0.57→0.41 に縮む」は概ね本物だが「0.94→0.31」ほど劇的ではない。(2) §5.3 の 117/105/97% は S1(=ER>1.2×20〜40 倍×14〜112 日)自身の凍結 price_noise_ALL と同一値で S1 にしか当たらない。S3 の凍結値は σ0.1→103.3%・0.2→95.7%・0.3→90.7% なので S3 は σ≤0.2 でも既に 100% 未満=必要 σ は 0.15 未満。(3) 「T−2 分前後」は 10 分以内が 8 レース・97 頭(全て STORED_PRE・アーカイブ精算)、2.6 分未満の観測 0 件からの log-線形外挿。観測できる最小帯 (0,5] は 32 頭で sd 0.30=既に σ0.3(S1 97%)相当。外挿では 2 分 0.18〜0.22・3 分 0.21〜0.22・10 分 0.30〜0.34 で、主張の向きは合うが数値は一桁の精度しかない。(4) sd を σ にそのまま当てるのは比喩で測定ではない。§5.3 のノイズは平均 0 の i.i.d. 対数正規だが、実測ずれは平均 +0.12〜+0.36(確定に向けてオッズが伸びる系統成分)を持ち、オッズ帯で 0.47(1〜5 倍)〜0.82(100 倍超)と不均一。20〜40 倍帯の 10〜30 分だけ切ると 0.41 で全馬と同じなので中核結論は変わらない。",
+   "corrected_claim_ja": "判断時→確定の自馬 log オッズずれの sd は T−10 分以内 0.31(8 レース・97 頭のみ)・10〜30 分 0.41・30〜60 分 0.49・1〜3 時間 0.56・3〜10 時間 0.57。10〜24 時間の 0.94 は chaos 捕捉(前夜の薄いプール)だけの値で、保存発走前オッズ由来の同帯は 0.52〜0.57。出所を固定すると縮みは 0.5 台→0.4 台→0.3 台と緩やか。ずれには平均 +0.15〜+0.36 の系統成分(確定へ向けてオッズが伸びる)があり、該当馬のずれは非該当馬の 2.5 倍(中央値 0.58〜0.61 対 0.24)なので、全馬 sd を §5.3 の σ に当てるのは下限側の近似。それでも T−10〜30 分は σ≈0.4 で S1 の凍結代理(σ0.3→97%)の外、S3 は凍結代理が σ0.2 で 95.7% なので σ<0.15 が要る。「σ≤0.2 は T−2〜3 分」は 2.6 分未満の観測 0 件からの外挿で、観測できる最小帯 (0,5] 分は既に sd 0.30。言えるのは「T−5 分でも S1 損益分岐付近、T−10〜30 分は利益が消える帯」まで。",
+   "evidence_ja": "再計算スクリプト: /private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/levers_verifier/p2_recheck.py(出力 p2_recheck.out)。入力は artifacts/roi_explore/missed_20261004/R02_odds_drift/pairs.parquet(564 組・444 レース・2026-08-02〜10-04、CHAOS 411 / STORED_PRE 153、確定側 archive 352 / db_stored 212)。帯別 sd(全馬 log(O_F/O_J))0.314/0.413/0.486/0.556/0.570/0.939/0.568=調査員と一致。平均 +0.123/+0.229/+0.282/+0.361/+0.346/+0.239。MAD 換算 0.221/0.426/0.488/0.627/0.611/0.841。レース内中心化 0.291/0.396/0.473/0.529/0.550/0.886。出所別: (10,30] CHAOS 0.378 / STORED_PRE 0.418、(30,60] 0.595/0.437、(600,1440] 0.950/0.518、(1440,2000] STORED_PRE 0.568。STORED_PRE 細分 (0,5] 0.297(n=32)・(5,10] 0.321(65)・(10,20] 0.409・(20,30] 0.426・(30,60] 0.437・(180,600] 0.497・(600,3000] 0.559。オッズ帯別 sd(全期間)B1 0.467・B2 0.537・B3 0.615・B4(20〜40) 0.680・B5 0.670・B6 0.818、平均 +0.015→+0.587。20〜40 倍帯の帯別 sd: 0.255/0.411/0.445/0.571/0.549/0.963。該当馬 sd: S3 (10,30] 0.485・(30,60] 0.631・(180,600] 0.593。EV_F/EV_J 中央値 全馬 0.949(帯別 0.941〜0.966)、S1 該当 0.784・S3 0.809=一致。保持率 (10,30] S1 3/9=0.333・S3 6/17=0.353=一致。10 分以内は 8 レース(全 STORED_PRE・archive 精算、最小 2.62 分)、2 分以内 0・5 分以内 3。log-線形外挿: 全馬 sd で 2 分 0.181・3 分 0.221・10 分 0.342、20〜40 倍帯で 0.125/0.170/0.304。凍結表 artifacts/market_ev/mev-ens15-v1/rules_S1_S5_freeze.json の price_noise_ALL: S1 σ0.1 1.166・0.2 1.045・0.3 0.967(=followup §5.3 と同一値)、S3 1.033・0.957・0.907。該当馬の実精算(100 円均等・O_settle)は S1 46 点 1.33・S3 97 点 0.63 で帯別は 1〜33 点=回収率の帯別判定には使えない。",
+   "numbers": {
+    "sd_by_band_all": [
+     0.314,
+     0.413,
+     0.486,
+     0.556,
+     0.57,
+     0.939,
+     0.568
+    ],
+    "mean_logdrift_by_band": [
+     0.123,
+     0.229,
+     0.282,
+     0.361,
+     0.346,
+     0.239,
+     0.151
+    ],
+    "sd_stored_pre_fine": {
+     "(0,5]": 0.297,
+     "(5,10]": 0.321,
+     "(10,20]": 0.409,
+     "(20,30]": 0.426,
+     "(30,60]": 0.437,
+     "(180,600]": 0.497,
+     "(600,3000]": 0.559
+    },
+    "sd_chaos": {
+     "(0,30]": 0.378,
+     "(30,60]": 0.595,
+     "(60,180]": 0.557,
+     "(180,600]": 0.574,
+     "(600,900]": 0.842,
+     "(900,1440]": 1.015
+    },
+    "sd_B4_20_40_by_band": [
+     0.255,
+     0.411,
+     0.445,
+     0.571,
+     0.549,
+     0.963
+    ],
+    "sd_by_odds_band": {
+     "B1": 0.467,
+     "B2": 0.537,
+     "B3": 0.615,
+     "B4": 0.68,
+     "B5": 0.67,
+     "B6": 0.818
+    },
+    "races_le_min": {
+     "2": 0,
+     "5": 3,
+     "10": 8,
+     "30": 99
+    },
+    "min_minutes_observed": 2.62,
+    "extrap_sd_all_at_min": {
+     "2": 0.181,
+     "3": 0.221,
+     "10": 0.342,
+     "30": 0.451
+    },
+    "freeze_price_noise_roi": {
+     "S1": {
+      "0.1": 1.166,
+      "0.2": 1.045,
+      "0.3": 0.967
+     },
+     "S3": {
+      "0.1": 1.033,
+      "0.2": 0.957,
+      "0.3": 0.907
+     }
+    },
+    "retention_10_30": {
+     "S1": "3/9=0.333",
+     "S3": "6/17=0.353"
+    },
+    "EV_ratio_median": {
+     "all": 0.949,
+     "S1_picks": 0.784,
+     "S3_picks": 0.809
+    },
+    "pick_vs_nonpick_median_logdrift": {
+     "S1": [
+      0.612,
+      0.24
+     ],
+     "S3": [
+      0.581,
+      0.239
+     ]
+    }
+   }
+  }
+ },
+ {
+  "finding": {
+   "dim": "levers",
+   "id": "P3",
+   "title_ja": "直前全レース捕捉は予算・礼儀と両立し、障害は規約(憲法 V・スケジューラ先送り・UNIQUE)",
+   "claim_ja": "1 日 31.6 レース・発走間隔中央値 9 分・2 分未満 6/2,658、単勝+複勝は 1 req/レース、netkeiba API 鮮度中央値 0.6 分 → T−2 の 1 点捕捉で 1 日 32〜36 req、T−10 を足しても 72 req(通常 ~250 req/日)。1 req/分契約でも間隔は足りる。",
+   "evidence_ja": "races 2026 84 開催日(post_time 100%): 平均 31.6 レース・span 7.0 時間・post 間隔 <2 分 6 件。races.place_odds_observed_at−official_at 発走前 159 件: 中央値 0.6 分・90% 2.2 分。scrape/politeness.py:56-66 source_interval_s(netkeiba 契約)。chaos_capture.py:605-609 は predict_auto のみ窓判定、:617-627 already_captured、0013 UNIQUE(race_id)。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "設計案: 新表 decision_quotes(race_id UNIQUE・captured_at・official_at・全馬 win/place quote・入力/モデル hash)+ 1 日 1 回手動起動で各レース T−3 分に 1 req を打つ長時間プロセス。憲法 V は『判断時 1 凍結値』の例外で読めるが、chaos 捕捉と並ぶと同一レースに発走前 2 点が残るので明示の判断が要る。T−2 と確定の 2 点で足り(確定は race_horses.odds/official_win_payouts)、T−10 を加える 3 点目は (a)(d) 候補を測る場合のみ。"
+  },
+  "verdict": {
+   "finding_id": "P3",
+   "refuted": false,
+   "verdict_ja": "confirmed(注記つき)。主要数値は READ ONLY で独立再計算し一致: 2026 年 84 開催日・2,658 レース・post_time 100%・1 日平均 31.64 レース(min 11/max 36)・1 日の span 平均 6.96 時間、同日内の発走間隔 2,574 本のうち 2 分未満は 6 本(すべて 0 分=2 場が同時刻発走の組)。races.place_odds_observed_at − place_odds_official_at は発走前 159 件で中央値 0.597 分・90%点 2.22 分・最大 4.75 分で一致。コード参照(politeness.py:56-66 source_interval_s / chaos_capture.py:605-609 predict_auto のみ窓判定 / :617-627 already_captured / 0013 UNIQUE(race_id))と憲法 V の文言「スナップショット履歴を保存せず最新値で上書き」も確認。予算・礼儀と両立する結論自体は崩れない。食い違い・弱点は 3 点: (1) 発走間隔の中央値は 9 分でなく 10.0 分(p10 も 10 分)。分母は 2,658 レースでなく 2,574 間隔。(2) 「鮮度中央値 0.6 分」の 159 件は観測時刻が発走前中央値 29.4 分(p10 で 12 分)で、発走 10 分以内は 10 件・3 分以内は 0 件。T−2 での鮮度は未測定の外挿(10 分以内の 10 件は中央値 0.49 分・p90 0.74 分で向きは悪くない)。(3) 「通常 ~250 req/日」は Codex 報告・コードに出所がなく、pipeline.py:496 の 250 はブロック時の暴走件数。ingestion_jobs の取得系ジョブ数は通常開催日 121〜390/日で桁としては整合するが req 数の実測ではない。礼儀契約の既定は 1 req/分でなく 1 秒(politeness.py:41・ops config OPS_FETCH_MIN_INTERVAL=1.0)で、1 req/分に設定しても同時刻発走 6 組だけが片方 T−1/T−3 にずれる程度。",
+   "corrected_claim_ja": "2026 年 84 開催日(post_time 100%)で 1 日平均 31.6 レース・同日内の発走間隔中央値 10 分・2 分未満は 2,574 間隔中 6 本(すべて 2 場同時刻発走)。単勝+複勝は odds API type=1 の 1 req/レース、netkeiba API の鮮度(取得時刻−official_at)は発走前 159 件で中央値 0.6 分・90% 2.2 分だが、その観測は発走前中央値 29 分のもので発走 3 分以内の実測は無い(10 分以内 10 件は中央値 0.5 分)。T−2 の 1 点捕捉で 1 日 32〜36 req、T−10 を足して 72 req。礼儀契約の既定は 1 秒間隔(1 req/分に設定しても同時刻発走の 6 組のみ 1 分ずれる)。「通常 ~250 req/日」は未実測の桁感(取得系ジョブは通常日 121〜390/日)。障害は規約(憲法 V の 2 点目・スケジューラ先送り・UNIQUE)である点は成立。",
+   "evidence_ja": "再計算スクリプト: /private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/levers_verifier/check.py(races 2026 の post_time 間隔・span)、check2.py(place_odds_observed_at/official_at の鮮度を発走前に限定・同時刻発走ペア)。DB は SET TRANSACTION READ ONLY。結果: days=84 mean=31.64 span mean=6.96h; gaps n=2,574 median=10.0 <2min=6(==0 が 6); pre-post n=159 stale median=0.597 p90=2.22 max=4.75; to_post median=29.4 p10=12.0 ≤3min=0 ≤10min=10(stale median 0.49 p90 0.74); 鮮度データは 2026-08-23〜10-04 の 12 日のみ。コード: scrape/src/horseracing_scrape/politeness.py:41,56-66(_DEFAULT_NETKEIBA_INTERVAL_S=1.0・env 上書き)、ops/src/horseracing_ops/config.py:72(OPS_FETCH_MIN_INTERVAL 1.0)、scrape/urls.py:18-52(type=1=単勝/複勝同一レスポンス)、scrape/pipeline.py:496-504(250 はブロック暴走の件数・type=1 に win/place 両方)、live/chaos_capture.py:605-627、db migration 0013_capture_provenance.py:23-29(UNIQUE(race_id))、.specify/memory/constitution.md:76-83(憲法 V)。ingestion_jobs 取得系ジョブ数(2026-09-12〜10-05): 121〜390/日(9/19 の 1,472 は範囲更新)。Codex 側の出所: scratchpad/eval1007/audit_levers_33309.json claim/summary(3)。",
+   "numbers": {
+    "days_2026": 84,
+    "races_2026": 2658,
+    "post_time_coverage": 1,
+    "races_per_day_mean": 31.64,
+    "span_hours_mean": 6.96,
+    "gaps_n": 2574,
+    "gap_median_min_mine": 10,
+    "gap_median_min_codex": 9,
+    "gaps_lt_2min": 6,
+    "gaps_eq_0min": 6,
+    "freshness_pre_post_n": 159,
+    "freshness_median_min": 0.597,
+    "freshness_p90_min": 2.22,
+    "freshness_max_min": 4.75,
+    "obs_to_post_median_min": 29.4,
+    "obs_within_10min_n": 10,
+    "obs_within_3min_n": 0,
+    "near10_stale_median_min": 0.49,
+    "politeness_default_interval_s": 1,
+    "daily_fetch_jobs_normal_range": "121-390",
+    "req_per_day_T2": "32-36",
+    "req_per_day_T2_plus_T10": 72
+   }
+  }
+ }
+]

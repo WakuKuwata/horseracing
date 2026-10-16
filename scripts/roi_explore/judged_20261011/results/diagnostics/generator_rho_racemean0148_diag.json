@@ -1,0 +1,200 @@
+{
+ "name": "judged-odds-injection-generator",
+ "version": "diag-rho-racemean",
+ "method": "per horizon band (minutes, right-closed): OLS u=log(O_J/O_F)=a+b*log(q_F)+eps; s=std(resid, ddof=1); rho = 1 - pooled within-race resid variance / total resid variance (ICC, pooled over bands; the race-mean-variance estimator used by m2 is biased up by (1-rho)/n and is only reported for comparison); injection u=a+b*log q_F+s*(sqrt(rho)*eps_race+sqrt(1-rho)*eps_i), O_J=O_F*exp(u), renormalise sum(1/O) per race to the final value, round to 0.1, floor 1.0",
+ "period": {
+  "from": "2026-08-02",
+  "to": "2026-10-04"
+ },
+ "fit_period_registered": {
+  "from": "2026-08-02",
+  "to": "2026-10-04"
+ },
+ "input": {
+  "pairs_parquet": "artifacts/roi_explore/missed_20261004/R02_odds_drift/pairs.parquet",
+  "sha256": "d9d7d626e3a71c0b81efbb0a157657895a89882ef02d5eaabad9896df53a1099",
+  "n_rows": 7562,
+  "n_pairs": 564,
+  "n_races": 444,
+  "n_days": 17,
+  "sources": {
+   "CHAOS": 5544,
+   "STORED_PRE": 2018
+  }
+ },
+ "bands": [
+  {
+   "band": "(0,10]",
+   "lo_min": 0.0,
+   "hi_min": 10.0,
+   "a": 0.3413271498999004,
+   "b": 0.1416410285802925,
+   "s": 0.2412131262068126,
+   "rho_band": 0.09190321729874062,
+   "rho_band_racemean_estimator": 0.15811860770404065,
+   "n": 97,
+   "n_pairs": 8
+  },
+  {
+   "band": "(10,30]",
+   "lo_min": 10.0,
+   "hi_min": 30.0,
+   "a": 0.522027720786276,
+   "b": 0.2203011756181969,
+   "s": 0.2732927324113545,
+   "rho_band": 0.08627688354448615,
+   "rho_band_racemean_estimator": 0.15602673976246426,
+   "n": 1180,
+   "n_pairs": 91
+  },
+  {
+   "band": "(30,60]",
+   "lo_min": 30.0,
+   "hi_min": 60.0,
+   "a": 0.6389565872171058,
+   "b": 0.2742745255760269,
+   "s": 0.30075212970874443,
+   "rho_band": 0.0588077984968407,
+   "rho_band_racemean_estimator": 0.13134328771042997,
+   "n": 533,
+   "n_pairs": 42
+  },
+  {
+   "band": "(60,180]",
+   "lo_min": 60.0,
+   "hi_min": 180.0,
+   "a": 0.6736093614588639,
+   "b": 0.2917121762360654,
+   "s": 0.34260454174630933,
+   "rho_band": 0.11480462630639499,
+   "rho_band_racemean_estimator": 0.18013609359563207,
+   "n": 963,
+   "n_pairs": 72
+  },
+  {
+   "band": "(180,600]",
+   "lo_min": 180.0,
+   "hi_min": 600.0,
+   "a": 0.8029307933220462,
+   "b": 0.33638185392505177,
+   "s": 0.3376274839787438,
+   "rho_band": 0.02832382676240719,
+   "rho_band_racemean_estimator": 0.09905177992108867,
+   "n": 2625,
+   "n_pairs": 192
+  },
+  {
+   "band": "(600,3000]",
+   "lo_min": 600.0,
+   "hi_min": 3000.0,
+   "a": 1.0289290167789826,
+   "b": 0.363611302869388,
+   "s": 0.7410035409822028,
+   "rho_band": 0.09127498088512986,
+   "rho_band_racemean_estimator": 0.15765433965542539,
+   "n": 2164,
+   "n_pairs": 159
+  }
+ ],
+ "rho": 0.148238623351562,
+ "rho_racemean_estimator": 0.148238623351562,
+ "n": 7562,
+ "horizon_pool_minutes": {
+  "n_pairs": 564,
+  "quantiles": {
+   "0.1": 22.049634168333338,
+   "0.25": 59.80416666666666,
+   "0.5": 277.6916666666667,
+   "0.75": 774.3708333333333,
+   "0.9": 1114.6599999999999
+  }
+ },
+ "comparison_with_m2_reference": {
+  "reference": {
+   "bands": [
+    {
+     "band": "(0,10]",
+     "a": 0.341,
+     "b": 0.142,
+     "s": 0.241
+    },
+    {
+     "band": "(10,30]",
+     "a": 0.522,
+     "b": 0.22,
+     "s": 0.273
+    },
+    {
+     "band": "(30,60]",
+     "a": 0.639,
+     "b": 0.274,
+     "s": 0.301
+    },
+    {
+     "band": "(60,180]",
+     "a": 0.674,
+     "b": 0.292,
+     "s": 0.343
+    },
+    {
+     "band": "(180,600]",
+     "a": 0.803,
+     "b": 0.336,
+     "s": 0.338
+    },
+    {
+     "band": "(600,3000]",
+     "a": 1.029,
+     "b": 0.364,
+     "s": 0.741
+    }
+   ],
+   "rho": 0.16
+  },
+  "diff_fit_minus_reference": [
+   {
+    "band": "(0,10]",
+    "da": 0.0003,
+    "db": -0.0004,
+    "ds": 0.0002
+   },
+   {
+    "band": "(10,30]",
+    "da": 0.0,
+    "db": 0.0003,
+    "ds": 0.0003
+   },
+   {
+    "band": "(30,60]",
+    "da": -0.0,
+    "db": 0.0003,
+    "ds": -0.0002
+   },
+   {
+    "band": "(60,180]",
+    "da": -0.0004,
+    "db": -0.0003,
+    "ds": -0.0004
+   },
+   {
+    "band": "(180,600]",
+    "da": -0.0001,
+    "db": 0.0004,
+    "ds": -0.0004
+   },
+   {
+    "band": "(600,3000]",
+    "da": -0.0001,
+    "db": -0.0004,
+    "ds": 0.0
+   }
+  ],
+  "drho_icc_minus_reference": -0.0803,
+  "drho_racemean_minus_reference": -0.0118
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "判断時専用版(mev-ens15-judged)は表示・確定側に接続しない(研究 artifact・本番非結線)"
+ ],
+ "diagnostic_only": true
+}

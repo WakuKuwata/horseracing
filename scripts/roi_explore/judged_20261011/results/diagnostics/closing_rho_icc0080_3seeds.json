@@ -1,0 +1,90 @@
+{
+ "n_rows": 22612,
+ "n_races": 1591,
+ "n_days": 52,
+ "window": {
+  "from": "2026-01-04",
+  "to": "2026-06-21"
+ },
+ "ens15": {
+  "nll": 0.19938581321546084,
+  "winner_nll": 1.9476504781340085,
+  "ev_gt12_n": 186
+ },
+ "judged_h0": {
+  "nll": 0.19986258652843994,
+  "winner_nll": 1.952106440665973,
+  "ev_gt12_n": 97
+ },
+ "paired_judged_minus_ens15": {
+  "nll_J": {
+   "point": 0.00047677331297910075,
+   "ci_low": 0.00015296648995230395,
+   "ci_high": 0.0008119661876224344,
+   "n_replicates_valid": 4000,
+   "arm_value": 0.19986258652843994,
+   "ref_value": 0.19938581321546084
+  },
+  "winner_nll_J": {
+   "point": 0.0044559625319648966,
+   "ci_low": 0.0005454342789547817,
+   "ci_high": 0.008352520663039415,
+   "n_replicates_valid": 4000,
+   "arm_value": 1.952106440665973,
+   "ref_value": 1.947650478134008
+  },
+  "calib_ratio_ev_gt1": {
+   "point": -0.028709377992642504,
+   "ci_low": -0.2079836279514033,
+   "ci_high": 0.1548396433405292,
+   "n_replicates_valid": 4000,
+   "arm_value": 0.9478626905765896,
+   "ref_value": 0.9765720685692321
+  }
+ },
+ "bootstrap": {
+  "method": "race-day block bootstrap",
+  "B": 4000,
+  "seed": 20261011,
+  "n_blocks": 52
+ },
+ "rule_i": {
+  "nll_within_tolerance": false,
+  "winner_nll_not_worse": false,
+  "tolerance_nll": 0.0002,
+  "pass": false,
+  "note": "FR-010 (i): closing-odds 2026 OOS (<= 2026-06-26), judged scored with log_min=0"
+ },
+ "diagnostic_only": true,
+ "diagnostic_note": "window and/or seeds differ from the registered rule (i) check; not usable for the verdict",
+ "computed_at": "2026-10-11T22:53:19.490369+00:00",
+ "inputs": {
+  "rows": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/rows_2007.parquet",
+  "rows_sha256": "99f699502424c65a4f2dcd998bd105c2537551952b931b2c4a19f28399468b2b",
+  "ens15": {
+   "manifest": "ensemble_2026.json",
+   "manifest_sha256": "6a4f42895b7c7b622559fc30458f84eff39744099a3a80778c7d1a541de1c7d9"
+  },
+  "judged": {
+   "dir": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/judged/mev-ens15-judged-v0",
+   "seeds_found": [
+    1,
+    2,
+    3
+   ],
+   "seeds_missing": [],
+   "partial": true,
+   "generator_sha256": "8b760a777f5dd3dffb97dd0b365d0f1a8470e1b16fb692862848fda3dbd56ae7",
+   "model_sha256": {
+    "seed_01": "72484c421fc29318bc7276d10ac2146440a7ab9ddf00968f6bf840f981f803d7",
+    "seed_02": "34efd4460c97cd5fb6eb7c853cec8027b6cb6e24fd8f51345e176096238944a3",
+    "seed_03": "685554db0aa015d501ded8a9c3581cea817aad4880d960271cf15f2b5c8b2e01"
+   }
+  }
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "判断時専用版(mev-ens15-judged)は表示・確定側に接続しない(研究 artifact・本番非結線)"
+ ],
+ "elapsed_s": 6.4
+}

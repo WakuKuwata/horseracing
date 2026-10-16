@@ -1,0 +1,115 @@
+{
+ "name": "judged-ev-logit-correction",
+ "version": "v0",
+ "model": "logit p' = b0 + b1*logit(p_hat_J) + b2*log(h_minutes) + b3*log(q_J)",
+ "coef_names": [
+  "b0_intercept",
+  "b1_logit_p",
+  "b2_log_h",
+  "b3_log_q"
+ ],
+ "fit_period_registered": {
+  "from": "2026-08-02",
+  "to": "2026-10-04"
+ },
+ "refit_at_evaluation": false,
+ "c1": {
+  "coef": {
+   "b0_intercept": 0.8873642054648084,
+   "b1_logit_p": -0.12577022603068005,
+   "b2_log_h": 0.000299679614848907,
+   "b3_log_q": 1.438126319363639
+  },
+  "se": {
+   "b0_intercept": 0.24731578050703554,
+   "b1_logit_p": 0.238006634244644,
+   "b2_log_h": 0.03461491468791217,
+   "b3_log_q": 0.27717294967009404
+  },
+  "n": 5967,
+  "n_won": 443,
+  "loglik": -1288.2364414300741,
+  "loglik_null": -1578.1231010150623,
+  "loglik_identity": -1303.284627184072,
+  "n_iter": 8,
+  "converged": true,
+  "source": "R02 scored_pairs (real judged/final pairs)",
+  "input": "artifacts/roi_comprehensive_20261005/price_robustness/scored_pairs.parquet",
+  "sha256": "876fddc7651e0a7b1aa2f7323e6c403a4a0440359e4b1fa4ae55f39827dbdeb1",
+  "n_races": 443,
+  "period": {
+   "from": "2026-08-02",
+   "to": "2026-10-04"
+  },
+  "p_hat_definition": "EVe_J / O_J (15-seed ensemble EV at judgement time)",
+  "q_definition": "recomputed from O_J per pair with r02_drift.market_block",
+  "h_minutes_quantiles": {
+   "0.1": 20.129646583333333,
+   "0.5": 228.51666666666665,
+   "0.9": 1123.8166666666668
+  }
+ },
+ "c2": {
+  "coef": {
+   "b0_intercept": 0.816903387499032,
+   "b1_logit_p": 0.03287066993187796,
+   "b2_log_h": 0.0017312076309783384,
+   "b3_log_q": 1.2668951453146773
+  },
+  "se": {
+   "b0_intercept": 0.09431416792754431,
+   "b1_logit_p": 0.08938958381741187,
+   "b2_log_h": 0.012892251018299463,
+   "b3_log_q": 0.1024509966935445
+  },
+  "n": 46207,
+  "n_won": 3329,
+  "loglik": -9819.738834103113,
+  "loglik_null": -11962.891315971578,
+  "loglik_identity": -9914.88661739639,
+  "n_iter": 9,
+  "converged": true,
+  "source": "simulated judged rows: 2025 OOF rows + generator; p_hat from the 15 production model_2025.txt boosters on perturbed features",
+  "input": {
+   "rows": "artifacts/market_ev/rows_2007.parquet",
+   "rows_sha256": "99f699502424c65a4f2dcd998bd105c2537551952b931b2c4a19f28399468b2b",
+   "generator_sha256": "8b760a777f5dd3dffb97dd0b365d0f1a8470e1b16fb692862848fda3dbd56ae7",
+   "horizon_pool_sha256": "d9d7d626e3a71c0b81efbb0a157657895a89882ef02d5eaabad9896df53a1099",
+   "oof_results_dir": "artifacts/roi_explore/results",
+   "boosters_sha256": {
+    "seed_01": "ef9b37e885f47ca681e7305550b99f358abafd97f90eeb9df9640f5ae1e3dae3",
+    "seed_02": "896ff3a558ae9025477af72ebf2ca91550da34667232079697e41a368307ffe7",
+    "seed_03": "a5927a94c4dd44802fd76d1fc8048289c6f4a2d8ba096b98c3b35a7dfb62cf44",
+    "seed_04": "e15f0aa9b46eff5efa8e736e91f6e16d6209cb350230927266f7b0be754fef5a",
+    "seed_05": "0acd76b5b7562d862bb90feb9fddaca2c1996404ae8d95be1fc753dc0ccd152c",
+    "seed_06": "cbe01e5c71f364f3e244bda96f6ee4a31e4b01bfdd9d46015dd1fefbdafca7f9",
+    "seed_07": "d7b0b689e9f43d43b002edbec459a98d2c3863d6ad8b2a56e5bf3129389c3b9a",
+    "seed_08": "9dcc99c4659889676aa6d031de48c6cec812de7373c1bd60cf23c75dda2aa62b",
+    "seed_09": "bbf6fc73ac58debdddba8be829563435fb8625a7d903d2e581bad1f156420bb3",
+    "seed_10": "e3883aad6e7fa05ddb929df341ab2aba371a70006118e2b365f057434cc66e34",
+    "seed_11": "423a75de471f780d51dfa852dd6ac767da36bfa696e0bb878c717b44b44a199f",
+    "seed_12": "06910e505c352e7d061add5330a5007cb76952b7dc53a187bd9aac2853ca0694",
+    "seed_13": "713f5d38f0c71c9cd9c118044a00a1802b66fe1efd021a0b21ccf9e219d9dac9",
+    "seed_14": "bf4a03051a79fa84cf54215a50949c9515945831c4e4eb972caeb0695a23e040",
+    "seed_15": "32cf40cdb9e0a0064d723df2455fa39defcd8928c67b3eb3a453e4159811f273"
+   }
+  },
+  "n_races": 3329,
+  "perturb_seed": 20261111,
+  "parity_unperturbed_vs_oof": {
+   "max_abs_diff": 1.6653345369377348e-16,
+   "n": 46207
+  },
+  "h_minutes_quantiles": {
+   "0.1": 21.0,
+   "0.5": 272.68333333333334,
+   "0.9": 1136.4833333333333
+  },
+  "mean_log_ratio_oj_of": -0.3397901098436771
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "判断時専用版(mev-ens15-judged)は表示・確定側に接続しない(研究 artifact・本番非結線)"
+ ],
+ "elapsed_s": 21.3
+}

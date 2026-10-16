@@ -1,0 +1,186 @@
+{
+ "summary_ja": "学習レシピの監査結果: mev-ens15-v1 は「2007〜Y−1 年の started・race_ok・非同着行 929,770 行、ラベル won、LightGBM binary(lr 0.05・leaves 63・min_leaf 1000・ff 0.8・bagging 0.8/1・λ2=10・max_bin 255)300 ラウンド固定・早期停止なし・検証集合なし・11 列は native categorical(pd.factorize の全期間語彙)・欠損は NaN 素通し・seed 1〜15 は `seed` だけ違う(bagging/ff の抽選が変わる)・年単位 refit(12 月のレースは最長 12 か月古い booster)」。特徴生成は本番 `market_ev.build_features` が学習入力 rows_2007.parquet を作っているので構造的に一致(137 の serving_v2 seed1 と ens15 seed1 の OOF が 786,049 行で差 0.0)。パラメータは研究の回帰 arm から持ち越され、一度も調整されていない。測定で新たに分かったこと: (1) 容量レバーは本番と逆向き — rounds 600 は 300 より winner NLL が +0.0056(2019〜26・SE 0.0006)/+0.0158(通算)悪化し、同一 seed の反復曲線では最適が通算 200・直近窓 250〜300 で、増やす余地はなく早期停止で守る側。(2) seed 平均は −0.0040(15 seed・SE 0.0004)、k=7 で −0.0035 と飽和。(3) binary ゆえレース内 Σp̂ は sd 0.075(5〜95% 0.88〜1.13・24% のレースで ≥1.05)で、この水準ノイズが Jensen 項 var/2≈0.0028 nats/レースを食っている=race-softmax 化の期待の上限の目安。単純正規化は通算 −0.0029 だが 2021〜25 は Σ の平均が 1.01 なので直近窓では +0.0042 悪化(softmax 学習なら水準も学ぶのでこの害は出ない)。(4) 市場に対する増分は ens15 −0.0056(正規化後 −0.0085)nats/レース。全体 ECE は 0.0008 と市場 q(0.0018)より良いが、EV>1.2 帯の Σwon/Σp̂ は 0.75(2019〜 0.79)で選別による 25% の過大評価は seed 数を増やしても 0.74〜0.75 のまま=周辺較正では直らず (p̂,q) 条件付きの OOF 再較正か softmax 学習の領分。(5) 直近 8 年窓学習は +0.0035/+0.0063 悪化(101 と同じ向き)、本番 p 追加は +0.0052 悪化(2008〜学習の交絡あり)。(6) オッズの時点: 学習は確定寄り保存オッズ、適用は表示時の current odds(保存予測の中央値は発走 4.9 時間前・30 分以内は 16.6%・10 分以内 4%)。77 入力のうち判断時オッズで再計算される列は 12(odds・q・popularity・odds_rank・q_share_of_fav・fav_q・fav_odds・second_odds・odds_gap12・q_entropy_norm・n_fav_under_2・n_odds_under_10)、残り 65(過去走の odds/q/人気・騎手 excess を含む)は固定。移植レバーの優先は、判断時 EV の較正・保持率に効く「オッズノイズ注入(train/serve skew 是正)」と、確定オッズ NLL/較正に効く「race-softmax 目的関数」「(p̂,q) 条件付き OOF 較正」「早期停止+小 HPO」。rounds 増・時間窓・本番 p 追加・TE は市場モデルでは期待が小さいか負。",
+ "findings": [
+  {
+   "id": "F1",
+   "title_ja": "学習レシピの正確な記述",
+   "claim_ja": "objective=binary、params = learning_rate 0.05 / num_leaves 63 / min_data_in_leaf 1000 / feature_fraction 0.8 / bagging_fraction 0.8 / bagging_freq 1 / lambda_l2 10 / max_bin 255 / deterministic+force_row_wise(ens15 のみ)、num_boost_round=300 固定、早期停止・検証集合なし、lambda_l1/min_gain 等は既定。カテゴリ 11 列は pd.factorize の整数コードを `lgb.Dataset(categorical_feature=cat_idx)` で native categorical として渡す(ただの整数ではない)。語彙は全期間(将来年含む)から作るがラベル非依存・本番 `_encode_category` は未知値→NaN。欠損は NaN のまま LightGBM の missing 扱い(補完なし)。学習母集団 = entry_status='started'・平地・race_ok(全 started にオッズ>0)・非同着(n_winners==1)・2007 年以降 = 929,770 行/65,584 レース(race_ok 99.998%・同着 0.13%)。ラベル = finished かつ finish_order==1。seed 1〜15 は params['seed'] のみ違う(bagging・feature_fraction の抽選が変わる)。年次 walk-forward は年 Y を 2007..Y−1 で学習(年末締め・年内 refit なし)。入力は 66 数値 + 11 カテゴリ = 77 列(drop_groups sameday 6 列・weightlive 3 列を除外)。",
+   "evidence_ja": "scripts/roi_explore/direct_return_model.py L104-166(params・GROUPS・Dataset)、artifacts/market_ev/mev-ens15-v1/seed_01/model.spec.json、artifacts/roi_explore/results/armC_binary_drop-sameday+weightlive_from2007_ens15/result.json の params。母集団数値は scratchpad measure.py で rows_2007.parquet を直接集計。",
+   "status": "confirmed",
+   "implication_ja": "パラメータは研究の回帰 arm(直接収益回帰)用に置いた値を binary にそのまま流用したもので、市場モデルとして一度も調整されていない(F5 と合わせて読む)。"
+  },
+  {
+   "id": "F2",
+   "title_ja": "特徴生成の一致は構造的(parity 済)",
+   "claim_ja": "学習入力 rows_2007.parquet は本番 `market_ev.build_features` 自身で export(export_rows_2007.py)しており、研究 builder(build_dataset.py)との差は parity_market_ev.py で全共有列の厳密一致を確認済み。137 の serving_v2 seed1 と ens15 seed1 の OOF 予測は 786,049 行で差 0.0。",
+   "evidence_ja": "scripts/roi_explore/export_rows_2007.py・parity_market_ev.py、scratchpad variants.json の serving_v2_seed1 vs seed1 = (0.0, 0.0)。",
+   "status": "confirmed",
+   "implication_ja": "train/serve の特徴ドリフトは無い。残る skew はオッズの時点(F8)だけ。"
+  },
+  {
+   "id": "F3",
+   "title_ja": "容量レバーは本番と逆向き — rounds は増やせない",
+   "claim_ja": "rounds 600 は 300 に対し winner NLL が通算 +0.0158(SE 0.0005)・2019〜26 で +0.0056(SE 0.0006)と有意に悪化(seed 2/3 でも +0.0155/+0.0176・3 seed 平均でも +0.0130)。同一 seed で反復数だけ変えた曲線(50〜400)では通算の最適は 200(−0.0028 vs 300)、2019〜26 では 250〜300(200: +0.0002・250: −0.0001)。EV>1.2 帯の Σwon/Σp̂ は 600 で 0.71 と過大評価が広がり、該当数は 2 倍。",
+   "evidence_ja": "scratchpad variants.json(r600_*)・rounds_eval.json。本番の容量軸(capacity-axis-closed: rounds 300→900 で −0.0067)との対比。",
+   "status": "measured",
+   "implication_ja": "市場モデルは q 以外の信号が小さい(ΔR² 0.0037)ので容量を増やすと過学習する。レバー (d) は『増やす』ではなく『前年までの検証で早期停止して守る』。直近窓での期待利得は ≈0〜−0.001、通算では −0.003。"
+  },
+  {
+   "id": "F4",
+   "title_ja": "seed 平均の利得と飽和",
+   "claim_ja": "15 seed 平均は seed1 に対し winner NLL −0.0040(SE 0.0004)。k=2: −0.0018、3: −0.0028、5: −0.0033、7: −0.0035、10: −0.0038、15: −0.0040 で飽和。EV>1.2 帯の過大評価(Σwon/Σp̂)は k=1 0.736 → 15 0.752 とほぼ不変、該当数は 30,036 → 22,384。",
+   "evidence_ja": "scratchpad variants.json seed_curve_vs_seed1・S3_by_k。",
+   "status": "measured",
+   "implication_ja": "再学習ノイズの平均化は済んでいる。EV>1.2 帯の 25% 過大評価は seed ノイズではなく選別(p̂/q の上振れを拾う)由来=周辺の seed 数では直らない。"
+  },
+  {
+   "id": "F5",
+   "title_ja": "binary ゆえのレース内 Σp̂ の揺らぎ=race-softmax 化の期待の目安",
+   "claim_ja": "ens15 のレース内 Σp̂ は平均 1.000・sd 0.075・5〜95% 0.879〜1.126、24.0% のレースで ≥1.05、24.9% で ≤0.95。単純正規化(N1 の確率)は通算 winner NLL −0.0029(SE 0.0003)=ほぼ Jensen 項 var/2≈0.0028 と一致。ただし 2021〜2025 は Σ の年平均が 1.007〜1.013 なので 2019〜26 窓では正規化が +0.0042 悪化(ECE も 0.00128→0.00157)。",
+   "evidence_ja": "scratchpad measure.json sum_pbar / paired / metrics(窓別)。",
+   "status": "measured",
+   "implication_ja": "レース内 Σ=1 を学習で課す(cond_logit/PL)と、水準ノイズ ≈0.003 nats/レースを原理的に消せ、直近窓の『平均 Σ>1』の害も出ない。期待の桁は seed 平均(−0.004)と同程度・市場差(−0.0056)の半分。N1 の ROI +5pt は Σp̄≥1.05 レースを買わない効果なので、softmax 化はその原理版になる。"
+  },
+  {
+   "id": "F6",
+   "title_ja": "市場に対する増分と較正の現状",
+   "claim_ja": "winner NLL: 市場 q 1.9623 / ens15 raw 1.9567(−0.0056・SE 0.0008)/ ens15 正規化 1.9538(−0.0085)。全体 ECE(等質量 20 bin)は ens15 0.0008 < q 0.0018。オッズ帯別の Σwon/Σp̂ は 0.97〜1.04 で周辺は較正済み。一方 EV 帯別は (1.0,1.1] 0.91・(1.1,1.2] 0.86・(1.2,1.4] 0.80・>1.4 0.65、S3(EV>1.2)全体 0.75(D 0.75・Q 0.72・C 0.79)、N1 は 0.79(C 0.84)。",
+   "evidence_ja": "scratchpad measure.json metrics / odds_bands_raw / ev_bands_raw / S3_calib / N1_calib。",
+   "status": "measured",
+   "implication_ja": "『確定オッズでの NLL/較正』は市場を上回っており周辺較正に伸びしろは小さい。改善対象は『選ばれた馬の EV の較正』で、これは p̂ と q の両方に条件付けた再較正(または softmax 学習)でしか動かない。isotonic 等の 1 次元周辺較正は効かない見込み。"
+  },
+  {
+   "id": "F7",
+   "title_ja": "時間窓・本番 p 追加は市場モデルでも負",
+   "claim_ja": "直近 8 年のみ学習(win8)は seed1 に対し +0.0035(通算)/+0.0063(2019〜26)悪化。本番 OOF p を特徴に追加(withp・2008〜学習)は +0.0052/+0.0067 悪化(学習開始年の違いが交絡)。",
+   "evidence_ja": "scratchpad variants.json win8_seed1 / withp_seed1。101(半減期 730 日で +0.0058 悪化)・R04(本番 p の増分 ≈0)と整合。",
+   "status": "measured",
+   "implication_ja": "レバー (g) 時間重み・本番 p 合議は閉じる。"
+  },
+  {
+   "id": "F8",
+   "title_ja": "オッズの時点と、判断時オッズで動く列・固定列",
+   "claim_ja": "学習の odds は race_horses.odds(JRA-VAN 期=確定・netkeiba 期は 139 以降 結果ページの確定値で上書き、2026-07-04〜08-09 の 504 レースは発走前値のまま)。適用は refresh_race が書いた current odds を `expected_return` ジョブ(pending_only)が読む。保存 ens15 予測(結果未確定時計算・2026-08 以降 404 レース)の発走前時間は中央値 4.9 h、25% 0.68 h、10 分以内 4.0%・30 分以内 16.6%・4 時間超 60.6%。77 入力のうち判断時オッズで再計算される列は 12: odds, q, popularity, odds_rank, q_share_of_fav, fav_q, fav_odds, second_odds, odds_gap12, q_entropy_norm, n_fav_under_2, n_odds_under_10(重要度では q 51.7%・odds 24.2%・q_share_of_fav/fav_q も上位)。固定列 65: 履歴 31(prev_odds/prev_q/prev_popularity/prev_beat_market は過去走の確定オッズで学習・適用とも同一時点)、騎手/調教師 13(jockey/trainer_excess は過去走 q の累積で固定)、静的 10、カテゴリ 11。R02 の判断時→確定の log(O_F/O_J) sd は T−10 分以内 0.31・10〜30 分 0.41・30〜60 分 0.49・1〜4 h 0.58・4〜8 h 0.57・8〜24 h 0.86、S3 該当馬の中央値 0.58(非該当 0.24)、EV_F/EV_J 中央値 0.81、確定時保持率 16.9%。",
+   "evidence_ja": "training/src/horseracing_training/market_ev.py predict/compute_and_persist、ops runner.py `_maybe_enqueue_expected_return`、読み取り専用 DB クエリ(market_ev_predictions × races.post_time)、R02 pairs.parquet 再集計(scratchpad)。",
+   "status": "measured",
+   "implication_ja": "skew は 12 列に集中し、しかも最重要列。判断時オッズでの再計算は構造的に 12 列だけで、固定列は訓練と同一分布。別担当の『オッズノイズ注入』『直前捕捉』設計の入力。"
+  },
+  {
+   "id": "F9",
+   "title_ja": "weightlive を落とした理由と直前版の可否",
+   "claim_ja": "当日馬体重(weight, weight_diff, weight_change_vs_prev)は netkeiba で発走約 50 分前まで『計不』のため 137 で学習から除外(spec 137 の利用可能タイミング表・『切り分け実験で担い手でない』と記録)。実測: 2026-10-10 の結果未確定 315 行で weight NULL 285(90%)・odds NULL 193。保存予測の 16.6% だけが発走 30 分以内の計算。確定済み週末(09-26〜10-04)は started 全行で weight・odds とも充足。",
+   "evidence_ja": "specs/137-market-ev-display/spec.md L47、読み取り専用 DB(race_horses × race_results)。091 の前例: 体重 NaN の train/serve skew は本番勝率モデルで −0.0106。",
+   "status": "confirmed",
+   "implication_ja": "『公表後に再計算する直前版』は、T−50 分以降の再計算が走るときだけ使える別 arm として成立する(レース単位で全馬計量済みのときだけ切替=091 のレース単位二値化と同型)。市場モデルでは体重情報の一部は T−50 分の市場価格に織り込まれるので期待は本番より小さい。"
+  },
+  {
+   "id": "F10",
+   "title_ja": "既に市場モデルで試された『移植レバー』",
+   "claim_ja": "(c) 相当=市場 q+ens15 の年次較正 softmax(a log q + b log p_ens)は実施済み(b 0.63→0.73・q のみ比 NLL −0.010/レース、ens15 正規化比では ≈−0.0015 の見込み)。ただし EV>1.2 の操作点が極端上位 2,330 点に移り ROI 比較は非有意=『未検出』。(a) 相当の近縁=市場 offset 残差 softmax 小実験(1 seed・65 列・bagging なし)は ens15 比 +0.0045 悪化だが seed 数差で半分は説明可能=判定不能。(d) rounds 600・(g) 直近 8 年窓・本番 p 追加は本監査で NLL 悪化を確定(F3/F7)。(b) TE+isotonic・(f) HPO・race-softmax 本体・オッズノイズ注入再学習は未試行。",
+   "evidence_ja": "docs/roi-comprehensive-review-20261005/calibration-roi.md・residual-protocol.md、docs/roi-independent-eval-20261008/report.md §2〜4、docs/roi-pattern-exploration-20260930/report.md §2.5。",
+   "status": "confirmed",
+   "implication_ja": "未試行で期待が立つのは race-softmax 目的関数・(p̂,q) 条件付き OOF 較正・早期停止+小 HPO・オッズノイズ注入の 4 本。TE は F11 の理由で優先度低。"
+  },
+  {
+   "id": "F11",
+   "title_ja": "TE+isotonic の移植は期待が小さい",
+   "claim_ja": "市場モデルの騎手/調教師は勝率スカラー 13 列(365 日/通算の rate・starts・市場超過勝ち数 excess・コンビ)で、036 当時の本番(単純累積率のみ)と形は似る。しかし市場モデルでは現在オッズが騎手の質の大半を既に織り込み、q 以外の全信号の合計が ΔR² 0.0037・NLL −0.0056 しかない。isotonic は周辺較正で、全体 ECE は既に 0.0008(市場 q 0.0018 より良い)。",
+   "evidence_ja": "F6 の測定、R04 ΔR²、feature-036 memory(本番 TE −0.006 は市場非入力モデル上の値)。",
+   "status": "inferred",
+   "implication_ja": "(b) は期待 ≤−0.001 で seed ノイズ床(0.001〜0.002)に埋もれる公算。やるなら HPO と同じ走行に相乗りさせる程度。"
+  }
+ ],
+ "levers": [
+  {
+   "name_ja": "(a) race-softmax / PL top-k 目的関数への置換(レース内 Σp̂=1 を学習で課す)",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "未試行(近縁: 市場 offset 残差 softmax 小実験は 1 seed・65 列で ens15 比 +0.0045 悪化=判定不能。事後の N1 正規化は通算 −0.0029 だが 2019〜26 で +0.0042 悪化)",
+   "expected_magnitude_ja": "水準ノイズ(Σp̂ sd 0.075)の Jensen 項 ≈ −0.003 nats/レースが上限の目安+softmax なら直近窓の『平均 Σ=1.01』の害が出ない。seed 平均(−0.004)と同程度・市場差(−0.0056)の半分。本番 039/042 の −0.0006/−0.0009 より市場モデルでは大きい可能性(binary の Σ 揺らぎが大きいため)。EV>1.2 帯の過大評価 0.75 がどこまで縮むかは未知(N1 で 0.79)",
+   "cost_ja": "小〜中: direct_return_model.py に objective 'cond_logit'/'pl_topk' を追加(training/cond_logit.py の custom objective を group=race_id で流用・binary と同じ p̂×odds 出力に写す)・15 seed 17 分・assemble/market_ev の objective ガード('binary' 固定)を緩める・新 version(attention 規則 S1〜S5 は ens15 版に束縛なので別系列として並走記録)",
+   "acceptance_ja": "年次 walk-forward・15 seed 平均・2019〜2026 窓で paired winner NLL が ens15 raw 比 ≤ −0.002 かつ開催日ブロック CI 上限 < 0、等質量 ECE 非劣化(≤0.0013+0.0005)、EV>1.2 帯の Σwon/Σp̂ が 0.79 以上(悪化しない)、該当数の年次推移を併記。ROI は保存価格で参考値のみ",
+   "risk_ja": "確率の意味が変わり EV 分布がずれる(表示閾値 1.2・S1〜S5 の凍結表は使えず前向き記録を分ける)。Σ=1 の制約が『市場が過少評価する馬』の p̂ を押し下げ該当数が減る方向=ROI 側は N1 と同じ『買わない』効果が主で利益の証拠にはならない"
+  },
+  {
+   "name_ja": "(c') (p̂, q) 条件付きの OOF 再較正(EV 帯の選別過大評価を正面から直す)",
+   "what_improves": "確定オッズ NLL/較正(とくに EV>1.2 帯)",
+   "tried_before": "部分的に実施: softmax(a log q + b log p_ens) 年次 fit(b≈0.63〜0.73・q 比 NLL −0.010)。ただし操作点が極端上位に移り ROI 非有意。1 次元 isotonic は未試行だが F6 より効かない見込み",
+   "expected_magnitude_ja": "NLL は ens15 正規化比で ≈ −0.001〜−0.002(seed 床と同程度)。EV>1.2 帯の Σwon/Σp̂ は構造的に 1 に寄る(0.75→0.9 台)が、同時に該当数が 22,384→数千に縮む。『表示 EV が実現 EV に近くなる』ことが主効果で、利益の証拠ではない",
+   "cost_ja": "小: 15 seed OOF から strictly-prior 年で 2 変数(log q, log p̂)+必要なら EV 帯のスプライン係数を fit・適用は predict 後の後処理・version を分ける。既存 calibration_roi のコードが流用可",
+   "acceptance_ja": "2019〜26 窓で EV 帯 (1.0,1.1]/(1.1,1.2]/(1.2,1.4]/>1.4 の Σwon/Σp̂ が 0.9〜1.1 に入り、全体 winner NLL が ens15 正規化比で非劣化、同点数比較(S3 と同じ該当数の閾値)で保存価格 ROI 非劣化。閾値は事前固定",
+   "risk_ja": "EV>1.2 の該当数が激減し表示上『注目』が消える。較正係数が年で動く(2024 1.10→2026 0.99 の前例)。ROI の有意化は不可能なので採用判定は較正指標に限る"
+  },
+  {
+   "name_ja": "(d) 反復数の早期停止(前年までの検証で stop)+小さな HPO(leaves / min_data_in_leaf / lambda_l2 / lr)",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "rounds 600 のみ試行=有意に悪化(+0.0056/+0.0158)。反復曲線(本監査)で最適は通算 200・直近窓 250〜300。leaves/min_leaf/λ/lr は未調整(回帰 arm からの持ち越し)。本番 hpo.py は WinModel 専用で未結線",
+   "expected_magnitude_ja": "早期停止: 直近窓 ≈0〜−0.001、通算 −0.003(初期年の過学習を防ぐ分)。HPO: 反復数の感度(±0.003)から同程度(−0.001〜−0.003)と推定。利益側への波及は無いか負(反復を減らすと該当数が減り保存価格 ROI は 0.95〜0.98 に下がった)",
+   "cost_ja": "小: direct_return_model.py に valid=前年・early_stopping を追加(年ごとに最適反復が変わる=ログに記録)、グリッド 6〜10 点×15 seed を 2010〜2018 で選び 2019〜26 で確認(選択と確認の窓を分ける)",
+   "acceptance_ja": "2019〜26 窓・15 seed 平均で paired winner NLL ≤ −0.001 かつ CI 上限 < 0、ECE 非劣化、EV>1.2 帯の Σwon/Σp̂ 非劣化。選択窓 2010〜18 の結果で止める候補を事前に決める(capacity-axis-closed の打ち止め規則)",
+   "risk_ja": "反復を減らすと p̂ の分散が縮み EV>1.2 の該当数が減る=『注目』表示が減るのを利得と誤読しないこと。winner's curse(094 の colsample が確認で消えた前例)"
+  },
+  {
+   "name_ja": "(h) 判断時オッズ相当のノイズ注入による再学習(train/serve skew の是正・091 と同型)",
+   "what_improves": "判断時 EV 較正・保持率",
+   "tried_before": "未試行(近縁: followup §5.3 は p̂ 固定で選定にノイズ、R10 V2/価格 gate は事後補正。再学習はしていない。独立評価 §4 の候補 B)",
+   "expected_magnitude_ja": "判断時該当の確定時保持率 0.17 → 0.5 以上、該当馬の EV_F/EV_J 中央値 0.81 → 0.95 以上が目標水準(推測)。確定オッズでの NLL は注入分だけ悪化する(推定 +0.002〜+0.005)=両立しないので『判断時用』の別 version。保存価格 ROI は上がらない(該当数が減るだけ)",
+   "cost_ja": "小〜中: 12 列(F8)だけを horizon 帯別 μ(h)/σ(h)(R02: T−10 分 sd 0.31〜8 h 0.57)で摂動して q・順位・上位価格を再構成し学習(学習時に h を抽選、または h を入力に持つ)・15 seed 17 分・適用時に odds_observed_at−post_time の h を渡す",
+   "acceptance_ja": "R02 443 集合(判断時/確定時の同一馬ベクトル)で、判断時該当の保持率 ≥0.5・EV_F/EV_J 中央値 ≥0.95・判断時 EV の較正 Σwon/Σp_J を記録(的中 2 件なので値では判定しない)。確定オッズ NLL の悪化幅を併記。直前捕捉(T−3 分)が始まれば σ(T−3) で要否を再判定",
+   "risk_ja": "摂動分布が R02 の 17 日・出所混在の推定で、2007〜2025 の判断時価格は復元不能=分布の外挿。h を入力にすると表示値が『いつ見たか』で変わる(説明が要る)。直前捕捉が認められれば不要に近い"
+  },
+  {
+   "name_ja": "(e) 当日馬体重を含む『直前版』arm(T−50 分以降の再計算にだけ使う)",
+   "what_improves": "確定オッズ NLL/較正(発走 50 分以内に再計算されたレースのみ)",
+   "tried_before": "未試行(137 で weightlive を除外。1986〜版 armC_binary は体重あり学習だが 2007〜版は無い)",
+   "expected_magnitude_ja": "本番 091 は −0.0106 だが、それは体重を学習したモデルが欠損で壊れていた skew の是正分。市場モデルでは T−50 分の価格に体重情報の一部が織り込まれるので期待は ≤ −0.002(推測)。保存予測の 16.6% しか対象にならない",
+   "cost_ja": "中: drop_groups から weightlive を外した 15 seed を追加学習・serving で『全 started が計量済み』のレースだけ直前版へ切替(091 のレース単位二値化)・version 2 系列の管理・attention 規則との整合",
+   "acceptance_ja": "体重が揃った確定済みレース(2019〜26)で paired winner NLL ≤ −0.002・CI 上限<0・ECE 非劣化。混在レースでの挙動テスト(一頭でも未計量なら通常版)",
+   "risk_ja": "対象が発走 50 分以内の再計算に限られ、直前捕捉(T−3)の運用が無いと実質ほぼ発火しない=レバー A(直前捕捉)と同時に設計すべき"
+  },
+  {
+   "name_ja": "(b) OOF target encoding(jockey_id/trainer_id)+ isotonic",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "未試行",
+   "expected_magnitude_ja": "≤ −0.001(seed ノイズ床以下)。理由: 現在オッズが騎手/調教師の質を織り込み、q 以外の全信号が −0.0056 しかない。isotonic は全体 ECE 0.0008 で伸びしろなし、EV 帯の過大評価は周辺較正では直らない(F6)",
+   "cost_ja": "中: 高カード ID 列の OOF TE を年次 walk-forward の各 fold で再 fit(training/target_encoding.py 流用)・ID の nk: 分裂は 067 で解消済み",
+   "acceptance_ja": "(d) と同じ基準(2019〜26・15 seed・≤ −0.001・CI 上限<0・ECE 非劣化)。単独走行は勧めず (d) の HPO 走行に 1 arm として相乗り",
+   "risk_ja": "TE は 2019 年以降の netkeiba 期で騎手 ID の被覆が変わる(nk:)と挙動が変わる"
+  },
+  {
+   "name_ja": "(g) 直近窓/時間重み学習",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "試行済みで負: 直近 8 年窓は seed1 比 +0.0035(通算)/+0.0063(2019〜26)悪化。本番 101 も +0.0058 悪化",
+   "expected_magnitude_ja": "負。閉じる",
+   "cost_ja": "—",
+   "acceptance_ja": "—(再開は新規事前登録のみ)",
+   "risk_ja": "—"
+  },
+  {
+   "name_ja": "(d-旧) rounds 900 等の容量増",
+   "what_improves": "確定オッズ NLL/較正",
+   "tried_before": "rounds 600 で +0.0056(2019〜26)/+0.0158(通算)悪化・3 seed とも同方向",
+   "expected_magnitude_ja": "負。閉じる(本番と逆向き)",
+   "cost_ja": "—",
+   "acceptance_ja": "—",
+   "risk_ja": "—"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/measure.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/measure.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/variants.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/variants.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/rounds_curve.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/rounds_curve_preds.parquet",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/rounds_eval.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/rounds_eval.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/recipe_audit/rounds_curve.log"
+ ],
+ "open_questions_ja": [
+  "race-softmax 化で EV>1.2 帯の Σwon/Σp̂(現 0.75)がどこまで 1 に寄るか — 事後正規化 N1 では 0.79 までしか動かなかった。学習で課した場合は未測定(15 seed 17 分で測れる)。",
+  "反復曲線は seed 1・8 スレッド非決定論の 1 本。早期停止の年別最適反復(初期年 ~200・直近 ~250〜300)が他 seed で再現するか、また min_data_in_leaf/lambda_l2 を動かした時に反復の最適が動くか(HPO と同時に測る必要)。",
+  "with-p arm の +0.0052 悪化は train_from 2008 と 108 束の行欠落が交絡している。R04 の『増分 ≈0』と矛盾しないが、同一母集団での再測定はしていない。",
+  "オッズノイズ注入の摂動分布(R02 17 日・出所 CHAOS/pick 混在)を 2007〜2025 の学習期間に外挿してよいか。直前捕捉(T−3 分)の σ 実測が無い限り判断時 EV の受入値(保持率 0.5・EV 比 0.95)は目標値であって根拠ある閾値ではない。",
+  "2026-07-04〜08-09 の 504 レース(保存オッズが発走前値)は rows_2007.parquet(〜09-22)に学習行として含まれ 2026 年 booster には未使用(train_through 2025)だが、次回の年次再学習(2027 年用)で学習に入る。再取得の可否は利用者判断待ち。",
+  "(e) 直前版 arm は保存予測の 16.6% にしか発火しない。直前捕捉の運用(憲法 V・スケジューラ先送り)の判断が先。"
+ ]
+}

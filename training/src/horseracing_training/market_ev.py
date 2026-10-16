@@ -47,7 +47,9 @@ from sqlalchemy.orm import Session
 ROWS_SQL = """
 select rh.race_id, rh.horse_id, rh.horse_number, rh.frame, rh.sex, rh.age, rh.weight,
        rh.weight_diff, rh.jockey_weight, rh.odds, rh.popularity, rh.running_style, rh.jockey_id,
-       rh.trainer_id, rh.updated_at as horse_row_updated_at,
+       rh.trainer_id,
+       coalesce(r.win_odds_observed_at, rh.updated_at) as horse_row_updated_at,
+       (r.win_odds_observed_at is null) as odds_observed_fallback,
        r.race_date, r.venue_code, r.race_number, r.distance, r.track_type, r.going, r.weather,
        r.race_class, r.grade, r.prize_money,
        rs.finish_order, rs.result_status, extract(epoch from rs.finish_time_diff) as margin_sec,
@@ -64,15 +66,52 @@ order by rh.race_id, rh.horse_number
 
 #: Recorded on every persisted row (constitution V): which feature builder / exclusions / data
 #: window produced the value. Bump when any of them changes.
-LOGIC_VERSION = "mev-v1;features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007"
+#: ``oddsobs=quote`` (Feature 140): ``odds_observed_at`` is the race's win-quote provenance
+#: (``races.win_odds_observed_at``) when it exists, else the ``race_horses.updated_at`` proxy —
+#: and the summary counts how often the proxy had to be used.
+LOGIC_VERSION = (
+    "mev-v1;features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007;oddsobs=quote"
+)
 
 #: Feature 138: the logic version of the 15-seed average rows. ``EnsembleMarketEvModel.load``
 #: refuses an ensemble spec that does not match it (seeds 1-15, one thread, deterministic).
 ENSEMBLE_LOGIC_VERSION = (
     "mev-ens15-v1;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;"
-    "drop=sameday,weightlive;data>=2007"
+    "drop=sameday,weightlive;data>=2007;oddsobs=quote"
 )
 ENSEMBLE_SEEDS = tuple(range(1, 16))
+
+#: Feature 140: the per-row form of the ``oddsobs`` token. A row whose ``odds_observed_at`` fell
+#: back to the ``race_horses.updated_at`` proxy (no ``races.win_odds_observed_at`` at compute time)
+#: is stamped ``oddsobs=proxy`` in place of the constant's ``oddsobs=quote`` — the only carrier of
+#: that fact that survives (the race's provenance columns are overwritten by the final-odds write
+#: once results land, so they cannot tell afterwards which source a compute used). Per-row tokens
+#: in logic_version follow the ``recommendations`` precedent (``prospective=1``, Feature 065).
+ODDSOBS_QUOTE = "oddsobs=quote"
+ODDSOBS_PROXY = "oddsobs=proxy"
+
+
+def row_logic_version(logic_version: str, fallback) -> str:
+    """The audit string stored on one row: ``oddsobs=proxy`` replaces ``oddsobs=quote`` when the
+    row's observation time is the proxy. Unknown (None/NaN) is treated as proxy — fail-closed."""
+    if fallback is None or (isinstance(fallback, float) and np.isnan(fallback)):
+        is_proxy = True
+    else:
+        is_proxy = bool(fallback)
+    if not is_proxy:
+        return logic_version
+    assert ODDSOBS_QUOTE in logic_version, logic_version
+    return logic_version.replace(ODDSOBS_QUOTE, ODDSOBS_PROXY)
+
+
+def _fallback_flags(part: pd.DataFrame) -> pd.Series:
+    """Boolean ``odds_observed_fallback`` for a prediction block; a frame without the column (built
+    from rows that never carried the provenance) is all-proxy (fail-closed)."""
+    if "odds_observed_fallback" in part.columns:
+        return part["odds_observed_fallback"].fillna(True).astype(bool)
+    return pd.Series(True, index=part.index)
+
+
 #: what ``drop=sameday,weightlive;data>=2007`` in ENSEMBLE_LOGIC_VERSION states about the training
 ENSEMBLE_DROP_GROUPS = ("sameday", "weightlive")
 ENSEMBLE_TRAIN_FROM = 2007
@@ -80,6 +119,32 @@ ENSEMBLE_SPEC_NAME = "ensemble.spec.json"
 
 #: Constitution I: JRA-VAN data before 2007 uses a different ID system and must not be used.
 DATA_START = "2007-01-01"
+
+#: Feature 140: from this race date every settled race's stored odds are the result page's FINAL
+#: values written by ``scrape.upsert.apply_final_odds`` (139) WITH the race's observation time
+#: (``races.win_odds_observed_at``, migration 0021). A settled race in this era with odds on its
+#: started rows but no observation time means the final-odds write did not run for it — the
+#: fail-closed monitor ``final_odds_provenance_missing`` (codex, plan 0.3). The era starts the day
+#: after the planned A3 go-live (migration 0021 applied to the production DB on 2026-10-12, plan
+#: §1.1 / quickstart): the 139 era before it (netkeiba final odds since 2025-10-11) holds ~3,500
+#: settled races whose provenance was never recorded and is NOT backfilled (plan D11), so counting
+#: them would pin the monitor far from 0 forever and hide a real miss. This date is a PLAN, not a
+#: fact the code can verify: if 0021 lands after races dated >= this day have settled, those races
+#: have no provenance either and the monitor pins > 0 — then either move this constant to the day
+#: after the actual apply date or fill their ``win_odds_observed_at`` from
+#: ``official_win_payouts.observed_at`` (review training-token-2).
+FINAL_ODDS_PROVENANCE_FROM = datetime.date(2026, 10, 13)
+
+_FINAL_ODDS_PROVENANCE_MISSING_SQL = """
+select count(*)
+from races r
+where r.race_date >= :since
+  and r.win_odds_observed_at is null
+  and exists (select 1 from race_results rs where rs.race_id = r.race_id)
+  and exists (select 1 from race_horses rh
+              where rh.race_id = r.race_id and rh.entry_status = 'started'
+                and rh.odds is not null)
+"""
 
 #: Artifacts under a Claude worktree vanish with the worktree (a model row once outlived its
 #: calibrator that way and stopped every prediction). The model directory must be durable.
@@ -102,7 +167,7 @@ _GRADE_CANON = {"A": "G1", "B": "G2", "C": "G3", "L": "L", "G1": "G1", "G2": "G2
 
 _PREDICTION_COLUMNS = (
     "race_id", "horse_id", "horse_number", "odds_used", "odds_observed_at",
-    "win_prob", "expected_return", "booster", "booster_sha256",
+    "odds_observed_fallback", "win_prob", "expected_return", "booster", "booster_sha256",
 )
 
 
@@ -158,6 +223,37 @@ def _rolling_window_counts(df: pd.DataFrame, key: str, window_days: int = 365) -
 
 def load_rows(conn, *, through: str, since: str = DATA_START) -> pd.DataFrame:
     return pd.read_sql(text(ROWS_SQL), conn, params={"through": through, "since": since})
+
+
+def odds_observed_fallback_counts(raw: pd.DataFrame, in_range: pd.Series) -> tuple[int, int]:
+    """(rows, races) of ``raw[in_range]`` whose ``horse_row_updated_at`` is the ``updated_at``
+    PROXY rather than the race's win-quote provenance (``odds_observed_fallback`` from ROWS_SQL).
+    A frame without the column (a pre-0021 reader) counts everything as fallback: the proxy must
+    never be mistaken for provenance.
+
+    These are INPUT rows of the date range — every started row ROWS_SQL returned, whether or not
+    it was written (``race_ok=False`` races, settled races skipped by ``pending_only`` and races
+    dropped for an impossible price are all included). The count of proxy rows actually WRITTEN
+    is reported per version as ``odds_observed_proxy_rows`` (review training-token-4)."""
+    part = raw.loc[in_range]
+    if part.empty:
+        return 0, 0
+    if "odds_observed_fallback" in part.columns:
+        flag = part["odds_observed_fallback"].fillna(True).astype(bool)
+    else:
+        flag = pd.Series(True, index=part.index)
+    rows = int(flag.sum())
+    races = int(part.loc[flag, "race_id"].astype(str).nunique())
+    return rows, races
+
+
+def final_odds_provenance_missing(session: Session) -> int:
+    """Races dated >= FINAL_ODDS_PROVENANCE_FROM that are settled, have odds on their started
+    rows and no ``win_odds_observed_at``: the fail-closed monitor that ``apply_final_odds`` ran for
+    every settled netkeiba-era race (codex, plan 0.3). Whole table, not the computed range."""
+    return int(session.execute(
+        text(_FINAL_ODDS_PROVENANCE_MISSING_SQL), {"since": FINAL_ODDS_PROVENANCE_FROM}
+    ).scalar_one())
 
 
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -388,6 +484,15 @@ class EnsembleMarketEvModel:
         missing = [k for k in ("features", "cats", "cat_maps") if k not in spec]
         if missing:
             raise EnsembleIntegrityError(f"{ENSEMBLE_SPEC_NAME} lacks {missing}")
+        # Feature 140: the judged-EV research artifact (``mev-ens15-judged-*``, trained on injected
+        # judgement-time odds with a ``log_min`` input) marks its spec ``judged: true`` and is never
+        # a production model (spec FR-007 / plan D10). Refuse it here, not at predict time where
+        # the missing ``log_min`` column would surface as a KeyError (harness-leak-protocol-1).
+        if spec.get("judged"):
+            raise EnsembleIntegrityError(
+                f"{ENSEMBLE_SPEC_NAME} is a judged-EV research spec (judged=true); "
+                "it is not a production ensemble"
+            )
         if spec.get("version") != version:
             raise EnsembleIntegrityError(
                 f"{ENSEMBLE_SPEC_NAME} is version {spec.get('version')!r}, expected {version!r}"
@@ -480,6 +585,7 @@ def predict(model: MarketEvModel, feats: pd.DataFrame) -> pd.DataFrame:
         bst, sha256 = _read_booster(path)
         p = bst.predict(model.design_matrix(part))
         res = part[["race_id", "horse_id", "horse_number", "odds", "horse_row_updated_at"]].copy()
+        res["odds_observed_fallback"] = _fallback_flags(part)
         res["win_prob"] = p
         res["expected_return"] = p * part["odds"].to_numpy(dtype=float)
         res["booster"] = path.name
@@ -507,6 +613,7 @@ def predict_ensemble(model: EnsembleMarketEvModel, feats: pd.DataFrame) -> pd.Da
         X = model.design_matrix(part)
         p = np.mean(np.vstack([bst.predict(X) for bst in boosters]), axis=0)
         res = part[["race_id", "horse_id", "horse_number", "odds", "horse_row_updated_at"]].copy()
+        res["odds_observed_fallback"] = _fallback_flags(part)
         res["win_prob"] = p
         res["expected_return"] = p * part["odds"].to_numpy(dtype=float)
         res["booster"] = path.name
@@ -607,7 +714,8 @@ def _row_values(
         "result_pending_at_compute": pending,
         "booster": str(rec["booster"]),
         "booster_sha256": str(rec["booster_sha256"]),
-        "logic_version": logic_version,
+        # Feature 140: oddsobs=proxy on rows whose observation time is the updated_at proxy
+        "logic_version": row_logic_version(logic_version, rec.get("odds_observed_fallback")),
         "run_id": run_id,
         "computed_at": computed_at,
     }
@@ -660,6 +768,14 @@ def _boosters(pred: pd.DataFrame) -> dict[str, str]:
         pred[["booster", "booster_sha256"]].drop_duplicates().sort_values("booster")
         .set_index("booster")["booster_sha256"].to_dict()
     )
+
+
+def _proxy_rows_written(pred: pd.DataFrame) -> int:
+    """How many of the rows just written carry ``oddsobs=proxy`` (their observation time is the
+    ``updated_at`` proxy). The version's ``logic_version`` in the summary stays the contract
+    constant (``oddsobs=quote``); this count lets a reader reconcile it with the rows
+    (reviews training-token-4 / -5)."""
+    return int(_fallback_flags(pred).sum())
 
 
 def _row_keys(pred: pd.DataFrame) -> set[tuple[str, str]]:
@@ -811,6 +927,7 @@ def compute_and_persist(
     raw_dates = pd.to_datetime(raw["race_date"]).dt.date
     in_range = (raw_dates >= d_from) & (raw_dates <= d_to)
     in_range_ids = sorted(raw.loc[in_range, "race_id"].astype(str).unique())
+    fallback_rows, fallback_races = odds_observed_fallback_counts(raw, in_range)
     summary: dict = {
         "from": d_from.isoformat(),
         "to": d_to.isoformat(),
@@ -826,6 +943,11 @@ def compute_and_persist(
         "versions": {},
         "picks": None,
         "checkpoints": None,
+        # Feature 140: how often odds_observed_at had to fall back to the updated_at proxy, and
+        # whether every settled netkeiba-era race got its final-odds provenance (always reported)
+        "odds_observed_fallback_rows": fallback_rows,
+        "odds_observed_fallback_races": fallback_races,
+        "final_odds_provenance_missing": final_odds_provenance_missing(session),
     }
     if ens_model is not None:
         summary["ensemble_version"] = ens_model.version
@@ -892,7 +1014,8 @@ def compute_and_persist(
                 with_results=with_results, run_id=run_id, computed_at=computed_at,
             )
             versions[version] = {"races": races, "horses": horses, "result_pending_races": pending,
-                                 "logic_version": LOGIC_VERSION, "boosters": _boosters(pred)}
+                                 "logic_version": LOGIC_VERSION, "boosters": _boosters(pred),
+                                 "odds_observed_proxy_rows": _proxy_rows_written(pred)}
         if ens_model is not None and pred_ens is not None:
             from . import attention_picks
 
@@ -904,6 +1027,7 @@ def compute_and_persist(
             versions[ens_model.version] = {
                 "races": races, "horses": horses, "result_pending_races": pending,
                 "logic_version": ENSEMBLE_LOGIC_VERSION, "boosters": _boosters(pred_ens),
+                "odds_observed_proxy_rows": _proxy_rows_written(pred_ens),
             }
             target_ids = sorted(target["race_id"].astype(str).unique())
             picks_summary = attention_picks.record_attention(

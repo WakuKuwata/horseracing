@@ -568,7 +568,7 @@ def apply_result_page_settlement(
     c = Counts(extra=dict.fromkeys(SETTLEMENT_COUNT_KEYS, 0))
     try:
         with session.begin_nested():
-            odds = apply_final_odds(session, race_id, scraped.rows)
+            odds = apply_final_odds(session, race_id, scraped.rows, observed_at=observed_at)
         c.extra["final_odds_updated"] += odds.updated
         c.extra["final_odds_unreadable"] += odds.unreadable
         c.extra["final_odds_unmatched"] += odds.unmatched

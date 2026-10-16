@@ -1,0 +1,151 @@
+{
+ "summary_ja": "担当=既存検証と重複しない追加パターン・情報源の探索(成績は計算しない)。結論は 5 点。\n(1) 「締切直前(T−5/T−2/T−1)に寄せると EV>1.2 がどれだけ残るか」は**測られていない**。判断時点データの発走 10 分以内標本は chaos_snapshots 1/528・attention_picks(結果未確定) 2/21・R02 pairs 8 レース(2 分以内 0・5 分以内 3)で、R02 の最近接帯 (0,10] に S3 の判断時該当は 1 頭しかない。\n(2) それでも R02 pairs の時間帯別再集計から方向は読める: 自馬オッズの log ずれ sd は T−10 分以内 0.31 → 10〜30 分 0.41 → 1〜3 時間 0.56 → 10〜24 時間 0.94 と単調に縮む。10/01 followup §5.3 の代理実験(σ0.1→117%・0.2→105%・0.3→97%)に当てると、**T−30 分でも σ≈0.3〜0.4=利益が消える帯**で、σ≤0.2 に入るのは T−2 分前後以降と推定される(未測定・外挿)。価格ずれが主因なら、直前捕捉が無い限りどの前向き比較も「負け方の比較」になる。\n(3) 直前捕捉は予算・礼儀と両立する: 2026 年は 1 日平均 31.6 レース・発走間隔中央値 9 分・2 分未満の間隔は 2,658 レース中 6 件、netkeiba オッズ API の鮮度は取得時刻−official_datetime 中央値 0.6 分(90% ≤2.2 分)、単勝+複勝は同一レスポンス 1 req/レース → 1 日 32〜64 req(通常運用 ~250 req/日の 1/4)。障害は技術でなく規約: 憲法 V(同一レースに chaos 捕捉と直前捕捉の 2 本が並ぶ)・スケジューラ先送り(T−2 に 1 日 ~32 回の時刻起動が要る)・chaos_snapshots の UNIQUE(race_id)。\n(4) 2007〜2025 の購入時価格は**構造的に復元不能**(JRA-VAN 生データは結果時オッズ 1 列のみ・netkeiba 取得は no-cache で上書き)。さらに 139 の確定オッズ上書きで、R02 が使った STORED_PRE 系の「発走前の古い保存オッズ」は今後生成されない=判断時点の全馬オッズ源は chaos(T−10 分〜24 時間)だけになる。「2007 年以降・購入時点の情報で回収率」は選定価格については前向きでしか満たせない。\n(5) 今すぐ計算できて重複しない候補は 1 本だけ強い: **価格ずれを学習に注入した市場連動モデル(horizon 条件付きオッズノイズ学習)**。R02 で S3 該当馬の log(O_F/O_J) 中央値 0.58 vs 非該当 0.24・EV_F/EV_J 中央値 0.81=「一時的に高いオッズを価値と誤認して選ぶ」機構が実測されているので、学習時に捕捉 horizon と同分布のノイズをオッズに入れれば EV が判断時価格に較正される。followup §5.3 は p̂ 固定の選定ノイズ、R10/価格 gate は事後補正で、再学習は未実施。受入は保持率と EV_F/EV_J で(ROI は 17 日では判定不能)。他候補(当日馬体重の直前版・複勝/ワイドの判断時 ROI・オッズ変動信号・2 時点持続性)は直前捕捉が前提で、ROI 判定は年単位(S3 で約 2,500 点=3.5〜8 年・20〜40 倍細胞は数十年)。",
+ "agree_with_codex": [
+  {
+   "point": "精算器(公式払戻・ワイド 3 着同着・オッズ取得時刻)の修正を買い方探索より先に置く",
+   "evidence": "A3 をコードで確認: training/src/horseracing_training/market_ev.py:50 `rh.updated_at as horse_row_updated_at` を odds_observed_at に改名。一方 netkeiba の official_datetime は scrape/parse/odds.py:102 で既に official_at として読まれ、複勝は races.place_odds_official_at に保存済み → 単勝側も 1 列の配管で足り、新規取得は不要"
+  },
+  {
+   "point": "判断時点の全馬予測・オッズ・入力・モデル版を同一 run で凍結しないと前向き比較ができない(B1)",
+   "evidence": "attention_race_scans 5,827 中 結果前 18・attention_picks は該当馬のみ(2,717 行・結果未確定 21 行/5 レース)。chaos_snapshots.field は全馬 odds/popularity を持つが T−10 分〜24 時間窓(中央値 444 分前)"
+  },
+  {
+   "point": "未検出を効果なしと言い切らない/探索の高値を信用しない",
+   "evidence": "R02 443 レース集合の S1 156.7% は 2 的中、新混合 160% は 1 的中。判断時 S3 は 82 点 2 的中 74.5%(再計算 83 点 0.736)"
+  },
+  {
+   "point": "N3/N4 の前年移送は直近で悪化、較正・残差・±10% 価格 gate は採用根拠なし",
+   "evidence": "online-normalization.md: N3/N4 R 窓 101.3/101.5% vs S3 109.7%。price_robustness: gate の親内 null p S1=.933 S3=.927"
+  },
+  {
+   "point": "取消馬の価格時点ずれ(逆数和<1 の 40 レース)は実在だが ROI への影響は小さい",
+   "evidence": "calibration-roi.md: guard 後 S3 106.98→107.25%(+0.27pt)。学習側は未修復(小)"
+  },
+  {
+   "point": "2019〜2026 は既読窓で独立確認に使えない",
+   "evidence": "followup §7・pattern-inventory 冒頭。本担当も成績を一切計算せず定義・データ有無のみで評価した"
+  }
+ ],
+ "disagree_with_codex": [
+  {
+   "point": "提案順序の第 3 段(S3 対照・N1 主候補を同じ購入時刻・同じ公式払戻で仮想比較)は、記録時刻が『初回計算時』のままでは意味を持たない。直前(T−2 前後)の捕捉点を記録仕様に含めない限り、S3 も N1 も価格ずれで ≈0.85 に落ちた者同士の比較になる",
+   "evidence": "R02 pairs 再集計(scratchpad near_post_measurements.json r02_by_band): 保持率は (10,30] 分 S3 0.35/S1 0.33、(60,180] 0.0/0.0、(180,600] 0.15/0.0、(600,1440] 0.20/0.0。log オッズずれ sd 0.31→0.41→0.56→0.94。初回計算の中央値は 444 分前(chaos)。N1 の締切価格保持率も 17.0% で S3 と同じ(report.md §4)",
+   "severity": "high"
+  },
+  {
+   "point": "N1/N2(保存価格で 112〜113%)を『次の優先候補』に置くのは順位が逆。S3 との差 +5.8pt(区間ゼロ含む)は二次の差で、価格ずれによる −20〜25pt(S3 106.98%→判断時換算 0.85)が一次の損失。正規化はずれ機構に触れていない",
+   "evidence": "R02: EV_F/EV_J 中央値 0.78〜0.81、S3 該当馬の log(O_F/O_J) 中央値 0.58 vs 非該当 0.24(自分で再計算・pairs.parquet 444 レース 5,983 頭)。buy-time-v2: S3 0.85 [0.76,0.98]",
+   "severity": "medium"
+  },
+  {
+   "point": "data-audit は 139 の副作用を書いていない: 確定オッズで race_horses.odds を上書きするので、R02 の STORED_PRE 系(564 組中 153・発走 10 分以内の 8 レースは全て STORED_PRE)は今後生成されない。判断時点の全馬オッズ源は chaos(predict_auto は T−10 分未満を skip)だけになり、直前標本は構造的にゼロのまま",
+   "evidence": "live/src/horseracing_live/chaos_capture.py:605-609(predict_auto のみ primary_horizon 判定)・:617-627(already_captured で再捕捉なし)・migration 0013 UNIQUE(race_id)。specs/139 plan: apply_final_odds は 2025-10-11 以降を結果ページ値で上書き。R02 pairs の発走 10 分以内 8 レースは source=STORED_PRE",
+   "severity": "medium"
+  },
+  {
+   "point": "『2007 年以降・購入時点の情報で回収率』が選定価格については過去に満たせないことを明言していない。モデル入力の as-of(満たせる)と購入価格(復元不能)を分けて伝えるべき",
+   "evidence": "ingest/src/horseracing_ingest/mapping.py:289 `odds: result-time (provenance R5)`=JRA-VAN 生データのオッズは 1 列・結果時。netkeiba 単勝 API は use_cache=False で過去に遡れない(memory place-quote-and-dividend-separation)。raw_data/jra-van は年別 1 ファイルで時系列オッズ無し",
+   "severity": "medium"
+  },
+  {
+   "point": "R11(市場 offset 残差モデル)と年次較正は ROI 目的では優先度が低く、閉じてよい。Codex 自身も増分なしとしているが report.md §6 で『積極採用を支持しない』と残している。ΔR²(ens15|q)=0.0037 を超える残差軸は 060/R04/R11 で 3 回測って出ていない",
+   "evidence": "report.md §3: 単体 NLL −0.00445(悪化)・混合増分 +0.000157 [−0.00058,+0.00088]。memory accuracy-levers-exhausted",
+   "severity": "low"
+  }
+ ],
+ "findings": [
+  {
+   "id": "P1",
+   "title_ja": "締切直前の判断時点標本はほぼ存在せず、T−5/T−2 の EV 残存率は未測定",
+   "claim_ja": "発走 10 分以内の判断時点データは chaos 1/528・attention_picks(結果未確定) 2/21・R02 pairs 8 レース(2 分以内 0)で、直前購入の効果はどの文書でも測られていない。",
+   "evidence_ja": "DB 読み取り(scratchpad measure_near_post.py): chaos_snapshots seconds_to_post ≤600s 1 件・≤1800s 17・≤3600s 33、中央値 444 分。attention_picks pending 21 行/5 レース、≤300s 2。R02 pairs.parquet: 1 分以内 0・2 分以内 0・5 分以内 3・10 分以内 8 レース(全て STORED_PRE)、(0,10] 帯の S3 判断時該当 1 頭。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "『判断時→締切の価格ずれが主因』は確定しているが『直前に寄せれば残る』は仮説のまま。これを測る捕捉が無い限り、前向き検証は凍結表とも買い時とも比較できない。"
+  },
+  {
+   "id": "P2",
+   "title_ja": "価格ずれの大きさは発走に近づくほど縮むが、T−30 分でも利益が消える帯",
+   "claim_ja": "自馬 log オッズずれの sd は T−10 分以内 0.31・10〜30 分 0.41・30〜60 分 0.49・1〜3 時間 0.56・3〜10 時間 0.57・10〜24 時間 0.94。followup §5.3 の代理(σ0.1→117%・0.2→105%・0.3→97%)に当てると σ≤0.2 は T−2 分前後以降でしか見込めない。",
+   "evidence_ja": "R02 pairs 再集計(near_post_measurements.json r02_by_band)。保持率は (10,30] 分で S1 0.33/S3 0.35、それ以遠で 0〜0.20。EV_F/EV_J 中央値はどの帯も 0.94〜0.97(全馬)、該当馬は 0.81。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "直前捕捉を T−10〜30 分で妥協すると『利益が消える帯』しか測れない。捕捉は T−2〜3 分に置く設計が要る(API 鮮度 0.6 分を含めると実質 T−3 の価格)。ただし σ(h) の最終 2 分は未観測の外挿。"
+  },
+  {
+   "id": "P3",
+   "title_ja": "直前全レース捕捉は予算・礼儀と両立し、障害は規約(憲法 V・スケジューラ先送り・UNIQUE)",
+   "claim_ja": "1 日 31.6 レース・発走間隔中央値 9 分・2 分未満 6/2,658、単勝+複勝は 1 req/レース、netkeiba API 鮮度中央値 0.6 分 → T−2 の 1 点捕捉で 1 日 32〜36 req、T−10 を足しても 72 req(通常 ~250 req/日)。1 req/分契約でも間隔は足りる。",
+   "evidence_ja": "races 2026 84 開催日(post_time 100%): 平均 31.6 レース・span 7.0 時間・post 間隔 <2 分 6 件。races.place_odds_observed_at−official_at 発走前 159 件: 中央値 0.6 分・90% 2.2 分。scrape/politeness.py:56-66 source_interval_s(netkeiba 契約)。chaos_capture.py:605-609 は predict_auto のみ窓判定、:617-627 already_captured、0013 UNIQUE(race_id)。",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "設計案: 新表 decision_quotes(race_id UNIQUE・captured_at・official_at・全馬 win/place quote・入力/モデル hash)+ 1 日 1 回手動起動で各レース T−3 分に 1 req を打つ長時間プロセス。憲法 V は『判断時 1 凍結値』の例外で読めるが、chaos 捕捉と並ぶと同一レースに発走前 2 点が残るので明示の判断が要る。T−2 と確定の 2 点で足り(確定は race_horses.odds/official_win_payouts)、T−10 を加える 3 点目は (a)(d) 候補を測る場合のみ。"
+  },
+  {
+   "id": "P4",
+   "title_ja": "2007〜2025 の購入時価格は復元不能で、139 以降は発走前の保存オッズも残らない",
+   "claim_ja": "JRA-VAN 生データのオッズは結果時 1 列、netkeiba 単勝 API は no-cache で上書き、139 が確定値で race_horses.odds を上書きするため、判断時点の全馬オッズ源は chaos_snapshots(T−10 分〜24 時間)だけになる。",
+   "evidence_ja": "ingest/mapping.py:289 `odds: result-time`。raw_data/jra-van は年別単一ファイル。R02 の STORED_PRE 153 組は『ops 不具合で残った発走前値』で 139 により消える系統。memory: 複勝 quote は use_cache=False で過去に遡れない。",
+   "status": "confirmed",
+   "critical": true,
+   "implication_ja": "利用者の制約のうち『購入時点の価格』は前向きでしか満たせない。既存 2,356+480+150+R01〜R12 はすべて確定寄り価格の選定であり、直前捕捉が溜まるまで『買える価格での ROI』は一件も存在しない。"
+  },
+  {
+   "id": "P5",
+   "title_ja": "候補 A(最優先・今すぐ可): 捕捉 horizon 条件付きオッズノイズ学習(判断時価格への較正)",
+   "claim_ja": "市場連動モデルを確定オッズで学習し判断時オッズで適用する train/serve スキュー(091 の体重と同型)が EV>1.2 の水増しを生む。学習時に R02 で実測した σ(h) のノイズをオッズに注入して 15 seed を再学習すれば、判断時 EV が較正され該当数が縮み保持率が上がるはず。",
+   "evidence_ja": "R02 pairs: S3 該当馬の log(O_F/O_J) 中央値 0.58 vs 非該当 0.24(回帰平均=一時的高オッズの誤認)、EV_F/EV_J 0.81。既存との差: followup §5.3 は p̂ 固定の選定ノイズ、R10 V2/価格 gate は事後補正、ens15 の再学習は 138 で 15 本 5 並列 17 分=安価。pattern-inventory の『繰り返さない』に非該当。",
+   "status": "inferred",
+   "critical": true,
+   "implication_ja": "受入基準(ROI でなく較正): R02 443 レース集合で (i) 判断時該当の締切保持率 ≥0.5(現 0.17〜0.20)、(ii) 該当馬の EV_F/EV_J 中央値 ≥0.95(現 0.81)、(iii) 該当数が S3 の 1/2 以下に縮んでも可。ノイズは iid 対数正規でなく帯別 sd(0.31/0.41/0.49/0.56/0.57/0.94)を horizon 入力と共に使う。ROI は保存価格の代理(followup §5.3 型)で参考値のみ。"
+  },
+  {
+   "id": "P6",
+   "title_ja": "候補 B〜E は直前捕捉が前提で、今は定義と受入基準だけ固定できる",
+   "claim_ja": "(a) オッズ変動信号と (d) 2 時点持続性は T−10/T−2 の 2 点=憲法 V と正面衝突、(b) 当日馬体重・馬場の直前版は閉鎖価格では市場が既知なので直前捕捉でのみ意味を持つ、(c) 複勝/ワイドの判断時 ROI は公式配当 3,423 レース(2025-01〜)があるが判断時 quote は発走前 159/198 レースのみ。",
+   "evidence_ja": "exotic_odds 配当 6 券種各 3,423 レース(2025-01-05〜)。races.place_odds_official_at 発走前 159(≤10 分 8)、exotic_quotes wide/trio 発走前 198。R02 帯別の『EV_J とずれの傾き』は (0,30] 分 −0.43・(180,600] +0.35 と符号不定(方向不明)。(c) は R07 c(ワイド i−全頭は複勝より 9〜19% 不利)・R06・B06(前向き専用)と近接。",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "(a)(d) は捕捉表に T−10 点を足すかの判断次第。(b) は P5 のノイズ学習と同じ再学習に weightlive を戻すだけなので同時に 1 arm 追加(受入: ΔR²(ens15+w|q,ens15) 下限>0 かつ R02 集合で保持率非悪化)。(c) は優先低(FL バイアスは複勝の穴側で強く、方向は負と推定)。"
+  },
+  {
+   "id": "P7",
+   "title_ja": "候補 (e)(f) は閉じる: 資金配分は選定の言い換え、会計補正は ≤0.5pt",
+   "claim_ja": "重み付けで総 ROI が動くのは重みが r_i と相関する場合だけで、それは軟らかい選定規則=同じ検定に服する(C13・138 で不成功)。同着 77/54,753 レース(0.14%)・逆数和<1 の 40 レース(+0.27pt)・JRA-VAN 期は確定オッズ=払戻(同着除く)で、会計修正で過去 ROI が 1pt 以上動く余地はない。",
+   "evidence_ja": "method-review §3.7 の指摘に同意しつつ定式化。online-normalization: 2010 年以降同着 77 レース除外。calibration-roi guard 表。R05: 凍結表の変化 ALL −0.002〜+0.007。未修復は 2026-07-04〜08-09 の 419 レース(公式払戻なし・アーカイブなし)のみ。",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "新規作業なし。残るのは 139 の未修復 504 レースの許可判断と、逆数和<1 の 40 レースを学習・較正の母集団から外す小修正(効果は小)。"
+  },
+  {
+   "id": "P8",
+   "title_ja": "前向きで判定できる量と期間: 保持率は半年、ROI は年単位〜数十年",
+   "claim_ja": "S3 の判断時該当は 0.22 頭/レース(R02 97/444)で年 ~750 点、T−2 では締切率 0.09/レース(~300 点/年)へ縮む。保持率の SE ±0.04 には 150〜350 点=半年。ROI 差 15pt の検出は 1 点 sd≈3.8(O≈15)で約 2,500 点=3.5〜8 年、20〜40 倍細胞(年 ~100 点・sd≈6)は約 6,400 点=数十年。",
+   "evidence_ja": "R02 報告 選定数比 S3 2.49 倍・保持率 0.196。2026 年 2,658 レース/84 日(年換算 ~3,450)。分散は単勝 100 円の払戻 sd を p·O² から算出。followup §7 の『半年で保持率は分かる』と整合。",
+   "status": "inferred",
+   "critical": true,
+   "implication_ja": "前向き登録の主判定は『購入時 EV の較正(Σwon/Σp_J)と保持率』にし、ROI は停止条件付きの副判定にする。『ROI 100% 超の確認』を 1 年以内に約束する設計は作れない。"
+  },
+  {
+   "id": "P9",
+   "title_ja": "重複として除外した案と理由",
+   "claim_ja": "本番 p との合議(R04 D2)・seed 分散/合意/下側分位(R08/R10)・プラス10(R06)・東西遠征など同セル再提案(R09)・確定グリッド券種またぎ(R12)・年内 top-N(R10 V1/V2)・±10% 価格 gate の倍率探索・N1/N2 の閾値刻み・2019〜26 窓での新規固定条件探索(followup §7 で閉鎖)・逆数和<1 レースの『裁定』(取消時点ずれの artifact で実時間には存在しない)は候補に入れない。",
+   "evidence_ja": "pattern-inventory 表『繰り返さないもの』・method-review §4・followup §7(3)。逆数和<1 はパリミュチュエルでは起き得ず、40 件全てに取消馬(calibration-roi)。",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "追加検証の検定族をこれ以上広げない。新規は P5(ノイズ学習)と P3(直前捕捉)の 2 本に絞る。"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/patterns/measure_near_post.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/patterns/near_post_measurements.json"
+ ],
+ "open_questions_ja": [
+  "憲法 V の解釈: 直前(T−3 分)の決定時クオートを chaos_snapshots とは別の事実として 1 行/レース保存してよいか。同一レースに発走前 2 点(chaos T−7h + 決定時)が並ぶことを『履歴』とみなすか。",
+  "スケジューラ先送りの扱い: 1 日 1 回の手動起動で各レースの発走 3 分前に 1 req を打つ長時間プロセスは『手動実行』の範囲か。許容されないなら直前捕捉は原理的に不可能で、買える価格での ROI は永久に測れない。",
+  "(a)(d) 候補のために T−10 分の 2 点目を同じ表に持つか(憲法 V との衝突が明示的になる)。2 点目が無ければオッズ変動信号と持続性 gate は閉じる。",
+  "P5(ノイズ学習)の σ(h) は R02 17 日の実測で、最終 2 分の挙動(締切直前の大口流入)は未観測。直前捕捉の最初の 1〜2 か月で σ(T−3) を測り直してから本採用するか。",
+  "2026-07-04〜08-09 の 504 レース(アーカイブなし)の修復許可。許可しない場合、2026 年前半の公式払戻精算は 419 レース欠落のまま『レース単位で集計外』を続けるか。",
+  "前向き登録の判定を『購入時 EV 較正+保持率(半年)』と『ROI(停止規則つき・年単位)』に分けることに合意するか。ROI だけを主判定にすると 1 年以内の結論は構造的に出ない。"
+ ]
+}

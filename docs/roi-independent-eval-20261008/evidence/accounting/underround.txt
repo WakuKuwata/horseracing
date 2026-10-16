@@ -1,0 +1,31 @@
+======== -- per-race inverse odds sums: started-only vs incl cancelled; 2007+ races with results
+  yr      era  races  under1_started  under1_with_cancel  under1_cancel_has_odds  under1_fixed_by_incl_cancel  races_with_cancel  races_cancel_has_odds  med_s_started  med_s_all  p01_s_started  med_cancel_contrib
+2007   jravan   3453              14                  14                      14                           14                298                     88         1.2544     1.2547         1.1581              0.0577
+2008   jravan   3452               8                   8                       8                            8                312                     88         1.2552     1.2554         1.1867              0.0389
+2009   jravan   3453              12                  12                      12                           12                270                     82         1.2552     1.2554         1.1838              0.0335
+2010   jravan   3454               6                   6                       6                            6                273                     79         1.2551     1.2552         1.1860              0.0422
+2011   jravan   3453               8                   8                       8                            8                228                     71         1.2552     1.2554         1.1897              0.0244
+2012   jravan   3454               6                   6                       6                            6                253                     82         1.2553     1.2554         1.2066              0.0395
+2013   jravan   3454               6                   6                       6                            6                234                    100         1.2553     1.2554         1.1847              0.0379
+2014   jravan   3451              11                  11                      11                           11                239                     88         1.2598     1.2600         1.1880              0.0434
+2015   jravan   3454               5                   5                       5                            5                231                     68         1.2620     1.2622         1.1923              0.0530
+2016   jravan   3454               5                   5                       5                            5                211                     54         1.2627     1.2628         1.1921              0.0349
+2017   jravan   3455               2                   2                       2                            2                210                     65         1.2615     1.2617         1.1854              0.0323
+2018   jravan   3454               4                   4                       4                            4                230                     53         1.2619     1.2621         1.1879              0.0286
+2019   jravan   3452               3                   3                       3                            3                239                     64         1.2614     1.2615         1.1869              0.0504
+2020   jravan   3456               8                   8                       8                            8                208                     59         1.2614     1.2614         1.1881              0.0398
+2021   jravan   3456               5                   5                       5                            5                205                     48         1.2612     1.2612         1.1893              0.0259
+2022   jravan   3456               6                   6                       6                            6                219                     63         1.2615     1.2617         1.1881              0.0279
+2023   jravan   3456               7                   7                       7                            7                226                     59         1.2614     1.2616         1.1884              0.0297
+2024   jravan   3454               4                   4                       4                            4                244                     70         1.2637     1.2640         1.1900              0.0420
+2025   jravan   2663               3                   3                       3                            3                173                     42         1.2636     1.2637         1.1930              0.0211
+2025 netkeiba    791               0                   0                       0                            0                 32                      0         1.2638     1.2638         1.2535                 NaN
+2026 netkeiba   2658               0                   0                       0                            0                128                     17         1.2632     1.2633         1.2448              0.0467
+======== -- n_started band counts (A2 wide 5-7 relevance), 2007+ with results
+band  count
+ <=4      2
+ 5-7    981
+  8+  67300
+======== -- dead heats at 1st and at 3rd: count races 2007+
+ dh_first  dh_third  races
+       89       167  68283

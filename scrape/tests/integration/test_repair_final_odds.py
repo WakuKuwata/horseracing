@@ -143,6 +143,14 @@ def test_repair_writes_final_odds_and_payouts_from_the_archive(
     assert _payouts(session) == [
         (RID, 1, 340, datetime.datetime(2026, 7, 19, 9, 0, tzinfo=datetime.UTC))
     ]
+    # Feature 140: the repaired race's odds provenance is the ARCHIVE file's timestamp (not now),
+    # with no quote time — a final value; the race without an archive got no provenance
+    repaired = session.get(Race, RID)
+    assert (repaired.win_odds_official_at, repaired.win_odds_observed_at) == (
+        None, datetime.datetime(2026, 7, 19, 9, 0, tzinfo=datetime.UTC)
+    )
+    untouched = session.get(Race, RID_NO_ARCHIVE)
+    assert (untouched.win_odds_official_at, untouched.win_odds_observed_at) == (None, None)
     # the race without an archive kept its stored odds
     assert session.scalar(select(RaceHorse.odds).where(
         RaceHorse.race_id == RID_NO_ARCHIVE)) == Decimal("9.9")

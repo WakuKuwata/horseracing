@@ -1,0 +1,8 @@
+production_lever,effect_on_prod_winner_NLL(CLAUDE.md),ported_to_market_model
+036 OOF target encoding + isotonic,−0.014 LogLoss,未移植(cat_maps 整数化のみ・校正なし)
+039 cond_logit race-softmax,−0.00057,未移植(binary のまま)。R11 は log q offset race-softmax を別モデルとして 1 seed=単体悪化・増分 null
+042 pl_topk,−0.00085,未移植
+085 arm E OOF 校正,−0.0128,未移植(校正器なし)。F5 isotonic は選択後 ROI のみ=差なし
+094 rounds 900,−0.0067,600 のみ試行(ROI 不変・NLL 未報告)。900 未試行
+091 体重 mask(serving skew),−0.0106,同型の『オッズ skew』は未修正。weightlive は除外で対処(mask ではない)
+129/131 seed 平均・異質混合,−0.0090(walk-forward),seed 平均は移植済み(ens15・NLL 0.201584→0.201204)。異質混合は未

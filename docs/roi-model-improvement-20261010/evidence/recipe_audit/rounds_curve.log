@@ -1,0 +1,18 @@
+year 2010 train=143,721 test=48,000 5s
+year 2011 train=191,721 test=47,344 11s
+year 2012 train=239,065 test=47,987 17s
+year 2013 train=287,052 test=48,199 23s
+year 2014 train=335,251 test=48,435 30s
+year 2015 train=383,686 test=48,152 37s
+year 2016 train=431,838 test=48,220 44s
+year 2017 train=480,058 test=47,499 51s
+year 2018 train=527,557 test=46,747 60s
+year 2019 train=574,304 test=45,666 71s
+year 2020 train=619,970 test=46,410 80s
+year 2021 train=666,380 test=46,021 89s
+year 2022 train=712,401 test=45,554 98s
+year 2023 train=757,955 test=45,962 108s
+year 2024 train=803,917 test=45,467 121s
+year 2025 train=849,384 test=46,207 133s
+year 2026 train=895,591 test=34,179 144s
+saved 786049

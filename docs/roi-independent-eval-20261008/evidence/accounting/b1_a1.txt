@@ -1,0 +1,15 @@
+======== -- B1: pre-result scans whose run_id survives in market_ev_predictions
+ scans_rp  run_still_present
+       18                  3
+======== -- B1: picks rp whose run_id survives
+ picks_rp  run_still_present
+       21                  2
+======== -- A1: purchase_records win bets vs official payouts (7 rows)
+     race_id  race_date              kind                                                                                                                                                              bets payouts
+202607030406 2026-08-30      as_presented [{"bet_type": "win", "odds_used": 1.9, "selection": [6], "amount_yen": 300}, {"bet_type": "trio", "odds_used": null, "selection": [3, 6, 14], "amount_yen": 100}]   6:130
+202604020212 2026-07-26          freeform                                                                              [{"bet_type": "trio", "odds_used": null, "selection": [2, 4, 5], "amount_yen": 100}]     NaN
+202607030406 2026-08-30        correction [{"bet_type": "win", "odds_used": 1.9, "selection": [6], "amount_yen": 500}, {"bet_type": "trio", "odds_used": null, "selection": [3, 6, 14], "amount_yen": 100}]   6:130
+202607030406 2026-08-30              void                                                                                                                                                                []   6:130
+202604020212 2026-07-26              void                                                                                                                                                                []     NaN
+202607030406 2026-08-30 skipped_presented                                                                                                                                                                []   6:130
+202607030406 2026-08-30              void                                                                                                                                                                []   6:130

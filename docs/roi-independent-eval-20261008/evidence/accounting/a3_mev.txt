@@ -1,0 +1,3 @@
+======== -- A3 actual frequency: result-pending mev rows (race-level) where recorded odds_observed_at is newer than last odds-writing job
+ races_rp  no_odds_job_found  obs_newer_than_odds_write_5m  consistent  med_gap_sec
+       18                  0                             1          17    -1.057349

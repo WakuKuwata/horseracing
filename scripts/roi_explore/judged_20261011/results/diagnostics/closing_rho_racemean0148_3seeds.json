@@ -1,0 +1,90 @@
+{
+ "n_rows": 22612,
+ "n_races": 1591,
+ "n_days": 52,
+ "window": {
+  "from": "2026-01-04",
+  "to": "2026-06-21"
+ },
+ "ens15": {
+  "nll": 0.19938581321546084,
+  "winner_nll": 1.9476504781340085,
+  "ev_gt12_n": 186
+ },
+ "judged_h0": {
+  "nll": 0.19997308336088554,
+  "winner_nll": 1.9537238978308682,
+  "ev_gt12_n": 85
+ },
+ "paired_judged_minus_ens15": {
+  "nll_J": {
+   "point": 0.0005872701454247009,
+   "ci_low": 0.0002410649793864038,
+   "ci_high": 0.0009342312184200226,
+   "n_replicates_valid": 4000,
+   "arm_value": 0.19997308336088554,
+   "ref_value": 0.19938581321546084
+  },
+  "winner_nll_J": {
+   "point": 0.0060734196968599274,
+   "ci_low": 0.001988349001386991,
+   "ci_high": 0.010214623075715018,
+   "n_replicates_valid": 4000,
+   "arm_value": 1.953723897830868,
+   "ref_value": 1.947650478134008
+  },
+  "calib_ratio_ev_gt1": {
+   "point": -0.004686392507839976,
+   "ci_low": -0.17313738571898257,
+   "ci_high": 0.1713526149238308,
+   "n_replicates_valid": 4000,
+   "arm_value": 0.9718856760613921,
+   "ref_value": 0.9765720685692321
+  }
+ },
+ "bootstrap": {
+  "method": "race-day block bootstrap",
+  "B": 4000,
+  "seed": 20261011,
+  "n_blocks": 52
+ },
+ "rule_i": {
+  "nll_within_tolerance": false,
+  "winner_nll_not_worse": false,
+  "tolerance_nll": 0.0002,
+  "pass": false,
+  "note": "FR-010 (i): closing-odds 2026 OOS (<= 2026-06-26), judged scored with log_min=0"
+ },
+ "diagnostic_only": true,
+ "diagnostic_note": "window and/or seeds differ from the registered rule (i) check; not usable for the verdict",
+ "computed_at": "2026-10-11T22:53:12.758324+00:00",
+ "inputs": {
+  "rows": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/rows_2007.parquet",
+  "rows_sha256": "99f699502424c65a4f2dcd998bd105c2537551952b931b2c4a19f28399468b2b",
+  "ens15": {
+   "manifest": "ensemble_2026.json",
+   "manifest_sha256": "6a4f42895b7c7b622559fc30458f84eff39744099a3a80778c7d1a541de1c7d9"
+  },
+  "judged": {
+   "dir": "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/j140/diag/rho148",
+   "seeds_found": [
+    1,
+    2,
+    3
+   ],
+   "seeds_missing": [],
+   "partial": true,
+   "generator_sha256": "b42b38e14fa353b28905c1435a41ee90cdbaed83f40b04d27e9fa923f5814709",
+   "model_sha256": {
+    "seed_01": "18ab88420c9c6b97ada7891ffeb12cae818c3cc9077ac7907d361956a38489d5",
+    "seed_02": "911ca7644a0a4a4098bd3def6d721ec9a3c3a03bd8dd590c8f8d804c92d69720",
+    "seed_03": "b9b39191d38ed94285ea06c1f64b737d4bd52091f02899c5bab19a6cdf6d0b6a"
+   }
+  }
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "判断時専用版(mev-ens15-judged)は表示・確定側に接続しない(研究 artifact・本番非結線)"
+ ],
+ "elapsed_s": 6.5
+}

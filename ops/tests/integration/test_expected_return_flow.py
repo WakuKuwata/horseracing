@@ -239,6 +239,107 @@ def test_no_checkpoint_error_leaves_the_error_fields_empty(session, monkeypatch,
     assert job.error_message is None and job.error_count is None
 
 
+PROV = ("market-ev-provenance: fallback_rows=0 fallback_races=0 "
+        "final_odds_provenance_missing={missing} proxy_rows_written=0\n")
+
+
+def test_provenance_line_is_kept_in_the_summary(session, monkeypatch, client):
+    """Feature 140 (review training-token-1): the CLI's ``market-ev-provenance:`` line is the
+    only place the FR-004a monitor reaches production; the runner keeps it as summary['provenance']
+    and leaves the error fields empty when nothing is missing."""
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0,
+        "market-ev: model_version=mev-binary-v2 logic_version=x run_id=r\n"
+        + PROV.format(missing=0)
+        + "attention-picks: written=0\n"
+        "attention-checkpoints: written=- pending=- prospective_start_date=-\n"
+        "OK: races=12 horses=180 from=2024-12-28 to=2024-12-28 "
+        "versions=2 picks=0 checkpoints=ok\n"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+
+    assert job.status == JobStatus.SUCCEEDED and job.processed_rows == 180
+    assert job.summary["provenance"] == {"fallback_rows": 0, "fallback_races": 0,
+                                         "final_odds_provenance_missing": 0,
+                                         "proxy_rows_written": 0}
+    assert job.summary["result"]["checkpoints"] == "ok"   # the marker contract is untouched
+    assert job.error_message is None and job.error_count is None
+
+
+def test_missing_final_odds_provenance_is_surfaced_as_an_error_while_succeeded(
+        session, monkeypatch, client):
+    """``final_odds_provenance_missing > 0`` = the 139 final-odds write did not run for some
+    settled race (spec FR-004a, fail-closed). Like a checkpoint error it must show on the jobs
+    pages (error_message / error_count), while the job stays SUCCEEDED (the values are fine)."""
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0, PROV.format(missing=3) + "OK: races=1 horses=18 from=x to=x\n"))
+    job, _ = enqueue_expected_return(session, DAY, source="manual_ui")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+
+    assert job.status == JobStatus.SUCCEEDED
+    assert job.summary["provenance"]["final_odds_provenance_missing"] == 3
+    assert job.error_count == 1
+    assert job.error_message == "provenance: final_odds_provenance_missing=3"
+    body = client.get(f"/ops/v1/jobs/{job.ingestion_job_id}").json()
+    assert body["status"] == "succeeded" and body["error_count"] == 1
+
+
+def test_provenance_and_checkpoint_errors_are_both_recorded(session, monkeypatch):
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0,
+        PROV.format(missing=1)
+        + "attention-checkpoints: error=OperationalError: lock timeout\n"
+        "OK: races=1 horses=1 from=x to=x versions=2 picks=0 checkpoints=error\n"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert job.status == JobStatus.SUCCEEDED and job.error_count == 2
+    assert job.error_message == ("checkpoints: error=OperationalError: lock timeout; "
+                                 "provenance: final_odds_provenance_missing=1")
+    assert job.summary["checkpoints_error"] == "error=OperationalError: lock timeout"
+    assert job.summary["provenance"]["final_odds_provenance_missing"] == 1
+
+
+def test_skipped_run_keeps_the_provenance_too(session, monkeypatch):
+    """A SKIPPED run (nothing pending) still prints the whole-table monitor; it is recorded, and a
+    miss is surfaced the same way."""
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0, PROV.format(missing=0) + "SKIPPED: no_pending_races\n"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert job.status == JobStatus.SKIPPED and job.summary["reason"] == "no_pending_races"
+    assert job.summary["provenance"]["final_odds_provenance_missing"] == 0
+    assert job.error_message is None and job.error_count is None
+
+    monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
+        0, PROV.format(missing=2) + "SKIPPED: no_pending_races\n"))
+    job2, _ = enqueue_expected_return(session, OTHER_DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job2)
+    assert job2.status == JobStatus.SKIPPED
+    assert job2.error_count == 1
+    assert job2.error_message == "provenance: final_odds_provenance_missing=2"
+
+
+def test_a_run_without_a_provenance_line_records_none(session, monkeypatch):
+    """An older CLI (or a crash before the line) must not fabricate counters."""
+    monkeypatch.setattr(runner_mod, "_training_market_ev",
+                        lambda d: _proc(0, "OK: races=1 horses=1 from=x to=x\n"))
+    job, _ = enqueue_expected_return(session, DAY, source="auto_after_refresh")
+    session.commit()
+    drain(session)
+    session.refresh(job)
+    assert job.status == JobStatus.SUCCEEDED and "provenance" not in job.summary
+
+
 def test_checkpoint_error_without_a_cause_line_falls_back_to_the_tail(session, monkeypatch):
     monkeypatch.setattr(runner_mod, "_training_market_ev", lambda d: _proc(
         0, "OK: races=1 horses=1 from=x to=x versions=2 picks=1 checkpoints=error\n",

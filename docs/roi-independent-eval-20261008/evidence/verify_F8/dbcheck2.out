@@ -1,0 +1,90 @@
+['finish_time', 'created_at', 'updated_at', 'first_3f', 'finish_time_diff', 'finish_order', 'last_3f', 'corner_orders', 'horse_id', 'race_id', 'result_status']
+['ingestion_job_id', 'started_at', 'completed_at', 'created_at', 'updated_at', 'processed_rows', 'skipped_rows', 'error_count', 'summary', 'retry_count', 'max_retry', 'source', 'job_type', 'scope', 'scope_value', 'status', 'trace_id', 'checkpoint', 'error_message']
+     horse_id  finish_order result_status
+0  2022105495             1      finished
+1  2022101557             2      finished
+2  2021100158             3      finished
+3  2020100363             4      finished
+official payouts for race: 0
+     n          mn          mx
+0  505  2026-08-15  2026-10-04
+    race_date  races  with_payout
+0  2026-08-02     36            0
+1  2026-08-09     36            0
+2  2026-08-15     36           36
+3  2026-08-16     36           36
+4  2026-10-04     24           24
+odds updated_at by date for 08-02/08-09 races:     race_date                         h  count
+0  2026-08-02 2026-08-12 10:00:00+00:00     53
+1  2026-08-02 2026-08-12 11:00:00+00:00      2
+2  2026-08-02 2026-08-22 11:00:00+00:00    409
+3  2026-08-09 2026-08-12 02:00:00+00:00     12
+4  2026-08-09 2026-08-12 08:00:00+00:00     22
+5  2026-08-09 2026-08-12 09:00:00+00:00    461
+Traceback (most recent call last):
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column "finished_at" does not exist
+LINE 1: select job_type,status,started_at,finished_at,left(summary::...
+                                          ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/pandas/io/sql.py", line 1679, in execute
+    return execute_function(sql, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedColumn) column "finished_at" does not exist
+LINE 1: select job_type,status,started_at,finished_at,left(summary::...
+                                          ^
+[SQL: select job_type,status,started_at,finished_at,left(summary::text,200) s from ingestion_jobs where started_at between '2026-08-12 08:00' and '2026-08-12 11:00' order by started_at]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/verify_F8/dbcheck2.py", line 13, in <module>
+    print(q("select job_type,status,started_at,finished_at,left(summary::text,200) s from ingestion_jobs where started_at between '2026-08-12 08:00' and '2026-08-12 11:00' order by started_at").to_string())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/verify_F8/dbcheck2.py", line 5, in <lambda>
+    q=lambda s: pd.read_sql(sa.text(s),c)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/pandas/io/sql.py", line 730, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/pandas/io/sql.py", line 1856, in read_query
+    result = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kuwatawaku/workspace/horseracing/training/.venv/lib/python3.12/site-packages/pandas/io/sql.py", line 1681, in execute
+    raise DatabaseError(f"Execution failed on sql '{sql}': {exc}") from exc
+pandas.errors.DatabaseError: Execution failed on sql 'select job_type,status,started_at,finished_at,left(summary::text,200) s from ingestion_jobs where started_at between '2026-08-12 08:00' and '2026-08-12 11:00' order by started_at': (psycopg.errors.UndefinedColumn) column "finished_at" does not exist
+LINE 1: select job_type,status,started_at,finished_at,left(summary::...
+                                          ^
+[SQL: select job_type,status,started_at,finished_at,left(summary::text,200) s from ingestion_jobs where started_at between '2026-08-12 08:00' and '2026-08-12 11:00' order by started_at]
+(Background on this error at: https://sqlalche.me/e/20/f405)

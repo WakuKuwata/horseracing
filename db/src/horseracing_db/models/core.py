@@ -69,6 +69,18 @@ class Race(TimestampMixin, Base):
     place_odds_observed_at: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True)
     )
+    #: Feature 140: provenance of the LATEST win quote (race_horses.odds). Same shape as the place
+    #: columns above — the single latest observation's timestamps, NOT an odds history
+    #: (constitution V): source-declared effective time (NULL when the stored value is the FINAL
+    #: odds taken from the result page) and our observation time, overwritten in place with the
+    #: value itself. Existing rows are NULL (no backfill); readers fall back to
+    #: race_horses.updated_at and count how often they had to.
+    win_odds_official_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    win_odds_observed_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
 
 class Horse(TimestampMixin, Base):

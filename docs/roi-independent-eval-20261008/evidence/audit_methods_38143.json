@@ -1,0 +1,220 @@
+{
+ "summary_ja": "担当範囲(年次較正・R11 残差小実験・購入時価格診断)の結論。\n1) 年次較正: q のみの係数 a は 14 年すべて 1.006〜1.018(>1)で、EV>1.2 は逆オッズ和 S<1 のレース以外で数学的に起こりえない(S≥1 レースの最大 EV は 1.0106)。「q のみ 77.95%」は方式の成績ではなく取消馬混入レース(40 件)の検出器で、Codex 自身の QA と整合するが、report §3 の表に政策として並べ「q+ens は q のみに対し +16pt(CI −68〜68)=ens 固有の改善を確認できず」と書くのは無意味な比較。q+ens の b は 0.63→0.73 と年々増加し a+b≈1.00、q のみ比で勝者 NLL −0.010/レース=ens15 の増分は大きい(b≈0 ではない)。\n2) 「市場＋ens15 較正は EV>1.2 で改善を支持せず」は閾値固定による操作点の混同。同じ購入数(14,946)で並べると較正 q+ens 111.96% > N1 110.19% > S3 106.98% で、D/Q/R 3 窓すべて較正が最良(事後診断・保存価格・採用根拠にはしない)。逆に較正スコアの極端な上位 2,330 点は 94% と悪く、ROI-件数曲線は交差する。固定 1 閾値の 1 点比較で「較正は効かない」と結論するのは未検出の効果なし扱い。\n3) R11: 残差モデル単体は市場 q を 4/4 年で上回る(−0.0043/レース)。ens15 との差 +0.0045 のうち半分(0.0024)は 15 seed 平均と単 seed の差で説明でき、残りは市場構造 12 列を落とした影響と bagging 無し。混合増分 +0.00016(±0.0007)は seed ノイズ床(0.001〜0.002)未満で「判定不能」。EV>1.4 の 166%/177% は年別符号が反転(2023 257%→2026 27%)し信用できない。\n4) 価格診断: 443 集合と公式 389 集合の差は公式払戻によるものではなく(精算変更 0 頭)、08-02/08-09 の 54 レース(S3 7 点中 1 的中=575.7%)の有無。その 1 的中(202604020609 馬 15・判断時 33.4→保存 40.3)はアーカイブも公式払戻も無い検証不能な価格で、S1 156.7%・S3 74.5% はこの 1 点に依存する。検証済み 389 集合では S1 61%・S3 28%・N1 26%。snapshot は発走に最も近いものを選ぶので保持率・判断時 ROI は上振れ側(T1 32%/T2 0%/T3〜T4 18%)。±10% gate の p=.93 は親の 2 的中のどちらを含むかで決まる退化した検定で情報ゼロ。\n5) 時系列・SHA: 凍結 SHA は現ファイルと全一致、MAX_DATE 06-26 は 3 実験で一致、2010〜18 の ens15 予測は spec の年別 cutoff(2007..Y−1)による OOF(booster 未保存のため spec 上の確認)。評価上限の延長は rows の再構築+08-15 以降の再推論が要り、得るのは約 5 週分で 07-04〜08-09 は恒久的に近似のまま=歴史研究では割に合わない。\n6) 最重要の異論: Codex ④「S3 対照・N1 主候補の前向き仮想購入比較」は検出力が構造的に無い。2023〜26 の S3 1,564 点で bootstrap SD 15.4pt、N1−S3 の paired SD 14.6pt → 差 2.5pt の SE に 5.3 万点必要。前向き計器は「買時 ROI が 100% か」を多年で粗く測ることしかできず、S3 vs N1 の優劣は決まらない。順序は「公式精算・quote 時刻・全馬 snapshot の記録(139 の続き)」→「S3 単腕を主登録し的中率/Σp と価格ドリフトの分解監視」→ N1・較正 q+ens は副腕として記録のみ、が妥当。",
+ "agree_with_codex": [
+  {
+   "point": "q のみ較正の 88 購入は逆オッズ和<1 の取消馬混入 8 レースに集中しており、方式の失敗ではなく価格ベクトルの時点ずれの検出である",
+   "evidence": "recipes.json の a=1.0061〜1.0179(全年 >1)。predictions.parquet で S≥1 レースの最大 EV_q=1.0106、EV_q>1.2 の 88 行はすべて S<1 の 40 レース内。DB 読取で 40 レース全件に取消馬 1〜2 頭(オッズ 1.4〜18.1)があり、取消馬を戻すと S=1.20〜1.29(db_check.out)"
+  },
+  {
+   "point": "method-review §3.1/3.2/3.3/3.6/3.7(非棄却≠効果なし・seed 平均と ROI>1 の検定は別・事後 48 通りは族補正にならない・年内 top-N は実装不能・0 的中の [0,0] は証明でない)はすべて妥当",
+   "evidence": "各指摘は該当スクリプト(r10_norm_meta.py:101 の当年件数依存など)と整合。本レビューの再計算でも反例なし"
+  },
+  {
+   "point": "R11 小実験は 060 の再現ではなく探索であり、単 seed の結果で学習乱数への頑健性を主張しない、EV>1.4 の高 ROI で選ばない、という留保は正しい",
+   "evidence": "residual_spike/results.json: residual_EV_gt_1.4 年別 2023 257%/2024 122%/2025 149%/2026 27%、extended_mix_EV_gt_1.4 は 26 点 3 的中。CI 0〜681%"
+  },
+  {
+   "point": "価格 gate(±10%)が親より良いという証拠はない",
+   "evidence": "price_robustness/results.json: S3_price_guard 39 点 1 的中 53%、paired delta −21pt CI[−146,+87]; 公式 389 集合でも 34 点 1 的中。guard_random_parent p=.93/.93"
+  },
+  {
+   "point": "公式払戻の統一・quote 固有の取得時刻・判断時の全馬予測/オッズ/入力 hash の保存が前向き検証の前提(data-audit A1/A3/B1)",
+   "evidence": "DB 読取: official_win_payouts は 2026-08 216/360・09 240/240・10 48/48 のみ、07 月 0/288。race_horses.updated_at は 08-02/08-09/09-20 の started 全行がレース日より後(行トリガで進むため価格時刻にならない)"
+  },
+  {
+   "point": "2026 の評価上限 06-26 は R05 汚染(07-04〜)回避として妥当",
+   "evidence": "specs/139 spec.md:10 と roi-missed-patterns report:198(06-27/28 は確定値・07-04〜09-22 474 レース)。rows.parquet は 09-30 構築=139 修復(10-05)前の値なので、修復後 DB を使うには再構築と 08-15 以降の再推論が要る"
+  }
+ ],
+ "disagree_with_codex": [
+  {
+   "point": "「市場 q＋ens15 の年次較正は固定 EV>1.2 での改善を支持せず」(report §1 表・§3)は、閾値を 1 点に固定したことによる操作点の混同で、較正の順位付け能力を測っていない",
+   "evidence": "rank_matched.out: S3 と同数(14,946 点)の上位を各スコアで取ると、較正 q+ens 111.96%(842 的中) > N1 110.19% > S3 106.98%、窓別 D 109.4/107.6/104.0・Q 121.0/118.4/115.3・R 114.4/101.2/109.7 で較正が 3 窓とも最良。一方、較正スコアの上位 2,330 点(=その EV>1.2 集合)は 94.0%(S3 上位 2,330 は 107.8%)。ROI-件数曲線が交差するので固定 1 閾値で「効かない」は言えない。事後診断・保存価格であり採用根拠ではない",
+   "severity": "medium"
+  },
+  {
+   "point": "q のみ較正を政策として表に載せ、「q+ens 対 q のみ +16.01pt(−68.51〜68.37)=ens 固有の ROI 改善も確認できず」と書くのは、構造的に成立しない比較対象を使った無意味な検定",
+   "evidence": "calibration-roi.md 結果節。q のみは S<1 の 8 レース・88 点にしか購入が発生せず(predictions.parquet)、EV_i=q_i^(a−1)/(S·Σq^a)≤N^(a−1)/S で a=1.018・N=18 でも EV≤1.054/S。CI 幅 ±68pt はその 8 レースの雑音",
+   "severity": "low"
+  },
+  {
+   "point": "「残差モデル単体は ens15 より NLL 悪化」を R11 設計への否定材料として読むのは不公平な比較(1 seed vs 15 seed・65 列 vs 77 列・bagging 無し vs 0.8)",
+   "evidence": "calib_check.out: res−q=−0.00434(2023 −0.0058/2024 −0.0046/2025 −0.0013/2026 −0.0072、4/4 年負)、ens−q=−0.00879、ens15−単 seed 平均=−0.00236(15 seed 個別 NLL 1.9124〜1.9152 vs ens 1.9116)。差 +0.00445 の 53% は seed 数で説明。Codex は残差 vs q を報告していない",
+   "severity": "medium"
+  },
+  {
+   "point": "混合増分 +0.000157(Holm p=.65)を「増分を確認できず」と書くのは正しいが、検出床の明示がなく「無い」と読める。1 seed 残差モデルが 15 seed 平均に足せる増分は seed ノイズ床(0.001〜0.002・memory seed-correlation-floor)未満で原理的に検出不能=判定不能",
+   "evidence": "results.json B_incremental: CI[−0.00058,+0.00088]、幅 0.0015。2024 の混合係数は 2023 の 3,326 レースのみで fit。c=0.23〜0.33 で 0 ではない",
+   "severity": "low"
+  },
+  {
+   "point": "report §4 の 443 集合の数値(S1 156.67%・S3 74.51%)を主表に置き、公式 389 集合との差を「レース集合が違う」としか書かないのは不十分。差は 100% が 08-02/08-09 の検証不能な 1 的中に由来する",
+   "evidence": "price_check.out/hit_check.out: 389 集合は精算変更 0 頭。54 レース(08-02 31・08-09 23)の S3 7 点中 1 的中=575.7%。その的中 202604020609 馬 15 は O_J 33.4(8.7h 前・CHAOS T3)→O_F 40.3、final_src=db_stored、official なし、affected_races.csv で timing_class=FILLED_AFTER_RESULTS・archive_available=False。08-09 は 36 レース中 9 が affected かつ correctable=0。検証済み 389 集合: S1 61.2%・S3 27.7%・N1 26.3%",
+   "severity": "medium"
+  },
+  {
+   "point": "±10% gate の親内無作為対照 p=.933/.927 を「価格 gate が良い証拠はない」の根拠として提示するのは弱い。親に 2 的中しかなく、null 分布は「無作為部分集合がどの的中を含むか」で決まる退化した検定。p=.93 は gate が 40.3 倍の的中を落としたので無作為より悪い側(7 パーセンタイル)にいるだけ",
+   "evidence": "results.json guard_random_parent: S1 平均 1.95 vs gate 0.90、S3 平均 1.13 vs 0.53。公式集合では同じ 1 的中(20.8 倍)を保持したため S1 gate 109%・S3 gate 104% に反転。情報量ゼロ",
+   "severity": "low"
+  },
+  {
+   "point": "Codex ④「元条件 S3 を対照、正規化 N1 を主候補として同じ購入時刻・公式払戻で仮想購入を比較」は、S3 vs N1 の優劣判定として検出力が構造的に無い。前向き計器が答えられるのは「買時 ROI が 100% を割るか」を多年で粗く見ることだけ",
+   "evidence": "hit_check.out: 2023〜26 の S3 1,564 点で開催日 bootstrap SD 0.154 → 500 点で SE≈27pt・2,000 点で≈14pt。N1−S3 の paired SD 0.146(1,564 点)→ SE 2.5pt に 53,430 点必要。買時は選定数 2.5〜4 倍(R02)でも 10 年超。N1 と S3 は 10,658 点共通・N1 固有 2,916 点(114%)・S3 固有 4,288 点(94.5%)で差は Σp_ens>1 レースの除外効果",
+   "severity": "high"
+  },
+  {
+   "point": "N1/N2 を「有力な参考候補」「次の優先候補」(report §2・§6)と格上げするのは、差 +5.5pt CI[−0.8,+13.1] の非有意な結果を信用しすぎ。N1 は S3 の単調変換で独立情報ゼロ、判断時価格では 88 点 2 的中 69%(公式 389 では 26%)",
+   "evidence": "calibration_roi/results.json ALL: N1 112.46% vs S3 106.98%、paired CI ゼロ跨ぎ。price results: N1 retention 17.0%、paired delta vs S3 −5pt",
+   "severity": "medium"
+  },
+  {
+   "point": "method-review §3.4 の「17 日から換算した 85〜90% が確定した将来期待値 は言い過ぎ」は、139 の buy-time-v2 には当たらない(藁人形)。139 は 2 推定量の範囲+区間(S1 は 100% を含む)で表示し「見込み」と明記",
+   "evidence": "CLAUDE.md 139 要約・memory feature-139: 「1 点の凍結値をやめ 2 推定量の範囲を 5% 丸め+区間で表示」。指摘が当たるのは 10/04 R02 報告の「判断時に買うと S1≈0.90・S3≈0.86」の表現のみ",
+   "severity": "low"
+  },
+  {
+   "point": "§3.5「ΔR² に利益の普遍的閾値はない」は論理的には正しいが、少数機会への集中仮説はこのリポジトリで既に 2,356+480+393+150 条件・セル検定で網羅的に検証され生存ゼロ。実務上は新しい道を開かない",
+   "evidence": "memory accuracy-to-roi-bridge・roi-exploration-2007-patterns・feature-109: 乖離 t/q 最良セル 1.112<必要 1.257、確認窓 Holm 0",
+   "severity": "low"
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "title_ja": "q のみ較正は a>1 で EV>1.2 が構造的に不可能",
+   "claim_ja": "q のみ較正の係数 a は 14 年すべて 1.006〜1.018 で、EV>1.2 は逆オッズ和 S<1 のレースでしか起きない",
+   "evidence_ja": "recipes.json(calib_check.out 表): a=1.0084/1.0061/1.0074/1.0077/1.0082/1.0101/1.0112/1.0104/1.0092/1.0115/1.0147/1.0154/1.0175/1.0179。predictions.parquet 44,791 レース中 S<1 は 40、S≥1 での最大 EV_q=1.0106、EV_q>1.2 の 88 行は全て S<1。解析的に EV_i=q_i^(a−1)/(S·Σq^a)≤N^(a−1)/S",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "「q のみ 77.95%」は方式の失敗ではなく取消馬混入レースの検出器。q のみを比較対象にした検定(+16pt CI±68)は無意味"
+  },
+  {
+   "id": "F2",
+   "title_ja": "q+ens の b は 0.63→0.73 で増加・ens15 の増分は大きい",
+   "claim_ja": "q+ens 較正の a は 0.37→0.28、b は 0.625→0.732 と年々 ens15 側へ移り a+b≈1.00、q のみ比で勝者 NLL −0.0098〜−0.0116/レース",
+   "evidence_ja": "recipes.json: 2013 (0.373,0.625) → 2026 (0.279,0.732)、nll_q−nll_qens=0.01087(2013)〜0.00976(2026)",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "「b≈0 なら ens15 に増分なし」の仮説は否定。市場に対する予測増分は確実にあるが、それが固定閾値 ROI に直結しないのは別問題(F3)"
+  },
+  {
+   "id": "F3",
+   "title_ja": "固定 EV>1.2 の 1 点比較は操作点の混同",
+   "claim_ja": "同一購入数(14,946)で上位を取ると較正 q+ens が 3 窓すべてで S3・N1 を上回るが、較正スコアの極端上位 2,330 点は 94% と最悪",
+   "evidence_ja": "rank_matched.out: N=14,946 で q+ens 111.96%/N1 110.19%/S3 106.98%、D 109.4/107.6/104.0・Q 121.0/118.4/115.3・R 114.4/101.2/109.7。N=2,330 で q+ens 94.0%/S3 107.8%/N1 99.7%。較正 EV の閾値換算は 1.041",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "Codex の「較正は改善を支持せず」は閾値固定の副作用で未検出を効果なしと扱っている。ただし事後・保存価格・年内 top-N は実装不能なので採用根拠ではなく、再検証なら固定閾値 1.04 前後を事前登録する形になる"
+  },
+  {
+   "id": "F4",
+   "title_ja": "2010〜2018 の ens15 予測は spec 上は年別 OOF",
+   "claim_ja": "ens15 の predictions.parquet(786,049 行・2010〜2026)は model.spec.json の training_cutoff_by_year(各年 2007..Y−1)で生成された walk-forward 予測で、booster は 2019〜2026 のみ保存",
+   "evidence_ja": "artifacts/market_ev/mev-ens15-v1/seed_01/model.spec.json: training_cutoff_by_year 2010..2026 全て train_from 2007/train_through Y−1。results/armC_binary…/result.json: years_scored [2010,2026]・n_scored_rows 786,049。ensemble.spec.json booster_years 2019〜2026",
+   "status": "inferred",
+   "critical": false,
+   "implication_ja": "較正 fit の母集団(2010..y−1)は OOF と見てよいが、2010〜18 分は booster が無く再現検証はできない(spec の記述に依存)"
+  },
+  {
+   "id": "F5",
+   "title_ja": "残差モデルは市場を上回り、ens15 との差の半分は seed 数",
+   "claim_ja": "残差単体は q を 4/4 年で上回り(−0.00434/レース)、ens15 との差 +0.00445 のうち 0.00236 は 15 seed 平均と単 seed の差で説明される",
+   "evidence_ja": "calib_check.out: res−q 2023 −0.00578/2024 −0.00463/2025 −0.00126/2026 −0.00715、ens−q −0.00879。15 seed 個別 NLL 1.91239〜1.91521(平均 1.91393)vs ens15 1.91157。残差は 65 列(市場構造 12 列除外)・bagging 無し、ens15 は 77 列・bagging 0.8",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "「単体は ens15 より悪い」は正しいが offset 設計の評価としては不公平。公平な設計(15 seed・レース構造の市場列は特徴として残し自馬 log q だけ offset)は未測定。ただし期待増分は seed 床以下で ROI には直結しない"
+  },
+  {
+   "id": "F6",
+   "title_ja": "混合増分は検出床未満で判定不能",
+   "claim_ja": "混合の増分 +0.000157(CI −0.00058〜+0.00088)は 1 seed モデルを 15 seed 平均に足した場合の seed ノイズ床(0.001〜0.002)未満",
+   "evidence_ja": "residual_spike/results.json B_incremental; 混合係数 c=0.279/0.331/0.230(ゼロでない)。Holm は 2 検定で正しく適用(adj 2p/1p)",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "「増分を確認できず」は「この設計では原理的に検出できない」と読むべき。EV>1.4 の 166%/177% は年別符号反転(2023 257%→2026 27%)で信用しない"
+  },
+  {
+   "id": "F7",
+   "title_ja": "snapshot 選択(発走に最も近い 1 つ)は保持率を上振れ側に偏らせる",
+   "claim_ja": "444 レース中 120 が複数 snapshot を持ち、選ばれた snapshot の保持率 16.9% は非選択の 35.7% より低いが、時間帯別では T1 32%/T2 0%/T3 18%/T4 18% で近いほど高い",
+   "evidence_ja": "price_check.out: 選択内訳 STORED_PRE T1 114・CHAOS T1 27/T2 85/T3 106/T4 73、hours 中央値 3.69h。pairs.parquet 564 pair/444 race",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "報告の 17% と判断時 ROI は「最も遅い判断」の値で、実際の初回判断(中央値 T−6.7h・086)より保持率は低く、価格はより判断時寄り。方向は上振れ(楽観側)"
+  },
+  {
+   "id": "F8",
+   "title_ja": "443 集合と 389 集合の差は公式払戻でなく検証不能な 1 的中",
+   "claim_ja": "389 集合では精算変更 0 頭で、443 集合の S3 74.5%・S1 156.7% は 08-02/08-09 の 54 レースにある 1 的中(40.3 倍・アーカイブ無し・公式払戻無し)に依存する",
+   "evidence_ja": "price_check.out: 54 レースの S3 7 点中 1 的中=575.7%。hit_check.out: 202604020609 馬 15 O_J 33.4(8.7h 前)→O_F 40.3・final_src db_stored・official NaN・timing_class FILLED_AFTER_RESULTS・archive_available False。08-09 は 36 レース中 9 affected・correctable 0。DB: 同レース odds 40.3・updated_at 08-12。検証済 389: S1 61.2%・S3 27.7%・N1 26.3%",
+   "status": "confirmed",
+   "critical": true,
+   "implication_ja": "判断時価格での S1/S3 の成績として引用してよいのは 389 集合の値。443 集合の表を主表に置くのは「探索で高かった値を信用しすぎ」の側"
+  },
+  {
+   "id": "F9",
+   "title_ja": "±10% gate の親内無作為検定は退化しており情報ゼロ",
+   "claim_ja": "親の的中が 2 点しかないため p=.93 は gate が 40.3 倍の的中を落としたことの言い換え",
+   "evidence_ja": "results.json guard_random_parent: 無作為平均 S1 1.95/S3 1.13 vs gate 0.90/0.53。公式 389 では同じ 1 的中(20.8 倍)を保持し S1 gate 109%・S3 gate 104% に反転",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "価格 gate は「否定された」のではなく「測れていない」。再検証は的中数が数十に達するまで無意味"
+  },
+  {
+   "id": "F10",
+   "title_ja": "凍結 SHA・cutoff・適用年の spot check は全一致",
+   "claim_ja": "rows.parquet/pairs.parquet/3 スクリプト/protocol の SHA は freeze と一致、MAX_DATE 06-26 は 3 実験で一致、2026 booster は 2025-12-28 まで、混合係数は 2023〜2025 OOF で fit",
+   "evidence_ja": "shasum 出力(0434ab0c…/d9d7d626…/e2c8d318…/c8eb244b…/8b166570…/e030bee5…)。residual recipes.json train_max 2025-12-28、coefficients.2026 calibration_max 2025-12-28。verification.json all_frozen_hashes_unchanged true",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "時系列リークは検出されず。ただし 2010〜18 の OOF は F4 のとおり spec 依存"
+  },
+  {
+   "id": "F11",
+   "title_ja": "評価上限 06-26 の延長は歴史研究では割に合わない",
+   "claim_ja": "official_win_payouts は 2026-08-15 以降のみ(08 月 216/360・09 月 240/240・10 月 48/48、07 月 0/288)で、rows.parquet は 139 修復前の 09-30 構築、ens15 予測は汚染オッズを入力に含む",
+   "evidence_ja": "db_check.out の月別集計。freeze の rows SHA 0434ab0c… は 09-30 版。specs/139: 07-04〜08-09 約 239 レース復元不能",
+   "status": "confirmed",
+   "critical": false,
+   "implication_ja": "延長には rows 再構築+08-15 以降の再推論(booster あり)が要り、得るのは約 5 週・460 レース程度。前向き pipeline が公式精算に乗る以上、歴史側の延長は優先しない"
+  },
+  {
+   "id": "F12",
+   "title_ja": "前向き S3 vs N1 比較は検出力が構造的に無い",
+   "claim_ja": "2023〜26 の S3 1,564 点で ROI の開催日 bootstrap SD は 15.4pt、N1−S3 paired SD 14.6pt で、差 2.5pt の SE には 53,430 点が必要",
+   "evidence_ja": "hit_check.out: S3 SD 0.1542→500 点 SE≈0.273・2,000 点≈0.136。N1 SD 0.1655。N1−S3 paired SD 0.1461、点推定 +7.5pt。買時は選定数 2.5〜4 倍(R02)でも年 2,000 点程度",
+   "status": "measured",
+   "critical": true,
+   "implication_ja": "Codex ④ の設計は優劣判定にならない。前向き計器は単腕 S3 で「ROI が 100% を大きく割るか」を 2〜4 年で粗く見るもの。副腕(N1・較正 q+ens)は記録のみ"
+  },
+  {
+   "id": "F13",
+   "title_ja": "N1 の優位は S3 固有購入(Σp_ens>1 レース)の除外効果",
+   "claim_ja": "N1 と S3 は 10,658 点共通で、N1 固有 2,916 点は 114.2%、S3 固有 4,288 点は 94.5%、共通は 112.0%",
+   "evidence_ja": "calib_check.out。Σp_ens のレース分位 1%=0.839・50%=1.001・99%=1.175",
+   "status": "measured",
+   "critical": false,
+   "implication_ja": "N1 は新情報ではなく「ens15 がレース合計確率を過大に出すレースを間引くフィルタ」。採用候補ではなく S3 の診断軸として扱う"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/calib_check.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/calib_check.out",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/rank_matched.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/rank_matched.out",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/price_check.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/price_check.out",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/hit_check.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/db_check.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/db_check.out",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/db_check2.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/eval1007/calib_residual_price/db_check2.out"
+ ],
+ "open_questions_ja": [
+  "ens15 の 2010〜2018 年分の予測が 2019〜2026 と同一コード・同一パラメータで生成されたかは spec の記述でしか確認できない(booster 未保存)。assemble_ens15_20261001.py と当時の実行ログで再現性を確認する価値はあるか",
+  "202604020609 の保存オッズ 40.3(FILLED_AFTER_RESULTS)はどの endpoint から埋められた値か。結果後の netkeiba は単勝を返さないはずで、R05 が affected=0 とした根拠(n_odds_jobs_after_results=1)の中身",
+  "較正 q+ens の順位優位(F3)は固定閾値 1.04 前後を事前登録して将来期間でのみ測るべきだが、買時価格では S3 同様に保持率 17% 前後に落ちると予想される。判断時 snapshot(R02 の 443 集合)で rank-matched 比較を行う意味はあるか(的中 2 件では無意味)",
+  "公平な残差設計(15 seed・レース構造の市場列を特徴に残す・自馬 log q だけ offset)の増分は未測定。期待値は seed 床(0.001〜0.002)程度で ROI に直結しないため、実施するなら『R11 を閉じるため』の目的に限るべきか",
+  "前向き単腕 S3 の監視指標を ROI 一本でなく (a) Σwon/Σp_ens(選定馬の確率過大の検出・分散小)と (b) O_F/O_J の価格ドリフトに分解して事前登録するとき、停止規則をどう置くか(138 のチェックポイント設計との整合)"
+ ]
+}

@@ -1,0 +1,115 @@
+{
+ "summary_ja": "担当「判断時オッズへの整合」の計測と設計。(1) 計測: R02 の 443 レース集合(5,967 頭・17 開催日)で判断時 EV 帯別に Σwon/Σp̂_J を取ると、EV_J≤1.0 は 1.05(較正良)だが EV_J 1.0–1.2 は 0.58 [Poisson 0.34–0.91]、EV_J>1.2 は 0.50 [0.06–1.82](EV_J>1.0 合計で 20 勝/Σp̂ 35.2=0.57 [0.35–0.88])=判断時 p̂ は高 EV 帯で約 2 倍過大。同じ馬の確定時 p̂ では 0.80、確定市場 q_F では 1.08 で、過大評価は判断時固有。判断時 EV>1.2 のうち確定でも >1.2 は 17%、p̂_F/p̂_J 中央値 0.45、O_F/O_J 中央値 1.77(選ばれた馬のオッズは確定までに 77% 伸びる)。log(EV_F/EV_J) の平均 −0.315 の分解は オッズ +0.503 / p̂ −0.818 で p̂ 側が支配(弾力性 d log p̂/d log O=−1.13〜−1.23)。(2) 設計 B 用の注入分布: 確定オッズ条件の log(O_J/O_F) は帯で符号が変わる(確定 1–5 倍 +0.08〜+0.44、100 倍超 −0.5〜−1.07)=判断時オッズは確定より圧縮されており、一律 μ(h) の注入は誤り。u=a(h)+b(h)·log q_F+ε で a 0.34→1.03・b 0.14→0.36・残差 sd 0.24(<10 分)→0.34(1–10h)→0.74(>10h)、レース共通成分の分散比 0.16、判断時と確定の Σ1/O は 1.260 vs 1.265 でほぼ同じ。(3) 規模の見積り(spike・採否には使わない): 2007–2025 学習の seed-1 モデルに「未摂動行(h=1 分)+注入行、log(分)を特徴」(V2)で再学習、1 seed 25 秒。3 seed で 確定オッズ 2026 OOS NLL は 0.20416→0.20406〜0.20423(wnll 1.9374→1.9352〜1.9374)=非劣化、実判断時 443 集合で NLL_J 0.21835→0.2155〜0.2161(−0.0023〜−0.0028)、EV_J>1.0 の較正 0.63→0.79〜0.88(3 seed 平均 0.88・59 勝)、EV_J>1.2 の精算 ROI 0.67→0.75〜0.85(12〜19 勝・証拠にならない)。ただし B の該当馬は現行と 3/143 しか重ならず、確定オッズが短くなる馬(O_F/O_J 0.63)で、確定時 ens15 EV>1.2 との重なりは 1〜3%=依頼の受入基準「保持率 ≥0.5・EV_F/EV_J ≥0.95」は B では原理的に満たせない(閉線 1.2 を基準にした指標は閉線モデルの選択を正とみなしている)。パリミュチュエルでは判断時に買っても払戻は確定オッズなので、必要なのは p̂(J)×E[O_F|J] で、(O_J,h) だけの確定オッズ射影は情報が薄い(残差 sd 0.62→0.57・該当 1,971 頭に膨張)。確定オッズの動きを馬ごとに予測するには実 (J,F) 組が大量に要る=A(直前捕捉+全馬凍結)が B の上限も決める。副作用: V2 は確定時(h=0)の EV>1.2 件数を 543→212〜233 に 6 割減らす(ROI 1.10〜1.28・NLL 不変)ので、採用時も表示・閉線用は現行 ens15 を据え置き B は判断時専用にする。",
+ "findings": [
+  {
+   "id": "F1",
+   "title_ja": "判断時 p̂ は高 EV 帯で約 2 倍過大(確定時・市場は較正内)",
+   "claim_ja": "R02 443 集合で EV_J>1.0 の Σwon/Σp̂_J=0.57(20 勝/35.2)、EV_J 1.0–1.2 で 0.58、>1.2 で 0.50。同じ馬を確定時 p̂ で評価すると 0.80、確定市場 q_F で 1.08。EV_J≤1.0 は 1.05、全体 1.007。",
+   "evidence_ja": "scored_pairs.parquet(5,967 頭・443 レース・17 日)。Poisson 区間 EV_J>1.0 [0.35,0.88]、>1.2 [0.06,1.82]。開催日ブロック bootstrap では [0.37,0.80]/[0.00,1.29]。公式払戻のある 232 レース(R02 公式列)でも EV_J>1.0 0.72 [0.36,1.29]・>1.2 0.41。層別: CHAOS 0.30/STORED_PRE 0.67、10–30 分 1.01(17 頭・1 勝)で判断できず。スクリプト m1_calib.py",
+   "status": "measured",
+   "implication_ja": "判断時 EV>1.2 の主因は p̂ 側(log(EV_F/EV_J) 平均 −0.315=オッズ +0.503+p̂ −0.818)。較正の修正対象は p̂(J)。ただし的中 20 件で帯別区間は広く、保持率より Σwon/Σp̂_J を前向きの主指標にすべき。"
+  },
+  {
+   "id": "F2",
+   "title_ja": "判断時オッズは確定より圧縮されており、注入は帯依存にする必要がある",
+   "claim_ja": "確定オッズ条件の log(O_J/O_F) は 確定 1–5 倍で +0.08(<10 分)〜+0.44(>10h)、100 倍超で −0.48〜−1.07。u=a(h)+b(h)·log q_F+ε で a=0.34/0.52/0.64/0.67/0.80/1.03、b=0.14/0.22/0.27/0.29/0.34/0.36、残差 sd=0.24/0.27/0.30/0.34/0.34/0.74(<10 分/10–30/30–60/1–3h/3–10h/>10h)。レース共通成分の分散比 0.10〜0.18(pooled 0.16)。Σ1/O は判断時 1.260・確定 1.265。",
+   "evidence_ja": "pairs.parquet 7,562 頭・564 組。m2_drift_reverse.py。>10h の sd 0.74 は CHAOS T4(0.95)が支配し STORED_PRE は 0.56 で出所差あり。",
+   "status": "measured",
+   "implication_ja": "依頼文の O_J=O_F·exp(−(μ(h)+σ(h)ε)) は不可。生成器は log q_F の線形項を持つ必要があり、レース共通ノイズは √0.16 の重みで足す。Σ1/O はレース単位で保存できる(再正規化は軽い)。"
+  },
+  {
+   "id": "F3",
+   "title_ja": "注入再学習(V2)は判断時 NLL と較正を改善し確定オッズ NLL を保つ",
+   "claim_ja": "未摂動行(h=1 分)+注入行、log(分) を特徴に加えた seed-1 再学習(2007–2025・300 rounds)3 seed: 2026 確定オッズ OOS NLL 0.20416→0.20406〜0.20423(wnll 1.9374→1.9352〜1.9374)。実判断時 443 集合で NLL_J 0.21835→0.2155〜0.2161、EV_J>1.0 の Σwon/Σp̂_J 0.63→0.79〜0.88(3 seed 平均 0.88・459 頭・59 勝)、EV_J>1.2 で 0.65→0.68〜1.08(平均 0.89・150 頭・13 勝)。",
+   "evidence_ja": "m3_spike.py V2 seed1–3、spike_V2_s*_results.json。学習 1 seed 25 秒(10 スレッド・非決定論)。生成器パラメータは評価と同じ 17 日から取っているので horizon 構造は楽観側。注入 1 コピーのみで h 特徴なし(V1)は確定 NLL を 0.2042→0.2068 に悪化させ不可。",
+   "status": "measured",
+   "implication_ja": "B は『判断時の p̂ の較正』という指標では実装可能で安価(研究チェーン 15 seed×17 年で 1〜2 時間)。採否は新しい開催日の組で再測定してから。"
+  },
+  {
+   "id": "F4",
+   "title_ja": "B の該当馬は現行と別物で、依頼の受入基準(保持率・EV_F/EV_J)は満たせない",
+   "claim_ja": "V2 の判断時 EV>1.2(150〜167 頭)は現行 seed-1 の 143 頭と 3 頭しか重ならず、確定時 ens15 EV>1.2 との重なりは 1〜3%(現行 17%)。V2 該当馬は O_F/O_J 中央値 0.63(確定で短くなる馬)、EV_F(ens15)/EV_J 中央値 0.55。精算 ROI は 0.75〜0.85(12〜19 勝)で現行 0.67(5 勝)より高いが区間は 1 を跨ぐ。該当は horizon>10h に 138/157 が集中し <30 分では 2 頭。",
+   "evidence_ja": "m4_detail.py・m5_cross.py。horizon 応答: 同じ判断時オッズで h を 1 分→60 分にすると 20–40 倍帯の p̂ は ×0.73、40–100 倍帯 ×0.53、1–5 倍帯 ×1.12。",
+   "status": "measured",
+   "implication_ja": "『判断時該当が締切でも残るか』は閉線モデルを正とする指標で、較正済み判断時モデルは別の馬(後で人気になる馬)を選ぶので構造的に 0 に近づく。受入は (i) 確定 NLL 非劣化 (ii) 判断時 Σwon/Σp̂_J≥0.8 (iii) 該当馬の O_F/O_J と精算 ROI の記録、に置き換えるべき。"
+  },
+  {
+   "id": "F5",
+   "title_ja": "払戻は確定オッズなので判断時の買い EV は p̂(J)×E[O_F|J]。(O_J,h) だけの射影は情報が薄い",
+   "claim_ja": "前向き回帰 log(O_F/O_J)=c(h)+d(h)·log q_J は <10h で c −0.41〜−0.64・d −0.20〜−0.32、>10h で c +0.45・d +0.07。leave-one-day-out の射影は corr 0.909→0.916・残差 sd 0.62→0.57 しか改善せず、p̂×Ô_F>1.2 は 1,971 頭に膨らみ較正 0.61。V2 p̂×Ô_F も 511 頭・較正 0.92・ROI 0.79。",
+   "evidence_ja": "m6_projection.py。V2 該当馬の O_F/O_J 0.63 は馬の特徴が確定オッズの向きを予測していることを示すが、馬ごとの閉線予測を学習するには実 (J,F) 組が 564 では足りない。",
+   "status": "measured",
+   "implication_ja": "B は p̂ 側しか直せない。払戻側(確定オッズの予測)は A の実データが無いと作れず、B の到達上限も A のデータ量に依存する。"
+  },
+  {
+   "id": "F6",
+   "title_ja": "副作用: V2 は確定時(h=0)の EV>1.2 件数を 6 割減らす",
+   "claim_ja": "2026 OOS で確定オッズの EV>1.2 は 543→212〜233 頭(ROI 1.18→1.10〜1.28)。NLL は不変。",
+   "evidence_ja": "spike_V2_s*_results.json closing_2026。min_data_in_leaf=1000 で未摂動行と注入行が木を共有するため。",
+   "status": "measured",
+   "implication_ja": "B を採用しても表示・凍結表・S1〜S5 の確定側は現行 ens15 を据え置き、B は判断時 EV 専用の別版(mev-ens15-judged)として並置する。確定側を置き換えると 138 の凍結表が移送されない。"
+  },
+  {
+   "id": "F7",
+   "title_ja": "簡易版(帯別の事後縮小係数)は実質『判断時は EV_J>約 2.1 まで買わない』になる",
+   "claim_ja": "測った縮小係数は EV_J 1.0–1.2 ×0.58・>1.2 ×0.50。これを掛けると EV>1.2 に残るのは EV_J>2.4 相当=443 集合で 2 頭以下。",
+   "evidence_ja": "F1 の比。係数の区間は [0.35,0.88] と広く 17 日依存。",
+   "status": "inferred",
+   "implication_ja": "費用ゼロで今日から表示に使えるが、情報を足さず該当をほぼ消す。B の代替ではなく、A/B が揃うまでの『判断時 EV の注記』としてのみ妥当。"
+  }
+ ],
+ "levers": [
+  {
+   "name_ja": "B. horizon 条件付きオッズノイズ注入で ens15 を判断時専用に再学習(mev-ens15-judged)",
+   "what_improves": "判断時 EV 較正・保持率",
+   "tried_before": "未試行(本件 spike のみ: V2 3 seed で判断時較正 0.63→0.79〜0.88・NLL_J −0.0023〜−0.0028・確定 NLL 非劣化。V1=h 特徴なし 1 コピーは確定 NLL +0.0026 悪化で不可)",
+   "expected_magnitude_ja": "判断時 Σwon/Σp̂_J(EV_J>1.0) 0.57→約 0.85、NLL_J −0.002〜−0.003。該当馬は現行と別物(O_F/O_J 0.63 の馬)で精算 ROI は 0.75〜0.85(12〜19 勝)=利益の見込みではなく損失の縮小と較正の是正。<30 分帯では該当がほぼ出ない(2/157)。",
+   "cost_ja": "研究チェーン: build_dataset.py の市場ブロック(L146–167)を関数化し、学習行を『未摂動(log_min=0)+注入(u=a(h)+b(h)log q_F+s(h)(√0.16 ε_race+√0.84 ε_i)、Σ1/O をレースで保存、h は R02 組の horizon 分布から抽出)』の 2 倍に増幅、features に log_min を追加。strict2007_market_models.py の refit を流用(1 seed 25 秒・15 seed×17 年 1 スレッド決定論で 1〜2 時間)。本番: market_ev.py build_features の市場ブロック(L190–212)を関数に切り出し(r02_drift.py market_block と同一)、compute_and_persist で log_min=log((post_time−odds_observed_at)/分) を渡す(post_time は 2026 で 100%、observed_at は A3 の odds ジョブ時刻に依存)。model.spec の features は 67 列・新 version。2〜3 日。",
+   "acceptance_ja": "(i) 確定オッズ 2026 OOS NLL ≤ ens15+0.0002 かつ race-normalized winner NLL 非悪化(spike: +0.00007/0.0000)。(ii) R02 443 集合+新規開催日の組で 判断時 Σwon/Σp̂_J(EV_J>1.0) ≥0.80(現 0.57・spike 0.79〜0.88)、NLL_J ≤ ens15−0.002。(iii) 記録のみ: 該当馬の O_F/O_J・精算 ROI・ens15 確定 EV>1.2 との重なり。依頼の『保持率 ≥0.5・EV_F/EV_J ≥0.95』は閉線モデルを正とする指標で B では原理的に不成立(spike 0.01〜0.03/0.55)なので受入にしない。生成器パラメータは評価日と別の開催日で推定する(現 spike は同じ 17 日=楽観)。",
+   "risk_ja": "確定時 EV>1.2 の件数が 6 割減る副作用(F6)=確定側は現行 ens15 を据え置く。>10h 帯の sd 0.74 は CHAOS T4 の出所差を含み過大の可能性(該当が >10h に集中する一因)。h の供給元(odds_observed_at)が updated_at 代理のままだと h を誤り、判断時専用モデルが誤った縮小をする。前向きの ROI 判定は不可能(数十年)で、測れるのは較正と NLL のみ。"
+  },
+  {
+   "name_ja": "A. 発走直前(T−3 分)の全馬 quote+ens15 予測の凍結(別途判断中)",
+   "what_improves": "判断時 EV 較正・保持率(直接)・保存価格 ROI の前向き測定の前提",
+   "tried_before": "未着手(R02 で 10 分以内の組は 8 レース・2 分以内 0)",
+   "expected_magnitude_ja": "V2 の horizon 応答(h=5〜10 分で 20–40 倍帯の p̂ ×0.90・40–100 倍 ×0.69、EV>1.2 件数 27→13〜14)と M2 の sd(<10 分 0.24)から、T−3 分では判断時 p̂ の過大は小さく該当は確定とほぼ同じ集合になる見込み(測定ではなく外挿)。A が揃えば B の払戻側(閉線予測)も学習可能になる。",
+   "cost_ja": "独立評価報告 §5 作業 1 のとおり migration+capture+長時間プロセスで 1〜2 週、1 日 ≤40 req。憲法 V の例外判断が前提。",
+   "acceptance_ja": "開催日全レースで T−3±1 分の quote ≥95%、半年で判断時 Σwon/Σp̂ の SE ±0.1 以下(勝者 100 件規模)。",
+   "risk_ja": "利用者の決定 3 件待ち。T−3 でも sd 0.2〜0.3 の帯で S3 は 100% 未満の見込み(評価報告 §0)。"
+  },
+  {
+   "name_ja": "C. 簡易版: 判断時 EV に帯別・horizon 別の事後縮小係数を掛ける(表示注記)",
+   "what_improves": "判断時 EV 較正",
+   "tried_before": "未試行(F1 の比がそのまま係数: EV_J 1.0–1.2 ×0.58・>1.2 ×0.50、区間 [0.35,0.88])",
+   "expected_magnitude_ja": "EV>1.2 の該当が EV_J>約 2.1 相当に限定され 443 集合で 2 頭以下=該当をほぼ消す。情報は足さない。",
+   "cost_ja": "front/api の注記 1 日。係数は 17 日・20 勝依存で四半期ごとに更新が要る。",
+   "acceptance_ja": "新規開催日で縮小後の Σwon/Σp̂ が [0.8,1.2] に入ること。",
+   "risk_ja": "係数の区間が広く、horizon 別にすると帯内 1〜2 勝で推定不能。B の代替にならず、A/B までのつなぎ。"
+  }
+ ],
+ "artifacts": [
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/m1_calib.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/m2_drift_reverse.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/m3_spike.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/m4_detail.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/m5_cross.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/m6_projection.py",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V1.log",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V2.log",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V2_s1_results.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V2_s2_results.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V2_s3_results.json",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V2_s1_2026.txt",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V2_s2_2026.txt",
+  "/private/tmp/claude-501/-Users-kuwatawaku-workspace-horseracing/76c2ac6f-96e3-4c6c-8f6a-7693441ba707/scratchpad/improve1010/decision_odds/spike_V2_s3_2026.txt"
+ ],
+ "open_questions_ja": [
+  "既存との重複(依頼 4): followup §5.3 の価格ノイズ代理は p̂ を固定して選定オッズだけを揺らす(p̂ 側の過大 −0.818 を扱わない)、R10 V2 は確定オッズ上の p̂ をレース内正規化・メタ補正する事後処理(判断時オッズを一度も見ない)、価格 gate(±10%)は自馬オッズの局所感度で該当を落とす見送り規則(較正を変えない)。B はこれらと違い p̂ の学習分布そのものを判断時に合わせる唯一の案で、091 の体重 train/serve skew 修正と同型。",
+  "B の生成器(a(h),b(h),s(h),ρ)は評価に使った同じ 17 日の組から推定しているため、判断時較正 0.79〜0.88 は horizon 構造について楽観側。10 月以降の新規開催日(chaos_snapshots+market_ev_predictions の結果未確定時 run)で組を増やし、生成器の推定日と評価日を分けて再測定する必要がある。",
+  ">10h 帯の sd 0.74 は CHAOS T4(0.95)と STORED_PRE(0.56)の出所差を含む。V2 の該当が >10h に 138/157 集中するのはこの帯で『オッズを信じない』学習をしたためで、出所別に s(h) を分けると該当分布が変わる可能性がある(未測定)。",
+  "本番で h を正しく渡せるか: odds_observed_at は現状 race_horses.updated_at の代理(評価報告 A3・未修正)。entries 再取込で時刻が進むと h を過小に見積もり、判断時専用モデルが縮小を弱める。A3 の修正が B の前提になる。",
+  "B の該当馬(確定で短くなる馬・O_F/O_J 0.63)の精算 ROI 0.75〜0.85 は 12〜19 勝の値で、前向きに 1 と区別する検出力はない。B の価値は『判断時 EV を正直に出す(過大を消す)』ことであり、ROI 改善の証拠は出せないことを利用者に明示する必要がある。",
+  "A(T−3 捕捉)が認められた場合、B の到達点は『閉線予測 E[O_F|J,特徴]』の学習に進める(564 組では不可能)。A の初月データで σ(T−3) を測ってから B の要否を決める順序(評価報告 §5 作業 4)は本計測でも支持される。",
+  "codex 未起動: 本担当は読み取り専用の計測と設計案で、リポジトリ変更・判定を含まないため見送った。B を実装段階に進めるなら market_ev.py の市場ブロック関数化と log_min 特徴追加(FEATURE 列変更)は codex レビュー対象。"
+ ]
+}

@@ -1,0 +1,31 @@
+cols ['pair_id', 'race_id', 'horse_id', 'horse_number', 'O_J', 'EVe_J', 'EVs_J', 'days_since_last', 'race_date', 'source', 'tb', 'hours', 'O_F', 'EVe_F', 'EVs_F', 'q_F', 'final_src', 'official_payout_yen', 'd', 'bJ', 'bF', 'J_S1', 'F_S1', 'J_S2', 'F_S2', 'J_S3', 'F_S3', 'J_S4', 'F_S4', 'J_S5', 'F_S5', 'won', 'dead_heat', 'O_settle', 'ret', 'gapf', 'frame', 'sex', 'age', 'weight', 'weight_diff', 'jockey_weight', 'popularity', 'running_style', 'jockey_id', 'trainer_id', 'venue_code', 'race_number', 'distance', 'track_type', 'going', 'weather', 'race_class', 'grade', 'prize_money', 'finish_order', 'result_status', 'margin_sec', 'last_3f', 'sire_line', 'damsire_line', 'finished', 'year', 'month', 'dow', 'dist_band', 'race_class_canon', 'class_rank', 'is_graded', 'field_size', 'race_ok', 'q', 'odds_rank', 'fav_odds', 'second_odds', 'odds_gap12', 'fav_q', 'q_share_of_fav', 'q_entropy_norm', 'n_fav_under_2', 'n_odds_under_10', 'is_fav', 'is_last_race', 'is_first_race', 'last3f_rank', 'career_starts', 'career_wins', 'career_top3', 'career_win_rate', 'career_top3_rate', 'is_debut', 'prev_finish', 'prev2_finish', 'prev3_finish', 'avg_last3_finish', 'best_finish_last5', 'wins_last5', 'top3_last5', 'prev_popularity', 'prev_odds', 'prev_q', 'prev_field_size', 'prev_finish_pct', 'prev_beat_market', 'prev_distance', 'prev_track_type', 'prev_venue_code', 'prev_class_canon', 'dist_change', 'class_change', 'tataki_2', 'prev_weight', 'weight_change_vs_prev', 'prev_running_style', 'prev_last3f_rank', 'prev_margin_sec', 'last_won', 'jockey_change', 'combo_id', 'jockey_starts_all', 'jockey_wins_all', 'jockey_q_all', 'jockey_starts_365', 'jockey_wins_365', 'jockey_q_365', 'jockey_excess_365', 'jockey_excess_all', 'jockey_win_rate_all', 'jockey_win_rate_365', 'trainer_starts_all', 'trainer_wins_all', 'trainer_q_all', 'trainer_starts_365', 'trainer_wins_365', 'trainer_q_365', 'trainer_excess_365', 'trainer_excess_all', 'trainer_win_rate_all', 'trainer_win_rate_365', 'combo_starts_all', 'combo_wins_all', 'combo_q_all', 'combo_starts_365', 'combo_wins_365', 'combo_q_365', 'combo_win_rate_all', 'combo_win_rate_365', 'official_race', 'settle_multiplier', 'N1_J', 'residual_EV12_J', 'extended_EV12_J', 'residual_p_J', 'extended_p_J', 'N1_F', 'residual_EV12_F', 'extended_EV12_F', 'residual_p_F', 'extended_p_F']
+rows 5967 races 443 days 17
+final_src counts {'archive': 3092, 'db_stored': 2875}
+official_race races 232
+archive cols ['race_id', 'race_date', 'horse_number', 'horse_id', 'stored_odds', 'result_page_odds', 'popularity_page', 'differs', 'db_won', 'official_payout_yen', 'affected'] races 504
+arc-confirmed races in scored: 389 unconfirmed: 54
+unconfirmed dates: {'2026-08-02': 31, '2026-08-09': 23}
+J_S1 443 O_settle: (39, 2, 1.5667) O_F: (39, 2, 1.5667)
+J_S1 389 O_settle: (34, 1, 0.6118) O_F: (34, 1, 0.6118)
+J_S1 54 O_settle: (5, 1, 8.06) O_F: (5, 1, 8.06)
+J_S3 443 O_settle: (82, 2, 0.7451) O_F: (82, 2, 0.7451)
+J_S3 389 O_settle: (75, 1, 0.2773) O_F: (75, 1, 0.2773)
+J_S3 54 O_settle: (7, 1, 5.7571) O_F: (7, 1, 5.7571)
+N1_J 443 O_settle: (88, 2, 0.6943) O_F: (88, 2, 0.6943)
+N1_J 389 O_settle: (79, 1, 0.2633) O_F: (79, 1, 0.2633)
+N1_J 54 O_settle: (9, 1, 4.4778) O_F: (9, 1, 4.4778)
+winners total 443 winners with official 232
+archive payout rows 500          race_id  horse_number  official_payout_yen
+2   202601010701             3                210.0
+20  202601010702             9                140.0
+32  202601010703            11                710.0
+winners in 389 with archive payout: 389 changed vs O_settle: 0
+Empty DataFrame
+Columns: [race_id, race_date, horse_number, O_J, O_F, O_settle, arc_mult]
+Index: []
+J_S1 hits:           race_id   race_date  horse_number   O_J   O_F  O_settle  arc_mult  final_src     hours      source  tb    arc
+122  202604020609  2026-08-09          15.0  33.4  40.3      40.3       NaN  db_stored  8.742222       CHAOS  T3  False
+426  202609040607  2026-09-20           9.0  25.7  20.8      20.8      20.8    archive  0.404554  STORED_PRE  T1   True
+J_S3 hits:           race_id   race_date  horse_number   O_J   O_F  O_settle  arc_mult  final_src     hours      source  tb    arc
+122  202604020609  2026-08-09          15.0  33.4  40.3      40.3       NaN  db_stored  8.742222       CHAOS  T3  False
+426  202609040607  2026-09-20           9.0  25.7  20.8      20.8      20.8    archive  0.404554  STORED_PRE  T1   True

@@ -222,12 +222,41 @@ def update_odds(session: Session, race_id: str, scraped: ScrapedOdds) -> Counts:
     - result-finalized race -> fill ONLY where odds IS NULL. This lets a netkeiba-only finished
       race get its confirmed odds, but NEVER clobbers an existing (JRA-VAN) final odds value.
     netkeiba win-odds JSON is keyed by 馬番 → match race_horses by (race_id, horse_number); no
-    id_mapping needed (Feature 022 I1)."""
+    id_mapping needed (Feature 022 I1).
+
+    Feature 140 — provenance of the latest win quote (``races.win_odds_official_at`` /
+    ``win_odds_observed_at``, the 複勝 shape). On a result-pending race whose payload carries at
+    least one valid win odds, and whose ``official_at`` is not older than the stored one (a stored
+    NULL accepts anything; the same instant is accepted; a payload without ``official_at`` moves
+    only ``observed_at``), the provenance is written EVEN WHEN NO VALUE CHANGED — a fresh quote at
+    the same price is still a fresh observation — but only when at least one race_horses row was
+    matched (``written > 0``; a same-price UPDATE still counts its matched rows). A payload whose
+    馬番 match no stored row (entries not ingested yet, a renumbered field) leaves the provenance
+    alone: the stored odds are still the OLD quote, so a newer timestamp would misdescribe them
+    (review a3-scrape-db-1). A payload older than the stored ``official_at``
+    writes neither odds nor provenance and is counted as ``skipped`` (the place quote's monotone
+    guard, so a replayed response cannot walk the latest value backwards). The settled fill-if-null
+    path never touches the provenance: the final odds' provenance is ``apply_final_odds``'s."""
     c = Counts()
     has_results = session.scalar(select(exists().where(RaceResult.race_id == race_id)))
-    for row in scraped.rows:
-        if row.odds is None or row.odds <= 0:
-            continue
+    valid = [row for row in scraped.rows if row.odds is not None and row.odds > 0]
+    write_provenance = False
+    if not has_results and valid:
+        # FOR UPDATE: the read-compare-write below is atomic against a concurrent writer of the
+        # same race (the live CLI and the ops worker can both reach here), so a stale payload
+        # cannot slip past the monotone guard between our read and our write (a3-scrape-db-2)
+        prior = session.scalar(
+            select(Race.win_odds_official_at).where(Race.race_id == race_id).with_for_update()
+        )
+        if (
+            scraped.official_at is not None and prior is not None
+            and scraped.official_at < prior
+        ):
+            c.skipped += len(valid)
+            c.merge(update_place_quote(session, race_id, scraped))
+            return c
+        write_provenance = True
+    for row in valid:
         c.processed += 1
         stmt = (
             update(RaceHorse)
@@ -240,6 +269,11 @@ def update_odds(session: Session, race_id: str, scraped: ScrapedOdds) -> Counts:
             c.written += res.rowcount
         elif has_results:  # existing odds protected (or no matching horse)
             c.skipped += 1
+    if write_provenance and c.written > 0:
+        values: dict = {"win_odds_observed_at": datetime.datetime.now(datetime.UTC)}
+        if scraped.official_at is not None:
+            values["win_odds_official_at"] = scraped.official_at
+        session.execute(update(Race).where(Race.race_id == race_id).values(**values))
 
     c.merge(update_place_quote(session, race_id, scraped))
     return c
@@ -464,7 +498,8 @@ def _usable_win_odds(value: float | None) -> Decimal | None:
 
 
 def apply_final_odds(
-    session: Session, race_id: str, rows: Iterable[ScrapedResultRow]
+    session: Session, race_id: str, rows: Iterable[ScrapedResultRow], *,
+    observed_at: datetime.datetime,
 ) -> FinalOddsCounts:
     """Overwrite ``race_horses.odds`` / ``popularity`` with the result page's FINAL values.
 
@@ -481,8 +516,14 @@ def apply_final_odds(
     * only rows whose value changes are touched (``IS DISTINCT FROM``), so the same page twice is
       a no-op and race_horses.updated_at does not move on a re-run;
     * a page with result rows but not one readable win odds is ``missing = 1`` (the stored odds
-      stay pre-race — surfaced per race, like a missing 単勝 payout).
+      stay pre-race — surfaced per race, like a missing 単勝 payout);
+    * Feature 140: when at least one row was rewritten, the race's win-quote provenance becomes
+      ``win_odds_observed_at = observed_at`` (when the result page was fetched; for an archive
+      repair the archive file's timestamp) and ``win_odds_official_at = NULL`` — a final value has
+      no quote time (plan D3). A no-op re-run leaves both as they were.
     """
+    if observed_at.tzinfo is None:
+        raise ValueError("observed_at must be timezone-aware")
     out = FinalOddsCounts()
     race_date = session.scalar(select(Race.race_date).where(Race.race_id == race_id))
     if race_date is None:
@@ -530,6 +571,11 @@ def apply_final_odds(
             out.unchanged += 1
     if rows and out.unreadable == len(rows):
         out.missing = 1
+    if out.updated:
+        session.execute(
+            update(Race).where(Race.race_id == race_id)
+            .values(win_odds_observed_at=observed_at, win_odds_official_at=None)
+        )
     return out
 
 
