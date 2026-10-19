@@ -97,6 +97,7 @@ def race_attention(race_id: str, session: Session = Depends(get_session)):
         return unavailable_attention(race_id, entries)
     return build_attention(
         race_id=race_id,
+        race_date=race.race_date,
         post_time=race.post_time,
         has_results=race_has_results(session, race_id),
         scan=scan,
@@ -150,6 +151,7 @@ def attention_day(date: datetime.date, session: Session = Depends(get_session)):
     responses = {
         race_id: build_attention(
             race_id=race_id,
+            race_date=races[race_id].race_date,
             post_time=races[race_id].post_time,
             has_results=race_id in with_results,
             scan=scans.get(race_id),

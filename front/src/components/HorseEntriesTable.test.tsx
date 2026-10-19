@@ -234,15 +234,19 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     result_pending_at_compute: true,
     threshold: 1.2,
     is_pseudo: true,
+    mix: { status: "unavailable", reason: "model_mismatch", threshold: 1.0 },
     horses: [
       { horse_id: "2020000001", horse_number: 1, expected_return: 1.243, odds_used: 3.9,
-        exceeds_threshold: true },
+        exceeds_threshold: true, expected_return_mix: null,
+      exceeds_mix_threshold: null },
       // exactly the threshold: the API says NOT exceeding (strict >) → no highlight
       { horse_id: "nk:99999", horse_number: 2, expected_return: 1.2, odds_used: 6.0,
-        exceeds_threshold: false },
+        exceeds_threshold: false, expected_return_mix: null,
+      exceeds_mix_threshold: null },
       // horse 3 (2020000003) has no stored row → "—"
       { horse_id: "2020000004", horse_number: 4, expected_return: 1.5, odds_used: 12.0,
-        exceeds_threshold: true },
+        exceeds_threshold: true, expected_return_mix: null,
+      exceeds_mix_threshold: null },
     ],
   };
 
@@ -348,8 +352,69 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     const headers = headerTexts(container);
     expect(headers).not.toContain("モデル勝率");
     expect(headers[headers.indexOf("単勝") + 1]).toBe("期待回収率");
-    expect(headers[headers.length - 1]).toBe("期待回収率");
+    // 141: the parallel 市場混合 column follows 期待回収率 (never replaces it)
+    expect(headers[headers.length - 2]).toBe("期待回収率");
+    expect(headers[headers.length - 1]).toBe("期待回収率(市場混合)");
     expect(screen.getByText("124.3%")).toBeInTheDocument();
+  });
+
+  it("141: shows the market-mixed value next to 期待回収率 with a neutral >100% mark", () => {
+    const mixed: MarketEvAvailable = {
+      ...marketEv,
+      model_version: "mev-ens15-v1",
+      mix: {
+        status: "available", version: "mix-ens15-v1", source_model_version: "mev-ens15-v1",
+        coef_year: 2026, fit_through_year: 2025, a: 0.2785, b: 0.7321, threshold: 1.0,
+      },
+      horses: [
+        { ...marketEv.horses[0], expected_return_mix: 1.087, exceeds_mix_threshold: true },
+        { ...marketEv.horses[1], expected_return_mix: 1.0, exceeds_mix_threshold: false },
+        { ...marketEv.horses[2], expected_return_mix: 0.912, exceeds_mix_threshold: false },
+      ],
+    };
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={entries} predictions={[]} marketEv={mixed} />,
+    );
+    const cells = Array.from(container.querySelectorAll('[data-testid="ev-mix-cell"]'));
+    expect(cells.map((c) => c.querySelector(".cell-main")?.textContent?.replace(/\s*推定$/, "")))
+      .toEqual(["108.7%", "100.0%", undefined]);
+    // horse 3 has no stored row → "—"
+    expect(cells[2].textContent).toBe("—");
+    // the mark only where the API says so (strict > 1.0), plain text, no emphasis classes
+    const marks = container.querySelectorAll(".mix-mark");
+    expect(marks).toHaveLength(1);
+    expect(marks[0].textContent).toBe("100%超");
+    expect(marks[0].className).toBe("cell-sub mix-mark");
+    // every mixed value carries the pseudo badge
+    for (const c of cells) {
+      if (c.textContent !== "—") {
+        expect(c.querySelector('[data-pseudo-kind="expected_return_mix"]')).not.toBeNull();
+      }
+    }
+    // the 期待回収率 column is untouched
+    expect(screen.getByText("124.3%")).toBeInTheDocument();
+    // the same display discipline as 137 on the mixed column (text, titles, colours) — review L4
+    const table = container.querySelector("table") as HTMLElement;
+    expect(table.textContent).not.toMatch(EXPECTED_RETURN_SCOPE);
+    const attrs = Array.from(table.querySelectorAll("[title], [aria-label]")).flatMap((el) => [
+      el.getAttribute("title") ?? "",
+      el.getAttribute("aria-label") ?? "",
+    ]);
+    for (const a of attrs) {
+      expect(a).not.toMatch(/買/);
+      expect(a).not.toMatch(EXPECTED_RETURN_SCOPE);
+    }
+    expect(container.querySelector(`${PROFIT_COLOUR_SELECTOR}, .up, .down`)).toBeNull();
+    assertPseudoLabelCoverage(container, ["108.7%", "100.0%", "124.3%"]);
+  });
+
+  it("141: mix unavailable → the column shows — for every horse (never the unmixed value)", () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={entries} predictions={[]} marketEv={marketEv} />,
+    );
+    const cells = Array.from(container.querySelectorAll('[data-testid="ev-mix-cell"]'));
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.every((c) => c.textContent === "—")).toBe(true);
   });
 
   it.each([
@@ -427,13 +492,17 @@ describe("HorseEntriesTable 注目条件 (138)", () => {
     result_pending_at_compute: true,
     threshold: 1.2,
     is_pseudo: true,
+    mix: { status: "unavailable", reason: "model_mismatch", threshold: 1.0 },
     horses: [
       { horse_id: "2020000001", horse_number: 1, expected_return: 1.246, odds_used: 30.8,
-        exceeds_threshold: true },
+        exceeds_threshold: true, expected_return_mix: null,
+      exceeds_mix_threshold: null },
       { horse_id: "nk:99999", horse_number: 2, expected_return: 0.864, odds_used: 5.4,
-        exceeds_threshold: false },
+        exceeds_threshold: false, expected_return_mix: null,
+      exceeds_mix_threshold: null },
       { horse_id: "2020000003", horse_number: 3, expected_return: 1.31, odds_used: 25.0,
-        exceeds_threshold: true },
+        exceeds_threshold: true, expected_return_mix: null,
+      exceeds_mix_threshold: null },
     ],
   };
 

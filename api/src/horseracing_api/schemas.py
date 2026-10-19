@@ -13,7 +13,7 @@ import uuid
 from typing import Annotated, Literal
 
 from horseracing_eval.attention_rules import Decision, RuleId, Stage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ErrorBody(BaseModel):
@@ -969,6 +969,45 @@ class HorseMarketEv(BaseModel):
     expected_return: float
     odds_used: float
     exceeds_threshold: bool
+    #: Feature 141: the market-mixed expected return (p_mix × odds_used, ratio). A SEPARATE
+    #: parallel value — never a replacement for expected_return. null when ``mix`` is unavailable.
+    expected_return_mix: float | None
+    #: strictly greater than ``mix.threshold`` (1.0); null when ``mix`` is unavailable
+    exceeds_mix_threshold: bool | None
+
+
+class MarketMixAvailable(BaseModel):
+    """Feature 141: how the mixed values were computed (shared definition in
+    horseracing_eval.market_mix): p_mix = softmax_race(a·log q + b·log p̄), q = market vote share
+    of odds_used, coefficients of the race's year fitted on earlier years only."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["available"]
+    version: str
+    #: the market-aware model whose p̄ the coefficients were fitted on
+    source_model_version: str
+    coef_year: int
+    fit_through_year: int
+    a: float
+    b: float
+    threshold: float
+
+
+class MarketMixUnavailable(BaseModel):
+    """Feature 141: no mixed values for this race (never silently replaced by expected_return)."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["unavailable"]
+    reason: Literal["no_coefficients", "invalid_inputs", "model_mismatch", "disabled"]
+    threshold: float
+
+
+MarketMix = Annotated[
+    MarketMixAvailable | MarketMixUnavailable,
+    Field(discriminator="status"),
+]
 
 
 class MarketEvAvailable(BaseModel):
@@ -989,8 +1028,30 @@ class MarketEvAvailable(BaseModel):
     result_pending_at_compute: bool
     threshold: float
     is_pseudo: Literal[True]
+    #: Feature 141: the parallel market-mixed column's provenance (or why it is absent)
+    mix: MarketMix
     #: horse_number ascending (nulls last, then horse_id)
     horses: list[HorseMarketEv]
+
+    @model_validator(mode="after")
+    def _mix_state_matches_the_horses(self) -> MarketEvAvailable:
+        """available ⇔ every horse has a mixed value and its flag; unavailable ⇔ none has
+        (the unmixed value can never stand in for the mixed one) — review L3."""
+        if self.mix.status == "available":
+            ok = all(
+                h.expected_return_mix is not None and h.exceeds_mix_threshold is not None
+                for h in self.horses
+            )
+        else:
+            ok = all(
+                h.expected_return_mix is None and h.exceeds_mix_threshold is None
+                for h in self.horses
+            )
+        if not ok:
+            raise ValueError(
+                f"mix.status={self.mix.status} disagrees with the horses' mixed values"
+            )
+        return self
 
 
 class MarketEvUnavailable(BaseModel):

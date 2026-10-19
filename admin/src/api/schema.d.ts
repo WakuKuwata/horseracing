@@ -1442,10 +1442,14 @@ export interface components {
          *     (strictly greater than the response's threshold).
          */
         HorseMarketEv: {
+            /** Exceeds Mix Threshold */
+            exceeds_mix_threshold: boolean | null;
             /** Exceeds Threshold */
             exceeds_threshold: boolean;
             /** Expected Return */
             expected_return: number;
+            /** Expected Return Mix */
+            expected_return_mix: number | null;
             /** Horse Id */
             horse_id: string;
             /** Horse Number */
@@ -1708,6 +1712,8 @@ export interface components {
             is_pseudo: true;
             /** Logic Version */
             logic_version: string;
+            /** Mix */
+            mix: components["schemas"]["MarketMixAvailable"] | components["schemas"]["MarketMixUnavailable"];
             /** Model Version */
             model_version: string;
             /** Odds Changed After Compute */
@@ -1742,6 +1748,51 @@ export interface components {
              * @enum {string}
              */
             reason: "not_computed" | "field_changed" | "odds_unavailable";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "unavailable";
+            /** Threshold */
+            threshold: number;
+        };
+        /**
+         * MarketMixAvailable
+         * @description Feature 141: how the mixed values were computed (shared definition in
+         *     horseracing_eval.market_mix): p_mix = softmax_race(a·log q + b·log p̄), q = market vote share
+         *     of odds_used, coefficients of the race's year fitted on earlier years only.
+         */
+        MarketMixAvailable: {
+            /** A */
+            a: number;
+            /** B */
+            b: number;
+            /** Coef Year */
+            coef_year: number;
+            /** Fit Through Year */
+            fit_through_year: number;
+            /** Source Model Version */
+            source_model_version: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "available";
+            /** Threshold */
+            threshold: number;
+            /** Version */
+            version: string;
+        };
+        /**
+         * MarketMixUnavailable
+         * @description Feature 141: no mixed values for this race (never silently replaced by expected_return).
+         */
+        MarketMixUnavailable: {
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "no_coefficients" | "invalid_inputs" | "model_mismatch" | "disabled";
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}

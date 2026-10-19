@@ -144,7 +144,7 @@ def _tallies(**stages):
 def _build(entries, picks, *, ens=None, single=None, scan=True, tallies=None, post=_POST,
            has_results=False):
     return build_attention(
-        race_id=_RACE, post_time=post, has_results=has_results,
+        race_id=_RACE, race_date=_POST.date(), post_time=post, has_results=has_results,
         scan=_scan() if scan else None, picks=picks, entries=entries,
         ens_rows=_ev_rows(entries) if ens is None else ens,
         single_rows=_ev_rows(entries) if single is None else single,
