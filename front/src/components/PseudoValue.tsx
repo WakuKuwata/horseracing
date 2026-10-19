@@ -16,7 +16,9 @@ export type PseudoKind =
   | "double_pseudo"
   | "market_q"
   // Feature 137: 期待回収率 = market-aware model p × win odds (a model estimate, never realized)
-  | "expected_return";
+  | "expected_return"
+  // Feature 141: the market-mixed parallel value of 期待回収率 (still an estimate)
+  | "expected_return_mix";
 
 const LABELS: Record<PseudoKind, string> = {
   estimated: "推定",
@@ -24,6 +26,7 @@ const LABELS: Record<PseudoKind, string> = {
   double_pseudo: "二重疑似",
   market_q: "市場推定",
   expected_return: "推定",
+  expected_return_mix: "推定",
 };
 
 const TITLES: Record<PseudoKind, string> = {
@@ -32,6 +35,8 @@ const TITLES: Record<PseudoKind, string> = {
   double_pseudo: "二重疑似(推定オッズ + PL外挿・実現ROIではない)",
   market_q: "市場推定確率(オッズ由来 vote-share・FL bias 含む・真の確率でもモデル p でもない)",
   expected_return: "市場連動モデルの推定(勝率×単勝オッズ)。実績ではありません",
+  expected_return_mix:
+    "期待回収率の推定勝率を市場の評価と混ぜ直した推定(勝率×単勝オッズ)。実績ではありません",
 };
 
 export function PseudoBadge({ kind }: { kind: PseudoKind }) {

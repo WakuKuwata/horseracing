@@ -21,9 +21,11 @@ const AVAILABLE: MarketEvAvailable = {
   result_pending_at_compute: true,
   threshold: 1.2,
   is_pseudo: true,
+  mix: { status: "unavailable", reason: "model_mismatch", threshold: 1.0 },
   horses: [
     { horse_id: "h1", horse_number: 1, expected_return: 1.3, odds_used: 5.0,
-      exceeds_threshold: true },
+      exceeds_threshold: true, expected_return_mix: null,
+      exceeds_mix_threshold: null },
   ],
 };
 
@@ -146,5 +148,55 @@ describe("ExpectedReturnNote (137)", () => {
     expect(container.textContent).not.toMatch(/買/);
     expect(container.querySelector("button, [role='button'], a, input, select")).toBeNull();
     expect(container.querySelector(`${PROFIT_COLOUR_SELECTOR}, .up, .down`)).toBeNull();
+  });
+});
+
+// Feature 141: the 市場混合 paragraphs (fixed text, frozen values) and the per-reason unavailable text.
+describe("ExpectedReturnNote 市場混合 (141)", () => {
+  const MIXED: MarketEvAvailable = {
+    ...AVAILABLE,
+    mix: {
+      status: "available", version: "mix-ens15-v1", source_model_version: "mev-ens15-v1",
+      coef_year: 2026, fit_through_year: 2025, a: 0.2785, b: 0.7321, threshold: 1.0,
+    },
+    horses: [{ ...AVAILABLE.horses[0], expected_return_mix: 1.08, exceeds_mix_threshold: true }],
+  };
+
+  it("available: defines the mixed value, gives the ratio (not a return) and the limits", () => {
+    render(<ExpectedReturnNote marketEv={MIXED} isLoading={false} error={null} />);
+    const note = screen.getByTestId("expected-return-note");
+    expect(screen.getByTestId("expected-return-mix-definition").textContent).toMatch(
+      /^『期待回収率\(市場混合\)』は、/,
+    );
+    const validation = screen.getByTestId("expected-return-mix-validation").textContent ?? "";
+    expect(validation).toContain("比が 0.95");
+    expect(validation).toContain("この検証の結果を見て決めました");
+    // the in-sample return of the selected set is NOT shown (the boundary was chosen on it)
+    expect(validation).not.toMatch(/106|回収率は/);
+    expect(screen.getByTestId("expected-return-mix-heldout").textContent).toContain(
+      "差の区間は改善と悪化の両方を含みます",
+    );
+    expect(screen.queryByTestId("expected-return-mix-unavailable")).toBeNull();
+    expect(note.textContent).not.toMatch(EXPECTED_RETURN_SCOPE);
+    expect(note.textContent).not.toMatch(/目印|同等以上/);
+    expect(screen.getByTestId("expected-return-disclaimer").textContent).toBe(
+      "的中や利益を保証するものではありません。",
+    );
+  });
+
+  it.each([
+    ["no_coefficients", "混ぜる比率がまだ決まっていない"],
+    ["invalid_inputs", "計算に必要な値がそろわない"],
+    ["model_mismatch", "市場混合を計算していません"],
+    ["disabled", "停止中"],
+  ] as const)("unavailable(%s) says why the column is empty", (reason, text) => {
+    const marketEv: MarketEvAvailable = {
+      ...AVAILABLE,
+      mix: { status: "unavailable", reason, threshold: 1.0 },
+    };
+    render(<ExpectedReturnNote marketEv={marketEv} isLoading={false} error={null} />);
+    const msg = screen.getByTestId("expected-return-mix-unavailable").textContent ?? "";
+    expect(msg).toContain(text);
+    expect(msg).not.toMatch(EXPECTED_RETURN_SCOPE);
   });
 });

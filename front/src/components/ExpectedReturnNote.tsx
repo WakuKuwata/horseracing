@@ -31,6 +31,26 @@ export const EXPECTED_RETURN_UNCERTAINTY =
 
 export const EXPECTED_RETURN_DISCLAIMER = "的中や利益を保証するものではありません。";
 
+/** Feature 141: 市場混合(並走表示)の固定文言。数値は fit_mix.py / heldout.py の凍結値の転記。 */
+export const MIX_DEFINITION =
+  "『期待回収率(市場混合)』は、期待回収率の推定勝率を市場の評価(単勝オッズの支持率)と混ぜ直して計算し直した期待回収率です。混ぜ方の係数は各年、前年までのデータで決めています。期待回収率が高く出た馬ほど過大になりやすい分を抑えます。期待回収率の列と注目条件はこれまでどおりです。";
+
+export const MIX_VALIDATION =
+  "過去検証(2013〜2026 年 6 月・確定オッズ・各年を前年までのデータで決定): 市場混合で 100% を超えた馬(24,737 頭)では、推定に対する実際の勝ち数の比が 0.95 でした(混ぜる前は 120% 超の馬で 0.75)。120% を超える馬ではなお推定が高すぎる(比 0.77)ため、表の「100%超」は 100% を境にしています。この境はこの検証の結果を見て決めました。";
+
+export const MIX_HELDOUT =
+  "検証に使っていない期間(2026 年 8 月 10 日〜10 月 18 日・593 レース)の確認では、勝ち馬の当てはまりの悪化は見られませんでした(差の区間は改善と悪化の両方を含みます)。この期間の 100% 超は 149 頭と少なく、何も判断できません。";
+
+export const MIX_LIMIT =
+  "混ぜる比率は確定オッズで決めたもので、発走前のオッズで表示した値の検証はこれから記録します。";
+
+const MIX_UNAVAILABLE_TEXT: Record<string, string> = {
+  no_coefficients: "このレースの年の混ぜる比率がまだ決まっていないため、市場混合は表示していません",
+  invalid_inputs: "このレースは計算に必要な値がそろわないため、市場混合は表示していません",
+  model_mismatch: "このモデルの値には市場混合を計算していません",
+  disabled: "市場混合の表示は停止中です",
+};
+
 function definition(modelVersion: string): string {
   return (
     "期待回収率は、表の『モデル勝率』とは別の市場連動モデル" +
@@ -109,6 +129,16 @@ function NoteBody({
       <p data-testid="expected-return-validation">{EXPECTED_RETURN_VALIDATION}</p>
       <p data-testid="expected-return-series">{EXPECTED_RETURN_SERIES_CHANGE}</p>
       <p data-testid="expected-return-uncertainty">{EXPECTED_RETURN_UNCERTAINTY}</p>
+      <p className="ev-note__subtitle">市場混合について</p>
+      <p data-testid="expected-return-mix-definition">{MIX_DEFINITION}</p>
+      {marketEv.mix.status === "unavailable" && (
+        <p data-testid="expected-return-mix-unavailable">
+          {MIX_UNAVAILABLE_TEXT[marketEv.mix.reason] ?? MIX_UNAVAILABLE_TEXT.invalid_inputs}
+        </p>
+      )}
+      <p data-testid="expected-return-mix-validation">{MIX_VALIDATION}</p>
+      <p data-testid="expected-return-mix-heldout">{MIX_HELDOUT}</p>
+      <p data-testid="expected-return-mix-limit">{MIX_LIMIT}</p>
       <p data-testid="expected-return-disclaimer">{EXPECTED_RETURN_DISCLAIMER}</p>
     </>
   );

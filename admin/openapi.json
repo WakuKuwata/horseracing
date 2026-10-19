@@ -2911,6 +2911,17 @@
         "additionalProperties": false,
         "description": "One started horse: expected_return = market-aware p × odds_used (ratio; 1.2 = 120%).\n\nPseudo (a model estimate, never a realized return). exceeds_threshold is decided by the API\n(strictly greater than the response's threshold).",
         "properties": {
+          "exceeds_mix_threshold": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exceeds Mix Threshold"
+          },
           "exceeds_threshold": {
             "title": "Exceeds Threshold",
             "type": "boolean"
@@ -2918,6 +2929,17 @@
           "expected_return": {
             "title": "Expected Return",
             "type": "number"
+          },
+          "expected_return_mix": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Return Mix"
           },
           "horse_id": {
             "title": "Horse Id",
@@ -2944,7 +2966,9 @@
           "horse_number",
           "expected_return",
           "odds_used",
-          "exceeds_threshold"
+          "exceeds_threshold",
+          "expected_return_mix",
+          "exceeds_mix_threshold"
         ],
         "title": "HorseMarketEv",
         "type": "object"
@@ -3769,6 +3793,24 @@
             "title": "Logic Version",
             "type": "string"
           },
+          "mix": {
+            "discriminator": {
+              "mapping": {
+                "available": "#/components/schemas/MarketMixAvailable",
+                "unavailable": "#/components/schemas/MarketMixUnavailable"
+              },
+              "propertyName": "status"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MarketMixAvailable"
+              },
+              {
+                "$ref": "#/components/schemas/MarketMixUnavailable"
+              }
+            ],
+            "title": "Mix"
+          },
           "model_version": {
             "title": "Model Version",
             "type": "string"
@@ -3811,6 +3853,7 @@
           "result_pending_at_compute",
           "threshold",
           "is_pseudo",
+          "mix",
           "horses"
         ],
         "title": "MarketEvAvailable",
@@ -3850,6 +3893,89 @@
           "threshold"
         ],
         "title": "MarketEvUnavailable",
+        "type": "object"
+      },
+      "MarketMixAvailable": {
+        "additionalProperties": false,
+        "description": "Feature 141: how the mixed values were computed (shared definition in\nhorseracing_eval.market_mix): p_mix = softmax_race(a·log q + b·log p̄), q = market vote share\nof odds_used, coefficients of the race's year fitted on earlier years only.",
+        "properties": {
+          "a": {
+            "title": "A",
+            "type": "number"
+          },
+          "b": {
+            "title": "B",
+            "type": "number"
+          },
+          "coef_year": {
+            "title": "Coef Year",
+            "type": "integer"
+          },
+          "fit_through_year": {
+            "title": "Fit Through Year",
+            "type": "integer"
+          },
+          "source_model_version": {
+            "title": "Source Model Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "available",
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version",
+          "source_model_version",
+          "coef_year",
+          "fit_through_year",
+          "a",
+          "b",
+          "threshold"
+        ],
+        "title": "MarketMixAvailable",
+        "type": "object"
+      },
+      "MarketMixUnavailable": {
+        "additionalProperties": false,
+        "description": "Feature 141: no mixed values for this race (never silently replaced by expected_return).",
+        "properties": {
+          "reason": {
+            "enum": [
+              "no_coefficients",
+              "invalid_inputs",
+              "model_mismatch",
+              "disabled"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "const": "unavailable",
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "status",
+          "reason",
+          "threshold"
+        ],
+        "title": "MarketMixUnavailable",
         "type": "object"
       },
       "ModelListResponse": {

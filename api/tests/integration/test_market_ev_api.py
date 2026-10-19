@@ -102,7 +102,7 @@ def test_available_values_equal_persisted_rows(client, session):
     assert set(body) == {
         "status", "race_id", "model_version", "logic_version", "computed_at", "odds_observed_at",
         "odds_changed_after_compute", "result_pending_at_compute", "threshold", "is_pseudo",
-        "horses",
+        "mix", "horses",
     }
     assert body["status"] == "available"
     assert body["race_id"] == _RACE
@@ -119,6 +119,7 @@ def test_available_values_equal_persisted_rows(client, session):
     for h, row in zip(body["horses"], persisted, strict=True):
         assert set(h) == {
             "horse_id", "horse_number", "expected_return", "odds_used", "exceeds_threshold",
+            "expected_return_mix", "exceeds_mix_threshold",
         }
         assert h["horse_id"] == row.horse_id
         assert h["horse_number"] == row.horse_number
@@ -127,6 +128,42 @@ def test_available_values_equal_persisted_rows(client, session):
         assert h["exceeds_threshold"] is (float(row.expected_return) > 1.2)
     # 0.36×2.5=0.9 / 0.25×4.0=1.0 / 0.16×8.0=1.28 / 0.09×15.0=1.35
     assert [h["exceeds_threshold"] for h in body["horses"]] == [False, False, True, True]
+
+
+def test_mixed_expected_return_is_computed_from_the_stored_rows(client, session):
+    """Feature 141: the parallel market-mixed column = softmax(a·log q + b·log p̄) over the stored
+    started field × odds_used, with the race year's frozen coefficients; nothing is stored."""
+    import math
+
+    from horseracing_eval import market_mix
+
+    _seed(session, booster="ensemble_2026.json")
+    before = session.scalar(select(func.count()).select_from(MarketEvPrediction))
+    body = client.get(_url()).json()
+    coef = market_mix.coefficients_for(_DATE.year)
+    assert body["mix"] == {
+        "status": "available", "version": market_mix.MIX_VERSION,
+        "source_model_version": DISPLAYED_MARKET_EV_MODEL_VERSION, "coef_year": 2026,
+        "fit_through_year": 2025, "a": coef.a, "b": coef.b, "threshold": 1.0,
+    }
+    inv = {n: 1 / h["odds_used"] for n, h in _EV.items()}
+    s = {n: coef.a * math.log(inv[n] / sum(inv.values())) + coef.b * math.log(h["win_prob"])
+         for n, h in _EV.items()}
+    z = sum(math.exp(v) for v in s.values())
+    want = [math.exp(s[n]) / z * _EV[n]["odds_used"] for n in sorted(_EV)]
+    got = [h["expected_return_mix"] for h in body["horses"]]
+    assert got == pytest.approx(want, rel=1e-9)
+    assert [h["exceeds_mix_threshold"] for h in body["horses"]] == [w > 1.0 for w in want]
+    assert "p_mix" not in body["mix"] and "win_prob" not in str(body)
+    assert session.scalar(select(func.count()).select_from(MarketEvPrediction)) == before
+
+
+def test_mixed_column_is_null_for_the_single_seed_series(client, session):
+    _seed(session, model_version=SINGLE_SEED_MODEL_VERSION)
+    session.commit()
+    body = client.get(_url()).json()
+    # the column shows the displayed (15-seed) version only; no rows of it -> not_computed
+    assert body["status"] == "unavailable"
 
 
 def test_threshold_is_strict_at_exactly_one_point_two(client, session):

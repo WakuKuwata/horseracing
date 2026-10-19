@@ -97,6 +97,14 @@ const DIVERGENCE_TOOLTIP =
 const EV_HEADER_TITLE =
   "表の「モデル勝率」とは別の市場連動モデルが推定した勝率 × 単勝オッズ。推定値であり実績ではありません";
 
+// Feature 141: the market-mixed PARALLEL value of 期待回収率 (API `expected_return_mix`). Never
+// replaces the 期待回収率 column, never sortable, and its >100% mark is neutral text (no colour,
+// fill or weight) so it cannot be confused with the 137/138 emphasis.
+const MIX_HEADER_TITLE =
+  "期待回収率の推定勝率を市場の評価と混ぜ直した値。期待回収率が高く出た馬ほど過大になりやすい分を抑えた推定で、実績ではありません";
+export const MIX_MARK_TEXT = "100%超";
+const MIX_MARK_TITLE = "市場混合後に 100% を超える(推定)。的中や利益を保証するものではありません";
+
 /** Feature 138: 注目条件チップ(判断時点の表示)。どの条件か・段階・S2 副チップは API の値
  *  (`chip_rule`/`chip_stage`/`chip_s2`)をそのまま使い、front は該当を導き直さない。強調レベル
  *  (4 軸の最小値)は `lib/attention.ts` が決め、形(塗り/枠/文字のみ)で 3 段に描き分ける。
@@ -222,6 +230,8 @@ export function HorseEntriesTable({
     [attention],
   );
   const evColumn = evAvailable || attentionRace !== null;
+  // 141: shown next to 期待回収率 whenever that column is; cells are "—" without a mixed value
+  const mixColumn = evColumn;
   // Evaluated at render (FR-006): not auto-refreshed; a refetch re-renders and re-evaluates it.
   const renderNow = now ?? Date.now();
 
@@ -273,7 +283,11 @@ export function HorseEntriesTable({
   const sortableColumns = hasPreds ? [...BASE_COLUMNS, ...PRED_COLUMNS] : BASE_COLUMNS;
   // total columns for the expansion row colSpan
   const totalCols =
-    sortableColumns.length + (evColumn ? 1 : 0) + (comparable ? 1 : 0) + (hasPreds ? 1 : 0);
+    sortableColumns.length +
+    (evColumn ? 1 : 0) +
+    (mixColumn ? 1 : 0) +
+    (comparable ? 1 : 0) +
+    (hasPreds ? 1 : 0);
 
   return (
     <div className="table-scroll">
@@ -296,6 +310,13 @@ export function HorseEntriesTable({
             {evColumn && (
               <th className="num ev-head" title={EV_HEADER_TITLE}>
                 期待回収率
+              </th>
+            )}
+            {mixColumn && (
+              <th className="num ev-mix-head" title={MIX_HEADER_TITLE}>
+                期待回収率
+                <br />
+                (市場混合)
               </th>
             )}
             {comparable && (
@@ -440,6 +461,26 @@ export function HorseEntriesTable({
                         >
                           {isOpen ? "▾" : "▸"}
                         </button>
+                      )}
+                    </td>
+                  )}
+                  {mixColumn && (
+                    <td className="num ev-mix-cell" data-testid="ev-mix-cell">
+                      {ev?.expected_return_mix != null ? (
+                        <>
+                          <span className="cell-main">
+                            <PseudoValue kind="expected_return_mix">
+                              {formatPct(ev.expected_return_mix, 1)}
+                            </PseudoValue>
+                          </span>
+                          {ev.exceeds_mix_threshold && (
+                            <span className="cell-sub mix-mark" title={MIX_MARK_TITLE}>
+                              {MIX_MARK_TEXT}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        PLACEHOLDER
                       )}
                     </td>
                   )}

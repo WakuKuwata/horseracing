@@ -535,7 +535,8 @@ th.colgroup {
 .entries-table th.ev-head {
   white-space: nowrap;
 }
-.ev-cell {
+.ev-cell,
+.ev-mix-cell {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

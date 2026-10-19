@@ -248,11 +248,14 @@ export const marketEvAvailable: MarketEvAvailable = {
   result_pending_at_compute: true,
   threshold: 1.2,
   is_pseudo: true,
+  mix: { status: "unavailable", reason: "model_mismatch", threshold: 1.0 },
   horses: [
     { horse_id: "h1", horse_number: 1, expected_return: 1.237, odds_used: 3.1,
-      exceeds_threshold: true },
+      exceeds_threshold: true, expected_return_mix: null,
+      exceeds_mix_threshold: null },
     { horse_id: "h2", horse_number: 2, expected_return: 0.864, odds_used: 5.4,
-      exceeds_threshold: false },
+      exceeds_threshold: false, expected_return_mix: null,
+      exceeds_mix_threshold: null },
   ],
 };
 

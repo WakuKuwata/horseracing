@@ -37,10 +37,12 @@ def _err(status: int, code: str, detail: str) -> JSONResponse:
 def race_market_ev(race_id: str, session: Session = Depends(get_session)):
     if not _RACE_ID.match(race_id):
         return _err(422, "invalid_race_id", "race_id must be 12 digits")
-    if get_race(session, race_id) is None:
+    race = get_race(session, race_id)
+    if race is None:
         return _err(404, "race_not_found", f"race {race_id} not found")
     return build_market_ev(
         race_id,
         market_ev_rows(session, race_id, model_version=DISPLAYED_MARKET_EV_MODEL_VERSION),
         started_win_odds_by_horse(session, race_id),
+        race_date=race.race_date,
     )

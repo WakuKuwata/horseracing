@@ -1,0 +1,37 @@
+{
+ "name": "141 market-mix held-out check (closing odds)",
+ "version": "v1",
+ "frozen_at": "2026-10-19",
+ "spec": "specs/141-market-mix-display/spec.md FR-006",
+ "window": {
+  "from": "2026-08-10",
+  "to": "2026-10-18",
+  "why": "after the generator/fit data (coefficients fit on 2010..2025) and after the 139 final-odds repair gap (2026-06-27..08-09 stored win odds are pre-race values)"
+ },
+ "population": [
+  "races with race_date in window, track_type <> '障', results present",
+  "market_ev.build_features race_ok (every started horse has odds) and no dead heat (exactly one finished winner)",
+  "the winner's stored win odds x 100 equals the official 単勝 payout within 10 yen (the stored odds are the final values)"
+ ],
+ "predictions": "production as-of features (market_ev.load_rows since 2007 -> build_features) on the stored final odds; p_bar = mean of the 15 mev-ens15-v1 2026 boosters (ensemble_2026.json); p_mix = horseracing_eval.market_mix with the frozen 2026 coefficients",
+ "metrics": [
+  "race-normalized winner NLL of p_bar and of p_mix (one value per race)",
+  "EV bands (<=0.8, 0.8-1.0, 1.0-1.2, 1.2-1.5, >1.5) of EV=p_bar*odds and EV_mix=p_mix*odds: n, won, sum p, sum won / sum p",
+  "sets raw EV>1.0, raw EV>1.2 (=S3), EV_mix>1.0: n, won, sum won/sum p, ROI settled on the official payout"
+ ],
+ "paired": "winner NLL difference (mix - raw) per race; race-day block bootstrap B=4000 seed=20261019; 95% percentile interval",
+ "rule": {
+  "display_enabled_if": "point estimate of (mix - raw) winner NLL <= 0, OR the 95% interval lower bound <= 0 (not significantly worse)",
+  "display_disabled_if": "the 95% interval lower bound > 0 (significantly worse)",
+  "recorded_only": [
+   "EV_mix>1.0 sum won/sum p and its interval",
+   "band calibration",
+   "ROI (never used for any decision)"
+  ]
+ },
+ "run_once": true,
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "確定オッズでの確認。発走前オッズでの表示値は別に記録する"
+ ]
+}

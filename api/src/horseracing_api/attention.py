@@ -630,6 +630,7 @@ def unavailable_attention(race_id: str, entries: Sequence[Entry]) -> AttentionUn
 def build_attention(
     *,
     race_id: str,
+    race_date: datetime.date,
     post_time: datetime.datetime | None,
     has_results: bool,
     scan: StoredScan | None,
@@ -649,7 +650,7 @@ def build_attention(
         return unavailable_attention(race_id, entries)
     started_odds = {e.horse_id: e.odds for e in entries if e.entry_status == EntryStatus.STARTED}
 
-    market = build_market_ev(race_id, ens_rows, started_odds)
+    market = build_market_ev(race_id, ens_rows, started_odds, race_date=race_date)
     ens_now = (
         {row.horse_id: row for row in ens_rows} if isinstance(market, MarketEvAvailable) else {}
     )
