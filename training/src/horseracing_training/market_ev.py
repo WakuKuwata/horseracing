@@ -86,7 +86,7 @@ ENSEMBLE_SEEDS = tuple(range(1, 16))
 #: is stamped ``oddsobs=proxy`` in place of the constant's ``oddsobs=quote`` — the only carrier of
 #: that fact that survives (the race's provenance columns are overwritten by the final-odds write
 #: once results land, so they cannot tell afterwards which source a compute used). Per-row tokens
-#: in logic_version follow the ``recommendations`` precedent (``prospective=1``, Feature 065).
+#: in logic_version follow the Feature 065 precedent on the recommendation rows (``prospective=1``).
 ODDSOBS_QUOTE = "oddsobs=quote"
 ODDSOBS_PROXY = "oddsobs=proxy"
 
