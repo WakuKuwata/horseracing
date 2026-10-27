@@ -11,6 +11,8 @@ import {
   type JobAccepted,
   type JobStatus,
 } from "../api/opsClient";
+import { usePauseState } from "../api/opsStatus";
+import { OpsPauseNotice } from "./OpsPauseNotice";
 
 // Feature 043: generate the buy-recommendation set (Kelly EV+stake) for THIS race on demand.
 // Write goes through the ops path (024) — never the read-only 014 API. On terminal success we
@@ -89,6 +91,7 @@ export function RecommendButton({
   }, [status, invalidated, qc, raceId]);
 
   const running = start.isPending || (jobId != null && !isTerminal(status));
+  const { paused } = usePauseState(); // B5: 172 pause → disabled with the reason
 
   let tone = "";
   let text = "";
@@ -116,10 +119,11 @@ export function RecommendButton({
         type="button"
         className="predict__btn"
         onClick={() => start.mutate()}
-        disabled={running}
+        disabled={running || paused}
       >
         {running ? "生成中…" : "買い目生成"}
       </button>
+      {paused && !text && <OpsPauseNotice className="predict__status" />}
       {text && (
         <span className={`predict__status predict__status--${tone}`} role="status">
           {text}

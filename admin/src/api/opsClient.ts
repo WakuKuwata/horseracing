@@ -29,3 +29,16 @@ export async function postRefreshRange(
   }
   return { job: res.data as JobAccepted };
 }
+
+// --- B5 (2026-10-27): service status — is the ops process accepting writes? ----------------------
+export type OpsStatus =
+  paths["/ops/v1/status"]["get"]["responses"][200]["content"]["application/json"];
+
+/** Whether ops currently accepts writes (172 pause). Throws a typed ErrorInfo on failure. */
+export async function getOpsStatus(): Promise<OpsStatus> {
+  const res = await opsApi.GET("/ops/v1/status");
+  if (res.error !== undefined || !res.response.ok) {
+    throw parseApiError(res.response.status, res.error) as ErrorInfo;
+  }
+  return res.data as OpsStatus;
+}

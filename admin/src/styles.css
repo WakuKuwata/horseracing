@@ -78,3 +78,8 @@ tr[data-hole="true"] { background: #fff4e5; }  /* coverage hole — needs backfi
 /* Feature 054: diagnostics viewer — factual display, no advantage sorting / P&L coloring */
 .diag-disclaimer { border-left: 3px solid var(--banner-fg); padding-left: 0.6rem; }
 .state--empty pre { background: #f6f6f6; padding: 0.5rem 0.7rem; border-radius: 4px; overflow-x: auto; }
+
+/* B5 (2026-10-27): ops pause — an operating state, neutral (not the error colour). */
+.app__banner--pause { background: var(--panel, #f3f4f6); color: var(--muted, #555); }
+.refresh-paused { display: inline-flex; gap: 0.4rem; align-items: center; }
+.refresh-result[data-state="paused"] { color: var(--muted); }

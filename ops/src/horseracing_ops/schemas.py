@@ -20,6 +20,28 @@ JobStatusT = Literal["queued", "running", "succeeded", "partial", "failed", "ski
 # front stayed on 更新中… forever.
 
 
+class PolicyFileStatus(BaseModel):
+    """The repository's public source-operations policy (172), reported as data."""
+    present: bool
+    parse_error: str | None = None
+    schema_version: str | None = None
+    collection_paused: bool | None = None
+    source_interval_seconds: float | None = None
+    ops_fetch_min_interval_seconds: float | None = None
+    shared_limiter_enabled: bool | None = None
+
+
+class OpsStatus(BaseModel):
+    """GET /status — whether THIS ops process accepts writes (B5). See routers/status.py."""
+    collection_paused: bool
+    writes_accepted: bool
+    collection_mode: str | None
+    policy_file: PolicyFileStatus
+    policy_mismatch: bool
+    ops_fetch_min_interval_seconds: float
+    detail: str
+
+
 class ErrorBody(BaseModel):
     status: int
     code: str

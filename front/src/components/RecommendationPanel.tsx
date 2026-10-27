@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
+import { usePauseState } from "../api/opsStatus";
+
 import { submitPurchaseRecord } from "../api/opsClient";
 import { usePurchaseRecords, useRecommendations } from "../api/queries";
 import type { HorseEntry, RecommendationResponse } from "../api/types";
@@ -71,6 +73,8 @@ export function RecommendationPanel({
 }) {
   const query = useRecommendations(raceId);
   const { budget, setBudget } = useBudget();
+  // B5: the 172 pause blocks purchase-record POSTs too; the record controls say so instead of 503ing.
+  const { paused } = usePauseState();
   const queryClient = useQueryClient();
 
   // Feature 106: has this race already been recorded? (effective record after fold — a voided
@@ -167,6 +171,7 @@ export function RecommendationPanel({
             <PurchaseRecordsSection comparisonMode={comparisonMode}>
             <PurchaseActions
               raceId={raceId}
+              paused={paused}
               presentedBets={presentedBetsOf(data, budget)}
               predictionRunId={data.items[0]?.prediction_run_id ?? null}
               winPolicy={data.win_policy_status}
@@ -189,7 +194,7 @@ export function RecommendationPanel({
                 .map((h) => h.horse_number)
                 .filter((n): n is number => typeof n === "number")}
               submit={(payload: FreeformPayload) => submitPurchase(payload)}
-              disabled={existingView !== null}
+              disabled={existingView !== null || paused}
             />
             </PurchaseRecordsSection>
           </>

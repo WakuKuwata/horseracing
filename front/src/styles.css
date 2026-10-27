@@ -1197,3 +1197,18 @@ th.colgroup {
 .betslip__skip-note { font-size: 0.72rem; color: var(--muted); margin: 0.15rem 0 0; }
 .betslip__over-budget { font-size: 0.75rem; color: var(--muted); margin: 0; }
 .view-toggle { margin: 0.3rem 0; }
+
+/* B5 (2026-10-27): ops pause — an operating state, shown in a neutral band (never an alert colour). */
+.ops-pause-banner {
+  margin: 0.5rem 0 0;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+}
+.purchase-actions__paused {
+  color: var(--muted);
+  font-size: 0.85rem;
+}

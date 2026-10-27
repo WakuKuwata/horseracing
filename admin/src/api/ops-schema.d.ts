@@ -158,6 +158,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ops/v1/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Status */
+        get: operations["get_status_ops_v1_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -331,6 +348,45 @@ export interface components {
              * @enum {string}
              */
             status: "queued" | "running" | "succeeded" | "partial" | "failed" | "skipped";
+        };
+        /**
+         * OpsStatus
+         * @description GET /status — whether THIS ops process accepts writes (B5). See routers/status.py.
+         */
+        OpsStatus: {
+            /** Collection Mode */
+            collection_mode: string | null;
+            /** Collection Paused */
+            collection_paused: boolean;
+            /** Detail */
+            detail: string;
+            /** Ops Fetch Min Interval Seconds */
+            ops_fetch_min_interval_seconds: number;
+            policy_file: components["schemas"]["PolicyFileStatus"];
+            /** Policy Mismatch */
+            policy_mismatch: boolean;
+            /** Writes Accepted */
+            writes_accepted: boolean;
+        };
+        /**
+         * PolicyFileStatus
+         * @description The repository's public source-operations policy (172), reported as data.
+         */
+        PolicyFileStatus: {
+            /** Collection Paused */
+            collection_paused?: boolean | null;
+            /** Ops Fetch Min Interval Seconds */
+            ops_fetch_min_interval_seconds?: number | null;
+            /** Parse Error */
+            parse_error?: string | null;
+            /** Present */
+            present: boolean;
+            /** Schema Version */
+            schema_version?: string | null;
+            /** Shared Limiter Enabled */
+            shared_limiter_enabled?: boolean | null;
+            /** Source Interval Seconds */
+            source_interval_seconds?: number | null;
         };
         /** PurchaseError */
         PurchaseError: {
@@ -778,6 +834,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_status_ops_v1_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpsStatus"];
                 };
             };
         };

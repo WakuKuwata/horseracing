@@ -177,3 +177,12 @@ export async function submitPurchaseRecord(payload: {
     await opsApi.POST("/ops/v1/purchase-records", { body }),
   );
 }
+
+// --- B5 (2026-10-27): service status — is the ops process accepting writes? ----------------------
+export type OpsStatus =
+  S["/ops/v1/status"]["get"]["responses"][200]["content"]["application/json"];
+
+/** Whether ops currently accepts writes (172 pause). GET, so the pause wrapper lets it through. */
+export async function getOpsStatus(): Promise<OpsStatus> {
+  return unwrap(await opsApi.GET("/ops/v1/status"));
+}

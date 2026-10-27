@@ -11,6 +11,8 @@ import {
   type JobAccepted,
   type JobStatus,
 } from "../api/opsClient";
+import { usePauseState } from "../api/opsStatus";
+import { OpsPauseNotice } from "./OpsPauseNotice";
 
 // Feature 028: generate the active model's predictions for THIS race on demand. Write goes through
 // the ops path (024) — never the read-only 014 API. On success we invalidate the predictions query
@@ -113,6 +115,7 @@ export function PredictButton({
   }, [followupStatus, recsInvalidated, qc, raceId]);
 
   const running = start.isPending || (jobId != null && !isTerminal(status));
+  const { paused } = usePauseState(); // B5: 172 pause → disabled with the reason
 
   let tone = "";
   let text = "";
@@ -140,10 +143,11 @@ export function PredictButton({
         type="button"
         className="predict__btn"
         onClick={() => start.mutate()}
-        disabled={running}
+        disabled={running || paused}
       >
         {running ? "予測中…" : "予測する"}
       </button>
+      {paused && !text && <OpsPauseNotice className="predict__status" />}
       {text && (
         <span className={`predict__status predict__status--${tone}`} role="status">
           {text}

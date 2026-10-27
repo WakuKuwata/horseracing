@@ -13,6 +13,8 @@ import {
   type BatchAccepted,
   type Job,
 } from "../api/opsClient";
+import { usePauseState } from "../api/opsStatus";
+import { OpsPauseNotice } from "./OpsPauseNotice";
 
 // US2: refresh every race on the selected day (ops write service). The display stays on 014 — on a
 // batch with any progress we invalidate the races query so the list (and its 結果確定 badges)
@@ -150,16 +152,19 @@ export function DayRefreshButton({
     return text;
   }
 
+  const { paused } = usePauseState(); // B5: 172 pause → disabled with the reason
+
   return (
     <span className="refresh">
       <button
         type="button"
         className="refresh__btn"
         onClick={() => start.mutate(false)}
-        disabled={running || !date}
+        disabled={running || !date || paused}
       >
         {running ? "更新中…" : "この日を更新"}
       </button>
+      {paused && !b && !start.isError && <OpsPauseNotice className="refresh__status" />}
 
       {start.isError && (
         <span className="refresh__status refresh__status--error" role="status">

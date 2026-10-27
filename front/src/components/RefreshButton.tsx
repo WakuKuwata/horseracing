@@ -11,6 +11,8 @@ import {
   type JobAccepted,
   type JobStatus,
 } from "../api/opsClient";
+import { usePauseState } from "../api/opsStatus";
+import { OpsPauseNotice } from "./OpsPauseNotice";
 
 // One label per state (FR-008): 受付/取得中/成功/一部成功/失敗/対象なし(skipped). The display path
 // stays on the read-only 014 data — on success we invalidate the race query so it refetches; we
@@ -111,6 +113,8 @@ export function RefreshButton({
   }, [followupStatus, evInvalidated, qc, raceId]);
 
   const running = start.isPending || (jobId != null && !isTerminal(status));
+  // B5: ops confirmed it rejects writes (172 pause) → disabled with the reason; unknown = enabled.
+  const { paused } = usePauseState();
 
   // What to show next to the button.
   let tone = "";
@@ -139,10 +143,11 @@ export function RefreshButton({
         type="button"
         className="refresh__btn"
         onClick={() => start.mutate()}
-        disabled={running}
+        disabled={running || paused}
       >
         {running ? "更新中…" : "データ更新"}
       </button>
+      {paused && !text && <OpsPauseNotice className="refresh__status" />}
       {text && (
         <span className={`refresh__status refresh__status--${tone}`} role="status">
           {text}

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { postRefreshRange } from "../api/opsClient";
+import { usePauseState } from "../api/opsStatus";
+import { PAUSE_SHORT } from "./OpsPauseBanner";
 
 type Phase = "idle" | "confirming" | "pending" | "done" | "error";
 
@@ -22,6 +24,8 @@ export function RefreshRangeButton({
   const [phase, setPhase] = useState<Phase>("idle");
   const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // B5: ops confirmed the 172 pause → disabled with the reason; unknown status = enabled.
+  const { paused } = usePauseState();
 
   async function run() {
     setPhase("pending");
@@ -65,6 +69,16 @@ export function RefreshRangeButton({
         {dateFrom}〜{dateTo} を更新?（予測→推奨を再生成)
         <button type="button" onClick={run}>実行</button>
         <button type="button" onClick={() => setPhase("idle")}>取消</button>
+      </span>
+    );
+  }
+  if (paused) {
+    return (
+      <span className="refresh-paused">
+        <button type="button" className="refresh-btn" disabled title={PAUSE_SHORT}>{label}</button>
+        <span className="refresh-result" data-state="paused" role="status" data-testid="ops-paused-notice">
+          {PAUSE_SHORT}
+        </span>
       </span>
     );
   }

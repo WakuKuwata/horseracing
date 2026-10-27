@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 
+import { PAUSE_SHORT } from "./OpsPauseNotice";
+
 export type PresentedBet = {
   betType: string;
   selection: number[];
@@ -49,6 +51,8 @@ export type PurchaseActionsProps = {
   hasResults: boolean;
   submit: (payload: PurchaseRecordPayload) => Promise<SubmitResult>;
   existingRecord: { kind: string; recordId: string } | null;
+  /** B5: ops reports the 172 pause — every record POST would be a 503 (owner passes it in). */
+  paused?: boolean;
 };
 
 type ActionKind = Exclude<PurchaseRecordKind, "correction">;
@@ -95,12 +99,15 @@ export function PurchaseActions({
   hasResults,
   submit,
   existingRecord,
+  paused = false,
 }: PurchaseActionsProps) {
   const [editorRows, setEditorRows] = useState<EditorRow[] | null>(null);
   const [submission, setSubmission] = useState<SubmissionState>({ phase: "idle" });
 
   const isSubmitting = submission.phase === "submitting";
   const hasSucceeded = submission.phase === "success";
+  // B5: the 172 pause rejects purchase records too (the ops wrapper blocks every POST).
+  const blocked = isSubmitting || hasSucceeded || paused;
   const correctionSuffix = existingRecord ? "を訂正として記録" : "を記録";
 
   function createPayload(action: ActionKind, bets: PresentedBet[]): PurchaseRecordPayload {
@@ -207,12 +214,17 @@ export function PurchaseActions({
         </p>
       ) : null}
 
+      {paused ? (
+        <p className="purchase-actions__paused" role="status" data-testid="ops-paused-notice">
+          {PAUSE_SHORT}(購入記録の保存も止まっています)
+        </p>
+      ) : null}
       <div className="purchase-actions__buttons">
         <button
           className="purchase-actions__button"
           type="button"
           onClick={recordAsPresented}
-          disabled={isSubmitting || hasSucceeded}
+          disabled={blocked}
         >
           そのまま購入{correctionSuffix}
         </button>
@@ -220,7 +232,7 @@ export function PurchaseActions({
           className="purchase-actions__button"
           type="button"
           onClick={openModifiedEditor}
-          disabled={isSubmitting || hasSucceeded}
+          disabled={blocked}
         >
           変更して購入{correctionSuffix}
         </button>
@@ -228,7 +240,7 @@ export function PurchaseActions({
           className="purchase-actions__button"
           type="button"
           onClick={recordSkip}
-          disabled={isSubmitting || hasSucceeded}
+          disabled={blocked}
         >
           見送り{correctionSuffix}
         </button>

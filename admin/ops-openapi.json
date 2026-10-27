@@ -443,6 +443,136 @@
         "title": "JobAccepted",
         "type": "object"
       },
+      "OpsStatus": {
+        "description": "GET /status — whether THIS ops process accepts writes (B5). See routers/status.py.",
+        "properties": {
+          "collection_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Mode"
+          },
+          "collection_paused": {
+            "title": "Collection Paused",
+            "type": "boolean"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "ops_fetch_min_interval_seconds": {
+            "title": "Ops Fetch Min Interval Seconds",
+            "type": "number"
+          },
+          "policy_file": {
+            "$ref": "#/components/schemas/PolicyFileStatus"
+          },
+          "policy_mismatch": {
+            "title": "Policy Mismatch",
+            "type": "boolean"
+          },
+          "writes_accepted": {
+            "title": "Writes Accepted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "collection_paused",
+          "writes_accepted",
+          "collection_mode",
+          "policy_file",
+          "policy_mismatch",
+          "ops_fetch_min_interval_seconds",
+          "detail"
+        ],
+        "title": "OpsStatus",
+        "type": "object"
+      },
+      "PolicyFileStatus": {
+        "description": "The repository's public source-operations policy (172), reported as data.",
+        "properties": {
+          "collection_paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Paused"
+          },
+          "ops_fetch_min_interval_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ops Fetch Min Interval Seconds"
+          },
+          "parse_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Error"
+          },
+          "present": {
+            "title": "Present",
+            "type": "boolean"
+          },
+          "schema_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Version"
+          },
+          "shared_limiter_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared Limiter Enabled"
+          },
+          "source_interval_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Interval Seconds"
+          }
+        },
+        "required": [
+          "present"
+        ],
+        "title": "PolicyFileStatus",
+        "type": "object"
+      },
       "PurchaseError": {
         "properties": {
           "detail": {
@@ -1164,6 +1294,27 @@
         "summary": "Refresh Range",
         "tags": [
           "refresh-range"
+        ]
+      }
+    },
+    "/ops/v1/status": {
+      "get": {
+        "operationId": "get_status_ops_v1_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Status",
+        "tags": [
+          "status"
         ]
       }
     }
