@@ -1,0 +1,96 @@
+{
+  "counters": {
+    "fits": 10,
+    "artifact_hashes": 30
+  },
+  "fit_checks": [
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 1,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 2,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 3,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 4,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 5,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 6,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 7,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 8,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 9,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 10,
+      "train_rows": 287052,
+      "target_rows": 48199
+    }
+  ],
+  "saved_body_replays": [
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    }
+  ],
+  "blockers": [],
+  "no_model_fits_performed": true
+}

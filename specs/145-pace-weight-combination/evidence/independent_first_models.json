@@ -1,0 +1,53 @@
+{
+  "reviewer": "paceweight145_review",
+  "protocol_sha256": "8929b5ef128f0fd59ae507f24133805a49be32161f19899b703c7cedb845bf69",
+  "models": [
+    {
+      "year": 2019,
+      "seed": 1,
+      "all_prediction_rows_exact": 45666,
+      "all_prediction_columns_exact": [
+        "race_id",
+        "horse_id",
+        "horse_number",
+        "race_date",
+        "year",
+        "odds",
+        "won",
+        "field_size",
+        "p",
+        "p_race",
+        "pred"
+      ],
+      "features": 91,
+      "replay_rows": 64,
+      "replay_max_abs_p_difference": 0.0,
+      "original143_weights_sha256": "856461eca0e59eb9b6490cf91cd9d17bfab3037ebb16b192d6fdf0362ca28341"
+    },
+    {
+      "year": 2019,
+      "seed": 2,
+      "all_prediction_rows_exact": 45666,
+      "all_prediction_columns_exact": [
+        "race_id",
+        "horse_id",
+        "horse_number",
+        "race_date",
+        "year",
+        "odds",
+        "won",
+        "field_size",
+        "p",
+        "p_race",
+        "pred"
+      ],
+      "features": 91,
+      "replay_rows": 64,
+      "replay_max_abs_p_difference": 0.0,
+      "original143_weights_sha256": "856461eca0e59eb9b6490cf91cd9d17bfab3037ebb16b192d6fdf0362ca28341"
+    }
+  ],
+  "no_roi_inspection": true,
+  "no_model_fits_performed": true,
+  "blockers": []
+}

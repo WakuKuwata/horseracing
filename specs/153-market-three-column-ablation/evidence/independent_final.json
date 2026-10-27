@@ -1,0 +1,455 @@
+{
+  "auditor": "market153_review",
+  "protocol_sha256": "6f3574d814a4a26adb47958cd9c2750cd469682824fe6578ed8014d1eb6abe1d",
+  "summary_sha256": "dfb4c7d51fcb1fd0f093d3dd8b93ddff603bbd1beffd269cafe1567f6e56bb9f",
+  "counters": {
+    "fits": 360,
+    "artifact_hashes": 1080
+  },
+  "frozen_file_count": 543,
+  "independent_weights": [
+    {
+      "year": 2019,
+      "train_rows": 574304,
+      "informative_rows": 0,
+      "neutral_rows": 574304,
+      "vector_sha256": "856461eca0e59eb9b6490cf91cd9d17bfab3037ebb16b192d6fdf0362ca28341"
+    },
+    {
+      "year": 2020,
+      "train_rows": 619970,
+      "informative_rows": 45666,
+      "neutral_rows": 574304,
+      "vector_sha256": "89b672077ea28d71fbfd7befe51befb67f15743d8254d9e0adbe616f7aa5ace7"
+    },
+    {
+      "year": 2021,
+      "train_rows": 666380,
+      "informative_rows": 92076,
+      "neutral_rows": 574304,
+      "vector_sha256": "745f096f13025c58b8553d4011f57db62bc04d5910331ab36a6b3c66e094e273"
+    },
+    {
+      "year": 2022,
+      "train_rows": 712401,
+      "informative_rows": 138097,
+      "neutral_rows": 574304,
+      "vector_sha256": "f70cb9a0677294361f0f87cb72cf940880b75bc7c9fb2004dc0067880ec2d436"
+    },
+    {
+      "year": 2023,
+      "train_rows": 757955,
+      "informative_rows": 183651,
+      "neutral_rows": 574304,
+      "vector_sha256": "99c22b03852c0693e97030cbc3a5db563297e918029d7aa74a7e475117e464d1"
+    },
+    {
+      "year": 2024,
+      "train_rows": 803917,
+      "informative_rows": 229613,
+      "neutral_rows": 574304,
+      "vector_sha256": "f6cb615a438963e3d2b7e069bf5df038b406fce535cc4fde0b1a6120c6a72389"
+    },
+    {
+      "year": 2025,
+      "train_rows": 849384,
+      "informative_rows": 275080,
+      "neutral_rows": 574304,
+      "vector_sha256": "dcf65fe65824e523cd6f2231fa47518905e5d0f5200f2eedc285ac52b205124a"
+    },
+    {
+      "year": 2026,
+      "train_rows": 895575,
+      "informative_rows": 321271,
+      "neutral_rows": 574304,
+      "vector_sha256": "c92462ef091a7ccba2f7f7f062617b91759066611baa700277c6e2f6a53dd0de"
+    }
+  ],
+  "independent_saved_body_replays": [
+    {
+      "arm": "baseline",
+      "year": 2019,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "weighted_baseline",
+      "year": 2019,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "market_drop3",
+      "year": 2019,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "baseline",
+      "year": 2024,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "weighted_baseline",
+      "year": 2024,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "market_drop3",
+      "year": 2024,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "baseline",
+      "year": 2026,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "weighted_baseline",
+      "year": 2026,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "market_drop3",
+      "year": 2026,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    }
+  ],
+  "normalization_diagnostics": {
+    "normalized_weighted_baseline": {
+      "parent": "weighted_baseline",
+      "max_abs_race_sum_error": 4.440892098500626e-16
+    },
+    "normalized_market_drop3": {
+      "parent": "market_drop3",
+      "max_abs_race_sum_error": 4.440892098500626e-16
+    }
+  },
+  "raw_candidate_quality_diagnostic_only": {
+    "rows": 343883,
+    "races": 24855,
+    "winner_nll": 1.927140231824778,
+    "winner_nll_sum": 47899.07046200486,
+    "ece_race": 0.0010298833501772781,
+    "ece_raw": 0.0006791226292517011,
+    "binary_logloss": 0.20320548953852657
+  },
+  "points": {
+    "current_reference": {
+      "n_races": 24855,
+      "n_days": 807,
+      "n_betting_races": 3881,
+      "n_bets": 4732,
+      "n_hits": 272,
+      "n_hit_races": 272,
+      "skip_rate": 0.843854355260511,
+      "stake_yen": 3863000.0,
+      "payout_yen": 4424530.0,
+      "profit_yen": 561530.0,
+      "budget_yen": 24855000.0,
+      "unspent_cash_yen": 20992000.0,
+      "budget_return": 0.022592234962784147,
+      "deployed_roi": 1.145361118301838,
+      "max_race_settlement_drawdown_yen": 138170.0,
+      "max_consecutive_losing_races": 80,
+      "profit_without_top1_payout_yen": 461430.0,
+      "profit_without_top5_payouts_yen": 99330.0,
+      "budget_return_without_top1_payout": 0.01856487628243814,
+      "budget_return_without_top5_payouts": 0.003996378998189499,
+      "top1_payout_share": 0.02262387191407901,
+      "top5_payout_share": 0.10446307291395922
+    },
+    "baseline": {
+      "n_races": 24855,
+      "n_days": 807,
+      "n_betting_races": 3885,
+      "n_bets": 4736,
+      "n_hits": 276,
+      "n_hit_races": 276,
+      "skip_rate": 0.8436934218467109,
+      "stake_yen": 3867300.0,
+      "payout_yen": 4426100.0,
+      "profit_yen": 558800.0,
+      "budget_yen": 24855000.0,
+      "unspent_cash_yen": 20987700.0,
+      "budget_return": 0.02248239790786562,
+      "deployed_roi": 1.1444935743283429,
+      "max_race_settlement_drawdown_yen": 138170.0,
+      "max_consecutive_losing_races": 80,
+      "profit_without_top1_payout_yen": 458700.0,
+      "profit_without_top5_payouts_yen": 119800.0,
+      "budget_return_without_top1_payout": 0.018455039227519614,
+      "budget_return_without_top5_payouts": 0.004819955743311205,
+      "top1_payout_share": 0.022615846908113236,
+      "top5_payout_share": 0.09918438354307405
+    },
+    "weighted_baseline": {
+      "n_races": 24855,
+      "n_days": 807,
+      "n_betting_races": 3960,
+      "n_bets": 4831,
+      "n_hits": 293,
+      "n_hit_races": 293,
+      "skip_rate": 0.8406759203379601,
+      "stake_yen": 3942500.0,
+      "payout_yen": 4606230.0,
+      "profit_yen": 663730.0,
+      "budget_yen": 24855000.0,
+      "unspent_cash_yen": 20912500.0,
+      "budget_return": 0.026704083685375177,
+      "deployed_roi": 1.1683525681674065,
+      "max_race_settlement_drawdown_yen": 140850.0,
+      "max_consecutive_losing_races": 73,
+      "profit_without_top1_payout_yen": 551130.0,
+      "profit_without_top5_payouts_yen": 165030.0,
+      "budget_return_without_top1_payout": 0.022173808086904043,
+      "budget_return_without_top5_payouts": 0.00663971031985516,
+      "top1_payout_share": 0.02444515362888957,
+      "top5_payout_share": 0.10826641309704466
+    },
+    "normalized_weighted_baseline": {
+      "n_races": 24855,
+      "n_days": 807,
+      "n_betting_races": 3544,
+      "n_bets": 4126,
+      "n_hits": 225,
+      "n_hit_races": 225,
+      "skip_rate": 0.8574129953731644,
+      "stake_yen": 3533200.0,
+      "payout_yen": 4499390.0,
+      "profit_yen": 966190.0,
+      "budget_yen": 24855000.0,
+      "unspent_cash_yen": 21321800.0,
+      "budget_return": 0.03887306376986522,
+      "deployed_roi": 1.2734603192573304,
+      "max_race_settlement_drawdown_yen": 154910.0,
+      "max_consecutive_losing_races": 95,
+      "profit_without_top1_payout_yen": 853590.0,
+      "profit_without_top5_payouts_yen": 479290.0,
+      "budget_return_without_top1_payout": 0.034342788171394086,
+      "budget_return_without_top5_payouts": 0.019283443975055322,
+      "top1_payout_share": 0.025025614583310183,
+      "top5_payout_share": 0.10821466909958906
+    },
+    "normalized_market_drop3": {
+      "n_races": 24855,
+      "n_days": 807,
+      "n_betting_races": 3401,
+      "n_bets": 3903,
+      "n_hits": 203,
+      "n_hit_races": 203,
+      "skip_rate": 0.8631663649165158,
+      "stake_yen": 3394500.0,
+      "payout_yen": 3717100.0,
+      "profit_yen": 322600.0,
+      "budget_yen": 24855000.0,
+      "unspent_cash_yen": 21460500.0,
+      "budget_return": 0.012979279822973245,
+      "deployed_roi": 1.0950360877890706,
+      "max_race_settlement_drawdown_yen": 177880.0,
+      "max_consecutive_losing_races": 92,
+      "profit_without_top1_payout_yen": 216100.0,
+      "profit_without_top5_payouts_yen": -117900.0,
+      "budget_return_without_top1_payout": 0.008694427680547174,
+      "budget_return_without_top5_payouts": -0.004743512371756186,
+      "top1_payout_share": 0.028651368001936992,
+      "top5_payout_share": 0.11850636248688494
+    }
+  },
+  "paired": {
+    "normalized_market_drop3_minus_baseline": {
+      "winner_nll": {
+        "difference": 0.00045963506322231336,
+        "ci95": [
+          1.4315841787313348e-05,
+          0.0008891694463741801
+        ],
+        "bonferroni_familywise95_ci": [
+          -7.103050760354634e-05,
+          0.0009980972648677066
+        ],
+        "valid_replicates": 4000
+      },
+      "profit_per_budget": {
+        "difference": -0.009503118084892376,
+        "ci95": [
+          -0.03375329173111338,
+          0.013654007703586782
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.03939604404829128,
+          0.018739160427048554
+        ],
+        "valid_replicates": 4000
+      },
+      "deployed_roi": {
+        "difference": -0.04945748653927229,
+        "ci95": [
+          -0.21236316355768373,
+          0.10937787297735439
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.250084613870799,
+          0.1464969046340504
+        ],
+        "valid_replicates": 4000
+      }
+    },
+    "normalized_market_drop3_minus_weighted_baseline": {
+      "winner_nll": {
+        "difference": 0.0002635994657629735,
+        "ci95": [
+          -0.00014000028458814148,
+          0.0006565945310779002
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.00022858447081386358,
+          0.0007392963670991807
+        ],
+        "valid_replicates": 4000
+      },
+      "profit_per_budget": {
+        "difference": -0.013724803862401932,
+        "ci95": [
+          -0.038020468924668926,
+          0.009080030686702085
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.044781981414388584,
+          0.013722221196448335
+        ],
+        "valid_replicates": 4000
+      },
+      "deployed_roi": {
+        "difference": -0.07331648037833594,
+        "ci95": [
+          -0.23811419570771042,
+          0.08291805982210554
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.27970595060112236,
+          0.11068230237031862
+        ],
+        "valid_replicates": 4000
+      }
+    },
+    "normalized_market_drop3_minus_normalized_weighted_baseline": {
+      "winner_nll": {
+        "difference": 0.0002635994657629958,
+        "ci95": [
+          -0.00014000028458811847,
+          0.0006565945310779141
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.00022858447081383626,
+          0.0007392963670992033
+        ],
+        "valid_replicates": 4000
+      },
+      "profit_per_budget": {
+        "difference": -0.025893783946891975,
+        "ci95": [
+          -0.05017949097659326,
+          -0.0045480244815842555
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.0556413339855739,
+          -0.000310164783299909
+        ],
+        "valid_replicates": 4000
+      },
+      "deployed_roi": {
+        "difference": -0.1784242314682598,
+        "ci95": [
+          -0.35265021575625616,
+          -0.0274159763878857
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.38689832150947456,
+          0.0028300131090959867
+        ],
+        "valid_replicates": 4000
+      }
+    }
+  },
+  "sensitivity": {
+    "normalized_market_drop3_minus_baseline": {
+      "known_race_delta_yen": 1000.0,
+      "without_known_race_delta_yen": -237200.0,
+      "top_difference_race": "202207040407",
+      "top_difference_yen": 88600.0,
+      "without_top_difference_yen": -324800.0,
+      "same_calendar_jan1_jun21_by_year": {
+        "2019": 26250.0,
+        "2020": -91560.0,
+        "2021": 39390.0,
+        "2022": 202040.0,
+        "2023": -8430.0,
+        "2024": -71930.0,
+        "2025": -17950.0,
+        "2026": -81000.0
+      },
+      "before2026_delta_yen": -155200.0,
+      "year2026_delta_yen": -81000.0
+    },
+    "normalized_market_drop3_minus_weighted_baseline": {
+      "known_race_delta_yen": -104700.0,
+      "without_known_race_delta_yen": -236430.0,
+      "top_difference_race": "202209020207",
+      "top_difference_yen": 74300.0,
+      "without_top_difference_yen": -415430.0,
+      "same_calendar_jan1_jun21_by_year": {
+        "2019": 26250.0,
+        "2020": -60740.0,
+        "2021": -10250.0,
+        "2022": 113940.0,
+        "2023": -11650.0,
+        "2024": -26130.0,
+        "2025": -39890.0,
+        "2026": -173780.0
+      },
+      "before2026_delta_yen": -167350.0,
+      "year2026_delta_yen": -173780.0
+    },
+    "normalized_market_drop3_minus_normalized_weighted_baseline": {
+      "known_race_delta_yen": 0.0,
+      "without_known_race_delta_yen": -643590.0,
+      "top_difference_race": "201908031202",
+      "top_difference_yen": 53250.0,
+      "without_top_difference_yen": -696840.0,
+      "same_calendar_jan1_jun21_by_year": {
+        "2019": 12230.0,
+        "2020": -33450.0,
+        "2021": -6900.0,
+        "2022": 20100.0,
+        "2023": -16400.0,
+        "2024": -28650.0,
+        "2025": -73000.0,
+        "2026": -127980.0
+      },
+      "before2026_delta_yen": -515610.0,
+      "year2026_delta_yen": -127980.0
+    }
+  },
+  "no_model_fits_performed": true,
+  "can_adopt": false,
+  "untouched_holdout": false,
+  "blockers": [],
+  "audit_script_sha256": "69584fbaec2f8559eba34f732d1b406dee0c9f757e4f67b2239219aa52ccbcc4",
+  "independent143_helpers_sha256": "dbaea243a5fda07d5a18ce0f1195044ee01ef78974c6ed46be6dd670741737c2"
+}

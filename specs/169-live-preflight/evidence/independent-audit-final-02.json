@@ -1,0 +1,31 @@
+{
+  "status": "independently_verified",
+  "new_collection": false,
+  "database_write": false,
+  "database_requery_performed": false,
+  "model_inference": false,
+  "cache_refreshed": false,
+  "role_grants_applied": false,
+  "can_collect": false,
+  "packets": [
+    {
+      "path": "artifacts/169-live-preflight/final-02/inventory-01",
+      "scope": "administrative_inventory_not_live_profile",
+      "state": "NO_GO",
+      "statements": 20,
+      "manifest_sha256": "15ee2336c27300862457834ff06d706b3850cab65f61d13fc405cae583149c2a",
+      "native_profile_not_measured": true,
+      "can_collect": false
+    },
+    {
+      "path": "artifacts/169-live-preflight/final-02/profile-check-01",
+      "scope": "explicit_live_profile_only",
+      "state": "NO_GO",
+      "statements": 0,
+      "manifest_sha256": "04bff7e2deae987bd539ff6f0d6ef0c1ae0ddd81805a1c10a1ec8593044d7ada",
+      "native_profile_not_measured": true,
+      "can_collect": false
+    }
+  ],
+  "total_sql_statements": 20
+}

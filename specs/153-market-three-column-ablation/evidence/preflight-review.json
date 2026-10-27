@@ -1,0 +1,38 @@
+{
+  "reviewer": "market153_review",
+  "stage": "before_candidate_fitting_and_scoring",
+  "verdict": "pass",
+  "blockers": [],
+  "codex_cli": "0.153.4",
+  "checks": [
+    "Exactly ordered77 minus odds/popularity/odds_rank =74; q/remaining9 market columns retained; price metadata preserved",
+    "Original143 training_weights called verbatim; all annual weights metadata/hash later checked against parent143",
+    "2007 onward strictly past annual fits, binary BASE_PARAMS300round15seeds, train-only category maps and shifted categorical indices",
+    "120single fixed candidate fits; saved models/receipt/resume guards; max2workers each1thread",
+    "Mean15 raw first then all-starter normalization; sole scored candidate normalized74",
+    "Three fixed contrasts vs matched77/raw③/fullnorm③, savedcurrent separate; family3/4000day/seed20261025",
+    "Inherited controls reconstructed/audited with exact savedscore and bets parity",
+    "Full-source/input freeze before fitting; unchanged old scope151 and other dirtyfiles",
+    "Known/top-positive race deletion both sides, annual/calendar/pre2026/risk sensitivity, historical and closingproxy limits"
+  ],
+  "recommendations_resolved": [
+    "Corrected inherited148 no-extra-fitting limitation to explicitly document120newfits",
+    "Removed pace/four test copy remnants"
+  ],
+  "tests_reported_by_root": "29 passed; Ruff E/F passed with E501 ignored and environment-before-import E402 justification",
+  "files_sha256": {
+    "scripts/roi_explore/roi_improvement_153/ensemble.py": "bb0c79bde2ca1bf2363274f3e55c6044da6fc4e801aa97b44640cc9c00475b07",
+    "scripts/roi_explore/roi_improvement_153/experiment.py": "8b62c1448156989d6310733a156201eb8b0a07b7f03cb2c87994688bd3175ee7",
+    "scripts/roi_explore/roi_improvement_153/models.py": "69b3102c0e83e4577bcc69a9ac1157b08a8e285359842e7d3ab7a35a84dc864e",
+    "scripts/roi_explore/roi_improvement_153/report.py": "e7ce01fa5e605b25ae2c14dd171d082f02f5a8b5187c07f7be5dbbc259a0f2d1",
+    "scripts/roi_explore/roi_improvement_153/run.py": "1b0cf4df6b2e3d4f8156f311fde3bc0f442b701d985c29d60bdd498a25f6de75",
+    "scripts/tests/test_roi_models_153.py": "470d2f10ed0a713d4d14f14cc25ae83d25518aaf662153b4819f230d504667f4",
+    "scripts/tests/test_roi_report_153.py": "530cb5d78f8f447eb525f89ec73247c4ae4b694f56c8f72cdd421f29fb50bd49",
+    "specs/153-market-three-column-ablation/evidence/design-second-opinion.md": "319ddd2ab7818cdb5f8cc7f2e34e870c60b381e8d565760117a19916c88a590a",
+    "specs/153-market-three-column-ablation/plan.md": "14363b9af95001040cae4ab4b010abae624335abc5eeace00f37e0cc764fea02",
+    "specs/153-market-three-column-ablation/quickstart.md": "e1fe36ee1747a4ae904e72035258e02546c0d72e0cae6ece9bcf431061d9a288",
+    "specs/153-market-three-column-ablation/spec.md": "b73309ce38e6299decf6c03542833b2022fe1259cc77519bebb108d3b710b732",
+    "specs/153-market-three-column-ablation/tasks.md": "d89bc28e26d513ad03e055344a428d531a8626f8d83f9215a70141f29c3aa49a"
+  },
+  "independent_final_audit": "Prepare without153implementationimports;360fit1080artifacts,all5armindependentscores3bootstraps/sensitivity,9savedbodyreplays"
+}

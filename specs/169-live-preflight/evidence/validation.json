@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "old_artifacts": [
+    {
+      "path": "artifacts/165-manual-observation/run-02/session/plan.json",
+      "files": 240,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts/166-readonly-db-runtime/run-03/protocol.json",
+      "files": 245,
+      "unchanged": true
+    },
+    {
+      "path": "specs/167-first-manual-observation/evidence/delivery-receipt.json",
+      "files": 6,
+      "unchanged": true
+    },
+    {
+      "path": "specs/168-saved-candidate-go/evidence/delivery-receipt.json",
+      "files": 16,
+      "unchanged": true
+    }
+  ],
+  "private_profile_mode": "0600",
+  "private_profile_gitignored": true,
+  "private_profile_content_or_password_hash_saved": false,
+  "live_registry_exists": false,
+  "docs_shell_syntax_only": true,
+  "new_collection": false,
+  "database_write": false,
+  "role_grants_applied": false
+}

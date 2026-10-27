@@ -1,0 +1,327 @@
+{
+  "auditor": "feature143_review",
+  "protocol_sha256": "d79e1fe27376cc3a63e23333535aa85284ba426c820ed47127b2e82977c03bb5",
+  "stage": "features",
+  "counters": {
+    "fits": 360,
+    "artifact_hashes": 1080
+  },
+  "new_candidate_fits_verified": 240,
+  "baseline_reused_fits_verified": 120,
+  "all_recipe_and_hash_checks_passed": true,
+  "reports": {
+    "features": {
+      "points": {
+        "current_reference": {
+          "n_races": 24855,
+          "n_days": 807,
+          "n_betting_races": 3881,
+          "n_bets": 4732,
+          "n_hits": 272,
+          "n_hit_races": 272,
+          "skip_rate": 0.843854355260511,
+          "stake_yen": 3863000.0,
+          "payout_yen": 4424530.0,
+          "profit_yen": 561530.0,
+          "budget_yen": 24855000.0,
+          "unspent_cash_yen": 20992000.0,
+          "budget_return": 0.022592234962784147,
+          "deployed_roi": 1.145361118301838,
+          "max_race_settlement_drawdown_yen": 138170.0,
+          "max_consecutive_losing_races": 80,
+          "profit_without_top1_payout_yen": 461430.0,
+          "profit_without_top5_payouts_yen": 99330.0,
+          "budget_return_without_top1_payout": 0.01856487628243814,
+          "budget_return_without_top5_payouts": 0.003996378998189499,
+          "top1_payout_share": 0.02262387191407901,
+          "top5_payout_share": 0.10446307291395922
+        },
+        "baseline": {
+          "n_races": 24855,
+          "n_days": 807,
+          "n_betting_races": 3885,
+          "n_bets": 4736,
+          "n_hits": 276,
+          "n_hit_races": 276,
+          "skip_rate": 0.8436934218467109,
+          "stake_yen": 3867300.0,
+          "payout_yen": 4426100.0,
+          "profit_yen": 558800.0,
+          "budget_yen": 24855000.0,
+          "unspent_cash_yen": 20987700.0,
+          "budget_return": 0.02248239790786562,
+          "deployed_roi": 1.1444935743283429,
+          "max_race_settlement_drawdown_yen": 138170.0,
+          "max_consecutive_losing_races": 80,
+          "profit_without_top1_payout_yen": 458700.0,
+          "profit_without_top5_payouts_yen": 119800.0,
+          "budget_return_without_top1_payout": 0.018455039227519614,
+          "budget_return_without_top5_payouts": 0.004819955743311205,
+          "top1_payout_share": 0.022615846908113236,
+          "top5_payout_share": 0.09918438354307405
+        },
+        "speed": {
+          "n_races": 24855,
+          "n_days": 807,
+          "n_betting_races": 4342,
+          "n_bets": 5358,
+          "n_hits": 346,
+          "n_hit_races": 346,
+          "skip_rate": 0.8253067793200564,
+          "stake_yen": 4323200.0,
+          "payout_yen": 4453310.0,
+          "profit_yen": 130110.0,
+          "budget_yen": 24855000.0,
+          "unspent_cash_yen": 20531800.0,
+          "budget_return": 0.005234761617380809,
+          "deployed_roi": 1.0300957623982236,
+          "max_race_settlement_drawdown_yen": 267790.0,
+          "max_consecutive_losing_races": 78,
+          "profit_without_top1_payout_yen": 17510.0,
+          "profit_without_top5_payouts_yen": -271990.0,
+          "budget_return_without_top1_payout": 0.0007044860189096762,
+          "budget_return_without_top5_payouts": -0.010943069804868236,
+          "top1_payout_share": 0.025284563616725538,
+          "top5_payout_share": 0.09029238925653053
+        },
+        "pace": {
+          "n_races": 24855,
+          "n_days": 807,
+          "n_betting_races": 5038,
+          "n_bets": 6259,
+          "n_hits": 420,
+          "n_hit_races": 420,
+          "skip_rate": 0.7973043653188493,
+          "stake_yen": 5016800.0,
+          "payout_yen": 5547390.0,
+          "profit_yen": 530590.0,
+          "budget_yen": 24855000.0,
+          "unspent_cash_yen": 19838200.0,
+          "budget_return": 0.021347415007040838,
+          "deployed_roi": 1.1057626375378729,
+          "max_race_settlement_drawdown_yen": 244820.0,
+          "max_consecutive_losing_races": 85,
+          "profit_without_top1_payout_yen": 415790.0,
+          "profit_without_top5_payouts_yen": 100690.0,
+          "budget_return_without_top1_payout": 0.01672862603097968,
+          "budget_return_without_top5_payouts": 0.004051096358881513,
+          "top1_payout_share": 0.020694416653597458,
+          "top5_payout_share": 0.07749590347893334
+        }
+      },
+      "paired": {
+        "speed": {
+          "winner_nll": {
+            "difference": -0.0011399943012382929,
+            "ci95": [
+              -0.0019553914210768027,
+              -0.0003339729729123598
+            ],
+            "bonferroni_familywise95_ci": [
+              -0.0021433940094212067,
+              -0.00014493730594665488
+            ],
+            "valid_replicates": 4000
+          },
+          "profit_per_budget": {
+            "difference": -0.017247636290484814,
+            "ci95": [
+              -0.04397843167680522,
+              0.009372460406197628
+            ],
+            "bonferroni_familywise95_ci": [
+              -0.05004720709646313,
+              0.014631371705598036
+            ],
+            "valid_replicates": 4000
+          },
+          "deployed_roi": {
+            "difference": -0.11439781193011922,
+            "ci95": [
+              -0.28182640522811375,
+              0.04938852324362085
+            ],
+            "bonferroni_familywise95_ci": [
+              -0.31812485331420637,
+              0.08098125971499917
+            ],
+            "valid_replicates": 4000
+          }
+        },
+        "pace": {
+          "winner_nll": {
+            "difference": -0.0017636781651054162,
+            "ci95": [
+              -0.0026805328379355836,
+              -0.0008548840320654175
+            ],
+            "bonferroni_familywise95_ci": [
+              -0.002877589565730118,
+              -0.0006387812978380041
+            ],
+            "valid_replicates": 4000
+          },
+          "profit_per_budget": {
+            "difference": -0.0011349829008247838,
+            "ci95": [
+              -0.032805968954882456,
+              0.03085782422949898
+            ],
+            "bonferroni_familywise95_ci": [
+              -0.04043906220422118,
+              0.03807674546108081
+            ],
+            "valid_replicates": 4000
+          },
+          "deployed_roi": {
+            "difference": -0.038730936790470016,
+            "ci95": [
+              -0.22735794978203225,
+              0.13725171919189433
+            ],
+            "bonferroni_familywise95_ci": [
+              -0.27138391333431017,
+              0.17986429322792571
+            ],
+            "valid_replicates": 4000
+          }
+        }
+      },
+      "summary_sha256": "5a130b1f2ed6eb3d4404f6680d56de7cf80fa58db415b11f7de59649dd41e254"
+    }
+  },
+  "independent_saved_body_replays": [
+    {
+      "year": 2019,
+      "seed": 1,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2019,
+      "seed": 1,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2019,
+      "seed": 8,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2019,
+      "seed": 8,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2019,
+      "seed": 15,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2019,
+      "seed": 15,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2024,
+      "seed": 1,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2024,
+      "seed": 1,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2024,
+      "seed": 8,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2024,
+      "seed": 8,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2024,
+      "seed": 15,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2024,
+      "seed": 15,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2026,
+      "seed": 1,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2026,
+      "seed": 1,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2026,
+      "seed": 8,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2026,
+      "seed": 8,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2026,
+      "seed": 15,
+      "arm": "speed",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "year": 2026,
+      "seed": 15,
+      "arm": "pace",
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    }
+  ],
+  "independent_weights": null,
+  "no_model_fits_performed": true,
+  "can_adopt": false,
+  "untouched_holdout": false,
+  "blockers": [],
+  "audit_script_sha256": "dbaea243a5fda07d5a18ce0f1195044ee01ef78974c6ed46be6dd670741737c2"
+}

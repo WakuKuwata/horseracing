@@ -1,0 +1,63 @@
+{
+  "protocol_sha256": "aeae9262f1de01b9033249e3b23517a57647e184ec7d3d5ced8c7535c1f67ef4",
+  "checks": [
+    {
+      "arm": "within_race",
+      "seed": 1,
+      "year": 2019,
+      "prediction_rows": 45666,
+      "neutral_min_max_mean": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "exact_all_column_baseline_parity": true,
+      "independent_body_replay_rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "race_only",
+      "seed": 1,
+      "year": 2019,
+      "prediction_rows": 45666,
+      "neutral_min_max_mean": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "exact_all_column_baseline_parity": true,
+      "independent_body_replay_rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "within_race",
+      "seed": 2,
+      "year": 2019,
+      "prediction_rows": 45666,
+      "neutral_min_max_mean": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "exact_all_column_baseline_parity": true,
+      "independent_body_replay_rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "arm": "race_only",
+      "seed": 2,
+      "year": 2019,
+      "prediction_rows": 45666,
+      "neutral_min_max_mean": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "exact_all_column_baseline_parity": true,
+      "independent_body_replay_rows": 64,
+      "max_abs_p_difference": 0.0
+    }
+  ],
+  "model_fits_performed_by_auditor": 0,
+  "blockers": []
+}

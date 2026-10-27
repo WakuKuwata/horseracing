@@ -1,0 +1,194 @@
+{
+  "status": "passed",
+  "blockers": [],
+  "new_fits": 0,
+  "new_policies_scored": 0,
+  "checked": [
+    "all seven fixed purchase contrasts: every group n/wins/stake/profit/delta/ROI; annual/sensitivity/total sums",
+    "seven-arm independent race probability mass: all reported means/quantiles/fractions",
+    "root attribution and probability mass source hashes"
+  ],
+  "contrasts": {
+    "within_race_minus_baseline": {
+      "total_delta_yen": -108560.0,
+      "delta_by_group": {
+        "neither": 0.0,
+        "common_same_stake": 0.0,
+        "removed": -167530.0,
+        "added": -14989.999999999998,
+        "common_stake_changed": 73960.0
+      }
+    },
+    "within_race_minus_weighted_baseline": {
+      "total_delta_yen": -213490.0,
+      "delta_by_group": {
+        "neither": 0.0,
+        "common_same_stake": 0.0,
+        "removed": -242500.0,
+        "common_stake_changed": 55810.0,
+        "added": -26800.0
+      }
+    },
+    "weighted_pace_minus_baseline": {
+      "total_delta_yen": -412440.0,
+      "delta_by_group": {
+        "neither": 0.0,
+        "common_same_stake": 0.0,
+        "removed": -318570.0,
+        "added": -51050.0,
+        "common_stake_changed": -42820.0
+      }
+    },
+    "weighted_pace_minus_weighted_baseline": {
+      "total_delta_yen": -517370.0,
+      "delta_by_group": {
+        "neither": 0.0,
+        "common_same_stake": 0.0,
+        "removed": -294740.0,
+        "added": -159020.0,
+        "common_stake_changed": -63610.0
+      }
+    },
+    "weighted_backfill_minus_baseline": {
+      "total_delta_yen": -149560.0,
+      "delta_by_group": {
+        "neither": 0.0,
+        "common_same_stake": 0.0,
+        "removed": -307370.0,
+        "common_stake_changed": -710.0,
+        "added": 158520.0
+      }
+    },
+    "weighted_backfill_minus_weighted_baseline": {
+      "total_delta_yen": -254490.0,
+      "delta_by_group": {
+        "neither": 0.0,
+        "common_same_stake": 0.0,
+        "removed": -157170.0,
+        "common_stake_changed": -4140.0,
+        "added": -93180.0
+      }
+    },
+    "weighted_pace_minus_pace": {
+      "total_delta_yen": -384230.0,
+      "delta_by_group": {
+        "neither": 0.0,
+        "common_same_stake": 0.0,
+        "added": -37410.0,
+        "common_stake_changed": 36540.0,
+        "removed": -383360.0
+      }
+    }
+  },
+  "mass_results": {
+    "baseline": {
+      "races": 24855,
+      "mean": 1.0068703838280493,
+      "median": 1.0064221074426705,
+      "p01": 0.8589844904640268,
+      "p99": 1.1661589141504167,
+      "fraction_outside_0_95_1_05": 0.4333534500100583,
+      "selected_horses_in_mass_above_one_fraction": 0.7287312645134051,
+      "selected_mean_mass": 1.0441499701701802
+    },
+    "weighted_baseline": {
+      "races": 24855,
+      "mean": 1.004715989748156,
+      "median": 1.0035144313628244,
+      "p01": 0.8578828198142988,
+      "p99": 1.1651703504033457,
+      "fraction_outside_0_95_1_05": 0.43178434922550796,
+      "selected_horses_in_mass_above_one_fraction": 0.7156456953642384,
+      "selected_mean_mass": 1.0423690507672811
+    },
+    "pace": {
+      "races": 24855,
+      "mean": 1.0111528173777187,
+      "median": 1.0094354640124725,
+      "p01": 0.8621159215506299,
+      "p99": 1.1792727898401207,
+      "fraction_outside_0_95_1_05": 0.44031382015691006,
+      "selected_horses_in_mass_above_one_fraction": 0.7319488817891374,
+      "selected_mean_mass": 1.045443921224356
+    },
+    "within_race": {
+      "races": 24855,
+      "mean": 1.0057026748734357,
+      "median": 1.0046029454854428,
+      "p01": 0.8583230158447207,
+      "p99": 1.1667643129119463,
+      "fraction_outside_0_95_1_05": 0.43339368336350836,
+      "selected_horses_in_mass_above_one_fraction": 0.7219340112056444,
+      "selected_mean_mass": 1.0437284064989938
+    },
+    "race_only": {
+      "races": 24855,
+      "mean": 1.0058670461582384,
+      "median": 1.0049993903015106,
+      "p01": 0.8577639292621705,
+      "p99": 1.1643010884057414,
+      "fraction_outside_0_95_1_05": 0.43186481593240794,
+      "selected_horses_in_mass_above_one_fraction": 0.7182274247491639,
+      "selected_mean_mass": 1.0423451891061712
+    },
+    "weighted_pace": {
+      "races": 24855,
+      "mean": 1.0098053945412688,
+      "median": 1.0074847370429039,
+      "p01": 0.8610039116371337,
+      "p99": 1.1795913349232798,
+      "fraction_outside_0_95_1_05": 0.43975055320860995,
+      "selected_horses_in_mass_above_one_fraction": 0.7224940805051302,
+      "selected_mean_mass": 1.045069898784216
+    },
+    "weighted_backfill": {
+      "races": 24855,
+      "mean": 1.0030408343023947,
+      "median": 1.0016629721537142,
+      "p01": 0.8572969517728818,
+      "p99": 1.16358271693858,
+      "fraction_outside_0_95_1_05": 0.42908871454435726,
+      "selected_horses_in_mass_above_one_fraction": 0.7197154471544716,
+      "selected_mean_mass": 1.0436448558882045
+    }
+  },
+  "input_sha256": {
+    "artifacts/roi-next-proposals-20261025/attribution.json": "2f880d93f296d057c271adf293a1d4861cb2917737d75d5e01ec146650e0d548",
+    "artifacts/roi-next-proposals-20261025/probability_mass.json": "757990c4484a835364cb7aa079ae7b75a48beafee7209c2e3914c13bc4177224",
+    "docs/roi-next-proposals-20261025/independent_verify.py": "bcb95b5046d596eea9210b7ca8302eea314991861c599cd997bbf546edb9b41a",
+    "artifacts/143-existing-feature-roi/weighted_comparison/baseline_ensemble.parquet": "87468a1ad7a365dd743c45993936a14bc432232798f3c3921b759c45034bfd91",
+    "artifacts/143-existing-feature-roi/weighted_comparison/baseline_bets.parquet": "829a173566869994f9b013103b92a103a0cd92eb3f7fe6871784a16f3d100efe",
+    "artifacts/143-existing-feature-roi/weighted_comparison/weighted_baseline_ensemble.parquet": "57ad3b0b8e02546f43ebd55b2a56a0f66c5f418a04e87c8b89870f7ceb5d9c86",
+    "artifacts/143-existing-feature-roi/weighted_comparison/weighted_baseline_bets.parquet": "7eb106395631349757201cb3827c17bc409e48a8468c4259d5439a4567eaaca6",
+    "artifacts/143-existing-feature-roi/features_comparison/pace_ensemble.parquet": "10a0a55b21851152ccb138678add07f89ba195b52f7536aee2dd9d460243832a",
+    "artifacts/143-existing-feature-roi/features_comparison/pace_bets.parquet": "d4dc58f14bb40e5d4124395bece3d6a4b6a3d3b6974e2d428a075f1ed3142f03",
+    "artifacts/144-race-normalized-weight/comparison/within_race_ensemble.parquet": "5314bfee31e1cfb81aeed1b543a8020bca24ba1411a0c7db01df8e58da374d26",
+    "artifacts/144-race-normalized-weight/comparison/within_race_bets.parquet": "aac0f24c0a265d61fcf785e99b08fa3b98e59e5a1d550514439ee0ac856df556",
+    "artifacts/144-race-normalized-weight/comparison/race_only_ensemble.parquet": "3ef46045f26acdc868ee60173dec345e4fd92d3350465f3ff45e4288b7e1207b",
+    "artifacts/144-race-normalized-weight/comparison/race_only_bets.parquet": "6b993d08051f7a179b490f40578bb603e4e111fda6b2c3ff049e8725f45e9406",
+    "artifacts/145-pace-weight-combination/comparison/weighted_pace_ensemble.parquet": "79b573235fbe1678f5b7cfe54215c5284a0f68cd4f56c5ebed1626c0779d02eb",
+    "artifacts/145-pace-weight-combination/comparison/weighted_pace_bets.parquet": "7692d1e2913caaf66f361a3705cf22ba2b7928d006bf2effba55023b10405f48",
+    "artifacts/146-old-oof-backfill/comparison/weighted_backfill_ensemble.parquet": "262cd17b775e762824ab485adc934db4afc8c4ca4de0d4eb86720717c67095e7",
+    "artifacts/146-old-oof-backfill/comparison/weighted_backfill_bets.parquet": "5a5366d6e65621ad23d7e0b28f84072574c8ef019d80e8342b78c11707edbe84"
+  },
+  "final_report_review": {
+    "status": "passed",
+    "blockers": [],
+    "path": "docs/roi-next-proposals-20261025/report.md",
+    "sha256": "2e9a41da2db7f867a1d5f7bed74c805c3b21c11455aab1446155d4c38a98ab4f",
+    "checked": [
+      "all report comparison values and seven purchase-set decompositions",
+      "independent winner NLL partition facts and causal limits",
+      "race probability mass statistics",
+      "fixed 1:1 baseline77 + unweighted pace91 raw probability mean, before selection",
+      "original weighted/base post-prediction full-field normalization and same-budget four-arm comparison",
+      "prior N1 fixed100 yen vs new combination/common1000 yen budget; novelty limited to untested combination",
+      "no new fits or new policy ROI scored; repeated historical window not untouched holdout",
+      "official scikit-learn calibration and soft voting references directly opened and support statements"
+    ],
+    "minor_corrections_resolved": [
+      "clarified OOF-covered training-row count does not increase training data",
+      "full source path for probability_mass.py"
+    ]
+  }
+}

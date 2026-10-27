@@ -1,0 +1,7 @@
+{
+  "status": "verified",
+  "state": "NO_GO",
+  "can_collect": false,
+  "new_collection": false,
+  "database_write": false
+}

@@ -1,0 +1,28 @@
+{
+  "reviewer": "half149_review",
+  "stage": "preflight before freeze and candidate scoring",
+  "verdict": "PASS",
+  "blockers": [],
+  "files_sha256": {
+    "scripts/roi_explore/roi_improvement_149/run.py": "6e9011f8d429bd30f421236f18f36cdb91d0db68c49a19d1b63e3f1da848b68e",
+    "scripts/roi_explore/roi_improvement_149/report.py": "f546016458f4cc8a96d6cfd943e2c8409575973f230cbfd9f2e09681749eab8a",
+    "scripts/tests/test_roi_report_149.py": "77d79acbca158a340486a2789d9c5b6ad56a460e40e4dbd494354dc43872948f",
+    "specs/149-half-normalization/spec.md": "7a01534b2b32cadac46e86b695c67129e0291e4b1fec5f22038313aba36f34e4",
+    "specs/149-half-normalization/plan.md": "011069ba25f603d22d220793ba8626b63104283107c93047e9afca2869357f47",
+    "specs/149-half-normalization/quickstart.md": "b9d7b17657791323fde17d1045edfd21cf903dc521a01db3f1880c3528199e22",
+    "specs/149-half-normalization/tasks.md": "70a149a6d503fc4efeff77c71ee1978c6b87099c9991b305c5b65c198dd2e86c"
+  },
+  "checks": [
+    "One fixed exponent 0.5 applied after 15-seed parent mean",
+    "All complete-field starters define S; no odds or label in denominator",
+    "Parent and endpoint controls retained; saved148 controls must exactly match",
+    "Transitive148 source and input bindings plus149 source frozen",
+    "Three fixed contrasts, seed20261025,4000 day draws,family3",
+    "Complete fields and positive sums validated using unchanged148 normalization",
+    "No new fits or candidate search; fixed100-yen proposal2 held",
+    "Score sum sqrt(S), NLL invariance and historical limitations documented",
+    "Tests cover formula,parent nonmutation,all-starter grouping,seed mean order,malformed fields,EV changes and pairing"
+  ],
+  "tests_execution": "Root reports 15 pytest checks passed and scoped Ruff E/F passed; no source differences since independent preflight",
+  "independent_candidate_scoring_performed": false
+}

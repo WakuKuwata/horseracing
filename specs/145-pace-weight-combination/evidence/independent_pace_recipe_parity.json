@@ -1,0 +1,2049 @@
+{
+  "reviewer": "paceweight145_review",
+  "protocol_sha256": "8929b5ef128f0fd59ae507f24133805a49be32161f19899b703c7cedb845bf69",
+  "verified_fits": 120,
+  "checks": [
+    {
+      "year": 2019,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2019,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2020,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2021,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2022,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2023,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2024,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2025,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 1,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 2,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 3,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 4,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 5,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 6,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 7,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 8,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 9,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 10,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 11,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 12,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 13,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 14,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    },
+    {
+      "year": 2026,
+      "seed": 15,
+      "full_feature_spec_exact": true,
+      "train_and_target_recipe_fields_exact": [
+        "seed",
+        "rounds",
+        "params",
+        "features",
+        "train_start",
+        "train_end",
+        "target_start",
+        "target_end",
+        "train_rows",
+        "target_rows"
+      ]
+    }
+  ],
+  "no_model_fits_performed": true,
+  "blockers": []
+}

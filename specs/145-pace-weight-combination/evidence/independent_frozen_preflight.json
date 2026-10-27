@@ -1,0 +1,26 @@
+{
+  "reviewer": "paceweight145_review",
+  "protocol_sha256": "8929b5ef128f0fd59ae507f24133805a49be32161f19899b703c7cedb845bf69",
+  "frozen_bindings_verified": 757,
+  "candidate_feature_count": 91,
+  "same_original143_weight_recipe": true,
+  "same_original143_models_recipe": true,
+  "contrasts": [
+    [
+      "weighted_pace",
+      "baseline"
+    ],
+    [
+      "weighted_pace",
+      "weighted_baseline"
+    ],
+    [
+      "weighted_pace",
+      "pace"
+    ]
+  ],
+  "deferred": "proposal3 OOFbackfill",
+  "no_roi_inspection": true,
+  "no_model_fits_performed": true,
+  "blockers": []
+}

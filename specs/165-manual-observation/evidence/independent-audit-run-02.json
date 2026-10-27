@@ -1,0 +1,39 @@
+{
+  "status": "independently_verified",
+  "origin": "fixture_rehearsal",
+  "new_collection": false,
+  "database_access": false,
+  "comparison_data_added": 0,
+  "clocks_and_durable_receipts_verified": true,
+  "same_field_all_stages": true,
+  "decision_quote_age_seconds": 0.658256,
+  "decision_window_verified": true,
+  "sealed_primary_admissible": false,
+  "actual_models": {
+    "mev_native_boosters": 15,
+    "legacy_native_boosters": 6,
+    "independent_legacy_isotonic_and_correction": true,
+    "main_model_adapter_imported": false
+  },
+  "independent_blend_ev_tickets": true,
+  "historical_official": {
+    "races": 9,
+    "horses": 129,
+    "official_html_reparsed": true,
+    "current_session_linked": false,
+    "accounts": {
+      "plus_prediction": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      },
+      "roi_only": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      }
+    }
+  }
+}

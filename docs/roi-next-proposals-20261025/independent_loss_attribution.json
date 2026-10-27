@@ -1,0 +1,757 @@
+{
+  "purpose": "Descriptive fixed saved-prediction loss attribution. No new forecast, fit, policy, threshold sweep, or ROI comparison.",
+  "population": {
+    "races": 24855,
+    "horses": 343883,
+    "days": 807
+  },
+  "partitions": "Common baseline raw EV and fixed odds bins. Outcome-selected winners only for winner NLL. Negative delta means improvement.",
+  "caution": "Post-result mechanism diagnosis, not independent validation or a tradable subset rule; no causal attribution.",
+  "sha256": {
+    "baseline": "87468a1ad7a365dd743c45993936a14bc432232798f3c3921b759c45034bfd91",
+    "weighted_baseline": "57ad3b0b8e02546f43ebd55b2a56a0f66c5f418a04e87c8b89870f7ceb5d9c86",
+    "within_race": "5314bfee31e1cfb81aeed1b543a8020bca24ba1411a0c7db01df8e58da374d26",
+    "race_only": "3ef46045f26acdc868ee60173dec345e4fd92d3350465f3ff45e4288b7e1207b",
+    "pace": "10a0a55b21851152ccb138678add07f89ba195b52f7536aee2dd9d460243832a",
+    "weighted_pace": "79b573235fbe1678f5b7cfe54215c5284a0f68cd4f56c5ebed1626c0779d02eb",
+    "weighted_backfill": "262cd17b775e762824ab485adc934db4afc8c4ca4de0d4eb86720717c67095e7"
+  },
+  "contrasts": {
+    "weighted_baseline_minus_baseline": {
+      "winner_nll": {
+        "full_mean_delta": 0.00019603559745933995,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": -2.1261059379844793e-05,
+              "contribution_to_full_mean": -1.937746039555921e-05
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": 0.0023112204333874207,
+              "contribution_to_full_mean": 0.00017909517419851831
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": 0.003270583327099081,
+              "contribution_to_full_mean": 3.631788365638086e-05
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": -0.0004256723707574271,
+              "contribution_to_full_mean": -0.00022431932054640033
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": 0.000645741663567478,
+              "contribution_to_full_mean": 0.0002403702221414728
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": 0.0021725692579107063,
+              "contribution_to_full_mean": 0.00019973127154801707
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": -0.0022309142664527094,
+              "contribution_to_full_mean": -1.974657568374959e-05
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": 1.5661748384822197e-05,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": 1.8774016623311685e-05,
+              "contribution_to_full_mean": 1.722370518002376e-05
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": -4.982664491970699e-05,
+              "contribution_to_full_mean": -3.428196272570227e-06
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 0.0001354798459353958,
+              "contribution_to_full_mean": 1.8662394773686685e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": 4.985658761559238e-05,
+              "contribution_to_full_mean": 6.982007096575573e-06
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": -1.3368091589152374e-05,
+              "contribution_to_full_mean": -4.160795814453597e-06
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": 3.8073524599872216e-05,
+              "contribution_to_full_mean": 1.2779452828259177e-05
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": 2.867026566886742e-07,
+              "contribution_to_full_mean": 6.108427444104272e-08
+            }
+          }
+        }
+      }
+    },
+    "within_race_minus_baseline": {
+      "winner_nll": {
+        "full_mean_delta": 6.607765101950585e-05,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": -0.00016379820656295797,
+              "contribution_to_full_mean": -0.00014928669375460419
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": 0.001990101174853092,
+              "contribution_to_full_mean": 0.0001542118230845727
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": 0.005507050458671923,
+              "contribution_to_full_mean": 6.115252168953734e-05
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": -0.0010299960417668274,
+              "contribution_to_full_mean": -0.0005427836714971598
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": 0.0009558738763483216,
+              "contribution_to_full_mean": 0.0003558135225900089
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": 0.0025665039892885846,
+              "contribution_to_full_mean": 0.00023594695697141081
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": 0.0019320065984210785,
+              "contribution_to_full_mean": 1.7100842955245918e-05
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": 1.98445921334783e-06,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": 3.844028193193556e-06,
+              "contribution_to_full_mean": 3.5265979375481263e-06
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": -6.834821459525243e-05,
+              "contribution_to_full_mean": -4.702526025781072e-06
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 0.00022942863973601438,
+              "contribution_to_full_mean": 3.1603873015807705e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": -8.626939861758418e-05,
+              "contribution_to_full_mean": -1.2081323294916058e-05
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": -1.4101226704791051e-05,
+              "contribution_to_full_mean": -4.388982874680925e-06
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": 4.664034858972581e-05,
+              "contribution_to_full_mean": 1.5654924017672005e-05
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": 1.3141221125665167e-05,
+              "contribution_to_full_mean": 2.79984136527281e-06
+            }
+          }
+        }
+      }
+    },
+    "within_race_minus_weighted_baseline": {
+      "winner_nll": {
+        "full_mean_delta": -0.00012995794643983407,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": -0.00014253714718311323,
+              "contribution_to_full_mean": -0.00012990923335904502
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": -0.0003211192585343289,
+              "contribution_to_full_mean": -2.4883351113945585e-05
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": 0.002236467131572842,
+              "contribution_to_full_mean": 2.4834638033156483e-05
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": -0.0006043236710094003,
+              "contribution_to_full_mean": -0.0003184643509507594
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": 0.00031013221278084353,
+              "contribution_to_full_mean": 0.00011544330044853609
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": 0.00039393473137787815,
+              "contribution_to_full_mean": 3.621568542339375e-05
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": 0.004162920864873788,
+              "contribution_to_full_mean": 3.684741863899551e-05
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": -1.3677289171474377e-05,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": -1.4929988430118125e-05,
+              "contribution_to_full_mean": -1.369710724247563e-05
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": -1.8521569675545443e-05,
+              "contribution_to_full_mean": -1.2743297532108454e-06
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 9.39487938006186e-05,
+              "contribution_to_full_mean": 1.2941478242121022e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": -0.00013612598623317658,
+              "contribution_to_full_mean": -1.9063330391491635e-05
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": -7.331351156386915e-07,
+              "contribution_to_full_mean": -2.2818706022733333e-07
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": 8.566823989853594e-06,
+              "contribution_to_full_mean": 2.8754711894128267e-06
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": 1.2854518468976491e-05,
+              "contribution_to_full_mean": 2.7387570908317672e-06
+            }
+          }
+        }
+      }
+    },
+    "pace_minus_baseline": {
+      "winner_nll": {
+        "full_mean_delta": -0.0017636781651054116,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": -0.003007650654285477,
+              "contribution_to_full_mean": -0.0027411913205201734
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": 0.007984638618945545,
+              "contribution_to_full_mean": 0.0006187251651615014
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": 0.0323104184700898,
+              "contribution_to_full_mean": 0.0003587879902532603
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": 0.0008947153905377934,
+              "contribution_to_full_mean": 0.0004714939523340985
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": -0.004486544878832073,
+              "contribution_to_full_mean": -0.0016700669168760547
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": -0.005109108402922508,
+              "contribution_to_full_mean": -0.00046969674917231666
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": -0.010778986633303416,
+              "contribution_to_full_mean": -9.540845139113865e-05
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": -0.00013879334159728094,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": -0.00013447825591785667,
+              "contribution_to_full_mean": -0.00012337337712681618
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": -0.00025945532270799836,
+              "contribution_to_full_mean": -1.7851167214637657e-05
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 0.0001764934121330815,
+              "contribution_to_full_mean": 2.4312027441728933e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": -0.0004332758326438908,
+              "contribution_to_full_mean": -6.0676734669828086e-05
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": -0.0001297062752680764,
+              "contribution_to_full_mean": -4.037085799753993e-05
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": -9.388050860826246e-05,
+              "contribution_to_full_mean": -3.1511175911890655e-05
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": -2.9262337384587223e-05,
+              "contribution_to_full_mean": -6.23457301802227e-06
+            }
+          }
+        }
+      }
+    },
+    "weighted_pace_minus_baseline": {
+      "winner_nll": {
+        "full_mean_delta": -0.0015946480718967949,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": -0.002727750856059172,
+              "contribution_to_full_mean": -0.0024860889214366696
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": 0.007187088188128062,
+              "contribution_to_full_mean": 0.0005569234299068455
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": 0.030124748061517957,
+              "contribution_to_full_mean": 0.0003345174196330298
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": 0.0006629303193405117,
+              "contribution_to_full_mean": 0.00034934867522518694
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": -0.0036628863044266546,
+              "contribution_to_full_mean": -0.0013634690842307547
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": -0.005121854411125631,
+              "contribution_to_full_mean": -0.00047086853065467986
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": -0.012388989689724416,
+              "contribution_to_full_mean": -0.00010965913223654684
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": -0.00012445445521292855,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": -0.00011638248420166982,
+              "contribution_to_full_mean": -0.00010677190908200756
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": -0.00031861954192474956,
+              "contribution_to_full_mean": -2.1921811668327817e-05
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 0.0003077499157272706,
+              "contribution_to_full_mean": 4.239265537406854e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": -0.000429572460157422,
+              "contribution_to_full_mean": -6.015810765946885e-05
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": -0.00010374507668452505,
+              "contribution_to_full_mean": -3.229047900819398e-05
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": -7.96227875356697e-05,
+              "contribution_to_full_mean": -2.6725544011494244e-05
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": -2.4783515657075087e-05,
+              "contribution_to_full_mean": -5.280324533771429e-06
+            }
+          }
+        }
+      }
+    },
+    "weighted_pace_minus_pace": {
+      "winner_nll": {
+        "full_mean_delta": 0.00016903009320861685,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": 0.00027989979822630424,
+              "contribution_to_full_mean": 0.0002551023990835031
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": -0.0007975504308174829,
+              "contribution_to_full_mean": -6.180173525465588e-05
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": -0.0021856704085718337,
+              "contribution_to_full_mean": -2.427057062023038e-05
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": -0.00023178507119728185,
+              "contribution_to_full_mean": -0.0001221452771089116
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": 0.0008236585744054183,
+              "contribution_to_full_mean": 0.00030659783264529996
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": -1.274600820312483e-05,
+              "contribution_to_full_mean": -1.1717814823633167e-06
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": -0.0016100030564210014,
+              "contribution_to_full_mean": -1.425068084540818e-05
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": 1.4338886384352409e-05,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": 1.8095771716186826e-05,
+              "contribution_to_full_mean": 1.66014680448086e-05
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": -5.916421921675116e-05,
+              "contribution_to_full_mean": -4.070644453690158e-06
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 0.00013125650359418917,
+              "contribution_to_full_mean": 1.8080627932339608e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": 3.7033724864687835e-06,
+              "contribution_to_full_mean": 5.186270103592317e-07
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": 2.596119858355132e-05,
+              "contribution_to_full_mean": 8.080378989345936e-06
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": 1.4257721072592717e-05,
+              "contribution_to_full_mean": 4.7856319003963975e-06
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": 4.478821727512141e-06,
+              "contribution_to_full_mean": 9.542484842508412e-07
+            }
+          }
+        }
+      }
+    },
+    "weighted_backfill_minus_baseline": {
+      "winner_nll": {
+        "full_mean_delta": 0.0007527495901557356,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": 0.00042483669722199986,
+              "contribution_to_full_mean": 0.0003871987810166954
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": 0.004311647256469003,
+              "contribution_to_full_mean": 0.0003341071259689922
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": 0.002831640381128786,
+              "contribution_to_full_mean": 3.144368317004808e-05
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": -0.0015039724834358126,
+              "contribution_to_full_mean": -0.0007925581005046177
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": 0.003434716105527151,
+              "contribution_to_full_mean": 0.0012785352407297204
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": 0.003162851940660497,
+              "contribution_to_full_mean": 0.00029077113998830155
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": -0.0027113065517425086,
+              "contribution_to_full_mean": -2.399869005766855e-05
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": 5.9761934031603295e-05,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": 6.352684236317655e-05,
+              "contribution_to_full_mean": 5.828095424836098e-05
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": -1.333776360778075e-05,
+              "contribution_to_full_mean": -9.176710885972628e-07
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 0.00017413030562820535,
+              "contribution_to_full_mean": 2.3986508718395754e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": 9.931713282070854e-05,
+              "contribution_to_full_mean": 1.3908551694557981e-05
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": 9.592054395587435e-05,
+              "contribution_to_full_mean": 2.9855106478741607e-05
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": 3.59650557967944e-05,
+              "contribution_to_full_mean": 1.2071741160060235e-05
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": 1.842942295489184e-05,
+              "contribution_to_full_mean": 3.926534698243474e-06
+            }
+          }
+        }
+      }
+    },
+    "weighted_backfill_minus_weighted_baseline": {
+      "winner_nll": {
+        "full_mean_delta": 0.0005567139926963957,
+        "denominator": 24855,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 22653,
+              "mean_delta": 0.00044609775660184466,
+              "contribution_to_full_mean": 0.0004065762414122545
+            },
+            "gt_1_le_1p2": {
+              "n": 1926,
+              "mean_delta": 0.002000426823081583,
+              "contribution_to_full_mean": 0.00015501195177047389
+            },
+            "gt_1p2": {
+              "n": 276,
+              "mean_delta": -0.000438942945970295,
+              "contribution_to_full_mean": -4.874200486332787e-06
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 13098,
+              "mean_delta": -0.0010783001126783856,
+              "contribution_to_full_mean": -0.0005682387799582175
+            },
+            "ge_5_lt_20": {
+              "n": 9252,
+              "mean_delta": 0.0027889744419596725,
+              "contribution_to_full_mean": 0.0010381650185882474
+            },
+            "ge_20_lt_100": {
+              "n": 2285,
+              "mean_delta": 0.0009902826827497908,
+              "contribution_to_full_mean": 9.103986844028454e-05
+            },
+            "ge_100": {
+              "n": 220,
+              "mean_delta": -0.00048039228528979906,
+              "contribution_to_full_mean": -4.252114373918962e-06
+            }
+          }
+        }
+      },
+      "binary_logloss": {
+        "full_mean_delta": 4.410018564678109e-05,
+        "denominator": 343883,
+        "partitions": {
+          "baseline_raw_ev": {
+            "le_1": {
+              "n": 315486,
+              "mean_delta": 4.475282573986487e-05,
+              "contribution_to_full_mean": 4.105724906833723e-05
+            },
+            "gt_1_le_1p2": {
+              "n": 23660,
+              "mean_delta": 3.648888131192624e-05,
+              "contribution_to_full_mean": 2.5105251839729646e-06
+            },
+            "gt_1p2": {
+              "n": 4737,
+              "mean_delta": 3.86504596928096e-05,
+              "contribution_to_full_mean": 5.324113944709075e-07
+            }
+          },
+          "odds": {
+            "lt_5": {
+              "n": 48158,
+              "mean_delta": 4.9460545205116145e-05,
+              "contribution_to_full_mean": 6.9265445979824045e-06
+            },
+            "ge_5_lt_20": {
+              "n": 107033,
+              "mean_delta": 0.00010928863554502672,
+              "contribution_to_full_mean": 3.40159022931952e-05
+            },
+            "ge_20_lt_100": {
+              "n": 115425,
+              "mean_delta": -2.108468803077827e-06,
+              "contribution_to_full_mean": -7.077116681989461e-07
+            },
+            "ge_100": {
+              "n": 73267,
+              "mean_delta": 1.8142720298203163e-05,
+              "contribution_to_full_mean": 3.86545042380243e-06
+            }
+          }
+        }
+      }
+    }
+  }
+}

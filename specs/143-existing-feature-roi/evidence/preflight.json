@@ -1,0 +1,71 @@
+{
+  "research": "143",
+  "auditor": "feature143_review",
+  "phase": "independent_preflight",
+  "protocol_sha256": "d79e1fe27376cc3a63e23333535aa85284ba426c820ed47127b2e82977c03bb5",
+  "bound_dependencies_verified": 265,
+  "all_manifest_source_and_dependency_hashes_match": true,
+  "manifest_file_rows_verified": {
+    "races": 67274,
+    "race_horses": 954528,
+    "race_results": 949557,
+    "additions": 918187
+  },
+  "all_coverage_year_feature_cells_exact": true,
+  "all_target_keys_and_order_exact": true,
+  "history_excluded_races": [
+    "202504040406",
+    "202504040407"
+  ],
+  "mutable_horses_unused": true,
+  "oof_rows321271_match142_baseline_probability_exact": true,
+  "oof_years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "oof_all_train_through_equals_year_minus_one": true,
+  "saved_body_forward_checks": [
+    {
+      "arm": "speed",
+      "year": 2019,
+      "seed": 1,
+      "rows": 45666,
+      "max_abs_p_diff": 0.0,
+      "feature_names_exact": true,
+      "categorical_columns": 11,
+      "feature_count": 87,
+      "all_artifact_hashes_match": true
+    },
+    {
+      "arm": "pace",
+      "year": 2019,
+      "seed": 1,
+      "rows": 45666,
+      "max_abs_p_diff": 0.0,
+      "feature_names_exact": true,
+      "categorical_columns": 11,
+      "feature_count": 91,
+      "all_artifact_hashes_match": true
+    }
+  ],
+  "baseline143_score_exact142": {
+    "races": 24855,
+    "days": 807,
+    "bets": 4736,
+    "stake_yen": 3867300,
+    "payout_yen": 4426100,
+    "profit_yen": 558800,
+    "deployed_roi": 1.1444935743283429,
+    "winner_nll": 1.9266805967615557
+  },
+  "bootstrap_identity_check_zero_all_metrics_and_intervals": true,
+  "no_bet_dates_retained": 21,
+  "blockers": [],
+  "can_adopt": false,
+  "untouched_holdout": false
+}

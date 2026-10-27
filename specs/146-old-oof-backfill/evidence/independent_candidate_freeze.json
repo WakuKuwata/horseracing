@@ -1,0 +1,10 @@
+{
+  "auditor": "oof146_review",
+  "protocol_sha256": "3138a39b4acb98c6d5752023f99672cee7c11a0a194ac5ae040ddee54ca9720d",
+  "bound_files": 700,
+  "original_design_preserved": true,
+  "all_stage1_bindings_retained": true,
+  "teacher_sha256": "47f8e1ed0d2231c53384f9bf6b801eab29c131cb8d921bf558a601a412d73a2a",
+  "blockers": [],
+  "no_model_fits_performed": true
+}

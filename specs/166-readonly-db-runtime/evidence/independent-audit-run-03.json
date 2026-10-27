@@ -1,0 +1,51 @@
+{
+  "status": "independently_verified",
+  "new_collection": false,
+  "database_write": false,
+  "comparison_data_added": 0,
+  "actual_db_access": true,
+  "source_pins_verified": true,
+  "sql_statement_hashes_verified": true,
+  "strictly_classified_pandas_metadata_probes": 5,
+  "unhandled_sql_failures": 0,
+  "clock_and_ready_order_verified": true,
+  "original_quote_clock_preserved": true,
+  "raw_http_missing_remains_ineligible": true,
+  "masked_current_replay_not_historical_asof": true,
+  "actual_models": {
+    "mev_native_boosters": 15,
+    "legacy_native_boosters": 6,
+    "independent_legacy_isotonic_and_correction": true,
+    "main_model_adapter_imported": false
+  },
+  "full_history_counts": {
+    "horses": 177726,
+    "mev": 935057,
+    "race_horses": 970677,
+    "race_results": 965618,
+    "races": 68500
+  },
+  "elapsed_process_seconds": 60.4049055,
+  "current_replay_core_seconds": 59.068990084,
+  "peak_process_rss_bytes": 4313186304,
+  "historical_official": {
+    "races": 9,
+    "horses": 129,
+    "official_html_reparsed": true,
+    "current_session_linked": false,
+    "accounts": {
+      "plus_prediction": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      },
+      "roi_only": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      }
+    }
+  }
+}

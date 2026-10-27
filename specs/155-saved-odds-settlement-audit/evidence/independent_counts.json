@@ -1,0 +1,649 @@
+{
+  "status": "PASS",
+  "protocol_sha256": "91eeffadc6ef91518cf2558390678619cf7dee97d170aa16214f4e942fce223b",
+  "summary_sha256": "1d1b1cb85f3a4a01590dff9f12cd9c54eb8f9887dfb3ca310b8d3f276962e2b8",
+  "all_frozen_input_source_files_verified": 4475,
+  "all_current_race_classifications_match": true,
+  "core": {
+    "snapshot_files": 10,
+    "snapshot_rows": {
+      "races": 68500,
+      "horses": 970677,
+      "results": 965520,
+      "payouts": 714,
+      "mev": 165670,
+      "picks": 2843,
+      "scans": 5983,
+      "chaos": 740,
+      "recommendations": 73938,
+      "id_mappings": 21950
+    },
+    "races": 68500,
+    "field": {
+      "complete": 68490,
+      "no_results": 8,
+      "inconsistent_or_incomplete": 2
+    },
+    "payout": {
+      "missing": 67787,
+      "consistent": 712,
+      "inconsistent": 1
+    },
+    "winner_price": {
+      "payout_missing": 67778,
+      "field_not_complete": 10,
+      "exact": 711,
+      "dead_heat_separate": 1
+    },
+    "duplicate_starter_number_races": 2,
+    "incomplete_result_races": 10,
+    "underround_races": 123,
+    "quote_observed_class": {
+      "missing_event": 68332,
+      "at_or_after_post": 161,
+      "before_post": 7
+    },
+    "quote_official_class": {
+      "missing_event": 68493,
+      "before_post": 7
+    },
+    "mev": {
+      "groups": 11966,
+      "field_mismatch_groups": 6,
+      "source_rows": {
+        "legacy_unknown": 162510,
+        "quote": 3160
+      },
+      "computed_time_rows": {
+        "post_time_unknown": 71076,
+        "at_or_after_post": 92904,
+        "before_post": 1690
+      },
+      "observed_time_rows": {
+        "post_time_unknown": 71076,
+        "at_or_after_post": 89904,
+        "before_post": 4690
+      },
+      "observed_after_computed_rows": 0
+    },
+    "known_202504040407": [
+      {
+        "race_id": "202504040407",
+        "field_status": "inconsistent_or_incomplete",
+        "payout_status": "missing",
+        "winner_price_status": "field_not_complete",
+        "n_missing_results": 1,
+        "n_nonstarter_results": 0,
+        "duplicate_starter_numbers": true,
+        "n_winners": 1
+      }
+    ],
+    "missing_result_ids_total": 127,
+    "missing_result_ids_in_no_results_races": 116
+  },
+  "additional_diagnostics": {
+    "underround": {
+      "current_races": 123,
+      "by_year": {
+        "2007": 14,
+        "2008": 8,
+        "2009": 12,
+        "2010": 6,
+        "2011": 8,
+        "2012": 6,
+        "2013": 6,
+        "2014": 11,
+        "2015": 5,
+        "2016": 5,
+        "2017": 2,
+        "2018": 4,
+        "2019": 3,
+        "2020": 8,
+        "2021": 5,
+        "2022": 6,
+        "2023": 7,
+        "2024": 4,
+        "2025": 3
+      },
+      "by_track_type": {
+        "障": 59,
+        "ダ": 44,
+        "芝": 20
+      },
+      "field": {
+        "complete": 123
+      },
+      "started_count": {
+        "5": 1,
+        "6": 1,
+        "7": 3,
+        "8": 5,
+        "9": 10,
+        "10": 13,
+        "11": 20,
+        "12": 14,
+        "13": 30,
+        "14": 5,
+        "15": 17,
+        "16": 1,
+        "17": 3
+      },
+      "min_inverse_sum": 0.5121523836209437,
+      "has_odds_ge999_9": 0,
+      "has_odds_ge9999_9": 0,
+      "research_underround_overlap": 64,
+      "research_underround_total": 65,
+      "current_underround_in151": 12,
+      "research_underround_in151": 12,
+      "underround_151_ids": [
+        "202203020810",
+        "202203030311",
+        "202204030802",
+        "202206030406",
+        "202209040801",
+        "202302010202",
+        "202309030706",
+        "202309050107",
+        "202404040303",
+        "202405010304",
+        "202407040403",
+        "202508010810"
+      ],
+      "all_151_underround_still_current_underround": true
+    },
+    "before_post_mev_intersections": {
+      "before_post": {
+        "rows": 1690,
+        "race_model_groups": 122,
+        "races": 61,
+        "by_model": {
+          "mev-binary-v2": 845,
+          "mev-ens15-v1": 845
+        }
+      },
+      "before_quote": {
+        "rows": 1110,
+        "race_model_groups": 84,
+        "races": 42,
+        "by_model": {
+          "mev-binary-v2": 555,
+          "mev-ens15-v1": 555
+        }
+      },
+      "before_quote_pending": {
+        "rows": 1110,
+        "race_model_groups": 84,
+        "races": 42,
+        "by_model": {
+          "mev-binary-v2": 555,
+          "mev-ens15-v1": 555
+        }
+      },
+      "before_quote_pending_field": {
+        "rows": 1042,
+        "race_model_groups": 78,
+        "races": 39,
+        "by_model": {
+          "mev-binary-v2": 521,
+          "mev-ens15-v1": 521
+        }
+      },
+      "before_quote_pending_field_one_run": {
+        "rows": 1042,
+        "race_model_groups": 78,
+        "races": 39,
+        "by_model": {
+          "mev-binary-v2": 521,
+          "mev-ens15-v1": 521
+        }
+      },
+      "before_quote_pending_field_one_run_observed_before": {
+        "rows": 1042,
+        "race_model_groups": 78,
+        "races": 39,
+        "by_model": {
+          "mev-binary-v2": 521,
+          "mev-ens15-v1": 521
+        }
+      }
+    },
+    "fully_eligible_saved_groups": [
+      {
+        "race_id": "202604040204",
+        "model_version": "mev-binary-v2",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040204",
+        "model_version": "mev-ens15-v1",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040206",
+        "model_version": "mev-binary-v2",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040206",
+        "model_version": "mev-ens15-v1",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040207",
+        "model_version": "mev-binary-v2",
+        "rows": 18
+      },
+      {
+        "race_id": "202604040207",
+        "model_version": "mev-ens15-v1",
+        "rows": 18
+      },
+      {
+        "race_id": "202604040208",
+        "model_version": "mev-binary-v2",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040208",
+        "model_version": "mev-ens15-v1",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040209",
+        "model_version": "mev-binary-v2",
+        "rows": 14
+      },
+      {
+        "race_id": "202604040209",
+        "model_version": "mev-ens15-v1",
+        "rows": 14
+      },
+      {
+        "race_id": "202604040210",
+        "model_version": "mev-binary-v2",
+        "rows": 18
+      },
+      {
+        "race_id": "202604040210",
+        "model_version": "mev-ens15-v1",
+        "rows": 18
+      },
+      {
+        "race_id": "202604040211",
+        "model_version": "mev-binary-v2",
+        "rows": 10
+      },
+      {
+        "race_id": "202604040211",
+        "model_version": "mev-ens15-v1",
+        "rows": 10
+      },
+      {
+        "race_id": "202604040212",
+        "model_version": "mev-binary-v2",
+        "rows": 10
+      },
+      {
+        "race_id": "202604040212",
+        "model_version": "mev-ens15-v1",
+        "rows": 10
+      },
+      {
+        "race_id": "202604040304",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202604040304",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      },
+      {
+        "race_id": "202604040310",
+        "model_version": "mev-binary-v2",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040310",
+        "model_version": "mev-ens15-v1",
+        "rows": 15
+      },
+      {
+        "race_id": "202604040412",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202604040412",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      },
+      {
+        "race_id": "202605040612",
+        "model_version": "mev-binary-v2",
+        "rows": 14
+      },
+      {
+        "race_id": "202605040612",
+        "model_version": "mev-ens15-v1",
+        "rows": 14
+      },
+      {
+        "race_id": "202605040704",
+        "model_version": "mev-binary-v2",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040704",
+        "model_version": "mev-ens15-v1",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040705",
+        "model_version": "mev-binary-v2",
+        "rows": 8
+      },
+      {
+        "race_id": "202605040705",
+        "model_version": "mev-ens15-v1",
+        "rows": 8
+      },
+      {
+        "race_id": "202605040706",
+        "model_version": "mev-binary-v2",
+        "rows": 8
+      },
+      {
+        "race_id": "202605040706",
+        "model_version": "mev-ens15-v1",
+        "rows": 8
+      },
+      {
+        "race_id": "202605040707",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202605040707",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      },
+      {
+        "race_id": "202605040708",
+        "model_version": "mev-binary-v2",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040708",
+        "model_version": "mev-ens15-v1",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040710",
+        "model_version": "mev-binary-v2",
+        "rows": 9
+      },
+      {
+        "race_id": "202605040710",
+        "model_version": "mev-ens15-v1",
+        "rows": 9
+      },
+      {
+        "race_id": "202605040711",
+        "model_version": "mev-binary-v2",
+        "rows": 13
+      },
+      {
+        "race_id": "202605040711",
+        "model_version": "mev-ens15-v1",
+        "rows": 13
+      },
+      {
+        "race_id": "202605040712",
+        "model_version": "mev-binary-v2",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040712",
+        "model_version": "mev-ens15-v1",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040801",
+        "model_version": "mev-binary-v2",
+        "rows": 14
+      },
+      {
+        "race_id": "202605040801",
+        "model_version": "mev-ens15-v1",
+        "rows": 14
+      },
+      {
+        "race_id": "202605040804",
+        "model_version": "mev-binary-v2",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040804",
+        "model_version": "mev-ens15-v1",
+        "rows": 16
+      },
+      {
+        "race_id": "202605040811",
+        "model_version": "mev-binary-v2",
+        "rows": 13
+      },
+      {
+        "race_id": "202605040811",
+        "model_version": "mev-ens15-v1",
+        "rows": 13
+      },
+      {
+        "race_id": "202605040903",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202605040903",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      },
+      {
+        "race_id": "202605040912",
+        "model_version": "mev-binary-v2",
+        "rows": 13
+      },
+      {
+        "race_id": "202605040912",
+        "model_version": "mev-ens15-v1",
+        "rows": 13
+      },
+      {
+        "race_id": "202608040501",
+        "model_version": "mev-binary-v2",
+        "rows": 15
+      },
+      {
+        "race_id": "202608040501",
+        "model_version": "mev-ens15-v1",
+        "rows": 15
+      },
+      {
+        "race_id": "202608040512",
+        "model_version": "mev-binary-v2",
+        "rows": 16
+      },
+      {
+        "race_id": "202608040512",
+        "model_version": "mev-ens15-v1",
+        "rows": 16
+      },
+      {
+        "race_id": "202608040704",
+        "model_version": "mev-binary-v2",
+        "rows": 15
+      },
+      {
+        "race_id": "202608040704",
+        "model_version": "mev-ens15-v1",
+        "rows": 15
+      },
+      {
+        "race_id": "202608040705",
+        "model_version": "mev-binary-v2",
+        "rows": 5
+      },
+      {
+        "race_id": "202608040705",
+        "model_version": "mev-ens15-v1",
+        "rows": 5
+      },
+      {
+        "race_id": "202608040706",
+        "model_version": "mev-binary-v2",
+        "rows": 18
+      },
+      {
+        "race_id": "202608040706",
+        "model_version": "mev-ens15-v1",
+        "rows": 18
+      },
+      {
+        "race_id": "202608040707",
+        "model_version": "mev-binary-v2",
+        "rows": 9
+      },
+      {
+        "race_id": "202608040707",
+        "model_version": "mev-ens15-v1",
+        "rows": 9
+      },
+      {
+        "race_id": "202608040708",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202608040708",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      },
+      {
+        "race_id": "202608040710",
+        "model_version": "mev-binary-v2",
+        "rows": 10
+      },
+      {
+        "race_id": "202608040710",
+        "model_version": "mev-ens15-v1",
+        "rows": 10
+      },
+      {
+        "race_id": "202608040711",
+        "model_version": "mev-binary-v2",
+        "rows": 17
+      },
+      {
+        "race_id": "202608040711",
+        "model_version": "mev-ens15-v1",
+        "rows": 17
+      },
+      {
+        "race_id": "202608040712",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202608040712",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      },
+      {
+        "race_id": "202608040812",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202608040812",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      },
+      {
+        "race_id": "202608040904",
+        "model_version": "mev-binary-v2",
+        "rows": 16
+      },
+      {
+        "race_id": "202608040904",
+        "model_version": "mev-ens15-v1",
+        "rows": 16
+      },
+      {
+        "race_id": "202608040911",
+        "model_version": "mev-binary-v2",
+        "rows": 18
+      },
+      {
+        "race_id": "202608040911",
+        "model_version": "mev-ens15-v1",
+        "rows": 18
+      },
+      {
+        "race_id": "202608040912",
+        "model_version": "mev-binary-v2",
+        "rows": 12
+      },
+      {
+        "race_id": "202608040912",
+        "model_version": "mev-ens15-v1",
+        "rows": 12
+      }
+    ]
+  },
+  "research_and_archive_comparison": {
+    "status": "PASS",
+    "research_all_price_classes": {
+      "payout_missing": 65190,
+      "dead_heat_separate": 89,
+      "exact": 188,
+      "mismatch": 190,
+      "near_10_yen": 16
+    },
+    "research_payout_covered_races": 395,
+    "research_payout_covered_classes": {
+      "mismatch": 190,
+      "exact": 188,
+      "near_10_yen": 16,
+      "dead_heat_separate": 1
+    },
+    "archive_selected": 713,
+    "archive_price_only_exact": 712,
+    "archive_full_field_verified": 96,
+    "invalid_odds_research_races": 1,
+    "source_sha256": "18083875498e97d9e5ee9e989325ecd34ba24ff89c0e6160aeee16cb41116070"
+  },
+  "payout_archive_sha": {
+    "total_payout_rows": 714,
+    "any_same_race_version_match_rows": 714,
+    "latest_same_race_version_match_rows": 528,
+    "older_same_race_version_only_rows": 186,
+    "no_stored_same_race_version_match_rows": 0,
+    "raw_archive_rehash_verified_rows": 714,
+    "distinct_matching_raw_archive_versions_rehashed": 713,
+    "no_match_rows": []
+  },
+  "research_normal_covered_current_exact_races": 394,
+  "payout_covered_151_races": 0,
+  "independent_code_sha256": {
+    "artifacts/155-saved-odds-settlement-audit/independent/independent155_core.py": "0300d36fce0471df9e444cb622e3be3a190ea406f2e22ae08dfbd47743b84655",
+    "artifacts/155-saved-odds-settlement-audit/independent/independent155_extra.py": "c9964f623fc06e00d9bcbacc7479d39d8d74258892b2255ef3bb425ce4d8028e",
+    "artifacts/155-saved-odds-settlement-audit/independent/independent155_research.py": "18083875498e97d9e5ee9e989325ecd34ba24ff89c0e6160aeee16cb41116070"
+  },
+  "new_analysis_imported": false,
+  "database_connected": false,
+  "limitations": [
+    "Archive comparison arithmetic uses parsed archive evidence from the main parser; raw source payout hash verification separately rehashes matching gzip/decoded files.",
+    "Does not independently refit models or modify historical research data.",
+    "Current-vs-saved field changes may reflect legitimate scratches; mismatch is not itself corruption."
+  ]
+}

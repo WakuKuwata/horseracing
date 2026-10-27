@@ -1,0 +1,65 @@
+{
+  "status": "PASS",
+  "protocol_sha256": "490646b01eb526e7b5f9beee73034ba3a1076f0f2e92f6367873095e348d1470",
+  "summary_sha256": "3f24617e3f515127a6eba1d0f5dd4ae31f0c02d0708b56646e2f1a60dbd89a66",
+  "prediction_sha256": "b660b131c40c1de8866a9d574b5556ef2e37e0698751d654e5caf8123d027394",
+  "source_sha256": "5e2d3916703d6e87ea949c4c6844e4057f5dbfc6b05c11be4a8820a3f9a3c2ee",
+  "frozen_files_verified": 142,
+  "evaluation_rows": 205786,
+  "evaluation_races": 14893,
+  "evaluation_days": 482,
+  "checks": [
+    "Protocol and all frozen input/source hashes verified; primary remains preweight.",
+    "Complete fields, unique starter IDs and horse numbers, one winner, date/odds contracts verified.",
+    "All annual softmax predictions, coefficient bounds, nested train losses and recorded cutoffs verified.",
+    "All 10 arms: exact tickets/rank/cap/strict thresholds, full-population accounting, overall/yearly quality and risk summaries verified.",
+    "All paired points, 4000 same-day resamples, unadjusted/Bonferroni intervals and outlier sensitivity reproduced.",
+    "Primary preweight decision and historical-only retention limitations verified."
+  ],
+  "max_abs_errors": {
+    "field": 5.551115123125783e-16,
+    "softmax": 3.3306690738754696e-16,
+    "references": 0.0,
+    "accounting": 0.0,
+    "tickets": 0.0,
+    "policy": 0.0,
+    "quality": 4.336808689942018e-19,
+    "policy_year": 0.0,
+    "quality_year": 1.734723475976807e-18,
+    "bootstrap": 0.0,
+    "sensitivity": 0.0
+  },
+  "primary_verdict": "incremental_value_not_demonstrated",
+  "limits": [
+    "No import of analysis.py or inputs.py; all output calculations independently implemented.",
+    "Fit cutoff and convergence records checked; historical train-only coefficients were not independently refitted.",
+    "The separate input audit covers source eligibility, label completeness and 130 reconstruction parity.",
+    "Conditional historical closing-odds evidence; does not establish executable pre-race profitability or justify deletion."
+  ],
+  "stored_odds_diagnostic": {
+    "post_scoring_diagnostic_only": true,
+    "changes_selection_or_verdict": false,
+    "n_underround_races": 12,
+    "minimum_inverse_odds_sum": 0.5756594841030491,
+    "inverse_odds_sum_by_race": {
+      "202203020810": 0.9007348418840104,
+      "202203030311": 0.9463299950723317,
+      "202204030802": 0.8697630958065564,
+      "202206030406": 0.9540175593700351,
+      "202209040801": 0.7082145293322973,
+      "202302010202": 0.9689160008458366,
+      "202309030706": 0.8814845354172564,
+      "202309050107": 0.9558913207421328,
+      "202404040303": 0.9837961947285686,
+      "202405010304": 0.6952475917618486,
+      "202407040403": 0.5756594841030491,
+      "202508010810": 0.9047102959988731
+    },
+    "primary_profit_by_arm_yen": {
+      "roi_only_ev1": 2550.0,
+      "plus_prediction_ev1": 2350.0
+    },
+    "primary_profit_difference_yen": -200.0,
+    "interpretation": "Stored odds include underround fields; no post hoc exclusion or adoption decision was made."
+  }
+}

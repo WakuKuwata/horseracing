@@ -1,0 +1,91 @@
+{
+  "coverage": {
+    "source_races": 34,
+    "selected_races": [
+      "202604040204",
+      "202604040304",
+      "202604040310",
+      "202605040704",
+      "202605040811",
+      "202605040903",
+      "202608040501",
+      "202608040512",
+      "202608040704"
+    ],
+    "excluded_races": [
+      "202604040206",
+      "202604040207",
+      "202604040208",
+      "202604040209",
+      "202604040210",
+      "202604040211",
+      "202604040212",
+      "202605040705",
+      "202605040706",
+      "202605040707",
+      "202605040708",
+      "202605040710",
+      "202605040711",
+      "202605040712",
+      "202605040801",
+      "202605040804",
+      "202608040705",
+      "202608040706",
+      "202608040707",
+      "202608040708",
+      "202608040710",
+      "202608040711",
+      "202608040712",
+      "202608040812",
+      "202608040904"
+    ],
+    "races": 9,
+    "horses": 129,
+    "days": 4,
+    "min_age_seconds": 18.901935,
+    "max_age_seconds": 1279.501492,
+    "date_counts": {
+      "2026-10-12": 2,
+      "2026-10-18": 3,
+      "2026-10-24": 3,
+      "2026-10-25": 1
+    },
+    "base_protocol_sha256": "248c0a46f9229c88a595378855ee3344dd87df0ee6a28edc55069bc05d1f53ba",
+    "inherited_file_shas_verified": 808
+  },
+  "arms": {
+    "roi_only": {
+      "tickets": 8,
+      "hit_tickets": 1,
+      "stake_yen": 800,
+      "payout_yen": 2590,
+      "profit_yen": 1790,
+      "roi": 3.2375,
+      "no_bet_races": 4,
+      "winner_nll": 1.842214087169903,
+      "profit_per_common_budget": 0.1988888888888889
+    },
+    "plus_prediction": {
+      "tickets": 8,
+      "hit_tickets": 1,
+      "stake_yen": 800,
+      "payout_yen": 2590,
+      "profit_yen": 1790,
+      "roi": 3.2375,
+      "no_bet_races": 4,
+      "winner_nll": 1.8432578803868327,
+      "profit_per_common_budget": 0.1988888888888889
+    }
+  },
+  "changed_decisions": 0,
+  "profit_difference_yen": 0,
+  "roi_difference": 0.0,
+  "profit_common_budget_difference": 0.0,
+  "undefined_roi_replicates": 19,
+  "roi_difference_interval": null,
+  "profit_common_budget_interval": [
+    0.0,
+    0.0
+  ],
+  "status": "INDEPENDENT_RECALCULATION_COMPLETE"
+}

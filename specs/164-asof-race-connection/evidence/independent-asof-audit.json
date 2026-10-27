@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "mode": "offline_asof_connection",
+  "eligible_for_prospective": false,
+  "source_records": 46,
+  "source_horses": 621,
+  "legacy_memory_available_by_fixed_target": 45,
+  "contract_ready": 0,
+  "historical_seals_created": 0,
+  "new_comparison_races": 0,
+  "main_164_adapters_imported": false,
+  "native_saved_legacy_replay": {
+    "legacy_native_boosters": 6,
+    "independent_isotonic_and_correction": true
+  },
+  "actual_saved_legacy_horses": 16,
+  "actual_saved_history_rows": 340,
+  "official_replay": {
+    "races": 9,
+    "horses": 129,
+    "official_html_reparsed": true,
+    "current_session_linked": false,
+    "accounts": {
+      "plus_prediction": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      },
+      "roi_only": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      }
+    }
+  },
+  "manifest_sha256": "5b55ce65eab700a20ecf816d42f04aff9fe10ae36c57de18eb51f0f31d845b8c"
+}

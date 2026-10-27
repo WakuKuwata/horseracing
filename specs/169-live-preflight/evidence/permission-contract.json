@@ -1,0 +1,188 @@
+{
+  "contract_version": "169-live165-permissions-v1",
+  "source_scope": "unmodified manual_observation_165 live backend and capture fetcher",
+  "executed_against_database": false,
+  "database_privileges": [
+    "CONNECT"
+  ],
+  "schema": "public",
+  "schema_privileges": [
+    "USAGE"
+  ],
+  "select_relations": {
+    "races": [
+      "race_id",
+      "race_date",
+      "post_time",
+      "venue_code",
+      "distance",
+      "track_type",
+      "going",
+      "weather",
+      "race_class",
+      "race_number",
+      "prize_money",
+      "grade",
+      "win_odds_observed_at"
+    ],
+    "race_horses": [
+      "race_id",
+      "horse_id",
+      "age",
+      "sex",
+      "frame",
+      "horse_number",
+      "jockey_id",
+      "trainer_id",
+      "weight",
+      "weight_diff",
+      "jockey_weight",
+      "entry_status",
+      "running_style",
+      "popularity",
+      "odds",
+      "updated_at"
+    ],
+    "race_results": [
+      "race_id",
+      "horse_id",
+      "finish_order",
+      "last_3f",
+      "result_status",
+      "finish_time",
+      "finish_time_diff",
+      "corner_orders",
+      "first_3f"
+    ],
+    "horses": [
+      "horse_id",
+      "sire_name",
+      "dam_name",
+      "damsire_name",
+      "sire_id",
+      "dam_id",
+      "damsire_id",
+      "owner_name",
+      "breeder_name",
+      "sire_line",
+      "damsire_line"
+    ],
+    "id_mappings": [
+      "source_id",
+      "canonical_id",
+      "mapping_status",
+      "entity_type",
+      "source"
+    ],
+    "fetch_throttle_state": [
+      "domain",
+      "next_allowed_at",
+      "blocked_until",
+      "block_reason",
+      "updated_at"
+    ]
+  },
+  "operational_write_relation": "fetch_throttle_state",
+  "operational_insert_columns": [
+    "domain",
+    "next_allowed_at",
+    "updated_at"
+  ],
+  "operational_update_columns": [
+    "next_allowed_at",
+    "blocked_until",
+    "block_reason",
+    "updated_at"
+  ],
+  "row_lock": {
+    "statement": "SELECT fetch_throttle_state.* WHERE domain = canonical_source_key FOR UPDATE",
+    "requires_select_and_update_privileges": true,
+    "canonical_source_key": "netkeiba.com",
+    "probe_row_lock_or_write_in_preflight": false
+  },
+  "builtins_execute": [
+    "pg_catalog.clock_timestamp()",
+    "pg_catalog.txid_current_snapshot()"
+  ],
+  "sequence_privileges_required": [],
+  "delete_privileges_required": [],
+  "ddl_privileges_required": [],
+  "not_required_for_observe": [
+    "official_win_payouts",
+    "feature_snapshots",
+    "predictions",
+    "market_ev_predictions",
+    "recommendations",
+    "chaos_snapshots",
+    "chaos_readouts",
+    "jockeys",
+    "trainers"
+  ],
+  "optional_preflight_or_settlement_inspection": [
+    "SELECT official_win_payouts if a separate DB settlement audit is explicitly used"
+  ],
+  "source_evidence": {
+    "scripts/roi_explore/manual_observation_165/adapters.py": [
+      17,
+      23,
+      100,
+      118,
+      137,
+      156
+    ],
+    "scripts/roi_explore/manual_observation_165/features.py": [
+      293,
+      343
+    ],
+    "features/src/horseracing_features/loader.py": [
+      16,
+      25,
+      49,
+      135
+    ],
+    "training/src/horseracing_training/market_ev.py": [
+      46,
+      66,
+      224,
+      225
+    ],
+    "scrape/src/horseracing_scrape/politeness.py": [
+      169,
+      210,
+      301,
+      325,
+      334,
+      345
+    ],
+    "db/src/horseracing_db/models/chaos.py": [
+      94,
+      111
+    ],
+    "db/migrations/versions/0013_capture_provenance.py": [
+      97,
+      105
+    ],
+    "deploy/scripts/migrate.py": [
+      46,
+      54
+    ]
+  },
+  "preflight_requirements_beyond_acl": [
+    "The live DSN is explicit and has no owner/superuser fallback.",
+    "Every unqualified runtime relation resolves to the expected public relation.",
+    "The effective live default transaction mode permits the operational throttle writes; the forced readonly probe mode is not that evidence.",
+    "Role/login/database CONNECT, schema USAGE, table/column privileges and builtins are available.",
+    "RLS, FORCE RLS, custom triggers and rules must be absent or explicitly reviewed for the current login; ACL alone does not prove visible history or writable throttle rows.",
+    "Unknown restrictions, standby/read-only server, or incompatible connection options remain NO_GO/UNCONFIRMED; never issue a write test to force a pass."
+  ],
+  "source_sha256": {
+    "scripts/roi_explore/manual_observation_165/adapters.py": "167b9f0f102068f4ca98e058ac72481d12daeeae4d3e5f7a7c8f920b51a11121",
+    "scripts/roi_explore/manual_observation_165/features.py": "a66809158134adf32ee608aa2f9e78ab3ec2093e49d967c7abf2ec403d0616c1",
+    "features/src/horseracing_features/loader.py": "0ae276712640df2470377315651dd6fe6a5e9bf22b7d1f7e6c405a5e42dbc47e",
+    "training/src/horseracing_training/market_ev.py": "be44116061632d8f98c8bab3e8c32de464c4538bedf36c858302041ccb61ad66",
+    "scrape/src/horseracing_scrape/politeness.py": "b7ed94d98cd75ed37abd5bcaf495f49d5835ecbc497674fd6f3e14da6a7575a3",
+    "db/src/horseracing_db/models/chaos.py": "3df118c56c02696e7c007d377c1e0cf93c1967bfd9d4ae3fdc3d1e987183ab9c",
+    "db/migrations/versions/0013_capture_provenance.py": "5654af75e027355c384f5019e357ab595ec79f6b224e475e670b4fccf466b127",
+    "deploy/scripts/migrate.py": "4958c9f7dec8fde9b89eef16d0eaf8bac00809d3b2927f73c9ad0e9f8c4ade9f"
+  }
+}

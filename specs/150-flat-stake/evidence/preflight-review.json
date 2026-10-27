@@ -1,0 +1,24 @@
+{
+  "reviewer": "flat150_review",
+  "phase": "before candidate protocol freeze and scoring",
+  "reviewed_at": "2026-10-25T06:34:32.793629+00:00",
+  "sources": {
+    "scripts/roi_explore/roi_improvement_150/run.py": "782d7554b88fad380fc5a4cc20b40281713617ee4e60f5149ddc720bec497fa9",
+    "scripts/roi_explore/roi_improvement_150/report.py": "256967b6882176b5c5e213679d0a08feec791ed7b97944907fc5d908b07c527b",
+    "scripts/tests/test_roi_report_150.py": "96d5eac194dd18c84d03453cc2698e86b7a61aab3e94578054ff49c02d1baab7",
+    "specs/150-flat-stake/spec.md": "42e2efc5b1da53722ce2197ece2d2c8a466ce6ddea71479a21875048a13eeba9",
+    "specs/150-flat-stake/plan.md": "a845f4f28b8a12b7a67d9c499d67eb3372075e129ac9b9dadc0baa297dddce84"
+  },
+  "independent_design": true,
+  "selection_preserved": true,
+  "only_stakes_change": true,
+  "seven_comparisons": true,
+  "fixed100_on_raw_and_fully_normalized_parent": true,
+  "common_budget_cash": true,
+  "quality_preserved": true,
+  "model_fits": 0,
+  "synthetic_tests": "11 root tests and independent143/150 self-test passed",
+  "lint_diagnosis": "unused numpy import removed; no calculations changed",
+  "index_comparison": "both sides reset_index(drop=True) before exact all-column compare; final source verified",
+  "blockers": []
+}

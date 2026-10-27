@@ -1,0 +1,32 @@
+{
+  "state": "NO_GO_SKIP",
+  "selected_race_id": null,
+  "new_collection": false,
+  "actual_readonly_database_access": true,
+  "database_write": false,
+  "live_registration": false,
+  "observe_invocations": 0,
+  "model_inference": false,
+  "official_settlement_executed": false,
+  "comparison_data_added": 0,
+  "independent_review": "PASS",
+  "tests_passed": 72,
+  "files": {
+    "artifacts/168-saved-candidate-go/run-01/assessment.json": "458e6d2e09d9f20901b3728b755a9ee3c1fec6cf45dd5008a81440fa4a8ca2b2",
+    "artifacts/168-saved-candidate-go/run-01/manifest.json": "fb7f97718f85fdb4c75f1a91d59cdedc52548c540594c713b2c4f452f54a717d",
+    "scripts/roi_explore/candidate_go_168/access.py": "4e22300094e8bd08747b5629c526cd7fae97e2f84908ae65d5687ebe90825dff",
+    "scripts/roi_explore/candidate_go_168/assessment.py": "729dea3ce677d157623afe0f28d300664aab017c8d683335a5f9bfe1e88c7fd8",
+    "scripts/roi_explore/candidate_go_168/snapshot.py": "9e1c9fe40ea3332641a716daa1cf6ef95c43b4b590db0da48bfcb5bd22bf93e0",
+    "scripts/tests/test_candidate_go_168.py": "41f7b6d36041d6846ece1151b90717c6870462956d48e270627855a9e827096b",
+    "specs/168-saved-candidate-go/evidence/independent-audit-run-01.json": "e42cb11c3018a5029a91cba2169d4e690843a1f2b12587fe5bf8b46a82efe8d1",
+    "specs/168-saved-candidate-go/evidence/independent-review.md": "bc712f1510d8e17bbed47c11e416d26f50d02e42c0797be9f32812fe2ded119f",
+    "specs/168-saved-candidate-go/evidence/independent_candidate_audit.py": "de66ad29690c5f80247e63437e4d0520ecbd6a3d46d0c17b4fb4b3bfd11fab5d",
+    "specs/168-saved-candidate-go/evidence/local-card-ledger.json": "ad6467f8c555465afbeabdcd24562c2d389ccd66f90cc07ef7368977c36d269c",
+    "specs/168-saved-candidate-go/evidence/local-inventory-report.md": "7b27f58a4bb328e5ee6b84b6f05c159b706cc9d442cd1d8d2619deabbb85cd6d",
+    "specs/168-saved-candidate-go/evidence/local-inventory.json": "242e5043b459158f5151c3fbe68d17206c10ae98d248c4d00c7fbb13386df0d3",
+    "specs/168-saved-candidate-go/evidence/local_inventory_audit.py": "769ce202635429d23131095d6057b071f3601cc4dbaf2319b195789931cfe073",
+    "specs/168-saved-candidate-go/evidence/tests.txt": "6d2bd17f1dd8f19ec7f8181b95e2a04ac21d15504f239290d22e51eb81890aee",
+    "specs/168-saved-candidate-go/plan.md": "8faef08673d9bc1526cce9f95eeaa482c180ed3aa12ed1e9f6bbd2fdd75892d4",
+    "specs/168-saved-candidate-go/result-review.md": "467aad6d3c1d22111f7a0a8e394c6d97ded3ed0c258057308cb5de1fed08e112"
+  }
+}

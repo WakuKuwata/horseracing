@@ -1,0 +1,19 @@
+{
+  "races": 34,
+  "quote_age_seconds": {
+    "min": 18.901935,
+    "median": 9795.769852,
+    "max": 73295.373322
+  },
+  "old_available_age_seconds": {
+    "min": 18.386368,
+    "median": 72882.02748399999,
+    "max": 73282.032385
+  },
+  "decision_before_post_seconds": {
+    "min": 37.279737,
+    "median": 7566.420148,
+    "max": 19566.420148
+  },
+  "source_sha256": "10f34b0e1e94ff464239b3370570f7b66a0ee6e552a42b29d4191e78af976300"
+}

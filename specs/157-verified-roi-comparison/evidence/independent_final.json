@@ -1,0 +1,95 @@
+{
+  "verified_races": 96,
+  "verified_horses": 1308,
+  "comparison_races": 44,
+  "comparison_horses": 626,
+  "days": 18,
+  "html_price_and_payout_independent_parser": true,
+  "feature_checks": [
+    "q",
+    "prev_odds",
+    "prev_q",
+    "jockey_excess_all",
+    "jockey_excess_365",
+    "trainer_excess_all",
+    "trainer_excess_365"
+  ],
+  "independently_eligible_db_runs": 52,
+  "independently_selected_db_races": 40,
+  "exclusions": {
+    "legacy_model_training_period": 18,
+    "no_proven_preweight_prediction": 14,
+    "accepted": 44,
+    "jump_not_in_mev_scope": 20
+  },
+  "preserved135_sha_files": 449,
+  "source_races": {
+    "135_owned_baseline_preweight": 13,
+    "db_prestart_preweight": 31
+  },
+  "numerical": {
+    "protocol_files": 685,
+    "mev_boosters": 15,
+    "mev_rows": 1095,
+    "arms": {
+      "roi_only": {
+        "races": 44,
+        "days": 18,
+        "tickets": 37,
+        "hit_tickets": 2,
+        "stake_yen": 3700,
+        "payout_yen": 4520,
+        "profit_yen": 820,
+        "roi": 1.2216216216216216,
+        "no_bet_races": 25,
+        "common_budget_yen": 44000,
+        "profit_per_common_budget": 0.018636363636363635,
+        "winner_nll": 2.1561764676332746,
+        "max_drawdown_yen": 3040.0
+      },
+      "plus_prediction": {
+        "races": 44,
+        "days": 18,
+        "tickets": 39,
+        "hit_tickets": 3,
+        "stake_yen": 3900,
+        "payout_yen": 4810,
+        "profit_yen": 910,
+        "roi": 1.2333333333333334,
+        "no_bet_races": 23,
+        "common_budget_yen": 44000,
+        "profit_per_common_budget": 0.020681818181818183,
+        "winner_nll": 2.1584857530964374,
+        "max_drawdown_yen": 2750.0
+      }
+    },
+    "paired": {
+      "days": 18,
+      "races": 44,
+      "repetitions": 4000,
+      "seed": 20261026,
+      "interval": "97.5% per metric; Bonferroni simultaneous 95% for ROI and profit/common budget",
+      "roi_difference": 0.011711711711711814,
+      "roi_difference_interval": [
+        -0.2586576069604086,
+        0.32954793123543125
+      ],
+      "undefined_roi_replicates": 0,
+      "profit_difference_yen": 90,
+      "profit_common_budget_difference": 0.0020454545454545456,
+      "profit_common_budget_interval": [
+        -0.014003571428571428,
+        0.018372171590194847
+      ],
+      "largest_absolute_race_difference": {
+        "race_id": "202604030409",
+        "difference_yen": 190.0
+      },
+      "profit_difference_without_that_race_yen": -100.0
+    },
+    "main_summary_sha256": "547c2d54903b3d9e8eb4ff02279a5ca4b77d38e60e3f22770d918740aa531695",
+    "max_mev_abs_difference": 0.0
+  },
+  "status": "PASS",
+  "script_sha256": "d1da645bc5744a9d24dfc5c9f443b05474e3aee3cd6fd8334a070a58303ee8fe"
+}

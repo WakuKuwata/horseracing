@@ -1,0 +1,110 @@
+{
+  "status": "PASS",
+  "source": "artifacts/135-mixture-reproducibility/recent-owned-54586a4bf86c/raw-inputs.pkl",
+  "races": [
+    {
+      "race_id": "202601020410",
+      "n_horses": 16,
+      "snapshot_created_at_max": "2026-08-29T01:34:41.417727+00:00",
+      "scheduled_post_time": "2026-08-30T05:50:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202601020510",
+      "n_horses": 16,
+      "snapshot_created_at_max": "2026-09-05T01:12:19.078641+00:00",
+      "scheduled_post_time": "2026-09-05T05:45:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202601020611",
+      "n_horses": 14,
+      "snapshot_created_at_max": "2026-09-06T00:57:20.444055+00:00",
+      "scheduled_post_time": "2026-09-06T06:20:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202604030307",
+      "n_horses": 17,
+      "snapshot_created_at_max": "2026-08-28T23:58:11.066001+00:00",
+      "scheduled_post_time": "2026-08-29T06:10:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202604030308",
+      "n_horses": 11,
+      "snapshot_created_at_max": "2026-08-28T23:54:58.224993+00:00",
+      "scheduled_post_time": "2026-08-29T06:45:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202604030407",
+      "n_horses": 12,
+      "snapshot_created_at_max": "2026-08-29T01:35:51.667444+00:00",
+      "scheduled_post_time": "2026-08-30T06:10:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202604030409",
+      "n_horses": 18,
+      "snapshot_created_at_max": "2026-08-29T01:37:59.835212+00:00",
+      "scheduled_post_time": "2026-08-30T07:25:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202606040110",
+      "n_horses": 13,
+      "snapshot_created_at_max": "2026-09-05T01:16:07.661940+00:00",
+      "scheduled_post_time": "2026-09-05T06:05:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202606040210",
+      "n_horses": 9,
+      "snapshot_created_at_max": "2026-09-06T00:55:22.320795+00:00",
+      "scheduled_post_time": "2026-09-06T06:05:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202607030306",
+      "n_horses": 13,
+      "snapshot_created_at_max": "2026-08-28T23:54:34.946699+00:00",
+      "scheduled_post_time": "2026-08-29T06:01:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202607030308",
+      "n_horses": 14,
+      "snapshot_created_at_max": "2026-08-28T23:57:02.285172+00:00",
+      "scheduled_post_time": "2026-08-29T07:10:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202609040111",
+      "n_horses": 12,
+      "snapshot_created_at_max": "2026-09-05T02:47:53.642423+00:00",
+      "scheduled_post_time": "2026-09-05T06:30:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    },
+    {
+      "race_id": "202609040210",
+      "n_horses": 13,
+      "snapshot_created_at_max": "2026-09-06T00:57:57.455336+00:00",
+      "scheduled_post_time": "2026-09-06T05:55:00+00:00",
+      "capture_before_post": true,
+      "retrospective_prediction_time_proxy": true
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "mode": "offline_model_connection",
+  "eligible_for_prospective": false,
+  "simulated_clock": false,
+  "current_session_horses": 3,
+  "actual_model_checks": {
+    "mev_native_boosters": 15,
+    "legacy_native_boosters": 6,
+    "independent_legacy_isotonic_and_correction": true,
+    "main_model_adapter_imported": false
+  },
+  "all_receipt_times_and_sha_verified": true,
+  "probability_ev_and_tickets_verified": true,
+  "current_session_settlement": "pending",
+  "historical_replay": {
+    "races": 9,
+    "horses": 129,
+    "official_html_reparsed": true,
+    "current_session_linked": false,
+    "accounts": {
+      "plus_prediction": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      },
+      "roi_only": {
+        "payout_yen": 2590,
+        "profit_yen": 1790,
+        "stake_yen": 800,
+        "tickets": 8
+      }
+    }
+  },
+  "main_selector_store_settler_imported": false,
+  "new_collection": false,
+  "database_access": false,
+  "manifest_sha256": "189af7554d60117efeee84214e0fb0e8d8aceb0bdfe3485fb58cd2fb0d67579c"
+}

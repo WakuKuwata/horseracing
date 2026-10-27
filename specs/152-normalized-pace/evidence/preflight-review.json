@@ -1,0 +1,27 @@
+{
+  "reviewer": "pace152_review",
+  "reviewed_at": "2026-10-25T10:35:20.276106+00:00",
+  "phase": "before freeze and candidate scoring",
+  "verdict": "PASS",
+  "blockers": [],
+  "files_sha256": {
+    "scripts/roi_explore/roi_improvement_152/run.py": "e33e7a85bdc86958dc99f77a631590ecb6df8bb9e096fb561b2748681f9b3d10",
+    "scripts/roi_explore/roi_improvement_152/report.py": "9b30856bcb0d3f8da14add0db03065a48b54e6c57e1304f4f05a3c16e848e11e",
+    "scripts/tests/test_roi_report_152.py": "60adf164f4a4349defdf8fe53e2dcbb9e5235b8b5dbaa22dd588b449aa29d8c5",
+    "specs/152-normalized-pace/spec.md": "a531052dc18feb008109322327badb532c2489885849137cdf3ade9426fb9e2d",
+    "specs/152-normalized-pace/plan.md": "aebaed39374b4af7217f02a615e5154c4629fe30a6d4ac43d1d30d7ba2ab110a",
+    "specs/152-normalized-pace/quickstart.md": "ada6a8df63bc2a6f0ae25228f1396d00593549f10641c4184dc23c9649e7225f",
+    "specs/152-normalized-pace/tasks.md": "57fd24e5ccf14ac37fcf61dded1fd0ab7a731a557297961d08a8e897adc919e3"
+  },
+  "checks": [
+    "Single saved unweighted pace91 candidate; mean15 raw first, then all-starter p/S before EV",
+    "Exact current/③/③fullnorm/pace controls with saved score and bet parity",
+    "147 plus148 frozen manifests bind all actual source/data dependencies and360fit receipts/predictions",
+    "Four fixed contrasts,4000 day draws,seed20261025,family4 per metric",
+    "NLL invariant within pace and complete field/malformed input/mean order tests",
+    "No new fits,market-column-removal proposal2 held,production unchanged",
+    "Historical/closing-odds/selection/seed-conditional uncertainty documented"
+  ],
+  "tests_execution": "Root reports16 pytest checks passed and scoped Ruff E/F passed; reviewed16 test cases and source",
+  "independent_candidate_scoring_performed": false
+}

@@ -1,0 +1,13 @@
+{
+  "auditor": "oof146_review",
+  "counters": {
+    "fits": 240,
+    "artifact_hashes": 720
+  },
+  "rows": 343883,
+  "races": 24855,
+  "baseline_and_original143_ensembles_reconstructed_exact": true,
+  "old_2019_neutral_parity": true,
+  "no_model_fits_performed": true,
+  "blockers": []
+}

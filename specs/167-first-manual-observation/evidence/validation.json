@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "scope": "documentation_static_checks_only",
+  "shell_blocks_syntax_checked": 6,
+  "shell_blocks_executed": 0,
+  "cli_commands_and_flags_match_ast": true,
+  "template_no_race_selected": true,
+  "all_go_gates_not_checked": true,
+  "old_165_source_pins_unchanged": true,
+  "old_166_source_pins_unchanged": true,
+  "live_registry_exists": false,
+  "new_collection": false,
+  "database_access": false,
+  "model_inference": false,
+  "settlement_execution": false,
+  "illustrative_schedule_only": {
+    "selection": "14:15:00+09:00",
+    "registration": "14:30:00+09:00",
+    "go": "14:44:00+09:00",
+    "launch_open": "14:45:00+09:00",
+    "launch_close": "14:46:00+09:00",
+    "decision_open": "14:50:00+09:00",
+    "decision_close": "14:51:00+09:00",
+    "post_local_clock": "15:00:00+09:00"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "auditor": "oof146_review",
+  "reviewed_at_utc": "2026-10-25T00:17:29.247278+00:00",
+  "source_sha256": {
+    "scripts/roi_explore/roi_improvement_146/experiment.py": "1f7e500ca1a932b97b131ee556b152ae068a7e7911e8ca1fbdd516d84329715a",
+    "scripts/roi_explore/roi_improvement_146/models.py": "ea029420afb3a26071fafc937a02e13b95cb1d5a8153d93529d3fae55c88e90d",
+    "scripts/roi_explore/roi_improvement_146/report.py": "51848bbaf7e25fecc853eb85ac93fe89dbcf924df3c5ff01fd947eb3b4cfaa49",
+    "scripts/roi_explore/roi_improvement_146/run.py": "083b80c59245a8fc0457eb5b176e4b96ff18bcd29eee41b49a8ba26e74a2eb84"
+  },
+  "checks": [
+    "Read135plan,143fixedweight/teacherandbaseline142kernels,attributionproposalC.",
+    "Reviewedtwo-stagefreeze:completecandidateprocedurebefore90mentorfits,bindnewrawOOFandallmentorartifactreceiptsbefore120candidatefits.",
+    "Mentors2013..18,train2007..year-1,77features,train-onlycategorymaps,300rounds,all15seeds,rawpsigmoidmean.",
+    "Candidateisoriginal143weighted_baselinekernelsame77features,complete2013+OOFrequired,2007..12neutral,no144normalizationor145features.",
+    "Original2019..25teacherkeys/dtypes/valuespreservedexactlyaftercanonicalkeysorting.",
+    "Twocontrasts,family2permetric,4000daybootstrapseed20261025,samecalendarandknown/topdifferenceracesensitivities.",
+    "Fullcompletedresumerecipe/source/runtime/weightvectors/hashesverified;max2workerssinglethread.",
+    "Independentoldcontrolaudit240fits720artifactSHA343883rows24855racesmatchedsavedsummaries.",
+    "Independentselectionsyntheticselftestsforcap/ties/cash/labels/pairingpassed.",
+    "compose_weights now preserves old material row order as well as all columns/dtypes/values exactly; test fixture floating sum diagnosed separately (0.7+0.6!=1.3 in IEEE754).",
+    "Final sources reviewed after row-order preservation and 25 passing root tests; no blockers in mentor_ensemble, prepare_weights, stage2 derivation or report."
+  ],
+  "limitations": [
+    "Coverageandnormalizationdenominatorchangesarejointtreatment.",
+    "2019isnowinformative,notaneutralparityyear.",
+    "Fixedlater-researchedrecipeentailshistoricallookback;no untouchedholdout.",
+    "Closingoddsproxyprofits,bootstrapconditionalonsavedseeds."
+  ],
+  "blockers": [],
+  "no_model_fits_performed": true
+}

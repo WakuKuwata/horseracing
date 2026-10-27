@@ -1,0 +1,9 @@
+{
+  "status": "verified",
+  "state": "completed_current_replay",
+  "mode": "readonly_db_runtime_replay",
+  "evidence_admissible": false,
+  "database_write": false,
+  "new_collection": false,
+  "comparison_data_added": 0
+}

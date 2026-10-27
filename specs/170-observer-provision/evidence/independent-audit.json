@@ -1,0 +1,38 @@
+{
+  "status": "independently_verified",
+  "target": {
+    "system_identifier": "7624360747090018342",
+    "database_oid": "5987755",
+    "configured_api_and_ops_endpoint_matched": true
+  },
+  "provision": {
+    "role": "hr_manual_observer",
+    "role_catalog_and_acl_changes_applied": true,
+    "race_data_changed": false,
+    "throttle_state_digest_unchanged": true,
+    "private_profile_mode": "0600",
+    "private_profile_content_read": false,
+    "logging_and_atomic_publication_receipts_verified": true
+  },
+  "read_smoke": {
+    "projection_checks": 6,
+    "count_star_with_column_select": 15,
+    "public_relations_checked": 27,
+    "extra_relation_or_sequence_privileges": false,
+    "readonly_queries": 11
+  },
+  "preflight": {
+    "path": "artifacts/170-observer-provision/run-01/preflight",
+    "manifest_sha256": "f772250720de21fd217aff9b18be89a0f31d6f033ec9aaf8138bd4a39353ecf6",
+    "native_role": "hr_manual_observer",
+    "role_acl_and_native_default_verified": true,
+    "readonly_preflight_queries": 20,
+    "private_profile_content_read": false,
+    "private_profile_mode": "0600",
+    "state": "NO_GO",
+    "can_collect": false
+  },
+  "database_requery_performed": false,
+  "private_profile_content_read": false,
+  "new_collection": false
+}

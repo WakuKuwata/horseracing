@@ -1,0 +1,15 @@
+{
+  "reviewer": "normalize148_review",
+  "reviewed_at": "2026-10-25T01:29:26.896236+00:00",
+  "phase": "before_candidate_scoring",
+  "blockers": [],
+  "source_sha256": {
+    "scripts/roi_explore/roi_improvement_148/run.py": "216e107aaa81fe2f6aa229c51a08a61741697a5437ec4daa1898093abe5cdf93",
+    "scripts/roi_explore/roi_improvement_148/report.py": "91339fb195d4a9b1b139a6800cedd7c661205267c7c404918d3bc10633fe59b1",
+    "scripts/tests/test_roi_report_148.py": "52a8c6abe268024f9d630b7d08d7afca2115ee6b86ecc6200728bfd19789d67a",
+    "specs/148-postprediction-normalization/spec.md": "cf4be88d8061e7bd439c2f08f1c8dac1d781a52c2ea61cbb50db941ac6aca15e",
+    "specs/148-postprediction-normalization/plan.md": "f877dac6bd1c82db4ffcfae4784bc55e501176ada829d2d33ce2386e64e2bbf4"
+  },
+  "scope": "two postprediction normalized parents, four fixed contrasts, no fitting",
+  "tests_reviewed": 15
+}

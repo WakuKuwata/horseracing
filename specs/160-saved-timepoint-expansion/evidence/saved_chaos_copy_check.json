@@ -1,0 +1,28 @@
+{
+  "r02_to_155": {
+    "rows": 528,
+    "shared_ids": 528,
+    "not_in_later": 0,
+    "shared_equal": {
+      "race_id": 528,
+      "captured_at": 528,
+      "field_json": 528
+    },
+    "shared_races": 528
+  },
+  "r02_to_158": {
+    "rows": 528,
+    "shared_ids": 390,
+    "not_in_later": 138,
+    "shared_equal": {
+      "race_id": 390,
+      "captured_at": 390,
+      "field_json": 390
+    },
+    "shared_races": 390
+  },
+  "155_chaos_rows": 740,
+  "155_unique_races": 740,
+  "158_chaos_rows": 594,
+  "158_unique_races": 594
+}

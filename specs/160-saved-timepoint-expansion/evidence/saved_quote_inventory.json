@@ -1,0 +1,33 @@
+{
+  "new_collection": false,
+  "db_access": false,
+  "result_html_opened": false,
+  "archive_groups": [
+    {
+      "url_path": "/race/result.html",
+      "markers": 720,
+      "gzip_versions": 3798
+    },
+    {
+      "url_path": "/race/shutuba.html",
+      "markers": 3665,
+      "gzip_versions": 5629
+    },
+    {
+      "url_path": "/top/race_list_sub.html",
+      "markers": 25,
+      "gzip_versions": 85
+    }
+  ],
+  "odds_api_archive_groups": 0,
+  "shutuba_versions": 5629,
+  "shutuba_races": 3665,
+  "with_odds_span": 5629,
+  "with_any_numeric_win_odds": 0,
+  "with_complete_numeric_win_odds": 0,
+  "official_complete_158_versions": 2638,
+  "official_complete_158_races": 712,
+  "official_complete_prepost_versions": 1561,
+  "official_complete_prepost_races": 636,
+  "numeric_versions_by_race": []
+}

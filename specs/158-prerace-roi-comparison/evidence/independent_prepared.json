@@ -1,0 +1,3098 @@
+{
+  "official_verified_races": 712,
+  "mev_quote_eligible_races": 34,
+  "mev_quote_dates": {
+    "2026-10-18": 24,
+    "2026-10-24": 6,
+    "2026-10-25": 2,
+    "2026-10-12": 2
+  },
+  "paired_races": 34,
+  "paired_horses": 452,
+  "paired_dates": {
+    "2026-10-12": 2,
+    "2026-10-18": 24,
+    "2026-10-24": 6,
+    "2026-10-25": 2
+  },
+  "chosen_old_runs": {
+    "202604040204": "ed2696b5-4dad-4f38-a312-4f938378cad4",
+    "202604040206": "db374188-1581-4022-8deb-b202cc7966cf",
+    "202604040207": "2e228a32-e8f3-4cd0-8492-77d6c1a20a63",
+    "202604040208": "81299d1f-8226-4e63-a54e-bd0f2274283b",
+    "202604040209": "092041ac-ebd2-4120-95c1-9e93012018bd",
+    "202604040210": "facc215f-b99f-4a5c-9ea1-5089fd236e6e",
+    "202604040211": "2f440288-7604-4d0f-8f27-2d9a564260c1",
+    "202604040212": "2b730f65-8392-4849-b05d-625c697bb3c9",
+    "202604040304": "81bd43f0-6564-4a87-9884-be8edf11d7b9",
+    "202604040310": "dc4d8327-9358-43fb-b0bd-70ec2aee64ba",
+    "202605040704": "81dfa9f8-edeb-423b-8242-8b8e6da0b879",
+    "202605040705": "72cdb6ef-fd2a-478c-8259-4877acf7b866",
+    "202605040706": "d431a5da-02d1-4e1d-a449-131757127ea0",
+    "202605040707": "d05ec1a9-1399-4ff1-9ea1-e871696c11f2",
+    "202605040708": "a6b284a4-de63-4814-8c13-78288506336c",
+    "202605040710": "6e2527aa-3309-4646-b3b2-97aee536e41b",
+    "202605040711": "57cbdcc6-8055-4268-bc73-6da34ff174bf",
+    "202605040712": "b93042b0-f22a-4336-92e1-19ccc95a4e2a",
+    "202605040801": "ba250f68-5ece-4bcd-a92d-73713858b214",
+    "202605040804": "c8cf4c7d-cca1-4a19-9e02-44ea259d4470",
+    "202605040811": "d8221253-7a7e-47a2-8292-04eb2e7f23bd",
+    "202605040903": "20c14df6-cb7d-4570-9573-19e35d51359a",
+    "202608040501": "bc4e7913-b0ea-43b6-a18c-64458b36dd22",
+    "202608040512": "b509a8a3-0308-464c-b3b5-a3d029f60bb6",
+    "202608040704": "6860ae7d-1d8d-4e70-b575-1681dd37f5a3",
+    "202608040705": "0fc46f50-a1c3-408d-8914-ddfbb3d0a489",
+    "202608040706": "fe79d623-0df2-4951-9fbf-dd47428ff650",
+    "202608040707": "a065fc2f-8fe2-471d-a8dc-ceed7a7a5410",
+    "202608040708": "33ccdfb1-7f56-4d9a-acd1-68d7501366d2",
+    "202608040710": "949af15b-a7d6-4c6f-9b3c-d28936b78aeb",
+    "202608040711": "21c6630c-e52a-4d2a-a34b-289a74fc8378",
+    "202608040712": "7d6102ed-af61-4f14-bad5-1da63fdd39f8",
+    "202608040812": "97195640-99d9-4c4e-99eb-bb5d5776bac4",
+    "202608040904": "7dd41620-dc80-49f9-a65b-12256c8cdaae"
+  },
+  "excluded_races": {
+    "202601010701": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010702": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010703": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010704": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010705": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010706": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010707": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010708": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010709": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010710": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010711": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010712": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010801": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010802": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010803": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010804": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010805": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010806": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010807": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010808": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010809": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010810": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010811": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601010812": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020101": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020102": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020103": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020104": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020105": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020106": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020107": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020108": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020109": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020110": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020111": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020112": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020201": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020202": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020203": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020204": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020205": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020206": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020207": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020208": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020209": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020210": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020211": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020212": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020301": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020302": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020303": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020304": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020305": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020306": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020307": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020308": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020309": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020310": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020311": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020312": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020401": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020402": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020403": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020404": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020405": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020406": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020407": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020408": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020409": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020410": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020411": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020412": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020501": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020502": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020503": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020504": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020505": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020506": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020507": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020508": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020509": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020510": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020511": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020512": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020601": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020602": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020603": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020604": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020605": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020606": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020607": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020608": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020609": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020610": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020611": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202601020612": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020701": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020702": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020703": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020704": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020705": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020706": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020707": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020708": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020709": [
+      "jump",
+      "in_legacy_training",
+      "missing_mev"
+    ],
+    "202604020710": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020711": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020712": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020801": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020802": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020803": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020804": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020805": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020806": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020807": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020808": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020809": [
+      "jump",
+      "in_legacy_training",
+      "missing_mev"
+    ],
+    "202604020810": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020811": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604020812": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030101": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030102": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030103": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030104": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030105": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030106": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030107": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030108": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030109": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030110": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030111": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030112": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030201": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030202": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030203": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030204": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030205": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030206": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030207": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030208": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030209": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030210": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030211": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030212": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030301": [
+      "jump",
+      "missing_mev"
+    ],
+    "202604030302": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030303": [
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030304": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030305": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030306": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030307": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030308": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030309": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030310": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030311": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030312": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030401": [
+      "jump",
+      "missing_mev"
+    ],
+    "202604030402": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030403": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030404": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030405": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030406": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030407": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030408": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030409": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030410": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030411": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604030412": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202604040101": [
+      "mev_timing"
+    ],
+    "202604040102": [
+      "mev_timing"
+    ],
+    "202604040103": [
+      "mev_timing"
+    ],
+    "202604040104": [
+      "missing_mev"
+    ],
+    "202604040105": [
+      "missing_mev"
+    ],
+    "202604040106": [
+      "mev_timing"
+    ],
+    "202604040107": [
+      "mev_timing"
+    ],
+    "202604040108": [
+      "mev_timing"
+    ],
+    "202604040109": [
+      "mev_timing"
+    ],
+    "202604040110": [
+      "mev_timing"
+    ],
+    "202604040111": [
+      "mev_timing"
+    ],
+    "202604040112": [
+      "mev_timing"
+    ],
+    "202604040201": [
+      "mev_timing"
+    ],
+    "202604040202": [
+      "mev_timing"
+    ],
+    "202604040203": [
+      "mev_timing"
+    ],
+    "202604040205": [
+      "mev_field",
+      "mev_numbers"
+    ],
+    "202604040301": [
+      "mev_timing"
+    ],
+    "202604040302": [
+      "mev_timing"
+    ],
+    "202604040303": [
+      "mev_timing"
+    ],
+    "202604040305": [
+      "missing_mev"
+    ],
+    "202604040306": [
+      "missing_mev"
+    ],
+    "202604040307": [
+      "missing_mev"
+    ],
+    "202604040308": [
+      "missing_mev"
+    ],
+    "202604040309": [
+      "missing_mev"
+    ],
+    "202604040311": [
+      "missing_mev"
+    ],
+    "202604040312": [
+      "missing_mev"
+    ],
+    "202604040401": [
+      "mev_timing"
+    ],
+    "202604040402": [
+      "mev_timing"
+    ],
+    "202604040403": [
+      "mev_timing"
+    ],
+    "202604040404": [
+      "missing_mev"
+    ],
+    "202604040405": [
+      "missing_mev"
+    ],
+    "202604040406": [
+      "mev_timing"
+    ],
+    "202604040407": [
+      "missing_mev"
+    ],
+    "202604040408": [
+      "mev_timing"
+    ],
+    "202604040409": [
+      "missing_mev"
+    ],
+    "202604040410": [
+      "mev_timing"
+    ],
+    "202605040101": [
+      "mev_quote_source"
+    ],
+    "202605040102": [
+      "missing_mev"
+    ],
+    "202605040103": [
+      "missing_mev"
+    ],
+    "202605040104": [
+      "jump",
+      "missing_mev"
+    ],
+    "202605040105": [
+      "missing_mev"
+    ],
+    "202605040106": [
+      "missing_mev"
+    ],
+    "202605040107": [
+      "mev_quote_source"
+    ],
+    "202605040108": [
+      "missing_mev"
+    ],
+    "202605040109": [
+      "missing_mev"
+    ],
+    "202605040110": [
+      "mev_quote_source"
+    ],
+    "202605040111": [
+      "mev_quote_source"
+    ],
+    "202605040112": [
+      "missing_mev"
+    ],
+    "202605040201": [
+      "missing_mev"
+    ],
+    "202605040202": [
+      "missing_mev"
+    ],
+    "202605040203": [
+      "missing_mev"
+    ],
+    "202605040204": [
+      "jump",
+      "missing_mev"
+    ],
+    "202605040205": [
+      "missing_mev"
+    ],
+    "202605040206": [
+      "missing_mev"
+    ],
+    "202605040207": [
+      "missing_mev"
+    ],
+    "202605040208": [
+      "missing_mev"
+    ],
+    "202605040209": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040210": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040211": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040212": [
+      "mev_quote_source"
+    ],
+    "202605040301": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040302": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040303": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040304": [
+      "missing_mev"
+    ],
+    "202605040305": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040306": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040307": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040308": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040309": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040310": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040311": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040312": [
+      "mev_quote_source"
+    ],
+    "202605040401": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040402": [
+      "mev_quote_source"
+    ],
+    "202605040403": [
+      "missing_mev"
+    ],
+    "202605040404": [
+      "missing_mev"
+    ],
+    "202605040405": [
+      "missing_mev"
+    ],
+    "202605040406": [
+      "missing_mev"
+    ],
+    "202605040407": [
+      "missing_mev"
+    ],
+    "202605040408": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040409": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040410": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040411": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202605040412": [
+      "mev_quote_source"
+    ],
+    "202605040501": [
+      "mev_timing"
+    ],
+    "202605040502": [
+      "mev_timing"
+    ],
+    "202605040503": [
+      "mev_timing"
+    ],
+    "202605040504": [
+      "jump",
+      "missing_mev"
+    ],
+    "202605040505": [
+      "mev_timing"
+    ],
+    "202605040506": [
+      "mev_timing"
+    ],
+    "202605040507": [
+      "mev_timing"
+    ],
+    "202605040508": [
+      "mev_timing"
+    ],
+    "202605040509": [
+      "mev_timing"
+    ],
+    "202605040510": [
+      "mev_timing"
+    ],
+    "202605040511": [
+      "mev_timing"
+    ],
+    "202605040512": [
+      "mev_timing"
+    ],
+    "202605040601": [
+      "mev_timing"
+    ],
+    "202605040602": [
+      "mev_timing"
+    ],
+    "202605040603": [
+      "missing_mev"
+    ],
+    "202605040604": [
+      "missing_mev"
+    ],
+    "202605040605": [
+      "missing_mev"
+    ],
+    "202605040606": [
+      "mev_timing"
+    ],
+    "202605040607": [
+      "mev_timing"
+    ],
+    "202605040608": [
+      "mev_timing"
+    ],
+    "202605040609": [
+      "mev_timing"
+    ],
+    "202605040610": [
+      "mev_timing"
+    ],
+    "202605040611": [
+      "mev_timing"
+    ],
+    "202605040701": [
+      "mev_timing"
+    ],
+    "202605040702": [
+      "mev_timing"
+    ],
+    "202605040703": [
+      "mev_timing"
+    ],
+    "202605040709": [
+      "jump",
+      "missing_mev"
+    ],
+    "202605040802": [
+      "mev_timing"
+    ],
+    "202605040803": [
+      "missing_mev"
+    ],
+    "202605040805": [
+      "missing_mev"
+    ],
+    "202605040806": [
+      "missing_mev"
+    ],
+    "202605040807": [
+      "missing_mev"
+    ],
+    "202605040808": [
+      "missing_mev"
+    ],
+    "202605040809": [
+      "missing_mev"
+    ],
+    "202605040810": [
+      "missing_mev"
+    ],
+    "202605040812": [
+      "missing_mev"
+    ],
+    "202605040901": [
+      "mev_timing"
+    ],
+    "202605040902": [
+      "mev_timing"
+    ],
+    "202605040904": [
+      "jump",
+      "missing_mev"
+    ],
+    "202605040905": [
+      "missing_mev"
+    ],
+    "202605040906": [
+      "missing_mev"
+    ],
+    "202605040907": [
+      "mev_timing"
+    ],
+    "202605040908": [
+      "missing_mev"
+    ],
+    "202605040909": [
+      "missing_mev"
+    ],
+    "202605040910": [
+      "missing_mev"
+    ],
+    "202606040101": [
+      "jump",
+      "missing_mev"
+    ],
+    "202606040102": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040103": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040104": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040105": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040106": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040107": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040108": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040109": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040110": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040111": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040112": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040201": [
+      "jump",
+      "missing_mev"
+    ],
+    "202606040202": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040203": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040204": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040205": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040206": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040207": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040208": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040209": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040210": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040211": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040212": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040301": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040302": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040303": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040304": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040305": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040306": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040307": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040308": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040309": [
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040310": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040311": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040312": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040401": [
+      "jump",
+      "missing_mev"
+    ],
+    "202606040402": [
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040403": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040404": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040405": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040406": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040407": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040408": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040409": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040410": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040411": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040412": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040501": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040502": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040503": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040504": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040505": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040506": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040507": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040508": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040509": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040510": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040511": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040512": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040601": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040602": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040603": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040604": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040605": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040606": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040607": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040608": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040609": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040610": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040611": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040612": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040701": [
+      "jump",
+      "missing_mev"
+    ],
+    "202606040702": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040703": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040704": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040705": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040706": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040707": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040708": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040709": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040710": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040711": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040712": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202606040801": [
+      "missing_mev"
+    ],
+    "202606040802": [
+      "missing_mev"
+    ],
+    "202606040803": [
+      "missing_mev"
+    ],
+    "202606040804": [
+      "jump",
+      "missing_mev"
+    ],
+    "202606040805": [
+      "missing_mev"
+    ],
+    "202606040806": [
+      "missing_mev"
+    ],
+    "202606040807": [
+      "missing_mev"
+    ],
+    "202606040808": [
+      "missing_mev"
+    ],
+    "202606040809": [
+      "missing_mev"
+    ],
+    "202606040810": [
+      "missing_mev"
+    ],
+    "202606040811": [
+      "missing_mev"
+    ],
+    "202606040812": [
+      "missing_mev"
+    ],
+    "202606040901": [
+      "missing_mev"
+    ],
+    "202606040902": [
+      "missing_mev"
+    ],
+    "202606040903": [
+      "missing_mev"
+    ],
+    "202606040904": [
+      "missing_mev"
+    ],
+    "202606040905": [
+      "missing_mev"
+    ],
+    "202606040906": [
+      "missing_mev"
+    ],
+    "202606040907": [
+      "missing_mev"
+    ],
+    "202606040908": [
+      "missing_mev"
+    ],
+    "202606040909": [
+      "missing_mev"
+    ],
+    "202606040910": [
+      "missing_mev"
+    ],
+    "202606040911": [
+      "missing_mev"
+    ],
+    "202606040912": [
+      "missing_mev"
+    ],
+    "202607020701": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020702": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020703": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020704": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020705": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020706": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020707": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020708": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020709": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020710": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020711": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020712": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020801": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020802": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020803": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020804": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020805": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020806": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020807": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020808": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020809": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020810": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020811": [
+      "dead_heat",
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607020812": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030101": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030102": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030103": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030104": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030105": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030106": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030107": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030108": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030109": [
+      "jump",
+      "in_legacy_training",
+      "missing_mev"
+    ],
+    "202607030110": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030111": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030112": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030201": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030202": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030203": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030204": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030205": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030206": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030207": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030208": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030209": [
+      "jump",
+      "in_legacy_training",
+      "missing_mev"
+    ],
+    "202607030210": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030211": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030212": [
+      "in_legacy_training",
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030301": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030302": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030303": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030304": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030305": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030306": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030307": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030308": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030309": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030310": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030311": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030312": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030401": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030402": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030403": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030404": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030405": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030406": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030407": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030408": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030409": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030410": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030411": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202607030412": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202608040101": [
+      "mev_quote_source"
+    ],
+    "202608040102": [
+      "missing_mev"
+    ],
+    "202608040103": [
+      "missing_mev"
+    ],
+    "202608040104": [
+      "missing_mev"
+    ],
+    "202608040105": [
+      "missing_mev"
+    ],
+    "202608040106": [
+      "missing_mev"
+    ],
+    "202608040107": [
+      "missing_mev"
+    ],
+    "202608040108": [
+      "mev_quote_source"
+    ],
+    "202608040109": [
+      "missing_mev"
+    ],
+    "202608040110": [
+      "mev_quote_source"
+    ],
+    "202608040111": [
+      "mev_quote_source"
+    ],
+    "202608040112": [
+      "mev_quote_source"
+    ],
+    "202608040201": [
+      "mev_quote_source"
+    ],
+    "202608040202": [
+      "missing_mev"
+    ],
+    "202608040203": [
+      "missing_mev"
+    ],
+    "202608040204": [
+      "mev_quote_source"
+    ],
+    "202608040205": [
+      "missing_mev"
+    ],
+    "202608040206": [
+      "missing_mev"
+    ],
+    "202608040207": [
+      "missing_mev"
+    ],
+    "202608040208": [
+      "missing_mev"
+    ],
+    "202608040209": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040210": [
+      "missing_mev"
+    ],
+    "202608040211": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040212": [
+      "mev_quote_source"
+    ],
+    "202608040301": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040302": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040303": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040304": [
+      "jump",
+      "missing_mev"
+    ],
+    "202608040305": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040306": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040307": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040308": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040309": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040310": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040311": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040312": [
+      "mev_quote_source"
+    ],
+    "202608040401": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040402": [
+      "missing_mev"
+    ],
+    "202608040403": [
+      "missing_mev"
+    ],
+    "202608040404": [
+      "jump",
+      "missing_mev"
+    ],
+    "202608040405": [
+      "missing_mev"
+    ],
+    "202608040406": [
+      "missing_mev"
+    ],
+    "202608040407": [
+      "missing_mev"
+    ],
+    "202608040408": [
+      "mev_quote_source"
+    ],
+    "202608040409": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040410": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040411": [
+      "mev_quote_source",
+      "mev_timing"
+    ],
+    "202608040412": [
+      "mev_quote_source"
+    ],
+    "202608040502": [
+      "mev_timing"
+    ],
+    "202608040503": [
+      "mev_timing"
+    ],
+    "202608040504": [
+      "mev_timing"
+    ],
+    "202608040505": [
+      "mev_timing"
+    ],
+    "202608040506": [
+      "mev_timing"
+    ],
+    "202608040507": [
+      "mev_timing"
+    ],
+    "202608040508": [
+      "mev_timing"
+    ],
+    "202608040509": [
+      "mev_timing"
+    ],
+    "202608040510": [
+      "mev_timing"
+    ],
+    "202608040511": [
+      "mev_timing"
+    ],
+    "202608040601": [
+      "mev_timing"
+    ],
+    "202608040602": [
+      "mev_timing"
+    ],
+    "202608040603": [
+      "missing_mev"
+    ],
+    "202608040604": [
+      "jump",
+      "missing_mev"
+    ],
+    "202608040605": [
+      "missing_mev"
+    ],
+    "202608040606": [
+      "mev_timing"
+    ],
+    "202608040607": [
+      "mev_timing"
+    ],
+    "202608040608": [
+      "mev_timing"
+    ],
+    "202608040609": [
+      "mev_timing"
+    ],
+    "202608040610": [
+      "mev_timing"
+    ],
+    "202608040611": [
+      "mev_timing"
+    ],
+    "202608040612": [
+      "mev_timing"
+    ],
+    "202608040701": [
+      "mev_timing"
+    ],
+    "202608040702": [
+      "mev_timing"
+    ],
+    "202608040703": [
+      "mev_timing"
+    ],
+    "202608040709": [
+      "mev_field",
+      "mev_numbers"
+    ],
+    "202608040801": [
+      "mev_timing"
+    ],
+    "202608040802": [
+      "mev_timing"
+    ],
+    "202608040803": [
+      "mev_timing"
+    ],
+    "202608040804": [
+      "jump",
+      "missing_mev"
+    ],
+    "202608040805": [
+      "missing_mev"
+    ],
+    "202608040806": [
+      "missing_mev"
+    ],
+    "202608040807": [
+      "mev_field",
+      "mev_numbers"
+    ],
+    "202608040808": [
+      "missing_mev"
+    ],
+    "202608040809": [
+      "missing_mev"
+    ],
+    "202608040810": [
+      "missing_mev"
+    ],
+    "202608040811": [
+      "missing_mev"
+    ],
+    "202608040901": [
+      "mev_timing"
+    ],
+    "202608040902": [
+      "mev_timing"
+    ],
+    "202608040903": [
+      "mev_timing"
+    ],
+    "202608040905": [
+      "missing_mev"
+    ],
+    "202608040906": [
+      "missing_mev"
+    ],
+    "202608040907": [
+      "missing_mev"
+    ],
+    "202608040908": [
+      "missing_mev"
+    ],
+    "202608040909": [
+      "missing_mev"
+    ],
+    "202609040101": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040102": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040103": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040104": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040105": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040106": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040107": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040108": [
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040109": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040110": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040111": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040112": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040201": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040202": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040203": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040204": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040205": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040206": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040207": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040208": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040209": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040210": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040211": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040212": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040301": [
+      "jump",
+      "missing_mev"
+    ],
+    "202609040302": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040303": [
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040304": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040305": [
+      "mev_quote_source",
+      "mixed_mev",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040306": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040307": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040308": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040309": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040310": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040311": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040312": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040401": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040402": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040403": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040404": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040405": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040406": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040407": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040408": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040409": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040410": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040411": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040412": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040501": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040502": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040503": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040504": [
+      "jump",
+      "missing_mev"
+    ],
+    "202609040505": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040506": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040507": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040508": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040509": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040510": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040511": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040512": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040601": [
+      "jump",
+      "missing_mev"
+    ],
+    "202609040602": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040603": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040604": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040605": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040606": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040607": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040608": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040609": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040610": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040611": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040612": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040701": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040702": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040703": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040704": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040705": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040706": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040707": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040708": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040709": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040710": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040711": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040712": [
+      "mev_quote_source",
+      "mev_timing",
+      "mev_result_known"
+    ],
+    "202609040801": [
+      "missing_mev"
+    ],
+    "202609040802": [
+      "missing_mev"
+    ],
+    "202609040803": [
+      "missing_mev"
+    ],
+    "202609040804": [
+      "missing_mev"
+    ],
+    "202609040805": [
+      "missing_mev"
+    ],
+    "202609040806": [
+      "missing_mev"
+    ],
+    "202609040807": [
+      "missing_mev"
+    ],
+    "202609040808": [
+      "missing_mev"
+    ],
+    "202609040809": [
+      "missing_mev"
+    ],
+    "202609040810": [
+      "missing_mev"
+    ],
+    "202609040811": [
+      "missing_mev"
+    ],
+    "202609040812": [
+      "missing_mev"
+    ],
+    "202609040901": [
+      "jump",
+      "missing_mev"
+    ],
+    "202609040902": [
+      "missing_mev"
+    ],
+    "202609040903": [
+      "missing_mev"
+    ],
+    "202609040904": [
+      "missing_mev"
+    ],
+    "202609040905": [
+      "missing_mev"
+    ],
+    "202609040906": [
+      "missing_mev"
+    ],
+    "202609040907": [
+      "missing_mev"
+    ],
+    "202609040908": [
+      "missing_mev"
+    ],
+    "202609040909": [
+      "missing_mev"
+    ],
+    "202609040910": [
+      "missing_mev"
+    ],
+    "202609040911": [
+      "missing_mev"
+    ],
+    "202609040912": [
+      "missing_mev"
+    ]
+  }
+}

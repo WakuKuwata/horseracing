@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "blockers": [],
+  "new_fits": 0,
+  "new_policies_scored": 0,
+  "numeric_values_checked": 7660,
+  "analysis_sha256": "d0eb7d848e7fa322f059dfeb29f17dff1dea648b21dc64df1141032d092a07c2",
+  "independent_script_sha256": "a20592da3a828890a3d013e67c1b5c58839dfc4464b862cf5c6cfe2518afdf76",
+  "frozen_input_source_sha256_count": 794,
+  "source_sha256_count": 27,
+  "checks": [
+    "Six contrasts: full/year/pre2026/2026 added/removed/common allocation accounting",
+    "Known race exclusion and top10 positive/negative race difference values",
+    "Six existing selection sets: predicted/observed wins, payout, ROI, profit by period",
+    "Two models fixed-reference winner-NLL EV strata contributions and aggregate loss",
+    "Both protocols, independent final receipts, and all frozen source/input hashes"
+  ],
+  "caveat": "Descriptive saved-bet accounting only; no adoption or new-policy evaluation."
+}

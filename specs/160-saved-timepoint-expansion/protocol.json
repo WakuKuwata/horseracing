@@ -1,0 +1,18 @@
+{
+  "purpose": "保存済みの別時点オッズ・予測で159の共通対象を増やせるかの品質・時点・重複監査",
+  "new_collection": false,
+  "database_access": false,
+  "training": false,
+  "inference": false,
+  "pnl_scoring": false,
+  "baseline": "159: 9 races, 129 horses, 4 days",
+  "official_cohort": "158 snapshot: full started field and saved netkeiba official win payouts confirmed against archived payout HTML; 712 races",
+  "quote_freshness": "0 <= decision_at - captured_at <= 1800 seconds, inclusive",
+  "decision_time": "earliest feasible max(quote captured/created, stored MEV computed, old run/prediction/feature computed/created/updated); must be strictly before post",
+  "prediction": "stored mev-ens15-v1 plus mix-129-nj6 preweight; original model/training/field/probability checks retained; latest eligible old computation at chosen decision",
+  "price_bridge": "whole-field canonical horse_id + horse_number + Decimal odds exactly equal saved MEV odds_used; saved p is reused unchanged; matching prices do not prove the quote was consumed by MEV",
+  "not_admissible": ["closing odds as decision prices", "future/recomputed predictions backdated to decision", "proxy timestamps relabeled as actual quote capture", "same-race/time old run variants counted as new races", "different odds substituted into cached MEV", "post-start MEV backdated to quote"],
+  "counts": "unique races, race-days and (race_id, decision_at) separately; baseline retained; additional source copies deduplicated by ID/time/price/p",
+  "settlement": "official payout only; no settlement or PnL rerun without newly eligible cohort",
+  "verdict": "coverage finding only; can_adopt=false, eligible_for_verdict=false, untouched_holdout=false"
+}

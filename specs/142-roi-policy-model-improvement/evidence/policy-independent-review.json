@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-19",
+  "reviewer": "independent_142_audit",
+  "method": "Separate scalar allocation and settlement loops; policies.py aggregation functions were not called.",
+  "protocol_sha256": "50ffbb797dce6448fc1628b83b4d62268fdb3d6bb8c057ea7d8442d16c7a3edc",
+  "status": "PASS",
+  "matched_rows": {"bets": 43808, "races": 124275, "days": 4035},
+  "common_primary_races": 24855,
+  "common_budget_yen_each": 24855000,
+  "checked": ["outcome-free selection", "fixed ranking and ties", "100-yen unit allocation", "stake", "payout", "profit", "cash", "deployed ROI", "profit per budget", "top1/top5 payout sensitivity", "daily aggregation", "whole-race exclusion"],
+  "archived_official_race_coverage": 0,
+  "excluded_structurally_invalid_races": ["202504040407"],
+  "intersection_minus_raw": {"profit_yen": 95020, "profit_per_budget_percentage_points": 0.3822973244819956, "bonferroni95_percentage_points": [-1.103562105683604, 1.1116339777689171]},
+  "interpretation": "All six EV-policy pairwise adjusted intervals contain zero. No ranking or adoption conclusion. Conditional historical closing-odds comparison, not decision-time execution or future profit."
+}

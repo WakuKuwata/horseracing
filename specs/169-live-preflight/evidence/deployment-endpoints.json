@@ -1,0 +1,20 @@
+{
+  "source": "docker_inspect_labels_and_published_ports_only",
+  "compose_project": "docker",
+  "compose_service": "postgres",
+  "published_ports": {
+    "5432/tcp": [
+      {
+        "HostIp": "0.0.0.0",
+        "HostPort": "15432"
+      },
+      {
+        "HostIp": "::",
+        "HostPort": "15432"
+      }
+    ]
+  },
+  "container_environment_read": false,
+  "deploy_hostname_rewritten": false,
+  "db_privileges_changed": false
+}

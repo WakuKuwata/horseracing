@@ -1,0 +1,2061 @@
+{
+  "auditor": "oof146_review",
+  "mentor_protocol_sha256": "1cf37a6ac62035702270ebeb449fb1559bc48fad57a2db12dfbd3312f64090c0",
+  "counters": {
+    "fits": 450,
+    "artifact_hashes": 1350
+  },
+  "mentor_completion_hashes": 270,
+  "teacher_checks": {
+    "new_teacher_rows": 287252,
+    "new_teacher_races": 19935,
+    "preserved_old_rows": 321271,
+    "total_rows": 608523,
+    "weights_sha256": "47f8e1ed0d2231c53384f9bf6b801eab29c131cb8d921bf558a601a412d73a2a",
+    "old_values_bitwise_preserved": true,
+    "raw_mentor_seed_means_exact": true
+  },
+  "mentor_fit_checks": [
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 1,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 2,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 3,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 4,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 5,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 6,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 7,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 8,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 9,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 10,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 11,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 12,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 13,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 14,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 15,
+      "train_rows": 287052,
+      "target_rows": 48199
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 1,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 2,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 3,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 4,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 5,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 6,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 7,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 8,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 9,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 10,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 11,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 12,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 13,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 14,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2014,
+      "seed": 15,
+      "train_rows": 335251,
+      "target_rows": 48435
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 1,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 2,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 3,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 4,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 5,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 6,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 7,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 8,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 9,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 10,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 11,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 12,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 13,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 14,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2015,
+      "seed": 15,
+      "train_rows": 383686,
+      "target_rows": 48152
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 1,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 2,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 3,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 4,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 5,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 6,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 7,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 8,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 9,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 10,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 11,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 12,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 13,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 14,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 15,
+      "train_rows": 431838,
+      "target_rows": 48220
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 1,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 2,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 3,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 4,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 5,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 6,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 7,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 8,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 9,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 10,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 11,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 12,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 13,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 14,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2017,
+      "seed": 15,
+      "train_rows": 480058,
+      "target_rows": 47499
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 1,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 2,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 3,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 4,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 5,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 6,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 7,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 8,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 9,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 10,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 11,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 12,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 13,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 14,
+      "train_rows": 527557,
+      "target_rows": 46747
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 15,
+      "train_rows": 527557,
+      "target_rows": 46747
+    }
+  ],
+  "saved_body_replays": [
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2013,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2016,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "mentor",
+      "year": 2018,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 1,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 8,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 15,
+      "rows": 64,
+      "max_abs_p_difference": 0.0
+    }
+  ],
+  "no_model_fits_performed": true,
+  "can_adopt": false,
+  "untouched_holdout": false,
+  "blockers": [],
+  "audit_script_sha256": "dc5d13da35266b87ef92857f059dedba315901728cd6ebc713b2a8039cde948a",
+  "independent143_helpers_sha256": "dbaea243a5fda07d5a18ce0f1195044ee01ef78974c6ed46be6dd670741737c2",
+  "candidate_completion_hashes": 360,
+  "candidate_fit_checks": [
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 1,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 2,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 3,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 4,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 5,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 6,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 7,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 8,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 9,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 10,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 11,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 12,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 13,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 14,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2019,
+      "seed": 15,
+      "train_rows": 574304,
+      "target_rows": 45666
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 1,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 2,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 3,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 4,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 5,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 6,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 7,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 8,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 9,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 10,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 11,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 12,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 13,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 14,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2020,
+      "seed": 15,
+      "train_rows": 619970,
+      "target_rows": 46410
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 1,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 2,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 3,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 4,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 5,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 6,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 7,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 8,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 9,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 10,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 11,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 12,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 13,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 14,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2021,
+      "seed": 15,
+      "train_rows": 666380,
+      "target_rows": 46021
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 1,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 2,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 3,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 4,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 5,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 6,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 7,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 8,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 9,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 10,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 11,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 12,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 13,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 14,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2022,
+      "seed": 15,
+      "train_rows": 712401,
+      "target_rows": 45554
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 1,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 2,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 3,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 4,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 5,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 6,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 7,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 8,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 9,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 10,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 11,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 12,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 13,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 14,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2023,
+      "seed": 15,
+      "train_rows": 757955,
+      "target_rows": 45962
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 1,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 2,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 3,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 4,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 5,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 6,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 7,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 8,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 9,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 10,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 11,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 12,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 13,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 14,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2024,
+      "seed": 15,
+      "train_rows": 803917,
+      "target_rows": 45467
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 1,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 2,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 3,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 4,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 5,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 6,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 7,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 8,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 9,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 10,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 11,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 12,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 13,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 14,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2025,
+      "seed": 15,
+      "train_rows": 849384,
+      "target_rows": 46191
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 1,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 2,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 3,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 4,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 5,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 6,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 7,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 8,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 9,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 10,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 11,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 12,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 13,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 14,
+      "train_rows": 895575,
+      "target_rows": 22612
+    },
+    {
+      "stage": "candidate",
+      "year": 2026,
+      "seed": 15,
+      "train_rows": 895575,
+      "target_rows": 22612
+    }
+  ],
+  "protocol_sha256": "3138a39b4acb98c6d5752023f99672cee7c11a0a194ac5ae040ddee54ca9720d",
+  "summary_sha256": "a649218672e2ae9d7983b0f59bfd653eb60c5e46ff42a3190aa525c71d448a58",
+  "independent_weights": [
+    {
+      "year": 2019,
+      "training_rows": 574304,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 287252,
+      "unavailable": 287052,
+      "informative_rows": 287252,
+      "informative_races": 19935,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.1868242045341417,
+      "mean": 1.0,
+      "minimum": 0.8425847704989511,
+      "maximum": 1.685169539369495,
+      "vector_sha256": "4e2532545a9bce6d575bc73122489fd5ae8cd0603817159254c9df4b64dc6991"
+    },
+    {
+      "year": 2020,
+      "training_rows": 619970,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 332918,
+      "unavailable": 287052,
+      "informative_rows": 332918,
+      "informative_races": 23255,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.1860569103235934,
+      "mean": 1.0,
+      "minimum": 0.8431298627375046,
+      "maximum": 1.6862597238455483,
+      "vector_sha256": "4e71a9f9685f658e668c662eee56869de399d3cbae9d1453c003a4bc111c317c"
+    },
+    {
+      "year": 2021,
+      "training_rows": 666380,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 379328,
+      "unavailable": 287052,
+      "informative_rows": 379328,
+      "informative_races": 26577,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.1865742096926573,
+      "mean": 0.9999999999999998,
+      "minimum": 0.842762291503889,
+      "maximum": 1.6855245813790278,
+      "vector_sha256": "f59960a6bf7bab97f6b419fd9e28a6ed2c2d25d4a5a3baddafd1e274ac96b19d"
+    },
+    {
+      "year": 2022,
+      "training_rows": 712401,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 425349,
+      "unavailable": 287052,
+      "informative_rows": 425349,
+      "informative_races": 29897,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.1874643523809736,
+      "mean": 1.0,
+      "minimum": 0.8421305431147549,
+      "maximum": 1.6842610846019803,
+      "vector_sha256": "a1bce56c69582c986dcd640989e0dd1f131425eeaee95d7f1aff5ef83eec2324"
+    },
+    {
+      "year": 2023,
+      "training_rows": 757955,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 470903,
+      "unavailable": 287052,
+      "informative_rows": 470903,
+      "informative_races": 33224,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.1865326923004516,
+      "mean": 1.0,
+      "minimum": 0.8427917801920808,
+      "maximum": 1.6855835599506512,
+      "vector_sha256": "6d8cb9fc3973e3760388ef483f963b9be09e49ac92ab9bf320451b0fc66d7b67"
+    },
+    {
+      "year": 2024,
+      "training_rows": 803917,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 516865,
+      "unavailable": 287052,
+      "informative_rows": 516865,
+      "informative_races": 36550,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.1855702035006466,
+      "mean": 1.0000000000000002,
+      "minimum": 0.8434759890618782,
+      "maximum": 1.686951977689894,
+      "vector_sha256": "381f3556c761f2556366d9cb3ac5a26197cd2a960a671e15dc2932d47e468a1c"
+    },
+    {
+      "year": 2025,
+      "training_rows": 849384,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 562332,
+      "unavailable": 287052,
+      "informative_rows": 562332,
+      "informative_races": 39871,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.183633028274983,
+      "mean": 1.0,
+      "minimum": 0.844856451376143,
+      "maximum": 1.6897129023177138,
+      "vector_sha256": "7d142dd0798c76b2dab60627610468e909c4bc50953e61541ae766b85caef989"
+    },
+    {
+      "year": 2026,
+      "training_rows": 895575,
+      "verified_seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "recipe": {
+        "center": 1.2,
+        "width": 0.2,
+        "amplitude": 1.0,
+        "unavailable": 1.0,
+        "normalization": "informative_complete_races_mean_one_neutral_exact_one"
+      },
+      "available": 608523,
+      "unavailable": 287052,
+      "informative_rows": 608523,
+      "informative_races": 43199,
+      "neutral_rows": 287052,
+      "neutral_races": 19911,
+      "raw_mean": 1.1822033952188928,
+      "mean": 1.0000000000000002,
+      "minimum": 0.845878132345275,
+      "maximum": 1.69175626450778,
+      "vector_sha256": "0297e2654df46c6d11ddf5a2ef22ebbfcc1a77510717cecc1f8be5fc9271911c"
+    }
+  ],
+  "paired": {
+    "weighted_backfill_minus_baseline": {
+      "winner_nll": {
+        "difference": 0.0007527495901557274,
+        "ci95": [
+          0.0003580349420657219,
+          0.0011446499929547603
+        ],
+        "bonferroni_familywise95_ci": [
+          0.0003069422920357718,
+          0.001192952169976617
+        ],
+        "valid_replicates": 4000
+      },
+      "profit_per_budget": {
+        "difference": -0.006017300341983505,
+        "ci95": [
+          -0.031165400279999006,
+          0.018741301948284692
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.03386127680570633,
+          0.021756650567929723
+        ],
+        "valid_replicates": 4000
+      },
+      "deployed_roi": {
+        "difference": -0.042083724724979676,
+        "ci95": [
+          -0.20107329446017666,
+          0.11569362354718382
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.21772062452464205,
+          0.13348763452633616
+        ],
+        "valid_replicates": 4000
+      }
+    },
+    "weighted_backfill_minus_weighted_baseline": {
+      "winner_nll": {
+        "difference": 0.0005567139926963876,
+        "ci95": [
+          0.0001706499976608942,
+          0.0009219696203061448
+        ],
+        "bonferroni_familywise95_ci": [
+          0.0001081817245455372,
+          0.0009762231539558903
+        ],
+        "valid_replicates": 4000
+      },
+      "profit_per_budget": {
+        "difference": -0.01023898611949306,
+        "ci95": [
+          -0.03424752600758373,
+          0.011757679612103956
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.03754641799306053,
+          0.014887622898132452
+        ],
+        "valid_replicates": 4000
+      },
+      "deployed_roi": {
+        "difference": -0.06594271856404332,
+        "ci95": [
+          -0.2147711131818722,
+          0.07216274530778312
+        ],
+        "bonferroni_familywise95_ci": [
+          -0.23935126580433094,
+          0.09212181685080427
+        ],
+        "valid_replicates": 4000
+      }
+    }
+  },
+  "sensitivity": {
+    "weighted_backfill_minus_baseline": {
+      "known_race_delta_yen": 1000.0,
+      "without_known_race_delta_yen": -150560.0,
+      "top_difference_race": "202608010207",
+      "top_difference_yen": 98700.0,
+      "without_top_difference_yen": -248260.0,
+      "same_calendar_jan1_jun21_by_year": {
+        "2019": 119490.0,
+        "2020": -174460.0,
+        "2021": -65540.0,
+        "2022": 93690.0,
+        "2023": 20220.0,
+        "2024": -40950.0,
+        "2025": 149920.0,
+        "2026": 52930.0
+      },
+      "before2026_delta_yen": -202490.0,
+      "year2026_delta_yen": 52930.0
+    },
+    "weighted_backfill_minus_weighted_baseline": {
+      "known_race_delta_yen": -104700.0,
+      "without_known_race_delta_yen": -149790.0,
+      "top_difference_race": "202608010207",
+      "top_difference_yen": 98700.0,
+      "without_top_difference_yen": -353190.0,
+      "same_calendar_jan1_jun21_by_year": {
+        "2019": 119490.0,
+        "2020": -143640.0,
+        "2021": -115180.0,
+        "2022": 5590.0,
+        "2023": 17000.0,
+        "2024": 4850.0,
+        "2025": 127980.0,
+        "2026": -39850.0
+      },
+      "before2026_delta_yen": -214640.0,
+      "year2026_delta_yen": -39850.0
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "status": "prepared_not_started",
+  "target_race_id": null,
+  "new_collection": false,
+  "database_access": false,
+  "model_inference": false,
+  "live_registration": false,
+  "official_settlement_execution": false,
+  "application_source_changed": false,
+  "old_165_and_166_pins_unchanged": true,
+  "independent_review": "PASS",
+  "validation": "documentation_static_checks_only",
+  "files": {
+    "specs/167-first-manual-observation/evidence/independent-review.md": "45b0f00c73002ba250b2f96a601ba621582f0dc065ad424bf9e595f8c0cd7e4b",
+    "specs/167-first-manual-observation/evidence/validation.json": "0b81a4b7cf237373f8e4081192daf0eb3162dbbf68ad4492aea7951db9f09133",
+    "specs/167-first-manual-observation/operator-record.template.json": "eabea4833f6c6facc327a76c0c3985e9c09c27a42a0a5c1bec0a6a535e7aac7c",
+    "specs/167-first-manual-observation/plan.md": "ba6efee925e63bbf6e79a028bfce2334bff9af625c7ac8f31baee7aa73486e03",
+    "specs/167-first-manual-observation/result-review.md": "832e7d8c9e25a97e5e6b8f45bda02c9410a4dd931458545c2a85b82b5411a2cc",
+    "specs/167-first-manual-observation/runbook.md": "aa47b80d860629529ef0eee70a8c57418935e85702108ff683c45d662c6a2517"
+  }
+}

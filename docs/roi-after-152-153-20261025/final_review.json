@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "blockers": [],
+  "report_sha256": "66a306f59048f07c53f041ba4a6fc8f5d2e9c78e475aed7124d39236e6121ba9",
+  "analysis_sha256": "d0eb7d848e7fa322f059dfeb29f17dff1dea648b21dc64df1141032d092a07c2",
+  "independent_verification_sha256": "db6d0d09ddee584f30b8cdb9cb5b35d589828efa5244a98de5b4b30bcc1c1e3d",
+  "independent_label_verification_sha256": "38fde6ae28ef2a1460d904b320a7b313f2fc408e7e2a43cd2d22ed2644dfe329",
+  "independent_second_opinion_sha256": "5d3f68f0a1a545794fcb10f7b5d336cb0e3daf0eb23772d2cb5a821e105f145a",
+  "checks": [
+    "152 same-parent gain versus failure to replace gamma full normalization distinguished",
+    "153 selection loss and 7-of-8 annual weakness; market column count corrected to9 includingq",
+    "Winner-only fixed reference EV NLL strata distinguished from selected-all calibration and portfolio causality",
+    "PLtop3 preserved77 inputs,120newfits,4fixed contrasts,stage1 parity and identical Hessian bound,weightNone/rowbaggingoff specified",
+    "Querybagging binary77 preserves original gamma weights,120newfits,3contrasts; no evidence rowbagging caused losses and variance risk explicit",
+    "7660 analysis numbers and794 frozen dependency hashes pass; label-only20years120counts independently reproduced",
+    "153 corrected profit interval excludes0 whereas ROI includes0;152 revenue intervals include0",
+    "No candidate fitting or policy scoring, closing proxy and repeatedly inspected history limitations retained"
+  ],
+  "lint_note": "Source frozen after execution; E701/E702 style and label_inventory unusedhashlibF401 remain. No lint-pass claim.",
+  "new_fits": 0,
+  "new_policies_scored": 0,
+  "can_adopt": false
+}

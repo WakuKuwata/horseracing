@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "mode": "offline_rehearsal",
+  "eligible_for_prospective": false,
+  "accepted": 3,
+  "rejected": 8,
+  "settled": 2,
+  "incomplete": 1,
+  "historical_contract_accepted": 0,
+  "main_selector_imported": false,
+  "main_settler_imported": false,
+  "model_inference": false,
+  "network_or_database_access": false,
+  "source_manifest_sha256": "340dc37f07891db0d3f0d0a065ab4c46937000087a6b0d15949774cbd14a41e8",
+  "outcomes": [
+    {
+      "race_id": "202605040901",
+      "status": "settled",
+      "dead_heat": false
+    },
+    {
+      "race_id": "202605040902",
+      "status": "incomplete",
+      "dead_heat": null
+    },
+    {
+      "race_id": "202605040903",
+      "status": "settled",
+      "dead_heat": true
+    }
+  ]
+}

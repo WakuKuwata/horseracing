@@ -1,0 +1,28 @@
+{
+  "auditor": "raceweight144_review",
+  "reviewed_at_utc": "2026-10-24T00:34:08.711019+00:00",
+  "status": "passed",
+  "source_sha256": {
+    "scripts/roi_explore/roi_improvement_144/models.py": "bde194fbc0045c9cca1ac7d5c98a546186df327a375d63ae3063eb79e5f742ac",
+    "scripts/roi_explore/roi_improvement_144/experiment.py": "f72b68d8d1b00423029fcc84d1c87b161f0343c2f2743f91b746bc4380671209",
+    "scripts/roi_explore/roi_improvement_144/run.py": "2f53372f1c330ecee8ec4f2a3b0a338011a8f8e7d55b57f98f6a4d98c03edbf4",
+    "scripts/roi_explore/roi_improvement_144/report.py": "138e6711b2cad50c4a5673f6bf33e3b233d3c9be976d929f1f7d4b12bb953075"
+  },
+  "checks": [
+    "Read AGENTS and135plan,143fixedrecipes/resultreview and20261024 attribution.",
+    "Reviewedexact143weights perouter; a=arithmeticmean percomplete orderedrace; b=w/a; no postdecompositionnormalization.",
+    "Syntheticindependentchecks: variablefieldsize,a*b=w,withinracemean1,neutralexact1,partialOOFraceneutral,labelinvariance.",
+    "Same77features,binary300,15seeds,strictpast OOF and annual fits; baseline/143 reusednotrefit.",
+    "References rebuilt from240receipts/ensembles; freeze binds originalsources,inputs,receipts,predictions andnewrecipes.",
+    "Report pairsfourfixedcontrasts,Bonf4permetric,4kdaybootstrapseed20261024; noselectivecandidatechoice.",
+    "Reportexplicitarm/kernel/transformchecks andcompletionmarker480hashchecks.",
+    "Proposals2pacecomboand3OOFbackfilldeferred; researchonly noDB,production,UI changes."
+  ],
+  "limitations": [
+    "Fieldsize stillweightslargerfields more byrowcount.",
+    "Nonlineartrainingeffects includingweightedinitialpriorpreventsimpleadditivecausalprofitdecomposition.",
+    "No untouchedholdout; closingoddsproxyprofits."
+  ],
+  "blockers": [],
+  "model_fits_performed_by_auditor": 0
+}

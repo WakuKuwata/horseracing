@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-19",
+  "reviewer": "independent_142_audit",
+  "status": "PASS",
+  "scope": "2019 only; later-year outcomes were not read",
+  "method": "Independent probability averaging, normalization, NLL arithmetic and small-sample saved-model inference; report.py was not called",
+  "races": 3320,
+  "horse_rows": 45666,
+  "days": 110,
+  "final_model_bodies": 45,
+  "seeds_used": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  "winner_nll_after_probability_mean": {
+    "baseline": 1.951028135115273,
+    "earlystop": 1.9512412345686005,
+    "softmax": 1.9504543950670306
+  },
+  "all_keys_and_labels_match_source": true,
+  "all_final_train_through": 2018,
+  "all_selectors_train_through": 2017,
+  "selector_validation_year": 2018,
+  "all_artifact_and_protocol_hashes_match": true,
+  "receipt_roundtrip_max_raw_difference": 0.0,
+  "independent_replay_horse_rows_each_body": 28,
+  "independent_replay_max_probability_difference": 0.0,
+  "softmax_mean_max_race_sum_error": 4.44e-16,
+  "can_adopt": false,
+  "interpretation": "Arithmetic and temporal provenance verified; one year does not establish model superiority."
+}

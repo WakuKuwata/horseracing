@@ -1,0 +1,14 @@
+# 152 normalized pace: independent design review
+
+Reviewer: `pace152_review`. Reviewed before candidate scoring.
+
+- Accept the single fixed candidate: arithmetic mean of 15 saved unweighted pace91 raw probabilities first, divided by the probability sum of all starters in each complete race, then EV selection. Do not average separately normalized seeds; do not normalize just eligible horses. No fitted parameters, retraining, threshold search, blending or purchase-policy adjustment.
+- Compare normalized pace against matched baseline77 raw, original143 weighted baseline③ raw, original③ fully normalized, and pace91 raw. The saved current prediction is an additional reference, not a fifth inferential comparison. Proposal2 market-column removal remains held.
+- All six arms must use the same 24,855 races, 343,883 horses, 807 eligible dates including no-bet dates and settlement. Preserve strict EV>1.2, 1,000-yen budget, 100-yen units, max10 starters, floor(10/n) equal integer stakes with remaining cash.
+- Freeze 152 implementation and every actual source/input dependency before candidate scoring. Reconstruct all 360 saved parent fits and verify 1,080 feature/model/prediction hashes, receipt identities, feature recipes, chronology and no-weight status of pace. Validate inherited 147/148 manifests and exact saved control parity, including original③ normalization.
+- Four fixed contrasts, 4,000 paired date-bootstrap draws, seed20261025 and family4 Bonferroni correction separately per metric. Report deployed ROI and profit alongside common-budget profit differences. These intervals condition on saved seeds and do not account for historical selection among prior experiments.
+- Predeclare both-side deletion of known race202608030111 and each contrast's maximum positive difference race, same January1–June21 annual windows, pre2026/2026 split, drawdown and top-payout removal. These are diagnostics rather than trading exclusions.
+- Normalized pace field sums must be 1 within numerical tolerance. Winner NLL must match raw pace because its evaluation already normalizes race probabilities. Include malformed/partial fields, duplicate keys/numbers, zero mass, invalid probabilities and parent nonmutation tests.
+- The evidence remains exploratory: previously inspected history, closing-odds proxy, no untouched holdout and no production adoption. Keep can_adopt/untouched_holdout/eligible_for_verdict false.
+
+No design blocker. Independent final audit will use independent143 helpers only, reconstruct both normalization arms with separate race loops, independently score all six arms, reproduce all four bootstraps and sensitivity diagnostics and replay nine preselected saved bodies (2019seed1,2024seed8,2026seed15 per parent arm). No candidate implementation import or model fitting.

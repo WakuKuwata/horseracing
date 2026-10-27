@@ -1,0 +1,177 @@
+{
+  "status": "passed",
+  "blockers": [],
+  "input_sha256": "99f699502424c65a4f2dcd998bd105c2537551952b931b2c4a19f28399468b2b",
+  "inventory_sha256": "60c96c4d2e2ffaa4250ed5aef0ff34545c3e23089b24269eed11d78cfe21048c",
+  "script_sha256": "3d7136e5f96869932ef75671bf34aa6da344fcc0176ebca14bc74d6fe46b465a",
+  "source_read": "pyarrow minimal columns; independent race loop without142/root imports",
+  "year_records_checked": 20,
+  "numeric_counts_checked": 120,
+  "rows": 918187,
+  "races": 64701,
+  "nonfinished_rows_with_top3_finish_order": 0,
+  "by_year": [
+    {
+      "year": 2007,
+      "rows": 46889,
+      "races": 3315,
+      "valid_stage1": 3315,
+      "valid_stage2": 3308,
+      "valid_stage3": 3301
+    },
+    {
+      "year": 2008,
+      "rows": 48365,
+      "races": 3317,
+      "valid_stage1": 3317,
+      "valid_stage2": 3310,
+      "valid_stage3": 3301
+    },
+    {
+      "year": 2009,
+      "rows": 48467,
+      "races": 3317,
+      "valid_stage1": 3317,
+      "valid_stage2": 3311,
+      "valid_stage3": 3307
+    },
+    {
+      "year": 2010,
+      "rows": 48000,
+      "races": 3314,
+      "valid_stage1": 3314,
+      "valid_stage2": 3308,
+      "valid_stage3": 3297
+    },
+    {
+      "year": 2011,
+      "rows": 47344,
+      "races": 3331,
+      "valid_stage1": 3331,
+      "valid_stage2": 3326,
+      "valid_stage3": 3324
+    },
+    {
+      "year": 2012,
+      "rows": 47987,
+      "races": 3317,
+      "valid_stage1": 3317,
+      "valid_stage2": 3308,
+      "valid_stage3": 3299
+    },
+    {
+      "year": 2013,
+      "rows": 48199,
+      "races": 3322,
+      "valid_stage1": 3322,
+      "valid_stage2": 3318,
+      "valid_stage3": 3306
+    },
+    {
+      "year": 2014,
+      "rows": 48435,
+      "races": 3321,
+      "valid_stage1": 3321,
+      "valid_stage2": 3316,
+      "valid_stage3": 3303
+    },
+    {
+      "year": 2015,
+      "rows": 48152,
+      "races": 3323,
+      "valid_stage1": 3323,
+      "valid_stage2": 3314,
+      "valid_stage3": 3304
+    },
+    {
+      "year": 2016,
+      "rows": 48220,
+      "races": 3321,
+      "valid_stage1": 3321,
+      "valid_stage2": 3312,
+      "valid_stage3": 3302
+    },
+    {
+      "year": 2017,
+      "rows": 47499,
+      "races": 3326,
+      "valid_stage1": 3326,
+      "valid_stage2": 3322,
+      "valid_stage3": 3314
+    },
+    {
+      "year": 2018,
+      "rows": 46747,
+      "races": 3322,
+      "valid_stage1": 3322,
+      "valid_stage2": 3314,
+      "valid_stage3": 3307
+    },
+    {
+      "year": 2019,
+      "rows": 45666,
+      "races": 3320,
+      "valid_stage1": 3320,
+      "valid_stage2": 3316,
+      "valid_stage3": 3310
+    },
+    {
+      "year": 2020,
+      "rows": 46410,
+      "races": 3322,
+      "valid_stage1": 3322,
+      "valid_stage2": 3314,
+      "valid_stage3": 3302
+    },
+    {
+      "year": 2021,
+      "rows": 46021,
+      "races": 3320,
+      "valid_stage1": 3320,
+      "valid_stage2": 3316,
+      "valid_stage3": 3308
+    },
+    {
+      "year": 2022,
+      "rows": 45554,
+      "races": 3327,
+      "valid_stage1": 3327,
+      "valid_stage2": 3321,
+      "valid_stage3": 3319
+    },
+    {
+      "year": 2023,
+      "rows": 45962,
+      "races": 3326,
+      "valid_stage1": 3326,
+      "valid_stage2": 3323,
+      "valid_stage3": 3315
+    },
+    {
+      "year": 2024,
+      "rows": 45467,
+      "races": 3321,
+      "valid_stage1": 3321,
+      "valid_stage2": 3314,
+      "valid_stage3": 3305
+    },
+    {
+      "year": 2025,
+      "rows": 46191,
+      "races": 3328,
+      "valid_stage1": 3328,
+      "valid_stage2": 3317,
+      "valid_stage3": 3307
+    },
+    {
+      "year": 2026,
+      "rows": 22612,
+      "races": 1591,
+      "valid_stage1": 1591,
+      "valid_stage2": 1587,
+      "valid_stage3": 1582
+    }
+  ],
+  "new_fits": 0,
+  "new_policies_scored": 0
+}
