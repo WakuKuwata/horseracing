@@ -1,0 +1,7 @@
+{
+  "schema_version": "172-v1",
+  "source_interval_seconds": 60,
+  "ops_fetch_min_interval_seconds": 60,
+  "shared_limiter_enabled": true,
+  "collection_paused": true
+}

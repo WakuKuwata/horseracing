@@ -3,7 +3,8 @@
 # 使い方: scripts/stack.sh {start|stop|restart|status} [component]
 #   component 省略時は全体。指定可: postgres api ops-api worker front admin
 #
-# 各サーバーは nohup でシェル/エディタのセッションから切り離して起動し、
+# API/ops は172 wrapperの新OS session、front/adminはnohupで起動し、
+# workerは共通設定のpauseによりmain前で停止する。
 # PID とログを logs/ (gitignore 済み) に置く。停止は PID からプロセスツリーを
 # 再帰的に辿って子孫ごと止める(macOS に setsid が無いため。uv run→python、
 # pnpm→node のように親だけ殺すと本体が孤児で生き残るのを防ぐ)。
@@ -26,25 +27,25 @@ start_api() {
   DISPERSION_PCAL_PATH="$ROOT/artifacts/dispersion_bands/pcal-v1.json" \
   CHAOS_BANDS_ARTIFACT_PATH="$ROOT/artifacts/chaos_bands/20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680.json" \
   CHAOS_BANDS_APPROVED_MANIFEST="$ROOT/config/chaos_bands_approved.json" \
-  nohup uv run uvicorn horseracing_api.app:app --host 127.0.0.1 --port 8000 \
-    > "$LOGS/api.log" 2>&1 &
-  echo $! > "$LOGS/api.pid"
+  "$ROOT/api/.venv/bin/python" "$ROOT/scripts/source_operations_172.py" api --detach \
+    --report "$LOGS/api-policy172-$(date +%s)-$$.json" \
+    --log "$LOGS/api.log" --pidfile "$LOGS/api.pid"
 }
 
 start_ops_api() {
   cd "$ROOT/ops" || return 1
   DATABASE_URL="$DB_URL" \
-  nohup uv run uvicorn horseracing_ops.app:app --host 127.0.0.1 --port 8001 \
-    > "$LOGS/ops-api.log" 2>&1 &
-  echo $! > "$LOGS/ops-api.pid"
+  "$ROOT/ops/.venv/bin/python" "$ROOT/scripts/source_operations_172.py" ops-api --detach \
+    --report "$LOGS/ops-api-policy172-$(date +%s)-$$.json" \
+    --log "$LOGS/ops-api.log" --pidfile "$LOGS/ops-api.pid"
 }
 
 start_worker() {
   cd "$ROOT/ops" || return 1
   DATABASE_URL="$DB_URL" \
-  nohup uv run python -m horseracing_ops.worker \
-    > "$LOGS/worker.log" 2>&1 &
-  echo $! > "$LOGS/worker.pid"
+  "$ROOT/ops/.venv/bin/python" "$ROOT/scripts/source_operations_172.py" worker \
+    --report "$LOGS/worker-policy172-$(date +%s)-$$.json"
+  # Paused wrapper exits BEFORE importing worker.main; never records a stale daemon PID.
 }
 
 start_front() {
@@ -102,7 +103,7 @@ start_one() {
     postgres) docker start docker-postgres-1 >/dev/null && echo "[start] postgres" ;;
     api) start_api && echo "[start] api :8000" ;;
     ops-api) start_ops_api && echo "[start] ops-api :8001" ;;
-    worker) start_worker && echo "[start] worker" ;;
+    worker) start_worker ;;
     front) start_front && echo "[start] front :5174" ;;
     admin) start_admin && echo "[start] admin :5175" ;;
     *) echo "unknown component: $c" >&2; return 1 ;;
