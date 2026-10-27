@@ -7,16 +7,14 @@ import datetime
 from horseracing_db.enums import EntryStatus, ResultStatus
 from horseracing_db.models import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from horseracing_eval.dataset import load_eval_races
-from horseracing_eval.decision import EVALUATION_CONTRACT_VERSION
+from horseracing_eval.decision import EVALUATION_CONTRACT_VERSION, gate_config_hash
 from horseracing_eval.harness import evaluate
+from horseracing_eval.hashing import stable_hash
 from horseracing_features.registry import FEATURE_VERSION
-from horseracing_training.adoption import (
-    VERDICT_ARTIFACT_KIND,
-    AdoptionDecision,
-    AdoptionGate,
-)
+from horseracing_training.adoption import AdoptionDecision, AdoptionGate
 from horseracing_training.artifacts import save_model_version
 from horseracing_training.predictor import LightGBMPredictor
+from horseracing_training.promotion_evidence import stamp_report
 from sqlalchemy.orm import Session
 
 
@@ -72,40 +70,93 @@ def seed_learnable(session: Session, *, years=(2007, 2008), races_per_year=10, f
                         horses=horses)
 
 
-def adopt_verdict() -> dict:
-    """A confirmatory paired-eval report shaped like one that ADOPTed.
+#: The pre-registered gate-config these fixtures declare. Its numbers are not what any test
+#: asserts on; it exists so the stamped report satisfies the REAL confirmatory contract
+#: (``eval.decision.assert_confirmatory``): the current contract version, a declared
+#: retraining SD, and an eval window that matches the frozen config.
+_GATE_WINDOW = {"from": "2008-01-01", "to": "2008-12-31"}
+_GATE_CFG = {
+    "evaluation_contract_version": EVALUATION_CONTRACT_VERSION,
+    "seed_noise": {"sd_fold": 0.001816},
+    "eval_window": dict(_GATE_WINDOW),
+}
 
-    ``save_model_version`` will not mark a model ACTIVE without one: the legacy 4-metric gate alone
-    cannot justify a promotion. Tests that need a genuinely active model therefore have to supply
-    this, and supplying it exercises the real contract rather than an escape hatch.
 
-    The contract version is READ FROM eval, never spelled out here. Hard-coding it is precisely how
-    the promotion path broke once already — training pinned "v3" by equality while eval moved to
-    "v4", and every valid verdict was silently downgraded to a candidate.
+class _Arm:
+    """One side of a paired evaluation, in the shape ``stamp_report`` consumes."""
+
+    def __init__(self, predictor, label: str):
+        self._pred = predictor
+        self.recipe_meta = {"arm": label, "seed": predictor.seed}
+        self.recipe_hash = stable_hash(self.recipe_meta)
+
+
+def adopt_verdict(candidate, reference) -> dict:
+    """A CONFIRMED paired-eval report that can justify an ACTIVE promotion.
+
+    ``save_model_version`` will not mark a model ACTIVE without one: the legacy 4-metric gate
+    alone cannot justify a promotion. Tests that need a genuinely active model therefore have to
+    supply this, and supplying it exercises the real contract rather than an escape hatch.
+
+    CONTRACT AS OF 2026-09 (commit ``bdc789e``). An ``ADOPT`` verdict is no longer sufficient on
+    its own. ``adoption.evaluate_promotion`` now also requires, and this report therefore carries:
+
+    * ``can_adopt is True`` and ``eligible_for_verdict is True`` — strict booleans, not truthy
+      values, and no longer waived when ``artifact_kind`` is absent. An exploratory report can no
+      longer be reused as promotion evidence by omitting the field.
+    * a ``promotion_evidence`` block (written by ``stamp_report``, never by hand) binding the
+      report to the frozen gate-config, the scored window, and BOTH arms' recipe identities.
+    * a ``fitted_contract`` per arm that matches the contract recorded when that model was
+      REGISTERED — which is why ``make_active_model`` registers a reference model first and
+      passes it as ``reference_model_version``.
+
+    The contract version is READ FROM eval, never spelled out here. Hard-coding it is precisely
+    how the promotion path broke once already — training pinned "v3" by equality while eval moved
+    to "v4", and every valid verdict was silently downgraded to a candidate.
     """
-    return {
-        "decision": "ADOPT",
-        "evaluation_contract_version": EVALUATION_CONTRACT_VERSION,
-        "artifact_kind": VERDICT_ARTIFACT_KIND,
-        "eligible_for_verdict": True,
-        "decision_reason": {"subgroup_assurance": "full"},
-    }
+    return stamp_report(
+        {
+            "decision": "ADOPT",
+            "evaluation_contract_version": EVALUATION_CONTRACT_VERSION,
+            "decision_reason": {"subgroup_assurance": "full"},
+        },
+        _Arm(candidate, "candidate"),
+        _Arm(reference, "active"),
+        cfg=_GATE_CFG, confirmed=True, expected_hash=gate_config_hash(_GATE_CFG),
+        window=_GATE_WINDOW, feature_version=FEATURE_VERSION,
+    )
 
 
 def make_active_model(session: Session, artifacts_root, *, model_version="serv-test",
                       target_encode=()) -> str:
-    """Train a win model on the seeded data and save it as an ACTIVE model_version + artifacts."""
+    """Train a win model on the seeded data and save it as an ACTIVE model_version + artifacts.
+
+    Two rows are registered, because since 2026-09 a promotion must be BOUND to a registered
+    comparison model: ``<model_version>-ref`` is saved first as a CANDIDATE and named as the
+    ``reference_model_version``, so the verdict's "active" arm has a registered fitted contract
+    to match. The reference reuses the same fit — these tests need an ACTIVE model to serve, not
+    a meaningful accuracy comparison — so no extra training cost is incurred.
+    """
     races = load_eval_races(session)
     evald = LightGBMPredictor(session, seed=42, target_encode_cols=tuple(target_encode))
     result = evaluate(evald, races, first_valid_year=2008)
     final = LightGBMPredictor(session, seed=42, target_encode_cols=tuple(target_encode))
     final.fit([er.context for er in races])
+    reference_version = f"{model_version}-ref"
+    save_model_version(
+        session, model_version=reference_version, predictor=final, eval_result=result,
+        decision=AdoptionDecision(adopted=True, reasons={}),
+        gate=AdoptionGate(ece_threshold=1.0), artifacts_root=str(artifacts_root),
+        feature_version=FEATURE_VERSION, git_sha=None, register_as_candidate=True,
+    )
     save_model_version(
         session, model_version=model_version, predictor=final, eval_result=result,
-        decision=AdoptionDecision(adopted=True, reasons={}), verdict=adopt_verdict(),
+        decision=AdoptionDecision(adopted=True, reasons={}),
+        verdict=adopt_verdict(final, final),
         gate=AdoptionGate(ece_threshold=1.0), artifacts_root=str(artifacts_root),
         # An active model trained under the current registry carries the CURRENT feature_version;
         # serving's exact path now gates on it (value-changing same-column bumps keep the hash).
         feature_version=FEATURE_VERSION, git_sha=None,
+        reference_model_version=reference_version,
     )
     return model_version

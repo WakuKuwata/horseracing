@@ -1,0 +1,85 @@
+{
+  "artifact_kind": "first3f_scarcity_extension_preregistration",
+  "schema_version": 1,
+  "feature": "136-eight-model-candidate",
+  "question": "research-plan.md item C",
+  "frozen_at": "2026-09-22",
+  "frozen_by": "Claude, before any 7-year or 3-seed number for this question exists",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+
+  "what_is_being_measured": {
+    "intervention": "mask the three first-3F derived columns (asof_rel_first3f_avg, asof_rel_first3f_best, asof_pace_balance_avg) during TRAINING so the fitted model sees the supply it will actually be served",
+    "mask_unit": "row, keyed on (race_id, horse_id) - NOT race-atomic. Measured: the all-missing-race rate is flat at 7-9% in every year (debut races) while the row rate jumps 11% -> 41.7% in 2026, so the 2026 shortfall is within-race partial missingness.",
+    "mask_rule": "raise every year's row-level missing rate for those three columns to the 2026 observed rate, masking only rows that currently carry values; a year already at or above it is untouched",
+    "target_rate": 0.417283,
+    "mask_seed": 20260922,
+    "arms": {
+      "control": "trained on the matrix as-is  (what production does today)",
+      "candidate": "trained on the masked matrix (091's move, applied to this block)"
+    },
+    "no_serving_side_change": "The mask is a training device. At serving time the missingness is natural; nothing is masked in production. Adopting this would change a recipe, not an input contract."
+  },
+
+  "design": {
+    "years": [2020, 2021, 2022, 2023, 2024, 2025, 2026],
+    "seeds": [42, 43, 44],
+    "fits": 42,
+    "folds": "the same expanding walk-forward folds 130 used (FOLD_FIRST_VALID_YEAR = 2020)",
+    "recipe": "the shipped production joint member's recipe (125 columns, pl_topk, OOF isotonic over 8 blocks, weight mask 0.5 / seed 20260810, TE on jockey_id+trainer_id smoothing 10), 900 rounds",
+    "evaluation_regimes": {
+      "scarce": "validation rows masked to the target rate. For 2026 this masks NOTHING (already at the rate), so 2026 is the only year measured under REAL scarcity; 2020-2025 are a simulation in the sense of 097's pseudo supply-stoppage, and the estimand is the steady state.",
+      "natural": "validation rows untouched. Real conditions for every year: plentiful for 2020-2025, scarce for 2026."
+    },
+    "primary_regime": "scarce",
+    "why_scarce_is_primary": "Netkeiba does not publish a per-horse first 3F and will not, so every race served from 2026 onward faces the scarce condition permanently while the training set stays mostly pre-cutover. That is the condition the deployed model actually meets, exactly as 091 made the weight-masked serving regime its primary and full information its guard.",
+    "aggregation": "per-race winner-NLL differences (candidate - control), averaged ACROSS SEEDS as losses, never by averaging probabilities",
+    "uncertainty": {"fn": "race_day_cluster_bootstrap_ci_v1", "b": 4000, "seed": 20260907, "alpha": 0.0125}
+  },
+
+  "decision_rule": {
+    "what_is_being_decided": "whether this line becomes a candidate worth its own prospective registration - NOT adoption. Every one of the seven years is development period, so no adoption is possible from this measurement however it comes out.",
+    "continue_requires_all_of": [
+      "primary (scarce, 7-year, seed-averaged) point estimate <= -0.002",
+      "primary 98.75% CI upper bound < 0",
+      "guard: natural-regime 7-year point estimate <= +0.002",
+      "quality guards on the primary: top2 logloss <= +0.0005, top3 logloss <= +0.0005, win ECE <= +0.001",
+      "2026 negative in the primary",
+      "at least 5 of the 7 years negative in the primary"
+    ],
+    "otherwise": "STOP and record. A null closes the axis for this construction; it does not close first-3F as information (097 already measured a replacement column and rejected it separately)."
+  },
+
+  "floor_justification": {
+    "value": -0.002,
+    "why_this_number": "It is 091's delta, and 091 is the same question in the same shape: a column block that is present in training and absent in serving, fixed by masking it during training. Using its bar keeps the two comparable.",
+    "why_not_-0.0004": "That floor was derived for a different decision - 'does a SECOND mixture member buy more than another seed would' - and it prices 21 extra member-years of maintenance. This intervention adds no members and no maintenance: it changes a recipe, and members are refit at coefficient updates anyway. Importing -0.0004 here would be borrowing a number whose reasoning does not apply.",
+    "why_not_higher": "delta = 0.00352 from the v4 multiple-testing budget prices a CONFIRMATORY adoption. This measurement cannot adopt - its window is development period - so it is not spending that budget."
+  },
+
+  "prohibitions": [
+    "No re-choosing the mask rate, the mask unit, or the mask seed.",
+    "No per-year rate tuning.",
+    "No dropping or adding years after seeing numbers; all seven are reported.",
+    "No switching which regime is primary after seeing numbers.",
+    "No selecting a seed by score; all three are reported and averaged as losses.",
+    "No reading a subgroup as the verdict."
+  ],
+
+  "what_is_already_known": {
+    "disclosure": "The 2-year, single-seed breakpoint is already measured and its numbers are known to the author of this file: 2024 (simulated scarcity) -0.002390 with 98.75% CI [-0.006505, +0.001939]; 2026 (real scarcity) -0.006602 with CI [-0.013597, +0.000504]. Both CIs cross zero.",
+    "why_this_file_is_still_a_pre-registration": "No 7-year number and no multi-seed number exists for this question. The floor, the regimes, the guards and the year conditions are fixed here before any of them is computed.",
+    "what_would_have_made_it_illegitimate": "Choosing the floor after seeing the 7-year result. The breakpoint numbers do not identify a floor: -0.002 sits between them, so they do not tell the author which side the extension will land on.",
+    "procedural_note": "The breakpoint itself had NO pre-registered numeric continue/stop rule. That was a gap, recorded in research-c-breakpoint.md, and this file exists so it is not repeated."
+  },
+
+  "limits": [
+    "All seven years are development period (2020-2026-08 was consumed by 129/130/132/134 and the member kill-test). Nothing here can be confirmatory.",
+    "The mask matches the RATE, not the PATTERN: real 2026 missingness concentrates on horses whose racing history is post-cutover, and a pseudo-random draw breaks that correlation.",
+    "Single fold per year-seed. Re-training variance enters only through the three seeds.",
+    "2020-2025 under the scarce regime are simulations; only 2026 is real."
+  ],
+
+  "cost": {"fits": 42, "seconds_per_fit_observed": "797-992", "estimated_cpu_hours": 10.5,
+           "estimated_wall_hours_at_2_workers": 5.3}
+}

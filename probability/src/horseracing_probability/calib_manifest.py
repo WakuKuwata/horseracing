@@ -33,6 +33,13 @@ ELIGIBILITY_POLICY_VERSION = "eligibility-v3.0"
 _V3_VERDICTS = frozenset({"ADOPT", "REJECT", "NO_DECISION"})
 _REQUIRED_V3_STAGES = frozenset({"two_gamma_win", "stage_discount_topk"})
 ARTIFACT_KIND = "oof_calibration"
+#: The generation the FIRST manifests were built for. Feature 136 stopped treating this as the
+#: only permissible generation: it is a historical default, not a contract. A manifest states
+#: which generation it belongs to, and the binding that matters -- "this manifest is for the
+#: model that is about to use it" -- is enforced in ``calib_activation.load_calibration``
+#: against the ACTIVE model version. Keeping the equality here as well meant every manifest
+#: built for any later generation (e.g. the mixture ``mix-129-nj6``) was rejected by its own
+#: verifier, so the manifest path could never be used at all.
 BASE_MODEL_VERSION = "lgbm-063"
 MANIFEST_FILENAME = "manifest.json"
 
@@ -241,6 +248,7 @@ def _validate_activation_fields(manifest: dict[str, Any]) -> None:
 
 def build_manifest(
     *,
+    base_model_version: str,
     attestation_digest: str,
     bundle_digest: str,
     evaluation: dict,
@@ -264,7 +272,7 @@ def build_manifest(
     manifest = {
         "schema_version": SCHEMA_VERSION,
         "artifact_kind": ARTIFACT_KIND,
-        "base_model_version": BASE_MODEL_VERSION,
+        "base_model_version": base_model_version,
         "attestation_digest": attestation_digest,
         "bundle_digest": bundle_digest,
         "evaluation": evaluation_copy,
@@ -289,6 +297,7 @@ def build_manifest(
 
 def build_manifest_v3(
     *,
+    base_model_version: str,
     attestation_digest: str,
     bundle_digest: str,
     evaluation: dict,
@@ -355,7 +364,7 @@ def build_manifest_v3(
     manifest = {
         "schema_version": SCHEMA_VERSION_V3,
         "artifact_kind": ARTIFACT_KIND,
-        "base_model_version": BASE_MODEL_VERSION,
+        "base_model_version": base_model_version,
         "attestation_digest": attestation_digest,
         "bundle_digest": bundle_digest,
         "evaluation": evaluation_copy,
@@ -408,8 +417,15 @@ def _load_manifest(path_or_dict: Path | str | dict) -> dict[str, Any]:
     return loaded
 
 
-def verify_manifest(path_or_dict: Path | str | dict) -> None:
-    """Verify schema, generation, referenced checksums, and the manifest digest."""
+def verify_manifest(path_or_dict: Path | str | dict, *,
+                    expected_base_model_version: str | None = None) -> None:
+    """Verify schema, generation shape, referenced checksums, and the manifest digest.
+
+    ``expected_base_model_version`` pins the generation when the caller knows which one it
+    wants. ``calib_activation.load_calibration`` does its own binding against the ACTIVE model
+    and so does not need it; a caller verifying a manifest in isolation can pass it to get the
+    same strictness.
+    """
     manifest = _load_manifest(path_or_dict)
     _require_fields(manifest, _REQUIRED_FIELDS, scope="top-level")
 
@@ -417,10 +433,13 @@ def verify_manifest(path_or_dict: Path | str | dict) -> None:
         raise ManifestError(f"unknown schema_version: {manifest['schema_version']!r}")
     if manifest["artifact_kind"] != ARTIFACT_KIND:
         raise ManifestError(f"unknown artifact_kind: {manifest['artifact_kind']!r}")
-    if manifest["base_model_version"] != BASE_MODEL_VERSION:
+    base = manifest["base_model_version"]
+    if not isinstance(base, str) or not base.strip():
+        raise ManifestError("base_model_version must be a nonempty string")
+    if expected_base_model_version is not None and base != expected_base_model_version:
         raise ManifestError(
             "generation mismatch: "
-            f"expected {BASE_MODEL_VERSION!r}, got {manifest['base_model_version']!r}"
+            f"expected {expected_base_model_version!r}, got {base!r}"
         )
 
     evaluation = manifest["evaluation"]

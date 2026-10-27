@@ -1,0 +1,89 @@
+{
+  "cancellation": {
+    "fixture": {
+      "original_win": [
+        0.4,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "cancelled_horse_number": 1,
+      "remaining_horse_numbers": [
+        2,
+        3,
+        4
+      ]
+    },
+    "actual_sums": {
+      "win": 0.6,
+      "top2": 1.2841269841269842,
+      "top3": 2.0777777777777775,
+      "market_q": 1.0
+    },
+    "expected_sums_current_three_horse_field": {
+      "win": 1,
+      "top2": 2,
+      "top3": 3
+    },
+    "canonical_consistent": true,
+    "horses": [
+      {
+        "horse_number": 2,
+        "win": 0.3,
+        "top2": 0.6083333333333333,
+        "top3": 0.870238095238095,
+        "market_q": 0.5,
+        "divergence": "similar"
+      },
+      {
+        "horse_number": 3,
+        "win": 0.2,
+        "top2": 0.44126984126984137,
+        "top3": 0.7587301587301588,
+        "market_q": 0.3333333333333333,
+        "divergence": "similar"
+      },
+      {
+        "horse_number": 4,
+        "win": 0.1,
+        "top2": 0.23452380952380955,
+        "top3": 0.4488095238095239,
+        "market_q": 0.16666666666666666,
+        "divergence": "similar"
+      }
+    ],
+    "reproduced": true,
+    "scope": "Real canonical and router logic with mocked database/I/O return values; not a DB integration test"
+  },
+  "required_manifest_missing": {
+    "cases": [
+      {
+        "env": {
+          "PREDICT_CALIB_MODE": "manifest-required"
+        },
+        "argv": []
+      },
+      {
+        "env": {
+          "PREDICT_CALIB_MODE": "manifest-required",
+          "PREDICT_CALIB_MANIFEST": ""
+        },
+        "argv": []
+      },
+      {
+        "env": {
+          "PREDICT_CALIB_MODE": "manifest-required",
+          "PREDICT_CALIB_MANIFEST": "/tmp/required.json"
+        },
+        "argv": [
+          "--calib-manifest",
+          "/tmp/required.json",
+          "--calib-mode",
+          "manifest-required"
+        ]
+      }
+    ],
+    "reproduced": true,
+    "scope": "Exact current _calib_argv AST, no subprocess and no manifest file read"
+  }
+}

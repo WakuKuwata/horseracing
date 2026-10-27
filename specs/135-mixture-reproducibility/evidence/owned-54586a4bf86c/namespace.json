@@ -1,0 +1,17 @@
+{
+  "kind": "135_owned_namespace",
+  "token": "54586a4bf86c",
+  "wrapper": "/Users/kuwatawaku/workspace/horseracing/scripts/run_recent_owned_135_54586a4bf86c.py",
+  "wrapper_sha256": "5baf9a3ddd53bf548a52f84e132f55250ac61218b59286fd8a44d70d054b07fa",
+  "work": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-owned-54586a4bf86c",
+  "evidence": "/Users/kuwatawaku/workspace/horseracing/specs/135-mixture-reproducibility/evidence/owned-54586a4bf86c",
+  "reason": "Unattributed concurrent writes in generic recent output and source; use owned namespace and reviewed source. No unknown raw performance artifact reused. Later parent exposure through shared report is recorded in unexpected-report-exposure.json.",
+  "changes": "Output routing and module filename only; byte-identical previously reviewed core; all fixed statistical choices unchanged",
+  "experiment_sha256": "2a076d6df0cfffafe9a2f3378ae387de1193933b1d3b46546d1f6f5ee0ab2bc1",
+  "cutoff": "2026-09-06",
+  "additional_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "core": "scripts/mixture_recent_owned_135_54586a4bf86c.py",
+  "core_sha256": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec"
+}

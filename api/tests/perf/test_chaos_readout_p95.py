@@ -10,18 +10,13 @@ from __future__ import annotations
 
 import datetime
 import math
-import os
 import statistics
 import time
 import uuid
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from horseracing_db.models import ChaosSnapshot
-from testcontainers.postgres import PostgresContainer
 
 from horseracing_api import chaos
 from tests._synth import seed_model, seed_race
@@ -29,7 +24,6 @@ from tests._synth import seed_model, seed_race
 pytestmark = pytest.mark.integration
 
 _REPO = Path(__file__).resolve().parents[3]
-_DB_DIR = _REPO / "db"
 _DIGEST = "20d1e000de200a2a1ad0687ba9456cf12121f1b575dc5d87a7d482e9f9f83680"
 _ARTIFACT = _REPO / "artifacts" / "chaos_bands" / f"{_DIGEST}.json"
 _MANIFEST = _REPO / "config" / "chaos_bands_approved.json"
@@ -57,32 +51,6 @@ _WARM_SAMPLES = 100
 # take the warm path.
 _COLD_P95_BUDGET_MS = 150.0
 _WARM_P95_BUDGET_MS = 60.0
-
-
-@pytest.fixture(scope="session")
-def _migrated() -> Iterator[str]:
-    """Override the shared fixture so missing PostgreSQL is an explicit skip."""
-
-    container: PostgresContainer | None = None
-    try:
-        container = PostgresContainer("postgres:16", driver="psycopg")
-        container.start()
-    except Exception as exc:
-        pytest.skip(
-            "T086 requires PostgreSQL; testcontainer could not start "
-            f"({type(exc).__name__}: {exc})"
-        )
-
-    assert container is not None
-    try:
-        database_url = container.get_connection_url()
-        os.environ["DATABASE_URL"] = database_url
-        config = Config(str(_DB_DIR / "alembic.ini"))
-        config.set_main_option("script_location", str(_DB_DIR / "migrations"))
-        command.upgrade(config, "head")
-        yield database_url
-    finally:
-        container.stop()
 
 
 def _seed_full_path_race(session) -> None:

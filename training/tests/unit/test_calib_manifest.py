@@ -32,6 +32,7 @@ def _evaluation(*, method: str = "two_gamma") -> dict:
 
 def _manifest(*, evaluation: dict | None = None) -> dict:
     return build_manifest(
+        base_model_version=BASE_MODEL_VERSION,
         attestation_digest=ATTESTATION_DIGEST,
         bundle_digest=BUNDLE_DIGEST,
         evaluation=evaluation or _evaluation(),

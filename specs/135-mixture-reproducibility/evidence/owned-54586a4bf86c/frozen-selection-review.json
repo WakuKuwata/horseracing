@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "checks": {
+    "artifacts/135-mixture-reproducibility/repro/run-freeze.json": "55f932dd95cd97d297d9761ac6f000fda5983bfeeef579d77e163607539b9e27",
+    "artifacts/135-mixture-reproducibility/repro/summary.json": "ab907ade63391296343486ad2ccc3c8b138ced9d960674d5822ff7b5ffd892c9",
+    "specs/135-mixture-reproducibility/experiment.json": "2a076d6df0cfffafe9a2f3378ae387de1193933b1d3b46546d1f6f5ee0ab2bc1",
+    "specs/135-mixture-reproducibility/evidence/recent-lock.json": "e4c5e9ffee2aea66091cfc80658a47e68a9f344ae38a4ec47dd6762741517dc8",
+    "scripts/mixture_reproducibility.py": "f15590f2741835feff870513ce299181a3bfcf06a461fc2504f1216b1e40177f",
+    "scripts/mixture_recent_owned_135_54586a4bf86c.py": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec"
+  },
+  "extra_fits_or_selection_after_recent_report_exposure": 0,
+  "can_adopt": false
+}

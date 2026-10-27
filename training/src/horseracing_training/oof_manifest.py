@@ -49,6 +49,7 @@ def build_oof_manifest(
     attestation_digest = attestation["attestation_digest"]
     bundle_digest = bundle["bundle_digest"]
 
+
     # Provenance binding (codex D7, surfaced by the T015 real run): the manifest may only bind a
     # bundle that was GENERATED from this same recipe attestation. A mismatch means the OOF
     # predictions came from a different code generation — refuse rather than mislabel provenance.
@@ -57,6 +58,16 @@ def build_oof_manifest(
         raise ValueError(
             f"attestation mismatch: bundle was generated from {bundle_att!r} but the supplied "
             f"attestation is {attestation_digest!r} — regenerate the bundle at this generation")
+    # Feature 136: the manifest's generation is READ from the attestation of the recipe that
+    # produced the bundle, not asserted by the caller and not a module constant. Before this,
+    # calib_manifest stamped a fixed "lgbm-063" into every manifest and then demanded it back
+    # when verifying, so a manifest for any later generation was rejected by its own verifier
+    # and the manifest calibration path could not be used by the ACTIVE model at all.
+    base_model_version = attestation.get("base_model_version")
+    if not isinstance(base_model_version, str) or not base_model_version.strip():
+        raise ValueError(
+            "attestation carries no base_model_version; the manifest would have to guess which "
+            "generation it belongs to")
 
     # 1) verdicts from the pre-registered OOF gates (prequential, strictly-later blocks)
     tg_eval = calibrate_oof(session, bundle, gate_config=gate_config or {})
@@ -71,6 +82,7 @@ def build_oof_manifest(
 
     # 3) assemble v3 (eligibility recomputed by the verifier) + publish keyed by manifest_digest
     manifest = build_manifest_v3(
+        base_model_version=base_model_version,
         attestation_digest=attestation_digest,
         bundle_digest=bundle_digest,
         evaluation={"two_gamma_win": tg_eval, "stage_discount_topk": st_eval},

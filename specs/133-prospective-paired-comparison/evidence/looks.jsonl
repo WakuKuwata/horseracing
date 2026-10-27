@@ -1,0 +1,6 @@
+{"at": "2026-09-13T00:39:50.713713+00:00", "mode": "interim", "regime": "preweight", "n_races": 0, "n_days": 0, "status": "INTERIM_STATUS_NOT_A_VERDICT", "verdict": null}
+{"at": "2026-09-13T00:44:46.907812+00:00", "mode": "interim", "regime": "preweight", "n_races": 0, "n_days": 0, "status": "INTERIM_STATUS_NOT_A_VERDICT", "verdict": null}
+{"at": "2026-09-16T00:39:31.494203+00:00", "mode": "interim", "regime": "preweight", "n_races": 23, "n_days": 1, "status": "INTERIM_STATUS_NOT_A_VERDICT", "verdict": null}
+{"at": "2026-09-16T00:40:09.247807+00:00", "mode": "interim", "regime": "serving", "n_races": 23, "n_days": 1, "status": "INTERIM_STATUS_NOT_A_VERDICT", "verdict": null}
+{"at": "2026-09-20T01:02:10.577835+00:00", "mode": "interim", "regime": "preweight", "n_races": 23, "n_days": 1, "status": "INTERIM_STATUS_NOT_A_VERDICT", "verdict": null}
+{"at": "2026-09-20T01:02:27.649436+00:00", "mode": "interim", "regime": "serving", "n_races": 46, "n_days": 2, "status": "INTERIM_STATUS_NOT_A_VERDICT", "verdict": null}

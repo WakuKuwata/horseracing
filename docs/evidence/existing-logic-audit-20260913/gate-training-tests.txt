@@ -1,0 +1,6 @@
+cwd=/Users/kuwatawaku/workspace/horseracing/training
+command=['/Users/kuwatawaku/workspace/horseracing/training/.venv/bin/python', '-m', 'pytest', '-q', 'tests/unit/test_adoption_gate.py', 'tests/unit/test_promotion_gate.py', 'tests/unit/test_promote_preflight.py']
+..................................                                       [100%]
+34 passed in 0.78s
+
+exit_code=0

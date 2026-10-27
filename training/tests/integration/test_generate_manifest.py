@@ -18,7 +18,7 @@ from tests._synth import insert_race
 
 pytestmark = pytest.mark.integration
 
-_ATT = {"attestation_digest": "a" * 64}
+_ATT = {"attestation_digest": "a" * 64, "base_model_version": "lgbm-063"}
 _GATE = {"verdict": {"non_inferior_margin_ece": 0.001, "no_decision_min_days": 10},
          "transfer_check": {"ks_distance_max": 0.10}}
 

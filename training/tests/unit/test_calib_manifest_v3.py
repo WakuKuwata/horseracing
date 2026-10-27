@@ -32,6 +32,7 @@ def _stage(l2=0.82, l3=0.70):
 def _build(*, tg_verdict, tg_params, st_verdict, st_params,
            tg_ft="2024-12-31", st_ft="2024-12-31"):
     return build_manifest_v3(
+        base_model_version="lgbm-063",
         attestation_digest=_DIG, bundle_digest="b" * 64, evaluation=_EVAL,
         code_sha="078", seed=1, num_threads=1,
         two_gamma_verdict=tg_verdict, two_gamma_params=tg_params,

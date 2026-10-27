@@ -28,6 +28,7 @@ _MODEL = "lgbm-063"
 def _manifest(tmp_path, *, fit_through="2007-12-31", scope="production", eligible=True) -> tuple:
     dig = "a" * 64
     m = build_manifest(
+        base_model_version="lgbm-063",
         attestation_digest=dig, bundle_digest="b" * 64,
         evaluation={"evaluation_contract_version": "v2", "base_model_version": _MODEL,
                     "attestation_digest": dig, "bundle_digest": "b" * 64, "verdict": "ADOPT"},

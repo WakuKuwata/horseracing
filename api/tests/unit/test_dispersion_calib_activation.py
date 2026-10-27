@@ -24,6 +24,7 @@ def _manifest(tmp_path: Path, *, fit_through="2024-12-31", scope="production", e
               name="m.json") -> str:
     dig = "a" * 64
     m = build_manifest(
+        base_model_version=_MODEL,
         attestation_digest=dig, bundle_digest="b" * 64,
         evaluation={"evaluation_contract_version": "v2", "base_model_version": _MODEL,
                     "attestation_digest": dig, "bundle_digest": "b" * 64, "verdict": "ADOPT"},

@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "passed": 65,
+  "failed": 0,
+  "elapsed_seconds": 1.56,
+  "command": "training/.venv/bin/python -m pytest scripts/tests/test_accuracy_batch_common.py scripts/tests/test_accuracy_topk_recheck.py scripts/tests/test_accuracy_colsample_recheck.py scripts/tests/test_pace_style_unknown_features.py scripts/tests/test_accuracy_style_recheck.py -q",
+  "test_sha256": {
+    "scripts/tests/test_accuracy_batch_common.py": "bb5623c8890dcfbb6187a5e5eaa2e2beee50ca19e9ffddac247476c770550114",
+    "scripts/tests/test_accuracy_topk_recheck.py": "9bba22f13a0c54cae4a58eb4bc4b7f693fcff13bc34d67fd9c1a8770b51d0234",
+    "scripts/tests/test_accuracy_colsample_recheck.py": "4b1354e3c664159d37f37bd6c849cadfd6ac1dc956f49e220822e6c5d388724f",
+    "scripts/tests/test_pace_style_unknown_features.py": "bf9db14bb1e46fb910fd0ffcda2c6862c7df445ee41d12080f97d36bdcd020cb",
+    "scripts/tests/test_accuracy_style_recheck.py": "7224466f8fc74383c93eee0ca821f47a021d37fa328c5d80afa2a887aeec7f72"
+  },
+  "scope": "Five new modules; cutoff guards use synthetic dates; no actual post-cutoff data read."
+}

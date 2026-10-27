@@ -1,0 +1,6 @@
+cwd=/Users/kuwatawaku/workspace/horseracing
+command=['/Users/kuwatawaku/workspace/horseracing/training/.venv/bin/python', '-m', 'pytest', '-q', 'scripts/tests/test_mixture_reproducibility.py', 'scripts/tests/test_calibration_serving_recheck135.py', 'scripts/tests/test_mixture_recent_check_135.py', 'scripts/tests/test_accuracy_batch_common.py']
+.................................................................        [100%]
+65 passed in 1.01s
+
+exit_code=0

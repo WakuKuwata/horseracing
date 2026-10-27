@@ -6,7 +6,7 @@ import pytest
 from horseracing_eval.stage_discount import StageDiscount
 
 from horseracing_probability.calib_activation import load_calibration
-from horseracing_probability.calib_manifest import build_manifest_v3
+from horseracing_probability.calib_manifest import BASE_MODEL_VERSION, build_manifest_v3
 from horseracing_probability.calib_replay import ReplayParityError, replay_parity_report
 from horseracing_probability.model_calibration import PCalibrator
 
@@ -48,6 +48,7 @@ def test_v3_manifest_activation_replays_cleanly(tmp_path):
     from horseracing_probability.calib_activation import Profile
     dig = "a" * 64
     m = build_manifest_v3(
+        base_model_version=BASE_MODEL_VERSION,
         attestation_digest=dig, bundle_digest="b" * 64,
         evaluation={"two_gamma_win": {}, "stage_discount_topk": {}},
         code_sha="078", seed=1, num_threads=1,

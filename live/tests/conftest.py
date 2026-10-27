@@ -102,6 +102,10 @@ def _truncate_between_tests(request):
     if engine is None:
         return
     with engine.begin() as conn:
+        # Feature 106 makes purchase_records append-only with a table trigger; TRUNCATE fires it
+        # and aborts the whole cleanup block, so every later test inherits the previous test's
+        # rows. Replica role suppresses triggers for this maintenance transaction only.
+        conn.execute(text("SET LOCAL session_replication_role = 'replica'"))
         conn.execute(
             text(
                 """

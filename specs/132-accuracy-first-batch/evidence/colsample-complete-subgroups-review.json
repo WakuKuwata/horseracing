@@ -1,0 +1,304 @@
+{
+  "artifact_kind": "132_colsample_complete_subgroups_independent_review",
+  "status": "PASS",
+  "method": "Independent numpy binary-win loss; started all with known complete result coverage; paired race-day ratio bootstrap.",
+  "bootstrap": {
+    "b": 4000,
+    "seed": 20260907,
+    "alpha": 0.0125
+  },
+  "margin": 0.001,
+  "authorized_data_cutoff": "2026-09-06",
+  "actual_evaluation_end": "2026-08-23",
+  "source_hashes": {
+    "/Users/kuwatawaku/workspace/horseracing/specs/132-accuracy-first-batch/evidence/colsample-complete-subgroups-review.py": "4ebabafd889fdc9b8bafa64e1fd0edea30ef88ea8fb9431719c5d4df04b5e00a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/topk/design.json": "3df334430548ce49da3c9f77d5144c29c7472cc34f56402f72579374ca244ca0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/topk/summary.json": "1f85e49697ef3b5fa1d7ed9a195fb15b3cf1acd5799346493426928b339b5098",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/topk/full-summary.json": "60813f94b70d95f04b8d45b0c5951c05ec0507e8100b324ba6fa59abbefb547e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/topk/full-predictions.pkl": "aa6ae40a6ebe7ee94bdd402da641520771cc6001b33a20437fdadc2bad4263d0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/summary.json": "1a8f3f8e408483deb4a8169e8cc9eb2d060dc0d81ae871d39f91acc9db2706e3",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/run-freeze.json": "733cdc630d46bd17fe30f06a76478830753b2299a916ed1c9f7cb95df02a1f77",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/add_raw_1of7-predictions.pkl": "371df8f579d2efa1a52d43ea3a2b93913749bfcd0bc7905f363e688c3ea88f9c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/add_transferred_1of14-predictions.pkl": "f6325055ef016880dcf4cb69338f15291b069a7fd3142d34f0e353b881d1ae84",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/add_transferred_1of7-predictions.pkl": "1d0c86ec0df051c7b4a5942f976c1ffa87f12daf72faa92f8e12f2cce2eb1f36",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/replace_joint42-predictions.pkl": "c744b64c0077b96fa118ab8a0e664f69ee70c891281bb2143fb419e2f108fc4b"
+  },
+  "source_hashes_start_end_equal": true,
+  "n_input_races": 23030,
+  "n_complete_races": 23029,
+  "n_excluded_races": 1,
+  "n_excluded_horses": 16,
+  "excluded": [
+    {
+      "race_id": "202504040407",
+      "race_date": "2025-10-26",
+      "n_started": 16,
+      "n_result_rows": 15,
+      "n_finished_labels": 15,
+      "n_excluded_canonical": 15,
+      "n_excluded_nk": 1
+    }
+  ],
+  "subgroup_populations": {
+    "canonical": {
+      "legacy_n_horses": 301398,
+      "complete_n_horses": 301383
+    },
+    "nk": {
+      "legacy_n_horses": 15028,
+      "complete_n_horses": 15027
+    }
+  },
+  "arms": {
+    "add_raw_1of7": {
+      "canonical": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -1.814448993131407e-05,
+          "ci_low": -4.7810449289250645e-05,
+          "ci_high": 1.1347619216699939e-05,
+          "n_days": 715,
+          "n_horses": 301398,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -1.8110714100021653e-05,
+          "ci_low": -4.7810449289250645e-05,
+          "ci_high": 1.1418042611553446e-05,
+          "n_days": 715,
+          "n_horses": 301383,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": 3.3775831292416625e-08,
+          "ci_low": 0.0,
+          "ci_high": 7.042339485350697e-08,
+          "n_days": 0,
+          "n_horses": -15
+        },
+        "state_changed": false
+      },
+      "nk": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -8.020974444637419e-05,
+          "ci_low": -0.00021494189632470458,
+          "ci_high": 6.126176956374766e-05,
+          "n_days": 96,
+          "n_horses": 15028,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -8.022723510661971e-05,
+          "ci_low": -0.00021499574266803685,
+          "ci_high": 6.124756347997391e-05,
+          "n_days": 96,
+          "n_horses": 15027,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": -1.7490660245516568e-08,
+          "ci_low": -5.3846343332271005e-08,
+          "ci_high": -1.4206083773747602e-08,
+          "n_days": 0,
+          "n_horses": -1
+        },
+        "state_changed": false
+      }
+    },
+    "add_transferred_1of14": {
+      "canonical": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -2.1179863776077206e-05,
+          "ci_low": -3.41812608621288e-05,
+          "ci_high": -6.723921943351266e-06,
+          "n_days": 715,
+          "n_horses": 301398,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -2.1166677583562057e-05,
+          "ci_low": -3.416871013425017e-05,
+          "ci_high": -6.723834020017154e-06,
+          "n_days": 715,
+          "n_horses": 301383,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": 1.3186192515149376e-08,
+          "ci_low": 1.255072787862408e-08,
+          "ci_high": 8.792333411186063e-11,
+          "n_days": 0,
+          "n_horses": -15
+        },
+        "state_changed": false
+      },
+      "nk": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -2.041935357059734e-05,
+          "ci_low": -7.96755603457528e-05,
+          "ci_high": 3.8238808515927584e-05,
+          "n_days": 96,
+          "n_horses": 15028,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -2.0416213883484175e-05,
+          "ci_low": -7.96755603457528e-05,
+          "ci_high": 3.825276250137459e-05,
+          "n_days": 96,
+          "n_horses": 15027,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": 3.139687113164121e-09,
+          "ci_low": 0.0,
+          "ci_high": 1.3953985447002625e-08,
+          "n_days": 0,
+          "n_horses": -1
+        },
+        "state_changed": false
+      }
+    },
+    "add_transferred_1of7": {
+      "canonical": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -3.522620239297768e-05,
+          "ci_low": -6.112479934753005e-05,
+          "ci_high": -6.3858289884544014e-06,
+          "n_days": 715,
+          "n_horses": 301398,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -3.519953338391525e-05,
+          "ci_low": -6.1099395802375e-05,
+          "ci_high": -6.3613010792727046e-06,
+          "n_days": 715,
+          "n_horses": 301383,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": 2.6669009062432064e-08,
+          "ci_low": 2.540354515505642e-08,
+          "ci_high": 2.4527909181696886e-08,
+          "n_days": 0,
+          "n_horses": -15
+        },
+        "state_changed": false
+      },
+      "nk": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -3.370969940157663e-05,
+          "ci_low": -0.00015176682769552134,
+          "ci_high": 8.354024871930325e-05,
+          "n_days": 96,
+          "n_horses": 15028,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -3.37029459181891e-05,
+          "ci_low": -0.00015176682769552134,
+          "ci_high": 8.356908741097086e-05,
+          "n_days": 96,
+          "n_horses": 15027,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": 6.753483387533256e-09,
+          "ci_low": 0.0,
+          "ci_high": 2.883869166760882e-08,
+          "n_days": 0,
+          "n_horses": -1
+        },
+        "state_changed": false
+      }
+    },
+    "replace_joint42": {
+      "canonical": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -1.2020557703594755e-05,
+          "ci_low": -4.5830632235665907e-05,
+          "ci_high": 2.349476012881772e-05,
+          "n_days": 715,
+          "n_horses": 301398,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -1.2078970940547879e-05,
+          "ci_low": -4.5891267819775016e-05,
+          "ci_high": 2.349476012881772e-05,
+          "n_days": 715,
+          "n_horses": 301383,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": -5.8413236953123285e-08,
+          "ci_low": -6.063558410910908e-08,
+          "ci_high": 0.0,
+          "n_days": 0,
+          "n_horses": -15
+        },
+        "state_changed": false
+      },
+      "nk": {
+        "legacy_reproduced": true,
+        "legacy": {
+          "point": -0.0001169189781030484,
+          "ci_low": -0.00025219062603106467,
+          "ci_high": 1.7611699060125228e-05,
+          "n_days": 96,
+          "n_horses": 15028,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_results": {
+          "point": -0.00011692461563628645,
+          "ci_low": -0.0002522057356602405,
+          "ci_high": 1.761498975104252e-05,
+          "n_days": 96,
+          "n_horses": 15027,
+          "margin": 0.001,
+          "state": "PASS"
+        },
+        "complete_minus_legacy": {
+          "point": -5.6375332380451506e-09,
+          "ci_low": -1.5109629175819646e-08,
+          "ci_high": 3.2906909172938405e-09,
+          "n_days": 0,
+          "n_horses": -1
+        },
+        "state_changed": false
+      }
+    }
+  },
+  "all_complete_guards_pass": true,
+  "prior_results_preserved": true,
+  "new_booster_fits": 0,
+  "new_coefficient_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "limitations": [
+    "Complete result coverage follows the saved n_result_rows >= started_count contract; individual non-finished result identities were not saved.",
+    "Intervals are conditional on saved predictions and previously reused study periods; they omit model fitting and selection uncertainty."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "status": "STOPPED_BEFORE_INPUTS",
+  "phase": "capture",
+  "error_type": "ValueError",
+  "failing_check": "135 saved model source_hash differs from currently installed source",
+  "expected_model_source_hash": "ec9b8810396797a75f9f0a9830c451de1dc0aaee2f053c5a8b042b7fb7442c0b",
+  "observed_current_source_hash": "87fa7ca032cd1bcf482585e536a5fcb06e20fe5b7ac691f69d4baa431b7ee19f",
+  "other_profile_checks": "all9PASS including recipe/runtime/seed/date",
+  "private_core_sha256": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec",
+  "wrapper_sha256": "5baf9a3ddd53bf548a52f84e132f55250ac61218b59286fd8a44d70d054b07fa",
+  "dedicated_work_exists": false,
+  "database_connected": false,
+  "recent_values_read": false,
+  "recent_outcomes_read": false,
+  "additional_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

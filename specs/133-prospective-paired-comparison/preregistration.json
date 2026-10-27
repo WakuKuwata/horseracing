@@ -1,0 +1,119 @@
+{
+  "artifact_kind": "paired_prospective_preregistration",
+  "schema_version": 1,
+  "feature": "133-prospective-paired-comparison",
+  "title": "mix-129-nj6 (new, serving) vs lgbm-094-cap900 (old) — prospective paired comparison",
+  "registered_at": "2026-09-13T00:45:00+00:00",
+  "registered_by": "Claude (session 2026-09-13), reviewed by codex exec (design review, same session)",
+  "registration_state": {
+    "first_window_day": "2026-09-13",
+    "results_in_window_at_registration": "0 result rows for any race on or after 2026-09-13 (the first race of 2026-09-13 starts 00:45 UTC; results are ingested by the evening refresh). Verified by the first interim score run recorded in evidence/looks.jsonl.",
+    "records_existing_at_registration": "24 races of 2026-09-13 captured 00:16-00:17 UTC by the 129 tool (preweight + serving regimes) and 24 production_snapshot records derived from the pre-start production run of 2026-09-12 14:13-14:17 UTC. Their outcomes were unknown when this file was written; they are included.",
+    "supersedes": "specs/129-candidate-mixture-serving confirmation draft window 2026-09-12..2026-12-28 (never reserved; it added a transferred retraining sd to the CI, which this registration does not)."
+  },
+  "comparators": {
+    "new_model_version": "mix-129-nj6",
+    "new_kind": "six-member LightGBM mixture: members joint-42/43/44 (125 columns, 13 relative-ability drops) and anchor-42/43/44 (138 columns), each booster 900 rounds + OOF isotonic (8 blocks) + weight mask 0.5 + TE 10; residual correction with the 2026 coefficients (gap_log, prior_gap_log, female_sin, female_cos, centered_logp for joint members; gap_log for anchor members); WIN = equal-weight mean of the six corrected win vectors",
+    "new_bundle_id": "129-125_new_joint_mixed6_v1",
+    "new_bundle_manifest_sha256": "28f39715a9c1dba13755ee44f3a439099d5aaffd94685ac11e4d23166b388471",
+    "new_train_through": "2026-08-23",
+    "new_coefficient_fit_through": "2025-12-31",
+    "new_coefficient_valid_year": 2026,
+    "old_model_version": "lgbm-094-cap900",
+    "old_kind": "single LightGBM pl_topk booster (arm E: OOF isotonic calibration, 900 rounds, weight mask) on the same 138 features-021 columns; WIN = booster raw score -> isotonic -> clip -> race normalisation",
+    "old_anchor_sha256": "80fd7734f2d77f729bc71350a584c5ac5fb0c171b90940972fe7ad224e6537b3",
+    "old_anchor_path": "artifacts/129-candidate-mixture-serving/anchor/anchor.json",
+    "display_convention": "top2/top3 = assemble_predictions(eps=1e-6): clip -> race-normalise -> Harville with stage discount λ2/λ3 (the production display rule, 049/131). Both models share the frozen λ inside a record; the production λ of the day is stored beside it (display_production_lambda) for correspondence only.",
+    "display_lambda2": 0.8583894860493742,
+    "display_lambda3": 0.7156577981098011,
+    "display_lambda_source": "129 anchor stage discount, fit once with before_date=2026-08-24 (artifact sha256 0983175af3b2b7356d7f0080f57468a9705ad985d13886b673b5c78362543da5)",
+    "research_heads": "the mixture's averaged member top2/top3 are stored as new_research_heads_not_served and are never used in any served-head metric",
+    "input_contract": {
+      "feature_version": "features-021",
+      "feature_hash": "663fe86c756428fca7411f23bb5f0a4eaa91926b067a0e0acc4a11d581da0f7a",
+      "n_columns": 138,
+      "rows": "as-of feature matrix build_feature_matrix(end_date=race_date, target_race_ids) of the started horses; the mixture additionally reads the started history (race_horses started rows strictly before the day) for prior_gap"
+    }
+  },
+  "estimand": "Difference in expected per-race winner NLL between two FIXED artifacts on future JRA races, input condition preweight, new minus old (negative = new better). Both artifacts are frozen files; the uncertainty quantified is sampling over future race days only. Retraining variance is a different question and is reported beside the CI, never inside it.",
+  "primary": {
+    "regime": "preweight",
+    "regime_definition": "the three same-day weight columns (weight, weight_diff, carried_weight_ratio) set to NaN for every started horse of the race, on rows acquired before the start; this is a fixed input condition applied identically to both models",
+    "metric": "race-weighted mean of -log(p_model(winner)); paired per race; one race = one observation",
+    "orientation": "new - old",
+    "probability_clipping": "p clipped to [1e-15, 1] before the log; the served probabilities are already in [1e-6, 1-1e-6] so the clip never binds"
+  },
+  "sources": {
+    "capture": "paired_prospective capture: both models on the same acquired rows, pre-start re-checked through a fresh connection after the last prediction",
+    "shadow_129": "mixture_shadow capture records (same paired acquisition; served top2/top3 re-derived from the recorded win with the frozen λ)",
+    "production_snapshot": "pre-start production run of mix-129-nj6 (computed_at < scheduled_start; run rows are append-only) whose feature_snapshots reproduce the persisted win to 1e-9; the old model is then predicted on those frozen rows later. Weight publication state of these rows is unknown_zero_or_partial unless all weighed.",
+    "precedence": ["capture", "shadow_129", "production_snapshot"],
+    "rule": "exactly one record per race; a rejected higher-precedence record never falls back to a lower one (the race is rejected); production_snapshot is pooled into the primary analysis and also shown separately by source"
+  },
+  "exclusion_protocol_in_order": [
+    {"code": "not_prospective", "rule": "classification != prospective or pre_result != true (rehearsal records are never evidence)"},
+    {"code": "identity_mismatch", "rule": "bundle sha / anchor sha / display λ differ from this registration"},
+    {"code": "regime_not_recorded", "rule": "the scored regime is absent from the record"},
+    {"code": "prediction_missing_for_started_horse", "rule": "either model lacks a prediction for a started horse"},
+    {"code": "results_not_ingested", "rule": "PENDING (not excluded): no result rows yet"},
+    {"code": "field_changed_after_capture", "rule": "result rows exist for a horse not in the captured started set, or a captured horse has no result row and the current started set differs (scratch after capture, late addition, cancellation). The race is excluded: renormalising the captured vectors would evaluate a forecast nobody made."},
+    {"code": "results_incomplete", "rule": "PENDING: captured set == current started set but some result rows are still missing"},
+    {"code": "dead_heat_or_no_unique_winner", "rule": "not exactly one captured horse with finish_order == 1 (first-place dead heat)"},
+    {"code": "unknown_result_status", "rule": "a result_status other than finished/stopped aborts scoring loudly (never silently mapped)"}
+  ],
+  "labels": {
+    "win": "finish_order == 1 and result_status == finished",
+    "top2": "finished and finish_order <= 2 (a dead heat at 2nd gives three in-top2 horses; kept as-is)",
+    "top3": "finished and finish_order <= 3 (same tie rule)",
+    "stopped": "result_status stopped (finish_order NULL) -> 0 for every head; the horse stays in the started population"
+  },
+  "secondary_metrics": [
+    "per-race Brier of the win head (mean over started horses of (p - y)^2), new and old",
+    "per-horse log loss, Brier and equal-mass ECE (10 bins, tie-safe) for win/top2/top3 under the served convention with the frozen λ",
+    "top-1 agreement between models and top-1 hit rate of each (argmax of win, ties -> horse_id order)",
+    "leave-one-day-out shift of the point estimate (influence diagnostic)"
+  ],
+  "bootstrap": {
+    "method": "race_day_cluster_bootstrap_ci_v1 (percentile CI of the mean paired diff; whole race days resampled with replacement; races within a day move together)",
+    "b": 20000,
+    "seed": 20260913,
+    "alpha_primary": 0.05,
+    "alpha_reported_for_112_continuity": 0.0125,
+    "minimum_days_for_a_ci": 2,
+    "winsorisation": "none",
+    "caveat": "approximate coverage: ~24-32 day clusters; weekend days of the same meeting may be dependent; leave-one-day-out shift is reported to show influential days"
+  },
+  "conditions_descriptive_only": {
+    "field_size": ["<=8", "9-13", ">=14"],
+    "distance": ["<=1400", "<=1800", "<=2200", ">2200"],
+    "track_type": ["芝", "ダ", "障"],
+    "race_class": {"maiden": ["新馬", "未勝利"], "conditions": ["１勝", "２勝", "３勝"], "open": ["オープン", "Ｇ３", "Ｇ２", "Ｇ１", "other"]},
+    "weight_publication_state": ["prepublication", "partial", "full", "unknown_zero_or_partial"],
+    "source": ["capture", "shadow_129", "production_snapshot"],
+    "rule": "subgroup results are descriptive; no subgroup can change the verdict"
+  },
+  "window": {
+    "from": "2026-09-13",
+    "to": "2026-12-28",
+    "min_eval_days": 24,
+    "basis": "to = last JRA race day inside the 2026 validity of the new model's residual coefficients (serving tolerates 2027 with coefstale=1 but this comparison does not extend into it). min_eval_days = 24 comes from the 129 power plan (day-cluster SD 0.0123 from 4 rehearsal days; 0.01 effect detectable at 98.75%) and is a completeness requirement for the final readout, NOT a minimum effect: any difference, however small, is reported with its CI.",
+    "completeness": "final readout requires today > to (JST), no recorded race pending results, no scheduled race of the window without results, and n_days >= min_eval_days; race days without any record are disclosed in coverage, they do not block (captures are manual) and the window is never extended"
+  },
+  "decision_rule": "FINAL verdict from the primary 95% CI of the preweight paired winner-NLL difference (new - old): NEW_BETTER if CI high < 0; OLD_BETTER if CI low > 0; otherwise INCONCLUSIVE with the point estimate reported. No minimum effect. The 98.75% CI is reported for continuity with the 112 annual budget but does not decide.",
+  "interim_policy": "interim score runs are allowed at any time, are labelled INTERIM_STATUS_NOT_A_VERDICT, never carry a verdict, and are appended to evidence/looks.jsonl; the window, method and this file do not change in response to interim numbers (amendments require a new registration file and a note in README)",
+  "retraining_variance_note": {
+    "sd_fold_historical": 0.001816,
+    "status": "historical context from 100/129 (single-model refit noise), not a validated uncertainty estimate for re-training this six-member bundle; reported beside the CI, never added to it, never divided by sqrt(6)"
+  },
+  "production_correspondence": {
+    "recorded_per_race": [
+      "db_weight_state_at_capture (0/partial/all started horses weighed in the database at acquisition; 0 can also be ingestion lag)",
+      "serving regime prediction (091 race-level binarisation) and serving_equals_preweight",
+      "production_link: latest pre-start production run (id, logic_version with wregime and rounded λ, computed_at, seconds before start, persisted heads, max |win diff| vs the capture's serving-regime win)",
+      "production_stage_discount_of_day (λ re-fit with the production function and cutoff)"
+    ],
+    "known_drift": "as-of inputs move between the production run (typically the evening before) and a race-morning capture when corner orders or other late fields of earlier races are ingested; observed 2026-09-13: 5 of 24 races with |Δwin| 0.0015-0.0098. Each record keeps its own typed inputs, so the pair inside a record is always simultaneous."
+  },
+  "out_of_scope": ["production switch or rollback", "retraining", "112 confirmation ledger reservation (requires an independent review the operator must obtain; this readout is a post-hoc confirmation of the 2026-09-09 override)"],
+  "can_adopt": false
+}

@@ -1,0 +1,31 @@
+{
+  "scope": "Synthetic fixtures, real unchanged preregistration; no DB or fits",
+  "preregistration_sha256": "b7352356d031582239a2596039fb48a77514fa7315832a940356bd1bb537b11b",
+  "source_sha256": "d68b3468729c379c55157e2439a3c343218da2009c78595c57a06bd86f01b6c6",
+  "registered_primary": "preweight",
+  "registered_min_days": 24,
+  "outside_window_case": {
+    "selected": 23,
+    "rejected": 1,
+    "outside_window_selected": [],
+    "readouts": {
+      "preweight": {
+        "status": "NO_DECISION",
+        "verdict": null,
+        "n_days": 23
+      }
+    }
+  },
+  "secondary_verdict_case": {
+    "selected": 24,
+    "rejected": 0,
+    "outside_window_selected": [],
+    "readouts": {
+      "serving": {
+        "status": "SECONDARY_SUMMARY_NOT_A_VERDICT",
+        "verdict": null,
+        "n_days": 24
+      }
+    }
+  }
+}

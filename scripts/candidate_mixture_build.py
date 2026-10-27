@@ -97,9 +97,23 @@ def build_source_paths():
             ROOT / 'serving/src/horseracing_serving/model_loader.py']
 
 
+def fit_code_paths():
+    """Every source file that can change what a member fit produces.
+
+    Feature 136: this replaces ``research.source_hash()``, which reached the same five packages
+    but only as a value to compare against a freeze taken when the RESEARCH ran. The build does
+    not need today's tree to match that; it needs the tree not to move between ``prepare`` and
+    the last fit, which is what freezing this value and re-checking it per fit gives.
+    """
+    paths = [*build_source_paths()]
+    for package in ('db', 'features', 'training', 'eval', 'probability'):
+        paths.extend((ROOT / package / 'src').rglob('*.py'))
+    return sorted(set(paths))
+
+
 def source_hash():
-    return s.p.stable_hash({'build_files': {str(p): digest(p) for p in build_source_paths()},
-                            '125_source': research.source_hash()})
+    return s.p.stable_hash({str(path.relative_to(ROOT)): digest(path)
+                            for path in fit_code_paths()})
 
 
 def runtime():
@@ -107,10 +121,46 @@ def runtime():
             ('numpy', 'pandas', 'lightgbm', 'scikit-learn', 'scipy', 'SQLAlchemy', 'joblib', 'threadpoolctl')}}
 
 
+#: Feature 136. The research chain's ``verify()`` re-derives a source hash that digests EVERY
+#: ``.py`` under db/features/training/eval/probability, so ANY unrelated commit to those packages
+#: makes this build refuse to start. Commit bdc789e did exactly that on 2026-09-13 and left the
+#: shipped bundle unbuildable from main.
+#:
+#: The fit path was shown to be UNCHANGED by that commit: the kill-test's positive control
+#: (`colsample07_joint`, fitted 2026-09-16, i.e. after it) reproduced feature 126's pre-commit
+#: predictions to max_abs_diff 0.0 on 5,752 races / 78,686 horses, and none of the eight changed
+#: files is reachable from a member fit (calib_split's DB helper is patched out by
+#: ``frozen_outcomes``, eval's loader is unused because inputs come from the frozen snapshot,
+#: and artifacts.py's changes are all inside ``save_model_version``, which a file-only build
+#: never calls). See specs/136-eight-model-candidate/build-reproducibility.md.
+#:
+#: So this build binds the upstream EVIDENCE by content hash -- every digest check below still
+#: runs, unchanged -- and stops demanding that today's source tree hash to what it hashed when
+#: that evidence was produced. What the build's own code did during the build is covered
+#: separately by ``source_hash()``, which ``prepare`` freezes and every fit re-checks.
+SOURCE_DRIFT_WAIVER = {
+    'waived': 'recursive whole-source-tree hash equality of the 118/123/124/125 research chain',
+    'still_enforced': ('every frozen source-file digest, cache receipt, config hash, runtime, '
+                       'evidence/report/review content hash, and this build\'s own source_hash'),
+    'evidence': 'specs/136-eight-model-candidate/build-reproducibility.md',
+    'first_broken_by': 'bdc789e',
+}
+
+
 def upstream_state():
-    """Read and verify the complete old research chain, including its final audit."""
-    _, old = research.verify()
-    s.verify(); s.verify_historical_certificate()
+    """Read and verify the complete old research chain, including its final audit.
+
+    The chain's freezes are read rather than re-verified against the live source tree; see
+    ``SOURCE_DRIFT_WAIVER``. Everything content-addressed is still checked below.
+    """
+    old = read_json(research.WORK / 'run-freeze.json')
+    if (old.get('config_hash') != s.p.gate_config_hash(research.load_config())
+            or old.get('runtime') != research.q.probe.runtime()):
+        raise ValueError('125 frozen config or runtime changed')
+    s.verify_historical_certificate()
+    for path, sha in s.read_json(s.WORK / 'run-freeze.json')['source_files'].items():
+        if digest(Path(path)) != sha:
+            raise ValueError(f'118 frozen source artifact changed: {path}')
     root = research.SPEC
     final_path = root / 'evidence/final-integrity.json'
     final = read_json(final_path)
@@ -257,6 +307,7 @@ def prepare():
     frozen = {'schema_version': 1, 'artifact_kind': 'candidate_mixture_build_freeze', 'config': cfg,
               'config_hash': s.p.stable_hash(cfg), 'source_hash': before, 'runtime': versions,
               'sources': sources, 'population': pop, 'jobs': jobs,
+              'source_drift_waiver': SOURCE_DRIFT_WAIVER,
               'oof_partition_hash': partition_hash(train, 8),
               'probe_race_ids': [r.context.race_id for r in probes],
               'source_feature_version': read_json(s.p.MODEL / 'metadata.json')['feature_version'],

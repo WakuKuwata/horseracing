@@ -20,7 +20,7 @@ from tests._synth import seed_model, seed_race
 pytestmark = pytest.mark.integration
 
 _RACE = "202506010101"
-_MODEL = "lgbm-063"  # manifest base is hardcoded to lgbm-063 (074)
+_MODEL = "lgbm-063"  # manifest is bound to the selected run's model generation
 _AFTER = datetime.date(2025, 6, 1)  # after the manifest fit_through
 _HORSES = {
     1: {"win": 0.45, "odds": 2.0}, 2: {"win": 0.25, "odds": 3.5},
@@ -31,6 +31,7 @@ _HORSES = {
 def _manifest(tmp_path: Path) -> str:
     dig = "a" * 64
     m = build_manifest(
+        base_model_version=_MODEL,
         attestation_digest=dig, bundle_digest="b" * 64,
         evaluation={"evaluation_contract_version": "v2", "base_model_version": _MODEL,
                     "attestation_digest": dig, "bundle_digest": "b" * 64, "verdict": "ADOPT"},

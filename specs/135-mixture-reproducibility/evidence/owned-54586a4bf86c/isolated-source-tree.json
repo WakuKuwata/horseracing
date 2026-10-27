@@ -1,0 +1,1359 @@
+{
+  "environment": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/execution-environment-54586a4bf86c",
+  "method": "Physical immutable source copies. Historical packages from saved source; current scripts with historical3 overridden. Data/config only via symlinks. No current source modification. Expected training source hash must naturally match before data access.",
+  "files": {
+    "scripts/screen_data_scaling.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_data_scaling.py",
+      "sha256": "9261864a205853e019e0006e0fe4cb46e3dda7f40c1946d42abd6a1241408b31"
+    },
+    "scripts/killtest_running_style.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/killtest_running_style.py",
+      "sha256": "28ecd4b7e3ae3802ff0c8be4ebc2bb1fcdfc7626178442466ed19561f9b3ffd2"
+    },
+    "scripts/jockey_cat_spike.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/jockey_cat_spike.py",
+      "sha256": "06453829d31dfaa5294aac778d17fb9d5f3a38d08df81280c69324a1c34b9140"
+    },
+    "scripts/dump_arme_oof.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/dump_arme_oof.py",
+      "sha256": "3c84da689e01bf5feb6af184809105480775e0d835bfc0d524a0015bd2acaeac"
+    },
+    "scripts/recency_category_ess.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/recency_category_ess.py",
+      "sha256": "bf57ac0f74d0b6b3ba52e5454389960819672fd4372d9abf514498c2b1922e86"
+    },
+    "scripts/jockey_timevarying_spike.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/jockey_timevarying_spike.py",
+      "sha256": "2e1fcd638681602cd0f5155c45ba284dbec0b036dfefaebed831a4d94eaa0c70"
+    },
+    "scripts/anchor_gap_summary.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/anchor_gap_summary.py",
+      "sha256": "68150b65900f6752ffa8226b60ce21b28260b2043ed1641b379a1772c2fb98d1"
+    },
+    "scripts/killtest_class_support.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/killtest_class_support.py",
+      "sha256": "523d937e814063e38845a99cff523a2edb98b6afe8cdc6b0acb29b2f0e4ad907"
+    },
+    "scripts/parity_098.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/parity_098.py",
+      "sha256": "dd7090435d64371a57ed1387fd256cfcd614eadaae66d054ff10382050b76573"
+    },
+    "scripts/backfill_grade_class.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/backfill_grade_class.py",
+      "sha256": "4d2a83b7c7dfddcfd60a73c7900ea5d59ba41ac620c6f334a9dbeaf6ee8e9589"
+    },
+    "scripts/mixture_preweight_walkforward.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/mixture_preweight_walkforward.py",
+      "sha256": "6c1924da999fa66ffab0af549443995a82245b132705e03701ebf434a5eb91ec"
+    },
+    "scripts/mixture_recent_check_135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/scripts/mixture_recent_check_135.py",
+      "sha256": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec"
+    },
+    "scripts/margin_teacher_spike.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/margin_teacher_spike.py",
+      "sha256": "d4be2e758f198a211fe58800b1a889b245d79c4dbb904ee39a30764ee16c8491"
+    },
+    "scripts/gate_power_heterogeneity.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/gate_power_heterogeneity.py",
+      "sha256": "f5350c5b7c6c4ab03de5dc3992f548d4df30c552dc53593efb2fc322f3c35d43"
+    },
+    "scripts/mixture_reproducibility.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/scripts/mixture_reproducibility.py",
+      "sha256": "f15590f2741835feff870513ce299181a3bfcf06a461fc2504f1216b1e40177f"
+    },
+    "scripts/finish_decomp_coverage.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/finish_decomp_coverage.py",
+      "sha256": "861094243141e8c2aaecd9ed1c999d58cd853ffaad34fc660136fed84b69c7e9"
+    },
+    "scripts/jockey_pooling_spike.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/jockey_pooling_spike.py",
+      "sha256": "10fd396b667301fc886c3c2cbe9a3f99bb747ea5e76eae02941a6f21c7c0fa8e"
+    },
+    "scripts/killtest_first3f.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/killtest_first3f.py",
+      "sha256": "f4be47352949d37813a08e824a25bfc9e5cde53568aaf9fe6d80ccaeeddb3cd0"
+    },
+    "scripts/run_recent_owned_135_54586a4bf86c.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/run_recent_owned_135_54586a4bf86c.py",
+      "sha256": "5baf9a3ddd53bf548a52f84e132f55250ac61218b59286fd8a44d70d054b07fa"
+    },
+    "scripts/parity_088.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/parity_088.py",
+      "sha256": "2eb4019da40fcbaf160facfc0020f10a48e8f9ed2df4f60a6576c626ae3f46d3"
+    },
+    "scripts/gap_seed_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/gap_seed_recheck.py",
+      "sha256": "011203346f120e8a6e3677573f8a136ac169dc75813b14d16366fc05021996ae"
+    },
+    "scripts/calibration_serving_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/calibration_serving_recheck.py",
+      "sha256": "1080f5755f7946e5ea6430d03359463e35237561156106f42f05e0b58bb0f095"
+    },
+    "scripts/ability_observation_repair_import.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_repair_import.py",
+      "sha256": "d41f8f75faed571bdf1b72fc338c2d838db44e0761722b68fd070f4520d9ab9d"
+    },
+    "scripts/ingest_gap_audit.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ingest_gap_audit.py",
+      "sha256": "896e0b9ae7704aaebf0121e313a8552c7786b4cd254f9f958f1d937cc7bb822d"
+    },
+    "scripts/build_opportunity_mask.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/build_opportunity_mask.py",
+      "sha256": "bf15e4cc9753427254b280dc9b74fcd3f610efcf6114c3691e354a8d7ea94572"
+    },
+    "scripts/screen_track_bias.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_track_bias.py",
+      "sha256": "31be3f0d98bfb2145ce11820398b2c830cc9289c29a66dbd098c107bcb1cd862"
+    },
+    "scripts/remeasure_production.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/remeasure_production.py",
+      "sha256": "7a2ce80b739cc9f8acc7e047660ca5ee5e3f9fbbfa697e541e60d66578218425"
+    },
+    "scripts/cv_rho_probe.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/cv_rho_probe.py",
+      "sha256": "edf48f6a1d22c5093e34abe49b99ac5daa3e006c6d23bb2d3869cf35c04572e4"
+    },
+    "scripts/ensemble_spike.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ensemble_spike.py",
+      "sha256": "5681fe9d47cf1c9eb6ff34479d2d51fd6e0218e756c5b9b72d4247a247a61289"
+    },
+    "scripts/screen_jockey_context.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_jockey_context.py",
+      "sha256": "5dee423a995ea80314771f98200d962ce5fb6a60aea3321869edd2da817ad21b"
+    },
+    "scripts/pace_style_unknown_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/pace_style_unknown_features.py",
+      "sha256": "fa6c8a5cd829bb32dd8a4af4adafdb57898e91654417b61e71e41c40b1d90a74"
+    },
+    "scripts/screen_axes.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_axes.py",
+      "sha256": "8c76cc94fabc859d780fb00417cb45903a0aee39d45bd9fcf36d0995941bf436"
+    },
+    "scripts/coverage_097.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/coverage_097.py",
+      "sha256": "1aa2a8b3dbd303ffe669c047052d238361a90ebdc946f7005c28b8fdd0d4a8f1"
+    },
+    "scripts/feature_decay_audit.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/feature_decay_audit.py",
+      "sha256": "5f3efd827bed6a75d62462c689de82cfc42ade996cc39582b71fe30ba37ee722"
+    },
+    "scripts/mixture_recent_owned_135_54586a4bf86c.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/mixture_recent_owned_135_54586a4bf86c.py",
+      "sha256": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec"
+    },
+    "scripts/screen_regime.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_regime.py",
+      "sha256": "bcc18b71ebe2103bf0d7ec6a83ca555e32b5c5d2f539320b9decea357e79b667"
+    },
+    "scripts/ability_observation_prefill.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_prefill.py",
+      "sha256": "2f9eb304dcb067ed586416b5050f12477d4ac9df9e527833632cd37b37a83a6b"
+    },
+    "scripts/recency_halflife.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/recency_halflife.py",
+      "sha256": "fe71d6e86d1dc7f6b457ab49a66cd2ffe2856050bf399d7ad968df7d67f9bd6b"
+    },
+    "scripts/segment_edge_from_bundle.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/segment_edge_from_bundle.py",
+      "sha256": "0763e739ae7829d3a06fbfc3ca60573509afc16731c83c0f5348c8c99c2fb576"
+    },
+    "scripts/extra_residual_probes.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/extra_residual_probes.py",
+      "sha256": "62ad914fd06256de2b4dc660c5e3bb98c5a6e612b1113ed076a105ba329d47f4"
+    },
+    "scripts/calibration_serving_recheck135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/calibration_serving_recheck135.py",
+      "sha256": "ba6d6dcab19c2b9e6d7592bf06d8297989d6d367fbe7269163e5ad1c2b674a63"
+    },
+    "scripts/small_gain_budget.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/small_gain_budget.py",
+      "sha256": "01f0fac90d6fce56343c4ae45915d359653f633aab4ac26b0bbffb79f459e1e1"
+    },
+    "scripts/gap_season_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/gap_season_recheck.py",
+      "sha256": "11589c7d98bd760e986a3f2092698c5298840fbcabb9474f874c4c126ac8d73e"
+    },
+    "scripts/extra_feature_screen.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/extra_feature_screen.py",
+      "sha256": "cafa030424ddf0e31b6a1cd4a112028a03a7f668d601b9a714e430a44e1c948a"
+    },
+    "scripts/confirm_pool_arm.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/confirm_pool_arm.py",
+      "sha256": "9f32b80859378b597247336e00230a4b09dbabb005a6ccfb7ec241f20c1b3e3b"
+    },
+    "scripts/capacity_confirm.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/capacity_confirm.py",
+      "sha256": "f16a947093011c5b9328e3716693b30768be3ed83ec433475ee72335589155e9"
+    },
+    "scripts/screen_era_transport.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_era_transport.py",
+      "sha256": "810f39629709f4db364c21d5ef402bc805a051d63b071b51e2e1941099ac27ed"
+    },
+    "scripts/market_feature_screen.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/market_feature_screen.py",
+      "sha256": "5fbf0bd40b55c64f3d99303ea725baa08558748b715f38241c58d7e8d80661e4"
+    },
+    "scripts/accuracy_style_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/accuracy_style_recheck.py",
+      "sha256": "8632c25e96713858c56e266fd78a23700ed77de2bd2f21fe069c95512b5ce340"
+    },
+    "scripts/market_feature_full_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/market_feature_full_quality.py",
+      "sha256": "e5a9d0a99145191e00a85c161fc1eab53120f521ea9a57ab2d13d5e39a1fb02a"
+    },
+    "scripts/killtest_grade.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/killtest_grade.py",
+      "sha256": "d4ddbc75c5c127bfd89e3a466be114a2f65f46afb6065779153e875070c54bca"
+    },
+    "scripts/candidate_mixture_build.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/candidate_mixture_build.py",
+      "sha256": "f0efeb6bbac46c3080f1210146105b0119f5370da77d9e57a1775c255989187b"
+    },
+    "scripts/confirm_params.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/confirm_params.py",
+      "sha256": "6de7781ed6f819364c31fa7138a0a7cbb42b7ef6fd2a82d88ad388bd0d2acae9"
+    },
+    "scripts/anchor_gap_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/anchor_gap_recheck.py",
+      "sha256": "e43e9f801b9585d927a775b11bc206ead8f36eeeebc0238470563b0149a827b3"
+    },
+    "scripts/audit_mixture_recent_135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/audit_mixture_recent_135.py",
+      "sha256": "1080ec31a6c1412158cb07deeff7bc341587c35bcc8fa500e71c9946437add65"
+    },
+    "scripts/small_gain_policy.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/small_gain_policy.py",
+      "sha256": "364f17ab16dd955fa482bd7294808e7e25a6f95b4c52ac5ffa91ecef72835963"
+    },
+    "scripts/screen_divergence.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_divergence.py",
+      "sha256": "04fee9ef7f2dfb80291a68a910b66254179cf304c3ff25a9b369ca10cd7c3f5c"
+    },
+    "scripts/backfill_prize.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/backfill_prize.py",
+      "sha256": "0784a9fea4dc897615af164818febdbca2be3a3f0f521513b9930344dabc3330"
+    },
+    "scripts/derive_delta.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/derive_delta.py",
+      "sha256": "611a6c6c30738981e5e8850b9aee7e7d163323208a007d00289dea6dc6a3976a"
+    },
+    "scripts/audit_mixture_recent_inputs_135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/audit_mixture_recent_inputs_135.py",
+      "sha256": "f1fa1b9e8bbdb02f0e0685b8d4d5048a88876a0238b0eb6a14922a83e62200e5"
+    },
+    "scripts/feature_pruning_parallel_parity.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/feature_pruning_parallel_parity.py",
+      "sha256": "1dc84b45271b51ba3ab46365b3b9f74727d150a56d41930a8425b28f8105bee2"
+    },
+    "scripts/ability_observation_source_parity.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_source_parity.py",
+      "sha256": "3b7fe3770a4b63b9f9072938e7c8c55fd060b78abb323314a1dc3075b25ca2d6"
+    },
+    "scripts/register_mixture_model_version.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/register_mixture_model_version.py",
+      "sha256": "0e27f24cc9f46117399d02d30967fcb0ada25ee6ed64e04a8585bc937ee052a3"
+    },
+    "scripts/policy_gate_pl_topk.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/policy_gate_pl_topk.py",
+      "sha256": "6ed67d3642eb7567b366e440aa964bcef00e7183b6edc1f80d5c03b1efdbac85"
+    },
+    "scripts/gap_seed_summary.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/gap_seed_summary.py",
+      "sha256": "575eff8cbf608076724bf1c171c8d1e677c427f182856acaf73de730a88eb3e1"
+    },
+    "scripts/parity_097.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/parity_097.py",
+      "sha256": "c17ddd078952f6dc744c9fa9bc2672858055459ed303ff2a2c94c53c452c2184"
+    },
+    "scripts/accuracy_topk_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/accuracy_topk_recheck.py",
+      "sha256": "fdf16c9371a7a8ff33901bb3f9c08332cf47c21fa027927bbaaf4829a89f7154"
+    },
+    "scripts/ability_observation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation.py",
+      "sha256": "f696601e1a1298390b0c4735e8da84f458b3923015b663f02a4542645258e5da"
+    },
+    "scripts/extra_feature_full_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/extra_feature_full_quality.py",
+      "sha256": "5cb4e3d1959ae265bf0849d88fa28ea3f6fc8b0470196b164d30ff7ce0231f98"
+    },
+    "scripts/candidate_mixture_validate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/candidate_mixture_validate.py",
+      "sha256": "00005ca496a8c96f71289e3747f400fdc5895bee7d2abd5f90c8c6be3c18ef72"
+    },
+    "scripts/ability_observation_reuse.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_reuse.py",
+      "sha256": "e14c8210bab3c50a639db53021a26fca8070f7b9fdf322d400f356beb3e7c5f1"
+    },
+    "scripts/confirm_pool_verdict.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/confirm_pool_verdict.py",
+      "sha256": "ed18c172d811a1f18eab462344477927fe58eff73fe144f055fc04ac6b39bad5"
+    },
+    "scripts/backfill_first3f_1200m.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/backfill_first3f_1200m.py",
+      "sha256": "8459cd821b3e4df212adbe727d06419da1d0d90c52a22845ed16885120da2d16"
+    },
+    "scripts/killtest_class_spelling.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/killtest_class_spelling.py",
+      "sha256": "61f71674f927856258335b4de49ffd2c7528e65a3f17613ad4f4421bfe1f4dc3"
+    },
+    "scripts/joint_residual_stack.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/joint_residual_stack.py",
+      "sha256": "9f285f71b55059fd827e5f6a592f1f931db1855d03ef8ebc9c76f7b4381f0653"
+    },
+    "scripts/season_mixture_stack.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/season_mixture_stack.py",
+      "sha256": "71383ef679d19e75a93a53449c2277477fda4c66e1841b97252d5f5b0a0d0943"
+    },
+    "scripts/mixture_confirmation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/mixture_confirmation.py",
+      "sha256": "19a2b240b620ffc5e42f7d716730a9d10b2d55183c04acbb7cb7ddb23d75887c"
+    },
+    "scripts/screen_architecture.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_architecture.py",
+      "sha256": "28f5ec89fc4c9bae9a3be123c7bd2ed3145fb3888b735ba67a5934a7945712e4"
+    },
+    "scripts/win5_crawl.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/win5_crawl.py",
+      "sha256": "37d59ae09d56a9d7597a7d35d873c1bc092b412ddfbea5b045f0c7d811d4906a"
+    },
+    "scripts/feature_pruning.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/feature_pruning.py",
+      "sha256": "fed36823f9829a0c05e575e9e7e7303d548f7059cb63ddebc441c9e628c6931b"
+    },
+    "scripts/candidate_mixture_bundle.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/candidate_mixture_bundle.py",
+      "sha256": "bd13a180c31d7a90f5580bd2a9101de7c90d32834ceaba990e165d2ea43cf800"
+    },
+    "scripts/097_simulated_supply_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/097_simulated_supply_gate.py",
+      "sha256": "46623c6f31576df80c7a108d63dfdbd145e9af7a51dda048eb4c95cf3ec6d9e0"
+    },
+    "scripts/feature_candidate_readiness.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/feature_candidate_readiness.py",
+      "sha256": "6e1c8358e580d7585d0e436fd73070e27302fd78221b9f1a9928b08c0c966b4a"
+    },
+    "scripts/mixture_next_gains.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/mixture_next_gains.py",
+      "sha256": "1923118a8cdf3d35b2fdbf63adbb651ce0d156268fed1d4150857030e6271e8e"
+    },
+    "scripts/season_gap_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/season_gap_recheck.py",
+      "sha256": "e9f5a029b8c40d369d89119cdb2ed50fb339111e1009f5a1a9724f72b5443e2e"
+    },
+    "scripts/small_gain_research.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/small_gain_research.py",
+      "sha256": "d6f3f95d2bd2933844e2de4fc800f28bd2334ca5efec77621c9f1715401adcf2"
+    },
+    "scripts/audit_mixture_reproducibility_135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/audit_mixture_reproducibility_135.py",
+      "sha256": "b4a5bedfbfba6b149620a0ff5d99074577713f24446b50947e8940330a84cd94"
+    },
+    "scripts/extra_residual_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/extra_residual_quality.py",
+      "sha256": "e3cadc46099b04168fe45caaec6800e7babce17990b05e70018f2b5acf705971"
+    },
+    "scripts/accuracy_batch_common.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/scripts/accuracy_batch_common.py",
+      "sha256": "6533ba7d65248b0b716ca4a697550832ab45bfe7276d13cfc24cf59fcd33c3f2"
+    },
+    "scripts/backfill_bloodline_lines.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/backfill_bloodline_lines.py",
+      "sha256": "8c8c0a5500056c6a6fd10fa2b515ccc9f0d0c4af80a177ab706b457c49003dca"
+    },
+    "scripts/feature_pruning_prefill.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/feature_pruning_prefill.py",
+      "sha256": "d1f336227bd1220a2edc54e9dc0fb516e71cb416cab1c16f9e86c819127a74a8"
+    },
+    "scripts/gap_log_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/gap_log_quality.py",
+      "sha256": "0f19a2e1155ecf389d89b619d1887bcddd486b9ce5b04556f729e6c3611483ba"
+    },
+    "scripts/killtest_owner_breeder.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/killtest_owner_breeder.py",
+      "sha256": "e49e66c3acea1d5b8660e8d16ab8d78418305969bc69456d0e7dbfe2b587be95"
+    },
+    "scripts/probability_mixture_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/probability_mixture_recheck.py",
+      "sha256": "38e0b7c0d1b3c2eedc4f4759f0b6be5b7edcc59f765d738423cd9cc4272547b8"
+    },
+    "scripts/098_spelling_split_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/098_spelling_split_gate.py",
+      "sha256": "65b912494748d8f9715eb3012110079dc5b52646dfcd89eceb524fb183a1cd68"
+    },
+    "scripts/seed_variance_probe.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/seed_variance_probe.py",
+      "sha256": "ae47ac4697356093d103c12883ecfdd53b3544287bb4432c9e6af5c90625e9db"
+    },
+    "scripts/recency_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/recency_gate.py",
+      "sha256": "e4af9b2966bc31ddfd34c84b6d689c95fdb19af8b22e389ee6e19512166d03da"
+    },
+    "scripts/screen_exotic_preprice.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_exotic_preprice.py",
+      "sha256": "04d656f8c92dff923f19c54940bd22c63925eb9d08db02d105bed3397eb4098c"
+    },
+    "scripts/buy_pattern_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/buy_pattern_gate.py",
+      "sha256": "898c221ef34d95eb99191a4b3a8da44bea22b8b9afd44c21c8d64f475ec696a9"
+    },
+    "scripts/jockey_tv_confirmatory.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/jockey_tv_confirmatory.py",
+      "sha256": "eff5a0214e5107261b0be9dd91c4e7238ecf30e5218a4a3ce8c1033cf6153ccc"
+    },
+    "scripts/canary_ingest_2002_2006.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/canary_ingest_2002_2006.py",
+      "sha256": "a346ebf134b791b9a18a264574bc5011e872e8e478baf800d80d6b9ccd13e947"
+    },
+    "scripts/accuracy_colsample_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/accuracy_colsample_recheck.py",
+      "sha256": "a1b9159c7fa2001460f1685f07b63e7d64db4bd125143a9257ba74cfdcabbc3c"
+    },
+    "scripts/capacity_screen.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/capacity_screen.py",
+      "sha256": "16a7aeb123379a85ec40521c24bccf4d6bef1ddda8b50be937dad54ffdcca3e1"
+    },
+    "scripts/past_market_source_audit.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/past_market_source_audit.py",
+      "sha256": "b5056dcaefdaca9c799e3a11f829c57199a90c79a3f7c1b966cf94a248430fa3"
+    },
+    "scripts/verdict_ledger.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/verdict_ledger.py",
+      "sha256": "8f7260b230b31ecbb8f9d19d8cca9935c862c0079cc76ddb2a3a835cd96e056e"
+    },
+    "scripts/ability_observation_import_review.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_import_review.py",
+      "sha256": "7deb81a57cc1f359b5f44c211c497905e8eafd87fbfe925bf9d3b9d4057f3fb7"
+    },
+    "scripts/pruning_2026_diagnostic.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/pruning_2026_diagnostic.py",
+      "sha256": "22b405fbbe49baf597c36813f8c02bea7d24ecfa49c4a9a385e30c1e08489fbc"
+    },
+    "scripts/ability_observation_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/ability_observation_features.py",
+      "sha256": "6fb64d9eabf969b3fc01ba7337feda0750edfb7b1ce99c631addbfdb2d755fc4"
+    },
+    "scripts/arm_e_calibration_domain.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/arm_e_calibration_domain.py",
+      "sha256": "a37fef34a2e6905d3466e40528effbaa9994d0ce86fd90753e91e334872cd026"
+    },
+    "scripts/win5_accounting.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/win5_accounting.py",
+      "sha256": "e5f05e65ccfb6c24edd082fc4794474f4eb5585d1ee80e1b8e1b3a1d0016e1a0"
+    },
+    "scripts/_spike_runner.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/_spike_runner.py",
+      "sha256": "e36a5732d3a73700b72ce7a6ba23ee2126f553d011f081d71bb20ce7bb69d8aa"
+    },
+    "scripts/screen_power_probe.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/screen_power_probe.py",
+      "sha256": "1ed3a826e3d2da7fbc47da3f089ccc1b81b4088271b46a5e1396ffbfeb961d4f"
+    },
+    "scripts/season_gap_summary.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/season_gap_summary.py",
+      "sha256": "0ad4e2bbb5a3289262bff83f9c91d8bd66172f18e1669ff9e08dd2699a5de62d"
+    },
+    "scripts/small_gain_stack.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/small_gain_stack.py",
+      "sha256": "3d4cd6efc1eddb94dfb003c4a3ab1ebadeb1c8e84049a6fc8e444a002ae12f02"
+    },
+    "scripts/tests/test_extra_residual_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_extra_residual_quality.py",
+      "sha256": "a39f6edaa688acf6739e418ee4461944bca4da219bfc6168611aab827f530b28"
+    },
+    "scripts/tests/test_small_gain_stack_integration.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_small_gain_stack_integration.py",
+      "sha256": "6c827084e47e6075237c3a42e6ec4d2106ce2a47ada2691be2c1d332428785d1"
+    },
+    "scripts/tests/test_market_feature_full_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_market_feature_full_quality.py",
+      "sha256": "4945470656b66ccc1a788954222b90c077390b734149903f988006ac1bcc7f1d"
+    },
+    "scripts/tests/test_gap_log_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_gap_log_quality.py",
+      "sha256": "652e6c34e5ce2c380ed13af11a9415fb838b9e6fbede4ead737f8f8eae8a8e75"
+    },
+    "scripts/tests/test_ability_observation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_ability_observation.py",
+      "sha256": "cd8d57aeb921efa0f4338b91aa752a8c67a7fc1684df9443ef2c28d1e4ca19a7"
+    },
+    "scripts/tests/test_season_gap_summary.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_season_gap_summary.py",
+      "sha256": "3b7462e4baff2b4a1516f49503e8608f6abf9a5ddc82fd0d9a0b96ebb20b9d1b"
+    },
+    "scripts/tests/test_accuracy_colsample_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_accuracy_colsample_recheck.py",
+      "sha256": "4b1354e3c664159d37f37bd6c849cadfd6ac1dc956f49e220822e6c5d388724f"
+    },
+    "scripts/tests/test_candidate_mixture_build.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_candidate_mixture_build.py",
+      "sha256": "33587c737f69b02e4d7d1a29dd90f4774df2a19e370c4d8a1ea560d642a0383b"
+    },
+    "scripts/tests/test_mixture_confirmation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_mixture_confirmation.py",
+      "sha256": "89b20d180736ce54b70b50fa682a910af3c2df3b5585afe64206caa82ad8b1e5"
+    },
+    "scripts/tests/test_season_mixture_stack.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_season_mixture_stack.py",
+      "sha256": "7107aa2b281697e3b9f8e13541845c30c33badf26b3169ad0d956d538d846228"
+    },
+    "scripts/tests/test_ability_observation_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_ability_observation_features.py",
+      "sha256": "760457f544ddc9669e1e0c6595902b7732830e252aabaa7fb4df6d7b07c82569"
+    },
+    "scripts/tests/test_small_gain_stack.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_small_gain_stack.py",
+      "sha256": "1c2887150e977d23aa2ddb6c8fff03adc300fdce73ecc4a276d49ca53b06517a"
+    },
+    "scripts/tests/test_joint_residual_stack.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_joint_residual_stack.py",
+      "sha256": "fa72defd906bab2de3469c5190ad2feac0d7006e5bb0a750e1e98b06bd84c8fa"
+    },
+    "scripts/tests/test_feature_pruning.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_feature_pruning.py",
+      "sha256": "1c9815537d723c3ee95c1c1a71a0af387c6da6959311df0620ae474fb9102278"
+    },
+    "scripts/tests/test_audit_mixture_recent_inputs_135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_audit_mixture_recent_inputs_135.py",
+      "sha256": "bd6e21b76bbf332ef2334e4e152b3a5a9f305f97845f7b0d1fd2fb771063431e"
+    },
+    "scripts/tests/test_candidate_mixture_bundle.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_candidate_mixture_bundle.py",
+      "sha256": "8dd89fbce73fb8e6a8ef5cee0329d8301426a3a355bc4e4c9db700b1fbf21a69"
+    },
+    "scripts/tests/test_run_recent_owned_135_54586a4bf86c.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_run_recent_owned_135_54586a4bf86c.py",
+      "sha256": "5d15522309570985fd159f1736afcdcc12397ce838224912aad3b1ee7cd33548"
+    },
+    "scripts/tests/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "scripts/tests/test_accuracy_batch_common.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_accuracy_batch_common.py",
+      "sha256": "bb5623c8890dcfbb6187a5e5eaa2e2beee50ca19e9ffddac247476c770550114"
+    },
+    "scripts/tests/test_pace_style_unknown_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_pace_style_unknown_features.py",
+      "sha256": "bf9db14bb1e46fb910fd0ffcda2c6862c7df445ee41d12080f97d36bdcd020cb"
+    },
+    "scripts/tests/test_mixture_reproducibility.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_mixture_reproducibility.py",
+      "sha256": "da65ef7b19959e4046af88b0c35087bc00a0dd9b38449214c5946da2b49022f0"
+    },
+    "scripts/tests/test_season_gap_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_season_gap_recheck.py",
+      "sha256": "cfc5968b0decb8669d2054b87ab50b52d121b02834ba946792c3b80e8f467202"
+    },
+    "scripts/tests/test_candidate_mixture_validate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_candidate_mixture_validate.py",
+      "sha256": "cf720843b65c9d8ad1b34f29402715319e8e955b05a730d04a0395628d430aa9"
+    },
+    "scripts/tests/test_mixture_next_gains.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_mixture_next_gains.py",
+      "sha256": "2c1ae1965e55499a53b1499a6a41645515dc161accdec8ebb30b5bc5ad507de6"
+    },
+    "scripts/tests/test_extra_feature_full_quality.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_extra_feature_full_quality.py",
+      "sha256": "b7878ec70403fba47320275c21de3ddfd3421beac82de7bfd447c7cb815c2058"
+    },
+    "scripts/tests/test_anchor_gap_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_anchor_gap_recheck.py",
+      "sha256": "571fbcd3c6a7e75a01354a9ca7778daabba8b1881052d319f94fd34418664222"
+    },
+    "scripts/tests/test_pruning_2026_diagnostic.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_pruning_2026_diagnostic.py",
+      "sha256": "af3928b1b0ee3156fa6b30229e17d66233dcd169cc6155c81ff4945e5eccf1eb"
+    },
+    "scripts/tests/test_market_feature_screen.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_market_feature_screen.py",
+      "sha256": "ee1e80d6a4b35a5eaa74d95e15a5c93f290d20ee1d78777d750b79a5d94c6ca4"
+    },
+    "scripts/tests/test_gap_season_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_gap_season_recheck.py",
+      "sha256": "c3db7633cacbf5cd0e99de921d6e38462cb5f203124ea25a17362f3ae63180ac"
+    },
+    "scripts/tests/test_extra_residual_probes.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_extra_residual_probes.py",
+      "sha256": "1e5bec0858f4a1c7b0ef10f38be34aa21fe180f6ec66f0c98ec8b82e476d588f"
+    },
+    "scripts/tests/test_calibration_serving_recheck135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_calibration_serving_recheck135.py",
+      "sha256": "1ab31232e37ef4bdebc4c876285d810507e40f33c46658d29d524460301d8010"
+    },
+    "scripts/tests/test_accuracy_topk_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_accuracy_topk_recheck.py",
+      "sha256": "9bba22f13a0c54cae4a58eb4bc4b7f693fcff13bc34d67fd9c1a8770b51d0234"
+    },
+    "scripts/tests/test_gap_seed_summary.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_gap_seed_summary.py",
+      "sha256": "cd28997d6ec04aa028aef8ea4016a048ee156ae7d4829470b8fbfb1304b1e47c"
+    },
+    "scripts/tests/test_small_gain_budget.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_small_gain_budget.py",
+      "sha256": "3a7c9c0e8afaac242e9f8dfae1d4029502f0c409bd3f2b8afd951fd7c75d3a2c"
+    },
+    "scripts/tests/test_anchor_gap_summary.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_anchor_gap_summary.py",
+      "sha256": "69897243f00cb941719ccb6c61dffd141be056573b78d7aab6206f83c040fa23"
+    },
+    "scripts/tests/test_mixture_recent_check_135.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_mixture_recent_check_135.py",
+      "sha256": "889acc45e63495cc87db18060840207e70a9d291ab44d74875db38df0bd157d9"
+    },
+    "scripts/tests/test_accuracy_style_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_accuracy_style_recheck.py",
+      "sha256": "7224466f8fc74383c93eee0ca821f47a021d37fa328c5d80afa2a887aeec7f72"
+    },
+    "scripts/tests/test_mixture_recent_owned_135_54586a4bf86c.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_mixture_recent_owned_135_54586a4bf86c.py",
+      "sha256": "56b6528e640d7ae56e584b9ba8d0cb3afd8058177797fc51fd079fbac3be495b"
+    },
+    "scripts/tests/test_small_gain_policy.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_small_gain_policy.py",
+      "sha256": "afd110eb78788aa57fe4df59a7716ac020c54b0bd18a1b1d98d329c999d4b56b"
+    },
+    "scripts/tests/test_extra_feature_screen.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_extra_feature_screen.py",
+      "sha256": "c97a79a8b30d0307b634ff9ef3640fffd764edce17efd16119a6a54a427dc2e9"
+    },
+    "scripts/tests/test_gap_seed_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_gap_seed_recheck.py",
+      "sha256": "fac7c5b3c0a46a1e5798fde103d2f04e26f69a6bde1b3f1f57aef4a77930706e"
+    },
+    "scripts/tests/test_buy_pattern_gate_cli.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_buy_pattern_gate_cli.py",
+      "sha256": "a2590d36030bc4d1c05709618c0e62d33a9b1bf53eef1305122a714c7ed23027"
+    },
+    "scripts/tests/test_small_gain_research.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_small_gain_research.py",
+      "sha256": "550fe847f1095f017a6750fee24ad1ee20d25dcc1621b5ff22f62ebc3c2d62d0"
+    },
+    "scripts/tests/test_probability_mixture_recheck.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_probability_mixture_recheck.py",
+      "sha256": "bac28cccab2e5e6b475d79eaa5d8014139c91af33f234dfb49e4212dbde16e1c"
+    },
+    "serving/src/horseracing_serving/predictor.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/predictor.py",
+      "sha256": "51d775b7cdcf3f900a9a99d89e2fac38456c0d7e406b741fcde176a28051580f"
+    },
+    "serving/src/horseracing_serving/paired_prospective.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/paired_prospective.py",
+      "sha256": "91ef2db6e7e2051b4ca18217c449b6715eaf02e4a6f000b30c0ae53498a237d0"
+    },
+    "serving/src/horseracing_serving/mixture_shadow.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/mixture_shadow.py",
+      "sha256": "916614c834dcbd4180af004f88c3118ae68c99801129359304d19522b01ebbd8"
+    },
+    "serving/src/horseracing_serving/persistence.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/persistence.py",
+      "sha256": "2539ac6198989b4e4395e289deacee8a9e792d2247f29f19b88556330b47a8c7"
+    },
+    "serving/src/horseracing_serving/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/__init__.py",
+      "sha256": "ad9d254389426c9934ec28aad89f4385ea1d414ed7f238929f06639196b15dbd"
+    },
+    "serving/src/horseracing_serving/mixture_model.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/mixture_model.py",
+      "sha256": "ff489b58437825dc5d7de783955f2fafda139ea439686fb93e7faa6a9a1aa7cb"
+    },
+    "serving/src/horseracing_serving/cli.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/cli.py",
+      "sha256": "707502300a9e57779bb7609461cac3ac5c6814fb923b989085e633ec45b54595"
+    },
+    "serving/src/horseracing_serving/pipeline.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/pipeline.py",
+      "sha256": "74c0270a3e346ca85e9601bf4461e3ed4d8d5a4ce70bf4b3618139dcde46a87f"
+    },
+    "serving/src/horseracing_serving/mixture_correction.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/mixture_correction.py",
+      "sha256": "c2ff5c9e6fe5c825f43cad7244f279ef99cc1a9cd532fbbadc24ecf17bdb5255"
+    },
+    "serving/src/horseracing_serving/model_loader.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/model_loader.py",
+      "sha256": "5cb0263eaef1b82f27545774e69c80a7d308760f1e29fd58e24c57af91055066"
+    },
+    "serving/src/horseracing_serving/__main__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/__main__.py",
+      "sha256": "7068538ddf333c4a3457e8e19afb3fa4c110a3bf37821b73dcac9f65f5c2f7e4"
+    },
+    "serving/src/horseracing_serving/mixture_serving.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/serving/src/horseracing_serving/mixture_serving.py",
+      "sha256": "2c27ad9dd6a55e4fb5c2efde0fd444a836971487865eab782046664cd64d0671"
+    },
+    "probability/src/horseracing_probability/chaos_events.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/chaos_events.py",
+      "sha256": "791b463c69b079616802461d3e7f6165ba433764d4a076c6bee1eb6fe151e928"
+    },
+    "probability/src/horseracing_probability/calib_activation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/calib_activation.py",
+      "sha256": "51736a8c1e8aeecfce46b86f962d34c811693e056b2561cf6a9c88b00ec0543c"
+    },
+    "probability/src/horseracing_probability/oof_calibration.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/oof_calibration.py",
+      "sha256": "4c8c6049653454c03df41e4a83e3bc9dcd3c25924d4f34116c7fc3016afe115a"
+    },
+    "probability/src/horseracing_probability/chaos_eligibility.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/chaos_eligibility.py",
+      "sha256": "0daa54f8b2ab14f8ce44d72085b9dfc18a1424e5fcd5d474484cc0dddc714c38"
+    },
+    "probability/src/horseracing_probability/fl_bias.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/fl_bias.py",
+      "sha256": "3449824f2429501a9c9059f6137e8b10e1eac17fd57baf5103e4cb984fed0b36"
+    },
+    "probability/src/horseracing_probability/consistency.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/consistency.py",
+      "sha256": "32d5c6e574496d9f1d7b53125a5d0164e855f0ecbd5780c2475bea726bc760fb"
+    },
+    "probability/src/horseracing_probability/oof_bundle.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/oof_bundle.py",
+      "sha256": "8d508638884ebbdda3d60441f097112032dc6105f618b29aa055db4047e8d1f4"
+    },
+    "probability/src/horseracing_probability/model_calibration.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/model_calibration.py",
+      "sha256": "76e6e477f3d1b7a70e4c81b05d4d5129f3e5e433f8368fdeeab962611c2e1793"
+    },
+    "probability/src/horseracing_probability/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/__init__.py",
+      "sha256": "65c03b46e78d2e8391220b49b61f72bddbfa0a4d6d0feb580deff92cfc998f14"
+    },
+    "probability/src/horseracing_probability/chaos_artifact.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/chaos_artifact.py",
+      "sha256": "2dd0b780ba22d806a59bc2da007055d4a2b99265ca6c787feb76c10f88fe2921"
+    },
+    "probability/src/horseracing_probability/calib_replay.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/calib_replay.py",
+      "sha256": "69cdd0de17a6d62525116ed46f7b5709015aac9883f88f3a64de5b6add5632db"
+    },
+    "probability/src/horseracing_probability/engine.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/engine.py",
+      "sha256": "1ded18273339a3452d02636786d3ee0886975d3046a75663103ed1196019fe3d"
+    },
+    "probability/src/horseracing_probability/cli.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/cli.py",
+      "sha256": "772db41f9f44a2c51897b5b90e81eb15e733985d0d7306fb8d53ad889da31e9a"
+    },
+    "probability/src/horseracing_probability/calib_manifest.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/calib_manifest.py",
+      "sha256": "35fc797b2f605cfd0d4574bb87a6af7c61cb8eeb3a2f4afb593db8d52f168bbe"
+    },
+    "probability/src/horseracing_probability/__main__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/__main__.py",
+      "sha256": "757c11c87b46de3255bbc915626ecd4d8f4b63d49435ac17b5e7217d820508be"
+    },
+    "probability/src/horseracing_probability/market_calibration.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/market_calibration.py",
+      "sha256": "99ba751d868c93c8dedfb410abed31b8aa558aa1486825008e7a4b2d8c1f8baf"
+    },
+    "probability/src/horseracing_probability/calibration.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/calibration.py",
+      "sha256": "7f473cbc3475ade4b93eb11b7c8ef93a625a73e9333da970fe78c8465544df4e"
+    },
+    "probability/src/horseracing_probability/chaos_distribution.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/chaos_distribution.py",
+      "sha256": "f8e29939e64a43ecf2fd1aacf5f56211fb9daddea7cc0b57b97965f57e726826"
+    },
+    "probability/src/horseracing_probability/market_odds.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/probability/src/horseracing_probability/market_odds.py",
+      "sha256": "3554a760d9916253d60bc10cdcbbfd39f153584387c4add5fb0ab4326e06dd2b"
+    },
+    "training/src/horseracing_training/predictor.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/predictor.py",
+      "sha256": "3dfe38c182df3814f805d1c9858a669a5d8020f3caf2817a9bc1945c2ac839ba"
+    },
+    "training/src/horseracing_training/legacy_attest.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/legacy_attest.py",
+      "sha256": "a97fc94974a74f1f8f5d457c34f66ac2b6d05f9f9eb60bde7d0a5e5cd4d1404f"
+    },
+    "training/src/horseracing_training/ev_weight.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/ev_weight.py",
+      "sha256": "f4676af56e23a5c1f258583dd5aee84bdb56597c4c8e500f860a5707710b5c2d"
+    },
+    "training/src/horseracing_training/exotic_price_edge_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/exotic_price_edge_run.py",
+      "sha256": "a8f8d784a5775a5817b9675dfc832792c53c60fc9f8c4b3339056bdf0e0318b7"
+    },
+    "training/src/horseracing_training/delta_r2_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/delta_r2_run.py",
+      "sha256": "e6fe3cf7f07af3eca39c78c5f61eac1c7b621c15a7de3f8ea3dccd1a211ab9b1"
+    },
+    "training/src/horseracing_training/spelling_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/spelling_gate.py",
+      "sha256": "f832709baa534ec006df8747be92d339bb8f066592da836b59e620ad4592ad25"
+    },
+    "training/src/horseracing_training/folds.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/folds.py",
+      "sha256": "7c338f5f2c5e63fbc39201c30e822588e1ce18405fbd7ee0409f70567da3fc55"
+    },
+    "training/src/horseracing_training/promotion.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/promotion.py",
+      "sha256": "2cfe71b114798a314044c841edc40c0fd1b5a6ca48682940d555f433b8b47745"
+    },
+    "training/src/horseracing_training/market_offset.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/market_offset.py",
+      "sha256": "465a1689071212a0e0380fe4e90d256736693fd5993ceb6602195cb5ef9b1899"
+    },
+    "training/src/horseracing_training/frozen_configs.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/frozen_configs.py",
+      "sha256": "18c99091808af68f8c9d86746a67ace9c9de689f92305d69aca27d3201b43388"
+    },
+    "training/src/horseracing_training/supply_mask.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/supply_mask.py",
+      "sha256": "f4ea8975bb2f7137a9fecb45d2d728cb4a817937bdc90e120fa9b9bee0928e0c"
+    },
+    "training/src/horseracing_training/calib_binding.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/calib_binding.py",
+      "sha256": "92549c3ef6bf017b2a22b67f217777b09a5877312738288cbf06a58bae105413"
+    },
+    "training/src/horseracing_training/cond_logit.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/cond_logit.py",
+      "sha256": "8e19d5ce12156e170595065bc224cb3092660bfd901a14860023fd43f8c819fb"
+    },
+    "training/src/horseracing_training/recency.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/recency.py",
+      "sha256": "e75eaaa04c7d13f4a212f389094a6cf2e82513a05a8deb588e345bccea37ef98"
+    },
+    "training/src/horseracing_training/joint_calibration_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/joint_calibration_run.py",
+      "sha256": "d861c43bf9e56e8a6432f7824a850d217a84d81e5c69074c65dc06ca0b1da809"
+    },
+    "training/src/horseracing_training/calib_split_eval.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/calib_split_eval.py",
+      "sha256": "a6419684c26faf6079767ae2b67e6b93f178d9ba50bc9a416148faa8ac8107bc"
+    },
+    "training/src/horseracing_training/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/__init__.py",
+      "sha256": "d99064f920d9de1e620457077e027b6e0d31256454f78b7c7c630d6aa770a5f3"
+    },
+    "training/src/horseracing_training/promote.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/promote.py",
+      "sha256": "d2573f0fb2324c975764a0782d7efd41e67b870b62b769a9ccb03701b0922778"
+    },
+    "training/src/horseracing_training/legacy_freeze.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/legacy_freeze.py",
+      "sha256": "0ace7a5add67fabffc2949fdaeb8a56f2f83999c72bdb27ab5b4efd7431b0147"
+    },
+    "training/src/horseracing_training/cross_pool_win_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/cross_pool_win_run.py",
+      "sha256": "12434d37be07d43ca229723052375a35495ccd4932fc7c7d470b215592b7b585"
+    },
+    "training/src/horseracing_training/dataset.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/dataset.py",
+      "sha256": "756c5e4a541ca2927912e2726d4f64a9b545cd51d4afefb523f29c9ff836a4b6"
+    },
+    "training/src/horseracing_training/segment_accuracy_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/segment_accuracy_run.py",
+      "sha256": "7812621311f2d68d89a284af6cf3b004e4e8df9d210b3aa131f9da8469eb90a6"
+    },
+    "training/src/horseracing_training/exotic_portfolio_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/exotic_portfolio_run.py",
+      "sha256": "53c3794e1582d6c6683da2282cb4032ed4db8714d4492cb8322f8ec07b8e9c3e"
+    },
+    "training/src/horseracing_training/explanation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/explanation.py",
+      "sha256": "d64ee3714183aff53b714284418bbe2b55d4c69f2c94f24af5e1186c0aa6397a"
+    },
+    "training/src/horseracing_training/cli.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/cli.py",
+      "sha256": "db841bf998c074f6043ef40a1b42c7116781c0a5877e3881006be9627edba196"
+    },
+    "training/src/horseracing_training/adoption.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/adoption.py",
+      "sha256": "2c42b83f889f89aa4d022933eb57c24f7b19d7de0bacd736567e597785a3e21b"
+    },
+    "training/src/horseracing_training/spelling_split.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/spelling_split.py",
+      "sha256": "8ae532b1c3e8cb8f0f6a3e0bfffd32d838a2d9f9fdd3083907595b3a0f5f5ba5"
+    },
+    "training/src/horseracing_training/artifacts.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/artifacts.py",
+      "sha256": "2a5aa641906f35eed70f88eb6dd6a3bdf44695e62185979d2cb3c4520fea86a0"
+    },
+    "training/src/horseracing_training/ev_weight_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/ev_weight_run.py",
+      "sha256": "94d3c600701163c4bd466824bde9e735d8b35aa5f33ffe4a15a8207038b42e25"
+    },
+    "training/src/horseracing_training/recipe.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/recipe.py",
+      "sha256": "16191b6d728f226af32931e272d50f2f6a1bb16a8e16b8c3ceb44dfd426849e4"
+    },
+    "training/src/horseracing_training/folklore_probe.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/folklore_probe.py",
+      "sha256": "9653ee8391845c18e9f8b9c4e53a734607c323957d38e8b238e238b563648a35"
+    },
+    "training/src/horseracing_training/chaos_bands.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/chaos_bands.py",
+      "sha256": "5a07bbfb469939529b85a6f0b314029d1e2c0ad4d96416a5031ce1b58c75dedb"
+    },
+    "training/src/horseracing_training/calib_manifest.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/calib_manifest.py",
+      "sha256": "64526c4e482243b85bb039d2ca48b5bd6016cbe704e857249d00d3a45474faa5"
+    },
+    "training/src/horseracing_training/cross_pool_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/cross_pool_run.py",
+      "sha256": "d33baa17c687b7dabc0477221319f7db565e05d695c4cd4651c5c70c5067e9a4"
+    },
+    "training/src/horseracing_training/target_encoding.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/target_encoding.py",
+      "sha256": "cb538a02a362e18e8bae35323301e4008a8e053fbdf564bb676c455f4a0ad90e"
+    },
+    "training/src/horseracing_training/calib_split.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/calib_split.py",
+      "sha256": "b991ac43e6d744c237fca3dd64667dc33bb17a88f5e5575b426c396317e0ed0c"
+    },
+    "training/src/horseracing_training/pool_information_run.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/pool_information_run.py",
+      "sha256": "e2287934f7c8cb4fa522aef41f379cc059f7af6b1e463be656525a332fad6050"
+    },
+    "training/src/horseracing_training/market_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/market_gate.py",
+      "sha256": "cd1320ae4b9f427e63c02c829f34a736029a6cfeeeb50ec3e85d79cc9c7de5fa"
+    },
+    "training/src/horseracing_training/oof_manifest.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/oof_manifest.py",
+      "sha256": "05906dba07d51656b4659429c7f78a345792c0191125a3479d26fe49d74b20c5"
+    },
+    "training/src/horseracing_training/win_model.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/win_model.py",
+      "sha256": "3509cf934caaf947d2b2b05eb93694f036f04c9e266c53848d030c5fb0fc7abd"
+    },
+    "training/src/horseracing_training/__main__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/__main__.py",
+      "sha256": "9148564e522a2246b6fdfc988b82183384d0aacb45ff9b85213b5282cdb7c7d2"
+    },
+    "training/src/horseracing_training/arm_e_register.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/arm_e_register.py",
+      "sha256": "ae2ca359b2420d2dc115185b29e970755434e40e84c78ae49b53b2d921c448ab"
+    },
+    "training/src/horseracing_training/oof_generate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/oof_generate.py",
+      "sha256": "362af99ec04b684cd12bbd98add89673ba7b5471867b7405bc8fec69a0997ddd"
+    },
+    "training/src/horseracing_training/calibration.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/calibration.py",
+      "sha256": "99e4d76e7058f2a0e7209345b4e965461a49a8ea8f801b6a5f136d36489c2488"
+    },
+    "training/src/horseracing_training/hpo.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/training/src/horseracing_training/hpo.py",
+      "sha256": "67ea258fcaa3c7afacad189149bda365ca0b9fc5e2c952763b00c9a5382cfc2b"
+    },
+    "features/src/horseracing_features/pace_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/pace_features.py",
+      "sha256": "d120491d6ee43163cd1e19ef4a945181a0a2b8412005bed5fc0294adc594cfaa"
+    },
+    "features/src/horseracing_features/rating_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/rating_features.py",
+      "sha256": "936cee59151fa53cc5b56bbc982f50cb3c61818e3700abd3401721d0830377dc"
+    },
+    "features/src/horseracing_features/encoding.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/encoding.py",
+      "sha256": "0ca1380b245142c4919850f6ba1fa66af0482179440536a8108032c456107c71"
+    },
+    "features/src/horseracing_features/weight_mask.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/weight_mask.py",
+      "sha256": "cb94f5318bca43dfefc3363cca4caec985eda5eea9d0a5acc9ca0ac384a26805"
+    },
+    "features/src/horseracing_features/past_market_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/past_market_features.py",
+      "sha256": "8e655fc47f3e403d1d3466954d6e036cfa8fc67df15f46f180cb38839a11fced"
+    },
+    "features/src/horseracing_features/corner_trajectory_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/corner_trajectory_features.py",
+      "sha256": "8ceb547bd146d6361beac35b51b94977bcf48f8d0b253ece9a64bfc593059374"
+    },
+    "features/src/horseracing_features/nick_cross_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/nick_cross_features.py",
+      "sha256": "98342c2882563d5d18efeaeebff9c92f0182a5f9e5512477210f1a056761ba85"
+    },
+    "features/src/horseracing_features/registry.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/registry.py",
+      "sha256": "2afb7745f8e24df7ea708155ab864bf34ebaabecca622769942589f383ba08ad"
+    },
+    "features/src/horseracing_features/condition_change_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/condition_change_features.py",
+      "sha256": "007a0c9f8b3577126b580c0c2ba31f4b65a909b81d35f38fdbd7ee7b31719ccc"
+    },
+    "features/src/horseracing_features/human_form.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/human_form.py",
+      "sha256": "e72e585dc0c5a59408a0d32a4558e8825f4af74eabbdc14ceb6d232360b6f7bc"
+    },
+    "features/src/horseracing_features/finish_decomposition_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/finish_decomposition_features.py",
+      "sha256": "e8d82efe732e1c7137064d2369a909f79327145a9fe364409563a38f0efd23cf"
+    },
+    "features/src/horseracing_features/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/__init__.py",
+      "sha256": "5e36de201f792b24cc9001b8b9197145faa87bfe90f7d38fdd1e3ad621b5b722"
+    },
+    "features/src/horseracing_features/pace_scenario_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/pace_scenario_features.py",
+      "sha256": "a24782ff17f903fdaaae0005bc026ed448e7b20efa91c4ddb7a09dd156ede2f5"
+    },
+    "features/src/horseracing_features/pedigree_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/pedigree_features.py",
+      "sha256": "e0b5777d4ba3aca88e5b75e6397931df7d25ba4112dc6c2bdfc938cf67761644"
+    },
+    "features/src/horseracing_features/debut_pedigree_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/debut_pedigree_features.py",
+      "sha256": "e094774a6a4cbfa46c2c7ab7843e07834af12ecd58e6cfa6db57247950de223c"
+    },
+    "features/src/horseracing_features/builder.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/builder.py",
+      "sha256": "cf0b3034288a44d47a40f832c74aaaa57bc980d1ad5d80e63c947450c4babf9a"
+    },
+    "features/src/horseracing_features/materialize.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/materialize.py",
+      "sha256": "b6d1d3b246a92394335e851e4a450b0ad9f42a045551862a34752c3abf621ca6"
+    },
+    "features/src/horseracing_features/cli.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/cli.py",
+      "sha256": "88d5249b45ec070534171f1426331b89fe3403c4293a581cb09e9083c0efac22"
+    },
+    "features/src/horseracing_features/loader.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/loader.py",
+      "sha256": "0ae276712640df2470377315651dd6fe6a5e9bf22b7d1f7e6c405a5e42dbc47e"
+    },
+    "features/src/horseracing_features/static_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/static_features.py",
+      "sha256": "93afd11ac35853c42380835f9100918e0ef2102d96656b88b8c6e2f01f75708e"
+    },
+    "features/src/horseracing_features/relative_ability_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/relative_ability_features.py",
+      "sha256": "eed723cc19ee4030d6ccef813f1891bf99fdc829932a34cf180bf442af0a19f2"
+    },
+    "features/src/horseracing_features/lowcost_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/lowcost_features.py",
+      "sha256": "f026b9e7f2eb965ec74e3752beb4dd436b05bdb94ffbe29f6ac2992cbef00b37"
+    },
+    "features/src/horseracing_features/extra_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/extra_features.py",
+      "sha256": "a9449f7ef51cb8bc5c88b0560cf9a128635dfef302c9d3455cd9e86a78041110"
+    },
+    "features/src/horseracing_features/pm_core_strength.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/pm_core_strength.py",
+      "sha256": "87573cfc32820d454965e0163ebd0975a2463aa9805f01aadc9e9e29ba53c9ee"
+    },
+    "features/src/horseracing_features/closing_figure_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/closing_figure_features.py",
+      "sha256": "fe5ad6378ee46eacbaa0db999bc1f723cc420b4d58933c5d2d444cae68fe46ac"
+    },
+    "features/src/horseracing_features/pm_rank_robust.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/pm_rank_robust.py",
+      "sha256": "619d485be92fbcea5e1ca19a0de547a554202683f02c7855d2ac39a1a99df54e"
+    },
+    "features/src/horseracing_features/early_mid_pace_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/early_mid_pace_features.py",
+      "sha256": "f84ff4667f0ebfdf42761031ceadc4e2162c8c1665b5b618547c580dbef9b883"
+    },
+    "features/src/horseracing_features/owner_breeder_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/owner_breeder_features.py",
+      "sha256": "9c940806f9aa1675b895ea2a6fee4d024709e732af2b5e321cdf8e1f90310340"
+    },
+    "features/src/horseracing_features/pm_expectation_residual.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/pm_expectation_residual.py",
+      "sha256": "91449a4b78d581ead31853c2627387f3fadba9271079c1d988b7c33d0e253c47"
+    },
+    "features/src/horseracing_features/weight_history_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/weight_history_features.py",
+      "sha256": "8705a1b2b2997643bdc719e7ae2e80087f58862fbc367c0b033c11c9a7792940"
+    },
+    "features/src/horseracing_features/pm_conditioned.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/pm_conditioned.py",
+      "sha256": "36d283f25cd0eadadaedd7ed00d56478e7a7864e7c2ea05bbe133c2da502881c"
+    },
+    "features/src/horseracing_features/__main__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/__main__.py",
+      "sha256": "d633e26a9dd3b17a54100ae660892357b29ccd01983f3157ac905ecf2e9bfeff"
+    },
+    "features/src/horseracing_features/race_class_canon.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/race_class_canon.py",
+      "sha256": "0fc41c66161e915e6a5f9685e75510e94ec09b1653f67046473d4aa3bf606a57"
+    },
+    "features/src/horseracing_features/race_level_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/race_level_features.py",
+      "sha256": "d845938b3b3e163ac59bfc294bbd2f1b4e9f6ba050e51d5d42fba3d1a44cccfb"
+    },
+    "features/src/horseracing_features/speed_figure_features.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/speed_figure_features.py",
+      "sha256": "36e4d902e7ae335d650112f964ef1a4782460a1f86ac495ed47a467bcf2cdf40"
+    },
+    "features/src/horseracing_features/schema.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/schema.py",
+      "sha256": "dfa79eb2c0ab94eaccf829dc0e48ed2954c495a9a53a384c8fd4e219f31a41c2"
+    },
+    "features/src/horseracing_features/history.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/features/src/horseracing_features/history.py",
+      "sha256": "e13bc15737ceff46ed2a2f1ae8be5d06888453abd03166a6a90059caa2baeb21"
+    },
+    "db/src/horseracing_db/labels.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/labels.py",
+      "sha256": "614f1b8372fc2b0d38cc0d3b1a6fe33bfb4c1663c42fa3475e931713ca06c9e2"
+    },
+    "db/src/horseracing_db/enums.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/enums.py",
+      "sha256": "2f319d2c23a66701b7cbfef4d2f8b231be167dac5e9d16b5371f5d485b3714d2"
+    },
+    "db/src/horseracing_db/dedupe.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/dedupe.py",
+      "sha256": "3b4c06712c330f33c8cb8231e35cd538f5f357da8046fe1f27de22858fbe38d4"
+    },
+    "db/src/horseracing_db/session.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/session.py",
+      "sha256": "0195c40a17ee6e4c320c95ecb2d9499c88f924d500247e7141fae5e242e78285"
+    },
+    "db/src/horseracing_db/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/__init__.py",
+      "sha256": "15e77fd9b4d63f3bd4dc4b5f77474238d7db4e36e033aff186ec4f5295bf4c4c"
+    },
+    "db/src/horseracing_db/constraints.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/constraints.py",
+      "sha256": "34dcced0a6a186bb7733b81e0e228da53fa6f4f81abe1c7085aa4df4768bdb2c"
+    },
+    "db/src/horseracing_db/selection.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/selection.py",
+      "sha256": "accdbdf5f496c4a3c4ded3bf38753e42878c4e28910befb62fbe816861f6e084"
+    },
+    "db/src/horseracing_db/__main__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/__main__.py",
+      "sha256": "c759ab4cbc81c2c3dcd9d610ed4612fa35e4f02841a133e35e76e0fedf719de8"
+    },
+    "db/src/horseracing_db/base.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/base.py",
+      "sha256": "bf2478ff76a6f7d0e58b8c01b01463939f1ba495dc61436fdc07d8510eccbc29"
+    },
+    "db/src/horseracing_db/validation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/validation.py",
+      "sha256": "a9ec9508b3119af2cac72213301716f72aa03b052cf3c33936cf428aab6289c3"
+    },
+    "db/src/horseracing_db/models/ingestion.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/ingestion.py",
+      "sha256": "3555040bdf52786e46c95258644c5d43f6b3bb743dcc058dedf42541d9a85786"
+    },
+    "db/src/horseracing_db/models/market.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/market.py",
+      "sha256": "f82173e4718142e4ea82d028fc667f87790f279388b1a9df62385b2c368b50e1"
+    },
+    "db/src/horseracing_db/models/chaos.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/chaos.py",
+      "sha256": "3df118c56c02696e7c007d377c1e0cf93c1967bfd9d4ae3fdc3d1e987183ab9c"
+    },
+    "db/src/horseracing_db/models/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/__init__.py",
+      "sha256": "04464cfa6f2ea6c3877e0be6f80c288a5584ca07b39fed23ccb6f67879661b18"
+    },
+    "db/src/horseracing_db/models/core.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/core.py",
+      "sha256": "9aa94480d736f93c959a3618a9c9e20b37b12881b87e9ce8086e4928c1f49ced"
+    },
+    "db/src/horseracing_db/models/purchase.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/purchase.py",
+      "sha256": "e3f60be096e1d52975d8588c23b154d4ecf2ea344647d9036be515d88af449b5"
+    },
+    "db/src/horseracing_db/models/prediction.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/prediction.py",
+      "sha256": "1f4b5dd4502849367a58b5b69a6aa4c5b5697f93f88f4a1447d9af97e822a697"
+    },
+    "db/src/horseracing_db/models/_mixins.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/models/_mixins.py",
+      "sha256": "c4e0121eb6a579eab5ecdce38101d84409ffc4154084420825eb610eae6f7815"
+    },
+    "db/src/horseracing_db/sql/triggers.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/sql/triggers.py",
+      "sha256": "584b9da4086015afdc945ad6aa801584b6f54c0388bd37f416edd4409953248b"
+    },
+    "db/src/horseracing_db/sql/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/db/src/horseracing_db/sql/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "eval/src/horseracing_eval/predictor.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/predictor.py",
+      "sha256": "9843509f18568622ce50370a52f209cf6dde62e1fe459c84130df70cad0b1518"
+    },
+    "eval/src/horseracing_eval/bootstrap.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/bootstrap.py",
+      "sha256": "8bb08318912617f7ac1d89b45e4dc0736b77d32c271698ac2c1daeb35ba90d3c"
+    },
+    "eval/src/horseracing_eval/chaos_lambda.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/chaos_lambda.py",
+      "sha256": "8cb3935efa3a265edd060b72445319468eb955522d8659fdb838e2d168f5966d"
+    },
+    "eval/src/horseracing_eval/exotic_price_edge.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/exotic_price_edge.py",
+      "sha256": "9c5b3cef21e33739c26d97044f2c1e84c02ee5382026f7b524347bf19c59c39c"
+    },
+    "eval/src/horseracing_eval/store.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/store.py",
+      "sha256": "edec8d873151baec0d9c01405f3fdcc0512a5067172458825e6c18f851c6a060"
+    },
+    "eval/src/horseracing_eval/metrics.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/metrics.py",
+      "sha256": "50ffd0214ccb8e7c9dea268958cba1bb9b7975a513dd01faa1c4c5ff47d3c677"
+    },
+    "eval/src/horseracing_eval/baselines.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/baselines.py",
+      "sha256": "e4acfd685122087763594ccf3ba49e770662f7421be49ff6749cd1551da1e7f4"
+    },
+    "eval/src/horseracing_eval/delta_r2.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/delta_r2.py",
+      "sha256": "6dabbd461ac9bd0bf0577f6dbbaa2558a27efba3bc8634a7c9ce94ae5e104e67"
+    },
+    "eval/src/horseracing_eval/harness.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/harness.py",
+      "sha256": "67e486002a6acce3ea3da2e9e26a25001ec7b5585eb493274f3ed7be9a379d26"
+    },
+    "eval/src/horseracing_eval/foldfit.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/foldfit.py",
+      "sha256": "9c32848a8ada648add66b94b3150fd2e80b44fd56078d8335f75082ac6fadc98"
+    },
+    "eval/src/horseracing_eval/subgroups.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/subgroups.py",
+      "sha256": "a3acbd69547982fda20dee8622fc3ed4f02c445c39a805b91a5835f02491e723"
+    },
+    "eval/src/horseracing_eval/segment_accuracy.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/segment_accuracy.py",
+      "sha256": "2bfec22b03c511a4f807d737f768d9ebc5c7b8918d06c16ab8d6a308d03211c6"
+    },
+    "eval/src/horseracing_eval/operational.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/operational.py",
+      "sha256": "15a9cafb34f7d4046e489be83afcd3bcbd2a770ee8f43c0802e4957db382a8fc"
+    },
+    "eval/src/horseracing_eval/buy_patterns.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/buy_patterns.py",
+      "sha256": "5174f1350dfb65a95ec42bc6503849136aaf580be519e1b5be691e0a7440c161"
+    },
+    "eval/src/horseracing_eval/regime_paired.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/regime_paired.py",
+      "sha256": "33c6d8732d12b55a3089954bc40a32d838cf541c5d763f140471e395f96de4b7"
+    },
+    "eval/src/horseracing_eval/consistency.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/consistency.py",
+      "sha256": "fa384fe55331bec415bfa7ed6b706208e313b763729b963e1ce6de9356db50a6"
+    },
+    "eval/src/horseracing_eval/ablation.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/ablation.py",
+      "sha256": "b96c45a6d206c0b375c8a3c6dd126887a27c3d5c89fd6bfbfe6ae9f80d2e8cad"
+    },
+    "eval/src/horseracing_eval/cross_pool.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/cross_pool.py",
+      "sha256": "5f3c1280e27cfd31fc7f39464590b0824d8c18cd4a8f0e8cfb71d500382946cb"
+    },
+    "eval/src/horseracing_eval/stage_discount.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/stage_discount.py",
+      "sha256": "aee6024536f6ed25690da32432fc976c95594eadf07aadcf0c65f7e4766a29f4"
+    },
+    "eval/src/horseracing_eval/joint_calibration.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/joint_calibration.py",
+      "sha256": "e045ecaa31e2dd7c4973b92840486d89232ecaadee8462c84c676efa6df7639d"
+    },
+    "eval/src/horseracing_eval/__init__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/__init__.py",
+      "sha256": "6b26339abce454b7c8317c8afe6ab91a29d5de0140896d0205dae050d7d6928b"
+    },
+    "eval/src/horseracing_eval/market_edge.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/market_edge.py",
+      "sha256": "999313f2c378c472cad124640d0f87fbb3faf4f8f05d95cfa40d9399506535c8"
+    },
+    "eval/src/horseracing_eval/dispersion_bands.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/dispersion_bands.py",
+      "sha256": "61836c235e81b58a2b1dc067d1641925e70308cf0a86fe0368c88b6f594e442d"
+    },
+    "eval/src/horseracing_eval/gates.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/gates.py",
+      "sha256": "f59bfad9046e31d0b29168fddd6774e8fcb71a5709af4c4f967c87a9e45a128d"
+    },
+    "eval/src/horseracing_eval/exotic_portfolio.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/exotic_portfolio.py",
+      "sha256": "030565d06029243f78a85c11c16ece22552632d4d0dc94c2d050d8858be8d0d4"
+    },
+    "eval/src/horseracing_eval/decision.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/decision.py",
+      "sha256": "839d557a3394f51f07deaa3b5cd80bb644a0f8c88101c8ddec457c0358892ece"
+    },
+    "eval/src/horseracing_eval/dataset.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/dataset.py",
+      "sha256": "10a1d4221580705c26ca5833dc933726c2a338536de4841016c1b892bf577439"
+    },
+    "eval/src/horseracing_eval/cli.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/cli.py",
+      "sha256": "9feb717b1ecee2a8e7ce3f4a36924d039ef863eddda39f850819a81952a25470"
+    },
+    "eval/src/horseracing_eval/segment_edge.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/segment_edge.py",
+      "sha256": "7e3cbce47fda8b85cd12b79552944794951d8059b203da9ea53c69b97eab3da0"
+    },
+    "eval/src/horseracing_eval/diagnostics_store.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/diagnostics_store.py",
+      "sha256": "796a049f9f0037babd3b299e815d682a0c91c17323dcd6b7465d68ef5e3f9784"
+    },
+    "eval/src/horseracing_eval/cross_pool_win.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/cross_pool_win.py",
+      "sha256": "326e9491c90a2f102f04bccdc4314b81bd5254590ebed9b1d9338e6a42c25c61"
+    },
+    "eval/src/horseracing_eval/opportunity.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/opportunity.py",
+      "sha256": "24df8d24becc6c852ba2658b9c046e3a3ca1d3c3c23fdf28e8a46efb6a3bc8f8"
+    },
+    "eval/src/horseracing_eval/splits.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/splits.py",
+      "sha256": "45662d4105c3e56fbfc391e3f22228ba3b07155f87438a1b02ca30e8e4a99e8d"
+    },
+    "eval/src/horseracing_eval/policy_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/policy_gate.py",
+      "sha256": "cee3a9751f34d87ac2cfbc4217b8c16cf7e084f32438adacee56d1e7d36fb262"
+    },
+    "eval/src/horseracing_eval/provenance.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/provenance.py",
+      "sha256": "1c9a83f015bd8851c0b03a8c10d9c9f5ad597f01cbc7f87977bd2da1c208b385"
+    },
+    "eval/src/horseracing_eval/buy_pattern_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/buy_pattern_gate.py",
+      "sha256": "e93d6c04e8ca61a82af778743eba92ba22261e6c824a69e1680ab59eda488936"
+    },
+    "eval/src/horseracing_eval/ev_weight_gate.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/ev_weight_gate.py",
+      "sha256": "6c899e0f3e2c54c9c1f261ccd0142c76b3cc82c74f5c2c40a3171e3cacb30c4e"
+    },
+    "eval/src/horseracing_eval/delta_provenance.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/delta_provenance.py",
+      "sha256": "43a8a7a4f33c7db0719e7510a429e1c7bd411ed90b5f8a9e9195dca4c9aa4197"
+    },
+    "eval/src/horseracing_eval/stage_discount_eval.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/stage_discount_eval.py",
+      "sha256": "08330733165564ea43a3117c48164449924ff114803704d99f33bc1fe1d928df"
+    },
+    "eval/src/horseracing_eval/paired.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/paired.py",
+      "sha256": "abb89abe3a40f08812f956ccf8718fd7a03f67ae81718390a69f6715b66420a3"
+    },
+    "eval/src/horseracing_eval/evidence.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/evidence.py",
+      "sha256": "7a4cfb0482c7a47540dd5296fd5588fd4a7b1132aaf7c7bda99d643302a5cd21"
+    },
+    "eval/src/horseracing_eval/hashing.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/hashing.py",
+      "sha256": "d999cd68903dde209f5714487a896fef394bbfb26beb85bd51cb4d3242d40b4d"
+    },
+    "eval/src/horseracing_eval/__main__.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/__main__.py",
+      "sha256": "4689b611971b3606673126e541955e80461c3b5f9bc192f1372b04c7bcd73612"
+    },
+    "eval/src/horseracing_eval/report.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/report.py",
+      "sha256": "6dec99c898d7628a518ef1a0e1607fe7a5b928dd4ef13783a47d501a3d2ea39b"
+    },
+    "eval/src/horseracing_eval/feature_eval.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/feature_eval.py",
+      "sha256": "047635156e232820d358ec187c39b86f298011d0feca19d4dbe158cf41002d5b"
+    },
+    "eval/src/horseracing_eval/residual_probe.py": {
+      "source": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-failed-no-database-url-20260913/source/eval/src/horseracing_eval/residual_probe.py",
+      "sha256": "9234b7e67c127229acf44a82f09e688ab5762267718abb4a45d65c1b7efc7017"
+    }
+  },
+  "symlinks": {
+    "artifacts": "/Users/kuwatawaku/workspace/horseracing/artifacts",
+    "specs": "/Users/kuwatawaku/workspace/horseracing/specs"
+  },
+  "can_adopt": false
+}

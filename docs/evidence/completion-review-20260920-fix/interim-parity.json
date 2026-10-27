@@ -1,0 +1,62 @@
+{
+  "can_adopt": false,
+  "comparisons": {
+    "preweight": {
+      "compared_keys": [
+        "artifact_kind",
+        "can_adopt",
+        "conditions",
+        "excluded",
+        "excluded_counts",
+        "heads_served_convention_frozen_lambda",
+        "mode",
+        "overall",
+        "pending",
+        "pending_counts",
+        "per_race",
+        "preregistration_sha256",
+        "regime",
+        "retraining_variance_note",
+        "status",
+        "verdict",
+        "window"
+      ],
+      "n_days": 1,
+      "n_races": 23,
+      "saved_interim_sha256": "3a8526ec9f175bca3c569767160e1bb8b6d70c674741d01f0ce329dd20c8fdb1",
+      "score_excluding_timestamp_sha256": "77ccaa9b282621584b950c96db7ec412d458ae2b353fa20f003961d88465f75a",
+      "status": "EXACT_MATCH"
+    },
+    "serving": {
+      "compared_keys": [
+        "artifact_kind",
+        "can_adopt",
+        "conditions",
+        "excluded",
+        "excluded_counts",
+        "heads_served_convention_frozen_lambda",
+        "mode",
+        "overall",
+        "pending",
+        "pending_counts",
+        "per_race",
+        "preregistration_sha256",
+        "regime",
+        "retraining_variance_note",
+        "status",
+        "verdict",
+        "window"
+      ],
+      "n_days": 2,
+      "n_races": 46,
+      "saved_interim_sha256": "c60658d82a6f3c3cbe6fb3dd104e3f8490ef76d868ba3153727704b3f72f4342",
+      "score_excluding_timestamp_sha256": "c81af044b1cb42d66cf73020ffb2e936f3c4db3b379ec39bc970df57fe9a5a8d",
+      "status": "EXACT_MATCH"
+    }
+  },
+  "preregistration_sha256": "b7352356d031582239a2596039fb48a77514fa7315832a940356bd1bb537b11b",
+  "scope": "Same read-only DB snapshot before/after scoring-code change; no DB writes or fits",
+  "selected_records": 72,
+  "source_after_sha256": "d68b3468729c379c55157e2439a3c343218da2009c78595c57a06bd86f01b6c6",
+  "source_before_sha256": "91ef2db6e7e2051b4ca18217c449b6715eaf02e4a6f000b30c0ae53498a237d0"
+}

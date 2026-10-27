@@ -1,0 +1,300 @@
+{
+  "anchor_sha256": "80fd7734f2d77f729bc71350a584c5ac5fb0c171b90940972fe7ad224e6537b3",
+  "artifact_kind": "paired_prospective_snapshot_roundtrip",
+  "computed_at": "2026-09-13T00:40:02.607263+00:00",
+  "max_abs_win_diff": 0.08578914406224697,
+  "model_version": "lgbm-094-cap900",
+  "n_pass": 0,
+  "n_races": 36,
+  "rows": [
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=full_info",
+      "max_abs_win_diff": 0.006599506138228441,
+      "n_horses": 13,
+      "pass": false,
+      "prediction_run_id": "db0680d8-5aa3-4e1f-ac00-f6508bd2be03",
+      "race_id": "202601020601"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=full_info",
+      "max_abs_win_diff": 0.028538137952801357,
+      "n_horses": 10,
+      "pass": false,
+      "prediction_run_id": "b6cf9ae5-766b-4574-9553-b9e8ba5b6d13",
+      "race_id": "202601020602"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.01926694275031246,
+      "n_horses": 14,
+      "pass": false,
+      "prediction_run_id": "0f2f573e-4d4f-467f-a222-28172f537e66",
+      "race_id": "202601020603"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.008049902152977295,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "65732065-75be-4948-aa4b-9d34dc9cdfe3",
+      "race_id": "202601020604"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.01856405259437416,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "1e3f14a7-4b25-4421-b529-3c1e919e8d53",
+      "race_id": "202601020605"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.018642390778150913,
+      "n_horses": 12,
+      "pass": false,
+      "prediction_run_id": "3bfa6266-8bec-4871-875b-c38a622b6a74",
+      "race_id": "202601020606"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.006780195856064264,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "62d88ada-f8ea-484f-abb1-3113970d6c61",
+      "race_id": "202601020607"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.016738415346946284,
+      "n_horses": 14,
+      "pass": false,
+      "prediction_run_id": "5e4d79d3-3a13-4aa8-bc2a-2d443cd6024e",
+      "race_id": "202601020608"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.005627011817819494,
+      "n_horses": 14,
+      "pass": false,
+      "prediction_run_id": "b38406f2-fab9-4545-ba78-35daa93a799b",
+      "race_id": "202601020609"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.012333508067035676,
+      "n_horses": 14,
+      "pass": false,
+      "prediction_run_id": "6a2dc2de-10c2-448b-a4c3-b20361edb8a6",
+      "race_id": "202601020610"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.030837995131885593,
+      "n_horses": 14,
+      "pass": false,
+      "prediction_run_id": "b88e089c-2869-4941-b082-03967256b791",
+      "race_id": "202601020611"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.011593230843936923,
+      "n_horses": 12,
+      "pass": false,
+      "prediction_run_id": "2e85b1db-1373-482e-9bf3-c466ce80b500",
+      "race_id": "202601020612"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=full_info",
+      "max_abs_win_diff": 0.009581429448640613,
+      "n_horses": 7,
+      "pass": false,
+      "prediction_run_id": "d9819630-2696-4241-94b5-b144d5b564fa",
+      "race_id": "202606040201"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=full_info",
+      "max_abs_win_diff": 0.007859469127448601,
+      "n_horses": 14,
+      "pass": false,
+      "prediction_run_id": "c131ad47-d254-4cd7-98b4-e9f7a829971b",
+      "race_id": "202606040202"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.02524066784667925,
+      "n_horses": 15,
+      "pass": false,
+      "prediction_run_id": "9199fd47-138c-49a6-ac2a-7b2acf6428dd",
+      "race_id": "202606040203"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.030727555495453418,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "337e92d2-7430-48a0-9ac9-b667d111b311",
+      "race_id": "202606040204"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.052398213368543806,
+      "n_horses": 15,
+      "pass": false,
+      "prediction_run_id": "f6a70c64-1786-471d-9546-2f66c961ea8b",
+      "race_id": "202606040205"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.08578914406224697,
+      "n_horses": 12,
+      "pass": false,
+      "prediction_run_id": "efb6ea86-01e3-4d18-84cb-4c41332386fd",
+      "race_id": "202606040206"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.006330070948191824,
+      "n_horses": 18,
+      "pass": false,
+      "prediction_run_id": "a0aa789f-3fbe-4cd4-8716-2188c649206f",
+      "race_id": "202606040207"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.03438971870851018,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "bb70d241-1fc7-4ad4-a5ea-333c2165a2b8",
+      "race_id": "202606040208"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.014432286128854277,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "2defe779-07eb-4596-9753-99b0e1633e71",
+      "race_id": "202606040209"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.03479925738360112,
+      "n_horses": 9,
+      "pass": false,
+      "prediction_run_id": "b4361bec-cbb3-4c63-84d1-07a58a8581c2",
+      "race_id": "202606040210"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.012805411092176033,
+      "n_horses": 11,
+      "pass": false,
+      "prediction_run_id": "d16d3da4-67a1-4a61-8b0a-1e0b29f32d0e",
+      "race_id": "202606040211"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.04093752501093928,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "6bfec049-e526-4dec-b1f7-c4ed4060071d",
+      "race_id": "202606040212"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=full_info",
+      "max_abs_win_diff": 0.02060930409511466,
+      "n_horses": 10,
+      "pass": false,
+      "prediction_run_id": "4f108a0f-7d60-4484-b90a-923014cb2a9e",
+      "race_id": "202609040201"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=full_info",
+      "max_abs_win_diff": 0.003701847657153201,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "f02229f9-f24d-4997-8c67-15aeaf901487",
+      "race_id": "202609040202"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.02248339278051939,
+      "n_horses": 15,
+      "pass": false,
+      "prediction_run_id": "956c6e35-c377-4d23-95b5-d22dd36ef8cd",
+      "race_id": "202609040203"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.010485061668311755,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "cf24c1a5-1563-4ef5-8257-85e771cb4df7",
+      "race_id": "202609040204"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.028258955308197442,
+      "n_horses": 10,
+      "pass": false,
+      "prediction_run_id": "9566c1c8-4f99-47d6-821d-b781ea28ce69",
+      "race_id": "202609040205"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.03862699377272649,
+      "n_horses": 12,
+      "pass": false,
+      "prediction_run_id": "f82f29c3-85c9-4d97-b399-dcd90e8aa769",
+      "race_id": "202609040206"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.016937387947261864,
+      "n_horses": 14,
+      "pass": false,
+      "prediction_run_id": "1f80141e-3a02-44d7-bd0f-bfaab635fde8",
+      "race_id": "202609040207"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.022215405437706975,
+      "n_horses": 7,
+      "pass": false,
+      "prediction_run_id": "a29b8568-f925-4e63-836f-70db09bdb663",
+      "race_id": "202609040208"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.029402974920693492,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "f754bdf2-091e-4aee-bb44-343f74fa5ee9",
+      "race_id": "202609040209"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.02800778268188009,
+      "n_horses": 13,
+      "pass": false,
+      "prediction_run_id": "58646d6d-c6a0-4b54-973e-4921fe4c61e9",
+      "race_id": "202609040210"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.027681715204548707,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "b010c2d3-0029-4eca-9bc3-28c6bf300546",
+      "race_id": "202609040211"
+    },
+    {
+      "logic_version": "feat=features-021;serve=serve-0.1.0;rcr=raw;sdisc=harville;l2=0.85805;l3=0.71465;n2=9278;n3=9251;wregime=serving",
+      "max_abs_win_diff": 0.01892985824523377,
+      "n_horses": 16,
+      "pass": false,
+      "prediction_run_id": "e0172125-e271-4226-8f23-a76678fd6bdd",
+      "race_id": "202609040212"
+    }
+  ],
+  "tolerance_abs": 1e-09
+}

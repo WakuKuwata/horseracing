@@ -47,6 +47,58 @@ INFERENCE = dict(base_eps=1e-6, assembly_eps=0., head_aggregation='arithmetic_me
 PARAMS = dict(objective='binary', n_estimators=900, learning_rate=.05, num_leaves=31,
               min_child_samples=20, subsample=1., colsample_bytree=1., reg_lambda=1.)
 
+# --- bundle profiles (feature 136) -------------------------------------------------------
+# Until 136 the manifest could only describe ONE member set: six members, 1/6 each, fixed ids.
+# A candidate bundle has a different member set, so the shape has to be declared rather than
+# assumed. Each profile names its members exhaustively and in order -- generalising the SHAPE,
+# not the strictness: every field the six-member validator pinned is still pinned, it is just
+# read from the profile instead of from a module constant.
+#
+# ``mix-129-nj6`` keeps taking the legacy entry exactly as before. Its weights are still the
+# literal ``1 / 6`` float, its ids/branches/seeds still come from IDENTITIES in that order, and
+# its expected booster params are still PARAMS.
+
+#: branch -> (column set selector, correction terms, study the coefficients come from)
+BRANCH_SPECS = {
+    'pruning': ('pruning', JOINT_TERMS, 125),
+    'anchor': ('anchor', ['gap_log'], 118),
+    # 136 candidates: the same 125-column joint feature set, and their correction coefficients
+    # are joint-42's, transferred (member_kill_test.py:216), so they carry study 125 too.
+    'extra_trees_joint': ('pruning', JOINT_TERMS, 125),
+    'leaves63_child100_joint': ('pruning', JOINT_TERMS, 125),
+}
+
+CANDIDATE_PARAMS = {
+    'extra_trees_joint': {**PARAMS, 'extra_trees': True},
+    'leaves63_child100_joint': {**PARAMS, 'num_leaves': 63, 'min_child_samples': 100},
+}
+
+#: The 136 candidate profile: all three seeds of both new branches, at the branch allocation
+#: the pair pre-registration measured (joint .375 / anchor .375 / A .125 / B .125). Each
+#: branch's exposure is divided among its seeds, so member weights are deliberately unequal.
+#: See specs/136-eight-model-candidate/configuration-rule-amendment.json.
+CANDIDATE_PROFILE = '136_candidate_allseeds_registered_alloc_v1'
+
+
+def _profile_members():
+    legacy = [dict(identity, weight=1 / 6, params=PARAMS) for identity in IDENTITIES]
+    candidate = [dict(identity, weight=1 / 8, params=PARAMS) for identity in IDENTITIES]
+    candidate += [dict(id=f'{branch}-{seed}', branch=branch, seed=seed, weight=1 / 24,
+                       params=CANDIDATE_PARAMS[branch])
+                  for branch in ('extra_trees_joint', 'leaves63_child100_joint')
+                  for seed in (42, 43, 44)]
+    return {PROFILE: legacy, CANDIDATE_PROFILE: candidate}
+
+
+PROFILES = _profile_members()
+
+
+def profile_members(profile):
+    """The exhaustive ordered member specification for a registered profile."""
+    if profile not in PROFILES:
+        raise ValueError('Unknown or non-shadow candidate bundle')
+    return PROFILES[profile]
+
 
 def sha256(path):
     h = hashlib.sha256()
@@ -73,8 +125,9 @@ def feature_profile():
 
 def columns_for(branch):
     full = feature_profile()['full_columns']
-    if branch == 'anchor': return full
-    if branch != 'pruning': raise ValueError('Unknown member branch')
+    selector = BRANCH_SPECS.get(branch, (branch, None, None))[0]
+    if selector == 'anchor': return full
+    if selector != 'pruning': raise ValueError('Unknown member branch')
     cols = [c for c in full if c not in PRUNING_DROPS]
     if len(cols) != 125 or feature_hash(cols) != PRUNED_HASH: raise ValueError('Pruning profile changed')
     return cols
@@ -94,10 +147,14 @@ def contained_path(root, relative):
 
 
 def validate_manifest(d):
-    fixed = dict(schema_version=1, artifact_kind='candidate_mixture_bundle', profile=PROFILE,
+    if not isinstance(d, dict):
+        raise ValueError('Unknown or non-shadow candidate bundle')
+    specs = profile_members(d.get('profile'))
+    fixed = dict(schema_version=1, artifact_kind='candidate_mixture_bundle',
+                 profile=d.get('profile'),
                  mode='shadow', can_adopt=False, eligible_for_verdict=False,
                  train_through='2026-08-23', coefficient_train_through='2025-12-31')
-    if not isinstance(d, dict) or any(d.get(k) != v for k, v in fixed.items()):
+    if any(d.get(k) != v for k, v in fixed.items()):
         raise ValueError('Unknown or non-shadow candidate bundle')
     if d.get('can_adopt') is not False or d.get('eligible_for_verdict') is not False:
         raise ValueError('Bundle cannot adopt or issue a verdict')
@@ -110,21 +167,25 @@ def validate_manifest(d):
     if d.get('feature_profile') != feature_profile() or d.get('inference') != INFERENCE:
         raise ValueError('Feature or inference profile differs')
     members = d.get('members', [])
-    if len(members) != 6: raise ValueError('Exactly six ordered members required')
-    for item, expected in zip(members, IDENTITIES, strict=True):
-        if ({k: item.get(k) for k in expected} != expected or item.get('weight') != 1 / 6
-                or item.get('artifact_dir') != 'members/' + expected['id']
+    if len(members) != len(specs):
+        raise ValueError(f'Exactly {len(specs)} ordered members required')
+    if abs(sum(float(item.get('weight', 0)) for item in members) - 1.) > 1e-12:
+        raise ValueError('Member weights must sum to one')
+    for item, spec in zip(members, specs, strict=True):
+        identity = {k: spec[k] for k in ('id', 'branch', 'seed')}
+        if ({k: item.get(k) for k in identity} != identity or item.get('weight') != spec['weight']
+                or item.get('artifact_dir') != 'members/' + spec['id']
                 or set(item.get('files', {})) != set(FILES)
                 or not all(_is_sha(s) for s in item['files'].values())):
             raise ValueError('Member identity, order, weight, path, or file hashes differ')
         correction = item.get('correction', {})
-        joint = expected['branch'] == 'pruning'
-        terms = JOINT_TERMS if joint else ['gap_log']
+        _, terms, study = BRANCH_SPECS[spec['branch']]
+        joint = 'centered_logp' in terms
         beta = np.asarray(correction.get('coefficients', []))
         if (correction.get('terms') != terms or beta.shape != (len(terms),)
                 or beta.dtype.kind not in 'fiu' or not np.isfinite(beta).all()
                 or (joint and 1 + beta[-1] <= 0)
-                or correction.get('source_study') != (125 if joint else 118)
+                or correction.get('source_study') != study
                 or not _is_sha(correction.get('source_sha256'))
                 or correction.get('valid_year') != 2026 or correction.get('fit_through') != '2025-12-31'):
             raise ValueError('Frozen correction profile differs')
@@ -154,7 +215,7 @@ class MixturePrediction:
     audit: dict
 
 
-def _load_member(path, item):
+def _load_member(path, item, expected_params=PARAMS):
     meta = read_json(path / 'metadata.json')
     cols = columns_for(item['branch']); fh = feature_hash(cols)
     info, oof = meta.get('fit_info', {}), meta.get('oof_info', {})
@@ -167,7 +228,7 @@ def _load_member(path, item):
             or meta.get('train_through') != '2026-08-23' or meta.get('coefficient_train_through') != '2025-12-31'
             or any(meta.get(k) is not False for k in ('can_adopt', 'eligible_for_verdict', 'db_registration'))
             or meta.get('objective') != 'pl_topk' or meta.get('postprocess') != 'group_softmax'
-            or meta.get('actual_params') != PARAMS or info.get('params') != PARAMS
+            or meta.get('actual_params') != expected_params or info.get('params') != expected_params
             or info.get('seed') != item['seed'] or info.get('feature_cols') != cols
             or info.get('objective') != 'pl_topk' or info.get('model_degenerate') is not False
             or info.get('calibrator_degenerate') is not False or oof.get('sufficient') is not True
@@ -232,9 +293,12 @@ def load_mixture_bundle(path, *, expected_sha256=None):
             if not artifact.is_file() or sha256(artifact) != expected:
                 raise ValueError('Member artifact SHA mismatch or missing: ' + str(artifact))
         paths.append(directory)
-    members = tuple(MixtureMember(item['id'], _load_member(directory, item),
-                                   tuple(item['correction']['terms']), tuple(item['correction']['coefficients']))
-                    for directory, item in zip(paths, d['members'], strict=True))
+    specs = profile_members(d['profile'])
+    members = tuple(MixtureMember(item['id'],
+                                  _load_member(directory, item, expected_params=spec['params']),
+                                  tuple(item['correction']['terms']),
+                                  tuple(item['correction']['coefficients']))
+                    for directory, item, spec in zip(paths, d['members'], specs, strict=True))
     populations = [member.model.metadata['population'] for member in members]
     if any(p != populations[0] for p in populations[1:]): raise ValueError('Member populations differ')
     return MixtureBundle(path.resolve(), digest, d, members)
@@ -290,10 +354,25 @@ def coefficient_year_offset(valid_year, target_year, grace_years=0):
     return offset
 
 
+def average_for_profile(profile, predictions, weights):
+    """Average member heads, keeping the six-member profile on its original code path.
+
+    Equal weights and a plain mean are the same number mathematically but not the same
+    floating-point sum: ``x.mean(axis=0)`` sums pairwise and divides once, while the weighted
+    form accumulates ``w_i * x_i``. They differ in the last ULP. ``mix-129-nj6`` is the ACTIVE
+    model and feature 133 is recording paired comparisons against it, so it keeps calling the
+    unweighted path and its served probabilities do not move.
+    """
+    if profile == PROFILE:
+        return average_member_predictions(predictions)
+    return average_member_predictions(predictions, weights)
+
+
 def predict_mixture(bundle, race_id, feature_rows, history, regime='preweight', *,
                     coefficient_grace_years=0):
-    if [member.id for member in bundle.members] != [item['id'] for item in IDENTITIES]:
-        raise ValueError('Six loaded members required in the registered order')
+    specs = profile_members(bundle.manifest['profile'])
+    if [member.id for member in bundle.members] != [spec['id'] for spec in specs]:
+        raise ValueError('Loaded members must match the profile in the registered order')
     rows, audit = prepare_race_inputs(feature_rows, race_id, regime)
     valid_years = {int(item['correction']['valid_year']) for item in bundle.manifest['members']}
     if len(valid_years) != 1:
@@ -312,4 +391,7 @@ def predict_mixture(bundle, race_id, feature_rows, history, regime='preweight', 
         predictions.append(correct_member_predictions(ids, p, correction, member.terms, member.coefficients))
     audit.update(bundle_sha256=bundle.sha256, member_ids=[member.id for member in bundle.members],
                  base_win_sha256=base_hashes, head_aggregation='arithmetic_mean', postprocess='none')
-    return MixturePrediction(average_member_predictions(predictions), rows, audit)
+    weights = [item['weight'] for item in bundle.manifest['members']]
+    audit.update(member_weights=weights)
+    return MixturePrediction(average_for_profile(bundle.manifest['profile'], predictions, weights),
+                             rows, audit)

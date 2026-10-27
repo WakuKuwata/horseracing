@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "command": [
+    "training/.venv/bin/python",
+    "-m",
+    "pytest",
+    "scripts/tests/test_calibration_serving_recheck135.py",
+    "scripts/tests/test_mixture_reproducibility.py",
+    "scripts/tests/test_mixture_recent_owned_135_54586a4bf86c.py",
+    "scripts/tests/test_audit_mixture_recent_inputs_135.py",
+    "scripts/tests/test_run_recent_owned_135_54586a4bf86c.py",
+    "-q"
+  ],
+  "elapsed_seconds": 0.9921282919822261,
+  "returncode": 0,
+  "stdout": "........................................................................ [ 98%]\n.                                                                        [100%]\n73 passed in 0.82s\n",
+  "stderr": "",
+  "test_sha256": {
+    "scripts/tests/test_calibration_serving_recheck135.py": "1ab31232e37ef4bdebc4c876285d810507e40f33c46658d29d524460301d8010",
+    "scripts/tests/test_mixture_reproducibility.py": "da65ef7b19959e4046af88b0c35087bc00a0dd9b38449214c5946da2b49022f0",
+    "scripts/tests/test_mixture_recent_owned_135_54586a4bf86c.py": "56b6528e640d7ae56e584b9ba8d0cb3afd8058177797fc51fd079fbac3be495b",
+    "scripts/tests/test_audit_mixture_recent_inputs_135.py": "bd6e21b76bbf332ef2334e4e152b3a5a9f305f97845f7b0d1fd2fb771063431e",
+    "scripts/tests/test_run_recent_owned_135_54586a4bf86c.py": "5d15522309570985fd159f1736afcdcc12397ce838224912aad3b1ee7cd33548"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "status": "COMPLETE",
+  "allowed_data_through": "2026-09-06",
+  "actual_data_through": "2026-08-23",
+  "checks": {
+    "topk": {
+      "summary_sha256": "1f85e49697ef3b5fa1d7ed9a195fb15b3cf1acd5799346493426928b339b5098",
+      "complete": true
+    },
+    "colsample": {
+      "summary_sha256": "1a8f3f8e408483deb4a8169e8cc9eb2d060dc0d81ae871d39f91acc9db2706e3",
+      "complete": true
+    },
+    "style": {
+      "summary_sha256": "ed39a8991cdf6436223d376432e48626c9dc15ff0842a71032b81086c5f3af32",
+      "complete": true
+    },
+    "input-cutoff-review": {
+      "status": "PASS",
+      "sha256": "4c916931f5d532cadb2fa128317f65b66f11af4a8977ab217ad62f0b7d53faa1"
+    },
+    "independent-score-review": {
+      "status": "PASS",
+      "sha256": "7d8aa8386807d94217c90ce535998d87932057768e3eadf12e0c35ce940576ed"
+    },
+    "style-code-independent-review": {
+      "status": "PASS",
+      "sha256": "6820d71e9ba33136512df45ac049b3eed20f9b5ebf67b29cfa6d9f88531864f6"
+    },
+    "style-score-independent-review": {
+      "status": "PASS",
+      "sha256": "52731f3efba69ac277740a327e20b587124d85345b7601ac0922c84b5b3bbd68"
+    },
+    "colsample-complete-subgroups-review": {
+      "status": "PASS",
+      "sha256": "125a23a21bfd8715c205a352e2bd93ffa767a3b7a580ffec9bc507a2bb0b58ab"
+    },
+    "test-review": {
+      "status": "PASS",
+      "sha256": "a415ebf4b2e4f063cdac520ba5cde3f91faf887c286ce006d0be4f10edb7abb1"
+    }
+  },
+  "completed_tasks": 17,
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "new_production_changes_by_this_batch": false,
+  "note": "Artifacts retain source hashes; production and unrelated parallel changes are outside this batch."
+}

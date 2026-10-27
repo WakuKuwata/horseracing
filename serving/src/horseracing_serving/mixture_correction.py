@@ -157,15 +157,40 @@ def correct_member_predictions(
     return result
 
 
-def average_member_predictions(members: Sequence[Mapping[str, Prediction]]) -> dict[str, Prediction]:
-    """Average all three heads in fixed member/horse order, with no postprocess."""
-    if len(members) != 6:
-        raise ValueError("Exactly six complete members required")
+def average_member_predictions(
+    members: Sequence[Mapping[str, Prediction]],
+    weights: Sequence[float] | None = None,
+) -> dict[str, Prediction]:
+    """Average all three heads in fixed member/horse order, with no postprocess.
+
+    ``weights=None`` keeps the original contract exactly: exactly six members, plain mean.
+    Every shipped bundle uses that path, so its arithmetic is untouched.
+
+    Feature 136: a bundle may declare unequal member weights (e.g. a branch's registered
+    exposure divided among its seeds). Then ``weights`` must be one positive finite number per
+    member summing to 1. The Jensen guard generalises with them -- ``-log`` is convex, so
+    ``-log(sum_i w_i p_i) <= sum_i w_i (-log p_i)`` for any convex combination, and a violation
+    still means the averaging did not do what it claims.
+    """
+    if weights is None:
+        if len(members) != 6:
+            raise ValueError("Exactly six complete members required")
+        w = np.full(len(members), 1.0 / len(members), dtype=np.float64)
+    else:
+        w = np.asarray(weights, dtype=np.float64)
+        if (len(members) == 0 or w.shape != (len(members),) or not np.isfinite(w).all()
+                or (w <= 0).any() or abs(float(w.sum()) - 1.0) > 1e-12):
+            raise ValueError("Member weights must be positive, finite and sum to one")
     ids = list(members[0])
     x = np.stack([_heads(member, ids) for member in members])
-    mean = x.mean(axis=0, dtype=np.float64)
+    mean = (
+        x.mean(axis=0, dtype=np.float64)
+        if weights is None
+        else np.tensordot(w, x, axes=(0, 0)).astype(np.float64)
+    )
     result = {h: Prediction(*map(float, mean[i])) for i, h in enumerate(ids)}
     _heads(result, ids)
-    if np.max(-np.log(mean[:, 0]) - (-np.log(x[:, :, 0])).mean(axis=0)) > 1e-12:
+    weighted_nll = np.tensordot(w, -np.log(x[:, :, 0]), axes=(0, 0))
+    if np.max(-np.log(mean[:, 0]) - weighted_nll) > 1e-12:
         raise ValueError("Mixture Jensen invariant failed")
     return result

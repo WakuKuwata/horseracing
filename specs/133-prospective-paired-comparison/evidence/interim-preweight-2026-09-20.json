@@ -1,0 +1,1037 @@
+{
+  "artifact_kind": "paired_prospective_score",
+  "can_adopt": false,
+  "computed_at": "2026-09-20T01:02:10.577835+00:00",
+  "conditions": {
+    "distance": {
+      "<=1400": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.054634992652966376,
+        "n_days": 1,
+        "n_races": 6,
+        "new_brier_win": 0.06440147696198993,
+        "new_top1_hit": 0.16666666666666666,
+        "new_winner_nll": 2.026722047910561,
+        "old_brier_win": 0.0653301729485897,
+        "old_top1_hit": 0.16666666666666666,
+        "old_winner_nll": 2.0813570405635278,
+        "share_races_new_better": 0.6666666666666666,
+        "top1_agreement": 1.0
+      },
+      "<=1800": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.03484703637753359,
+        "n_days": 1,
+        "n_races": 11,
+        "new_brier_win": 0.05518472733419145,
+        "new_top1_hit": 0.5454545454545454,
+        "new_winner_nll": 1.8540808530266546,
+        "old_brier_win": 0.056227780072144,
+        "old_top1_hit": 0.5454545454545454,
+        "old_winner_nll": 1.8889278894041879,
+        "share_races_new_better": 0.6363636363636364,
+        "top1_agreement": 1.0
+      },
+      "<=2200": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.023115215107539423,
+        "n_days": 1,
+        "n_races": 5,
+        "new_brier_win": 0.08547509363993071,
+        "new_top1_hit": 0.2,
+        "new_winner_nll": 2.380781049818612,
+        "old_brier_win": 0.08699090624998021,
+        "old_top1_hit": 0.2,
+        "old_winner_nll": 2.4038962649261513,
+        "share_races_new_better": 0.8,
+        "top1_agreement": 0.6
+      },
+      ">2200": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": 0.026058886491382216,
+        "n_days": 1,
+        "n_races": 1,
+        "new_brier_win": 0.07640235487025342,
+        "new_top1_hit": 1.0,
+        "new_winner_nll": 1.6807732339749237,
+        "old_brier_win": 0.07620535329407428,
+        "old_top1_hit": 1.0,
+        "old_winner_nll": 1.6547143474835415,
+        "share_races_new_better": 0.0,
+        "top1_agreement": 1.0
+      }
+    },
+    "field_size": {
+      "9-13": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.0633572999508987,
+        "n_days": 1,
+        "n_races": 10,
+        "new_brier_win": 0.06609743033750609,
+        "new_top1_hit": 0.6,
+        "new_winner_nll": 1.6100497154657525,
+        "old_brier_win": 0.0683956951960057,
+        "old_top1_hit": 0.6,
+        "old_winner_nll": 1.673407015416651,
+        "share_races_new_better": 0.6,
+        "top1_agreement": 1.0
+      },
+      "<=8": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.05290923428421046,
+        "n_days": 1,
+        "n_races": 2,
+        "new_brier_win": 0.11209401115415571,
+        "new_top1_hit": 0.5,
+        "new_winner_nll": 1.6770564019803749,
+        "old_brier_win": 0.11491687949136987,
+        "old_top1_hit": 0.5,
+        "old_winner_nll": 1.7299656362645854,
+        "share_races_new_better": 1.0,
+        "top1_agreement": 0.5
+      },
+      ">=14": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.0055684615490522475,
+        "n_days": 1,
+        "n_races": 11,
+        "new_brier_win": 0.055641487257689116,
+        "new_top1_hit": 0.18181818181818182,
+        "new_winner_nll": 2.42593547229148,
+        "old_brier_win": 0.05525961746239099,
+        "old_top1_hit": 0.18181818181818182,
+        "old_winner_nll": 2.4315039338405318,
+        "share_races_new_better": 0.6363636363636364,
+        "top1_agreement": 0.9090909090909091
+      }
+    },
+    "race_class": {
+      "conditions": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.11044783314404696,
+        "n_days": 1,
+        "n_races": 10,
+        "new_brier_win": 0.06136930615589072,
+        "new_top1_hit": 0.3,
+        "new_winner_nll": 2.075586848013271,
+        "old_brier_win": 0.06373399264618063,
+        "old_top1_hit": 0.3,
+        "old_winner_nll": 2.186034681157318,
+        "share_races_new_better": 0.9,
+        "top1_agreement": 1.0
+      },
+      "maiden": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": 0.009016602165616212,
+        "n_days": 1,
+        "n_races": 11,
+        "new_brier_win": 0.06909870411439588,
+        "new_top1_hit": 0.45454545454545453,
+        "new_winner_nll": 1.8186933890680534,
+        "old_brier_win": 0.069430684337738,
+        "old_top1_hit": 0.45454545454545453,
+        "old_winner_nll": 1.8096767869024368,
+        "share_races_new_better": 0.5454545454545454,
+        "top1_agreement": 0.8181818181818182
+      },
+      "open": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": 0.10232558125085434,
+        "n_days": 1,
+        "n_races": 2,
+        "new_brier_win": 0.06171993935034539,
+        "new_top1_hit": 0.5,
+        "new_winner_nll": 2.6892021969716255,
+        "old_brier_win": 0.06028452442608667,
+        "old_top1_hit": 0.5,
+        "old_winner_nll": 2.5868766157207714,
+        "share_races_new_better": 0.0,
+        "top1_agreement": 1.0
+      }
+    },
+    "source": {
+      "capture": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.03481063239639055,
+        "n_days": 1,
+        "n_races": 23,
+        "new_brier_win": 0.06509646458773707,
+        "new_top1_hit": 0.391304347826087,
+        "new_winner_nll": 2.006082615383676,
+        "old_brier_win": 0.06615854360996075,
+        "old_top1_hit": 0.391304347826087,
+        "old_winner_nll": 2.0408932477800668,
+        "share_races_new_better": 0.6521739130434783,
+        "top1_agreement": 0.9130434782608695
+      }
+    },
+    "track_type": {
+      "ダ": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.04063107296398704,
+        "n_days": 1,
+        "n_races": 11,
+        "new_brier_win": 0.05932804318654021,
+        "new_top1_hit": 0.36363636363636365,
+        "new_winner_nll": 1.938919558379505,
+        "old_brier_win": 0.06027875035805363,
+        "old_top1_hit": 0.36363636363636365,
+        "old_winner_nll": 1.979550631343492,
+        "share_races_new_better": 0.6363636363636364,
+        "top1_agreement": 1.0
+      },
+      "芝": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.03452378445495523,
+        "n_days": 1,
+        "n_races": 11,
+        "new_brier_win": 0.06983707778143243,
+        "new_top1_hit": 0.36363636363636365,
+        "new_winner_nll": 2.102819252515916,
+        "old_brier_win": 0.07112499052694848,
+        "old_top1_hit": 0.36363636363636365,
+        "old_winner_nll": 2.137343036970871,
+        "share_races_new_better": 0.7272727272727273,
+        "top1_agreement": 0.8181818181818182
+      },
+      "障": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": 0.026058886491382216,
+        "n_days": 1,
+        "n_races": 1,
+        "new_brier_win": 0.07640235487025342,
+        "new_top1_hit": 1.0,
+        "new_winner_nll": 1.6807732339749237,
+        "old_brier_win": 0.07620535329407428,
+        "old_top1_hit": 1.0,
+        "old_winner_nll": 1.6547143474835415,
+        "share_races_new_better": 0.0,
+        "top1_agreement": 1.0
+      }
+    },
+    "weight_publication_state": {
+      "full": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.05638004135973951,
+        "n_days": 1,
+        "n_races": 2,
+        "new_brier_win": 0.06372852668723666,
+        "new_top1_hit": 1.0,
+        "new_winner_nll": 1.4339285365653796,
+        "old_brier_win": 0.06618850383275848,
+        "old_top1_hit": 1.0,
+        "old_winner_nll": 1.490308577925119,
+        "share_races_new_better": 0.5,
+        "top1_agreement": 1.0
+      },
+      "prepublication": {
+        "ci95": [
+          null,
+          null
+        ],
+        "ci9875": [
+          null,
+          null
+        ],
+        "diff_winner_nll": -0.032756402971309696,
+        "n_days": 1,
+        "n_races": 21,
+        "new_brier_win": 0.06522674438778472,
+        "new_top1_hit": 0.3333333333333333,
+        "new_winner_nll": 2.0605734800330375,
+        "old_brier_win": 0.0661556902554086,
+        "old_top1_hit": 0.3333333333333333,
+        "old_winner_nll": 2.093329883004347,
+        "share_races_new_better": 0.6666666666666666,
+        "top1_agreement": 0.9047619047619048
+      }
+    }
+  },
+  "coverage": {
+    "races_with_record": 72,
+    "races_without_record": [],
+    "scheduled_days_in_window_now": 3,
+    "scheduled_races_in_window_now": 72,
+    "scheduled_races_without_results_now": 24
+  },
+  "excluded": {
+    "202606040404": "field_changed_after_capture",
+    "202606040501": "regime_not_recorded",
+    "202606040502": "regime_not_recorded",
+    "202606040503": "regime_not_recorded",
+    "202606040504": "regime_not_recorded",
+    "202606040505": "regime_not_recorded",
+    "202606040506": "regime_not_recorded",
+    "202606040507": "regime_not_recorded",
+    "202606040508": "regime_not_recorded",
+    "202606040509": "regime_not_recorded",
+    "202606040510": "regime_not_recorded",
+    "202606040511": "regime_not_recorded",
+    "202606040512": "regime_not_recorded",
+    "202606040601": "regime_not_recorded",
+    "202609040501": "regime_not_recorded",
+    "202609040502": "regime_not_recorded",
+    "202609040503": "regime_not_recorded",
+    "202609040504": "regime_not_recorded",
+    "202609040505": "regime_not_recorded",
+    "202609040506": "regime_not_recorded",
+    "202609040507": "regime_not_recorded",
+    "202609040508": "regime_not_recorded",
+    "202609040509": "regime_not_recorded",
+    "202609040510": "regime_not_recorded",
+    "202609040511": "regime_not_recorded",
+    "202609040512": "regime_not_recorded",
+    "202609040601": "regime_not_recorded"
+  },
+  "excluded_counts": {
+    "field_changed_after_capture": 1,
+    "regime_not_recorded": 26
+  },
+  "heads_served_convention_frozen_lambda": {
+    "top2": {
+      "new": {
+        "brier": 0.11615950878354048,
+        "ece_equal_mass_10": 0.03675087764349371,
+        "log_loss": 0.37277435110990875,
+        "mean_pred": 0.15436241610738255,
+        "n_horses": 298,
+        "realized_rate": 0.15436241610738255
+      },
+      "old": {
+        "brier": 0.11591666979996455,
+        "ece_equal_mass_10": 0.03151913950107948,
+        "log_loss": 0.37402806862827864,
+        "mean_pred": 0.15436241610738255,
+        "n_horses": 298,
+        "realized_rate": 0.15436241610738255
+      }
+    },
+    "top3": {
+      "new": {
+        "brier": 0.13982138194853463,
+        "ece_equal_mass_10": 0.054279819495653386,
+        "log_loss": 0.42900544122526213,
+        "mean_pred": 0.23154362416107382,
+        "n_horses": 298,
+        "realized_rate": 0.23154362416107382
+      },
+      "old": {
+        "brier": 0.14098235382201726,
+        "ece_equal_mass_10": 0.04057698354991599,
+        "log_loss": 0.43275091099477553,
+        "mean_pred": 0.23154362416107382,
+        "n_horses": 298,
+        "realized_rate": 0.23154362416107382
+      }
+    },
+    "win": {
+      "new": {
+        "brier": 0.06152267818473591,
+        "ece_equal_mass_10": 0.04223000743971674,
+        "log_loss": 0.22295193370489674,
+        "mean_pred": 0.07718120805369127,
+        "n_horses": 298,
+        "realized_rate": 0.07718120805369127
+      },
+      "old": {
+        "brier": 0.06228205236589665,
+        "ece_equal_mass_10": 0.041292810883322296,
+        "log_loss": 0.2261774003800719,
+        "mean_pred": 0.07718120805369127,
+        "n_horses": 298,
+        "realized_rate": 0.07718120805369127
+      }
+    }
+  },
+  "mode": "interim",
+  "overall": {
+    "by_day": {
+      "2026-09-13": {
+        "diff_winner_nll": -0.03481063239639055,
+        "n": 23
+      }
+    },
+    "ci95": [
+      null,
+      null
+    ],
+    "ci9875": [
+      null,
+      null
+    ],
+    "diff_winner_nll": -0.03481063239639055,
+    "leave_one_day_out_shift": {},
+    "n_days": 1,
+    "n_races": 23,
+    "new_brier_win": 0.06509646458773707,
+    "new_top1_hit": 0.391304347826087,
+    "new_winner_nll": 2.006082615383676,
+    "old_brier_win": 0.06615854360996075,
+    "old_top1_hit": 0.391304347826087,
+    "old_winner_nll": 2.0408932477800668,
+    "share_races_new_better": 0.6521739130434783,
+    "top1_agreement": 0.9130434782608695
+  },
+  "pending": {
+    "202606040602": "results_not_ingested",
+    "202606040603": "results_not_ingested",
+    "202606040604": "results_not_ingested",
+    "202606040605": "results_not_ingested",
+    "202606040606": "results_not_ingested",
+    "202606040607": "results_not_ingested",
+    "202606040608": "results_not_ingested",
+    "202606040609": "results_not_ingested",
+    "202606040610": "results_not_ingested",
+    "202606040611": "results_not_ingested",
+    "202606040612": "results_not_ingested",
+    "202609040602": "results_not_ingested",
+    "202609040603": "results_not_ingested",
+    "202609040604": "results_not_ingested",
+    "202609040605": "results_not_ingested",
+    "202609040606": "results_not_ingested",
+    "202609040607": "results_not_ingested",
+    "202609040608": "results_not_ingested",
+    "202609040609": "results_not_ingested",
+    "202609040610": "results_not_ingested",
+    "202609040611": "results_not_ingested",
+    "202609040612": "results_not_ingested"
+  },
+  "pending_counts": {
+    "results_not_ingested": 22
+  },
+  "per_race": [
+    {
+      "conditions": {
+        "distance": ">2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "障",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.026058886491382216,
+      "n_started": 10,
+      "new_brier_win": 0.07640235487025342,
+      "new_top1": "2021109096",
+      "new_winner_nll": 1.6807732339749237,
+      "old_brier_win": 0.07620535329407428,
+      "old_top1": "2021109096",
+      "old_winner_nll": 1.6547143474835415,
+      "race_day": "2026-09-13",
+      "race_id": "202606040401",
+      "source": "capture",
+      "winner": "2021109096"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.04928544314028982,
+      "n_started": 10,
+      "new_brier_win": 0.06888316508353783,
+      "new_top1": "nk:2024107076",
+      "new_winner_nll": 1.2895996392617188,
+      "old_brier_win": 0.0722072660767736,
+      "old_top1": "nk:2024107076",
+      "old_winner_nll": 1.3388850824020087,
+      "race_day": "2026-09-13",
+      "race_id": "202606040402",
+      "source": "capture",
+      "winner": "nk:2024105048"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": 0.13744665188490868,
+      "n_started": 16,
+      "new_brier_win": 0.05286188091031714,
+      "new_top1": "nk:2024105946",
+      "new_winner_nll": 1.8252004369187034,
+      "old_brier_win": 0.04892074195138082,
+      "old_top1": "nk:2024105946",
+      "old_winner_nll": 1.6877537850337947,
+      "race_day": "2026-09-13",
+      "race_id": "202606040403",
+      "source": "capture",
+      "winner": "nk:2024101581"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": 0.0068556452338386364,
+      "n_started": 11,
+      "new_brier_win": 0.0930268860860402,
+      "new_top1": "nk:2024103912",
+      "new_winner_nll": 2.461857751039304,
+      "old_brier_win": 0.09137888578517171,
+      "old_top1": "nk:2024103912",
+      "old_winner_nll": 2.455002105805465,
+      "race_day": "2026-09-13",
+      "race_id": "202606040405",
+      "source": "capture",
+      "winner": "nk:2024105964"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": 0.15632880660574822,
+      "n_started": 16,
+      "new_brier_win": 0.06291264643674761,
+      "new_top1": "nk:2023105322",
+      "new_winner_nll": 2.9042994540455904,
+      "old_brier_win": 0.06180659968300602,
+      "old_top1": "nk:2023105322",
+      "old_winner_nll": 2.747970647439842,
+      "race_day": "2026-09-13",
+      "race_id": "202606040406",
+      "source": "capture",
+      "winner": "nk:2023103555"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.14584264290454918,
+      "n_started": 16,
+      "new_brier_win": 0.06829560529131673,
+      "new_top1": "2023103917",
+      "new_winner_nll": 4.3241912511428575,
+      "old_brier_win": 0.06818988418729091,
+      "old_top1": "2023103917",
+      "old_winner_nll": 4.470033894047407,
+      "race_day": "2026-09-13",
+      "race_id": "202606040407",
+      "source": "capture",
+      "winner": "2023107078"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.13006253786811106,
+      "n_started": 16,
+      "new_brier_win": 0.06266945719091999,
+      "new_top1": "2021102192",
+      "new_winner_nll": 2.84115013300749,
+      "old_brier_win": 0.06374595622011532,
+      "old_top1": "2021102192",
+      "old_winner_nll": 2.9712126708756013,
+      "race_day": "2026-09-13",
+      "race_id": "202606040408",
+      "source": "capture",
+      "winner": "nk:2023104780"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.1362813762359999,
+      "n_started": 11,
+      "new_brier_win": 0.030148210734613715,
+      "new_top1": "2022105189",
+      "new_winner_nll": 0.7446739503187663,
+      "old_brier_win": 0.037253253092071795,
+      "old_top1": "2022105189",
+      "old_winner_nll": 0.8809553265547662,
+      "race_day": "2026-09-13",
+      "race_id": "202606040409",
+      "source": "capture",
+      "winner": "2022105189"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": 0.0943978301990458,
+      "n_started": 10,
+      "new_brier_win": 0.1052536826336968,
+      "new_top1": "2022107163",
+      "new_winner_nll": 2.478764211893903,
+      "old_brier_win": 0.10296145569892305,
+      "old_top1": "2022107163",
+      "old_winner_nll": 2.384366381694857,
+      "race_day": "2026-09-13",
+      "race_id": "202606040410",
+      "source": "capture",
+      "winner": "2019100553"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "open",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": 0.14643279038943025,
+      "n_started": 16,
+      "new_brier_win": 0.06888980825060863,
+      "new_top1": "2023105378",
+      "new_winner_nll": 4.008355462859209,
+      "old_brier_win": 0.06803060125917709,
+      "old_top1": "2023105378",
+      "old_winner_nll": 3.8619226724697784,
+      "race_day": "2026-09-13",
+      "race_id": "202606040411",
+      "source": "capture",
+      "winner": "2023106924"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.18005111749378844,
+      "n_started": 13,
+      "new_brier_win": 0.04797482817545502,
+      "new_top1": "nk:2023106313",
+      "new_winner_nll": 1.3241852677563188,
+      "old_brier_win": 0.053989147459144786,
+      "old_top1": "nk:2023106313",
+      "old_winner_nll": 1.5042363852501073,
+      "race_day": "2026-09-13",
+      "race_id": "202606040412",
+      "source": "capture",
+      "winner": "nk:2023106313"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.13881896921086123,
+      "n_started": 11,
+      "new_brier_win": 0.05105469850421991,
+      "new_top1": "nk:2024103349",
+      "new_winner_nll": 1.1870838391558356,
+      "old_brier_win": 0.05617165437144269,
+      "old_top1": "nk:2024103349",
+      "old_winner_nll": 1.3259028083666968,
+      "race_day": "2026-09-13",
+      "race_id": "202609040401",
+      "source": "capture",
+      "winner": "nk:2024103349"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "<=8",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.04593682292268464,
+      "n_started": 7,
+      "new_brier_win": 0.04370988667109294,
+      "new_top1": "nk:2024106674",
+      "new_winner_nll": 0.6750749756438137,
+      "old_brier_win": 0.048292382123876244,
+      "old_top1": "nk:2024106674",
+      "old_winner_nll": 0.7210117985664983,
+      "race_day": "2026-09-13",
+      "race_id": "202609040402",
+      "source": "capture",
+      "winner": "nk:2024106674"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": 0.11444774426466187,
+      "n_started": 16,
+      "new_brier_win": 0.0414662413893453,
+      "new_top1": "nk:2023104330",
+      "new_winner_nll": 1.46167898435565,
+      "old_brier_win": 0.03831985171382281,
+      "old_top1": "nk:2023104330",
+      "old_winner_nll": 1.347231240090988,
+      "race_day": "2026-09-13",
+      "race_id": "202609040403",
+      "source": "capture",
+      "winner": "nk:2023104330"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.043847376745973055,
+      "n_started": 18,
+      "new_brier_win": 0.05352758316924189,
+      "new_top1": "nk:2023107297",
+      "new_winner_nll": 2.6730115260655656,
+      "old_brier_win": 0.05309096959986023,
+      "old_top1": "2023100281",
+      "old_winner_nll": 2.7168589028115386,
+      "race_day": "2026-09-13",
+      "race_id": "202609040404",
+      "source": "capture",
+      "winner": "nk:2023104882"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "<=8",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.05988164564573628,
+      "n_started": 6,
+      "new_brier_win": 0.18047813563721848,
+      "new_top1": "nk:2024106971",
+      "new_winner_nll": 2.679037828316936,
+      "old_brier_win": 0.1815413768588635,
+      "old_top1": "nk:2024102489",
+      "old_winner_nll": 2.7389194739626723,
+      "race_day": "2026-09-13",
+      "race_id": "202609040405",
+      "source": "capture",
+      "winner": "nk:2024103609"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.004184852993216248,
+      "n_started": 15,
+      "new_brier_win": 0.03576226650033983,
+      "new_top1": "2023106188",
+      "new_winner_nll": 1.168009610970546,
+      "old_brier_win": 0.03580244625684605,
+      "old_top1": "2023106188",
+      "old_winner_nll": 1.1721944639637623,
+      "race_day": "2026-09-13",
+      "race_id": "202609040406",
+      "source": "capture",
+      "winner": "2023106188"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.0774580536699816,
+      "n_started": 16,
+      "new_brier_win": 0.056101971225075035,
+      "new_top1": "nk:2023105342",
+      "new_winner_nll": 1.9876060458328542,
+      "old_brier_win": 0.0564890816106523,
+      "old_top1": "nk:2023105342",
+      "old_winner_nll": 2.0650640995028358,
+      "race_day": "2026-09-13",
+      "race_id": "202609040407",
+      "source": "capture",
+      "winner": "nk:2023101003"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.20567242706946454,
+      "n_started": 12,
+      "new_brier_win": 0.07808363077811502,
+      "new_top1": "nk:2023105041",
+      "new_winner_nll": 2.309609537583079,
+      "old_brier_win": 0.08116717113423212,
+      "old_top1": "nk:2023105041",
+      "old_winner_nll": 2.5152819646525435,
+      "race_day": "2026-09-13",
+      "race_id": "202609040408",
+      "source": "capture",
+      "winner": "nk:2023106129"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.1089944003951282,
+      "n_started": 11,
+      "new_brier_win": 0.055596776059046754,
+      "new_top1": "nk:2023103531",
+      "new_winner_nll": 1.2539007925896315,
+      "old_brier_win": 0.06008431745522664,
+      "old_top1": "nk:2023103531",
+      "old_winner_nll": 1.3628951929847597,
+      "race_day": "2026-09-13",
+      "race_id": "202609040409",
+      "source": "capture",
+      "winner": "nk:2023103531"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.0011987287496937338,
+      "n_started": 15,
+      "new_brier_win": 0.051101728162957466,
+      "new_top1": "2021105127",
+      "new_winner_nll": 1.6512596693532293,
+      "old_brier_win": 0.04976751176512529,
+      "old_top1": "2021105127",
+      "old_winner_nll": 1.652458398102923,
+      "race_day": "2026-09-13",
+      "race_id": "202609040410",
+      "source": "capture",
+      "winner": "2022104145"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "capture",
+        "track_type": "芝",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": 0.05821837211227843,
+      "n_started": 12,
+      "new_brier_win": 0.05455007045008215,
+      "new_top1": "2023106859",
+      "new_winner_nll": 1.370048931084043,
+      "old_brier_win": 0.05253844759299625,
+      "old_top1": "2023106859",
+      "old_winner_nll": 1.3118305589717645,
+      "race_day": "2026-09-13",
+      "race_id": "202609040411",
+      "source": "capture",
+      "winner": "2023106859"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "capture",
+        "track_type": "ダ",
+        "weight_publication_state": "prepublication"
+      },
+      "diff_winner_nll": -0.21331487725279885,
+      "n_started": 14,
+      "new_brier_win": 0.058467171307710696,
+      "new_top1": "2022102939",
+      "new_winner_nll": 1.8405276206545822,
+      "old_brier_win": 0.06369214783902404,
+      "old_top1": "2022102939",
+      "old_winner_nll": 2.053842497907381,
+      "race_day": "2026-09-13",
+      "race_id": "202609040412",
+      "source": "capture",
+      "winner": "2022101016"
+    }
+  ],
+  "preregistration_sha256": "b7352356d031582239a2596039fb48a77514fa7315832a940356bd1bb537b11b",
+  "record_dirs": [
+    "artifacts/133-prospective-paired-comparison/records",
+    "artifacts/129-candidate-mixture-serving/shadow/prospective",
+    "artifacts/129-candidate-mixture-serving/shadow-regime-serving/prospective"
+  ],
+  "regime": "preweight",
+  "rejected_records": {},
+  "retraining_variance_note": {
+    "applies_to": "the separate question whether a RE-TRAINED mixture also beats the old; both artifacts compared here are fixed, so it is not part of the CI",
+    "sd_fold_historical": 0.001816,
+    "status": "historical context from 100/129 (single-model refit noise), not a validated uncertainty estimate for re-training this six-member bundle; reported beside the CI, never added to it, never divided by sqrt(6)"
+  },
+  "status": "INTERIM_STATUS_NOT_A_VERDICT",
+  "verdict": null,
+  "window": {
+    "basis": "to = last JRA race day inside the 2026 validity of the new model's residual coefficients (serving tolerates 2027 with coefstale=1 but this comparison does not extend into it). min_eval_days = 24 comes from the 129 power plan (day-cluster SD 0.0123 from 4 rehearsal days; 0.01 effect detectable at 98.75%) and is a completeness requirement for the final readout, NOT a minimum effect: any difference, however small, is reported with its CI.",
+    "completeness": "final readout requires today > to (JST), no recorded race pending results, no scheduled race of the window without results, and n_days >= min_eval_days; race days without any record are disclosed in coverage, they do not block (captures are manual) and the window is never extended",
+    "from": "2026-09-13",
+    "min_eval_days": 24,
+    "to": "2026-12-28"
+  }
+}

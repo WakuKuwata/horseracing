@@ -1,0 +1,49 @@
+{
+  "artifact_kind": "candidate_configuration_rule",
+  "schema_version": 1,
+  "feature": "136-eight-model-candidate",
+  "frozen_at": "2026-09-20",
+  "frozen_by": "Claude (session 2026-09-20), before any number for a configuration other than the pre-registered 8-member mix was computed",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+
+  "why_this_document_exists": "The kill-test pre-registration (pair_prereg.json, sha256 9b4d6b241f648462f84fa95009f8a7908c9895f824e5479112e9ac5487119bd5) measures an EIGHT equal-member mixture: the frozen six plus ONE seed of candidate A and ONE seed of candidate B, with the three seed-matched pairings averaged as per-race LOSS differences. That is the expected value over which seed you happen to pick. It is not a shippable artifact, because nothing in it says which seed ships. The production bundle 129-125_new_joint_mixed6_v1 resolves the same question differently: it ships ALL THREE seeds of each branch at equal weight (2 branches x 3 seeds = 6 members at 1/6), and 129 explicitly refused a selected seed ('No fake selected_seed', specs/129-candidate-mixture-serving/plan.md:66). So the 8-member mixture has no production analogue, and a shippable candidate has to state a rule.",
+
+  "rule": {
+    "id": "all_seeds_of_every_branch_equal_weight",
+    "statement": "A distributable mixture contains every seed of every branch it includes, at equal weight. Adding a branch adds all three of its seeds.",
+    "source": "The existing production bundle's own construction (2 branches x seeds 42/43/44 at 1/6 each) and 129's refusal to select a seed. The rule is read off the shipped design; it is not derived from any candidate's measured performance.",
+    "consequence": "Adding branches A (extra_trees_joint) and B (leaves63_child100_joint) to the production six yields a TWELVE-member mixture at 1/12, not an eight-member mixture at 1/8.",
+    "seed_selection": "FORBIDDEN. No seed of A or B may be chosen by its score. If a smaller bundle is ever wanted, the branch is dropped whole, never trimmed to its best seed."
+  },
+
+  "what_was_already_known_when_this_was_frozen": {
+    "disclosure": "The seven-year C1 (-0.002009) and C2 (-0.000628) numbers for the eight-member mixture, their per-seed spread, and the per-year table were all already known and independently reproduced when this rule was written. The rule is therefore NOT blind to those results.",
+    "why_it_is_still_a_rule_and_not_a_choice": "The rule is fixed by the production bundle's existing construction, which predates every one of those numbers. It selects a configuration without reference to any candidate's score, and it is the same rule whichever way the twelve-member number comes out.",
+    "what_would_have_made_it_illegitimate": "Choosing between 8 and 12 members after seeing BOTH numbers. That is why this file is written and hashed before the twelve-member mixture is computed even once."
+  },
+
+  "measurement_status_of_the_twelve_member_mixture": {
+    "binding": false,
+    "role": "sizing and feasibility input only",
+    "reason": "All seven build years (2020..2026-08) are development period; 129/130/132/134 consumed them for selection and confirmation. A development-window point estimate cannot confirm this configuration. The only confirmation available is a prospective window, and feature 133's window is open until 2026-12-28, during which the production ACTIVE model must not change.",
+    "additional_training_required": 0,
+    "note": "All 42 member-years (A and B x 7 years x 3 seeds) already exist as saved predictions, so the twelve-member mixture is re-aggregation, not new fitting."
+  },
+
+  "what_is_still_missing_for_a_distributable_candidate": {
+    "no_boosters_exist": "The kill-test saved PREDICTIONS only (predictions/full, predictions/preweight per member-year). No model.txt, preprocessor.pkl or calibrator.pkl was written for A or B in any year. Verified by reading every one of the 42 pickles.",
+    "wrong_training_boundary": "The saved fits are walk-forward annual folds (each trained up to the start of its evaluation year). A bundle member is a single model trained through the bundle's train_through, 2026-08-23. Neither is convertible into the other.",
+    "required_fits": 6,
+    "required_fits_detail": "A and B, seeds 42/43/44, each a single fit with train_from 2007-01-01 and train_through 2026-08-23, saving the four bundle files. Six covers the twelve-member rule and is a superset of any smaller choice, so fitting six does not presuppose the configuration.",
+    "estimated_cost": "about 950 s per fit at 1 thread (the six production members took 934-1024 s each), so about 95 minutes of wall clock on 2 workers",
+    "builder_work": "scripts/candidate_mixture_build.py hardcodes MEMBERS to joint/anchor x 3 seeds and derives the recipe from a branch name. A separate research builder is needed that accepts the candidate LightGBM parameters (extra_trees=true; num_leaves=63 + min_child_samples=100) on the same 125-column joint recipe. The 129 builder must not be mutated."
+  },
+
+  "constraints_carried_forward": [
+    "The production ACTIVE model is not changed while feature 133's window is open (to 2026-12-28).",
+    "Feature 133's registration, frozen lambda and stored evidence are not modified.",
+    "Residual correction stays joint_transfer with the frozen 130 annual coefficients; the display lambda convention stays the production one (mean win -> Harville + stage discount).",
+    "Equal weights only. 134 closed post-mixture weight tuning in its confirmation window; any tuned weight is a separate question needing its own registration."
+  ]
+}

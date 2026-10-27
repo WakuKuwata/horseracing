@@ -1,0 +1,247 @@
+{
+  "artifact_kind": "paired_prospective_old_model_replay_parity",
+  "race_day": "2026-09-13",
+  "claim": "For races whose live capture (09:43 JST) received inputs identical to the pre-start production run (23:13 JST on 9/12; verified by new-model win diff == 0), the old model predicted on the mixture's persisted feature_snapshots reproduces its live prediction exactly. This validates the production_snapshot source for the old model; the mixture side is validated by reproducing its own persisted win (parity column of from-production).",
+  "n_races_total": 24,
+  "n_races_identical_inputs": 16,
+  "max_abs_old_heads_diff_on_identical_inputs": 0.0,
+  "max_abs_new_heads_diff_on_identical_inputs": 0.0,
+  "races_with_input_drift": [
+    {
+      "race_id": "202606040404",
+      "max_abs_new_heads_diff": 0.005537615905313931,
+      "max_abs_old_heads_diff": 0.0023195955330995166
+    },
+    {
+      "race_id": "202606040406",
+      "max_abs_new_heads_diff": 0.005732278966550097,
+      "max_abs_old_heads_diff": 0.01440589406957693
+    },
+    {
+      "race_id": "202606040408",
+      "max_abs_new_heads_diff": 0.018410514565831704,
+      "max_abs_old_heads_diff": 0.00836428562096958
+    },
+    {
+      "race_id": "202606040409",
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0
+    },
+    {
+      "race_id": "202609040403",
+      "max_abs_new_heads_diff": 0.00847259809709501,
+      "max_abs_old_heads_diff": 0.019023011120511406
+    },
+    {
+      "race_id": "202609040406",
+      "max_abs_new_heads_diff": 0.0037663607491389417,
+      "max_abs_old_heads_diff": 0.017620864727266983
+    },
+    {
+      "race_id": "202609040407",
+      "max_abs_new_heads_diff": 0.003679699157610211,
+      "max_abs_old_heads_diff": 0.0014313936076299112
+    },
+    {
+      "race_id": "202609040410",
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0
+    }
+  ],
+  "drift_cause": "corner-order / pace-scenario as-of columns of earlier races filled by the 00:03 UTC results ingest (corner orders publish a day late); see 131 review-2026-09-13 §4",
+  "rows": [
+    {
+      "race_id": "202606040401",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "497a13cfa3897dac04b99c43131c77368440ccc99ed17cf4cbeee4665e9c4866",
+      "snapshot_record_sha256": "bddf53a57de1bf477da9dcadc1ed0692170b0cb3e14d3faa51babf8d588abaa8"
+    },
+    {
+      "race_id": "202606040402",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "43e9d2379a43145ab9fc161514eda9da222c59597dce2b4b15f5f09420da117b",
+      "snapshot_record_sha256": "def656f16a71472f4a4ec0e423b2814cddfa2643531ce5bd130895a91af98041"
+    },
+    {
+      "race_id": "202606040403",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "2ab1396a925d17b4ca48b652b250c1420237996c1dd9679aabaed7592dcfb5ee",
+      "snapshot_record_sha256": "2cdd844f64afa451399f199a4d3437c57f02d9f4814689b148cfde170cc38f8a"
+    },
+    {
+      "race_id": "202606040404",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.005537615905313931,
+      "max_abs_old_heads_diff": 0.0023195955330995166,
+      "capture_record_sha256": "419f299ac96792ee2617ddc0eef3c7218703411cb68bb8d7a8e3dd543d28cd79",
+      "snapshot_record_sha256": "6b991ba5743a951c888d9e44c36136e2c373e393105f92ec26d28959453c4386"
+    },
+    {
+      "race_id": "202606040405",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "bffe30750b363615c5dfbd2a9faaf1951bb7e31cb7ae5af514a3d1c49cfd7483",
+      "snapshot_record_sha256": "9583a4742ef092d0805e68f777773491235bdb680ee2c873e892f7a9e4e8757f"
+    },
+    {
+      "race_id": "202606040406",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.005732278966550097,
+      "max_abs_old_heads_diff": 0.01440589406957693,
+      "capture_record_sha256": "e6ff5623a480469d7726bd866bbf190ad7c578d5db268237a1fcd716765fe151",
+      "snapshot_record_sha256": "48830f8d5d65131099aecf805636f1306e33236821a47f43163c72d02cce2933"
+    },
+    {
+      "race_id": "202606040407",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "21ad1e8e86c759d99daa6730a84a424b28e456ad7ba2e9ebcf72f75cd253b96a",
+      "snapshot_record_sha256": "a4c5e2e8fee4e5413f2fb58ff5a9ef02197e8e26176242e1f795a773ebad0cf4"
+    },
+    {
+      "race_id": "202606040408",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.018410514565831704,
+      "max_abs_old_heads_diff": 0.00836428562096958,
+      "capture_record_sha256": "cc27305b7b006cd513241a954784ec066f5188a0bd2f412a5b2520e4f342eb03",
+      "snapshot_record_sha256": "15362c39fe2ad1ec7935cdd76312aaca847a880f90675916411535a31bb79657"
+    },
+    {
+      "race_id": "202606040409",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "c8cd727b803f808743960af1ab7b9456106a4b3947e4b34677ad41f7e1b18de5",
+      "snapshot_record_sha256": "148a6a9f1ede4efaca08bad1bf8d5f9c67eb025845f64adc7370cd9e4b331d55"
+    },
+    {
+      "race_id": "202606040410",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "b356c94194cc3300fafe30aeed8c4fa1f8169f8c9ab94b66a59f7d4904c83ec2",
+      "snapshot_record_sha256": "7dffa8d7a86c5c91dfe1205d17f74b01b5136c221611d7ab7d1d1ac5c423f90b"
+    },
+    {
+      "race_id": "202606040411",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "9c7bb94463903126e1b5318cb53f019789459a91ed1331f89c5dace7a1599a2a",
+      "snapshot_record_sha256": "ec238d6b65fd650f0e73170af683b10374e8d83ffc6ad8e83b53d350173bd100"
+    },
+    {
+      "race_id": "202606040412",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "e761011abb21ec0ad28f4eacbc9b0276b828ae16a9fbb880f5c7aa82f302a2ff",
+      "snapshot_record_sha256": "5eef4879e1b61e21d02a4ab0d1f930f89a1bc987a991c8d5e031b26f96336122"
+    },
+    {
+      "race_id": "202609040401",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "a4d93acd2b411fad013f98f5bdf96b140632f9827a3233931a009282212abf85",
+      "snapshot_record_sha256": "84ea48caf82a0a54d57ad374a4b1e2cb78a1102ea92eaab2bd44080499d56639"
+    },
+    {
+      "race_id": "202609040402",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "bd7a96e2209d320124105f4819054d34843a28d2bc97c96414db116230665151",
+      "snapshot_record_sha256": "115c27f84201684e39f48d3f35224fb2e60f2b26a871d8410b707224016c4b4f"
+    },
+    {
+      "race_id": "202609040403",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.00847259809709501,
+      "max_abs_old_heads_diff": 0.019023011120511406,
+      "capture_record_sha256": "0e5e12ba501ae7cefa0d65aa4713eeea9ed077af1e8635a78878ce7dcfb77aa3",
+      "snapshot_record_sha256": "972928399fb947538b363abf466f3009466df852a113d21f920348dd537dd2d6"
+    },
+    {
+      "race_id": "202609040404",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "4eb02cf8b21427a9bf6be1cff2d02298d9977f08182575d88bd1fc23a6be0394",
+      "snapshot_record_sha256": "d6253a5bd09db45d68dfc2786f2cf6f7a89e4a603481465b3f3e01c68c7450b2"
+    },
+    {
+      "race_id": "202609040405",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "3814c3d7601b635f3ecdb0231ab3ae616321770dac9ed96485598d4e5366a261",
+      "snapshot_record_sha256": "43c688f1bb15c316ddad10544fe99ce09518dd941503bef3b67d0f855deb9846"
+    },
+    {
+      "race_id": "202609040406",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.0037663607491389417,
+      "max_abs_old_heads_diff": 0.017620864727266983,
+      "capture_record_sha256": "1fa6fcae574fdf137ef3c4f77adfa80b4cb783b81530975179376fca1f5387b5",
+      "snapshot_record_sha256": "ee6b4e41c12bffba9ec63e5ee7ec601997c6387ca65d99d6057d603ac132f728"
+    },
+    {
+      "race_id": "202609040407",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.003679699157610211,
+      "max_abs_old_heads_diff": 0.0014313936076299112,
+      "capture_record_sha256": "6e78e348f183d7369e831da2d77460b5e542c7c0c775db08c194a35815189916",
+      "snapshot_record_sha256": "4dad694e340e69a767bb6e46e4e7c134904434d0c9c7336dee08f6891d00d7f1"
+    },
+    {
+      "race_id": "202609040408",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "c090cca6b902deab79ac98cfc4b1ca2f5d4672e6e11474f82ea95280291c98b0",
+      "snapshot_record_sha256": "aa24b5d9c2fd08fc4352a22d6eaa46214054de94daf06d81a96c199b5f6dd247"
+    },
+    {
+      "race_id": "202609040409",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "62d26acf99e50f34c887f87ac166dd69f2d9fb26a0795c8bcd95c612c596be65",
+      "snapshot_record_sha256": "352649927051fe0e87093c242ebe9c6db51d156d87f4a9a02437412569cb4563"
+    },
+    {
+      "race_id": "202609040410",
+      "identical_new_inputs": false,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "85c0252825be65fd742746ba5d04149ceded200a62bd1d79943f1e843fd3cb46",
+      "snapshot_record_sha256": "5dc8223af4d00af405fdf747f9eab290e85586952f4d426682cf5d07f02ee832"
+    },
+    {
+      "race_id": "202609040411",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "74c4230958ecb79388fd1634120597ef3a35a7ff498891c0d20822577a9322c5",
+      "snapshot_record_sha256": "f64ca93b0036488967f855f9bbadb9ff98b4afdcd0eaa5596c48c0520a66fc18"
+    },
+    {
+      "race_id": "202609040412",
+      "identical_new_inputs": true,
+      "max_abs_new_heads_diff": 0.0,
+      "max_abs_old_heads_diff": 0.0,
+      "capture_record_sha256": "1cf9d49968ad1392bc94f50e90d7fa2d1e702ff8d8a3f3b745365ff8fd176ccf",
+      "snapshot_record_sha256": "7df57446423546508392f0bb269c6f9226afa80216ea31c988a14dffaeec9306"
+    }
+  ],
+  "computed_at": "2026-09-13T00:44:50.469531+00:00"
+}

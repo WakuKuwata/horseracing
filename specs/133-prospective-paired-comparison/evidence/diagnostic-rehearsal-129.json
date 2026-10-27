@@ -1,0 +1,3663 @@
+{
+  "artifact_kind": "paired_prospective_score",
+  "can_adopt": false,
+  "computed_at": "2026-09-13T00:44:49.614546+00:00",
+  "conditions": {
+    "distance": {
+      "<=1400": {
+        "ci95": [
+          -0.03947238086716474,
+          0.03780197099870313
+        ],
+        "ci9875": [
+          -0.045918421790092874,
+          0.04028422286172433
+        ],
+        "diff_winner_nll": 0.0020156605710153486,
+        "n_days": 4,
+        "n_races": 48,
+        "new_brier_win": 0.060252265588054486,
+        "new_top1_hit": 0.3125,
+        "new_winner_nll": 2.0969039167838996,
+        "old_brier_win": 0.06063676588448722,
+        "old_top1_hit": 0.3333333333333333,
+        "old_winner_nll": 2.0948882562128843,
+        "share_races_new_better": 0.4791666666666667,
+        "top1_agreement": 0.8958333333333334
+      },
+      "<=1800": {
+        "ci95": [
+          -0.02042437209689277,
+          0.0026734384316444777
+        ],
+        "ci9875": [
+          -0.020745532385659092,
+          0.005748708363738378
+        ],
+        "diff_winner_nll": -0.010421581016095959,
+        "n_days": 4,
+        "n_races": 65,
+        "new_brier_win": 0.06859384226545576,
+        "new_top1_hit": 0.2923076923076923,
+        "new_winner_nll": 1.9791951708937023,
+        "old_brier_win": 0.06864746029168867,
+        "old_top1_hit": 0.2923076923076923,
+        "old_winner_nll": 1.9896167519097985,
+        "share_races_new_better": 0.5538461538461539,
+        "top1_agreement": 0.8769230769230769
+      },
+      "<=2200": {
+        "ci95": [
+          -0.0037894228199319598,
+          0.051994793799603214
+        ],
+        "ci9875": [
+          -0.006397723204562654,
+          0.052589559115124744
+        ],
+        "diff_winner_nll": 0.02900029078445017,
+        "n_days": 4,
+        "n_races": 25,
+        "new_brier_win": 0.06932577358717881,
+        "new_top1_hit": 0.32,
+        "new_winner_nll": 2.305121646098951,
+        "old_brier_win": 0.06836497445745547,
+        "old_top1_hit": 0.28,
+        "old_winner_nll": 2.2761213553145008,
+        "share_races_new_better": 0.52,
+        "top1_agreement": 0.88
+      },
+      ">2200": {
+        "ci95": [
+          -0.044280251052254985,
+          0.10075650689424942
+        ],
+        "ci9875": [
+          -0.04966862172086545,
+          0.10477014825638081
+        ],
+        "diff_winner_nll": 0.012104115729792716,
+        "n_days": 4,
+        "n_races": 6,
+        "new_brier_win": 0.08772999748417443,
+        "new_top1_hit": 0.0,
+        "new_winner_nll": 2.060418203629722,
+        "old_brier_win": 0.08677683921067153,
+        "old_top1_hit": 0.0,
+        "old_winner_nll": 2.0483140878999295,
+        "share_races_new_better": 0.5,
+        "top1_agreement": 1.0
+      }
+    },
+    "field_size": {
+      "9-13": {
+        "ci95": [
+          -0.026709906999215226,
+          -0.009007059923773764
+        ],
+        "ci9875": [
+          -0.02812119842452236,
+          -0.0076700608143369
+        ],
+        "diff_winner_nll": -0.01788382512205341,
+        "n_days": 4,
+        "n_races": 65,
+        "new_brier_win": 0.0735649772543097,
+        "new_top1_hit": 0.23076923076923078,
+        "new_winner_nll": 1.978669541739485,
+        "old_brier_win": 0.07377560902486689,
+        "old_top1_hit": 0.24615384615384617,
+        "old_winner_nll": 1.9965533668615383,
+        "share_races_new_better": 0.5692307692307692,
+        "top1_agreement": 0.9230769230769231
+      },
+      "<=8": {
+        "ci95": [
+          -0.07338159200585037,
+          0.14181122660195963
+        ],
+        "ci9875": [
+          -0.07338159200585037,
+          0.14181122660195963
+        ],
+        "diff_winner_nll": 0.025747988114577108,
+        "n_days": 3,
+        "n_races": 7,
+        "new_brier_win": 0.13612870516912395,
+        "new_top1_hit": 0.0,
+        "new_winner_nll": 2.141407913410471,
+        "old_brier_win": 0.13433680908652096,
+        "old_top1_hit": 0.0,
+        "old_winner_nll": 2.1156599252958936,
+        "share_races_new_better": 0.42857142857142855,
+        "top1_agreement": 1.0
+      },
+      ">=14": {
+        "ci95": [
+          0.0038442560327206325,
+          0.026731110694244633
+        ],
+        "ci9875": [
+          0.003329153003207205,
+          0.028003726963516398
+        ],
+        "diff_winner_nll": 0.01665546696505475,
+        "n_days": 4,
+        "n_races": 72,
+        "new_brier_win": 0.053827893921552177,
+        "new_top1_hit": 0.375,
+        "new_winner_nll": 2.1623090122365296,
+        "old_brier_win": 0.05370365038741071,
+        "old_top1_hit": 0.3611111111111111,
+        "old_winner_nll": 2.145653545271475,
+        "share_races_new_better": 0.4861111111111111,
+        "top1_agreement": 0.8472222222222222
+      }
+    },
+    "race_class": {
+      "conditions": {
+        "ci95": [
+          -0.03426431952380746,
+          0.039454019819337896
+        ],
+        "ci9875": [
+          -0.03729808007588159,
+          0.041341156333462935
+        ],
+        "diff_winner_nll": -0.0004974791360922303,
+        "n_days": 4,
+        "n_races": 62,
+        "new_brier_win": 0.06780710624034109,
+        "new_top1_hit": 0.2903225806451613,
+        "new_winner_nll": 2.12177938054582,
+        "old_brier_win": 0.06783746368452225,
+        "old_top1_hit": 0.25806451612903225,
+        "old_winner_nll": 2.1222768596819126,
+        "share_races_new_better": 0.5,
+        "top1_agreement": 0.8870967741935484
+      },
+      "maiden": {
+        "ci95": [
+          -0.02093216722145866,
+          0.01685894468849105
+        ],
+        "ci9875": [
+          -0.02146449536599923,
+          0.01786599541664307
+        ],
+        "diff_winner_nll": -0.005013006840402043,
+        "n_days": 4,
+        "n_races": 71,
+        "new_brier_win": 0.065018951423123,
+        "new_top1_hit": 0.30985915492957744,
+        "new_winner_nll": 2.0502237761456183,
+        "old_brier_win": 0.0650551513026012,
+        "old_top1_hit": 0.323943661971831,
+        "old_winner_nll": 2.0552367829860207,
+        "share_races_new_better": 0.5633802816901409,
+        "top1_agreement": 0.8873239436619719
+      },
+      "open": {
+        "ci95": [
+          -0.06192590373555684,
+          0.17113088015088831
+        ],
+        "ci9875": [
+          -0.075819391737195,
+          0.18535589270939898
+        ],
+        "diff_winner_nll": 0.0548861906780703,
+        "n_days": 4,
+        "n_races": 11,
+        "new_brier_win": 0.07180424382935234,
+        "new_top1_hit": 0.18181818181818182,
+        "new_winner_nll": 2.0157649807081977,
+        "old_brier_win": 0.07069059883550016,
+        "old_top1_hit": 0.2727272727272727,
+        "old_winner_nll": 1.9608787900301274,
+        "share_races_new_better": 0.36363636363636365,
+        "top1_agreement": 0.9090909090909091
+      }
+    },
+    "source": {
+      "shadow_129": {
+        "ci95": [
+          -0.008211825757212656,
+          0.011225449442664185
+        ],
+        "ci9875": [
+          -0.010470007385306063,
+          0.013313952246496223
+        ],
+        "diff_winner_nll": 0.001506811842725764,
+        "n_days": 4,
+        "n_races": 144,
+        "new_brier_win": 0.06673772791712329,
+        "new_top1_hit": 0.2916666666666667,
+        "new_winner_nll": 2.078400170055347,
+        "old_brier_win": 0.0666835769313581,
+        "old_top1_hit": 0.2916666666666667,
+        "old_winner_nll": 2.076893358212621,
+        "share_races_new_better": 0.5208333333333334,
+        "top1_agreement": 0.8888888888888888
+      }
+    },
+    "track_type": {
+      "ダ": {
+        "ci95": [
+          -0.022658756637979872,
+          0.01314345650352841
+        ],
+        "ci9875": [
+          -0.025094603989125063,
+          0.016292562797426753
+        ],
+        "diff_winner_nll": -0.004757650067225729,
+        "n_days": 4,
+        "n_races": 60,
+        "new_brier_win": 0.06382758454783863,
+        "new_top1_hit": 0.26666666666666666,
+        "new_winner_nll": 2.0532607170055304,
+        "old_brier_win": 0.0638932323001667,
+        "old_top1_hit": 0.2833333333333333,
+        "old_winner_nll": 2.0580183670727563,
+        "share_races_new_better": 0.55,
+        "top1_agreement": 0.8833333333333333
+      },
+      "芝": {
+        "ci95": [
+          -0.011294518956103979,
+          0.022212935376514163
+        ],
+        "ci9875": [
+          -0.012676625386871102,
+          0.024298667904023134
+        ],
+        "diff_winner_nll": 0.004621521851889639,
+        "n_days": 4,
+        "n_races": 80,
+        "new_brier_win": 0.06745278812420731,
+        "new_top1_hit": 0.325,
+        "new_winner_nll": 2.107563910356233,
+        "old_brier_win": 0.06739832556381557,
+        "old_top1_hit": 0.3125,
+        "old_winner_nll": 2.102942388504343,
+        "share_races_new_better": 0.5125,
+        "top1_agreement": 0.8875
+      },
+      "障": {
+        "ci95": [
+          -0.06166951053673636,
+          0.10075650689424942
+        ],
+        "ci9875": [
+          -0.07376659085789272,
+          0.10477014825638081
+        ],
+        "diff_winner_nll": 0.03317954030872067,
+        "n_days": 4,
+        "n_races": 4,
+        "new_brier_win": 0.09608867431471338,
+        "new_top1_hit": 0.0,
+        "new_winner_nll": 1.8722171597848787,
+        "old_brier_win": 0.09424377375007925,
+        "old_top1_hit": 0.0,
+        "old_winner_nll": 1.839037619476158,
+        "share_races_new_better": 0.25,
+        "top1_agreement": 1.0
+      }
+    },
+    "weight_publication_state": {
+      "full": {
+        "ci95": [
+          -0.008211825757212656,
+          0.011225449442664185
+        ],
+        "ci9875": [
+          -0.010470007385306063,
+          0.013313952246496223
+        ],
+        "diff_winner_nll": 0.001506811842725764,
+        "n_days": 4,
+        "n_races": 144,
+        "new_brier_win": 0.06673772791712329,
+        "new_top1_hit": 0.2916666666666667,
+        "new_winner_nll": 2.078400170055347,
+        "old_brier_win": 0.0666835769313581,
+        "old_top1_hit": 0.2916666666666667,
+        "old_winner_nll": 2.076893358212621,
+        "share_races_new_better": 0.5208333333333334,
+        "top1_agreement": 0.8888888888888888
+      }
+    }
+  },
+  "coverage": {
+    "races_with_record": 144,
+    "races_without_record": [
+      "202606040401",
+      "202606040402",
+      "202606040403",
+      "202606040404",
+      "202606040405",
+      "202606040406",
+      "202606040407",
+      "202606040408",
+      "202606040409",
+      "202606040410",
+      "202606040411",
+      "202606040412",
+      "202609040401",
+      "202609040402",
+      "202609040403",
+      "202609040404",
+      "202609040405",
+      "202609040406",
+      "202609040407",
+      "202609040408",
+      "202609040409",
+      "202609040410",
+      "202609040411",
+      "202609040412"
+    ],
+    "scheduled_days_in_window_now": 1,
+    "scheduled_races_in_window_now": 24,
+    "scheduled_races_without_results_now": 24
+  },
+  "diagnostic_rehearsal": true,
+  "excluded": {},
+  "excluded_counts": {},
+  "heads_served_convention_frozen_lambda": {
+    "top2": {
+      "new": {
+        "brier": 0.10783163797363456,
+        "ece_equal_mass_10": 0.007898085632195836,
+        "log_loss": 0.35174671433259014,
+        "mean_pred": 0.15078534031413612,
+        "n_horses": 1910,
+        "realized_rate": 0.15078534031413612
+      },
+      "old": {
+        "brier": 0.10763982861306055,
+        "ece_equal_mass_10": 0.012999620549903723,
+        "log_loss": 0.35085795277972553,
+        "mean_pred": 0.15078534031413612,
+        "n_horses": 1910,
+        "realized_rate": 0.15078534031413612
+      }
+    },
+    "top3": {
+      "new": {
+        "brier": 0.14255429086297858,
+        "ece_equal_mass_10": 0.014157932449798913,
+        "log_loss": 0.44239440317655954,
+        "mean_pred": 0.2261780104712042,
+        "n_horses": 1910,
+        "realized_rate": 0.2261780104712042
+      },
+      "old": {
+        "brier": 0.14255770068000445,
+        "ece_equal_mass_10": 0.016086627662742336,
+        "log_loss": 0.4423724871090335,
+        "mean_pred": 0.2261780104712042,
+        "n_horses": 1910,
+        "realized_rate": 0.2261780104712042
+      }
+    },
+    "win": {
+      "new": {
+        "brier": 0.06328370609753323,
+        "ece_equal_mass_10": 0.006020043945074407,
+        "log_loss": 0.22582522759413257,
+        "mean_pred": 0.07539267015706806,
+        "n_horses": 1910,
+        "realized_rate": 0.07539267015706806
+      },
+      "old": {
+        "brier": 0.06324171050771028,
+        "ece_equal_mass_10": 0.01047897365369919,
+        "log_loss": 0.22560741077864646,
+        "mean_pred": 0.07539267015706806,
+        "n_horses": 1910,
+        "realized_rate": 0.07539267015706806
+      }
+    }
+  },
+  "mode": "interim",
+  "overall": {
+    "by_day": {
+      "2026-08-29": {
+        "diff_winner_nll": -0.01272818901339947,
+        "n": 36
+      },
+      "2026-08-30": {
+        "diff_winner_nll": -0.0036954625010258424,
+        "n": 36
+      },
+      "2026-09-05": {
+        "diff_winner_nll": 0.015402455050328263,
+        "n": 36
+      },
+      "2026-09-06": {
+        "diff_winner_nll": 0.007048443835000106,
+        "n": 36
+      }
+    },
+    "ci95": [
+      -0.008211825757212656,
+      0.011225449442664185
+    ],
+    "ci9875": [
+      -0.010470007385306063,
+      0.013313952246496223
+    ],
+    "diff_winner_nll": 0.001506811842725764,
+    "leave_one_day_out_shift": {
+      "2026-08-29": 0.004745000285375079,
+      "2026-08-30": 0.0017340914479172021,
+      "2026-09-05": -0.0046318810692008335,
+      "2026-09-06": -0.0018472106640914474
+    },
+    "n_days": 4,
+    "n_races": 144,
+    "new_brier_win": 0.06673772791712329,
+    "new_top1_hit": 0.2916666666666667,
+    "new_winner_nll": 2.078400170055347,
+    "old_brier_win": 0.0666835769313581,
+    "old_top1_hit": 0.2916666666666667,
+    "old_winner_nll": 2.076893358212621,
+    "share_races_new_better": 0.5208333333333334,
+    "top1_agreement": 0.8888888888888888
+  },
+  "pending": {},
+  "pending_counts": {},
+  "per_race": [
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.1428688420859474,
+      "n_started": 14,
+      "new_brier_win": 0.06146530212434032,
+      "new_top1": "nk:2023105726",
+      "new_winner_nll": 2.1081352609762067,
+      "old_brier_win": 0.05866252877695518,
+      "old_top1": "nk:2023103168",
+      "old_winner_nll": 1.9652664188902593,
+      "race_day": "2026-08-29",
+      "race_id": "202601020301",
+      "source": "shadow_129",
+      "winner": "nk:2023103168"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.059043314332714036,
+      "n_started": 13,
+      "new_brier_win": 0.0850681999162847,
+      "new_top1": "nk:2024105934",
+      "new_winner_nll": 3.0258041242675913,
+      "old_brier_win": 0.08389876218819883,
+      "old_top1": "nk:2024105934",
+      "old_winner_nll": 2.9667608099348772,
+      "race_day": "2026-08-29",
+      "race_id": "202601020302",
+      "source": "shadow_129",
+      "winner": "nk:2024100935"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.021493451115943252,
+      "n_started": 11,
+      "new_brier_win": 0.08156554823501745,
+      "new_top1": "nk:2024106180",
+      "new_winner_nll": 1.752085435848767,
+      "old_brier_win": 0.08047197208201076,
+      "old_top1": "nk:2024106180",
+      "old_winner_nll": 1.7735788869647102,
+      "race_day": "2026-08-29",
+      "race_id": "202601020303",
+      "source": "shadow_129",
+      "winner": "nk:2024103490"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.06491021343282322,
+      "n_started": 12,
+      "new_brier_win": 0.06307261411068242,
+      "new_top1": "2023107310",
+      "new_winner_nll": 1.55877885866727,
+      "old_brier_win": 0.06109237264077442,
+      "old_top1": "2023105279",
+      "old_winner_nll": 1.4938686452344467,
+      "race_day": "2026-08-29",
+      "race_id": "202601020304",
+      "source": "shadow_129",
+      "winner": "2023105279"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.2019625339571831,
+      "n_started": 14,
+      "new_brier_win": 0.053526085407632165,
+      "new_top1": "nk:2024106798",
+      "new_winner_nll": 1.739605337481307,
+      "old_brier_win": 0.05789885495438727,
+      "old_top1": "nk:2024106798",
+      "old_winner_nll": 1.94156787143849,
+      "race_day": "2026-08-29",
+      "race_id": "202601020305",
+      "source": "shadow_129",
+      "winner": "nk:2024106798"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.010944194222530568,
+      "n_started": 14,
+      "new_brier_win": 0.05127077633981348,
+      "new_top1": "nk:2023106578",
+      "new_winner_nll": 1.634446731382439,
+      "old_brier_win": 0.05141701229593346,
+      "old_top1": "nk:2023106578",
+      "old_winner_nll": 1.6453909256049695,
+      "race_day": "2026-08-29",
+      "race_id": "202601020306",
+      "source": "shadow_129",
+      "winner": "nk:2023106578"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.17238245875408142,
+      "n_started": 16,
+      "new_brier_win": 0.04564850703358592,
+      "new_top1": "2023103528",
+      "new_winner_nll": 1.654869012692211,
+      "old_brier_win": 0.04949848400760101,
+      "old_top1": "2023103137",
+      "old_winner_nll": 1.8272514714462924,
+      "race_day": "2026-08-29",
+      "race_id": "202601020307",
+      "source": "shadow_129",
+      "winner": "2023103528"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.13428315949255554,
+      "n_started": 10,
+      "new_brier_win": 0.08503260917583598,
+      "new_top1": "nk:2023103750",
+      "new_winner_nll": 1.8303283575020934,
+      "old_brier_win": 0.0886686864619701,
+      "old_top1": "nk:2023103750",
+      "old_winner_nll": 1.964611516994649,
+      "race_day": "2026-08-29",
+      "race_id": "202601020308",
+      "source": "shadow_129",
+      "winner": "2023105545"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.07969548865050347,
+      "n_started": 12,
+      "new_brier_win": 0.0408389026253849,
+      "new_top1": "2023104487",
+      "new_winner_nll": 1.0603858994266708,
+      "old_brier_win": 0.04370740811412265,
+      "old_top1": "2023104487",
+      "old_winner_nll": 1.1400813880771743,
+      "race_day": "2026-08-29",
+      "race_id": "202601020309",
+      "source": "shadow_129",
+      "winner": "2023104487"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.1550217090253998,
+      "n_started": 12,
+      "new_brier_win": 0.06485656641334595,
+      "new_top1": "nk:2024103547",
+      "new_winner_nll": 1.6986444460532188,
+      "old_brier_win": 0.06865260861375634,
+      "old_top1": "nk:2024103547",
+      "old_winner_nll": 1.8536661550786186,
+      "race_day": "2026-08-29",
+      "race_id": "202601020310",
+      "source": "shadow_129",
+      "winner": "nk:2024107239"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.10664442419059617,
+      "n_started": 14,
+      "new_brier_win": 0.07384449128692372,
+      "new_top1": "2022105796",
+      "new_winner_nll": 2.92833441657713,
+      "old_brier_win": 0.07221526220759635,
+      "old_top1": "2022105796",
+      "old_winner_nll": 2.821689992386534,
+      "race_day": "2026-08-29",
+      "race_id": "202601020311",
+      "source": "shadow_129",
+      "winner": "2020103910"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.16927100083826652,
+      "n_started": 12,
+      "new_brier_win": 0.058189879265525456,
+      "new_top1": "nk:2023104324",
+      "new_winner_nll": 1.3538625768046313,
+      "old_brier_win": 0.05143920691946869,
+      "old_top1": "nk:2023104324",
+      "old_winner_nll": 1.1845915759663648,
+      "race_day": "2026-08-29",
+      "race_id": "202601020312",
+      "source": "shadow_129",
+      "winner": "nk:2023102455"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.08164237512256833,
+      "n_started": 14,
+      "new_brier_win": 0.061212576825408906,
+      "new_top1": "2023102608",
+      "new_winner_nll": 2.0672291478453397,
+      "old_brier_win": 0.05967343824885541,
+      "old_top1": "2023102608",
+      "old_winner_nll": 1.9855867727227714,
+      "race_day": "2026-08-30",
+      "race_id": "202601020401",
+      "source": "shadow_129",
+      "winner": "nk:2023104322"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.012434155766774202,
+      "n_started": 14,
+      "new_brier_win": 0.06315870181008991,
+      "new_top1": "nk:2024106429",
+      "new_winner_nll": 1.7917941812268625,
+      "old_brier_win": 0.06187139538078175,
+      "old_top1": "nk:2024106429",
+      "old_winner_nll": 1.7793600254600883,
+      "race_day": "2026-08-30",
+      "race_id": "202601020402",
+      "source": "shadow_129",
+      "winner": "nk:2024106450"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.08534703823062073,
+      "n_started": 14,
+      "new_brier_win": 0.05771035672996454,
+      "new_top1": "nk:2023100609",
+      "new_winner_nll": 1.8843694355442027,
+      "old_brier_win": 0.059534820870535334,
+      "old_top1": "nk:2023100609",
+      "old_winner_nll": 1.9697164737748234,
+      "race_day": "2026-08-30",
+      "race_id": "202601020403",
+      "source": "shadow_129",
+      "winner": "2023105444"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.015343444127170924,
+      "n_started": 16,
+      "new_brier_win": 0.04067888407337561,
+      "new_top1": "nk:2023103481",
+      "new_winner_nll": 1.4204797712817163,
+      "old_brier_win": 0.041072024673585804,
+      "old_top1": "nk:2023103481",
+      "old_winner_nll": 1.4358232154088872,
+      "race_day": "2026-08-30",
+      "race_id": "202601020404",
+      "source": "shadow_129",
+      "winner": "nk:2023103481"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "<=8",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.06418769190480167,
+      "n_started": 8,
+      "new_brier_win": 0.08381204523907627,
+      "new_top1": "nk:2024106115",
+      "new_winner_nll": 1.3474520636329277,
+      "old_brier_win": 0.0796695835041313,
+      "old_top1": "nk:2024106115",
+      "old_winner_nll": 1.283264371728126,
+      "race_day": "2026-08-30",
+      "race_id": "202601020405",
+      "source": "shadow_129",
+      "winner": "nk:2024106744"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.17306889637972578,
+      "n_started": 12,
+      "new_brier_win": 0.0781494172089509,
+      "new_top1": "nk:2023106623",
+      "new_winner_nll": 2.1223956126815597,
+      "old_brier_win": 0.0740942438067228,
+      "old_top1": "nk:2023106623",
+      "old_winner_nll": 1.949326716301834,
+      "race_day": "2026-08-30",
+      "race_id": "202601020406",
+      "source": "shadow_129",
+      "winner": "nk:2023100471"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.09294345359943224,
+      "n_started": 12,
+      "new_brier_win": 0.0612355855519641,
+      "new_top1": "2018103293",
+      "new_winner_nll": 1.5642067288398303,
+      "old_brier_win": 0.06450955214247214,
+      "old_top1": "2018103293",
+      "old_winner_nll": 1.6571501824392625,
+      "race_day": "2026-08-30",
+      "race_id": "202601020407",
+      "source": "shadow_129",
+      "winner": "nk:2021103451"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.006464820352188871,
+      "n_started": 14,
+      "new_brier_win": 0.036078897443390566,
+      "new_top1": "2023104690",
+      "new_winner_nll": 1.0652112478454892,
+      "old_brier_win": 0.03542190750627221,
+      "old_top1": "2023104690",
+      "old_winner_nll": 1.0587464274933003,
+      "race_day": "2026-08-30",
+      "race_id": "202601020408",
+      "source": "shadow_129",
+      "winner": "2023104690"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.08347948232948443,
+      "n_started": 11,
+      "new_brier_win": 0.07098328456240503,
+      "new_top1": "2022104729",
+      "new_winner_nll": 1.7460294293418281,
+      "old_brier_win": 0.06899387081541729,
+      "old_top1": "2022104729",
+      "old_winner_nll": 1.6625499470123437,
+      "race_day": "2026-08-30",
+      "race_id": "202601020409",
+      "source": "shadow_129",
+      "winner": "2022104729"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.060442645870861345,
+      "n_started": 16,
+      "new_brier_win": 0.05952399580163761,
+      "new_top1": "2023106190",
+      "new_winner_nll": 2.5112752328658585,
+      "old_brier_win": 0.0594635161704059,
+      "old_top1": "2023106190",
+      "old_winner_nll": 2.450832586994997,
+      "race_day": "2026-08-30",
+      "race_id": "202601020410",
+      "source": "shadow_129",
+      "winner": "2023100925"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.0837935265382157,
+      "n_started": 14,
+      "new_brier_win": 0.06470631573378699,
+      "new_top1": "nk:2023106916",
+      "new_winner_nll": 2.3244946267557696,
+      "old_brier_win": 0.0633904931017716,
+      "old_top1": "2022105601",
+      "old_winner_nll": 2.240701100217554,
+      "race_day": "2026-08-30",
+      "race_id": "202601020411",
+      "source": "shadow_129",
+      "winner": "2022101412"
+    },
+    {
+      "conditions": {
+        "distance": ">2200",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.021094571739613155,
+      "n_started": 14,
+      "new_brier_win": 0.07485608248286102,
+      "new_top1": "nk:2023101050",
+      "new_winner_nll": 2.4288526226274927,
+      "old_brier_win": 0.07489840519612345,
+      "old_top1": "nk:2023101050",
+      "old_winner_nll": 2.449947194367106,
+      "race_day": "2026-08-30",
+      "race_id": "202601020412",
+      "source": "shadow_129",
+      "winner": "2023106077"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.1429342272835772,
+      "n_started": 12,
+      "new_brier_win": 0.08086117418405794,
+      "new_top1": "nk:2024108279",
+      "new_winner_nll": 1.655047653036429,
+      "old_brier_win": 0.0717547426573185,
+      "old_top1": "nk:2024108279",
+      "old_winner_nll": 1.512113425752852,
+      "race_day": "2026-09-05",
+      "race_id": "202601020501",
+      "source": "shadow_129",
+      "winner": "nk:2024106754"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.059078334449050196,
+      "n_started": 11,
+      "new_brier_win": 0.06729272194929031,
+      "new_top1": "nk:2024103914",
+      "new_winner_nll": 1.5933141587551682,
+      "old_brier_win": 0.06509886758827516,
+      "old_top1": "nk:2024104759",
+      "old_winner_nll": 1.534235824306118,
+      "race_day": "2026-09-05",
+      "race_id": "202601020502",
+      "source": "shadow_129",
+      "winner": "nk:2024104759"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.27036076337817994,
+      "n_started": 12,
+      "new_brier_win": 0.08807690626116131,
+      "new_top1": "nk:2023101755",
+      "new_winner_nll": 3.261643682088384,
+      "old_brier_win": 0.08588840430690665,
+      "old_top1": "nk:2023101755",
+      "old_winner_nll": 2.991282918710204,
+      "race_day": "2026-09-05",
+      "race_id": "202601020503",
+      "source": "shadow_129",
+      "winner": "nk:2023102999"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.06855721831357153,
+      "n_started": 14,
+      "new_brier_win": 0.03038842530997929,
+      "new_top1": "nk:2023101756",
+      "new_winner_nll": 0.965723458071064,
+      "old_brier_win": 0.03310778381177865,
+      "old_top1": "nk:2023101756",
+      "old_winner_nll": 1.0342806763846355,
+      "race_day": "2026-09-05",
+      "race_id": "202601020504",
+      "source": "shadow_129",
+      "winner": "nk:2023101756"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.0767599001786432,
+      "n_started": 14,
+      "new_brier_win": 0.04703036776558572,
+      "new_top1": "nk:2024106514",
+      "new_winner_nll": 1.427389310278363,
+      "old_brier_win": 0.048813579536239375,
+      "old_top1": "nk:2024106514",
+      "old_winner_nll": 1.5041492104570062,
+      "race_day": "2026-09-05",
+      "race_id": "202601020505",
+      "source": "shadow_129",
+      "winner": "nk:2024106514"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.02164892570531851,
+      "n_started": 16,
+      "new_brier_win": 0.06506424579086759,
+      "new_top1": "nk:2023106411",
+      "new_winner_nll": 3.6020683728999576,
+      "old_brier_win": 0.06497829887565895,
+      "old_top1": "nk:2023106411",
+      "old_winner_nll": 3.623717298605276,
+      "race_day": "2026-09-05",
+      "race_id": "202601020506",
+      "source": "shadow_129",
+      "winner": "nk:2023100771"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.033521202527213356,
+      "n_started": 12,
+      "new_brier_win": 0.0721148326011564,
+      "new_top1": "nk:2023106840",
+      "new_winner_nll": 1.8748273122888302,
+      "old_brier_win": 0.0716262359636924,
+      "old_top1": "nk:2023106840",
+      "old_winner_nll": 1.8413061097616168,
+      "race_day": "2026-09-05",
+      "race_id": "202601020507",
+      "source": "shadow_129",
+      "winner": "2022106618"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.05690373108149838,
+      "n_started": 12,
+      "new_brier_win": 0.06916635169433215,
+      "new_top1": "nk:2023103168",
+      "new_winner_nll": 1.8880842934925501,
+      "old_brier_win": 0.07110545468676856,
+      "old_top1": "nk:2023103168",
+      "old_winner_nll": 1.9449880245740485,
+      "race_day": "2026-09-05",
+      "race_id": "202601020508",
+      "source": "shadow_129",
+      "winner": "2023105032"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.12067166732198054,
+      "n_started": 14,
+      "new_brier_win": 0.06362279254925031,
+      "new_top1": "2023100207",
+      "new_winner_nll": 2.1866423228230403,
+      "old_brier_win": 0.06178618288122143,
+      "old_top1": "2023100207",
+      "old_winner_nll": 2.0659706555010597,
+      "race_day": "2026-09-05",
+      "race_id": "202601020509",
+      "source": "shadow_129",
+      "winner": "2022104724"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.13725701832080572,
+      "n_started": 16,
+      "new_brier_win": 0.062432765945641816,
+      "new_top1": "2023106619",
+      "new_winner_nll": 2.7503018870018643,
+      "old_brier_win": 0.06130540042450539,
+      "old_top1": "2023106619",
+      "old_winner_nll": 2.6130448686810586,
+      "race_day": "2026-09-05",
+      "race_id": "202601020510",
+      "source": "shadow_129",
+      "winner": "2021103478"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.1320846379730901,
+      "n_started": 9,
+      "new_brier_win": 0.02319059092504272,
+      "new_top1": "nk:2024106438",
+      "new_winner_nll": 0.5247663616542915,
+      "old_brier_win": 0.03145949667647957,
+      "old_top1": "nk:2024106438",
+      "old_winner_nll": 0.6568509996273816,
+      "race_day": "2026-09-05",
+      "race_id": "202601020511",
+      "source": "shadow_129",
+      "winner": "nk:2024106438"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.11020579608256664,
+      "n_started": 13,
+      "new_brier_win": 0.08627155533319497,
+      "new_top1": "nk:2023106217",
+      "new_winner_nll": 4.190675059465723,
+      "old_brier_win": 0.08557316868301362,
+      "old_top1": "nk:2023104766",
+      "old_winner_nll": 4.300880855548289,
+      "race_day": "2026-09-05",
+      "race_id": "202601020512",
+      "source": "shadow_129",
+      "winner": "nk:2023104384"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.1461529326183868,
+      "n_started": 13,
+      "new_brier_win": 0.07762196575877908,
+      "new_top1": "2023102608",
+      "new_winner_nll": 2.8094441348394636,
+      "old_brier_win": 0.08088042382256341,
+      "old_top1": "2023102608",
+      "old_winner_nll": 2.9555970674578504,
+      "race_day": "2026-09-06",
+      "race_id": "202601020601",
+      "source": "shadow_129",
+      "winner": "nk:2023103191"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.03221814283441926,
+      "n_started": 10,
+      "new_brier_win": 0.09121678498611602,
+      "new_top1": "nk:2024103201",
+      "new_winner_nll": 2.018251720996858,
+      "old_brier_win": 0.09065091614300472,
+      "old_top1": "nk:2024103201",
+      "old_winner_nll": 1.9860335781624388,
+      "race_day": "2026-09-06",
+      "race_id": "202601020602",
+      "source": "shadow_129",
+      "winner": "nk:2024103650"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.046774307900306455,
+      "n_started": 14,
+      "new_brier_win": 0.051713703365161075,
+      "new_top1": "nk:2023110069",
+      "new_winner_nll": 1.5422399714464896,
+      "old_brier_win": 0.049831626901177595,
+      "old_top1": "nk:2023110069",
+      "old_winner_nll": 1.4954656635461832,
+      "race_day": "2026-09-06",
+      "race_id": "202601020603",
+      "source": "shadow_129",
+      "winner": "nk:2023105280"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.09553570456533489,
+      "n_started": 16,
+      "new_brier_win": 0.06091246314707978,
+      "new_top1": "nk:2023110076",
+      "new_winner_nll": 2.5740915599312313,
+      "old_brier_win": 0.05945581822994108,
+      "old_top1": "nk:2023110076",
+      "old_winner_nll": 2.4785558553658964,
+      "race_day": "2026-09-06",
+      "race_id": "202601020604",
+      "source": "shadow_129",
+      "winner": "2023106567"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.006641688629511755,
+      "n_started": 16,
+      "new_brier_win": 0.05992330956805371,
+      "new_top1": "nk:2023101812",
+      "new_winner_nll": 2.4709518564769217,
+      "old_brier_win": 0.0604040056551359,
+      "old_top1": "2023102333",
+      "old_winner_nll": 2.4775935451064335,
+      "race_day": "2026-09-06",
+      "race_id": "202601020605",
+      "source": "shadow_129",
+      "winner": "nk:2023106617"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.02163207896310526,
+      "n_started": 12,
+      "new_brier_win": 0.08734677855754842,
+      "new_top1": "2022104941",
+      "new_winner_nll": 3.1617471146567953,
+      "old_brier_win": 0.08668932715597265,
+      "old_top1": "2022104941",
+      "old_winner_nll": 3.14011503569369,
+      "race_day": "2026-09-06",
+      "race_id": "202601020606",
+      "source": "shadow_129",
+      "winner": "2023105806"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.16427700036321213,
+      "n_started": 16,
+      "new_brier_win": 0.04544105217373877,
+      "new_top1": "2023105317",
+      "new_winner_nll": 1.6594804156385914,
+      "old_brier_win": 0.041534571751102624,
+      "old_top1": "2023105317",
+      "old_winner_nll": 1.4952034152753793,
+      "race_day": "2026-09-06",
+      "race_id": "202601020607",
+      "source": "shadow_129",
+      "winner": "2023105317"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.01363135708483576,
+      "n_started": 14,
+      "new_brier_win": 0.032924291735644096,
+      "new_top1": "nk:2023105344",
+      "new_winner_nll": 0.9778941590651832,
+      "old_brier_win": 0.032420950132320714,
+      "old_top1": "nk:2023105344",
+      "old_winner_nll": 0.9642628019803474,
+      "race_day": "2026-09-06",
+      "race_id": "202601020608",
+      "source": "shadow_129",
+      "winner": "nk:2023105344"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.05057309357731277,
+      "n_started": 14,
+      "new_brier_win": 0.04491171541409988,
+      "new_top1": "nk:2023101793",
+      "new_winner_nll": 1.3556277862141075,
+      "old_brier_win": 0.04334002187417701,
+      "old_top1": "nk:2023101793",
+      "old_winner_nll": 1.3050546926367947,
+      "race_day": "2026-09-06",
+      "race_id": "202601020609",
+      "source": "shadow_129",
+      "winner": "nk:2023101793"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.014583229869263414,
+      "n_started": 14,
+      "new_brier_win": 0.05216853744667923,
+      "new_top1": "nk:2023106894",
+      "new_winner_nll": 1.6097597650382962,
+      "old_brier_win": 0.05163384542176593,
+      "old_top1": "nk:2023106894",
+      "old_winner_nll": 1.5951765351690328,
+      "race_day": "2026-09-06",
+      "race_id": "202601020610",
+      "source": "shadow_129",
+      "winner": "nk:2023106894"
+    },
+    {
+      "conditions": {
+        "distance": ">2200",
+        "field_size": ">=14",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.03899889511651322,
+      "n_started": 14,
+      "new_brier_win": 0.06716920516333204,
+      "new_top1": "2022107282",
+      "new_winner_nll": 2.444787960011325,
+      "old_brier_win": 0.06878753506758875,
+      "old_top1": "2022107282",
+      "old_winner_nll": 2.483786855127838,
+      "race_day": "2026-09-06",
+      "race_id": "202601020611",
+      "source": "shadow_129",
+      "winner": "2022104733"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.04975400257041285,
+      "n_started": 12,
+      "new_brier_win": 0.08560160626117536,
+      "new_top1": "nk:2023103750",
+      "new_winner_nll": 2.762917002440438,
+      "old_brier_win": 0.08498097376613682,
+      "old_top1": "nk:2023103750",
+      "old_winner_nll": 2.8126710050108508,
+      "race_day": "2026-09-06",
+      "race_id": "202601020612",
+      "source": "shadow_129",
+      "winner": "2022102929"
+    },
+    {
+      "conditions": {
+        "distance": ">2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "障",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.1087837896185122,
+      "n_started": 12,
+      "new_brier_win": 0.06445942912529913,
+      "new_top1": "2020102648",
+      "new_winner_nll": 1.6067115965710785,
+      "old_brier_win": 0.06035232435407204,
+      "old_top1": "2020102648",
+      "old_winner_nll": 1.4979278069525663,
+      "race_day": "2026-08-29",
+      "race_id": "202604030301",
+      "source": "shadow_129",
+      "winner": "2018103590"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.10107967151331176,
+      "n_started": 15,
+      "new_brier_win": 0.054759523414573776,
+      "new_top1": "nk:2023104504",
+      "new_winner_nll": 1.8195138393120824,
+      "old_brier_win": 0.052144809401272654,
+      "old_top1": "nk:2023104504",
+      "old_winner_nll": 1.7184341677987707,
+      "race_day": "2026-08-29",
+      "race_id": "202604030302",
+      "source": "shadow_129",
+      "winner": "2023105753"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.04392617762486006,
+      "n_started": 11,
+      "new_brier_win": 0.08726986116695992,
+      "new_top1": "nk:2024106017",
+      "new_winner_nll": 2.2601835495346836,
+      "old_brier_win": 0.08805998326428441,
+      "old_top1": "nk:2024106017",
+      "old_winner_nll": 2.3041097271595437,
+      "race_day": "2026-08-29",
+      "race_id": "202604030303",
+      "source": "shadow_129",
+      "winner": "nk:2024101140"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.08447569072005878,
+      "n_started": 18,
+      "new_brier_win": 0.03374922480310657,
+      "new_top1": "nk:2024106743",
+      "new_winner_nll": 1.3373610608638982,
+      "old_brier_win": 0.03154019396185037,
+      "old_top1": "nk:2024106743",
+      "old_winner_nll": 1.2528853701438394,
+      "race_day": "2026-08-29",
+      "race_id": "202604030304",
+      "source": "shadow_129",
+      "winner": "nk:2024106743"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.08390969814521676,
+      "n_started": 18,
+      "new_brier_win": 0.036454074284395954,
+      "new_top1": "nk:2023103075",
+      "new_winner_nll": 1.3760887557575652,
+      "old_brier_win": 0.039071227669303904,
+      "old_top1": "nk:2023107195",
+      "old_winner_nll": 1.459998453902782,
+      "race_day": "2026-08-29",
+      "race_id": "202604030305",
+      "source": "shadow_129",
+      "winner": "nk:2023103075"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.047998420860063895,
+      "n_started": 15,
+      "new_brier_win": 0.05636692939197437,
+      "new_top1": "2022105863",
+      "new_winner_nll": 1.8678147914917296,
+      "old_brier_win": 0.056988781458244195,
+      "old_top1": "2022105863",
+      "old_winner_nll": 1.9158132123517935,
+      "race_day": "2026-08-29",
+      "race_id": "202604030306",
+      "source": "shadow_129",
+      "winner": "2023103013"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.10967081562893966,
+      "n_started": 17,
+      "new_brier_win": 0.03846996340499356,
+      "new_top1": "2022105002",
+      "new_winner_nll": 1.463449055297988,
+      "old_brier_win": 0.03604088269153941,
+      "old_top1": "2022105002",
+      "old_winner_nll": 1.3537782396690483,
+      "race_day": "2026-08-29",
+      "race_id": "202604030307",
+      "source": "shadow_129",
+      "winner": "2022105002"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.09812209801274108,
+      "n_started": 11,
+      "new_brier_win": 0.09239258338108955,
+      "new_top1": "2022106553",
+      "new_winner_nll": 2.45362437404363,
+      "old_brier_win": 0.09460033027319797,
+      "old_top1": "2022106553",
+      "old_winner_nll": 2.551746472056371,
+      "race_day": "2026-08-29",
+      "race_id": "202604030308",
+      "source": "shadow_129",
+      "winner": "2022100154"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.1025760011999266,
+      "n_started": 13,
+      "new_brier_win": 0.06911337129249966,
+      "new_top1": "nk:2023107013",
+      "new_winner_nll": 1.8698578449567436,
+      "old_brier_win": 0.07117605352078113,
+      "old_top1": "nk:2023107013",
+      "old_winner_nll": 1.9724338461566702,
+      "race_day": "2026-08-29",
+      "race_id": "202604030309",
+      "source": "shadow_129",
+      "winner": "2023103471"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.057290348472639696,
+      "n_started": 18,
+      "new_brier_win": 0.031626838692647194,
+      "new_top1": "2022105184",
+      "new_winner_nll": 1.2443908725916415,
+      "old_brier_win": 0.03018768357254838,
+      "old_top1": "2022105184",
+      "old_winner_nll": 1.1871005241190018,
+      "race_day": "2026-08-29",
+      "race_id": "202604030310",
+      "source": "shadow_129",
+      "winner": "2022105184"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.11941502562227191,
+      "n_started": 18,
+      "new_brier_win": 0.07084713337597927,
+      "new_top1": "nk:2023107340",
+      "new_winner_nll": 3.563054701072214,
+      "old_brier_win": 0.07073336797547937,
+      "old_top1": "nk:2023107340",
+      "old_winner_nll": 3.443639675449942,
+      "race_day": "2026-08-29",
+      "race_id": "202604030311",
+      "source": "shadow_129",
+      "winner": "nk:2023105298"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.09936275137358874,
+      "n_started": 12,
+      "new_brier_win": 0.031414734959654446,
+      "new_top1": "nk:2023106053",
+      "new_winner_nll": 0.7874568221284441,
+      "old_brier_win": 0.03596897764933548,
+      "old_top1": "nk:2023106053",
+      "old_winner_nll": 0.8868195735020329,
+      "race_day": "2026-08-29",
+      "race_id": "202604030312",
+      "source": "shadow_129",
+      "winner": "nk:2023106053"
+    },
+    {
+      "conditions": {
+        "distance": ">2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "障",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.11313575543897736,
+      "n_started": 12,
+      "new_brier_win": 0.08708635559370687,
+      "new_top1": "2020103063",
+      "new_winner_nll": 2.2932077302294855,
+      "old_brier_win": 0.090030252959452,
+      "old_top1": "2020103063",
+      "old_winner_nll": 2.406343485668463,
+      "race_day": "2026-08-30",
+      "race_id": "202604030401",
+      "source": "shadow_129",
+      "winner": "2021100557"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.004922615530009278,
+      "n_started": 13,
+      "new_brier_win": 0.05226009141786885,
+      "new_top1": "nk:2024106651",
+      "new_winner_nll": 1.331221708941029,
+      "old_brier_win": 0.05210273041919062,
+      "old_top1": "nk:2024106651",
+      "old_winner_nll": 1.3361443244710383,
+      "race_day": "2026-08-30",
+      "race_id": "202604030402",
+      "source": "shadow_129",
+      "winner": "nk:2024106700"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "<=8",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.2109508759165024,
+      "n_started": 8,
+      "new_brier_win": 0.14882060003389502,
+      "new_top1": "nk:2024104469",
+      "new_winner_nll": 4.5179802484792715,
+      "old_brier_win": 0.14831877430653034,
+      "old_top1": "nk:2024104469",
+      "old_winner_nll": 4.728931124395774,
+      "race_day": "2026-08-30",
+      "race_id": "202604030403",
+      "source": "shadow_129",
+      "winner": "nk:2024103855"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.05813359373587079,
+      "n_started": 11,
+      "new_brier_win": 0.024219964671881075,
+      "new_top1": "nk:2024106452",
+      "new_winner_nll": 0.6591002540774592,
+      "old_brier_win": 0.021055485645349602,
+      "old_top1": "nk:2024106452",
+      "old_winner_nll": 0.6009666603415884,
+      "race_day": "2026-08-30",
+      "race_id": "202604030404",
+      "source": "shadow_129",
+      "winner": "nk:2024106452"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.014629371641726507,
+      "n_started": 18,
+      "new_brier_win": 0.06080789300324966,
+      "new_top1": "nk:2023105858",
+      "new_winner_nll": 4.088977455867333,
+      "old_brier_win": 0.06074829429098134,
+      "old_top1": "nk:2023105858",
+      "old_winner_nll": 4.10360682750906,
+      "race_day": "2026-08-30",
+      "race_id": "202604030405",
+      "source": "shadow_129",
+      "winner": "2023101910"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.05534473402502116,
+      "n_started": 15,
+      "new_brier_win": 0.02434789691970534,
+      "new_top1": "nk:2023106494",
+      "new_winner_nll": 0.8263161813089214,
+      "old_brier_win": 0.026375966712707734,
+      "old_top1": "nk:2023106494",
+      "old_winner_nll": 0.8816609153339425,
+      "race_day": "2026-08-30",
+      "race_id": "202604030406",
+      "source": "shadow_129",
+      "winner": "nk:2023106494"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.10045374079941372,
+      "n_started": 12,
+      "new_brier_win": 0.07017275271384463,
+      "new_top1": "2022105456",
+      "new_winner_nll": 1.8595739450665967,
+      "old_brier_win": 0.07229584199428062,
+      "old_top1": "2021105474",
+      "old_winner_nll": 1.9600276858660104,
+      "race_day": "2026-08-30",
+      "race_id": "202604030407",
+      "source": "shadow_129",
+      "winner": "2022105454"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.24622190677611444,
+      "n_started": 11,
+      "new_brier_win": 0.10166049140631502,
+      "new_top1": "nk:2023107166",
+      "new_winner_nll": 2.679274647911094,
+      "old_brier_win": 0.09730599220252795,
+      "old_top1": "nk:2023107166",
+      "old_winner_nll": 2.4330527411349796,
+      "race_day": "2026-08-30",
+      "race_id": "202604030408",
+      "source": "shadow_129",
+      "winner": "2023106850"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.2258217376501308,
+      "n_started": 18,
+      "new_brier_win": 0.03375187035393082,
+      "new_top1": "2022104186",
+      "new_winner_nll": 1.2387071123957414,
+      "old_brier_win": 0.03883759157824725,
+      "old_top1": "2022101604",
+      "old_winner_nll": 1.4645288500458722,
+      "race_day": "2026-08-30",
+      "race_id": "202604030409",
+      "source": "shadow_129",
+      "winner": "2022104186"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.16071314494994926,
+      "n_started": 15,
+      "new_brier_win": 0.06418741732393418,
+      "new_top1": "nk:2023106956",
+      "new_winner_nll": 2.3342848751626164,
+      "old_brier_win": 0.06118270325245778,
+      "old_top1": "2023100578",
+      "old_winner_nll": 2.173571730212667,
+      "race_day": "2026-08-30",
+      "race_id": "202604030410",
+      "source": "shadow_129",
+      "winner": "nk:2023103697"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.07999794998083876,
+      "n_started": 13,
+      "new_brier_win": 0.04728114629657009,
+      "new_top1": "2023107121",
+      "new_winner_nll": 1.2452417624296686,
+      "old_brier_win": 0.05030267172496295,
+      "old_top1": "2023107121",
+      "old_winner_nll": 1.3252397124105073,
+      "race_day": "2026-08-30",
+      "race_id": "202604030411",
+      "source": "shadow_129",
+      "winner": "2023107121"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.039426495235425074,
+      "n_started": 15,
+      "new_brier_win": 0.030430384801237664,
+      "new_top1": "nk:2023100803",
+      "new_winner_nll": 0.9744160655856466,
+      "old_brier_win": 0.0315832383303032,
+      "old_top1": "nk:2023100803",
+      "old_winner_nll": 1.0138425608210717,
+      "race_day": "2026-08-30",
+      "race_id": "202604030412",
+      "source": "shadow_129",
+      "winner": "nk:2023100803"
+    },
+    {
+      "conditions": {
+        "distance": ">2200",
+        "field_size": "<=8",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "障",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.09272922416998663,
+      "n_started": 8,
+      "new_brier_win": 0.09819403270880989,
+      "new_top1": "2020102864",
+      "new_winner_nll": 1.6112189293912929,
+      "old_brier_win": 0.09331809935452635,
+      "old_top1": "2020102864",
+      "old_winner_nll": 1.5184897052213062,
+      "race_day": "2026-09-05",
+      "race_id": "202606040101",
+      "source": "shadow_129",
+      "winner": "2021104924"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.018240446513840824,
+      "n_started": 16,
+      "new_brier_win": 0.03755379119220289,
+      "new_top1": "2023101120",
+      "new_winner_nll": 1.3209017094057405,
+      "old_brier_win": 0.03839768230779774,
+      "old_top1": "2023101120",
+      "old_winner_nll": 1.3391421559195813,
+      "race_day": "2026-09-05",
+      "race_id": "202606040102",
+      "source": "shadow_129",
+      "winner": "2023101120"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.1419198061971727,
+      "n_started": 10,
+      "new_brier_win": 0.11020032553771478,
+      "new_top1": "nk:2024103015",
+      "new_winner_nll": 2.7001608243964657,
+      "old_brier_win": 0.11111224181037216,
+      "old_top1": "nk:2024103015",
+      "old_winner_nll": 2.8420806305936384,
+      "race_day": "2026-09-05",
+      "race_id": "202606040103",
+      "source": "shadow_129",
+      "winner": "nk:2024102834"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.16104216717933428,
+      "n_started": 11,
+      "new_brier_win": 0.0692898200107891,
+      "new_top1": "nk:2024106562",
+      "new_winner_nll": 1.3172968370939664,
+      "old_brier_win": 0.07652177256591812,
+      "old_top1": "nk:2024106562",
+      "old_winner_nll": 1.4783390042733007,
+      "race_day": "2026-09-05",
+      "race_id": "202606040104",
+      "source": "shadow_129",
+      "winner": "nk:2024103576"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.03198449718162333,
+      "n_started": 11,
+      "new_brier_win": 0.04165602387226276,
+      "new_top1": "nk:2024106354",
+      "new_winner_nll": 0.9768858707604977,
+      "old_brier_win": 0.04004549475965508,
+      "old_top1": "nk:2024106354",
+      "old_winner_nll": 0.9449013735788744,
+      "race_day": "2026-09-05",
+      "race_id": "202606040105",
+      "source": "shadow_129",
+      "winner": "nk:2024106354"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.06937210564487684,
+      "n_started": 14,
+      "new_brier_win": 0.04854597283461615,
+      "new_top1": "nk:2024106196",
+      "new_winner_nll": 1.4465761366907879,
+      "old_brier_win": 0.05039038440399838,
+      "old_top1": "nk:2024106196",
+      "old_winner_nll": 1.5159482423356647,
+      "race_day": "2026-09-05",
+      "race_id": "202606040106",
+      "source": "shadow_129",
+      "winner": "nk:2024108315"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.06038591607887689,
+      "n_started": 16,
+      "new_brier_win": 0.06004897173781552,
+      "new_top1": "nk:2023105322",
+      "new_winner_nll": 2.424760952540806,
+      "old_brier_win": 0.060473198693078475,
+      "old_top1": "nk:2023105322",
+      "old_winner_nll": 2.4851468686196827,
+      "race_day": "2026-09-05",
+      "race_id": "202606040107",
+      "source": "shadow_129",
+      "winner": "2023107348"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.09887514310472967,
+      "n_started": 16,
+      "new_brier_win": 0.04828451205188775,
+      "new_top1": "nk:2023103006",
+      "new_winner_nll": 1.7596041514099015,
+      "old_brier_win": 0.046015195754825815,
+      "old_top1": "nk:2023103006",
+      "old_winner_nll": 1.6607290083051718,
+      "race_day": "2026-09-05",
+      "race_id": "202606040108",
+      "source": "shadow_129",
+      "winner": "nk:2023103006"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.060068048449894995,
+      "n_started": 15,
+      "new_brier_win": 0.07229424767432538,
+      "new_top1": "nk:2023107159",
+      "new_winner_nll": 2.9095945995672494,
+      "old_brier_win": 0.07307658736796394,
+      "old_top1": "nk:2023100894",
+      "old_winner_nll": 2.9696626480171444,
+      "race_day": "2026-09-05",
+      "race_id": "202606040109",
+      "source": "shadow_129",
+      "winner": "2022101272"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.13389530094975388,
+      "n_started": 13,
+      "new_brier_win": 0.0986645536820445,
+      "new_top1": "2022104956",
+      "new_winner_nll": 3.090806675747307,
+      "old_brier_win": 0.09793691465306743,
+      "old_top1": "2022104956",
+      "old_winner_nll": 3.224701976697061,
+      "race_day": "2026-09-05",
+      "race_id": "202606040110",
+      "source": "shadow_129",
+      "winner": "2022103151"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.011277433791436309,
+      "n_started": 16,
+      "new_brier_win": 0.06532594278049764,
+      "new_top1": "2023107345",
+      "new_winner_nll": 3.0911529870316508,
+      "old_brier_win": 0.06444007090835324,
+      "old_top1": "2023107345",
+      "old_winner_nll": 3.0798755532402144,
+      "race_day": "2026-09-05",
+      "race_id": "202606040111",
+      "source": "shadow_129",
+      "winner": "2022101765"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.030117564603730607,
+      "n_started": 13,
+      "new_brier_win": 0.055225910475420366,
+      "new_top1": "2022103911",
+      "new_winner_nll": 1.4932199412435125,
+      "old_brier_win": 0.05455073320809411,
+      "old_top1": "2022103911",
+      "old_winner_nll": 1.463102376639782,
+      "race_day": "2026-09-05",
+      "race_id": "202606040112",
+      "source": "shadow_129",
+      "winner": "2022103911"
+    },
+    {
+      "conditions": {
+        "distance": ">2200",
+        "field_size": "<=8",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "障",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.04434090288536119,
+      "n_started": 7,
+      "new_brier_win": 0.13461487983103765,
+      "new_top1": "2021104844",
+      "new_winner_nll": 1.977730382947658,
+      "old_brier_win": 0.13327441833226664,
+      "old_top1": "2021104844",
+      "old_winner_nll": 1.9333894800622968,
+      "race_day": "2026-09-06",
+      "race_id": "202606040201",
+      "source": "shadow_129",
+      "winner": "2022102738"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.07003673702893298,
+      "n_started": 14,
+      "new_brier_win": 0.08486139372048364,
+      "new_top1": "nk:2024106007",
+      "new_winner_nll": 3.934655441839104,
+      "old_brier_win": 0.08343432782829507,
+      "old_top1": "nk:2024106007",
+      "old_winner_nll": 3.8646187048101712,
+      "race_day": "2026-09-06",
+      "race_id": "202606040202",
+      "source": "shadow_129",
+      "winner": "nk:2024103842"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.003012390140231247,
+      "n_started": 15,
+      "new_brier_win": 0.04435170653517928,
+      "new_top1": "2023105308",
+      "new_winner_nll": 1.4769553676820821,
+      "old_brier_win": 0.044596437519893395,
+      "old_top1": "2023105308",
+      "old_winner_nll": 1.4799677578223134,
+      "race_day": "2026-09-06",
+      "race_id": "202606040203",
+      "source": "shadow_129",
+      "winner": "2023105308"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.017851506279033202,
+      "n_started": 16,
+      "new_brier_win": 0.06410629909163368,
+      "new_top1": "nk:2023100692",
+      "new_winner_nll": 2.8747852856859737,
+      "old_brier_win": 0.06390435030940797,
+      "old_top1": "nk:2023100692",
+      "old_winner_nll": 2.8569337794069405,
+      "race_day": "2026-09-06",
+      "race_id": "202606040204",
+      "source": "shadow_129",
+      "winner": "nk:2023104017"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.016209699557839796,
+      "n_started": 15,
+      "new_brier_win": 0.048269062710290606,
+      "new_top1": "nk:2024106751",
+      "new_winner_nll": 1.5682833329648431,
+      "old_brier_win": 0.04864973663130063,
+      "old_top1": "nk:2024106751",
+      "old_winner_nll": 1.584493032522683,
+      "race_day": "2026-09-06",
+      "race_id": "202606040205",
+      "source": "shadow_129",
+      "winner": "nk:2024100668"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.07056493521255947,
+      "n_started": 12,
+      "new_brier_win": 0.08378773784190345,
+      "new_top1": "nk:2024106320",
+      "new_winner_nll": 2.375744187757276,
+      "old_brier_win": 0.08472157687492693,
+      "old_top1": "nk:2024106320",
+      "old_winner_nll": 2.4463091229698355,
+      "race_day": "2026-09-06",
+      "race_id": "202606040206",
+      "source": "shadow_129",
+      "winner": "nk:2024105733"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.05371098969572685,
+      "n_started": 18,
+      "new_brier_win": 0.06481844219448835,
+      "new_top1": "nk:2023107028",
+      "new_winner_nll": 5.5199418128512745,
+      "old_brier_win": 0.0643805126702697,
+      "old_top1": "nk:2023107028",
+      "old_winner_nll": 5.573652802547001,
+      "race_day": "2026-09-06",
+      "race_id": "202606040207",
+      "source": "shadow_129",
+      "winner": "nk:2023103668"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.0891930645802761,
+      "n_started": 16,
+      "new_brier_win": 0.06270699095803842,
+      "new_top1": "2022104570",
+      "new_winner_nll": 2.7610478597959407,
+      "old_brier_win": 0.061895335542813304,
+      "old_top1": "nk:2023106052",
+      "old_winner_nll": 2.6718547952156646,
+      "race_day": "2026-09-06",
+      "race_id": "202606040208",
+      "source": "shadow_129",
+      "winner": "nk:2023100419"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.062075871156336504,
+      "n_started": 16,
+      "new_brier_win": 0.035722617580734264,
+      "new_top1": "2022101557",
+      "new_winner_nll": 1.2639073092967243,
+      "old_brier_win": 0.037580286682671715,
+      "old_top1": "2022101557",
+      "old_winner_nll": 1.3259831804530609,
+      "race_day": "2026-09-06",
+      "race_id": "202606040209",
+      "source": "shadow_129",
+      "winner": "2022101557"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.3017463608640498,
+      "n_started": 9,
+      "new_brier_win": 0.11105066711853917,
+      "new_top1": "2022103639",
+      "new_winner_nll": 2.4463311939349883,
+      "old_brier_win": 0.12107681352148947,
+      "old_top1": "2022103639",
+      "old_winner_nll": 2.748077554799038,
+      "race_day": "2026-09-06",
+      "race_id": "202606040210",
+      "source": "shadow_129",
+      "winner": "2020104616"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.36224466257047805,
+      "n_started": 11,
+      "new_brier_win": 0.10890229132485935,
+      "new_top1": "2023107146",
+      "new_winner_nll": 3.000705593976744,
+      "old_brier_win": 0.10089463088596644,
+      "old_top1": "2023107146",
+      "old_winner_nll": 2.638460931406266,
+      "race_day": "2026-09-06",
+      "race_id": "202606040211",
+      "source": "shadow_129",
+      "winner": "nk:2023106810"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.03575857964371032,
+      "n_started": 16,
+      "new_brier_win": 0.048585589750622146,
+      "new_top1": "2022101108",
+      "new_winner_nll": 1.7258509490558802,
+      "old_brier_win": 0.04904506693531511,
+      "old_top1": "2022101108",
+      "old_winner_nll": 1.7616095286995905,
+      "race_day": "2026-09-06",
+      "race_id": "202606040212",
+      "source": "shadow_129",
+      "winner": "nk:2023105263"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.45974784907059796,
+      "n_started": 11,
+      "new_brier_win": 0.08717604273499761,
+      "new_top1": "nk:2024100037",
+      "new_winner_nll": 1.9519912880648824,
+      "old_brier_win": 0.07122289039752207,
+      "old_top1": "nk:2024100037",
+      "old_winner_nll": 1.4922434389942845,
+      "race_day": "2026-08-29",
+      "race_id": "202607030301",
+      "source": "shadow_129",
+      "winner": "nk:2024100654"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.10125838441444301,
+      "n_started": 12,
+      "new_brier_win": 0.05036895995366489,
+      "new_top1": "nk:2024107041",
+      "new_winner_nll": 1.2614739467677492,
+      "old_brier_win": 0.0547766286233993,
+      "old_top1": "nk:2024103740",
+      "old_winner_nll": 1.3627323311821922,
+      "race_day": "2026-08-29",
+      "race_id": "202607030302",
+      "source": "shadow_129",
+      "winner": "nk:2024107041"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.014260339654932785,
+      "n_started": 12,
+      "new_brier_win": 0.0742916892589757,
+      "new_top1": "nk:2024106134",
+      "new_winner_nll": 2.06675354935755,
+      "old_brier_win": 0.07434664084145824,
+      "old_top1": "nk:2024106134",
+      "old_winner_nll": 2.0810138890124827,
+      "race_day": "2026-08-29",
+      "race_id": "202607030303",
+      "source": "shadow_129",
+      "winner": "nk:2024100644"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.15406899544003516,
+      "n_started": 16,
+      "new_brier_win": 0.037997093544507615,
+      "new_top1": "nk:2023107155",
+      "new_winner_nll": 1.3215819464967085,
+      "old_brier_win": 0.04185620979095204,
+      "old_top1": "nk:2023107155",
+      "old_winner_nll": 1.4756509419367436,
+      "race_day": "2026-08-29",
+      "race_id": "202607030304",
+      "source": "shadow_129",
+      "winner": "nk:2023107155"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.02718658329121748,
+      "n_started": 13,
+      "new_brier_win": 0.03731770153791169,
+      "new_top1": "nk:2023106949",
+      "new_winner_nll": 1.0522120636898435,
+      "old_brier_win": 0.03852511862592485,
+      "old_top1": "nk:2023106949",
+      "old_winner_nll": 1.079398646981061,
+      "race_day": "2026-08-29",
+      "race_id": "202607030305",
+      "source": "shadow_129",
+      "winner": "nk:2023106949"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.2422970461863363,
+      "n_started": 13,
+      "new_brier_win": 0.07211696021774158,
+      "new_top1": "2023100670",
+      "new_winner_nll": 2.213696832999301,
+      "old_brier_win": 0.07618868230190966,
+      "old_top1": "2023100670",
+      "old_winner_nll": 2.4559938791856375,
+      "race_day": "2026-08-29",
+      "race_id": "202607030306",
+      "source": "shadow_129",
+      "winner": "2022104674"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.06891191679939146,
+      "n_started": 15,
+      "new_brier_win": 0.06793882670972098,
+      "new_top1": "2022105435",
+      "new_winner_nll": 2.877226769114708,
+      "old_brier_win": 0.0683239642721958,
+      "old_top1": "2022105435",
+      "old_winner_nll": 2.9461386859140997,
+      "race_day": "2026-08-29",
+      "race_id": "202607030307",
+      "source": "shadow_129",
+      "winner": "2022104694"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.02256680138039524,
+      "n_started": 14,
+      "new_brier_win": 0.06408583113194868,
+      "new_top1": "2022102153",
+      "new_winner_nll": 2.189257787980106,
+      "old_brier_win": 0.06459647078784818,
+      "old_top1": "2022102153",
+      "old_winner_nll": 2.2118245893605013,
+      "race_day": "2026-08-29",
+      "race_id": "202607030308",
+      "source": "shadow_129",
+      "winner": "2023106431"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.02364645749997063,
+      "n_started": 9,
+      "new_brier_win": 0.10564564396306002,
+      "new_top1": "nk:2023103169",
+      "new_winner_nll": 2.2587479819858705,
+      "old_brier_win": 0.10605853292888517,
+      "old_top1": "nk:2023103169",
+      "old_winner_nll": 2.2351015244859,
+      "race_day": "2026-08-29",
+      "race_id": "202607030309",
+      "source": "shadow_129",
+      "winner": "2023104372"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.08922041690872584,
+      "n_started": 16,
+      "new_brier_win": 0.054847033766965425,
+      "new_top1": "nk:2023105027",
+      "new_winner_nll": 1.9602042950462986,
+      "old_brier_win": 0.056444952346343225,
+      "old_top1": "nk:2023105027",
+      "old_winner_nll": 2.0494247119550244,
+      "race_day": "2026-08-29",
+      "race_id": "202607030310",
+      "source": "shadow_129",
+      "winner": "nk:2023104060"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.21848008071934855,
+      "n_started": 13,
+      "new_brier_win": 0.05894271849552095,
+      "new_top1": "nk:2023105804",
+      "new_winner_nll": 1.6161680123107993,
+      "old_brier_win": 0.06456588209386561,
+      "old_top1": "nk:2023105804",
+      "old_winner_nll": 1.8346480930301479,
+      "race_day": "2026-08-29",
+      "race_id": "202607030311",
+      "source": "shadow_129",
+      "winner": "2023103783"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.12486645972038923,
+      "n_started": 14,
+      "new_brier_win": 0.0786801251798662,
+      "new_top1": "2023106896",
+      "new_winner_nll": 4.0654008153255266,
+      "old_brier_win": 0.07814038640495517,
+      "old_top1": "nk:2023104872",
+      "old_winner_nll": 3.9405343556051373,
+      "race_day": "2026-08-29",
+      "race_id": "202607030312",
+      "source": "shadow_129",
+      "winner": "nk:2023110010"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.14260008156449266,
+      "n_started": 10,
+      "new_brier_win": 0.048109816604316284,
+      "new_top1": "nk:2024106976",
+      "new_winner_nll": 0.9682618994101632,
+      "old_brier_win": 0.05642355021860603,
+      "old_top1": "nk:2024106976",
+      "old_winner_nll": 1.1108619809746558,
+      "race_day": "2026-08-30",
+      "race_id": "202607030401",
+      "source": "shadow_129",
+      "winner": "nk:2024106976"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.008781845947881006,
+      "n_started": 10,
+      "new_brier_win": 0.09756119547060953,
+      "new_top1": "nk:2024106253",
+      "new_winner_nll": 2.6067541198231123,
+      "old_brier_win": 0.09739564256970781,
+      "old_top1": "nk:2024106253",
+      "old_winner_nll": 2.5979722738752313,
+      "race_day": "2026-08-30",
+      "race_id": "202607030402",
+      "source": "shadow_129",
+      "winner": "nk:2024102272"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.11156969217886603,
+      "n_started": 11,
+      "new_brier_win": 0.08584842979004591,
+      "new_top1": "nk:2024106576",
+      "new_winner_nll": 2.25834239977609,
+      "old_brier_win": 0.08797427015719189,
+      "old_top1": "nk:2024106576",
+      "old_winner_nll": 2.369912091954956,
+      "race_day": "2026-08-30",
+      "race_id": "202607030403",
+      "source": "shadow_129",
+      "winner": "nk:2024104681"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.08742182983830138,
+      "n_started": 16,
+      "new_brier_win": 0.02148829983679882,
+      "new_top1": "nk:2023102255",
+      "new_winner_nll": 0.7895814542099703,
+      "old_brier_win": 0.024840643482192254,
+      "old_top1": "nk:2023102255",
+      "old_winner_nll": 0.8770032840482717,
+      "race_day": "2026-08-30",
+      "race_id": "202607030404",
+      "source": "shadow_129",
+      "winner": "nk:2023102255"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.2640329561508947,
+      "n_started": 13,
+      "new_brier_win": 0.06571897641955733,
+      "new_top1": "2023110070",
+      "new_winner_nll": 2.056751351514806,
+      "old_brier_win": 0.07040791280346292,
+      "old_top1": "2023110070",
+      "old_winner_nll": 2.3207843076657007,
+      "race_day": "2026-08-30",
+      "race_id": "202607030405",
+      "source": "shadow_129",
+      "winner": "2023100145"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.061356285386420906,
+      "n_started": 16,
+      "new_brier_win": 0.03951842355563302,
+      "new_top1": "nk:2023100547",
+      "new_winner_nll": 1.411136286898983,
+      "old_brier_win": 0.037994706398286796,
+      "old_top1": "nk:2023100547",
+      "old_winner_nll": 1.349780001512562,
+      "race_day": "2026-08-30",
+      "race_id": "202607030406",
+      "source": "shadow_129",
+      "winner": "nk:2023100547"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.017802284453853456,
+      "n_started": 9,
+      "new_brier_win": 0.04320223185413448,
+      "new_top1": "nk:2024107165",
+      "new_winner_nll": 0.8112239107792457,
+      "old_brier_win": 0.04172084831980823,
+      "old_top1": "nk:2024107165",
+      "old_winner_nll": 0.7934216263253923,
+      "race_day": "2026-08-30",
+      "race_id": "202607030407",
+      "source": "shadow_129",
+      "winner": "nk:2024107165"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.03635479984070189,
+      "n_started": 15,
+      "new_brier_win": 0.06077496734371312,
+      "new_top1": "2023107157",
+      "new_winner_nll": 2.293737152730176,
+      "old_brier_win": 0.061036924481145026,
+      "old_top1": "2023107157",
+      "old_winner_nll": 2.330091952570878,
+      "race_day": "2026-08-30",
+      "race_id": "202607030408",
+      "source": "shadow_129",
+      "winner": "2023103899"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.06379742087333917,
+      "n_started": 15,
+      "new_brier_win": 0.04858324767550732,
+      "new_top1": "nk:2023104329",
+      "new_winner_nll": 1.5883457664587222,
+      "old_brier_win": 0.05088779697999703,
+      "old_top1": "nk:2023104329",
+      "old_winner_nll": 1.6521431873320613,
+      "race_day": "2026-08-30",
+      "race_id": "202607030409",
+      "source": "shadow_129",
+      "winner": "nk:2023100233"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.049834371763914476,
+      "n_started": 10,
+      "new_brier_win": 0.08481466682024018,
+      "new_top1": "nk:2023105793",
+      "new_winner_nll": 1.9084870939308396,
+      "old_brier_win": 0.08313216562063366,
+      "old_top1": "nk:2023105793",
+      "old_winner_nll": 1.8586527221669251,
+      "race_day": "2026-08-30",
+      "race_id": "202607030410",
+      "source": "shadow_129",
+      "winner": "2022105290"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.05548605415857821,
+      "n_started": 18,
+      "new_brier_win": 0.05408521689296886,
+      "new_top1": "2023105346",
+      "new_winner_nll": 2.6775747881651366,
+      "old_brier_win": 0.053202782690102646,
+      "old_top1": "2023105346",
+      "old_winner_nll": 2.6220887340065584,
+      "race_day": "2026-08-30",
+      "race_id": "202607030411",
+      "source": "shadow_129",
+      "winner": "2023105339"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.40830883288734476,
+      "n_started": 14,
+      "new_brier_win": 0.08191235737643106,
+      "new_top1": "nk:2023106388",
+      "new_winner_nll": 3.6614768931977664,
+      "old_brier_win": 0.07937263673329352,
+      "old_top1": "nk:2023106388",
+      "old_winner_nll": 3.2531680603104216,
+      "race_day": "2026-08-30",
+      "race_id": "202607030412",
+      "source": "shadow_129",
+      "winner": "nk:2023105024"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.004147526686560266,
+      "n_started": 11,
+      "new_brier_win": 0.055996072718009875,
+      "new_top1": "nk:2024106458",
+      "new_winner_nll": 1.2636722852676872,
+      "old_brier_win": 0.05482552928734554,
+      "old_top1": "nk:2024106458",
+      "old_winner_nll": 1.259524758581127,
+      "race_day": "2026-09-05",
+      "race_id": "202609040101",
+      "source": "shadow_129",
+      "winner": "nk:2024106458"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "<=8",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.07400265837535525,
+      "n_started": 5,
+      "new_brier_win": 0.17721067582006877,
+      "new_top1": "nk:2024106356",
+      "new_winner_nll": 1.542458363105134,
+      "old_brier_win": 0.18376815171406943,
+      "old_top1": "nk:2024106356",
+      "old_winner_nll": 1.6164610214804893,
+      "race_day": "2026-09-05",
+      "race_id": "202609040102",
+      "source": "shadow_129",
+      "winner": "nk:2024103816"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.03207584161064614,
+      "n_started": 13,
+      "new_brier_win": 0.0656025154958178,
+      "new_top1": "2023103248",
+      "new_winner_nll": 1.9151570118461583,
+      "old_brier_win": 0.06612514906956933,
+      "old_top1": "2023103248",
+      "old_winner_nll": 1.9472328534568044,
+      "race_day": "2026-09-05",
+      "race_id": "202609040103",
+      "source": "shadow_129",
+      "winner": "2023105340"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.04919637444539582,
+      "n_started": 17,
+      "new_brier_win": 0.0660349122978882,
+      "new_top1": "2023106188",
+      "new_winner_nll": 4.257440646062284,
+      "old_brier_win": 0.06549002899013448,
+      "old_top1": "2023106188",
+      "old_winner_nll": 4.208244271616888,
+      "race_day": "2026-09-05",
+      "race_id": "202609040104",
+      "source": "shadow_129",
+      "winner": "nk:2023106404"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.05858329054401157,
+      "n_started": 12,
+      "new_brier_win": 0.0785955978938606,
+      "new_top1": "nk:2024106447",
+      "new_winner_nll": 2.341300760916952,
+      "old_brier_win": 0.07975057554918828,
+      "old_top1": "nk:2024106447",
+      "old_winner_nll": 2.3998840514609636,
+      "race_day": "2026-09-05",
+      "race_id": "202609040105",
+      "source": "shadow_129",
+      "winner": "nk:2024106246"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.031145836075936906,
+      "n_started": 13,
+      "new_brier_win": 0.06383106221214309,
+      "new_top1": "nk:2024106342",
+      "new_winner_nll": 1.9429525573462838,
+      "old_brier_win": 0.06467233033657648,
+      "old_top1": "nk:2024106342",
+      "old_winner_nll": 1.9740983934222207,
+      "race_day": "2026-09-05",
+      "race_id": "202609040106",
+      "source": "shadow_129",
+      "winner": "nk:2024108215"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.18778319164634238,
+      "n_started": 16,
+      "new_brier_win": 0.06656042105634229,
+      "new_top1": "2023103836",
+      "new_winner_nll": 3.154542943489637,
+      "old_brier_win": 0.06573591644553044,
+      "old_top1": "2023103836",
+      "old_winner_nll": 2.9667597518432944,
+      "race_day": "2026-09-05",
+      "race_id": "202609040107",
+      "source": "shadow_129",
+      "winner": "2023101632"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.04163647828257577,
+      "n_started": 9,
+      "new_brier_win": 0.12140812792731676,
+      "new_top1": "2023104996",
+      "new_winner_nll": 2.872424872990684,
+      "old_brier_win": 0.12043132652858139,
+      "old_top1": "2023104996",
+      "old_winner_nll": 2.830788394708108,
+      "race_day": "2026-09-05",
+      "race_id": "202609040108",
+      "source": "shadow_129",
+      "winner": "nk:2023103996"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.00843059223916054,
+      "n_started": 11,
+      "new_brier_win": 0.0863381815884997,
+      "new_top1": "nk:2023102120",
+      "new_winner_nll": 1.923541311620418,
+      "old_brier_win": 0.08446465234863104,
+      "old_top1": "nk:2023102120",
+      "old_winner_nll": 1.9319719038595786,
+      "race_day": "2026-09-05",
+      "race_id": "202609040109",
+      "source": "shadow_129",
+      "winner": "nk:2023100922"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "<=8",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.4067071140112475,
+      "n_started": 7,
+      "new_brier_win": 0.2085721657995117,
+      "new_top1": "nk:2023101449",
+      "new_winner_nll": 2.6433850601792224,
+      "old_brier_win": 0.18827627927944798,
+      "old_top1": "nk:2023101449",
+      "old_winner_nll": 2.236677946167975,
+      "race_day": "2026-09-05",
+      "race_id": "202609040110",
+      "source": "shadow_129",
+      "winner": "2021105704"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.029315483754139837,
+      "n_started": 12,
+      "new_brier_win": 0.0805139493095764,
+      "new_top1": "2022104219",
+      "new_winner_nll": 2.3488050075490077,
+      "old_brier_win": 0.07894403375970573,
+      "old_top1": "2022104219",
+      "old_winner_nll": 2.319489523794868,
+      "race_day": "2026-09-05",
+      "race_id": "202609040111",
+      "source": "shadow_129",
+      "winner": "2020106063"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.12221735604679163,
+      "n_started": 12,
+      "new_brier_win": 0.09162302427340552,
+      "new_top1": "2023105516",
+      "new_winner_nll": 3.2014299214009405,
+      "old_brier_win": 0.09054524007472033,
+      "old_top1": "2023105516",
+      "old_winner_nll": 3.079212565354149,
+      "race_day": "2026-09-05",
+      "race_id": "202609040112",
+      "source": "shadow_129",
+      "winner": "2023105792"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.04194656657510354,
+      "n_started": 10,
+      "new_brier_win": 0.05498079973547154,
+      "new_top1": "nk:2024107063",
+      "new_winner_nll": 1.1705880916172184,
+      "old_brier_win": 0.05312531799289423,
+      "old_top1": "nk:2024107063",
+      "old_winner_nll": 1.128641525042115,
+      "race_day": "2026-09-06",
+      "race_id": "202609040201",
+      "source": "shadow_129",
+      "winner": "nk:2024107063"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.21511769717323048,
+      "n_started": 16,
+      "new_brier_win": 0.059147970616945746,
+      "new_top1": "nk:2023106223",
+      "new_winner_nll": 2.5042473308330404,
+      "old_brier_win": 0.06108592325781982,
+      "old_top1": "nk:2023106223",
+      "old_winner_nll": 2.719365028006271,
+      "race_day": "2026-09-06",
+      "race_id": "202609040202",
+      "source": "shadow_129",
+      "winner": "2023106926"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.0479663307101581,
+      "n_started": 15,
+      "new_brier_win": 0.03772320113111218,
+      "new_top1": "nk:2023105683",
+      "new_winner_nll": 1.2365320055274902,
+      "old_brier_win": 0.036191985888189636,
+      "old_top1": "nk:2023105683",
+      "old_winner_nll": 1.188565674817332,
+      "race_day": "2026-09-06",
+      "race_id": "202609040203",
+      "source": "shadow_129",
+      "winner": "nk:2023105683"
+    },
+    {
+      "conditions": {
+        "distance": "<=2200",
+        "field_size": ">=14",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.09222342204907008,
+      "n_started": 16,
+      "new_brier_win": 0.033023234266983795,
+      "new_top1": "2023107092",
+      "new_winner_nll": 1.104587110709954,
+      "old_brier_win": 0.03558128032361195,
+      "old_top1": "2023107092",
+      "old_winner_nll": 1.1968105327590242,
+      "race_day": "2026-09-06",
+      "race_id": "202609040204",
+      "source": "shadow_129",
+      "winner": "2023107092"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "maiden",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.008593976499467137,
+      "n_started": 10,
+      "new_brier_win": 0.07160780119052106,
+      "new_top1": "nk:2024106690",
+      "new_winner_nll": 1.5385109379726634,
+      "old_brier_win": 0.07136841629238647,
+      "old_top1": "nk:2024106690",
+      "old_winner_nll": 1.5299169614731962,
+      "race_day": "2026-09-06",
+      "race_id": "202609040205",
+      "source": "shadow_129",
+      "winner": "nk:2024106690"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.15580841864629846,
+      "n_started": 12,
+      "new_brier_win": 0.11439719670389664,
+      "new_top1": "nk:2023102948",
+      "new_winner_nll": 3.422380532904654,
+      "old_brier_win": 0.11199040177269386,
+      "old_top1": "nk:2023102948",
+      "old_winner_nll": 3.5781889515509526,
+      "race_day": "2026-09-06",
+      "race_id": "202609040206",
+      "source": "shadow_129",
+      "winner": "nk:2023102252"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.11791690617147532,
+      "n_started": 14,
+      "new_brier_win": 0.08803866443794052,
+      "new_top1": "nk:2023106399",
+      "new_winner_nll": 3.857155098423837,
+      "old_brier_win": 0.08363189805589168,
+      "old_top1": "nk:2023106399",
+      "old_winner_nll": 3.739238192252362,
+      "race_day": "2026-09-06",
+      "race_id": "202609040207",
+      "source": "shadow_129",
+      "winner": "2023103474"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": "<=8",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.14277548187749955,
+      "n_started": 7,
+      "new_brier_win": 0.10167653675146839,
+      "new_top1": "nk:2023107241",
+      "new_winner_nll": 1.349630346137789,
+      "old_brier_win": 0.11373235711467466,
+      "old_top1": "nk:2023107241",
+      "old_winner_nll": 1.4924058280152885,
+      "race_day": "2026-09-06",
+      "race_id": "202609040208",
+      "source": "shadow_129",
+      "winner": "2023105241"
+    },
+    {
+      "conditions": {
+        "distance": "<=1800",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.04524881700828809,
+      "n_started": 16,
+      "new_brier_win": 0.055407703289092614,
+      "new_top1": "nk:2023106867",
+      "new_winner_nll": 2.1184212509185247,
+      "old_brier_win": 0.054643620075530364,
+      "old_top1": "nk:2023106867",
+      "old_winner_nll": 2.0731724339102366,
+      "race_day": "2026-09-06",
+      "race_id": "202609040209",
+      "source": "shadow_129",
+      "winner": "2022105367"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": "9-13",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": -0.07918933489961599,
+      "n_started": 13,
+      "new_brier_win": 0.06185217189436149,
+      "new_top1": "2023104562",
+      "new_winner_nll": 1.7420471472745371,
+      "old_brier_win": 0.06508533057970911,
+      "old_top1": "2023104562",
+      "old_winner_nll": 1.8212364821741531,
+      "race_day": "2026-09-06",
+      "race_id": "202609040210",
+      "source": "shadow_129",
+      "winner": "2022102202"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "open",
+        "source": "shadow_129",
+        "track_type": "芝",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.2683844420705088,
+      "n_started": 16,
+      "new_brier_win": 0.04443879685587267,
+      "new_top1": "2023105685",
+      "new_winner_nll": 1.509210569388675,
+      "old_brier_win": 0.0374729411285912,
+      "old_top1": "2022102020",
+      "old_winner_nll": 1.2408261273181662,
+      "race_day": "2026-09-06",
+      "race_id": "202609040211",
+      "source": "shadow_129",
+      "winner": "2022102020"
+    },
+    {
+      "conditions": {
+        "distance": "<=1400",
+        "field_size": ">=14",
+        "race_class": "conditions",
+        "source": "shadow_129",
+        "track_type": "ダ",
+        "weight_publication_state": "full"
+      },
+      "diff_winner_nll": 0.17053585037412455,
+      "n_started": 16,
+      "new_brier_win": 0.0666634963350497,
+      "new_top1": "nk:2023103876",
+      "new_winner_nll": 3.7701394575287956,
+      "old_brier_win": 0.06600008095662156,
+      "old_top1": "nk:2023103876",
+      "old_winner_nll": 3.599603607154671,
+      "race_day": "2026-09-06",
+      "race_id": "202609040212",
+      "source": "shadow_129",
+      "winner": "2021105753"
+    }
+  ],
+  "preregistration_sha256": "b7352356d031582239a2596039fb48a77514fa7315832a940356bd1bb537b11b",
+  "record_dirs": [
+    "artifacts/129-candidate-mixture-serving/shadow/rehearsal"
+  ],
+  "regime": "preweight",
+  "rejected_records": {},
+  "retraining_variance_note": {
+    "applies_to": "the separate question whether a RE-TRAINED mixture also beats the old; both artifacts compared here are fixed, so it is not part of the CI",
+    "sd_fold_historical": 0.001816,
+    "status": "historical context from 100/129 (single-model refit noise), not a validated uncertainty estimate for re-training this six-member bundle; reported beside the CI, never added to it, never divided by sqrt(6)"
+  },
+  "status": "DIAGNOSTIC_REHEARSAL_NOT_EVIDENCE",
+  "verdict": null,
+  "window": {
+    "basis": "to = last JRA race day inside the 2026 validity of the new model's residual coefficients (serving tolerates 2027 with coefstale=1 but this comparison does not extend into it). min_eval_days = 24 comes from the 129 power plan (day-cluster SD 0.0123 from 4 rehearsal days; 0.01 effect detectable at 98.75%) and is a completeness requirement for the final readout, NOT a minimum effect: any difference, however small, is reported with its CI.",
+    "completeness": "final readout requires today > to (JST), no recorded race pending results, no scheduled race of the window without results, and n_days >= min_eval_days; race days without any record are disclosed in coverage, they do not block (captures are manual) and the window is never extended",
+    "from": "2026-09-13",
+    "min_eval_days": 24,
+    "to": "2026-12-28"
+  }
+}

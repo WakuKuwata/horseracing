@@ -1,0 +1,43 @@
+{
+ "artifact_kind": "134_preregistration",
+ "feature": "134-mixture-next-gains",
+ "registered_at": "2026-09-13T01:24:30.693927+00:00",
+ "dataset_sha256": "f00d7e2f8ae6619d48894c04542e3bb6ce5a52497e143287ca8eb433037de807",
+ "dataset": "artifacts/134-mixture-next-gains/dataset.pkl — reconstruction of the 130 frozen walk-forward cache (6 members × 2020–2026 × {preweight, full}), parity with 130 winner NLL ≤ 8.9e-16",
+ "baseline": "served recipe reconstructed: six annually corrected members (130 annual coefficients), equal weights, arithmetic mean of win, no post-average step",
+ "used_periods": {
+  "diagnosis_and_candidate_selection": "2020-01-05..2024-12-28 (selection scores on 2021–2024; 2020 warm-up only)",
+  "confirmation_this_round": "2025-01-01..2026-08-23 (cache end). Already consumed by earlier research (110–130) for the bundle itself; for THIS round it is unseen by the candidate choice and is therefore a 'confirmation for this round', not a globally untouched holdout.",
+  "untouched": "2026-09-13 onward = the 133 production-vs-old prospective window; not used here"
+ },
+ "primary_candidate": "temperature_recent2",
+ "primary_definition": "p_served ∝ p̄^γ with p̄ = served mixture win; γ fit by minimising winner NLL (golden section on [0.5, 2.0]) on ALL eligible races of the two most recent calendar years strictly before the scored year, on the same input regime as the scored prediction; renormalised within the race; top2/top3 then follow the production convention (Harville + stage discount).",
+ "why_this_variant": "On the selection years the three windows were −0.00089 (all prior), −0.00110 (last year), −0.00109 (last two years). Tie between the two recent windows; the two-year window was preferred before looking at 2025–2026 because it uses ~6,900 races instead of ~3,450 for γ and had the narrower CI.",
+ "secondary_candidates_reported_only": [
+  "temperature",
+  "temperature_recent1",
+  "geometric",
+  "weight"
+ ],
+ "not_advanced": {
+  "scale": "+0.00011 (worse) on selection",
+  "drop": "+0.00009 (worse)",
+  "stack": "no gain over temperature alone; heads guard marginal"
+ },
+ "scoring": {
+  "primary_metric": "race-weighted paired winner NLL difference (candidate − baseline), preweight regime",
+  "secondary_regime": "full (reported)",
+  "ci": "race_day_cluster_bootstrap_ci_v1, b=4000, seed=20260913, 95% primary, 98.75% reported",
+  "heads_guard": "top2/top3 per-race paired logloss difference under the production convention (λ2/λ3 re-fit per arm on all prior years from 2020, applied to the scored year): 95% CI upper bound ≤ +0.0005 for both heads; pooled equal-mass ECE (10 bins) delta ≤ +0.001 for win/top2/top3",
+  "classification": {
+   "改善が支持される": "confirmation 95% CI high < 0 AND heads guard passes",
+   "改善方向だが不確実": "point < 0 but CI crosses 0 (or heads guard marginal)",
+   "悪化・不採用": "point > 0 with CI low > 0, or a heads guard CI fails",
+   "データ不足": "fewer than 2 race days / CI undefined"
+  },
+  "no_minimum_effect": true,
+  "uncertainty_scope": "CI covers future-race sampling given the annual refits of the cache; it does not cover member retraining variance (the cache is one fresh fit per member-year) nor coefficient re-estimation"
+ },
+ "next_candidate_if_supported": "same bundle + a registered post-mixture temperature step with γ fit on the two most recent complete years (for 2026 use: 2024–2025); production switch is NOT part of this research and would require the 133-type prospective comparison",
+ "can_adopt": false
+}

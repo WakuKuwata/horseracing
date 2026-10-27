@@ -1,0 +1,1469 @@
+{
+  "status": "PASS",
+  "method_sha256": "09f11856103ea4e0e91043dbf34ffbb3d2af8d16c876195d67f54d5eb932b7f8",
+  "reviewer": "/root/challenge_model",
+  "source_sha256": {
+    "/Users/kuwatawaku/workspace/horseracing/specs/132-accuracy-first-batch/evidence/style-score-independent-review.py": "09f11856103ea4e0e91043dbf34ffbb3d2af8d16c876195d67f54d5eb932b7f8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/summary.json": "ed39a8991cdf6436223d376432e48626c9dc15ff0842a71032b81086c5f3af32",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/run-freeze.json": "9810215df821a3263a5bdca19fd967c8187e5839c3cf74881564eaca73199e18",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/baseline-reuse.json": "d7fba65a107c3af4a227f9e6d876516a01df1df4d09115062ff3b868fd9233c8",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/topk/summary.json": "1f85e49697ef3b5fa1d7ed9a195fb15b3cf1acd5799346493426928b339b5098",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/topk/full-predictions.pkl": "aa6ae40a6ebe7ee94bdd402da641520771cc6001b33a20437fdadc2bad4263d0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/snapshot.json": "301b601de16f004d28377aec5db0df36dc87c34dd472a735dedd5fc9b9d6633f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/111-ability-observation/snapshot.pkl": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/overlay.pkl": "6284805b5af27a781ae47c511086fafdef9cd047f977c9b9ce5ae54f4b124666",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/130-mixture-preweight-walkforward/run-freeze.json": "f82dcd0d2ac6fd17ffd413531d25fa38792a4bbf424fd77e039b67250e48bcd6",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/130-mixture-preweight-walkforward/receipts/anchor-42-2024.json": "916e0b9362022bf3cce28f0d62403857365fe68b1e31d1401b7859bc4d6aba81",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/130-mixture-preweight-walkforward/cache/anchor-42-2024.pkl": "4761ae8642375b031c0537e450ae191b9a5116a465e907002e2b3800b19c9696",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/cache/candidate-2024.json": "7c7f4100712f34519b6e063409c9eb128316bf718a826dcf4be6f51a39b49e2c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/cache/candidate-2024.pkl": "2f268c31a89ddb523346caa0cf4daaa1db4f692859a07121050efead4b643d7e",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/130-mixture-preweight-walkforward/receipts/anchor-42-2026.json": "a5b8a86ad50e1fa02be3470d23fcf8efb7d77e286c493e6ee510cf16bf20e4f7",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/130-mixture-preweight-walkforward/cache/anchor-42-2026.pkl": "bbcb5656daabd3c609ab16ac941e9e0f11457fbce7298c66f7e28e092d312f5f",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/cache/candidate-2026.json": "24eb9a37278eb5781742c53ecce8eb5ea23d20bd8f449065287efaefbbdd149c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/style/cache/candidate-2026.pkl": "f567270ea4360fef3ee8b01347f001ad1bf04e072cbaf7cbbad6eb8f2c3244dd"
+  },
+  "labels": {
+    "compared_races": 5752,
+    "snapshot_sha256": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+    "labels_and_started_order_exact": true,
+    "result_row_counts_exact": true
+  },
+  "populations": {
+    "2024": {
+      "n_races": 3454,
+      "from": "2024-01-06",
+      "through": "2024-12-28"
+    },
+    "2026": {
+      "n_races": 2298,
+      "from": "2026-01-04",
+      "through": "2026-08-23"
+    }
+  },
+  "results": {
+    "2024:full": {
+      "baseline": {
+        "winner_nll": 2.0005209719435926,
+        "winner_excluded": 6,
+        "top2_logloss": 0.33389214386144594,
+        "top3_logloss": 0.4235713599648647,
+        "started_all": {
+          "log_loss": 0.21334156976196844,
+          "brier": 0.05978123517628274
+        },
+        "ece_equal_width_like": {
+          "ece": 0.00429999090131708,
+          "n_bins": 10,
+          "bin_counts": [
+            4692,
+            4692,
+            4692,
+            4692,
+            4693,
+            4691,
+            4692,
+            4692,
+            4692,
+            4693
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.001997130811195046,
+          "[0.05,0.15)": 0.0033207981904953593,
+          "[0.15,0.30)": 0.01873049475021373,
+          "[0.30,1.00]": 0.0072225479339581575
+        },
+        "n_races": 3454,
+        "n_eligible": 3448,
+        "n_days": 106,
+        "n_complete": 3454,
+        "n_started_scored": 46921,
+        "heads_brier": [
+          0.05978123517628274,
+          0.1027850111470977,
+          0.1362010313035489
+        ]
+      },
+      "candidate": {
+        "winner_nll": 1.9974498371682121,
+        "winner_excluded": 6,
+        "top2_logloss": 0.3335132856209554,
+        "top3_logloss": 0.42344682247076687,
+        "started_all": {
+          "log_loss": 0.2130581793125384,
+          "brier": 0.05971176765250922
+        },
+        "ece_equal_width_like": {
+          "ece": 0.004434358235075039,
+          "n_bins": 10,
+          "bin_counts": [
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4693,
+            4691,
+            4692,
+            4693
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0015515762083691718,
+          "[0.05,0.15)": 0.0034868091869339644,
+          "[0.15,0.30)": 0.013530230432662492,
+          "[0.30,1.00]": 0.01624425958834977
+        },
+        "n_races": 3454,
+        "n_eligible": 3448,
+        "n_days": 106,
+        "n_complete": 3454,
+        "n_started_scored": 46921,
+        "heads_brier": [
+          0.05971176765250922,
+          0.10269074256350925,
+          0.13616107997546953
+        ]
+      },
+      "winner_nll_diff": -0.0030711347753804574,
+      "top2_diff": -0.00037885824049055383,
+      "top3_diff": -0.00012453749409785386,
+      "sample_ci": {
+        "point": -0.003071134775380194,
+        "ci_low": -0.007268101887123306,
+        "ci_high": 0.0013191924192619388,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 106,
+        "no_decision": false
+      }
+    },
+    "2024:full:materially_affected": {
+      "baseline": {
+        "winner_nll": 2.135219814573372,
+        "winner_excluded": 0,
+        "top2_logloss": 0.3564767108981548,
+        "top3_logloss": 0.4499869528389476,
+        "started_all": {
+          "log_loss": 0.2229140862261184,
+          "brier": 0.061395911339915524
+        },
+        "ece_equal_width_like": {
+          "ece": 0.008610695648396453,
+          "n_bins": 10,
+          "bin_counts": [
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            229
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.006874668277685458,
+          "[0.05,0.15)": 0.007516655952376456,
+          "[0.15,0.30)": 0.011163730329655269,
+          "[0.30,1.00]": 0.004023298642750327
+        },
+        "n_races": 167,
+        "n_eligible": 167,
+        "n_days": 82,
+        "n_complete": 167,
+        "n_started_scored": 2281,
+        "heads_brier": [
+          0.061395911339915524,
+          0.10888436357599987,
+          0.14448815738882856
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.1344267625851714,
+        "winner_excluded": 0,
+        "top2_logloss": 0.3559162486363286,
+        "top3_logloss": 0.4489634043486447,
+        "started_all": {
+          "log_loss": 0.22281303812059913,
+          "brier": 0.06138172112348775
+        },
+        "ece_equal_width_like": {
+          "ece": 0.013195017113775298,
+          "n_bins": 10,
+          "bin_counts": [
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            229
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.007092222732350412,
+          "[0.05,0.15)": 0.010528785450961163,
+          "[0.15,0.30)": 0.007733183341528131,
+          "[0.30,1.00]": 0.010629238478971138
+        },
+        "n_races": 167,
+        "n_eligible": 167,
+        "n_days": 82,
+        "n_complete": 167,
+        "n_started_scored": 2281,
+        "heads_brier": [
+          0.06138172112348775,
+          0.10891901946631709,
+          0.14437620427685213
+        ]
+      },
+      "winner_nll_diff": -0.000793051988200677,
+      "top2_diff": -0.0005604622618262112,
+      "top3_diff": -0.0010235484903028946,
+      "sample_ci": {
+        "point": -0.0007930519882006524,
+        "ci_low": -0.022595281724130386,
+        "ci_high": 0.020803377052149113,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 82,
+        "no_decision": false
+      }
+    },
+    "2024:preweight": {
+      "baseline": {
+        "winner_nll": 2.002271561053316,
+        "winner_excluded": 6,
+        "top2_logloss": 0.3339276447281695,
+        "top3_logloss": 0.42353201372265,
+        "started_all": {
+          "log_loss": 0.21348857171149635,
+          "brier": 0.059812834227060074
+        },
+        "ece_equal_width_like": {
+          "ece": 0.003720316418277335,
+          "n_bins": 10,
+          "bin_counts": [
+            4693,
+            4691,
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4693,
+            4692
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.001760676428087989,
+          "[0.05,0.15)": 0.004053074041935129,
+          "[0.15,0.30)": 0.01806802013350572,
+          "[0.30,1.00]": 0.012612026940080224
+        },
+        "n_races": 3454,
+        "n_eligible": 3448,
+        "n_days": 106,
+        "n_complete": 3454,
+        "n_started_scored": 46921,
+        "heads_brier": [
+          0.059812834227060074,
+          0.102817887946206,
+          0.13621269512390896
+        ]
+      },
+      "candidate": {
+        "winner_nll": 1.9991847712312725,
+        "winner_excluded": 6,
+        "top2_logloss": 0.3336860682679321,
+        "top3_logloss": 0.42360225115351463,
+        "started_all": {
+          "log_loss": 0.21320078698706993,
+          "brier": 0.05973374835986104
+        },
+        "ece_equal_width_like": {
+          "ece": 0.004506471331767947,
+          "n_bins": 10,
+          "bin_counts": [
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4692,
+            4693
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0021820961847092302,
+          "[0.05,0.15)": 0.0035107610113025633,
+          "[0.15,0.30)": 0.015489854591718002,
+          "[0.30,1.00]": 0.021404865391323222
+        },
+        "n_races": 3454,
+        "n_eligible": 3448,
+        "n_days": 106,
+        "n_complete": 3454,
+        "n_started_scored": 46921,
+        "heads_brier": [
+          0.05973374835986104,
+          0.1027311383756289,
+          0.13619696573387924
+        ]
+      },
+      "winner_nll_diff": -0.0030867898220436896,
+      "top2_diff": -0.00024157646023736934,
+      "top3_diff": 7.023743086465029e-05,
+      "sample_ci": {
+        "point": -0.0030867898220436683,
+        "ci_low": -0.007454010720251838,
+        "ci_high": 0.0012242628768854256,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 106,
+        "no_decision": false
+      }
+    },
+    "2024:preweight:materially_affected": {
+      "baseline": {
+        "winner_nll": 2.1347628314819342,
+        "winner_excluded": 0,
+        "top2_logloss": 0.35575914857956537,
+        "top3_logloss": 0.4494004015981372,
+        "started_all": {
+          "log_loss": 0.22284849568948512,
+          "brier": 0.061349571221895334
+        },
+        "ece_equal_width_like": {
+          "ece": 0.008901122789112441,
+          "n_bins": 10,
+          "bin_counts": [
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            229
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.007815360055450088,
+          "[0.05,0.15)": 0.009847169709436955,
+          "[0.15,0.30)": 0.00899980450294888,
+          "[0.30,1.00]": 0.0029733935408265085
+        },
+        "n_races": 167,
+        "n_eligible": 167,
+        "n_days": 82,
+        "n_complete": 167,
+        "n_started_scored": 2281,
+        "heads_brier": [
+          0.061349571221895334,
+          0.1087373372881764,
+          0.14431825696626377
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.133363133060726,
+        "winner_excluded": 0,
+        "top2_logloss": 0.3560311164380902,
+        "top3_logloss": 0.44951594312085424,
+        "started_all": {
+          "log_loss": 0.22267981713779778,
+          "brier": 0.06130657179803461
+        },
+        "ece_equal_width_like": {
+          "ece": 0.01332413628694625,
+          "n_bins": 10,
+          "bin_counts": [
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            228,
+            229
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0047687037419169645,
+          "[0.05,0.15)": 0.007675900898636931,
+          "[0.15,0.30)": 0.005309568029968145,
+          "[0.30,1.00]": 0.015811431800267218
+        },
+        "n_races": 167,
+        "n_eligible": 167,
+        "n_days": 82,
+        "n_complete": 167,
+        "n_started_scored": 2281,
+        "heads_brier": [
+          0.06130657179803461,
+          0.10888498144472665,
+          0.14435314547762504
+        ]
+      },
+      "winner_nll_diff": -0.0013996984212081287,
+      "top2_diff": 0.0002719678585248464,
+      "top3_diff": 0.00011554152271703311,
+      "sample_ci": {
+        "point": -0.0013996984212073895,
+        "ci_low": -0.022361911295766035,
+        "ci_high": 0.019022413380669644,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 82,
+        "no_decision": false
+      }
+    },
+    "2026:full": {
+      "baseline": {
+        "winner_nll": 2.049823455580972,
+        "winner_excluded": 2,
+        "top2_logloss": 0.3334471815379211,
+        "top3_logloss": 0.41921215423475877,
+        "started_all": {
+          "log_loss": 0.2137770401810779,
+          "brier": 0.0596823619298804
+        },
+        "ece_equal_width_like": {
+          "ece": 0.00289221744560768,
+          "n_bins": 10,
+          "bin_counts": [
+            3176,
+            3177,
+            3176,
+            3177,
+            3176,
+            3178,
+            3175,
+            3177,
+            3176,
+            3177
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.00022453936509235018,
+          "[0.05,0.15)": 0.0022169620420977097,
+          "[0.15,0.30)": 0.003990308043039443,
+          "[0.30,1.00]": 0.028760187515312438
+        },
+        "n_races": 2298,
+        "n_eligible": 2296,
+        "n_days": 70,
+        "n_complete": 2298,
+        "n_started_scored": 31765,
+        "heads_brier": [
+          0.0596823619298804,
+          0.10272532863480265,
+          0.13488080340183234
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.051576704115895,
+        "winner_excluded": 2,
+        "top2_logloss": 0.3335822427204937,
+        "top3_logloss": 0.4192110222961841,
+        "started_all": {
+          "log_loss": 0.2139573228690779,
+          "brier": 0.05975901080479877
+        },
+        "ece_equal_width_like": {
+          "ece": 0.0015483899925243085,
+          "n_bins": 10,
+          "bin_counts": [
+            3177,
+            3176,
+            3176,
+            3178,
+            3175,
+            3177,
+            3176,
+            3177,
+            3176,
+            3177
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.00047084247772782265,
+          "[0.05,0.15)": 0.002912511660921013,
+          "[0.15,0.30)": 0.0059205147355574535,
+          "[0.30,1.00]": 0.03634572841034019
+        },
+        "n_races": 2298,
+        "n_eligible": 2296,
+        "n_days": 70,
+        "n_complete": 2298,
+        "n_started_scored": 31765,
+        "heads_brier": [
+          0.05975901080479877,
+          0.10278439511613566,
+          0.1349030864943487
+        ]
+      },
+      "winner_nll_diff": 0.0017532485349232019,
+      "top2_diff": 0.00013506118257261557,
+      "top3_diff": -1.1319385746499933e-06,
+      "sample_ci": {
+        "point": 0.001753248534923448,
+        "ci_low": -0.004364108245685853,
+        "ci_high": 0.008080663061065039,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 70,
+        "no_decision": false
+      }
+    },
+    "2026:full:materially_affected": {
+      "baseline": {
+        "winner_nll": 2.0339289954249753,
+        "winner_excluded": 0,
+        "top2_logloss": 0.32918647030961395,
+        "top3_logloss": 0.41629318070227894,
+        "started_all": {
+          "log_loss": 0.20395284398229838,
+          "brier": 0.056641446433435
+        },
+        "ece_equal_width_like": {
+          "ece": 0.013817029314377153,
+          "n_bins": 10,
+          "bin_counts": [
+            189,
+            191,
+            189,
+            189,
+            190,
+            190,
+            189,
+            190,
+            190,
+            190
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0001574092367759833,
+          "[0.05,0.15)": 0.011696877228134048,
+          "[0.15,0.30)": 0.027882497780383986,
+          "[0.30,1.00]": 0.018821560672887264
+        },
+        "n_races": 132,
+        "n_eligible": 132,
+        "n_days": 56,
+        "n_complete": 132,
+        "n_started_scored": 1897,
+        "heads_brier": [
+          0.056641446433435,
+          0.1012423695771392,
+          0.13543836990907018
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.0389307303237993,
+        "winner_excluded": 0,
+        "top2_logloss": 0.3288848340239181,
+        "top3_logloss": 0.4153790204304275,
+        "started_all": {
+          "log_loss": 0.20439966861667924,
+          "brier": 0.05681607338523399
+        },
+        "ece_equal_width_like": {
+          "ece": 0.014038003501373622,
+          "n_bins": 10,
+          "bin_counts": [
+            189,
+            190,
+            190,
+            189,
+            190,
+            190,
+            189,
+            190,
+            190,
+            190
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0012893341558813526,
+          "[0.05,0.15)": 0.012017800387105542,
+          "[0.15,0.30)": 0.033412130914277915,
+          "[0.30,1.00]": 0.017113578769327467
+        },
+        "n_races": 132,
+        "n_eligible": 132,
+        "n_days": 56,
+        "n_complete": 132,
+        "n_started_scored": 1897,
+        "heads_brier": [
+          0.05681607338523399,
+          0.10123892681811023,
+          0.13519825053542173
+        ]
+      },
+      "winner_nll_diff": 0.005001734898824051,
+      "top2_diff": -0.0003016362856958499,
+      "top3_diff": -0.0009141602718514275,
+      "sample_ci": {
+        "point": 0.005001734898824528,
+        "ci_low": -0.020068060186640164,
+        "ci_high": 0.030554649399205193,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 56,
+        "no_decision": false
+      }
+    },
+    "2026:preweight": {
+      "baseline": {
+        "winner_nll": 2.0506958474195884,
+        "winner_excluded": 2,
+        "top2_logloss": 0.33343287464501237,
+        "top3_logloss": 0.4190469783824305,
+        "started_all": {
+          "log_loss": 0.21385874062962046,
+          "brier": 0.05970321357363209
+        },
+        "ece_equal_width_like": {
+          "ece": 0.002869928792143889,
+          "n_bins": 10,
+          "bin_counts": [
+            3177,
+            3176,
+            3176,
+            3177,
+            3176,
+            3177,
+            3176,
+            3177,
+            3176,
+            3177
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 7.594636445176768e-05,
+          "[0.05,0.15)": 0.0006862350050183803,
+          "[0.15,0.30)": 0.004668038743568903,
+          "[0.30,1.00]": 0.02287512257790032
+        },
+        "n_races": 2298,
+        "n_eligible": 2296,
+        "n_days": 70,
+        "n_complete": 2298,
+        "n_started_scored": 31765,
+        "heads_brier": [
+          0.05970321357363209,
+          0.10272277365320732,
+          0.1348771168403075
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.0542983776776813,
+        "winner_excluded": 2,
+        "top2_logloss": 0.3337554138903129,
+        "top3_logloss": 0.4192997584001938,
+        "started_all": {
+          "log_loss": 0.21417625233772972,
+          "brier": 0.0597891261119743
+        },
+        "ece_equal_width_like": {
+          "ece": 0.002004483885294467,
+          "n_bins": 10,
+          "bin_counts": [
+            3177,
+            3176,
+            3177,
+            3176,
+            3176,
+            3177,
+            3176,
+            3177,
+            3176,
+            3177
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0004185058107926647,
+          "[0.05,0.15)": 0.0033144158482961627,
+          "[0.15,0.30)": 0.001480827033458929,
+          "[0.30,1.00]": 0.02674150702673685
+        },
+        "n_races": 2298,
+        "n_eligible": 2296,
+        "n_days": 70,
+        "n_complete": 2298,
+        "n_started_scored": 31765,
+        "heads_brier": [
+          0.0597891261119743,
+          0.10280823744643822,
+          0.13495956015385477
+        ]
+      },
+      "winner_nll_diff": 0.003602530258092873,
+      "top2_diff": 0.0003225392453005127,
+      "top3_diff": 0.00025278001776329884,
+      "sample_ci": {
+        "point": 0.0036025302580929165,
+        "ci_low": -0.0019313961977778693,
+        "ci_high": 0.009476630942070463,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 70,
+        "no_decision": false
+      }
+    },
+    "2026:preweight:materially_affected": {
+      "baseline": {
+        "winner_nll": 2.028491213544165,
+        "winner_excluded": 0,
+        "top2_logloss": 0.3282769084605701,
+        "top3_logloss": 0.41448824876183693,
+        "started_all": {
+          "log_loss": 0.2035599000970442,
+          "brier": 0.056582062512172814
+        },
+        "ece_equal_width_like": {
+          "ece": 0.014938199740371139,
+          "n_bins": 10,
+          "bin_counts": [
+            189,
+            190,
+            190,
+            189,
+            190,
+            190,
+            189,
+            190,
+            190,
+            190
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0001843392746193676,
+          "[0.05,0.15)": 0.01553987672375275,
+          "[0.15,0.30)": 0.040931677169765056,
+          "[0.30,1.00]": 0.016574944346551868
+        },
+        "n_races": 132,
+        "n_eligible": 132,
+        "n_days": 56,
+        "n_complete": 132,
+        "n_started_scored": 1897,
+        "heads_brier": [
+          0.056582062512172814,
+          0.10086678180190096,
+          0.13469223090130925
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.0401850388357246,
+        "winner_excluded": 0,
+        "top2_logloss": 0.3289406261465183,
+        "top3_logloss": 0.4152628608518836,
+        "started_all": {
+          "log_loss": 0.20456522732916896,
+          "brier": 0.056898857285357415
+        },
+        "ece_equal_width_like": {
+          "ece": 0.01442731382725601,
+          "n_bins": 10,
+          "bin_counts": [
+            190,
+            189,
+            190,
+            190,
+            189,
+            190,
+            189,
+            190,
+            190,
+            190
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.00035137235483240784,
+          "[0.05,0.15)": 0.009287702496495274,
+          "[0.15,0.30)": 0.02546719252934921,
+          "[0.30,1.00]": 0.0030377740403100106
+        },
+        "n_races": 132,
+        "n_eligible": 132,
+        "n_days": 56,
+        "n_complete": 132,
+        "n_started_scored": 1897,
+        "heads_brier": [
+          0.056898857285357415,
+          0.10112128537238188,
+          0.1350454514649042
+        ]
+      },
+      "winner_nll_diff": 0.011693825291559712,
+      "top2_diff": 0.0006637176859481952,
+      "top3_diff": 0.0007746120900466447,
+      "sample_ci": {
+        "point": 0.011693825291559608,
+        "ci_low": -0.011140495987497253,
+        "ci_high": 0.03500620027837864,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 56,
+        "no_decision": false
+      }
+    },
+    "pooled:full": {
+      "baseline": {
+        "winner_nll": 2.020228232116194,
+        "winner_excluded": 8,
+        "top2_logloss": 0.3337125156149104,
+        "top3_logloss": 0.4218115784279041,
+        "started_all": {
+          "log_loss": 0.21351736619161307,
+          "brier": 0.05974132072298776
+        },
+        "ece_equal_width_like": {
+          "ece": 0.001991257633691157,
+          "n_bins": 10,
+          "bin_counts": [
+            7868,
+            7869,
+            7868,
+            7869,
+            7869,
+            7868,
+            7869,
+            7868,
+            7869,
+            7869
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0012640691472420931,
+          "[0.05,0.15)": 0.001195469322944479,
+          "[0.15,0.30)": 0.012657387451663138,
+          "[0.30,1.00]": 0.006930375425111329
+        },
+        "n_races": 5752,
+        "n_eligible": 5744,
+        "n_days": 176,
+        "n_complete": 5752,
+        "n_started_scored": 78686,
+        "heads_brier": [
+          0.05974132072298776,
+          0.10276091772510394,
+          0.1356680643297809
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.0190855068255726,
+        "winner_excluded": 8,
+        "top2_logloss": 0.3335411231303864,
+        "top3_logloss": 0.4217368589125,
+        "started_all": {
+          "log_loss": 0.21342115741630982,
+          "brier": 0.05973083938995323
+        },
+        "ece_equal_width_like": {
+          "ece": 0.0021503412283693057,
+          "n_bins": 10,
+          "bin_counts": [
+            7868,
+            7869,
+            7870,
+            7867,
+            7869,
+            7868,
+            7869,
+            7868,
+            7869,
+            7869
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0011135248306947164,
+          "[0.05,0.15)": 0.000919552235029791,
+          "[0.15,0.30)": 0.010512023734350638,
+          "[0.30,1.00]": 0.006076892874116708
+        },
+        "n_races": 5752,
+        "n_eligible": 5744,
+        "n_days": 176,
+        "n_complete": 5752,
+        "n_started_scored": 78686,
+        "heads_brier": [
+          0.05973083938995323,
+          0.10272854945843443,
+          0.13565323661162104
+        ]
+      },
+      "winner_nll_diff": -0.001142725290621538,
+      "top2_diff": -0.00017139248452396894,
+      "top3_diff": -7.471951540410915e-05,
+      "sample_ci": {
+        "point": -0.0011427252906209392,
+        "ci_low": -0.004614504049944424,
+        "ci_high": 0.002410817447488575,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 176,
+        "no_decision": false
+      }
+    },
+    "pooled:preweight": {
+      "baseline": {
+        "winner_nll": 2.02162778694067,
+        "winner_excluded": 8,
+        "top2_logloss": 0.3337279094297443,
+        "top3_logloss": 0.42172143563274955,
+        "started_all": {
+          "log_loss": 0.21363800637184452,
+          "brier": 0.05976858111905926
+        },
+        "ece_equal_width_like": {
+          "ece": 0.0021541235559279174,
+          "n_bins": 10,
+          "bin_counts": [
+            7868,
+            7869,
+            7870,
+            7867,
+            7871,
+            7866,
+            7869,
+            7868,
+            7869,
+            7869
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.0010010688362412977,
+          "[0.05,0.15)": 0.0022318230291682594,
+          "[0.15,0.30)": 0.012554760830445353,
+          "[0.30,1.00]": 0.0012835436543097442
+        },
+        "n_races": 5752,
+        "n_eligible": 5744,
+        "n_days": 176,
+        "n_complete": 5752,
+        "n_started_scored": 78686,
+        "heads_brier": [
+          0.05976858111905926,
+          0.10277949095668956,
+          0.13567353130596818
+        ]
+      },
+      "candidate": {
+        "winner_nll": 2.0212148618303245,
+        "winner_excluded": 8,
+        "top2_logloss": 0.33371406262137554,
+        "top3_logloss": 0.42186536425738463,
+        "started_all": {
+          "log_loss": 0.21359457567710038,
+          "brier": 0.05975610397961436
+        },
+        "ece_equal_width_like": {
+          "ece": 0.002231102238218065,
+          "n_bins": 10,
+          "bin_counts": [
+            7868,
+            7869,
+            7868,
+            7869,
+            7869,
+            7869,
+            7868,
+            7868,
+            7869,
+            7869
+          ]
+        },
+        "ece_by_band": {
+          "[0.00,0.05)": 0.001466939138017003,
+          "[0.05,0.15)": 0.0007834798880671551,
+          "[0.15,0.30)": 0.009887500406145291,
+          "[0.30,1.00]": 0.0009149412742622937
+        },
+        "n_races": 5752,
+        "n_eligible": 5744,
+        "n_days": 176,
+        "n_complete": 5752,
+        "n_started_scored": 78686,
+        "heads_brier": [
+          0.05975610397961436,
+          0.10276226274317,
+          0.1356974335648867
+        ]
+      },
+      "winner_nll_diff": -0.00041292511034551893,
+      "top2_diff": -1.3846808368744856e-05,
+      "top3_diff": 0.00014392862463508127,
+      "sample_ci": {
+        "point": -0.0004129251103456191,
+        "ci_low": -0.003949115828864272,
+        "ci_high": 0.0029663288114289465,
+        "b": 4000,
+        "seed": 20260907,
+        "block": "race_day",
+        "n_days": 176,
+        "no_decision": false
+      }
+    }
+  },
+  "n_numeric_checks": 420,
+  "numeric_checks": [
+    "2024:full:baseline:winner_nll",
+    "2024:full:baseline:winner_excluded",
+    "2024:full:baseline:top2_logloss",
+    "2024:full:baseline:top3_logloss",
+    "2024:full:baseline:started:log_loss",
+    "2024:full:baseline:started:brier",
+    "2024:full:baseline:ECE:ece",
+    "2024:full:baseline:ECE:n_bins",
+    "2024:full:baseline:ECE:bin_counts",
+    "2024:full:baseline:band:[0.00,0.05)",
+    "2024:full:baseline:band:[0.05,0.15)",
+    "2024:full:baseline:band:[0.15,0.30)",
+    "2024:full:baseline:band:[0.30,1.00]",
+    "2024:full:candidate:winner_nll",
+    "2024:full:candidate:winner_excluded",
+    "2024:full:candidate:top2_logloss",
+    "2024:full:candidate:top3_logloss",
+    "2024:full:candidate:started:log_loss",
+    "2024:full:candidate:started:brier",
+    "2024:full:candidate:ECE:ece",
+    "2024:full:candidate:ECE:n_bins",
+    "2024:full:candidate:ECE:bin_counts",
+    "2024:full:candidate:band:[0.00,0.05)",
+    "2024:full:candidate:band:[0.05,0.15)",
+    "2024:full:candidate:band:[0.15,0.30)",
+    "2024:full:candidate:band:[0.30,1.00]",
+    "2024:full:n_races",
+    "2024:full:paired_population:n_races",
+    "2024:full:n_eligible",
+    "2024:full:paired_population:n_eligible",
+    "2024:full:n_days",
+    "2024:full:paired_population:n_days",
+    "2024:full:winner_nll_diff",
+    "2024:full:top2_diff",
+    "2024:full:top3_diff",
+    "2024:full:all_saved_winner_loss_rows",
+    "2024:full:CI:point",
+    "2024:full:CI:ci_low",
+    "2024:full:CI:ci_high",
+    "2024:full:CI:n_days",
+    "2024:full:CI:b",
+    "2024:full:CI:seed",
+    "2024:full:materially_affected:baseline:winner_nll",
+    "2024:full:materially_affected:baseline:winner_excluded",
+    "2024:full:materially_affected:baseline:top2_logloss",
+    "2024:full:materially_affected:baseline:top3_logloss",
+    "2024:full:materially_affected:baseline:started:log_loss",
+    "2024:full:materially_affected:baseline:started:brier",
+    "2024:full:materially_affected:baseline:ECE:ece",
+    "2024:full:materially_affected:baseline:ECE:n_bins",
+    "2024:full:materially_affected:baseline:ECE:bin_counts",
+    "2024:full:materially_affected:baseline:band:[0.00,0.05)",
+    "2024:full:materially_affected:baseline:band:[0.05,0.15)",
+    "2024:full:materially_affected:baseline:band:[0.15,0.30)",
+    "2024:full:materially_affected:baseline:band:[0.30,1.00]",
+    "2024:full:materially_affected:candidate:winner_nll",
+    "2024:full:materially_affected:candidate:winner_excluded",
+    "2024:full:materially_affected:candidate:top2_logloss",
+    "2024:full:materially_affected:candidate:top3_logloss",
+    "2024:full:materially_affected:candidate:started:log_loss",
+    "2024:full:materially_affected:candidate:started:brier",
+    "2024:full:materially_affected:candidate:ECE:ece",
+    "2024:full:materially_affected:candidate:ECE:n_bins",
+    "2024:full:materially_affected:candidate:ECE:bin_counts",
+    "2024:full:materially_affected:candidate:band:[0.00,0.05)",
+    "2024:full:materially_affected:candidate:band:[0.05,0.15)",
+    "2024:full:materially_affected:candidate:band:[0.15,0.30)",
+    "2024:full:materially_affected:candidate:band:[0.30,1.00]",
+    "2024:full:materially_affected:n_races",
+    "2024:full:materially_affected:paired_population:n_races",
+    "2024:full:materially_affected:n_eligible",
+    "2024:full:materially_affected:paired_population:n_eligible",
+    "2024:full:materially_affected:n_days",
+    "2024:full:materially_affected:paired_population:n_days",
+    "2024:full:materially_affected:winner_nll_diff",
+    "2024:full:materially_affected:top2_diff",
+    "2024:full:materially_affected:top3_diff",
+    "2024:full:materially_affected:all_saved_winner_loss_rows",
+    "2024:full:materially_affected:CI:point",
+    "2024:full:materially_affected:CI:ci_low",
+    "2024:full:materially_affected:CI:ci_high",
+    "2024:full:materially_affected:CI:n_days",
+    "2024:full:materially_affected:CI:b",
+    "2024:full:materially_affected:CI:seed",
+    "2024:preweight:baseline:winner_nll",
+    "2024:preweight:baseline:winner_excluded",
+    "2024:preweight:baseline:top2_logloss",
+    "2024:preweight:baseline:top3_logloss",
+    "2024:preweight:baseline:started:log_loss",
+    "2024:preweight:baseline:started:brier",
+    "2024:preweight:baseline:ECE:ece",
+    "2024:preweight:baseline:ECE:n_bins",
+    "2024:preweight:baseline:ECE:bin_counts",
+    "2024:preweight:baseline:band:[0.00,0.05)",
+    "2024:preweight:baseline:band:[0.05,0.15)",
+    "2024:preweight:baseline:band:[0.15,0.30)",
+    "2024:preweight:baseline:band:[0.30,1.00]",
+    "2024:preweight:candidate:winner_nll",
+    "2024:preweight:candidate:winner_excluded",
+    "2024:preweight:candidate:top2_logloss",
+    "2024:preweight:candidate:top3_logloss",
+    "2024:preweight:candidate:started:log_loss",
+    "2024:preweight:candidate:started:brier",
+    "2024:preweight:candidate:ECE:ece",
+    "2024:preweight:candidate:ECE:n_bins",
+    "2024:preweight:candidate:ECE:bin_counts",
+    "2024:preweight:candidate:band:[0.00,0.05)",
+    "2024:preweight:candidate:band:[0.05,0.15)",
+    "2024:preweight:candidate:band:[0.15,0.30)",
+    "2024:preweight:candidate:band:[0.30,1.00]",
+    "2024:preweight:n_races",
+    "2024:preweight:paired_population:n_races",
+    "2024:preweight:n_eligible",
+    "2024:preweight:paired_population:n_eligible",
+    "2024:preweight:n_days",
+    "2024:preweight:paired_population:n_days",
+    "2024:preweight:winner_nll_diff",
+    "2024:preweight:top2_diff",
+    "2024:preweight:top3_diff",
+    "2024:preweight:all_saved_winner_loss_rows",
+    "2024:preweight:CI:point",
+    "2024:preweight:CI:ci_low",
+    "2024:preweight:CI:ci_high",
+    "2024:preweight:CI:n_days",
+    "2024:preweight:CI:b",
+    "2024:preweight:CI:seed",
+    "2024:preweight:materially_affected:baseline:winner_nll",
+    "2024:preweight:materially_affected:baseline:winner_excluded",
+    "2024:preweight:materially_affected:baseline:top2_logloss",
+    "2024:preweight:materially_affected:baseline:top3_logloss",
+    "2024:preweight:materially_affected:baseline:started:log_loss",
+    "2024:preweight:materially_affected:baseline:started:brier",
+    "2024:preweight:materially_affected:baseline:ECE:ece",
+    "2024:preweight:materially_affected:baseline:ECE:n_bins",
+    "2024:preweight:materially_affected:baseline:ECE:bin_counts",
+    "2024:preweight:materially_affected:baseline:band:[0.00,0.05)",
+    "2024:preweight:materially_affected:baseline:band:[0.05,0.15)",
+    "2024:preweight:materially_affected:baseline:band:[0.15,0.30)",
+    "2024:preweight:materially_affected:baseline:band:[0.30,1.00]",
+    "2024:preweight:materially_affected:candidate:winner_nll",
+    "2024:preweight:materially_affected:candidate:winner_excluded",
+    "2024:preweight:materially_affected:candidate:top2_logloss",
+    "2024:preweight:materially_affected:candidate:top3_logloss",
+    "2024:preweight:materially_affected:candidate:started:log_loss",
+    "2024:preweight:materially_affected:candidate:started:brier",
+    "2024:preweight:materially_affected:candidate:ECE:ece",
+    "2024:preweight:materially_affected:candidate:ECE:n_bins",
+    "2024:preweight:materially_affected:candidate:ECE:bin_counts",
+    "2024:preweight:materially_affected:candidate:band:[0.00,0.05)",
+    "2024:preweight:materially_affected:candidate:band:[0.05,0.15)",
+    "2024:preweight:materially_affected:candidate:band:[0.15,0.30)",
+    "2024:preweight:materially_affected:candidate:band:[0.30,1.00]",
+    "2024:preweight:materially_affected:n_races",
+    "2024:preweight:materially_affected:paired_population:n_races",
+    "2024:preweight:materially_affected:n_eligible",
+    "2024:preweight:materially_affected:paired_population:n_eligible",
+    "2024:preweight:materially_affected:n_days",
+    "2024:preweight:materially_affected:paired_population:n_days",
+    "2024:preweight:materially_affected:winner_nll_diff",
+    "2024:preweight:materially_affected:top2_diff",
+    "2024:preweight:materially_affected:top3_diff",
+    "2024:preweight:materially_affected:all_saved_winner_loss_rows",
+    "2024:preweight:materially_affected:CI:point",
+    "2024:preweight:materially_affected:CI:ci_low",
+    "2024:preweight:materially_affected:CI:ci_high",
+    "2024:preweight:materially_affected:CI:n_days",
+    "2024:preweight:materially_affected:CI:b",
+    "2024:preweight:materially_affected:CI:seed",
+    "2026:full:baseline:winner_nll",
+    "2026:full:baseline:winner_excluded",
+    "2026:full:baseline:top2_logloss",
+    "2026:full:baseline:top3_logloss",
+    "2026:full:baseline:started:log_loss",
+    "2026:full:baseline:started:brier",
+    "2026:full:baseline:ECE:ece",
+    "2026:full:baseline:ECE:n_bins",
+    "2026:full:baseline:ECE:bin_counts",
+    "2026:full:baseline:band:[0.00,0.05)",
+    "2026:full:baseline:band:[0.05,0.15)",
+    "2026:full:baseline:band:[0.15,0.30)",
+    "2026:full:baseline:band:[0.30,1.00]",
+    "2026:full:candidate:winner_nll",
+    "2026:full:candidate:winner_excluded",
+    "2026:full:candidate:top2_logloss",
+    "2026:full:candidate:top3_logloss",
+    "2026:full:candidate:started:log_loss",
+    "2026:full:candidate:started:brier",
+    "2026:full:candidate:ECE:ece",
+    "2026:full:candidate:ECE:n_bins",
+    "2026:full:candidate:ECE:bin_counts",
+    "2026:full:candidate:band:[0.00,0.05)",
+    "2026:full:candidate:band:[0.05,0.15)",
+    "2026:full:candidate:band:[0.15,0.30)",
+    "2026:full:candidate:band:[0.30,1.00]",
+    "2026:full:n_races",
+    "2026:full:paired_population:n_races",
+    "2026:full:n_eligible",
+    "2026:full:paired_population:n_eligible",
+    "2026:full:n_days",
+    "2026:full:paired_population:n_days",
+    "2026:full:winner_nll_diff",
+    "2026:full:top2_diff",
+    "2026:full:top3_diff",
+    "2026:full:all_saved_winner_loss_rows",
+    "2026:full:CI:point",
+    "2026:full:CI:ci_low",
+    "2026:full:CI:ci_high",
+    "2026:full:CI:n_days",
+    "2026:full:CI:b",
+    "2026:full:CI:seed",
+    "2026:full:materially_affected:baseline:winner_nll",
+    "2026:full:materially_affected:baseline:winner_excluded",
+    "2026:full:materially_affected:baseline:top2_logloss",
+    "2026:full:materially_affected:baseline:top3_logloss",
+    "2026:full:materially_affected:baseline:started:log_loss",
+    "2026:full:materially_affected:baseline:started:brier",
+    "2026:full:materially_affected:baseline:ECE:ece",
+    "2026:full:materially_affected:baseline:ECE:n_bins",
+    "2026:full:materially_affected:baseline:ECE:bin_counts",
+    "2026:full:materially_affected:baseline:band:[0.00,0.05)",
+    "2026:full:materially_affected:baseline:band:[0.05,0.15)",
+    "2026:full:materially_affected:baseline:band:[0.15,0.30)",
+    "2026:full:materially_affected:baseline:band:[0.30,1.00]",
+    "2026:full:materially_affected:candidate:winner_nll",
+    "2026:full:materially_affected:candidate:winner_excluded",
+    "2026:full:materially_affected:candidate:top2_logloss",
+    "2026:full:materially_affected:candidate:top3_logloss",
+    "2026:full:materially_affected:candidate:started:log_loss",
+    "2026:full:materially_affected:candidate:started:brier",
+    "2026:full:materially_affected:candidate:ECE:ece",
+    "2026:full:materially_affected:candidate:ECE:n_bins",
+    "2026:full:materially_affected:candidate:ECE:bin_counts",
+    "2026:full:materially_affected:candidate:band:[0.00,0.05)",
+    "2026:full:materially_affected:candidate:band:[0.05,0.15)",
+    "2026:full:materially_affected:candidate:band:[0.15,0.30)",
+    "2026:full:materially_affected:candidate:band:[0.30,1.00]",
+    "2026:full:materially_affected:n_races",
+    "2026:full:materially_affected:paired_population:n_races",
+    "2026:full:materially_affected:n_eligible",
+    "2026:full:materially_affected:paired_population:n_eligible",
+    "2026:full:materially_affected:n_days",
+    "2026:full:materially_affected:paired_population:n_days",
+    "2026:full:materially_affected:winner_nll_diff",
+    "2026:full:materially_affected:top2_diff",
+    "2026:full:materially_affected:top3_diff",
+    "2026:full:materially_affected:all_saved_winner_loss_rows",
+    "2026:full:materially_affected:CI:point",
+    "2026:full:materially_affected:CI:ci_low",
+    "2026:full:materially_affected:CI:ci_high",
+    "2026:full:materially_affected:CI:n_days",
+    "2026:full:materially_affected:CI:b",
+    "2026:full:materially_affected:CI:seed",
+    "2026:preweight:baseline:winner_nll",
+    "2026:preweight:baseline:winner_excluded",
+    "2026:preweight:baseline:top2_logloss",
+    "2026:preweight:baseline:top3_logloss",
+    "2026:preweight:baseline:started:log_loss",
+    "2026:preweight:baseline:started:brier",
+    "2026:preweight:baseline:ECE:ece",
+    "2026:preweight:baseline:ECE:n_bins",
+    "2026:preweight:baseline:ECE:bin_counts",
+    "2026:preweight:baseline:band:[0.00,0.05)",
+    "2026:preweight:baseline:band:[0.05,0.15)",
+    "2026:preweight:baseline:band:[0.15,0.30)",
+    "2026:preweight:baseline:band:[0.30,1.00]",
+    "2026:preweight:candidate:winner_nll",
+    "2026:preweight:candidate:winner_excluded",
+    "2026:preweight:candidate:top2_logloss",
+    "2026:preweight:candidate:top3_logloss",
+    "2026:preweight:candidate:started:log_loss",
+    "2026:preweight:candidate:started:brier",
+    "2026:preweight:candidate:ECE:ece",
+    "2026:preweight:candidate:ECE:n_bins",
+    "2026:preweight:candidate:ECE:bin_counts",
+    "2026:preweight:candidate:band:[0.00,0.05)",
+    "2026:preweight:candidate:band:[0.05,0.15)",
+    "2026:preweight:candidate:band:[0.15,0.30)",
+    "2026:preweight:candidate:band:[0.30,1.00]",
+    "2026:preweight:n_races",
+    "2026:preweight:paired_population:n_races",
+    "2026:preweight:n_eligible",
+    "2026:preweight:paired_population:n_eligible",
+    "2026:preweight:n_days",
+    "2026:preweight:paired_population:n_days",
+    "2026:preweight:winner_nll_diff",
+    "2026:preweight:top2_diff",
+    "2026:preweight:top3_diff",
+    "2026:preweight:all_saved_winner_loss_rows",
+    "2026:preweight:CI:point",
+    "2026:preweight:CI:ci_low",
+    "2026:preweight:CI:ci_high",
+    "2026:preweight:CI:n_days",
+    "2026:preweight:CI:b",
+    "2026:preweight:CI:seed",
+    "2026:preweight:materially_affected:baseline:winner_nll",
+    "2026:preweight:materially_affected:baseline:winner_excluded",
+    "2026:preweight:materially_affected:baseline:top2_logloss",
+    "2026:preweight:materially_affected:baseline:top3_logloss",
+    "2026:preweight:materially_affected:baseline:started:log_loss",
+    "2026:preweight:materially_affected:baseline:started:brier",
+    "2026:preweight:materially_affected:baseline:ECE:ece",
+    "2026:preweight:materially_affected:baseline:ECE:n_bins",
+    "2026:preweight:materially_affected:baseline:ECE:bin_counts",
+    "2026:preweight:materially_affected:baseline:band:[0.00,0.05)",
+    "2026:preweight:materially_affected:baseline:band:[0.05,0.15)",
+    "2026:preweight:materially_affected:baseline:band:[0.15,0.30)",
+    "2026:preweight:materially_affected:baseline:band:[0.30,1.00]",
+    "2026:preweight:materially_affected:candidate:winner_nll",
+    "2026:preweight:materially_affected:candidate:winner_excluded",
+    "2026:preweight:materially_affected:candidate:top2_logloss",
+    "2026:preweight:materially_affected:candidate:top3_logloss",
+    "2026:preweight:materially_affected:candidate:started:log_loss",
+    "2026:preweight:materially_affected:candidate:started:brier",
+    "2026:preweight:materially_affected:candidate:ECE:ece",
+    "2026:preweight:materially_affected:candidate:ECE:n_bins",
+    "2026:preweight:materially_affected:candidate:ECE:bin_counts",
+    "2026:preweight:materially_affected:candidate:band:[0.00,0.05)",
+    "2026:preweight:materially_affected:candidate:band:[0.05,0.15)",
+    "2026:preweight:materially_affected:candidate:band:[0.15,0.30)",
+    "2026:preweight:materially_affected:candidate:band:[0.30,1.00]",
+    "2026:preweight:materially_affected:n_races",
+    "2026:preweight:materially_affected:paired_population:n_races",
+    "2026:preweight:materially_affected:n_eligible",
+    "2026:preweight:materially_affected:paired_population:n_eligible",
+    "2026:preweight:materially_affected:n_days",
+    "2026:preweight:materially_affected:paired_population:n_days",
+    "2026:preweight:materially_affected:winner_nll_diff",
+    "2026:preweight:materially_affected:top2_diff",
+    "2026:preweight:materially_affected:top3_diff",
+    "2026:preweight:materially_affected:all_saved_winner_loss_rows",
+    "2026:preweight:materially_affected:CI:point",
+    "2026:preweight:materially_affected:CI:ci_low",
+    "2026:preweight:materially_affected:CI:ci_high",
+    "2026:preweight:materially_affected:CI:n_days",
+    "2026:preweight:materially_affected:CI:b",
+    "2026:preweight:materially_affected:CI:seed",
+    "pooled:full:baseline:winner_nll",
+    "pooled:full:baseline:winner_excluded",
+    "pooled:full:baseline:top2_logloss",
+    "pooled:full:baseline:top3_logloss",
+    "pooled:full:baseline:started:log_loss",
+    "pooled:full:baseline:started:brier",
+    "pooled:full:baseline:ECE:ece",
+    "pooled:full:baseline:ECE:n_bins",
+    "pooled:full:baseline:ECE:bin_counts",
+    "pooled:full:baseline:band:[0.00,0.05)",
+    "pooled:full:baseline:band:[0.05,0.15)",
+    "pooled:full:baseline:band:[0.15,0.30)",
+    "pooled:full:baseline:band:[0.30,1.00]",
+    "pooled:full:candidate:winner_nll",
+    "pooled:full:candidate:winner_excluded",
+    "pooled:full:candidate:top2_logloss",
+    "pooled:full:candidate:top3_logloss",
+    "pooled:full:candidate:started:log_loss",
+    "pooled:full:candidate:started:brier",
+    "pooled:full:candidate:ECE:ece",
+    "pooled:full:candidate:ECE:n_bins",
+    "pooled:full:candidate:ECE:bin_counts",
+    "pooled:full:candidate:band:[0.00,0.05)",
+    "pooled:full:candidate:band:[0.05,0.15)",
+    "pooled:full:candidate:band:[0.15,0.30)",
+    "pooled:full:candidate:band:[0.30,1.00]",
+    "pooled:full:n_races",
+    "pooled:full:paired_population:n_races",
+    "pooled:full:n_eligible",
+    "pooled:full:paired_population:n_eligible",
+    "pooled:full:n_days",
+    "pooled:full:paired_population:n_days",
+    "pooled:full:winner_nll_diff",
+    "pooled:full:top2_diff",
+    "pooled:full:top3_diff",
+    "pooled:full:all_saved_winner_loss_rows",
+    "pooled:full:CI:point",
+    "pooled:full:CI:ci_low",
+    "pooled:full:CI:ci_high",
+    "pooled:full:CI:n_days",
+    "pooled:full:CI:b",
+    "pooled:full:CI:seed",
+    "pooled:preweight:baseline:winner_nll",
+    "pooled:preweight:baseline:winner_excluded",
+    "pooled:preweight:baseline:top2_logloss",
+    "pooled:preweight:baseline:top3_logloss",
+    "pooled:preweight:baseline:started:log_loss",
+    "pooled:preweight:baseline:started:brier",
+    "pooled:preweight:baseline:ECE:ece",
+    "pooled:preweight:baseline:ECE:n_bins",
+    "pooled:preweight:baseline:ECE:bin_counts",
+    "pooled:preweight:baseline:band:[0.00,0.05)",
+    "pooled:preweight:baseline:band:[0.05,0.15)",
+    "pooled:preweight:baseline:band:[0.15,0.30)",
+    "pooled:preweight:baseline:band:[0.30,1.00]",
+    "pooled:preweight:candidate:winner_nll",
+    "pooled:preweight:candidate:winner_excluded",
+    "pooled:preweight:candidate:top2_logloss",
+    "pooled:preweight:candidate:top3_logloss",
+    "pooled:preweight:candidate:started:log_loss",
+    "pooled:preweight:candidate:started:brier",
+    "pooled:preweight:candidate:ECE:ece",
+    "pooled:preweight:candidate:ECE:n_bins",
+    "pooled:preweight:candidate:ECE:bin_counts",
+    "pooled:preweight:candidate:band:[0.00,0.05)",
+    "pooled:preweight:candidate:band:[0.05,0.15)",
+    "pooled:preweight:candidate:band:[0.15,0.30)",
+    "pooled:preweight:candidate:band:[0.30,1.00]",
+    "pooled:preweight:n_races",
+    "pooled:preweight:paired_population:n_races",
+    "pooled:preweight:n_eligible",
+    "pooled:preweight:paired_population:n_eligible",
+    "pooled:preweight:n_days",
+    "pooled:preweight:paired_population:n_days",
+    "pooled:preweight:winner_nll_diff",
+    "pooled:preweight:top2_diff",
+    "pooled:preweight:top3_diff",
+    "pooled:preweight:all_saved_winner_loss_rows",
+    "pooled:preweight:CI:point",
+    "pooled:preweight:CI:ci_low",
+    "pooled:preweight:CI:ci_high",
+    "pooled:preweight:CI:n_days",
+    "pooled:preweight:CI:b",
+    "pooled:preweight:CI:seed"
+  ],
+  "max_allowed_abs_error": 2e-12,
+  "allowed_data_through": "2026-09-06",
+  "actual_data_through": "2026-08-23",
+  "bootstrap_method": "Independently sampled day multiplicities; sum of race loss differences divided by number of sampled races. Percentiles 0.00625/0.99375, 4000 samples, seed20260907.",
+  "ci_scope": "Fixed saved model predictions; race-day sampling uncertainty only; no selection or refit uncertainty.",
+  "additional_booster_fits": 0,
+  "db_reads": 0,
+  "post_cutoff_data_reads": 0,
+  "experiment_scorer_calls": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

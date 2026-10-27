@@ -1,0 +1,81 @@
+{
+  "owner": {
+    "same_races_and_results": true,
+    "target_race_date": "2020-02-01",
+    "only_change": "current horses.owner_name of target: A -> B",
+    "owner_win_rate_before": 1.0,
+    "owner_win_rate_after": 0.0,
+    "claim": "Historical as-of features change when a later mutable master changes; real transfer incidence unmeasured."
+  },
+  "unknown_style": {
+    "unknown_front_rate": 0.0,
+    "unknown_closer_rate": 0.0,
+    "reported_field_style_coverage": 1.0,
+    "actual_known_horses_fraction": 0.5
+  },
+  "frozen_inputs": {
+    "source_sha256": "7dc539c4224fe4132c3892099f2c62790b47d1f3136fe8b79bbaeadd5c02ef11",
+    "data_through": "2026-08-23",
+    "source_races": 67924,
+    "started_rows": 958011,
+    "style_missing_all_rows": 8097,
+    "style_missing_started_rows": 3089,
+    "style_unknown_started_rows": 3089,
+    "style_tokens_started": {
+      "中団": 260700,
+      "後方": 247649,
+      "先行": 234925,
+      "差し": 96869,
+      "逃げ": 71595,
+      "追込": 36627,
+      "ﾏｸﾘ": 6557,
+      "nan": 3089
+    },
+    "rear_style_rows": 247649,
+    "rear_style_comparable_first_corner_rows": 247649,
+    "rear_style_current_closer_zero_but_modern_heuristic_one_rows": 228156,
+    "rear_style_rows_by_year": {
+      "2007": 13208,
+      "2008": 13745,
+      "2009": 13798,
+      "2010": 13647,
+      "2011": 13241,
+      "2012": 13654,
+      "2013": 13596,
+      "2014": 13703,
+      "2015": 13439,
+      "2016": 13545,
+      "2017": 13266,
+      "2018": 12988,
+      "2019": 12503,
+      "2020": 12895,
+      "2021": 12712,
+      "2022": 12571,
+      "2023": 12713,
+      "2024": 12558,
+      "2025": 9867
+    },
+    "missing_started_results": 15,
+    "missing_started_result_races": 2,
+    "nonstarted_results": 0,
+    "false_complete_races": [],
+    "missing_started_result_race_details": [
+      {
+        "race_id": "202504040406",
+        "started": 14,
+        "all_result_rows": 0,
+        "missing_started_result_rows": 14,
+        "nonstarted_result_rows": 0
+      },
+      {
+        "race_id": "202504040407",
+        "started": 16,
+        "all_result_rows": 15,
+        "missing_started_result_rows": 1,
+        "nonstarted_result_rows": 0
+      }
+    ],
+    "db_reads": 0,
+    "new_model_fits": 0
+  }
+}

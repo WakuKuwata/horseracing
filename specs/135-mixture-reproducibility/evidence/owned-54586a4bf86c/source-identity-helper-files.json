@@ -1,0 +1,18 @@
+{
+  "status": "SOURCE_COPIED",
+  "files": {
+    "scripts/owned_source_identity_135_54586a4bf86c.py": {
+      "origin": "/Users/kuwatawaku/workspace/horseracing/scripts/owned_source_identity_135_54586a4bf86c.py",
+      "isolated": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/execution-environment-54586a4bf86c/scripts/owned_source_identity_135_54586a4bf86c.py",
+      "sha256": "6a6aa4abfb3d0cdde79f95c1f0bc3c3c7da3f4127a01f9cbe70b6378127cb20d"
+    },
+    "scripts/tests/test_owned_source_identity_135_54586a4bf86c.py": {
+      "origin": "/Users/kuwatawaku/workspace/horseracing/scripts/tests/test_owned_source_identity_135_54586a4bf86c.py",
+      "isolated": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/execution-environment-54586a4bf86c/scripts/tests/test_owned_source_identity_135_54586a4bf86c.py",
+      "sha256": "25335ca37d202a243d95a9ea43958b0c33fc1cf5ddca3cc154d82f2d5fc7b5b0"
+    }
+  },
+  "tests": "4 passed in0.02s; synthetic mutation changes resulting hash",
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

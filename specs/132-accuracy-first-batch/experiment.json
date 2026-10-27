@@ -1,0 +1,66 @@
+{
+  "cutoff": "2026-09-06",
+  "source_end": "2026-08-23",
+  "topk": {
+    "arms": [
+      "head_mean",
+      "mean_win_harville",
+      "annual_stage_discount"
+    ],
+    "regimes": [
+      "full",
+      "preweight"
+    ],
+    "warmup": 2020,
+    "primary_years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ]
+  },
+  "colsample": {
+    "regime": "full",
+    "arms": {
+      "raw_add": {
+        "candidate_weight": "1/7"
+      },
+      "corrected_small_add": {
+        "candidate_weight": "1/14"
+      },
+      "corrected_equal_add": {
+        "candidate_weight": "1/7"
+      },
+      "replace_joint42": {
+        "member": "joint-42",
+        "weight": "1/6"
+      }
+    },
+    "coefficient_transfer": "125 seed42 corresponding annual joint coefficients; recompute centered_logp on126"
+  },
+  "style": {
+    "years": [
+      2024,
+      2026
+    ],
+    "baseline": "raw138",
+    "seed": 42,
+    "n_estimators": 900,
+    "n_oof_blocks": 8,
+    "te_smoothing": 10,
+    "weight_mask_rate": 0.5,
+    "regimes": [
+      "full",
+      "preweight"
+    ]
+  },
+  "bootstrap": {
+    "alpha": 0.0125,
+    "b": 4000,
+    "seed": 20260907
+  },
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

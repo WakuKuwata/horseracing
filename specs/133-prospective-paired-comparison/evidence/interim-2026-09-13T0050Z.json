@@ -1,0 +1,89 @@
+{
+  "artifact_kind": "paired_prospective_score",
+  "can_adopt": false,
+  "computed_at": "2026-09-13T00:44:46.907812+00:00",
+  "conditions": {
+    "distance": {},
+    "field_size": {},
+    "race_class": {},
+    "source": {},
+    "track_type": {},
+    "weight_publication_state": {}
+  },
+  "coverage": {
+    "races_with_record": 24,
+    "races_without_record": [],
+    "scheduled_days_in_window_now": 1,
+    "scheduled_races_in_window_now": 24,
+    "scheduled_races_without_results_now": 24
+  },
+  "excluded": {},
+  "excluded_counts": {},
+  "heads_served_convention_frozen_lambda": {
+    "top2": {
+      "new": null,
+      "old": null
+    },
+    "top3": {
+      "new": null,
+      "old": null
+    },
+    "win": {
+      "new": null,
+      "old": null
+    }
+  },
+  "mode": "interim",
+  "overall": {
+    "n_days": 0,
+    "n_races": 0
+  },
+  "pending": {
+    "202606040401": "results_not_ingested",
+    "202606040402": "results_not_ingested",
+    "202606040403": "results_not_ingested",
+    "202606040404": "results_not_ingested",
+    "202606040405": "results_not_ingested",
+    "202606040406": "results_not_ingested",
+    "202606040407": "results_not_ingested",
+    "202606040408": "results_not_ingested",
+    "202606040409": "results_not_ingested",
+    "202606040410": "results_not_ingested",
+    "202606040411": "results_not_ingested",
+    "202606040412": "results_not_ingested",
+    "202609040401": "results_not_ingested",
+    "202609040402": "results_not_ingested",
+    "202609040403": "results_not_ingested",
+    "202609040404": "results_not_ingested",
+    "202609040405": "results_not_ingested",
+    "202609040406": "results_not_ingested",
+    "202609040407": "results_not_ingested",
+    "202609040408": "results_not_ingested",
+    "202609040409": "results_not_ingested",
+    "202609040410": "results_not_ingested",
+    "202609040411": "results_not_ingested",
+    "202609040412": "results_not_ingested"
+  },
+  "pending_counts": {
+    "results_not_ingested": 24
+  },
+  "per_race": [],
+  "preregistration_sha256": "b7352356d031582239a2596039fb48a77514fa7315832a940356bd1bb537b11b",
+  "record_dirs": [
+    "artifacts/129-candidate-mixture-serving/shadow/prospective",
+    "artifacts/129-candidate-mixture-serving/shadow-regime-serving/prospective",
+    "artifacts/133-prospective-paired-comparison/records"
+  ],
+  "regime": "preweight",
+  "rejected_records": {},
+  "retraining_variance_note": null,
+  "status": "INTERIM_STATUS_NOT_A_VERDICT",
+  "verdict": null,
+  "window": {
+    "basis": "to = last JRA race day inside the 2026 validity of the new model's residual coefficients (serving tolerates 2027 with coefstale=1 but this comparison does not extend into it). min_eval_days = 24 comes from the 129 power plan (day-cluster SD 0.0123 from 4 rehearsal days; 0.01 effect detectable at 98.75%) and is a completeness requirement for the final readout, NOT a minimum effect: any difference, however small, is reported with its CI.",
+    "completeness": "final readout requires today > to (JST), no recorded race pending results, no scheduled race of the window without results, and n_days >= min_eval_days; race days without any record are disclosed in coverage, they do not block (captures are manual) and the window is never extended",
+    "from": "2026-09-13",
+    "min_eval_days": 24,
+    "to": "2026-12-28"
+  }
+}

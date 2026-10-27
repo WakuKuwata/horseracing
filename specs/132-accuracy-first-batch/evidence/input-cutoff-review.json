@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "allowed_data_through": "2026-09-06",
+  "actual_data_through": "2026-08-23",
+  "input_sha256": {
+    "snapshot.pkl": "58397ba94dc685c6e49b509619fb447106702d869adebc38889b021f3be6859a",
+    "source-frames.pkl": "7dc539c4224fe4132c3892099f2c62790b47d1f3136fe8b79bbaeadd5c02ef11"
+  },
+  "matrix_rows": 958011,
+  "matrix_races": 67924,
+  "evaluation_races": 67923,
+  "unknown_result_coverage_races": 0,
+  "matrix_only_race_ids": [
+    "202504040406"
+  ],
+  "matrix_label_contract": "Unique EvalRace IDs are a subset; shared dates match; only EvalRace IDs score.",
+  "db_reads": 0,
+  "post_cutoff_data_reads": 0,
+  "source_races": 67924,
+  "matrix_only_source_diagnostics": {
+    "202504040406": {
+      "appearance_rows": 14,
+      "result_rows": 0,
+      "result_statuses": {}
+    }
+  },
+  "method_sha256": "83320fa9a5a5b126b07fc45e176e3f55702521e23d1fd6514081ab090196f2cf"
+}

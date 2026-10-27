@@ -1,0 +1,27 @@
+{
+  "status": "RESTORED_FROM_OWN_PATCHES",
+  "known_test_sha256": "93d35eb27bdd94aaffbb6177604e77a4b3627a6846592cf425056650d9c93e60",
+  "owned_test_sha256": "56b6528e640d7ae56e584b9ba8d0cb3afd8058177797fc51fd079fbac3be495b",
+  "source_events": [
+    {
+      "timestamp": "2026-09-13T02:53:50.488Z",
+      "call_id": "call_VreU4DKJYIlUVwRJgh8XjvKe",
+      "patch_sha256": "1a23fe00dfc9a233e2dd68a3824b03cae6ed2cdee1524fccc85fd055d22bcbf6"
+    },
+    {
+      "timestamp": "2026-09-13T03:03:02.605Z",
+      "call_id": "call_pKkcC7NQ1plUwZrUEupCb5vM",
+      "patch_sha256": "3917bbc4bcc730a1ce229380bde76caf00ed7767837e10a6f5991ba50bad5634"
+    },
+    {
+      "timestamp": "2026-09-13T03:14:15.314Z",
+      "call_id": "call_dfUn4jm5LfVJSwSMmDIymIIC",
+      "patch_sha256": "1a5940c85c8ad367539a0372b78d6dbffff0166da8d7cb0d46ffdb830e572c4a"
+    }
+  ],
+  "only_owned_change": "import module alias",
+  "generic_test_modified": false,
+  "generic_test_starts_with_known_27_test_source": false,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

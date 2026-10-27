@@ -38,6 +38,7 @@ def _write_manifest(
 ) -> str:
     dig = "a" * 64
     manifest = build_manifest(
+        base_model_version="lgbm-063",
         attestation_digest=dig, bundle_digest="b" * 64,
         evaluation={"evaluation_contract_version": "v2", "base_model_version": _MODEL,
                     "attestation_digest": dig, "bundle_digest": "b" * 64, "verdict": "ADOPT"},

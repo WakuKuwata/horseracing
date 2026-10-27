@@ -1,0 +1,10 @@
+{
+  "event": "Existing shared result-review.md unexpectedly contained another process recent metrics when parent read it expecting pending report",
+  "report_sha256": "48feba72f4538e2cf5ac7c2a73c4ea55f651b7be83fa8f02d9441a54555dd421",
+  "parent_saw_recent_summary": true,
+  "raw_unknown_recent_artifacts_read": false,
+  "candidate_models_and_protocol_fixed_before_exposure": true,
+  "additional_selection_or_fits": 0,
+  "interpretation": "Owned execution is an independent reproduction; no claim of parent-blinded scoring or untouched holdout",
+  "can_adopt": false
+}

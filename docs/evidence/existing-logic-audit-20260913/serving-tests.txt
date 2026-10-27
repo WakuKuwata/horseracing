@@ -1,0 +1,18 @@
+Test output transcribed from completed tool results; tests were not rerun to create this file.
+
+cwd: /Users/kuwatawaku/workspace/horseracing/serving
+command: .venv/bin/python -m pytest tests/unit/test_mixture_serving.py tests/unit/test_mixture_model.py tests/unit/test_mixture_correction.py tests/unit/test_stage_discount_serving.py -q
+........................................................................ [ 71%]
+.............................                                            [100%]
+101 passed in 1.63s
+exit code: 0
+
+cwd: /Users/kuwatawaku/workspace/horseracing/probability
+command: .venv/bin/python -m pytest tests/unit/test_calib_activation.py -q
+.................                                                        [100%]
+17 passed in 0.05s
+exit code: 0
+
+Initial attempt to collect tests from both packages in one pytest process failed before tests ran:
+_pytest.pathlib.ImportPathMismatchError: tests.conftest (serving and probability tests have the same package name).
+Independent review recommended the per-package processes above; no implementation source change was required.

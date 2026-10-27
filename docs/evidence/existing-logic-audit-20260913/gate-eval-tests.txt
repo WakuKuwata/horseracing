@@ -1,0 +1,7 @@
+cwd=/Users/kuwatawaku/workspace/horseracing/eval
+command=['/Users/kuwatawaku/workspace/horseracing/training/.venv/bin/python', '-m', 'pytest', '-q', 'tests/unit/test_gate.py', 'tests/unit/test_gate_decision.py', 'tests/unit/test_paired_gate_boundary.py', 'tests/unit/test_paired_regime.py', 'tests/unit/test_opportunity_set.py', 'tests/unit/test_gate_contract_v3.py']
+........................................................................ [ 71%]
+.............................                                            [100%]
+101 passed in 1.02s
+
+exit_code=0

@@ -1,0 +1,15 @@
+{
+  "kind": "135_owned_namespace",
+  "token": "54586a4bf86c",
+  "wrapper": "/Users/kuwatawaku/workspace/horseracing/scripts/run_recent_owned_135_54586a4bf86c.py",
+  "wrapper_sha256": "fa759546216ee5491b3d75feb6ae1bd53c38161614b625b4d8927dc369d01a83",
+  "work": "/Users/kuwatawaku/workspace/horseracing/artifacts/135-mixture-reproducibility/recent-owned-54586a4bf86c",
+  "evidence": "/Users/kuwatawaku/workspace/horseracing/specs/135-mixture-reproducibility/evidence/owned-54586a4bf86c",
+  "reason": "Unattributed concurrent writes in generic recent output; no performance contents read or reused",
+  "changes": "Output routing only; fixed core, model, cutoff, recipe, coefficient, candidate, scoring unchanged",
+  "experiment_sha256": "2a076d6df0cfffafe9a2f3378ae387de1193933b1d3b46546d1f6f5ee0ab2bc1",
+  "cutoff": "2026-09-06",
+  "additional_fits": 0,
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

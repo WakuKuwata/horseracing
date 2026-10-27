@@ -31,14 +31,16 @@ def make_manifest(
     top3: float = 0.7098765432109876,
     attestation_digest: str = _ATTESTATION_DIGEST,
     code_sha: str = "076deadbeef",
+    base_model_version: str = "lgbm-063",
 ) -> dict:
     """Return a valid v2 manifest dict (defaults = production-eligible, known params)."""
     return build_manifest(
+        base_model_version=base_model_version,
         attestation_digest=attestation_digest,
         bundle_digest=_BUNDLE_DIGEST,
         evaluation={
             "evaluation_contract_version": "v2",
-            "base_model_version": "lgbm-063",
+            "base_model_version": base_model_version,
             "attestation_digest": attestation_digest,
             "bundle_digest": _BUNDLE_DIGEST,
             "verdict": "ADOPT",

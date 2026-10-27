@@ -1,0 +1,62 @@
+{
+  "artifact_kind": "candidate_configuration_rule_amendment",
+  "schema_version": 1,
+  "feature": "136-eight-model-candidate",
+  "amends": "configuration-rule.json",
+  "amends_sha256": "0485a9b7cda33806d924492ab70f1840c70264f3fd50bd03c428aad7072f39b1",
+  "amended_at": "2026-09-22",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+
+  "why_this_amendment_exists": "The frozen rule said a distributable mixture contains every seed of every branch at EQUAL MEMBER weight, which yields twelve members at 1/12. Measuring the D2 decomposition afterwards showed that rule has a consequence the rule itself never states: it doubles the candidate branches' combined weight from 0.25 to 0.50, and that reallocation - not the seed coverage - accounts for 89.9% of the twelve-member configuration's advantage over the pre-registered eight. A rule whose main effect is an untested weight change is not the neutral construction it was written to be.",
+
+  "measurement_that_forced_this": {
+    "source": "artifacts/136-eight-model-candidate/independent/recheck-v3-preweight-joint_transfer-7y.json",
+    "identity": "D2 = [L(U) - mean_s L(M_8,s)] + [L(M_12) - L(U)], U = .75F + .125*mean(A) + .125*mean(B)",
+    "seed_pooling_at_fixed_weight": -0.000166096,
+    "branch_weight_change_0p25_to_0p50": -0.001473190,
+    "d2_total": -0.001639287,
+    "identity_residual": 2.17e-19,
+    "share_from_reallocation_of_D2": 0.89868,
+    "precision_note": "89.9% is the share of D2, NOT of D1. Against the current six, U - F = -0.002175 and the reallocation adds a further -0.001473 to reach D1 = -0.003649."
+  },
+
+  "branch_weight_allocations": {
+    "registered_eight": {"joint": 0.375, "anchor": 0.375, "A": 0.125, "B": 0.125, "n_artifacts": 8},
+    "equal_twelve": {"joint": 0.25, "anchor": 0.25, "A": 0.25, "B": 0.25, "n_artifacts": 12},
+    "U_all_seeds_registered_allocation": {"joint": 0.375, "anchor": 0.375, "A": 0.125, "B": 0.125, "n_artifacts": 12,
+      "member_weights": "joint and anchor seeds at 1/8 each; A and B seeds at 1/24 each"}
+  },
+
+  "decision": {
+    "selected": "U_all_seeds_registered_allocation",
+    "supersedes": "the equal-member requirement of configuration-rule.json",
+    "rationale": [
+      "It preserves the ONLY branch allocation that has ever passed a pre-registered test (the pair registration's 0.375/0.375/0.125/0.125). Equal-twelve changes that allocation, and no test of the new allocation exists.",
+      "It requires no seed selection. Feature 129 explicitly refused to select a seed ('No fake selected_seed'). Selecting one now would additionally be post-hoc: the per-seed C2 values were already known (42 -0.000746, 43 -0.000573, 44 -0.000565), so seed 42 is the best of the three and any 'performance-independent' rationale for choosing it would be unfalsifiable from the outside.",
+      "Its measured gain over the registered eight is small and of a well-understood kind: -0.000166 from pooling seeds, which is variance reduction, not an untested allocation change.",
+      "All six candidate member artifacts already exist (fitted 2026-09-20), so the twelve-artifact cost is already paid for this round."
+    ],
+    "what_this_decision_does_NOT_claim": [
+      "That U is better than eight or twelve prospectively. All seven build years are development period; none of these numbers is confirmatory.",
+      "That the equal-twelve configuration is wrong. It remains a legitimate future challenger.",
+      "That U's own head guards or a direct U-vs-six CI have been measured. They have not; v3 does not report them."
+    ],
+    "honest_cost": "Twelve artifacts to store, verify and rebuild instead of eight. A future rebuild needs six candidate fits (~100 min at 2 workers) rather than two (~33 min). Bundle assembly itself does not refit."
+  },
+
+  "independent_review": {
+    "reviewer": "codex exec, read-only, two rounds (2026-09-22)",
+    "round_1": "recommended twelve equal members",
+    "round_2_after_the_decomposition": "revised to EIGHT equal members, on the grounds that eight preserves the registered allocation and adds only two artifacts; stated 'I would choose U if all-seed coverage is mandatory'",
+    "where_this_decision_differs": "It treats all-seed coverage as mandatory, because the seed choice required by eight is provably post-hoc in this session. The reviewer's eight recommendation is conditional on a 'documented, performance-independent draw', and no such draw is available after the per-seed numbers have been read.",
+    "reviewer_correction_accepted": "134's weighting result was +0.000121 CI [-0.000203, +0.000476] and tested the EXISTING joint/anchor allocation, not these new branches. The earlier claim that '134 closed weight tuning' was too broad and has been narrowed in the README."
+  },
+
+  "prohibitions_carried_forward": [
+    "No weight search. The two allocations named here are the registered one and the equal-member one; nothing else is to be tried without its own registration.",
+    "No seed selection by score, under any configuration.",
+    "Correction coefficients stay joint-42's, transferred to every candidate member (member_kill_test.py:216), which is the convention C1/C2 were measured under.",
+    "The production ACTIVE model does not change while feature 133's window is open (to 2026-12-28)."
+  ]
+}

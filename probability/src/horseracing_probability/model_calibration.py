@@ -34,6 +34,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .calibration import _realized_combo, _score  # combo loader + multiclass NLL/Brier
+from .calibration_provenance import (  # noqa: F401  (re-exported for callers)
+    REGIME_ABSENT,
+    CalibrationProvenanceError,
+    InsufficientQualifiedMaterial,
+    MaterialProvenance,
+)
 from .engine import joint_probabilities
 from .fl_bias import GAMMA_MAX, GAMMA_MIN, _engine_normalize, _golden_min, race_before
 from .market_calibration import DEFAULT_BINS, _reliability_and_ece
@@ -272,7 +278,19 @@ def _winner(session: Session, race_id: str) -> tuple[str | None, bool]:
     return None, len(winners) > 1
 
 
-def load_p_samples(session: Session, *, date_from, date_to):
+def _provenance_run_conditions(provenance: MaterialProvenance | None) -> list:
+    """Predicates on ``PredictionRun``; empty when the caller states no contract."""
+    return [] if provenance is None else provenance.run_conditions()
+
+
+def _provenance_race_conditions(provenance: MaterialProvenance | None) -> list:
+    """Predicates on ``Race.race_date``; empty when the caller states no contract."""
+    return [] if provenance is None else provenance.race_conditions(Race.race_date)
+
+
+def load_p_samples(
+    session: Session, *, date_from, date_to, provenance: MaterialProvenance | None = None
+):
     """[(race_id, race_date, p_dict, winner|None, is_dead_heat)] ordered by (race_date, race_id).
 
     Bulk-loaded (4 set-based queries, no per-race N+1) — value-identical to the per-race
@@ -287,6 +305,7 @@ def load_p_samples(session: Session, *, date_from, date_to):
         select(Race.race_id, Race.race_date)
         .where(Race.race_date >= date_from)
         .where(Race.race_date <= date_to)
+        .where(*_provenance_race_conditions(provenance))
         .order_by(Race.race_date, Race.race_id)
     ).all()
     if not races:
@@ -301,6 +320,10 @@ def load_p_samples(session: Session, *, date_from, date_to):
         .join(Race, Race.race_id == PredictionRun.race_id)
         .where(Race.race_date >= date_from)
         .where(Race.race_date <= date_to)
+        # Feature 136: provenance predicates are applied BEFORE the DISTINCT ON, so an
+        # ineligible newer run is never picked in place of an eligible older one.
+        .where(*_provenance_run_conditions(provenance))
+        .where(*_provenance_race_conditions(provenance))
         .distinct(PredictionRun.race_id)
         .order_by(
             PredictionRun.race_id,
@@ -423,7 +446,9 @@ def _placed_finishers(session: Session, race_id: str) -> tuple[str | None, str |
     )
 
 
-def load_topk_samples(session: Session, *, date_from, date_to):
+def load_topk_samples(
+    session: Session, *, date_from, date_to, provenance: MaterialProvenance | None = None
+):
     """[(race_id, race_date, p_dict, (id1|None, id2|None, id3|None))] by (race_date, race_id).
 
     Mirrors load_p_samples' run selection (latest run per race) for audit consistency
@@ -443,6 +468,7 @@ def load_topk_samples(session: Session, *, date_from, date_to):
         select(Race.race_id, Race.race_date)
         .where(Race.race_date >= date_from)
         .where(Race.race_date <= date_to)
+        .where(*_provenance_race_conditions(provenance))
         .order_by(Race.race_date, Race.race_id)
     ).all()
     if not races:
@@ -457,6 +483,10 @@ def load_topk_samples(session: Session, *, date_from, date_to):
         .join(Race, Race.race_id == PredictionRun.race_id)
         .where(Race.race_date >= date_from)
         .where(Race.race_date <= date_to)
+        # Feature 136: provenance predicates are applied BEFORE the DISTINCT ON, so an
+        # ineligible newer run is never picked in place of an eligible older one.
+        .where(*_provenance_run_conditions(provenance))
+        .where(*_provenance_race_conditions(provenance))
         .distinct(PredictionRun.race_id)
         .order_by(
             PredictionRun.race_id,
@@ -513,18 +543,119 @@ def load_topk_samples(session: Session, *, date_from, date_to):
     ]
 
 
-def fit_product_stage_discount(session, *, before_date, min_races=300, calibrator=None):
+def fit_product_stage_discount(
+    session, *, before_date, min_races=300, calibrator=None, provenance=None
+):
     """Walk-forward product fit: λ_2/λ_3 from persisted predictions STRICTLY before ``before_date``
     (research D3/D4). ``calibrator`` (e.g. two_gamma) is applied to fit-sample win vectors so fit
-    and apply share one distribution. Returns an eval StageDiscount (identity if under-sampled)."""
+    and apply share one distribution. Returns an eval StageDiscount (identity if under-sampled).
+
+    Feature 136: ``provenance`` (a :class:`MaterialProvenance`) restricts the material to one
+    model generation, one input condition and races strictly after the producer's training
+    boundary, and is applied before the latest-run selection.  Default ``None`` keeps the
+    pre-136 query byte-identical.  ``provenance`` alone does NOT change the identity fallback
+    -- use :func:`fit_product_stage_discount_strict` when an identity result must be an error
+    rather than a silently degraded calibration."""
     import datetime as _dt
 
     from horseracing_eval.stage_discount import fit_stage_discount
 
     end = before_date - _dt.timedelta(days=1)  # strictly before (date-level; race_id tie-break n/a)
-    raw = load_topk_samples(session, date_from=_dt.date(2007, 1, 1), date_to=end)
+    raw = load_topk_samples(
+        session, date_from=_dt.date(2007, 1, 1), date_to=end, provenance=provenance
+    )
     samples = to_topk_samples(raw, calibrator=calibrator)
     return fit_stage_discount(samples, min_races=min_races)
+
+
+def fit_product_stage_discount_strict(
+    session, *, before_date, provenance, min_races=300, calibrator=None, require_complete=True
+):
+    """:func:`fit_product_stage_discount` that refuses to degrade silently.
+
+    ``provenance`` is mandatory here: a fit that cannot say which generation, input condition
+    and out-of-sample boundary produced its material is not a calibration whose failure mode
+    anyone can reason about.
+
+    ``min_races`` and ``provenance.min_races`` measure different things and are NOT
+    interchangeable: ``max(...)`` of the two gates the number of usable RACES loaded here, while
+    only ``min_races`` reaches the fitter, which applies it per stage. A window can therefore
+    satisfy a large ``provenance.min_races`` while stage 3 still fits on ``min_races`` labels.
+    Both counts are reported in the audit dict so the difference is visible.
+
+    Raises :class:`InsufficientQualifiedMaterial` when fewer than that many qualified races
+    exist, or when the fitter declined (short stage labels OR a boundary-stuck optimum).
+    It never retries with another model,
+    another regime, earlier training races, or an unfiltered loader -- there is no broader
+    query that is still the same estimand.  Returns ``(StageDiscount, audit_dict)``.
+    """
+    import datetime as _dt
+
+    from horseracing_eval.stage_discount import fit_stage_discount
+
+    if provenance is None:
+        raise CalibrationProvenanceError(
+            "fit_product_stage_discount_strict requires an explicit MaterialProvenance; "
+            "recency is not provenance"
+        )
+    if require_complete:
+        # A MaterialProvenance whose regime and training boundary are both None disables the two
+        # guards that matter and still looks like a contract at the call site. Production callers
+        # must state them; a caller that genuinely has neither must say so with require_complete.
+        missing = [
+            name
+            for name, value in (
+                ("input_regime", provenance.input_regime),
+                ("producer_train_through", provenance.producer_train_through),
+            )
+            if value is None
+        ]
+        if missing:
+            raise CalibrationProvenanceError(
+                f"incomplete provenance contract: {', '.join(missing)} not stated. "
+                "Pass REGIME_ABSENT for a model with no regime marker, or "
+                "require_complete=False to fit with that guard switched off deliberately."
+            )
+    end = before_date - _dt.timedelta(days=1)
+    raw = load_topk_samples(
+        session, date_from=_dt.date(2007, 1, 1), date_to=end, provenance=provenance
+    )
+    samples = to_topk_samples(raw, calibrator=calibrator)
+    n_qualified = sum(1 for _rid, _rdate, p, _placed in raw if p)
+    required = max(min_races, provenance.min_races)
+    if len(samples) < required:
+        raise InsufficientQualifiedMaterial(
+            "stage discount material", n_available=len(samples), n_required=required
+        )
+    sd = fit_stage_discount(samples, min_races=min_races)
+    if sd.fallback:
+        # ``fallback`` is the fitter's own authoritative signal: either stage had fewer than
+        # min_races usable finishers, or a stage optimum sat on the [0.1, 5.0] search boundary
+        # (misspecified). Testing ``lambda2 == lambda3 == 1.0`` instead would conflate a
+        # legitimate fit that happened to land on 1.0 with a refusal to fit.
+        raise InsufficientQualifiedMaterial(
+            "stage discount fit fell back to identity "
+            f"(stage-2 usable {sd.n_races_l2}, stage-3 usable {sd.n_races_l3}, "
+            "or a boundary-stuck optimum)",
+            n_available=min(sd.n_races_l2, sd.n_races_l3),
+            n_required=min_races,
+            # Ample samples with a boundary optimum also land here, so do not claim a shortage.
+            shortage=min(sd.n_races_l2, sd.n_races_l3) < min_races,
+        )
+    return sd, {
+        "artifact_kind": "stage_discount_strict_fit",
+        "provenance": provenance.describe(),
+        "before_date": str(before_date),
+        "material_through": str(end),
+        "n_races_in_window": len(raw),
+        "n_qualified_races": n_qualified,
+        "n_fit_samples": len(samples),
+        "n_races_stage2": sd.n_races_l2,
+        "n_races_stage3": sd.n_races_l3,
+        "min_races": min_races,
+        "lambda2": sd.lambda2,
+        "lambda3": sd.lambda3,
+    }
 
 
 def to_topk_samples(raw, *, calibrator=None):

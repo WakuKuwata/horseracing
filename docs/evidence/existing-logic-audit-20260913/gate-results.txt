@@ -1,0 +1,10 @@
+FINDING: exploratory report reaches ACTIVE: {"decision": "ADOPT", "contract": "v4", "n_days": 2, "seed_noise": {"sd_fold": null, "k_seeds": 1, "n_folds": 1, "source": null, "applied": false}, "subgroups": null, "artifact_kind": null, "promotable": true}
+FINDING: explicit_ineligible_without_kind {"legacy_gate_adopted": true, "v3_verdict": {"status": "ADOPT", "subgroup_assurance": null, "contract_version": "v4", "artifact_kind": null, "eligible_for_verdict": false}, "cause": "legacy_gate_and_v3_verdict_agree"}
+FINDING: unrelated_recipe {"legacy_gate_adopted": true, "v3_verdict": {"status": "ADOPT", "subgroup_assurance": "full", "contract_version": "v4", "artifact_kind": "full_walk_forward", "eligible_for_verdict": true}, "cause": "legacy_gate_and_v3_verdict_agree"}
+FINDING: automatic activation leaves both active: ['existing-active', 'new-candidate'] SQL: ['Insert']
+135 independent ratio: winner_nll n_races 3 n_rows 3 max_abs_error 5.551115123125783e-17
+135 independent ratio: top2_logloss n_races 4 n_rows 27 max_abs_error 4.163336342344337e-17
+135 independent ratio: top3_logloss n_races 4 n_rows 27 max_abs_error 1.1102230246251565e-16
+135 independent ratio: top2_brier n_races 4 n_rows 27 max_abs_error 3.122502256758253e-17
+135 independent ratio: top3_brier n_races 4 n_rows 27 max_abs_error 2.0816681711721685e-17
+135 PASS: uneven day/horse counts, incomplete results, dead heat, per-seed loss averaging

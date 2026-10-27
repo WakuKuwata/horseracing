@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "reviewer": "/root/challenge_model",
+  "scope": "Independent read-only code review and synthetic unit tests; no model training or original source mutation performed by reviewer.",
+  "reviewed_files_sha256": {
+    "scripts/pace_style_unknown_features.py": "fa6c8a5cd829bb32dd8a4af4adafdb57898e91654417b61e71e41c40b1d90a74",
+    "scripts/accuracy_style_recheck.py": "8632c25e96713858c56e266fd78a23700ed77de2bd2f21fe069c95512b5ce340",
+    "scripts/tests/test_pace_style_unknown_features.py": "bf9db14bb1e46fb910fd0ffcda2c6862c7df445ee41d12080f97d36bdcd020cb",
+    "scripts/tests/test_accuracy_style_recheck.py": "7224466f8fc74383c93eee0ca821f47a021d37fa328c5d80afa2a887aeec7f72"
+  },
+  "style_freeze_sha256": "9810215df821a3263a5bdca19fd967c8187e5839c3cf74881564eaca73199e18",
+  "style_frozen_source_hash": "a2452596d3d204c25922cf6effee2071e9fe37ce1bac142011278db77f02e9f6",
+  "input_data_through": "2026-08-23",
+  "cutoff": "2026-09-06",
+  "actual_defects": [],
+  "checks": [
+    {
+      "name": "Unknown retained in last five started appearances",
+      "status": "PASS",
+      "evidence": [
+        "scripts/pace_style_unknown_features.py:79-90",
+        "features/src/horseracing_features/pace_features.py:115-120"
+      ],
+      "detail": "NaN replaces unknown binary values without dropping source rows. Only is_started filters the rolling source; known-only mean preserves unknown positions in the five-start window. Known rear style remains the legacy nonmatch."
+    },
+    {
+      "name": "Target date and future excluded",
+      "status": "PASS",
+      "evidence": [
+        "features/src/horseracing_features/pace_features.py:124-127",
+        "scripts/pace_style_unknown_features.py:98-102",
+        "scripts/tests/test_pace_style_unknown_features.py:test_current_same_day_and_future_styles_cannot_change_target"
+      ],
+      "detail": "Backward merge_asof disallows exact dates for both model features and counts. Synthetic target/same-day/future perturbation tests pass."
+    },
+    {
+      "name": "Only eight registered feature columns change",
+      "status": "PASS",
+      "evidence": [
+        "scripts/pace_style_unknown_features.py:132-156",
+        "scripts/accuracy_style_recheck.py:245-256"
+      ],
+      "detail": "Overlay checks key coverage, schema and dtype; copies matrix and enforces exact equality of all remaining columns including labels. Preparation checks legacy eight columns against the sealed matrix."
+    },
+    {
+      "name": "Raw138 and candidate overlay reach every final and OOF base",
+      "status": "PASS",
+      "evidence": [
+        "scripts/accuracy_style_recheck.py:138-153",
+        "scripts/accuracy_style_recheck.py:331-336",
+        "training/src/horseracing_training/calib_split.py:275-280",
+        "training/src/horseracing_training/calib_split.py:376-383",
+        "scripts/tests/test_accuracy_style_recheck.py:test_candidate_overlay_is_used_by_final_and_every_oof_base"
+      ],
+      "detail": "Candidate corrected shared matrix is scoped by recipe for final and inner OOF predictors. Spy test confirms both paths receive NaN overlay and exclude three observation columns. Training outcomes patch rejects any ID outside outer train population and non-None DB sessions."
+    },
+    {
+      "name": "130 baseline reuse matches registered fit conditions",
+      "status": "PASS",
+      "evidence": [
+        "scripts/accuracy_style_recheck.py:191-230",
+        "scripts/accuracy_style_recheck.py:299-316",
+        "scripts/mixture_preweight_walkforward.py:165-175"
+      ],
+      "detail": "Same sealed matrix, native source/runtime, raw138 order, seed42, 900 rounds, 8 OOF isotonic, TE10, mask0.5 and train/valid identities are checked. Cache/receipt/prediction hashes cover both full and preweight. Baseline reuse is explicitly recorded and no independent refit replication is claimed.",
+      "recorded_status": "REUSE_VERIFIED"
+    },
+    {
+      "name": "No read of real races beyond permitted cutoff",
+      "status": "PASS",
+      "evidence": [
+        "scripts/accuracy_style_recheck.py:109-135",
+        "scripts/pace_style_unknown_features.py:34-50",
+        "scripts/accuracy_style_recheck.py:320-328"
+      ],
+      "detail": "Only sealed 111 inputs with metadata end 2026-08-23 are read; hashes are validated before deserialization and actual dates and reference sets checked. No DB query is needed; OOF outcomes are supplied from frozen outer-training labels."
+    },
+    {
+      "name": "Winner and topk scoring populations",
+      "status": "PASS",
+      "evidence": [
+        "scripts/accuracy_style_recheck.py:438-459",
+        "eval/src/horseracing_eval/paired.py:154-203"
+      ],
+      "detail": "Winner NLL uses unique-winner eligible population; top2/top3 and win ECE use started-all labels only for complete-results races. Full/preweight are predictions from the same fitted object; comparisons are within year and regime."
+    }
+  ],
+  "verification": [
+    {
+      "command": "training/.venv/bin/python -m pytest scripts/tests/test_pace_style_unknown_features.py scripts/tests/test_accuracy_style_recheck.py -q",
+      "exit_code": 0,
+      "result": "20 passed in 1.59s"
+    },
+    {
+      "command": "training/.venv/bin/python scripts/accuracy_style_recheck.py verify",
+      "exit_code": 0,
+      "result": "VERIFY PASS"
+    }
+  ],
+  "limitations": [
+    "This is a code/contract review, not an independent refit or audit of future effectiveness.",
+    "Historical input end is a race-date restriction; it does not certify original publication-time availability.",
+    "The registered style screen covers seed42 and years2024/2026 only; sample CI does not include training or selection uncertainty."
+  ],
+  "source_changed_by_reviewer": false,
+  "additional_fits_by_reviewer": 0
+}

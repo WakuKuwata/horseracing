@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "review_kind": "Owned routing source review plus fake-module dispatch proof",
+  "reviewed_at": "2026-09-13T04:50:30.767083+00:00",
+  "source_sha256": {
+    "scripts/run_recent_owned_135_54586a4bf86c.py": "5baf9a3ddd53bf548a52f84e132f55250ac61218b59286fd8a44d70d054b07fa",
+    "scripts/mixture_recent_owned_135_54586a4bf86c.py": "481777c4f5233972bbc27b54054af30e914bc66c8736eaf19d77ad5c58aa44ec",
+    "scripts/audit_mixture_recent_inputs_135.py": "f1fa1b9e8bbdb02f0e0685b8d4d5048a88876a0238b0eb6a14922a83e62200e5",
+    "scripts/audit_mixture_recent_135.py": "1080ec31a6c1412158cb07deeff7bc341587c35bcc8fa500e71c9946437add65",
+    "scripts/audit_mixture_reproducibility_135.py": "b4a5bedfbfba6b149620a0ff5d99074577713f24446b50947e8940330a84cd94",
+    "scripts/tests/test_run_recent_owned_135_54586a4bf86c.py": "5d15522309570985fd159f1736afcdcc12397ce838224912aad3b1ee7cd33548"
+  },
+  "work_namespace": "artifacts/135-mixture-reproducibility/recent-owned-54586a4bf86c",
+  "evidence_namespace": "specs/135-mixture-reproducibility/evidence/owned-54586a4bf86c",
+  "checks": [
+    "Core alias is byte-identical to reviewed481777 version, with no calculation/data-bound/config/model changes. The externally modified generic core is not imported.",
+    "capture/predict/score bind the alias core WORK before any phase call. Core import itself performs no recent data I/O.",
+    "Input and prediction audit route WORK and dynamic output_path, including the prior inputs audit lookup.",
+    "Score audit routes WORK and OUT; standalone Step2 audit run is not called.",
+    "Wrapper and all3 audit sources are added to source_files and copied/hashed by capture.",
+    "Creating EVIDENCE does not create WORK, preserving capture fail-if-existing guard."
+  ],
+  "tests": {
+    "command": "training/.venv/bin/python -m pytest scripts/tests/test_run_recent_owned_135_54586a4bf86c.py -q",
+    "passed": 6,
+    "seconds": 0.03,
+    "scope": "Fake phase modules and temporary synthetic files only; Path.open rejects legacy recent/ and all touched paths are under temporary directory. All6 dispatches and owned prerequisite/output paths checked.",
+    "underlying_phase_bodies_mocked": true,
+    "actual_database_calls": 0
+  },
+  "remaining_blocking_findings": [],
+  "reviewer_data_access": {
+    "unknown_generic_recent_files_read": false,
+    "real_recent_input_values_read": false,
+    "real_recent_result_files_read": false,
+    "after_cutoff_real_data_read": false
+  },
+  "interpretation": "Routing proof only. This does not claim the whole study is outcome-blind: parent reported accidental exposure to externally written shared result summaries after models/protocol were fixed. No model/selection change follows that exposure.",
+  "can_adopt": false,
+  "eligible_for_verdict": false
+}

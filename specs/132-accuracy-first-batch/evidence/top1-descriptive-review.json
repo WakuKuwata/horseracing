@@ -1,0 +1,58 @@
+{
+  "kind": "post_hoc_descriptive_diagnostic_not_selection_criterion",
+  "tie_policy": "First saved started-horse order; also report fractional credit among exact ties.",
+  "can_adopt": false,
+  "eligible_for_verdict": false,
+  "cutoff": "2026-09-06",
+  "actual_end": "2026-08-23",
+  "arms": {
+    "baseline": {
+      "n_eligible": 22990,
+      "first_index_hits": 6902,
+      "first_index_hit_rate": 0.3002174858634189,
+      "fractional_tie_hit_rate": 0.3002174858634189,
+      "tied_top_races": 0,
+      "top1_changed_races": 0
+    },
+    "add_raw_1of7": {
+      "n_eligible": 22990,
+      "first_index_hits": 6925,
+      "first_index_hit_rate": 0.3012179208351457,
+      "fractional_tie_hit_rate": 0.3012179208351457,
+      "tied_top_races": 0,
+      "top1_changed_races": 410
+    },
+    "add_transferred_1of14": {
+      "n_eligible": 22990,
+      "first_index_hits": 6903,
+      "first_index_hit_rate": 0.30026098303610266,
+      "fractional_tie_hit_rate": 0.30026098303610266,
+      "tied_top_races": 0,
+      "top1_changed_races": 174
+    },
+    "add_transferred_1of7": {
+      "n_eligible": 22990,
+      "first_index_hits": 6920,
+      "first_index_hit_rate": 0.30100043497172685,
+      "fractional_tie_hit_rate": 0.30100043497172685,
+      "tied_top_races": 0,
+      "top1_changed_races": 393
+    },
+    "replace_joint42": {
+      "n_eligible": 22990,
+      "first_index_hits": 6910,
+      "first_index_hit_rate": 0.3005654632448891,
+      "fractional_tie_hit_rate": 0.3005654632448891,
+      "tied_top_races": 0,
+      "top1_changed_races": 496
+    }
+  },
+  "source_sha256": {
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/topk/full-predictions.pkl": "aa6ae40a6ebe7ee94bdd402da641520771cc6001b33a20437fdadc2bad4263d0",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/add_raw_1of7-predictions.pkl": "371df8f579d2efa1a52d43ea3a2b93913749bfcd0bc7905f363e688c3ea88f9c",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/add_transferred_1of14-predictions.pkl": "f6325055ef016880dcf4cb69338f15291b069a7fd3142d34f0e353b881d1ae84",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/add_transferred_1of7-predictions.pkl": "1d0c86ec0df051c7b4a5942f976c1ffa87f12daf72faa92f8e12f2cce2eb1f36",
+    "/Users/kuwatawaku/workspace/horseracing/artifacts/132-accuracy-first-batch/colsample/replace_joint42-predictions.pkl": "c744b64c0077b96fa118ab8a0e664f69ee70c891281bb2143fb419e2f108fc4b"
+  },
+  "method_sha256": "57f7de4309205fe6dfd647551605f9d33d02b240ea0eded6aab23e2142b68942"
+}

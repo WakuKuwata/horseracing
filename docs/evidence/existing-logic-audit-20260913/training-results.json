@@ -1,0 +1,57 @@
+{
+  "pl_and_race_alignment": {
+    "fixture_count": 100,
+    "seed": 783,
+    "finite_difference_epsilon": 0.0001,
+    "max_gradient_error": 2.9512381427565515e-10,
+    "max_diagonal_hessian_error": 8.237028398527801e-07,
+    "permutation_max_error": 8.326672684688674e-17,
+    "race_probability_sums": [
+      1.0,
+      1.0000000000000002,
+      0.9999999999999998,
+      1.0
+    ],
+    "synthetic_model_fits": 1,
+    "synthetic_model_trees": 5
+  },
+  "incomplete_results_count": {
+    "synthetic_started_horse_ids": [
+      "winner",
+      "missing-result"
+    ],
+    "synthetic_result_horse_ids": [
+      "winner",
+      "cancelled"
+    ],
+    "n_result_rows": 2,
+    "complete_results_returned": true,
+    "winner_nll_eligible_returned": true,
+    "missing_result_win_label_returned": 0,
+    "scope": "Synthetic guard defect; not proof that current frozen data exhibits it."
+  },
+  "hpo_te": {
+    "hpo_training_TE": [
+      0.5454545454545454,
+      0.45454545454545453,
+      0.5454545454545454,
+      0.45454545454545453,
+      0.5454545454545454,
+      0.45454545454545453
+    ],
+    "final_training_TE": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "active129_hpo": false,
+    "scope": "Confirmed HPO/final fitting inconsistency; inactive in current PL recipe."
+  },
+  "training_rank_column": "finish_rank",
+  "db_reads": 0,
+  "db_writes": 0,
+  "full_model_fits": 0
+}
