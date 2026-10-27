@@ -53,7 +53,7 @@ const MIX_UNAVAILABLE_TEXT: Record<string, string> = {
 
 function definition(modelVersion: string): string {
   return (
-    "期待回収率は、表の『モデル勝率』とは別の市場連動モデル" +
+    "期待回収率は、『予測モデルとの比較』に表示する勝率とは別の市場連動モデル" +
     `(${modelVersion})が、単勝オッズと各馬の過去成績から推定した勝率 × 単勝オッズです。`
   );
 }

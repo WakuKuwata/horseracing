@@ -1,10 +1,10 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import type { PredictionResponse } from "../api/types";
-import { happyHandlers, http, HttpResponse } from "../tests/fixtures";
+import { happyHandlers, http, HttpResponse, marketEvAvailable, raceDetail } from "../tests/fixtures";
 import { server } from "../tests/server";
 import { renderWithProviders } from "../tests/utils";
 import { RaceDetailPage } from "./RaceDetailPage";
@@ -50,11 +50,56 @@ function renderDetail() {
   );
 }
 
+beforeEach(() => {
+  server.use(http.get("*/api/v1/purchase-records", () => HttpResponse.json({ records: [] })));
+});
+
 describe("RaceDetailPage model switching (057)", () => {
+  it("keeps ROI values unchanged through model switching and preserves selection across tabs", async () => {
+    const marketUrls: string[] = [];
+    const predictionUrls: string[] = [];
+    server.use(
+      http.get("*/api/v1/races/:id", () => HttpResponse.json({ ...raceDetail,
+        horses: [{ horse_id: "h1", horse_number: 1, entry_status: "started" }],
+      })),
+      http.get("*/api/v1/races/:id/market-ev", ({ request }) => {
+        marketUrls.push(request.url);
+        return HttpResponse.json(marketEvAvailable);
+      }),
+      http.get("*/api/v1/races/:id/predictions", ({ request }) => {
+        predictionUrls.push(request.url);
+        return HttpResponse.json(new URL(request.url).searchParams.get("model_version") === "m-acc" ? accResp : activeResp);
+      }),
+      ...happyHandlers,
+    );
+    renderDetail();
+    const roi = await screen.findByRole("table", { name: "期待回収率の出走表" });
+    expect(await within(roi).findByText("123.7%")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
+    await screen.findByTestId("model-select");
+    await userEvent.selectOptions(screen.getByTestId("model-select"), "m-acc");
+    expect(await screen.findByTestId("viewing-non-adopted")).toBeInTheDocument();
+    expect(within(roi).getByText("123.7%")).toBeVisible();
+    expect(within(roi).queryByText("50.0%")).toBeNull();
+    expect(predictionUrls.every((url) => !new URL(url).searchParams.has("bet_type"))).toBe(true);
+    await userEvent.click(screen.getByText("モデル情報・結合確率", { selector: "summary" }));
+    await waitFor(() => expect(predictionUrls.some((url) => {
+      const params = new URL(url).searchParams;
+      return params.get("model_version") === "m-acc" && params.get("bet_type") === "quinella";
+    })).toBe(true));
+    await userEvent.click(screen.getByRole("tab", { name: "オッズ" }));
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
+    expect(screen.getByTestId("model-select")).toHaveValue("m-acc");
+    expect(marketUrls.length).toBeGreaterThan(0);
+    expect(marketUrls.every((url) => new URL(url).search === "")).toBe(true);
+    expect(predictionUrls.some((url) => new URL(url).searchParams.get("model_version") === "m-acc")).toBe(true);
+  });
+
   it("defaults to the adopted model with an adopted badge and marks it in the selector", async () => {
     server.use(...happyHandlers);
     server.use(predictionsHandler((mv) => HttpResponse.json(mv === "m-acc" ? accResp : activeResp)));
     renderDetail();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
 
     expect(await screen.findByTestId("model-select")).toBeInTheDocument();
     expect(screen.getByTestId("viewing-adopted")).toHaveTextContent("採用モデルを表示中");
@@ -67,6 +112,7 @@ describe("RaceDetailPage model switching (057)", () => {
     server.use(...happyHandlers);
     server.use(predictionsHandler((mv) => HttpResponse.json(mv === "m-acc" ? accResp : activeResp)));
     renderDetail();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
 
     await screen.findByTestId("model-select");
     await userEvent.selectOptions(screen.getByTestId("model-select"), "m-acc");
@@ -91,12 +137,17 @@ describe("RaceDetailPage model switching (057)", () => {
       ),
     );
     renderDetail();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
 
     await screen.findByTestId("model-select");
     await userEvent.selectOptions(screen.getByTestId("model-select"), "m-acc");
 
     expect(await screen.findByTestId("model-unavailable")).toBeInTheDocument();
     // distinct from the generic error alert
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "予測モデルとの比較" })).queryByRole("alert")).toBeNull();
+    expect(within(screen.getByRole("table", { name: "期待回収率の出走表" })).queryByRole("alert")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "採用モデルの表示へ戻る" }));
+    expect(await screen.findByTestId("viewing-adopted")).toBeInTheDocument();
+    expect(screen.queryByTestId("model-unavailable")).toBeNull();
   });
 });

@@ -12,11 +12,11 @@ const TOP_OPTIONS = [5, 10, 20];
  * supplied (never a full trifecta grid unprompted), on the canonical field (scratched excluded +
  * renormalized). These are real model-derived probabilities — NOT pseudo.
  */
-export function JointPanel({ raceId }: { raceId: string }) {
+export function JointPanel({ raceId, modelVersion }: { raceId: string; modelVersion?: string }) {
   const [betType, setBetType] = useState<string>("quinella");
   const [top, setTop] = useState<number>(10);
 
-  const query = usePredictions(raceId, { bet_type: betType, top });
+  const query = usePredictions(raceId, { bet_type: betType, top }, modelVersion);
 
   return (
     <div className="panel">

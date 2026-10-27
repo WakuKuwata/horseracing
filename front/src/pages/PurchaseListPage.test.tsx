@@ -90,6 +90,27 @@ describe("PurchaseListPage", () => {
     expect(await screen.findByText("未確定")).toBeInTheDocument();
   });
 
+  it.each([
+    ["pending", "results_incomplete", "未精算（結果不足）"],
+    ["unsettleable", "win_payout_missing", "未精算（公式払戻未保存）"],
+    ["unsettleable", "win_payout_inconsistent", "未精算（公式払戻と結果が不整合）"],
+    ["unsettleable", "field_inconsistent", "未精算（出走馬・結果の対応を確認できません）"],
+    ["unsettleable", "results_inconsistent", "未精算（出走馬・結果の対応を確認できません）"],
+    ["unsettleable", "selection_unknown", "未精算（出走馬・結果の対応を確認できません）"],
+  ])("discloses %s reason %s without showing a payout", async (status, reason, text) => {
+    const response: PurchaseRecordsResponse = structuredClone(purchaseRecords);
+    response.records[0].bets = [{
+      bet_type: "win", selection: [5], amount_yen: 100, status,
+      settlement_reason: reason, hit: null, payout_yen: null, is_estimated: false,
+    }];
+    server.use(http.get(`${BASE}/purchase-records`, () => HttpResponse.json(response)));
+    renderWithProviders(<PurchaseListPage />);
+
+    expect(await screen.findByRole("cell", { name: text })).toBeInTheDocument();
+    expect(screen.queryByText("不的中")).not.toBeInTheDocument();
+    expect(screen.queryByText("返還")).not.toBeInTheDocument();
+  });
+
   it("renders the empty state when no races were recorded", async () => {
     usePurchaseRecordsHandler({ records: [], n_races_recorded: 0 });
     renderWithProviders(<PurchaseListPage />);

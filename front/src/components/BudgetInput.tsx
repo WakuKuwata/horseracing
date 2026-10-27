@@ -12,9 +12,11 @@ import { formatYen, validateBudget } from "../lib/budget";
 export function BudgetInput({
   budget,
   onBudgetChange,
+  label = "このレースの予算",
 }: {
   budget: number | null;
   onBudgetChange: (value: number) => void;
+  label?: string;
 }) {
   const [text, setText] = useState<string>(budget === null ? "" : String(budget));
   const [invalid, setInvalid] = useState(false);
@@ -32,7 +34,7 @@ export function BudgetInput({
 
   return (
     <form className="betslip__budget" onSubmit={submit} data-testid="budget-input">
-      <label htmlFor="race-budget">このレースの予算</label>
+      <label htmlFor="race-budget">{label}</label>
       <input
         id="race-budget"
         type="number"

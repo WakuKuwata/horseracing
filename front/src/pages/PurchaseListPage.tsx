@@ -70,6 +70,7 @@ function errorMessage(error: unknown): string {
 function SettlementText({ bet }: { bet: PurchaseBetView }) {
   switch (bet.status) {
     case "pending":
+      if (bet.settlement_reason === "results_incomplete") return <>未精算（結果不足）</>;
       return <>未確定</>;
     case "settled_real":
       if (bet.hit === true) return <>的中 払戻 {formatYen(bet.payout_yen)}</>;
@@ -89,7 +90,18 @@ function SettlementText({ bet }: { bet: PurchaseBetView }) {
     case "refunded":
       return <>返還</>;
     case "unsettleable":
-      return <>精算不能(単勝オッズ欠落)</>;
+      switch (bet.settlement_reason) {
+        case "win_payout_missing":
+          return <>未精算（公式払戻未保存）</>;
+        case "win_payout_inconsistent":
+          return <>未精算（公式払戻と結果が不整合）</>;
+        case "field_inconsistent":
+        case "results_inconsistent":
+        case "selection_unknown":
+          return <>未精算（出走馬・結果の対応を確認できません）</>;
+        default:
+          return <>未精算（払戻資料不足）</>;
+      }
     default:
       return <>--</>;
   }
@@ -225,6 +237,9 @@ export function PurchaseListPage() {
         <EmptyView message="この期間の記録はありません" />
       ) : (
         <section aria-label="購入記録一覧">
+          <p className="note">
+            単勝の払戻は公式払戻で精算します。結果や払戻が不足する明細は未精算として表示します。
+          </p>
           <p className="note">
             結果取込前の記録でも、取込遅延により実際は発走後だった可能性があります。
           </p>

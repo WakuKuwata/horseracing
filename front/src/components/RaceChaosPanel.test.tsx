@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
@@ -223,7 +224,7 @@ describe("RaceChaosPanel", () => {
     );
   });
 
-  it("renders on the race page even when the selected run has no horse predictions", async () => {
+  it("renders in race comparison even when the selected run has no horse predictions", async () => {
     server.use(...happyHandlers);
     server.use(
       http.get("*/api/v1/races/:id/predictions", () =>
@@ -233,6 +234,7 @@ describe("RaceChaosPanel", () => {
           race_chaos: AVAILABLE,
         }),
       ),
+      http.get("*/api/v1/purchase-records", () => HttpResponse.json({ records: [] })),
     );
     renderWithProviders(
       <Routes>
@@ -241,8 +243,12 @@ describe("RaceChaosPanel", () => {
       { route: "/races/200806010111" },
     );
 
-    expect(await screen.findByTestId("race-chaos")).toHaveTextContent("13%");
-    expect(screen.getByTestId("no-predictions-cta")).toBeInTheDocument();
+    await screen.findByRole("table", { name: "期待回収率の出走表" });
+    expect(screen.queryByTestId("race-chaos")).toBeNull();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
+    const comparison = screen.getByRole("tabpanel", { name: "予測モデルとの比較" });
+    expect(await within(comparison).findByTestId("race-chaos")).toHaveTextContent("13%");
+    expect(within(comparison).getByTestId("no-predictions-cta")).toBeInTheDocument();
   });
 
   it("keeps percentages integer-only and has no P&L colours, sorting, or CTA", () => {

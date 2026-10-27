@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -27,6 +28,19 @@ import { QueryStateView } from "./StateView";
 
 type View = "slip" | "results";
 
+function PurchaseRecordsSection({ comparisonMode, children }: { comparisonMode: boolean; children: ReactNode }) {
+  if (!comparisonMode) return <>{children}</>;
+  return (
+    <details className="comparison-records">
+      <summary>購入記録・訂正</summary>
+      <p className="note">
+        実際に行った購入や見送りの記録です。比較用の換算額と購入履歴は別に扱います。
+      </p>
+      {children}
+    </details>
+  );
+}
+
 /** The slip exactly as this render presents it (Feature 106: frozen into the record). */
 function presentedBetsOf(
   data: RecommendationResponse | undefined,
@@ -48,10 +62,12 @@ export function RecommendationPanel({
   raceId,
   raceDate,
   entries,
+  comparisonMode = false,
 }: {
   raceId: string;
   raceDate?: string;
   entries?: HorseEntry[];
+  comparisonMode?: boolean;
 }) {
   const query = useRecommendations(raceId);
   const { budget, setBudget } = useBudget();
@@ -88,7 +104,13 @@ export function RecommendationPanel({
 
   return (
     <div className="panel">
-      <h2>買い目推奨(永続データ・推奨は生成しない)</h2>
+      <h2>{comparisonMode ? "旧予測モデルの買い目（比較用）" : "買い目推奨(永続データ・推奨は生成しない)"}</h2>
+      {comparisonMode && (
+        <p className="note" data-testid="recommendation-comparison-note">
+          旧方策が選定した買い目とKelly配分の比較表示です。
+          金額は比較用の仮予算による換算で、上の期待回収率に基づく買い目ではありません。
+        </p>
+      )}
       {/* Feature 064 (FR-007): always-on neutral disclosure — no profit language, no coloring. */}
       <p className="note" data-testid="no-edge-note">
         勝ちは約束しません。実測と算出値は区別して表示します。
@@ -106,7 +128,7 @@ export function RecommendationPanel({
         isLoading={query.isLoading}
         error={query.error ?? null}
         data={query.data}
-        loadingLabel="推奨を読み込み中…"
+        loadingLabel={comparisonMode ? "比較用の買い目を読み込み中…" : "推奨を読み込み中…"}
       >
         {(data) => (
           <>
@@ -118,20 +140,22 @@ export function RecommendationPanel({
                     setViewState({ raceId, override: view === "results" ? "slip" : "results" })
                   }
                 >
-                  {view === "results" ? "買い目を見る" : "答え合わせを見る"}
+                  {view === "results" ? (comparisonMode ? "選定・配分を見る" : "買い目を見る") : "答え合わせを見る"}
                 </button>
               </div>
             ) : null}
 
             {view === "slip" ? (
               <>
-                <BudgetInput budget={budget} onBudgetChange={setBudget} />
+                <BudgetInput budget={budget} onBudgetChange={setBudget}
+                  label={comparisonMode ? "比較用の仮予算" : undefined} />
                 <BetSlip
                   items={data.items}
                   budget={budget}
                   entries={entries}
                   winPolicyStatus={data.win_policy_status}
-                  showHistoricalNote={hasSettled}
+                  showHistoricalNote={hasSettled || comparisonMode}
+                  comparisonMode={comparisonMode}
                 />
               </>
             ) : (
@@ -140,6 +164,7 @@ export function RecommendationPanel({
 
             {/* Feature 106: record the ACTUAL purchase (append-only via ops). Mounted under
                 the slip so the frozen snapshot is exactly what this panel presented. */}
+            <PurchaseRecordsSection comparisonMode={comparisonMode}>
             <PurchaseActions
               raceId={raceId}
               presentedBets={presentedBetsOf(data, budget)}
@@ -166,6 +191,7 @@ export function RecommendationPanel({
               submit={(payload: FreeformPayload) => submitPurchase(payload)}
               disabled={existingView !== null}
             />
+            </PurchaseRecordsSection>
           </>
         )}
       </QueryStateView>

@@ -362,3 +362,28 @@ describe("RecommendationPanel — empty / skip states (US4)", () => {
     expect(screen.getByTestId("bet-slip-card-rec-1")).toBeInTheDocument(); // exotic card stays
   });
 });
+
+
+describe("RecommendationPanel — legacy comparison (154)", () => {
+  it("labels amounts as comparison-only and keeps purchase recording in a closed disclosure", async () => {
+    useSlipHandlers();
+    const { container } = renderWithProviders(
+      <RecommendationPanel raceId="200806010111" comparisonMode />,
+    );
+    expect(await screen.findByRole("heading", { name: "旧予測モデルの買い目（比較用）" })).toBeInTheDocument();
+    await screen.findByTestId("bet-slip-card-rec-w1");
+    const budget = screen.getByLabelText("比較用の仮予算");
+    await userEvent.clear(budget);
+    await userEvent.type(budget, "10000");
+    await userEvent.click(screen.getByRole("button", { name: "設定" }));
+    expect(screen.getByTestId("bet-slip-card-rec-w1")).toHaveTextContent("¥200");
+    expect(screen.getByTestId("model-scope-note")).toHaveTextContent("モデル切替はこの表示に影響しません");
+    const disclosure = screen.getByText("購入記録・訂正", { selector: "summary" }).closest("details")!;
+    expect(disclosure.open).toBe(false);
+    expect(screen.getByRole("button", { name: "そのまま購入を記録" })).not.toBeVisible();
+    await userEvent.click(within(disclosure).getByText("購入記録・訂正", { selector: "summary" }));
+    expect(screen.getByRole("button", { name: "そのまま購入を記録" })).toBeVisible();
+    assertPseudoLabelCoverage(container, ["1.23%", "2.00%"]);
+    expect(container.textContent).not.toMatch(/儲か|勝てる|稼げる|妙味/);
+  });
+});

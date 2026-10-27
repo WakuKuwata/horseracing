@@ -1,72 +1,60 @@
 import { useState } from "react";
+import type { KeyboardEvent } from "react";
 
 import { Link, useParams } from "react-router-dom";
 
-import { useAttention, useMarketEv, usePredictions, useRace } from "../api/queries";
+import { useAttention, useMarketEv, useRace } from "../api/queries";
 import { AttentionNote } from "../components/AttentionNote";
 import { AttentionRulesPanel } from "../components/AttentionRulesPanel";
-import { CalibrationChart } from "../components/CalibrationChart";
 import { ExpectedReturnNote } from "../components/ExpectedReturnNote";
-import { ImportanceChart } from "../components/ImportanceChart";
-import { JointPanel } from "../components/JointPanel";
-import { ModelSelector } from "../components/ModelSelector";
-import { OddsPanel } from "../components/OddsPanel";
-import { ModelMarketStanding } from "../components/ModelMarketStanding";
-import { OddsFreshness } from "../components/OddsFreshness";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
-import { RaceChaosPanel } from "../components/RaceChaosPanel";
-import { RaceDispersionPanel } from "../components/RaceDispersionPanel";
-import { RaceDivergenceSummary } from "../components/RaceDivergenceSummary";
-import { PredictButton } from "../components/PredictButton";
-import { RecommendButton } from "../components/RecommendButton";
-import { RecommendationPanel } from "../components/RecommendationPanel";
+import { LegacyPredictionComparison } from "../components/LegacyPredictionComparison";
+import { OddsPanel } from "../components/OddsPanel";
 import { RefreshButton } from "../components/RefreshButton";
-import { RunAuditView } from "../components/RunAudit";
-import { ErrorView, LoadingView, QueryStateView } from "../components/StateView";
-import { formatDateTime, PLACEHOLDER } from "../lib/format";
+import { QueryStateView } from "../components/StateView";
+import { PLACEHOLDER } from "../lib/format";
 import { venueName } from "../lib/venues";
 
-type Tab = "recs" | "odds" | "model";
-
+type Tab = "odds" | "comparison";
 const TABS: { key: Tab; label: string }[] = [
-  { key: "recs", label: "買い目推奨" },
   { key: "odds", label: "オッズ" },
-  { key: "model", label: "モデル情報" },
+  { key: "comparison", label: "予測モデルとの比較" },
 ];
 
 export function RaceDetailPage() {
   const { raceId = "" } = useParams();
-  const raceQuery = useRace(raceId);
-  // Feature 057: which model to predict with (undefined = adopted/active model, the default).
-  const [modelVersion, setModelVersion] = useState<string | undefined>(undefined);
-  // Per-horse predictions WITHOUT joint params (no bet_type/top) → flat win/top2/top3 only.
-  const predQuery = usePredictions(raceId, undefined, modelVersion);
-  // Feature 137: 期待回収率 from the SEPARATE market-aware model — independent of the win-model
-  // selection above (no model_version) and of whether the win model has predicted this race.
-  const marketEvQuery = useMarketEv(raceId);
-  // Feature 138: 注目条件(S1〜S5)— judged once at the race's first computation (server side);
-  // the page only reads it. Independent of the win-model selection as well.
-  const attentionQuery = useAttention(raceId);
-  const [tab, setTab] = useState<Tab>("recs");
+  return <RaceDetailContent key={raceId} raceId={raceId} />;
+}
 
-  const pred = predQuery.data;
-  const hasPreds = (pred?.horses.length ?? 0) > 0;
-  // Feature 057: a selected model with no run for this race → typed 404 (未生成), distinct from
-  // loading / empty / other errors (a 503 with the same code is a real fetch error → alert).
-  const modelUnavailable =
-    predQuery.error?.status === 404 &&
-    predQuery.error?.code === "prediction_unavailable";
+function RaceDetailContent({ raceId }: { raceId: string }) {
+  const raceQuery = useRace(raceId);
+  const marketEvQuery = useMarketEv(raceId);
+  const attentionQuery = useAttention(raceId);
+  const [tab, setTab] = useState<Tab>("odds");
+  const [comparisonOpened, setComparisonOpened] = useState(false);
+
+  function selectTab(next: Tab) {
+    setTab(next);
+    if (next === "comparison") setComparisonOpened(true);
+  }
+
+  function navigateTab(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let next: number;
+    if (event.key === "ArrowRight") next = (index + 1) % TABS.length;
+    else if (event.key === "ArrowLeft") next = (index + TABS.length - 1) % TABS.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = TABS.length - 1;
+    else return;
+    event.preventDefault();
+    selectTab(TABS[next].key);
+    document.getElementById(`detail-tab-${TABS[next].key}`)?.focus();
+  }
 
   return (
     <section>
       <div className="detail-topbar">
         <Link to="/">← レース一覧</Link>
-        {/* Ordered pipeline: refresh data → predict → recommend (024/028/043 ops writes). */}
-        <div className="detail-actions">
-          <RefreshButton raceId={raceId} />
-          <PredictButton raceId={raceId} />
-          <RecommendButton raceId={raceId} />
-        </div>
+        <div className="detail-actions"><RefreshButton raceId={raceId} /></div>
       </div>
 
       <div className="panel">
@@ -93,8 +81,15 @@ export function RaceDetailPage() {
         </QueryStateView>
       </div>
 
-      <div className="panel">
-        <h2>出走表</h2>
+      <section className="panel roi-overview" aria-labelledby="roi-overview-title">
+        <div className="roi-overview__heading">
+          <h2 id="roi-overview-title">期待回収率・出走表</h2>
+          <span className="badge">検証中</span>
+        </div>
+        <p className="note">
+          市場連動モデルの期待回収率・市場混合と、注目条件を確認できます。
+          いずれも推定・検証中の情報です。
+        </p>
         <QueryStateView
           isLoading={raceQuery.isLoading}
           error={raceQuery.error ?? null}
@@ -105,145 +100,64 @@ export function RaceDetailPage() {
         >
           {(r) => (
             <>
-              {/* Feature 057: model switcher (only when this race has predictions from >1 model). */}
-              {(pred?.available_models?.length ?? 0) > 0 && (
-                <ModelSelector
-                  models={pred?.available_models ?? []}
-                  selected={modelVersion}
-                  onChange={setModelVersion}
-                />
-              )}
-              {predQuery.isLoading && <LoadingView label="予測を読み込み中…" />}
-              {/* Feature 057: selected model has no prediction for this race — a distinct state. */}
-              {modelUnavailable ? (
-                <p className="state state--empty" data-testid="model-unavailable">
-                  選択したモデルはこのレースをまだ予測していません。別のモデルを選ぶか、予測を生成してください。
-                </p>
-              ) : (
-                predQuery.error && <ErrorView error={predQuery.error} />
-              )}
-              {pred?.run && <RunAuditView run={pred.run} />}
-              {/* Feature 084: market-only top-3 readout; deliberately independent of hasPreds. */}
-              <RaceChaosPanel
-                chaos={pred?.race_chaos}
-                isLoading={predQuery.isLoading}
-                error={predQuery.error ?? null}
-              />
-              {/* Feature 066 axis A: race-level 荒れ度 readout (market-q dispersion, display-only). */}
-              {hasPreds && <RaceDispersionPanel dispersion={pred?.race_dispersion} />}
-              {/* Feature 066 axis B: neutral model-vs-market divergence summary (人気/穴の材料). */}
-              {hasPreds && <RaceDivergenceSummary divergence={pred?.race_divergence} />}
-              {/* 予測なし → 空の列を並べず生成導線を示す(read-onlyの表示は永続データのみ) */}
-              {predQuery.isSuccess && !hasPreds && (
-                <p className="state state--empty" data-testid="no-predictions-cta">
-                  このレースの予測はまだ生成されていません。右上の「予測する」で生成できます。
-                </p>
-              )}
-              {hasPreds && pred?.canonical_consistent === false && (
-                <p className="state state--empty" data-testid="pq-incomparable">
-                  モデル勝率と市場評価の母集団が一致しないため、「市場との差」は表示しません(比較不可)。
-                </p>
-              )}
-              {/* Feature 103 US1: モデルと市場の関係を出走表の**直上**に常時開示する。
-                  旧注記は表の下にあり、内部 feature 番号「(020)」を画面に出しており、
-                  しかも帰属が誤っていた(全セグメント比較は 047)。ここで置き換える。 */}
-              <ModelMarketStanding canonicalConsistent={pred?.canonical_consistent} />
-              {/* Feature 103 US2: 見ているオッズがいつのもので、何がそれに依存しているか。
-                  予測実行の中央値は発走 6.7 時間前で、EV も疑似 ROI もこの値で計算される。
-                  odds_as_of は PredictionResponse、post_time/has_results は RaceDetail 由来。 */}
-              <OddsFreshness
-                oddsAsOf={pred?.odds_as_of}
-                postTime={r.post_time}
-                hasResults={r.has_results}
-              />
-              {/* Feature 137: 期待回収率の注記は出走表の直前に常時表示(別モデル・時刻・過去検証)。 */}
               <ExpectedReturnNote
                 marketEv={marketEvQuery.data}
                 isLoading={marketEvQuery.isLoading}
                 error={marketEvQuery.error ?? null}
               />
-              {/* Feature 138 (FR-011): 注目条件の常設注記。期待回収率の注記の直後・出走表の前。
-                  /attention の取得失敗はここで中立の 1 行として示す(チップが無いだけだと
-                  「該当なし」と見分けがつかない)。 */}
-              <AttentionNote
-                error={attentionQuery.error ?? null}
-                isLoading={attentionQuery.isLoading}
-              />
+              <AttentionNote error={attentionQuery.error ?? null} isLoading={attentionQuery.isLoading} />
               <HorseEntriesTable
+                variant="roi"
                 entries={r.horses}
-                predictions={pred?.horses ?? []}
-                oddsAsOf={pred?.odds_as_of}
-                canonicalConsistent={pred?.canonical_consistent}
+                predictions={[]}
                 marketEv={marketEvQuery.data}
                 attention={attentionQuery.data}
               />
               <p className="table-hint">
-                列見出しをクリックで並び替え（市場評価＝単勝オッズ由来の推定値・実測ではありません）。
-                「寄与」でモデルの判断要因を表示。
-                {attentionQuery.data?.status === "available" &&
-                  "注目条件の「▸」でその馬の注目条件の内訳を表示。"}
+                初期表示は馬番順です。列見出しをクリックで並び替えできます。
+                期待回収率と市場混合は並び替えません。
+                狭い画面では表を横にスクロールできます。
+                {attentionQuery.data?.status === "available" && "注目条件の「▸」で注目条件の内訳を表示。"}
               </p>
-              {/* Feature 138 (T036/T039): 注目条件の一覧(S1〜S5・閉じた状態で開始)。 */}
               <AttentionRulesPanel />
-              {hasPreds && (
-                <>
-                  {/* Feature 103 US1: 旧「市場優位」注記はここから ModelMarketStanding へ移した。
-                      色の凡例だけは表の直後に残す(表を読んだ位置で意味が引ける)。 */}
-                  <p className="table-hint" data-testid="divergence-legend">
-                    「市場との差」は見解の相違（<span className="diff--model_higher">青=モデルが高い</span>
-                    ・<span className="diff--market_higher">紫=市場が高い</span>）であり、
-                    買い目の推奨ではありません。
-                  </p>
-                  <div className="audit">
-                    <span>
-                      オッズ時刻: <code>{formatDateTime(pred?.odds_as_of)}</code>
-                    </span>
-                    <span>
-                      オッズ種別: <code>{pred?.odds_source ?? PLACEHOLDER}</code>
-                    </span>
-                    <span>
-                      q 出所: <code>{pred?.market_prob_source ?? PLACEHOLDER}</code>
-                    </span>
-                  </div>
-                </>
-              )}
+              <p className="table-hint" data-testid="roi-odds-context">
+                単勝欄は現在保存されているオッズです。期待回収率は計算時のオッズが基準です。
+                計算済みの場合、使用したオッズの取得時刻と計算時刻を上の注記に表示しています。
+              </p>
             </>
           )}
         </QueryStateView>
-      </div>
+      </section>
 
       <div className="tabbar" role="tablist" aria-label="詳細情報">
-        {TABS.map((t) => (
+        {TABS.map((item, index) => (
           <button
-            key={t.key}
+            key={item.key}
+            id={`detail-tab-${item.key}`}
             type="button"
             role="tab"
-            aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)}
+            aria-controls={`detail-panel-${item.key}`}
+            aria-selected={tab === item.key}
+            tabIndex={tab === item.key ? 0 : -1}
+            onClick={() => selectTab(item.key)}
+            onKeyDown={(event) => navigateTab(event, index)}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
-
-      {/* Feature 087 (codex C1): horse names/frames come from the RACE DETAIL response
-          (RaceDetail.horses: HorseEntry[]) — the prediction response's horses are
-          HorsePrediction[] and carry neither horse_name nor frame. */}
-      {tab === "recs" && (
-        <RecommendationPanel
-          raceId={raceId}
-          raceDate={raceQuery.data?.race_date ?? undefined}
-          entries={raceQuery.data?.horses}
-        />
-      )}
-      {tab === "odds" && <OddsPanel raceId={raceId} />}
-      {tab === "model" && (
-        <>
-          <CalibrationChart modelVersion={pred?.run?.model_version} />
-          <ImportanceChart modelVersion={pred?.run?.model_version} />
-          <JointPanel raceId={raceId} />
-        </>
-      )}
+      <div id="detail-panel-odds" role="tabpanel" aria-labelledby="detail-tab-odds" hidden={tab !== "odds"}>
+        <OddsPanel raceId={raceId} />
+      </div>
+      <div
+        id="detail-panel-comparison"
+        role="tabpanel"
+        aria-labelledby="detail-tab-comparison"
+        hidden={tab !== "comparison"}
+      >
+        {/* Keep controls mounted after first visit: hidden tabs still track active jobs. */}
+        {comparisonOpened && <LegacyPredictionComparison raceId={raceId} race={raceQuery.data} />}
+      </div>
     </section>
   );
 }

@@ -98,7 +98,7 @@ describe("PurchaseComparisonPage", () => {
     const firstRaceCells = within(screen.getByTestId("comparison-row-race-a")).getAllByRole("cell");
     expect(firstRaceCells[0]).toHaveTextContent("-1,200");
     expect(firstRaceCells[1]).toHaveTextContent("算出不能");
-    expect(firstRaceCells[1]).toHaveTextContent("提示スナップショット無し");
+    expect(firstRaceCells[1]).toHaveTextContent("提示内容または精算資料が不足");
     expect(firstRaceCells[2]).toHaveTextContent("0");
 
     const secondRaceCells = within(screen.getByTestId("comparison-row-race-b")).getAllByRole("cell");
@@ -135,7 +135,7 @@ describe("PurchaseComparisonPage", () => {
     expect(pseudoValue).toHaveAttribute("data-pseudo-kind", "double_pseudo");
 
     expect(screen.getByTestId("permanent-disclosures")).toHaveTextContent(
-      "政策線は記録時に凍結した提示スナップショットによる反実仮想の算出値であり、実現値ではありません",
+      "政策線は記録時の提示買い目・金額を公式単勝払戻で精算した反実仮想の算出値であり、実購入の実現値ではありません",
     );
     expect(screen.getByText(/算出時点:/)).toHaveTextContent("2026-09-02 03:04:05 UTC");
     expect(document.body).not.toHaveTextContent(/利益|儲|勝てる|おすすめ/);

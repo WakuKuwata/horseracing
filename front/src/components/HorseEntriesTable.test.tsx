@@ -274,6 +274,30 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     return cell;
   }
 
+  it("154 ROI variant orders by horse number and excludes legacy predictions even when supplied", async () => {
+    const { container } = renderWithProviders(
+      <HorseEntriesTable entries={[evEntries[2], evEntries[0], evEntries[3], evEntries[1]]}
+        predictions={[...predictions].reverse()} canonicalConsistent={true} marketEv={marketEv} variant="roi" />,
+    );
+    const table = screen.getByRole("table", { name: "期待回収率の出走表" });
+    const names = () => Array.from(table.querySelectorAll("tbody tr.entry-row td:nth-child(2) .cell-main"))
+      .map((cell) => cell.textContent);
+    const before = names();
+    expect(before).toEqual(["本登録馬", "サロゲート馬", "騎手なし馬", "取消馬cancelled"]);
+    expect(within(table).getByRole("columnheader", { name: /枠\/馬番/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(within(table).queryByRole("columnheader", { name: /モデル勝率|市場との差|寄与/ })).toBeNull();
+    expect(within(table).queryByText("32.0%")).toBeNull();
+    const evHeaders = within(table).getAllByRole("columnheader", { name: /期待回収率/ });
+    expect(evHeaders).toHaveLength(2);
+    for (const header of evHeaders) {
+      expect(header).not.toHaveClass("sortable");
+      expect(header).not.toHaveAttribute("aria-sort");
+      await userEvent.click(header);
+    }
+    expect(names()).toEqual(before);
+    assertPseudoLabelCoverage(container, ["124.3%", "120.0%"]);
+  });
+
   it("renders every value as a badged pseudo 推定 figure (coverage, not a spot-check)", () => {
     const { container } = renderWithProviders(
       <HorseEntriesTable entries={evEntries} predictions={predictions}

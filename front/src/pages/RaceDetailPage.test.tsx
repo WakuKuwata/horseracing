@@ -1,7 +1,7 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route, Routes } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { Link, Route, Routes } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ATTENTION_NOTE_TEXT } from "../components/AttentionNote";
 import { server } from "../tests/server";
@@ -14,6 +14,7 @@ import {
   HttpResponse,
   marketEvAvailable,
   raceDetail,
+  predictionResponse,
   recommendationResponse,
 } from "../tests/fixtures";
 import { assertPseudoLabelCoverage } from "../tests/pseudo";
@@ -29,10 +30,105 @@ function renderDetail() {
   );
 }
 
+beforeEach(() => {
+  server.use(http.get("*/api/v1/purchase-records", () => HttpResponse.json({ records: [] })));
+});
+
 describe("RaceDetailPage", () => {
+  it("keeps the initial ROI view independent of prediction/recommendation requests and controls", async () => {
+    let predictions = 0;
+    let recommendations = 0;
+    server.use(
+      http.get("*/api/v1/races/:id", () => HttpResponse.json({ ...raceDetail,
+        horses: [
+          { horse_id: "h2", horse_number: 2, entry_status: "started", horse_name: "ニ" },
+          { horse_id: "h1", horse_number: 1, entry_status: "started", horse_name: "イチ" },
+        ],
+      })),
+      http.get("*/api/v1/races/:id/market-ev", () => HttpResponse.json(marketEvAvailable)),
+      http.get("*/api/v1/races/:id/predictions", () => {
+        predictions += 1;
+        return HttpResponse.json(predictionResponse);
+      }),
+      http.get("*/api/v1/races/:id/recommendations", () => {
+        recommendations += 1;
+        return HttpResponse.json(recommendationResponse);
+      }),
+      ...happyHandlers,
+    );
+    renderDetail();
+    const roiTable = await screen.findByRole("table", { name: "期待回収率の出走表" });
+    expect(await within(roiTable).findByText("123.7%")).toBeInTheDocument();
+    const rows = within(roiTable).getAllByRole("row").slice(1);
+    expect(within(rows[0]).getByText("イチ")).toBeInTheDocument();
+    expect(within(rows[1]).getByText("ニ")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "オッズ" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("button", { name: "予測する" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "買い目生成" })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: /モデル勝率|市場との差|寄与/ })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /旧予測モデルの買い目/ })).toBeNull();
+    expect(predictions).toBe(0);
+    expect(recommendations).toBe(0);
+    expect(screen.getByRole("button", { name: "データ更新" })).toBeInTheDocument();
+  });
+
+  it("resets the comparison view and does not fetch legacy data for the next race", async () => {
+    const legacyRaces: string[] = [];
+    server.use(
+      http.get("*/api/v1/races/:id/predictions", ({ params }) => {
+        legacyRaces.push(String(params.id));
+        return HttpResponse.json(predictionResponse);
+      }),
+      http.get("*/api/v1/races/:id/recommendations", ({ params }) => {
+        legacyRaces.push(String(params.id));
+        return HttpResponse.json(recommendationResponse);
+      }),
+      ...happyHandlers,
+    );
+    renderWithProviders(<>
+      <Link to="/races/200806010112">次のレースへ</Link>
+      <Routes><Route path="/races/:raceId" element={<RaceDetailPage />} /></Routes>
+    </>, { route: "/races/200806010111" });
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
+    await screen.findByText("run-abc");
+    await userEvent.click(screen.getByRole("link", { name: "次のレースへ" }));
+    await screen.findByRole("table", { name: "期待回収率の出走表" });
+    expect(screen.getByRole("tab", { name: "オッズ" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("button", { name: "予測する" })).toBeNull();
+    expect(legacyRaces).not.toContain("200806010112");
+  });
+
+  it("keeps recommendation job tracking and refetch when comparison is hidden", async () => {
+    const jobId = "33333333-3333-3333-3333-333333333333";
+    let status = "running";
+    server.use(
+      http.post("*/ops/v1/races/:id/recommend", () => HttpResponse.json({
+        job_id: jobId, status: "queued", reused: false, scope: "race", scope_value: "200806010111",
+        poll_url: `/ops/v1/jobs/${jobId}`,
+      }, { status: 202 })),
+      http.get("*/ops/v1/jobs/:id", () => HttpResponse.json({
+        job_id: jobId, job_type: "recommend", status, scope: "race", scope_value: "200806010111", retry_count: 0,
+      })),
+      ...happyHandlers,
+    );
+    const { queryClient } = renderDetail();
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
+    await userEvent.click(screen.getByRole("button", { name: "買い目生成" }));
+    await screen.findByText("買い目生成中…");
+    await userEvent.click(screen.getByRole("tab", { name: "オッズ" }));
+    expect(screen.queryByRole("button", { name: "生成中…" })).toBeNull();
+    status = "succeeded";
+    await queryClient.refetchQueries({ queryKey: ["opsJob", jobId] });
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["recommendations", "200806010111"] }));
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
+    expect(await screen.findByText("生成完了")).toBeVisible();
+  });
+
   it("renders predictions and the prediction-run audit", async () => {
     server.use(...happyHandlers);
     renderDetail();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
     // win probability rendered as percentage in the entries table.
     expect((await screen.findAllByText("32.0%")).length).toBeGreaterThan(0);
     // run audit surfaces which prediction_run was selected (constitution V)
@@ -50,12 +146,19 @@ describe("RaceDetailPage", () => {
           { status: 503 },
         ),
       ),
+      http.get("*/api/v1/races/:id/market-ev", () => HttpResponse.json(marketEvAvailable)),
+      http.get("*/api/v1/races/:id", () => HttpResponse.json({ ...raceDetail,
+        horses: raceDetail.horses.map((horse) => ({ ...horse, entry_status: "started" })),
+      })),
     );
     renderDetail();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("prediction_unavailable");
-    expect(screen.getByText("prediction fetch failed")).toBeInTheDocument();
-    expect(await screen.findByText("h1")).toBeInTheDocument();
+    const comparison = await screen.findByRole("region", { name: "予測モデルとの比較" });
+    expect(await within(comparison).findByRole("alert")).toHaveTextContent("prediction_unavailable");
+    expect(within(comparison).getByText("prediction fetch failed")).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "期待回収率の出走表" })).getByText("h1")).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "期待回収率の出走表" })).getByText("123.7%")).toBeInTheDocument();
   });
 
   // Feature 087 (T013A, codex C1): the betting-slip horse names/frames come from the RACE
@@ -85,7 +188,8 @@ describe("RaceDetailPage", () => {
       // overrides FIRST — MSW resolves handlers first-match-wins
       ...happyHandlers,
     );
-    renderDetail(); // the 買い目推奨 tab is the default tab
+    renderDetail();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
 
     const card = await screen.findByTestId("bet-slip-card-rec-w1");
     expect(within(card).getByText("サンプルホース")).toBeInTheDocument();
@@ -245,7 +349,7 @@ describe("RaceDetailPage", () => {
       ...happyHandlers,
     );
     const { container } = renderDetail();
-    expect(await screen.findByText("h1")).toBeInTheDocument();
+    expect(await within(await screen.findByRole("table", { name: "期待回収率の出走表" })).findByText("h1")).toBeInTheDocument();
     // the failure is SAID (a table without chips alone reads exactly like "no horse matches"),
     // neutrally: inside the note, no alert role, no error colour
     const err = await screen.findByTestId("attention-error");

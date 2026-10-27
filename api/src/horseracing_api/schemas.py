@@ -865,6 +865,7 @@ class PurchaseBetView(BaseModel):
     payout_yen: float | None = None
     # True only for settled_estimated (double-pseudo; front badges it)
     is_estimated: bool
+    settlement_reason: str | None = None
 
 
 class PurchaseRecordView(BaseModel):

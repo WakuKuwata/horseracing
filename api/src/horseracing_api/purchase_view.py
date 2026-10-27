@@ -2,17 +2,24 @@
 
 Read-time computation only (research D3) — nothing here is persisted, so a correction, a voided
 row or a dividend arriving later is reflected on the next GET without any stored state to
-invalidate. Settlement uses OFFICIAL results for the hit decision (011 semantics via
-``settlement.is_hit``) and official prices first; a hit whose official dividend is absent is
-settled on the 010 estimated odds and MARKED (clarify Q2 = B: counted, double-pseudo badged,
-auto-replaced when the real dividend arrives).
+invalidate. Win settlement uses complete results and OfficialWinPayout, including dead heats.
+Missing or inconsistent win payouts leave the whole race unvalued. Combination bets retain
+the marked 010 estimate when their official dividend is absent.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 
-from horseracing_db.models import ExoticOdds, PurchaseRecord, RaceHorse, RaceResult
+from horseracing_db.enums import EntryStatus, ResultStatus
+from horseracing_db.models import (
+    ExoticOdds,
+    OfficialWinPayout,
+    PurchaseRecord,
+    RaceHorse,
+    RaceResult,
+)
 from horseracing_probability.market_odds import (
     MarketOddsError,
     default_market_stage_discount,
@@ -29,7 +36,7 @@ PENDING = "pending"
 SETTLED_REAL = "settled_real"
 SETTLED_ESTIMATED = "settled_estimated"
 REFUNDED = "refunded"
-UNSETTLEABLE = "unsettleable"   # win with no official odds (U4: the 010 estimate is win-derived)
+UNSETTLEABLE = "unsettleable"
 
 
 @dataclass(frozen=True)
@@ -41,43 +48,91 @@ class SettledBet:
     hit: bool | None            #: None while pending / refunded / unsettleable
     payout_yen: float | None    #: gross return (0 for a settled miss)
     is_estimated: bool          #: True only for SETTLED_ESTIMATED (double-pseudo)
+    settlement_reason: str | None = None
+
+
+def build_result_context(entries, results, payouts) -> dict:
+    """Validate identities before reducing records to number-keyed settlement facts.
+
+    A missing started result is unknown; only an explicit non-starter is refundable. Results
+    are supplied separately so an orphan result cannot disappear in a RaceHorse outer join.
+    """
+    numbers = [h["horse_number"] for h in entries]
+    field_valid = (
+        bool(entries)
+        and all(n is not None and n >= 1 for n in numbers)
+        and len(set(numbers)) == len(numbers)
+        and all(h["entry_status"] in EntryStatus.ALL for h in entries)
+    )
+    started = {h["horse_id"] for h in entries if h["entry_status"] == EntryStatus.STARTED}
+    result_by_id = {r["horse_id"]: r for r in results}
+    invalid_results = (
+        len(result_by_id) != len(results)
+        or bool(set(result_by_id) - started)
+        or any(
+            r["result_status"] not in ResultStatus.ALL
+            or (r["result_status"] == ResultStatus.FINISHED
+                and (r["finish_order"] is None or not 1 <= r["finish_order"] <= len(started)))
+            for r in results
+        )
+    )
+    statuses, finish, entry_statuses, win_odds = {}, {}, {}, {}
+    for h in entries:
+        n = h["horse_number"]
+        if n is None:
+            continue
+        entry_statuses[n] = h["entry_status"]
+        r = result_by_id.get(h["horse_id"])
+        statuses[n] = r["result_status"] if r else None
+        if h["entry_status"] == EntryStatus.STARTED:
+            if h["odds"] is not None:
+                win_odds[n] = float(h["odds"])
+            if r and r["result_status"] == ResultStatus.FINISHED and r["finish_order"]:
+                finish[n] = r["finish_order"]
+    winners = {n for n, rank in finish.items() if rank == 1}
+    if invalid_results:
+        result_state = "invalid"
+    elif not results:
+        result_state = "pending"
+    elif started - set(result_by_id):
+        result_state = "incomplete"
+    elif not winners:
+        result_state = "invalid"
+    else:
+        result_state = "complete"
+    win_payouts = {p["horse_number"]: p["payout_yen"] for p in payouts}
+    payout_consistent = (
+        bool(winners) and winners == set(win_payouts) and len(win_payouts) == len(payouts)
+        and all(p is not None and p >= 100 for p in win_payouts.values())
+    )
+    return {
+        "finish": finish, "statuses": statuses, "entry_statuses": entry_statuses,
+        "win_odds": win_odds, "n_started": len(started), "has_results": bool(results),
+        "field_valid": field_valid, "result_state": result_state,
+        "win_payouts": win_payouts, "win_payout_consistent": payout_consistent,
+    }
 
 
 def race_context(session: Session, race_id: str) -> dict:
     """Number-keyed result context for one race (read-only)."""
-    rows = session.execute(
-        select(RaceHorse.horse_number, RaceHorse.entry_status, RaceHorse.odds,
-               RaceResult.finish_order, RaceResult.result_status)
-        .join(RaceResult,
-              (RaceResult.race_id == RaceHorse.race_id)
-              & (RaceResult.horse_id == RaceHorse.horse_id), isouter=True)
+    entries = session.execute(
+        select(RaceHorse.horse_id, RaceHorse.horse_number, RaceHorse.entry_status, RaceHorse.odds)
         .where(RaceHorse.race_id == race_id)
-    ).all()
-    finish: dict[int, int] = {}
-    statuses: dict[int, str | None] = {}
-    win_odds: dict[int, float] = {}
-    n_started = 0
-    has_results = False
-    for number, entry_status, odds, order, result_status in rows:
-        if number is None:
-            continue
-        n = int(number)
-        entry = getattr(entry_status, "value", entry_status)
-        if entry == "started":
-            n_started += 1
-            if odds is not None:
-                win_odds[n] = float(odds)
-        statuses[n] = getattr(result_status, "value", result_status)
-        if result_status is not None:
-            has_results = True
-        if getattr(result_status, "value", result_status) == "finished" and order is not None:
-            finish[n] = int(order)
+    ).mappings().all()
+    results = session.execute(
+        select(RaceResult.horse_id, RaceResult.finish_order, RaceResult.result_status)
+        .where(RaceResult.race_id == race_id)
+    ).mappings().all()
+    payouts = session.execute(
+        select(OfficialWinPayout.horse_number, OfficialWinPayout.payout_yen)
+        .where(OfficialWinPayout.race_id == race_id)
+    ).mappings().all()
+    ctx = build_result_context(entries, results, payouts)
     dividends: dict[tuple[str, tuple[int, ...]], float] = {}
     for x in session.scalars(select(ExoticOdds).where(ExoticOdds.race_id == race_id)):
         bt = getattr(x.bet_type, "value", x.bet_type)
         dividends[(str(bt), tuple(int(i) for i in x.selection))] = float(x.odds)
-    return {"finish": finish, "statuses": statuses, "win_odds": win_odds,
-            "n_started": n_started, "has_results": has_results, "dividends": dividends}
+    return {**ctx, "dividends": dividends}
 
 
 def _estimated_multiplier(ctx: dict, bet_type: str, selection: list[int]) -> float | None:
@@ -112,22 +167,43 @@ def settle_bet(ctx: dict, bet: dict) -> SettledBet:
     bet_type = str(bet["bet_type"])
     selection = [int(x) for x in bet["selection"]]
     amount = int(bet["amount_yen"])
-    if not ctx["has_results"]:
-        return SettledBet(bet_type, selection, amount, PENDING, None, None, False)
-    # 返還: a selected number with no result row at all (取消・除外 — never ran)
-    if any(n not in ctx["statuses"] or ctx["statuses"][n] is None for n in selection):
+
+    def unresolved(status, reason):
+        return SettledBet(bet_type, selection, amount, status, None, None, False, reason)
+
+    if not ctx["field_valid"]:
+        return unresolved(UNSETTLEABLE, "field_inconsistent")
+    if not selection or any(n not in ctx["entry_statuses"] for n in selection):
+        return unresolved(UNSETTLEABLE, "selection_unknown")
+    if bet_type == "win" and len(selection) != 1:
+        return unresolved(UNSETTLEABLE, "selection_unknown")
+    if any(ctx["entry_statuses"][n] in EntryStatus.NON_STARTERS
+           and ctx["statuses"][n] is not None for n in selection):
+        return unresolved(UNSETTLEABLE, "results_inconsistent")
+    if any(ctx["entry_statuses"][n] in EntryStatus.NON_STARTERS for n in selection):
         return SettledBet(bet_type, selection, amount, REFUNDED, None, float(amount), False)
+    if bet_type == "win":
+        if ctx["result_state"] in ("pending", "incomplete"):
+            return unresolved(PENDING, "results_" + ctx["result_state"])
+        if ctx["result_state"] != "complete":
+            return unresolved(UNSETTLEABLE, "results_inconsistent")
+        if not ctx["win_payouts"]:
+            return unresolved(UNSETTLEABLE, "win_payout_missing")
+        if not ctx["win_payout_consistent"]:
+            return unresolved(UNSETTLEABLE, "win_payout_inconsistent")
+        hit = selection[0] in ctx["win_payouts"]
+        payout = ctx["win_payouts"].get(selection[0], 0)
+        gross = Decimal(amount) * Decimal(payout) / Decimal(100)
+        return SettledBet(bet_type, selection, amount, SETTLED_REAL, hit, float(gross), False)
+    if not ctx["has_results"]:
+        return unresolved(PENDING, "results_pending")
+    if any(ctx["statuses"][n] is None for n in selection):
+        return unresolved(PENDING, "results_incomplete")
     hit = is_hit(bet_type, selection, ctx["finish"], ctx["n_started"])
     if hit is None:   # place with <=4 starters — not on sale; treat as refunded
         return SettledBet(bet_type, selection, amount, REFUNDED, None, float(amount), False)
     if not hit:
         return SettledBet(bet_type, selection, amount, SETTLED_REAL, False, 0.0, False)
-    if bet_type == "win":
-        odds = ctx["win_odds"].get(selection[0])
-        if odds is None:   # U4: win estimate is itself win-odds derived — cannot fall back
-            return SettledBet(bet_type, selection, amount, UNSETTLEABLE, True, None, False)
-        return SettledBet(bet_type, selection, amount, SETTLED_REAL, True,
-                          amount * float(odds), False)
     div = ctx["dividends"].get((bet_type, tuple(selection)))
     if div is not None:
         return SettledBet(bet_type, selection, amount, SETTLED_REAL, True, amount * div, False)
@@ -160,7 +236,7 @@ def effective(session: Session, date_from, date_to) -> dict[str, EffectiveRecord
 
 #: fixed disclosure note keys (contract: notes carries stable phrasing keys, front owns the copy)
 COMPARISON_NOTES = [
-    "counterfactual_snapshot",   # 政策線は凍結スナップショット精算=反実仮想(075 命名)
+    "counterfactual_snapshot",   # 政策線は凍結した選択/金額を公式払戻で精算
     "pre_tax",                   # 税引前
     "asymmetric_scope",          # 実購入=全券種 / 政策線=単勝のみ(clarify Q1)
     "coverage_denominator_all_races",  # 記録率の分母=期間内の全開催レース(clarify Q3)
@@ -198,13 +274,13 @@ def _snapshot_win_bets(snapshot: dict | None) -> list[dict] | None:
 
 
 def settle_policy_net(ctx: dict, snapshot: dict | None) -> float | None:
-    """Counterfactual-snapshot net for the policy line (win-only, FROZEN odds).
+    """Counterfactual win net: frozen choices/stakes, the same official settlement as actual.
 
-    None = not computable (no snapshot, missing frozen odds/amount, or race not settled).
+    None = not computable (no snapshot, unknown amount, or unsettled results/payout).
     Zero win bets in a snapshot is a VERIFIED zero (skip / no_recommendation) and returns 0.0.
     """
     bets = _snapshot_win_bets(snapshot)
-    if bets is None or not ctx["has_results"]:
+    if bets is None:
         return None
     net = 0.0
     for b in bets:
@@ -212,16 +288,10 @@ def settle_policy_net(ctx: dict, snapshot: dict | None) -> float | None:
         if len(sel) != 1 or b["amount_yen"] is None:
             return None
         amount = int(b["amount_yen"])
-        n = sel[0]
-        if n not in ctx["statuses"] or ctx["statuses"][n] is None:
-            continue   # 返還 — stake back, net 0
-        hit = is_hit("win", sel, ctx["finish"], ctx["n_started"])
-        if hit:
-            if b["odds_used"] is None:
-                return None   # frozen odds missing — cannot value the counterfactual
-            net += amount * float(b["odds_used"]) - amount
-        else:
-            net -= amount
+        settled = settle_bet(ctx, {"bet_type": "win", "selection": sel, "amount_yen": amount})
+        if settled.status in (PENDING, UNSETTLEABLE):
+            return None
+        net += settled.payout_yen - amount
     return net
 
 

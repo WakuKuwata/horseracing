@@ -4545,6 +4545,17 @@
             "title": "Selection",
             "type": "array"
           },
+          "settlement_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement Reason"
+          },
           "status": {
             "title": "Status",
             "type": "string"

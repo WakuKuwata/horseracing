@@ -852,12 +852,13 @@ th.colgroup {
   margin: 0 0 0.5rem;
 }
 
-/* --- tab bar for the secondary panels (odds / recommendations / model info) --- */
+/* --- secondary odds and legacy prediction comparison --- */
 .tabbar {
   display: flex;
   gap: 0.25rem;
   border-bottom: 1px solid var(--border);
   margin: 0 0 1rem;
+  flex-wrap: wrap;
 }
 .tabbar button {
   background: none;
@@ -884,6 +885,43 @@ th.colgroup {
   gap: 0.5rem;
   flex-wrap: wrap;
   margin-left: auto;
+}
+
+.roi-overview__heading,
+.legacy-comparison__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.roi-overview__heading h2,
+.legacy-comparison__heading h2 {
+  margin-bottom: 0;
+}
+.roi-overview .entries-table {
+  min-width: 48rem;
+}
+.legacy-comparison .entries-table {
+  min-width: 60rem;
+}
+.roi-overview .entries-table td:nth-child(2),
+.roi-overview .entries-table td:nth-child(3),
+.legacy-comparison .entries-table td:nth-child(2),
+.legacy-comparison .entries-table td:nth-child(3) {
+  white-space: nowrap;
+}
+.comparison-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.comparison-model-info > summary,
+.comparison-records > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.5rem 0;
 }
 
 /* --- score contribution panel (040; previously unstyled) --- */

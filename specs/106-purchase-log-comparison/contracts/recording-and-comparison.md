@@ -21,9 +21,18 @@ Body: { race_id, kind, bets[], client_request_id, prediction_run_id?, presented_
 
 ## 読み取り (api, :8000 — read-only 維持・GET のみ)
 
+### 156の単勝精算更新
+
+単勝は実購入・政策線とも `OfficialWinPayout.payout_yen × amount_yen / 100`。
+政策線は提示時の選択と金額を固定し、凍結オッズを支払額には使わない。
+結果不足はpending、結果/出走対応不整合・公式払戻未保存/勝馬集合との不一致は
+unsettleableとし、払戻/的中はnull、比較累積から除外する。返還は明示取消/除外のみ。
+任意の`settlement_reason`で理由を示す。公式資料が後着した場合は次GETで再計算される。
+同着と元返しも含む詳細は[156仕様](../../156-official-win-settlement/spec.md)を参照。
+
 ### GET /api/v1/purchase-records?from&to → 200
 有効記録の一覧(履歴込み)。各行: kind・bets・精算状態(pending/settled_real/settled_estimated/
-refunded)・result_pending_at_record(表示は「結果取込前/後に記録」)・訂正履歴。**settled_estimated は is_estimated=true を必ず運ぶ**
+refunded/unsettleable)・settlement_reason・result_pending_at_record(表示は「結果取込前/後に記録」)・訂正履歴。**settled_estimated は is_estimated=true を必ず運ぶ**
 (front の PseudoValue 経路・バッジ必須)
 
 ### GET /api/v1/purchase-comparison?from&to&scope={all|win_only}&include_post_hoc={true|false} → 200

@@ -1973,6 +1973,8 @@ export interface components {
             payout_yen?: number | null;
             /** Selection */
             selection: number[];
+            /** Settlement Reason */
+            settlement_reason?: string | null;
             /** Status */
             status: string;
         };

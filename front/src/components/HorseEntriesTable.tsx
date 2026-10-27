@@ -95,7 +95,7 @@ const DIVERGENCE_TOOLTIP =
 // inputs), not from the モデル勝率 column. Pseudo → always via <PseudoValue>. Deliberately NOT
 // sortable (ordering by it would be an edge sort, 021 R3) and never green/red.
 const EV_HEADER_TITLE =
-  "表の「モデル勝率」とは別の市場連動モデルが推定した勝率 × 単勝オッズ。推定値であり実績ではありません";
+  "「予測モデルとの比較」の勝率とは別の市場連動モデルが推定した勝率 × 単勝オッズ。推定値であり実績ではありません";
 
 // Feature 141: the market-mixed PARALLEL value of 期待回収率 (API `expected_return_mix`). Never
 // replaces the 期待回収率 column, never sortable, and its >100% mark is neutral text (no colour,
@@ -180,6 +180,7 @@ function ProbBar({
  *  expansion row; the outline + left bar fire only at emphasis level 3 (never colour-only, never
  *  green/red). 137's 「120%超」 text chip is gone — S1–S3 already imply ens15 EV > 1.2. */
 export function HorseEntriesTable({
+  variant = "prediction",
   entries,
   predictions,
   oddsAsOf,
@@ -188,6 +189,7 @@ export function HorseEntriesTable({
   attention,
   now,
 }: {
+  variant?: "roi" | "prediction";
   entries: HorseEntry[];
   predictions: HorsePrediction[];
   oddsAsOf?: string | null;
@@ -200,14 +202,12 @@ export function HorseEntriesTable({
   /** 描画時刻(価格鮮度の評価)。省略時は描画のたびに現在時刻 — 自動では再描画しない。 */
   now?: Date | number;
 }) {
-  // Default sort = モデル勝率 desc (the prediction IS what this screen is for; user decision
-  // 2026-07-02). Without predictions every win is null → the null-last comparator keeps the
-  // API (馬番) order, so the no-prediction table still reads naturally.
-  const [sortKey, setSortKey] = useState<ColKey>("win");
-  const [asc, setAsc] = useState(false);
+  // ROI overview uses starter order; comparison retains the legacy model-win ordering.
+  const [sortKey, setSortKey] = useState<ColKey>(variant === "roi" ? "horse_number" : "win");
+  const [asc, setAsc] = useState(variant === "roi");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const hasPreds = predictions.length > 0;
+  const hasPreds = variant !== "roi" && predictions.length > 0;
   // 差(p−q) is only meaningful when the API confirms p and q share one canonical field (021 R1).
   const comparable = hasPreds && canonicalConsistent === true;
   const evAvailable = marketEv?.status === "available";
@@ -291,7 +291,7 @@ export function HorseEntriesTable({
 
   return (
     <div className="table-scroll">
-      <table className="entries-table">
+      <table className="entries-table" aria-label={variant === "roi" ? "期待回収率の出走表" : "予測モデルの出走表"}>
         <thead>
           <tr>
             {sortableColumns.map((c) => (
@@ -299,7 +299,9 @@ export function HorseEntriesTable({
                 key={c.key}
                 className={`sortable ${NUMERIC.includes(c.key) ? "num" : ""}`}
                 aria-sort={sortKey === c.key ? (asc ? "ascending" : "descending") : "none"}
-                title={c.title}
+                title={variant === "roi" && c.key === "odds"
+                  ? "現在保存されている単勝オッズと人気。期待回収率に使用したオッズとは異なる場合があります。"
+                  : c.title}
                 onClick={() => toggle(c.key)}
               >
                 {c.label}

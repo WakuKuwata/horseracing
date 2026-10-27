@@ -44,7 +44,7 @@ describe("ExpectedReturnNote (137)", () => {
     const note = screen.getByTestId("expected-return-note");
     expect(note).toHaveTextContent("期待回収率について");
     expect(screen.getByTestId("expected-return-definition").textContent).toBe(
-      "期待回収率は、表の『モデル勝率』とは別の市場連動モデル(mev-ens15-v1)が、単勝オッズと各馬の過去成績から推定した勝率 × 単勝オッズです。",
+      "期待回収率は、『予測モデルとの比較』に表示する勝率とは別の市場連動モデル(mev-ens15-v1)が、単勝オッズと各馬の過去成績から推定した勝率 × 単勝オッズです。",
     );
     expect(screen.getByTestId("expected-return-times").textContent).toBe(
       "オッズ取得 2026/09/27 09:10 ・計算 2026/09/27 09:15",

@@ -17,7 +17,7 @@ type ComparisonRow = {
 
 const NOTE_COPY = {
   counterfactual_snapshot:
-    "政策線は記録時に凍結した提示スナップショットによる反実仮想の算出値であり、実現値ではありません",
+    "政策線は記録時の提示買い目・金額を公式単勝払戻で精算した反実仮想の算出値であり、実購入の実現値ではありません",
   pre_tax: "金額は税引前です",
   asymmetric_scope:
     "実購入は全券種、政策線は単勝のみの非対称な比較です(単勝のみ表示で対称になります)",
@@ -98,7 +98,7 @@ function PolicyValue({ value }: { value: number | null | undefined }) {
       <>
         算出不能
         <br />
-        <small>提示スナップショット無し</small>
+        <small>提示内容または精算資料が不足</small>
       </>
     );
   }
@@ -238,7 +238,8 @@ function ComparisonContents({ data }: { data: PurchaseComparisonResponse }) {
           算出時点: <time dateTime={data.as_of}>{formatDateTime(data.as_of)}</time>
         </p>
         <p className="note">
-          実配当が後から取り込まれると推定精算が実精算へ置き換わるため、表示値は正当に変わることがあります。
+          単勝は公式払戻で精算します。結果不足・公式払戻未保存の明細は未精算として集計から除外します。
+          結果や払戻の後着で精算され、連系券では推定精算が実精算に置き換わることがあります。
         </p>
         <small>推定器の出所: {data.estimator_provenance || "--"}</small>
       </section>

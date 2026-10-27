@@ -98,6 +98,7 @@ def purchase_records(
                 bet_type=s.bet_type, selection=s.selection, amount_yen=s.amount_yen,
                 status=s.status, hit=s.hit, payout_yen=s.payout_yen,
                 is_estimated=s.is_estimated,
+                settlement_reason=s.settlement_reason,
             ) for s in settled],
             anomalies=list(eff.anomalies),
             note=current.note,
