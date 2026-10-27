@@ -11,6 +11,7 @@ import { HorseEntriesTable } from "../components/HorseEntriesTable";
 import { LegacyPredictionComparison } from "../components/LegacyPredictionComparison";
 import { OddsPanel } from "../components/OddsPanel";
 import { RefreshButton } from "../components/RefreshButton";
+import { RoiPurchaseRecord } from "../components/RoiPurchaseRecord";
 import { QueryStateView } from "../components/StateView";
 import { PLACEHOLDER } from "../lib/format";
 import { venueName } from "../lib/venues";
@@ -128,6 +129,18 @@ function RaceDetailContent({ raceId }: { raceId: string }) {
           )}
         </QueryStateView>
       </section>
+
+      {/* B6: record the actual purchase/skip from the ROI view (106 stream; no recommendation). */}
+      {raceQuery.data && (
+        <RoiPurchaseRecord
+          raceId={raceId}
+          raceDate={raceQuery.data.race_date ?? undefined}
+          horseNumbers={raceQuery.data.horses
+            .map((h) => h.horse_number)
+            .filter((n): n is number => typeof n === "number")}
+          hasResults={raceQuery.data.has_results === true}
+        />
+      )}
 
       <div className="tabbar" role="tablist" aria-label="詳細情報">
         {TABS.map((item, index) => (

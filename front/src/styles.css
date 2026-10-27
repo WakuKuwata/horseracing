@@ -1212,3 +1212,9 @@ th.colgroup {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* B6 (2026-10-28): purchase record from the ROI view — same neutral treatment as the 106 panel. */
+.roi-purchase__existing {
+  color: var(--muted);
+  font-size: 0.9rem;
+}

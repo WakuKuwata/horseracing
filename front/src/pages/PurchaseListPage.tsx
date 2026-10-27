@@ -4,6 +4,7 @@ import { usePurchaseRecords } from "../api/queries";
 import type { PurchaseBetView, PurchaseRecordView } from "../api/types";
 import { PseudoValue } from "../components/PseudoValue";
 import { EmptyView, LoadingView } from "../components/StateView";
+import { RECORD_KIND_LABELS } from "../lib/purchaseLabels";
 
 const BET_TYPE_LABELS: Record<string, string> = {
   win: "単勝",
@@ -13,15 +14,6 @@ const BET_TYPE_LABELS: Record<string, string> = {
   wide: "ワイド",
   trio: "三連複",
   trifecta: "三連単",
-};
-
-const RECORD_KIND_LABELS: Record<string, string> = {
-  as_presented: "提示どおり",
-  modified: "修正して購入",
-  skipped_presented: "見送り(提示あり)",
-  no_recommendation: "見送り(推奨なし)",
-  presentation_unavailable: "提示不明",
-  freeform: "自由入力",
 };
 
 function formatDateInput(date: Date): string {

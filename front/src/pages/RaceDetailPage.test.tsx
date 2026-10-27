@@ -70,6 +70,12 @@ describe("RaceDetailPage", () => {
     expect(predictions).toBe(0);
     expect(recommendations).toBe(0);
     expect(screen.getByRole("button", { name: "データ更新" })).toBeInTheDocument();
+    // B6: the purchase record (skip / free-form) is reachable from the ROI view without opening
+    // the comparison tab, and it is not a recommendation.
+    const record = screen.getByTestId("roi-purchase-record");
+    expect(within(record).getByRole("button", { name: "見送りを記録" })).toBeInTheDocument();
+    expect(within(record).getByRole("button", { name: "買い目を追加" })).toBeInTheDocument();
+    expect(record.textContent).toContain("ここに買い目の提案はありません");
   });
 
   it("resets the comparison view and does not fetch legacy data for the next race", async () => {

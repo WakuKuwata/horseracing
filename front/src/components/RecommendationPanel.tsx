@@ -1,18 +1,15 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { usePurchaseRecording } from "../api/purchaseRecording";
 
-import { usePauseState } from "../api/opsStatus";
-
-import { submitPurchaseRecord } from "../api/opsClient";
-import { usePurchaseRecords, useRecommendations } from "../api/queries";
+import { useRecommendations } from "../api/queries";
 import type { HorseEntry, RecommendationResponse } from "../api/types";
 import { computeAmount, useBudget } from "../lib/budget";
 import { BetSlip } from "./BetSlip";
 import { BudgetInput } from "./BudgetInput";
 import { FreeformPurchaseForm, type FreeformPayload } from "./FreeformPurchaseForm";
-import { PurchaseActions, type PresentedBet, type PurchaseRecordPayload } from "./PurchaseActions";
+import { PurchaseActions, type PresentedBet } from "./PurchaseActions";
 import { RecommendationResults } from "./RecommendationResults";
 import { QueryStateView } from "./StateView";
 
@@ -73,24 +70,9 @@ export function RecommendationPanel({
 }) {
   const query = useRecommendations(raceId);
   const { budget, setBudget } = useBudget();
-  // B5: the 172 pause blocks purchase-record POSTs too; the record controls say so instead of 503ing.
-  const { paused } = usePauseState();
-  const queryClient = useQueryClient();
-
-  // Feature 106: has this race already been recorded? (effective record after fold — a voided
-  // race legitimately comes back recordable). Range = the race's own day.
-  const recordsQuery = usePurchaseRecords(
-    { from: raceDate ?? "", to: raceDate ?? "" },
-    { enabled: !!raceDate },
-  );
-  const existingView = recordsQuery.data?.records.find((r) => r.race_id === raceId) ?? null;
-
-  async function submitPurchase(payload: PurchaseRecordPayload) {
-    const result = await submitPurchaseRecord(payload);
-    await queryClient.invalidateQueries({ queryKey: ["purchase-records"] });
-    await queryClient.invalidateQueries({ queryKey: ["purchase-comparison"] });
-    return { record_id: result.purchase_record_id };
-  }
+  // Feature 106 state shared with the ROI-view record section (B6): same existing-record query,
+  // same submit (+ B5 pause flag so the controls say why instead of 503ing).
+  const { existingView, submit: submitPurchase, paused } = usePurchaseRecording(raceId, raceDate);
 
   // View override survives toggling but NOT a race change (codex D7/H8): the effective view is
   // derived every render, so the async response flipping hasSettled updates the default view.
