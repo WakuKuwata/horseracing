@@ -22,7 +22,6 @@ import type {
   RaceDetail,
   RacePage,
   RecommendationResponse,
-  ShadowLogResponse,
 } from "./types";
 
 // openapi-fetch returns { data, error, response }. We normalize the error branch into ErrorInfo
@@ -248,14 +247,6 @@ export function useAttentionDay(date: string) {
           params: { query: { date } },
         }),
       ),
-  });
-}
-
-// --- Feature 065: prospective shadow-betting log (honest instrument) ---------
-export function useShadowLog() {
-  return useQuery<ShadowLogResponse, ErrorInfo>({
-    queryKey: ["shadow-log"],
-    queryFn: async () => unwrap(await api.GET("/api/v1/shadow-log", {})),
   });
 }
 

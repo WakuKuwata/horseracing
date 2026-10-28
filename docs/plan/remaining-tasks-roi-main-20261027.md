@@ -24,7 +24,7 @@
 9. **荒れ度を ROI 主画面に戻す**(**完了 2026-10-28**: `GET /api/v1/races/{id}/chaos` を追加(084 の `build_race_chaos` を同じ引数で呼ぶだけ・`/predictions` の `race_chaos` とオブジェクト一致をテストで固定)。front は ROI 領域の注目条件一覧の直後に `RaceChaosPanel` を置き、比較タブからは外した(ページ内 1 箇所)。初回表示で `/predictions` は引き続き叩かない)。084/066 の荒れ度は市場 q 由来で ROI 系と相性が良いが、`/predictions` 応答に同居しているため 154 で比較タブに移った。`/races/{id}/chaos` に分離すれば主画面で出せる。
 10. **モデルの用途ラベルを DB に持たせる**(**完了 2026-10-28**: 057 の CLI `uv run python -m horseracing_training set-model-label --model-version mix-129-nj6 --display-name '比較用: 6モデル平均 mix-129-nj6' --purpose '比較用(2026-10-27 の役割決定)…'` でローカル DB に記録(従来の技術説明は purpose 内に保持)。front の比較タブは `available_models` の display_name を読み、注記は表示中モデル・買い目見出しは採用モデルのラベルで組む(DB にラベルが無いときだけ従来の「旧予測モデル」)。admin は 051 で既に display_name/purpose を表示。**ROI 用 `mev-ens15-v1` は model_versions に行が無い**(別系統の artifact で、勝率モデルの registry に偽の候補行を作ると昇格/互換検査の対象になるため作らない)。ROI 側の名乗りは API 応答の `model_version` と注記の固定文言のまま)。057 の `display_name/purpose` は空のまま。「ROI 用(mev-ens15-v1)」「比較用(mix-129-nj6)」を model_versions に記録し、front/admin の見出しをハードコードから置き換える。
 11. **admin の被覆率を ROI 基準に**(**完了 2026-10-28**: `GET /api/v1/coverage` の各日に `n_market_ev_computed`(表示版 `mev-ens15-v1` の保存行があるレース)・`n_market_ev_quote`(その内数で保存行のすべてが 140 の `oddsobs=quote` を持つ)・`n_market_ev_mix_available`(その内数で保存行から 141 の混合が計算できる=レース詳細と同じ `_mix` 判定。出走馬変更・オッズ未取得は日付一覧の領分で含めない)を純追加し、応答に `market_ev_model_version`・`quote_token`。入れ子(quote ≤ computed ≤ races)は model_validator で強制。admin の被覆ページはハイライトを「期待回収率 < レース数」に切替え、旧列は「予測(比較用モデル)」の件数のみ。053 の更新ボタンは live refresh=比較用の予測と推奨だけなので「期待回収率の穴は ops の expected_return ジョブか `market-ev --date` で埋める」を明記。**実 DB(2026-10-03〜25)**: 期待回収率は 9〜35/24〜36 で全日が穴、quote は 10-12(140 の初適格日)以降のみ、400 日の範囲でも 0.4 秒。quote の内数は「最新計算が quote か」の現在形で履歴ではない(B8 と同じ保存表の限界))。coverage API の「予測済み」は旧 active モデルの run の有無。ROI 主なら market_ev 計算済み・mix 可用・quote 来歴ありの列を足す。
-12. **shadow-log(065)の扱い**。経路未結線で構造的に 0 のまま。ROI 列の発走前凍結に付け替えるか、ページを閉じるかを決める(8 と統合できる)。
+12. **shadow-log(065)の扱い**(**完了 2026-10-28=ページを閉じて 8 に統合**: 065 の集計は `live collect-prospective` が一度も走らず保存行 0、しかも精算対象は旧方策(Kelly 買い目)で 154 以降は比較用のみ。ROI 列の発走前凍結は 8 の `/market-ev/prospective` が既に担うので「付け替え」は 8 の複製になる。front は `/shadow-log` を `/market-ev/prospective` へ redirect(旧リンクを 404 にしない)し、ナビの「前向き実績(shadow-log)」・`ShadowLogPage`/`ShadowLogPanel`・hook・fixture を撤去(front 431→428)。`GET /api/v1/shadow-log` と live CLI は read-only の CLI 計器として残し OpenAPI は不変。065 spec の Status に記録)。経路未結線で構造的に 0 のまま。ROI 列の発走前凍結に付け替えるか、ページを閉じるかを決める(8 と統合できる)。
 
 ## C. 利用者の判断が要るもの
 
@@ -43,5 +43,5 @@
 1. A1〜A3(コミット・正本更新・テスト緑)。**完了(2026-10-27)**。
 2. B5(pause 可視化)と B6(購入記録の導線)。**どちらも完了(2026-10-27/28)**。
 3. C13・C14 の判断。前向き比較を始めないと ROI 系の正直な成績は増えない。
-4. B7・B8・B9(一覧・前向き現況・荒れ度)。**B7・B8・B9・B10・B11 完了(2026-10-28)**。
+4. B7・B8・B9(一覧・前向き現況・荒れ度)。**B7・B8・B9・B10・B11・B12 完了(2026-10-28)**。
 5. D17 を 11 月中に着手。

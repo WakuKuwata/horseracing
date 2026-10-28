@@ -225,14 +225,6 @@ export const importanceResponse: ImportanceResponse = {
   ],
 };
 
-export const shadowLogResponse = {
-  n_prospective: 3, n_settled: 2, n_hit: 1, hit_rate: 0.5,
-  counterfactual_snapshot_recovery_rate: 0.9,
-  n_pending: 1, n_void: 0, weak_pretime: 0,
-  by_month: [{ month: "2026-08", n_settled: 2, counterfactual_snapshot_recovery: 0.9 }],
-  first_at: "2026-08-01T09:00:00", last_at: "2026-08-15T09:00:00",
-};
-
 // Feature 137: the default is the typed empty state (not computed) so no existing test sees an
 // extra 期待回収率 column or percentage string; wiring tests install marketEvAvailable explicitly.
 export const marketEvNotComputed: MarketEvUnavailable = {
@@ -820,7 +812,6 @@ export function attentionDayFixture(
 
 /** Default happy-path handlers; tests override individually with server.use(). */
 export const happyHandlers = [
-  http.get(`${BASE}/shadow-log`, () => HttpResponse.json(shadowLogResponse)),
   http.get(`${BASE}/races`, () => HttpResponse.json(racePage)),
   http.get(`${BASE}/races/:id`, () => HttpResponse.json(raceDetail)),
   http.get(`${BASE}/races/:id/predictions`, ({ request }) => {

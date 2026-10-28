@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-10
 
-**Status**: Draft
+**Status**: 実装済み・front ページは閉鎖(B12・2026-10-28)。`live collect-prospective` は一度も運用されず `prospective=1` の保存行は 0。生成経路は旧方策(Kelly 買い目)で、spec 154 以降は比較用のみ。ROI 列(`mev-ens15-v1`・141 混合)の発走前記録は B8 の `GET /api/v1/market-ev/prospective` と front `/market-ev/prospective` が担うため、front の `/shadow-log` はそこへ redirect し、ナビの「前向き実績(shadow-log)」とパネルを撤去した。`GET /api/v1/shadow-log` と `live collect-prospective` は CLI 計器として残す(契約不変)。
 
 **Input**: User description: "Feature 065: prospective shadow-betting log — 発走前オッズを決定時点で凍結して『買ったつもり』を記録し、結果確定後に closing でなく約定可能だったオッズで精算する、回収率を正直に測る計器。過去データからは作れない前向きの装置。"
 

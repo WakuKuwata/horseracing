@@ -4,6 +4,12 @@ READ-ONLY prospective shadow-betting log roll-up. Aggregates PROSPECTIVE win rec
 RUNS (never active-run scoped), valued on the FROZEN market_odds_used via the pure win-only
 predicate — the current race_horses.odds and favorite_realized are never read here (that would be
 closing). Does not import horseracing_betting. Honest instrument: n_prospective=0 ⇒ still filling.
+
+B12 (2026-10-28): the product no longer shows this roll-up. Its collection path (``live
+collect-prospective``) never ran (0 rows) and it values the legacy policy's buy list, which spec 154
+keeps for comparison only; the prospective record of the 期待回収率 columns is
+/market-ev/prospective (B8). The endpoint stays as the read-only readout of the CLI instrument
+(contract unchanged).
 """
 
 from __future__ import annotations
