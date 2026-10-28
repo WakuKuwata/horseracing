@@ -85,7 +85,7 @@ def file_sha256(path) -> str:
 
 
 def model_spec(*, objective, feats, cats, cat_maps, last_year, params, rounds, train_from, drop_groups,
-               training_cutoff_by_year, input_rows_sha256) -> dict:
+               training_cutoff_by_year, input_rows_sha256, extra_booster_year=None) -> dict:
     """model.spec.json の中身(138 で来歴キーを追加。既存キー objective/features/cats/cat_maps/trained_for_year/
     train_through は不変=137 の loader は未知キーを無視する)。feature_hash = sha256(json.dumps(features + cats))。"""
     import hashlib
@@ -96,7 +96,24 @@ def model_spec(*, objective, feats, cats, cat_maps, last_year, params, rounds, t
             "drop_groups": sorted(g for g in drop_groups.split(",") if g),
             "feature_hash": hashlib.sha256(json.dumps(list(feats) + list(cats), ensure_ascii=False).encode("utf-8")).hexdigest(),
             "input_rows_sha256": input_rows_sha256,
-            "training_cutoff_by_year": {str(k): v for k, v in sorted(training_cutoff_by_year.items())}}
+            "training_cutoff_by_year": {str(k): v for k, v in sorted(training_cutoff_by_year.items())},
+            # D17: only present when --extra-booster-year was used (the default spec is byte-identical)
+            **({"extra_booster_year": int(extra_booster_year)} if extra_booster_year is not None else {})}
+
+
+def validate_extra_booster_year(year: int, years_present, save_last_model: str) -> int:
+    """D17 (2026-10-28): the yearly loop skips a year that has no rows, so in December the booster
+    for the coming season (trained strictly on every year with rows) cannot be produced. This mode
+    trains and saves exactly that one booster. It is fail-closed: the year must be max data year + 1
+    (a year that has rows is the loop's job; a later year would be the same training set under a
+    different name) and there must be a save prefix. Nothing else in the run is touched."""
+    if not save_last_model:
+        raise ValueError("--extra-booster-year needs --save-last-model (there is nowhere to save it)")
+    max_year = int(max(years_present))
+    if int(year) != max_year + 1:
+        hint = " (rows for that year exist: the yearly loop already saves its booster)" if int(year) <= max_year else ""
+        raise ValueError(f"--extra-booster-year must be max data year + 1 = {max_year + 1}, got {year}{hint}")
+    return int(year)
 
 
 def main(argv=None) -> int:
@@ -120,6 +137,9 @@ def main(argv=None) -> int:
                     help="LightGBM deterministic=True + force_row_wise=True (use with --threads 1 for bit-reproducible fits; 138)")
     ap.add_argument("--train-window-years", type=int, default=0,
                     help=">0: rolling window — train year y on [y-N, y-1] only (default 0 = expanding from --train-from)")
+    ap.add_argument("--extra-booster-year", type=int, default=0,
+                    help="D17: also train+save model_<Y>.txt for Y = max data year + 1 (the coming season, no rows yet) "
+                         "on all rows < Y; needs --save-last-model; predictions/result/model.txt are unchanged")
     args = ap.parse_args(argv)
     tag = f"armC_{args.objective}" + ("_withp" if args.with_model_p else "") + (f"_seed{args.seed}" if args.seed != 1 else "") \
         + (f"_drop-{args.drop_groups.replace(',', '+')}" if args.drop_groups else "") \
@@ -204,12 +224,32 @@ def main(argv=None) -> int:
                        "train_through": yv - 1}
         if args.save_last_model and yv >= 2019:
             bst.save_model(f"{args.save_last_model}_{yv}.txt")
+    extra_year = None
+    if args.extra_booster_year:
+        # D17: the coming season's booster. Same params / feature matrix / cutoff rule as the loop; the
+        # loop's boosters, predictions, importances and result.json are already final at this point.
+        extra_year = validate_extra_booster_year(args.extra_booster_year, years, args.save_last_model)
+        tr = (years < extra_year) & (years >= args.train_from)
+        if args.train_window_years:
+            tr &= years >= extra_year - args.train_window_years
+        if args.with_model_p:
+            tr &= years >= 2008
+        if tr.sum() < 50000:
+            raise ValueError(f"--extra-booster-year {extra_year}: only {tr.sum():,} training rows (< 50,000)")
+        ds = lgb.Dataset(X[tr], y[tr], categorical_feature=cat_idx, free_raw_data=True)
+        bst = lgb.train(params, ds, num_boost_round=args.rounds)
+        bst.save_model(f"{args.save_last_model}_{extra_year}.txt")
+        cutoffs[extra_year] = {"train_from": int(max(args.train_from, extra_year - args.train_window_years)
+                                                 if args.train_window_years else args.train_from),
+                               "train_through": extra_year - 1}
+        log(f"extra booster for year {extra_year}: train={tr.sum():,} (no test rows) "
+            f"→ {args.save_last_model}_{extra_year}.txt ({time.time() - t0:.0f}s)")
     if args.save_last_model:
         last_bst.save_model(args.save_last_model + ".txt")
         pathlib.Path(args.save_last_model + ".spec.json").write_text(json.dumps(model_spec(
             objective=args.objective, feats=feats, cats=cats, cat_maps=cat_maps, last_year=last_year, params=params,
             rounds=args.rounds, train_from=args.train_from, drop_groups=args.drop_groups, training_cutoff_by_year=cutoffs,
-            input_rows_sha256=file_sha256(rows_path)), ensure_ascii=False))
+            input_rows_sha256=file_sha256(rows_path), extra_booster_year=extra_year), ensure_ascii=False))
         log(f"saved last model (for year {last_year}) → {args.save_last_model}.txt")
     df["pred"] = pred
     ok = ~np.isnan(pred)
