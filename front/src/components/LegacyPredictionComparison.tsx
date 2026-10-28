@@ -26,6 +26,13 @@ export function LegacyPredictionComparison({ raceId, race }: { raceId: string; r
   const pred = query.data;
   const hasPreds = (pred?.horses.length ?? 0) > 0;
   const unavailable = query.error?.status === 404 && query.error.code === "prediction_unavailable";
+  // B10: the roles come from model_versions.display_name / purpose (057 CLI), not from text here.
+  // selected = the model on screen; adopted = the one 「予測する」「買い目生成」 use.
+  const models = pred?.available_models ?? [];
+  const selectedModel = models.find((m) => m.is_selected) ?? models[0];
+  const adoptedModel = models.find((m) => m.adoption_status === "active");
+  const selectedLabel = selectedModel?.display_name ?? selectedModel?.model_version ?? "旧予測モデル";
+  const adoptedLabel = adoptedModel?.display_name ?? adoptedModel?.model_version ?? "旧予測モデル";
 
   return (
     <>
@@ -35,7 +42,7 @@ export function LegacyPredictionComparison({ raceId, race }: { raceId: string; r
           <span className="badge">比較用</span>
         </div>
         <p className="note" data-testid="legacy-comparison-note">
-          旧予測モデルの勝率・判断要因と、旧方策の買い目・配分を比較するための情報です。
+          {selectedLabel}の勝率・判断要因と、旧方策の買い目・配分を比較するための情報です。
           上の期待回収率とは別に計算しています。
         </p>
         <p className="note" data-testid="comparison-generation-scope">
@@ -98,7 +105,8 @@ export function LegacyPredictionComparison({ raceId, race }: { raceId: string; r
           </>
         )}
       </section>
-      <RecommendationPanel raceId={raceId} raceDate={race?.race_date ?? undefined} entries={race?.horses} comparisonMode />
+      <RecommendationPanel raceId={raceId} raceDate={race?.race_date ?? undefined} entries={race?.horses}
+        comparisonMode comparisonModelLabel={adoptedLabel} />
       <details className="panel comparison-model-info" onToggle={(event) => setModelInfoOpen(event.currentTarget.open)}>
         <summary>モデル情報・結合確率</summary>
         {modelInfoOpen && (

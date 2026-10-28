@@ -62,11 +62,15 @@ export function RecommendationPanel({
   raceDate,
   entries,
   comparisonMode = false,
+  comparisonModelLabel = "旧予測モデル",
 }: {
   raceId: string;
   raceDate?: string;
   entries?: HorseEntry[];
   comparisonMode?: boolean;
+  /** B10: the adopted model's display_name from model_versions (the slip follows the ADOPTED
+   *  model, FR-024); the default is only the wording used before labels existed in the DB. */
+  comparisonModelLabel?: string;
 }) {
   const query = useRecommendations(raceId);
   const { budget, setBudget } = useBudget();
@@ -90,7 +94,7 @@ export function RecommendationPanel({
 
   return (
     <div className="panel">
-      <h2>{comparisonMode ? "旧予測モデルの買い目（比較用）" : "買い目推奨(永続データ・推奨は生成しない)"}</h2>
+      <h2>{comparisonMode ? `${comparisonModelLabel}の買い目（比較用）` : "買い目推奨(永続データ・推奨は生成しない)"}</h2>
       {comparisonMode && (
         <p className="note" data-testid="recommendation-comparison-note">
           旧方策が選定した買い目とKelly配分の比較表示です。

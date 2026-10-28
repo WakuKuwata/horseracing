@@ -150,4 +150,31 @@ describe("RaceDetailPage model switching (057)", () => {
     expect(await screen.findByTestId("viewing-adopted")).toBeInTheDocument();
     expect(screen.queryByTestId("model-unavailable")).toBeNull();
   });
+
+  // B10: the role wording comes from model_versions (display_name / purpose), not from the front.
+  it("labels the comparison with the selected model and the slip with the adopted model (B10)", async () => {
+    server.use(...happyHandlers);
+    server.use(
+      predictionsHandler((mv) => HttpResponse.json(mv === "m-acc" ? accResp : activeResp)),
+      http.get("*/api/v1/races/:id/recommendations", () =>
+        HttpResponse.json({ race_id: "200806010111", items: [], win_policy_status: "no_bet",
+          favorite_baseline: null }),
+      ),
+    );
+    renderDetail();
+    await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
+    await screen.findByTestId("model-select");
+    expect(screen.getByTestId("legacy-comparison-note")).toHaveTextContent(
+      "意思決定支援の勝率・判断要因と",
+    );
+    expect(screen.getByTestId("model-purpose")).toHaveTextContent("独立予測");
+    expect(screen.getByRole("heading", { name: "意思決定支援の買い目（比較用）" })).toBeInTheDocument();
+    expect(screen.queryByText(/旧予測モデル/)).toBeNull();
+
+    await userEvent.selectOptions(screen.getByTestId("model-select"), "m-acc");
+    await screen.findByTestId("viewing-non-adopted");
+    // the note follows the model on screen; the slip keeps the ADOPTED model's label (FR-024)
+    expect(screen.getByTestId("legacy-comparison-note")).toHaveTextContent("精度最優先の勝率・判断要因と");
+    expect(screen.getByRole("heading", { name: "意思決定支援の買い目（比較用）" })).toBeInTheDocument();
+  });
 });
