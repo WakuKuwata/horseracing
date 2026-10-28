@@ -339,6 +339,18 @@ RaceChaos = Annotated[
 ]
 
 
+class RaceChaosResponse(BaseModel):
+    """B9 (2026-10-28): the Feature 084 readout on its own endpoint (``/races/{id}/chaos``) so the
+    ROI view can show it without reading the legacy ``/predictions`` response. ``race_chaos`` is the
+    SAME object the predictions response carries (built by the same function from the same frozen
+    snapshot) — market-only, independent of any model run."""
+
+    model_config = {"extra": "forbid"}
+
+    race_id: str
+    race_chaos: RaceChaos
+
+
 class JointEntry(BaseModel):
     selection: list[int]
     prob: float

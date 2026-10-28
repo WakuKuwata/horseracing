@@ -50,6 +50,9 @@ export type MarketEvProspectiveResponse = S["MarketEvProspectiveResponse"];
 export type ProspectiveColumn = S["ProspectiveColumn"];
 export type ProspectiveFunnel = S["ProspectiveFunnel"];
 export type ProspectiveDay = S["ProspectiveDay"];
+// B9 (2026-10-28): the 084 chaos readout on its own path (market-only, no model run needed)
+export type RaceChaosResponse = S["RaceChaosResponse"];
+export type RaceChaos = RaceChaosResponse["race_chaos"];
 
 // Feature 138: 注目条件 (attention conditions S1–S5). Judgment-time chips + frozen backtest +
 // prospective tally. Stages are ASCII on the wire; Japanese lives only in lib/attention.ts.

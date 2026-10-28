@@ -224,16 +224,17 @@ describe("RaceChaosPanel", () => {
     );
   });
 
-  it("renders in race comparison even when the selected run has no horse predictions", async () => {
+  it("renders on the ROI view from /races/{id}/chaos without reading /predictions (B9)", async () => {
+    let predictions = 0;
     server.use(...happyHandlers);
     server.use(
-      http.get("*/api/v1/races/:id/predictions", () =>
-        HttpResponse.json({
-          ...predictionResponse,
-          horses: [],
-          race_chaos: AVAILABLE,
-        }),
+      http.get("*/api/v1/races/:id/chaos", ({ params }) =>
+        HttpResponse.json({ race_id: String(params.id), race_chaos: AVAILABLE }),
       ),
+      http.get("*/api/v1/races/:id/predictions", () => {
+        predictions += 1;
+        return HttpResponse.json({ ...predictionResponse, horses: [], race_chaos: AVAILABLE });
+      }),
       http.get("*/api/v1/purchase-records", () => HttpResponse.json({ records: [] })),
     );
     renderWithProviders(
@@ -244,11 +245,15 @@ describe("RaceChaosPanel", () => {
     );
 
     await screen.findByRole("table", { name: "期待回収率の出走表" });
-    expect(screen.queryByTestId("race-chaos")).toBeNull();
+    const roi = screen.getByRole("region", { name: "期待回収率・出走表" });
+    expect(await within(roi).findByTestId("race-chaos")).toHaveTextContent("13%");
+    expect(predictions).toBe(0);
+    // the comparison tab no longer repeats the readout (one place on the page)
     await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
     const comparison = screen.getByRole("tabpanel", { name: "予測モデルとの比較" });
-    expect(await within(comparison).findByTestId("race-chaos")).toHaveTextContent("13%");
-    expect(within(comparison).getByTestId("no-predictions-cta")).toBeInTheDocument();
+    expect(await within(comparison).findByTestId("no-predictions-cta")).toBeInTheDocument();
+    expect(within(comparison).queryByTestId("race-chaos")).toBeNull();
+    expect(screen.getAllByTestId("race-chaos")).toHaveLength(1);
   });
 
   it("keeps percentages integer-only and has no P&L colours, sorting, or CTA", () => {

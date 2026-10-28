@@ -21,6 +21,7 @@ import type {
   MarketEvDayResponse,
   MarketEvProspectiveResponse,
   ProspectiveColumn,
+  RaceChaosResponse,
   MarketEvUnavailable,
   OddsResponse,
   PredictionResponse,
@@ -299,6 +300,14 @@ export function marketEvDayFixture(
     n_computed: items.length,
     n_available: items.filter((i) => i.status === "available").length,
     items,
+  };
+}
+
+// B9: `/races/{id}/chaos` default = no frozen snapshot (typed unavailable, like the predictions one).
+export function raceChaosUnavailableFixture(raceId = "200806010111"): RaceChaosResponse {
+  return {
+    race_id: raceId,
+    race_chaos: { status: "unavailable", unavailable_reason: "no_snapshot", band_axis: "p_s_ge_20" },
   };
 }
 
@@ -826,6 +835,10 @@ export const happyHandlers = [
     HttpResponse.json(
       marketEvDayFixture(new URL(request.url).searchParams.get("date") ?? "", [], 1),
     ),
+  ),
+  // B9: no frozen snapshot for the race.
+  http.get(`${BASE}/races/:id/chaos`, ({ params }) =>
+    HttpResponse.json(raceChaosUnavailableFixture(String(params.id))),
   ),
   // B8: an empty prospective record (nothing eligible yet).
   http.get(`${BASE}/market-ev/prospective`, () =>

@@ -22,6 +22,7 @@ from . import API_PREFIX, API_VERSION
 from .routers import (
     attention,
     calibration,
+    chaos,
     coverage,
     diagnostics,
     horses,
@@ -103,3 +104,4 @@ app.include_router(jockeys.router, prefix=API_PREFIX)
 app.include_router(purchase.router, prefix=API_PREFIX)
 app.include_router(market_ev.router, prefix=API_PREFIX)
 app.include_router(attention.router, prefix=API_PREFIX)
+app.include_router(chaos.router, prefix=API_PREFIX)

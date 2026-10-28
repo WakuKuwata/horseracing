@@ -375,6 +375,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/races/{race_id}/chaos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Race Chaos */
+        get: operations["race_chaos_api_v1_races__race_id__chaos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/races/{race_id}/market-ev": {
         parameters: {
             query?: never;
@@ -2386,6 +2403,19 @@ export interface components {
             within_field_size_percentile: number | null;
         };
         /**
+         * RaceChaosResponse
+         * @description B9 (2026-10-28): the Feature 084 readout on its own endpoint (``/races/{id}/chaos``) so the
+         *     ROI view can show it without reading the legacy ``/predictions`` response. ``race_chaos`` is the
+         *     SAME object the predictions response carries (built by the same function from the same frozen
+         *     snapshot) — market-only, independent of any model run.
+         */
+        RaceChaosResponse: {
+            /** Race Chaos */
+            race_chaos: components["schemas"]["RaceChaosAvailable"] | components["schemas"]["RaceChaosUnavailable"];
+            /** Race Id */
+            race_id: string;
+        };
+        /**
          * RaceChaosUnavailable
          * @description Typed fail-closed state; it never makes the predictions request fail.
          */
@@ -3826,6 +3856,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttentionAvailable"] | components["schemas"]["AttentionUnavailable"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    race_chaos_api_v1_races__race_id__chaos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                race_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaceChaosResponse"];
                 };
             };
             /** @description Validation Error */

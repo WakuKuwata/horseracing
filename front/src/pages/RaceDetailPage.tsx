@@ -3,13 +3,14 @@ import type { KeyboardEvent } from "react";
 
 import { Link, useParams } from "react-router-dom";
 
-import { useAttention, useMarketEv, useRace } from "../api/queries";
+import { useAttention, useMarketEv, useRace, useRaceChaos } from "../api/queries";
 import { AttentionNote } from "../components/AttentionNote";
 import { AttentionRulesPanel } from "../components/AttentionRulesPanel";
 import { ExpectedReturnNote } from "../components/ExpectedReturnNote";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
 import { LegacyPredictionComparison } from "../components/LegacyPredictionComparison";
 import { OddsPanel } from "../components/OddsPanel";
+import { RaceChaosPanel } from "../components/RaceChaosPanel";
 import { RefreshButton } from "../components/RefreshButton";
 import { RoiPurchaseRecord } from "../components/RoiPurchaseRecord";
 import { QueryStateView } from "../components/StateView";
@@ -31,6 +32,9 @@ function RaceDetailContent({ raceId }: { raceId: string }) {
   const raceQuery = useRace(raceId);
   const marketEvQuery = useMarketEv(raceId);
   const attentionQuery = useAttention(raceId);
+  // B9: the 084 chaos readout (market-only) comes from its own endpoint, so the ROI view shows it
+  // without touching the legacy /predictions response.
+  const chaosQuery = useRaceChaos(raceId);
   const [tab, setTab] = useState<Tab>("odds");
   const [comparisonOpened, setComparisonOpened] = useState(false);
 
@@ -125,6 +129,13 @@ function RaceDetailContent({ raceId }: { raceId: string }) {
                 {attentionQuery.data?.status === "available" && "注目条件の「▸」で注目条件の内訳を表示。"}
               </p>
               <AttentionRulesPanel />
+              {/* B9: 上位3着の荒れ度(084・市場 q のみ)— 予測モデルとは無関係なので主画面に置く。
+                  注目条件の一覧は表のヒントの直後(138 FR)なので、その後ろに置く。 */}
+              <RaceChaosPanel
+                chaos={chaosQuery.data?.race_chaos}
+                isLoading={chaosQuery.isLoading}
+                error={chaosQuery.error ?? null}
+              />
               <p className="table-hint" data-testid="roi-odds-context">
                 単勝欄は現在保存されているオッズです。期待回収率は計算時のオッズが基準です。
                 計算済みの場合、使用したオッズの取得時刻と計算時刻を上の注記に表示しています。

@@ -11,7 +11,6 @@ import { ModelMarketStanding } from "./ModelMarketStanding";
 import { ModelSelector } from "./ModelSelector";
 import { OddsFreshness } from "./OddsFreshness";
 import { PredictButton } from "./PredictButton";
-import { RaceChaosPanel } from "./RaceChaosPanel";
 import { RaceDispersionPanel } from "./RaceDispersionPanel";
 import { RaceDivergenceSummary } from "./RaceDivergenceSummary";
 import { RecommendButton } from "./RecommendButton";
@@ -67,7 +66,7 @@ export function LegacyPredictionComparison({ raceId, race }: { raceId: string; r
           </p>
         )}
         {pred?.run && <RunAuditView run={pred.run} />}
-        <RaceChaosPanel chaos={pred?.race_chaos} isLoading={query.isLoading} error={query.error ?? null} />
+        {/* B9: the 084 chaos readout moved to the ROI view (/races/{id}/chaos); not repeated here. */}
         {hasPreds && <RaceDispersionPanel dispersion={pred?.race_dispersion} />}
         {hasPreds && <RaceDivergenceSummary divergence={pred?.race_divergence} />}
         {hasPreds && pred?.canonical_consistent === false && (

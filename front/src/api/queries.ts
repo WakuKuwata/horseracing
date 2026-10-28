@@ -18,6 +18,7 @@ import type {
   PredictionResponse,
   PurchaseComparisonResponse,
   PurchaseRecordsResponse,
+  RaceChaosResponse,
   RaceDetail,
   RacePage,
   RecommendationResponse,
@@ -190,6 +191,22 @@ export function useMarketEvProspective() {
   return useQuery<MarketEvProspectiveResponse, ErrorInfo>({
     queryKey: ["market-ev-prospective"],
     queryFn: async () => unwrap(await api.GET("/api/v1/market-ev/prospective", {})),
+  });
+}
+
+// --- B9: Feature 084 chaos readout on its own endpoint ------------------------
+// Market-only (frozen pre-race snapshot), independent of any prediction run, so the ROI view can
+// show it without the legacy /predictions response. Typed 200 on every state → no retry.
+export function useRaceChaos(raceId: string) {
+  return useQuery<RaceChaosResponse, ErrorInfo>({
+    queryKey: ["race-chaos", raceId],
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/races/{race_id}/chaos", {
+          params: { path: { race_id: raceId } },
+        }),
+      ),
   });
 }
 

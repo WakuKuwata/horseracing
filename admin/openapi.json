@@ -5536,6 +5536,40 @@
         "title": "RaceChaosAvailable",
         "type": "object"
       },
+      "RaceChaosResponse": {
+        "additionalProperties": false,
+        "description": "B9 (2026-10-28): the Feature 084 readout on its own endpoint (``/races/{id}/chaos``) so the\nROI view can show it without reading the legacy ``/predictions`` response. ``race_chaos`` is the\nSAME object the predictions response carries (built by the same function from the same frozen\nsnapshot) — market-only, independent of any model run.",
+        "properties": {
+          "race_chaos": {
+            "discriminator": {
+              "mapping": {
+                "available": "#/components/schemas/RaceChaosAvailable",
+                "unavailable": "#/components/schemas/RaceChaosUnavailable"
+              },
+              "propertyName": "status"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RaceChaosAvailable"
+              },
+              {
+                "$ref": "#/components/schemas/RaceChaosUnavailable"
+              }
+            ],
+            "title": "Race Chaos"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "race_id",
+          "race_chaos"
+        ],
+        "title": "RaceChaosResponse",
+        "type": "object"
+      },
       "RaceChaosUnavailable": {
         "additionalProperties": false,
         "description": "Typed fail-closed state; it never makes the predictions request fail.",
@@ -8782,6 +8816,48 @@
         "summary": "Race Attention",
         "tags": [
           "attention"
+        ]
+      }
+    },
+    "/api/v1/races/{race_id}/chaos": {
+      "get": {
+        "operationId": "race_chaos_api_v1_races__race_id__chaos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "race_id",
+            "required": true,
+            "schema": {
+              "title": "Race Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RaceChaosResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Race Chaos",
+        "tags": [
+          "chaos"
         ]
       }
     },

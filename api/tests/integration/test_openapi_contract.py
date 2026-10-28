@@ -19,6 +19,8 @@ _EXPECTED_PATHS = {
     "/api/v1/market-ev/day",
     # B8 (2026-10-28): the columns' prospective record
     "/api/v1/market-ev/prospective",
+    # B9 (2026-10-28): the 084 chaos readout on its own path (market-only)
+    "/api/v1/races/{race_id}/chaos",
     # Feature 138: 注目条件 (attention conditions), read-only
     "/api/v1/races/{race_id}/attention",
     "/api/v1/attention-rules",

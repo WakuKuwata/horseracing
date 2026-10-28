@@ -76,6 +76,8 @@ describe("RaceDetailPage", () => {
     expect(within(record).getByRole("button", { name: "見送りを記録" })).toBeInTheDocument();
     expect(within(record).getByRole("button", { name: "買い目を追加" })).toBeInTheDocument();
     expect(record.textContent).toContain("ここに買い目の提案はありません");
+    // B9: the 084 chaos readout sits on the ROI view (typed unavailable here = no snapshot)
+    expect(screen.getByTestId("race-chaos")).toHaveTextContent("発走前の市場スナップショットがないため");
   });
 
   it("resets the comparison view and does not fetch legacy data for the next race", async () => {
