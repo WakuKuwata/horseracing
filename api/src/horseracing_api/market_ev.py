@@ -34,12 +34,16 @@ stored). It is a parallel value: ``expected_return``, the 1.2 highlight and S1�
 frozen coefficients, ``invalid_inputs``, ``model_mismatch`` when the rows are not the model the
 coefficients were fitted on, ``disabled``) — the mixed column is then null, never back-filled with
 the unmixed value. The mixed probability itself is not returned either.
+
+B7 (2026-10-28): ``build_market_ev_day`` folds the SAME per-race shaping over one race day for the
+date listing (``/market-ev/day``): per race its state, provenance and the counts of horses above
+the two thresholds — never a per-horse value, never ordered by a value (board order only).
 """
 
 from __future__ import annotations
 
 import datetime
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from decimal import Decimal
 from typing import Protocol
 
@@ -49,6 +53,8 @@ from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
 from .schemas import (
     HorseMarketEv,
     MarketEvAvailable,
+    MarketEvDayItem,
+    MarketEvDayResponse,
     MarketEvUnavailable,
     MarketMixAvailable,
     MarketMixUnavailable,
@@ -57,8 +63,10 @@ from .schemas import (
 __all__ = [
     "DISPLAYED_MARKET_EV_MODEL_VERSION",
     "MARKET_EV_THRESHOLD",
+    "DayRace",
     "StoredMarketEv",
     "build_market_ev",
+    "build_market_ev_day",
     "exceeds_threshold",
 ]
 
@@ -216,4 +224,83 @@ def build_market_ev(
         is_pseudo=True,
         mix=mix_info,
         horses=horses,
+    )
+
+
+class DayRace(Protocol):
+    """The race columns the day listing reads (a ``races`` row)."""
+
+    race_id: str
+    race_date: datetime.date | None
+    venue_code: str | None
+    race_number: int | None
+    post_time: datetime.datetime | None
+
+
+def build_market_ev_day(
+    *,
+    date: datetime.date,
+    races: Sequence[DayRace],
+    rows_by_race: Mapping[str, Sequence[StoredMarketEv]],
+    started_odds_by_race: Mapping[str, Mapping[str, Decimal | float | None]],
+    race_ids_with_results: Collection[str],
+) -> MarketEvDayResponse:
+    """The day listing: one item per race of ``races`` (already in board order) that has stored
+    rows of the displayed version, each folded from ``build_market_ev`` so that the listing can
+    never disagree with the race page (an ``unavailable`` race page is an ``unavailable`` item
+    with null counts). Races without rows are left out and only counted in ``n_races``.
+    """
+    items: list[MarketEvDayItem] = []
+    for race in races:
+        rows = rows_by_race.get(race.race_id) or ()
+        if not rows:
+            continue
+        resp = build_market_ev(
+            race.race_id,
+            rows,
+            started_odds_by_race.get(race.race_id, {}),
+            race_date=race.race_date,
+        )
+        common = dict(
+            race_id=race.race_id,
+            venue_code=race.venue_code,
+            race_number=race.race_number,
+            post_time=race.post_time,
+            has_results=race.race_id in race_ids_with_results,
+        )
+        if isinstance(resp, MarketEvUnavailable):
+            if resp.reason == "not_computed":  # impossible with rows; keep the fold total
+                continue
+            items.append(MarketEvDayItem(
+                **common, status="unavailable", reason=resp.reason,
+                computed_at=None, odds_observed_at=None, odds_changed_after_compute=None,
+                result_pending_at_compute=None, n_horses=None, n_exceeds_threshold=None,
+                mix_status=None, n_exceeds_mix_threshold=None,
+            ))
+            continue
+        mix_available = resp.mix.status == "available"
+        items.append(MarketEvDayItem(
+            **common,
+            status="available",
+            reason=None,
+            computed_at=resp.computed_at,
+            odds_observed_at=resp.odds_observed_at,
+            odds_changed_after_compute=resp.odds_changed_after_compute,
+            result_pending_at_compute=resp.result_pending_at_compute,
+            n_horses=len(resp.horses),
+            n_exceeds_threshold=sum(1 for h in resp.horses if h.exceeds_threshold),
+            mix_status=resp.mix.status,
+            n_exceeds_mix_threshold=(
+                sum(1 for h in resp.horses if h.exceeds_mix_threshold) if mix_available else None
+            ),
+        ))
+    return MarketEvDayResponse(
+        date=date,
+        model_version=DISPLAYED_MARKET_EV_MODEL_VERSION,
+        threshold=MARKET_EV_THRESHOLD,
+        mix_threshold=market_mix.MIX_EV_THRESHOLD,
+        n_races=len(races),
+        n_computed=len(items),
+        n_available=sum(1 for i in items if i.status == "available"),
+        items=items,
     )

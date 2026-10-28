@@ -7,6 +7,8 @@ import {
   attentionDayFixture,
   attentionDayItemFixture,
   http,
+  marketEvDayFixture,
+  marketEvDayItemFixture,
   racePage,
   stageDetail,
 } from "../tests/fixtures";
@@ -129,5 +131,60 @@ describe("RaceListPage", () => {
     renderWithProviders(<RaceListPage />);
     expect(await screen.findByText("レースデータがありません")).toBeInTheDocument();
     expect(screen.queryByTestId("attention-day-list")).toBeNull();
+  });
+
+  // --- B7: the day's 期待回収率 at a glance -------------------------------------------------------
+
+  it("shows the day's 期待回収率 summary above the board and the hint on each card (B7)", async () => {
+    const dates: string[] = [];
+    const twoRaces = {
+      ...racePage,
+      items: [racePage.items[0], { ...racePage.items[0], race_id: "200806010112", race_number: 12 }],
+      total: 2,
+    };
+    server.use(
+      http.get(`${BASE}/races`, () => HttpResponse.json(twoRaces)),
+      http.get(`${BASE}/market-ev/day`, ({ request }) => {
+        const date = new URL(request.url).searchParams.get("date") ?? "";
+        dates.push(date);
+        return HttpResponse.json(
+          marketEvDayFixture(date, [marketEvDayItemFixture({ n_exceeds_threshold: 0 })], 2),
+        );
+      }),
+    );
+    renderWithProviders(<RaceListPage />);
+    const summary = await screen.findByTestId("market-ev-day-summary");
+    expect(dates).toContain("2008-06-01");
+    expect(summary).toHaveTextContent("計算済み 1 / 2 レース");
+    expect(summary).toHaveTextContent("120%超の馬がいるレース 0");
+    expect(summary).toHaveTextContent("市場混合100%超の馬がいるレース 1");
+    expect(summary).toHaveTextContent("期待回収率では並べ替えません");
+    // the summary sits above the board; the board order is untouched (11R before 12R)
+    const board = screen.getByText("東京", { selector: ".venue-group__title *, .venue-group__title" });
+    expect(summary.compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const hints = screen.getAllByTestId("race-card-ev");
+    expect(hints.map((h) => h.textContent)).toEqual([
+      "期待回収率 10:15 計算 · 120%超 0頭 · 混合100%超 3頭",
+      "期待回収率 未計算",
+    ]);
+    const links = screen.getAllByRole("link", { name: /R/ });
+    expect(links.map((l) => l.getAttribute("href"))).toEqual([
+      "/races/200806010111",
+      "/races/200806010112",
+    ]);
+  });
+
+  it("a failed 期待回収率 listing is a quiet note: the board stays and the cards show no hint (B7)", async () => {
+    server.use(
+      http.get(`${BASE}/races`, () => HttpResponse.json(racePage)),
+      http.get(`${BASE}/market-ev/day`, () =>
+        HttpResponse.json({ status: 500, code: "internal", detail: "boom" }, { status: 500 }),
+      ),
+    );
+    renderWithProviders(<RaceListPage />);
+    expect(await screen.findByTestId("market-ev-day-error")).toHaveTextContent("HTTP 500 internal");
+    expect(screen.getByText("11R")).toBeInTheDocument();
+    expect(screen.queryByTestId("race-card-ev")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });

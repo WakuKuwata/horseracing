@@ -17,6 +17,8 @@ import type {
   EvSnapshot,
   ImportanceResponse,
   MarketEvAvailable,
+  MarketEvDayItem,
+  MarketEvDayResponse,
   MarketEvUnavailable,
   OddsResponse,
   PredictionResponse,
@@ -258,6 +260,45 @@ export const marketEvAvailable: MarketEvAvailable = {
       exceeds_mix_threshold: null },
   ],
 };
+
+// B7: one computed race of `/market-ev/day` (default: the race of `raceDetail`, mix available).
+export function marketEvDayItemFixture(overrides: Partial<MarketEvDayItem> = {}): MarketEvDayItem {
+  return {
+    race_id: "200806010111",
+    venue_code: "05",
+    race_number: 11,
+    post_time: "2008-06-01T06:40:00Z",
+    has_results: true,
+    status: "available",
+    reason: null,
+    computed_at: "2008-06-01T01:15:00Z",
+    odds_observed_at: "2008-06-01T01:10:00Z",
+    odds_changed_after_compute: false,
+    result_pending_at_compute: true,
+    n_horses: 16,
+    n_exceeds_threshold: 1,
+    mix_status: "available",
+    n_exceeds_mix_threshold: 3,
+    ...overrides,
+  };
+}
+
+export function marketEvDayFixture(
+  date = "2008-06-01",
+  items: MarketEvDayItem[] = [],
+  nRaces = items.length,
+): MarketEvDayResponse {
+  return {
+    date,
+    model_version: "mev-ens15-v1",
+    threshold: 1.2,
+    mix_threshold: 1.0,
+    n_races: nRaces,
+    n_computed: items.length,
+    n_available: items.filter((i) => i.status === "available").length,
+    items,
+  };
+}
 
 // --- Feature 138: 注目条件 (attention conditions S1–S5) ----------------------------------------
 // Frozen values below are the production refreeze (2026-10-02, evidence/rules_S1_S5_freeze.json) as
@@ -696,6 +737,12 @@ export const happyHandlers = [
   http.get(`${BASE}/races/:id/odds`, () => HttpResponse.json(oddsResponse)),
   http.get(`${BASE}/races/:id/recommendations`, () => HttpResponse.json(recommendationResponse)),
   http.get(`${BASE}/races/:id/market-ev`, () => HttpResponse.json(marketEvNotComputed)),
+  // B7: an empty day (no computed race) that echoes the requested date and the board's size.
+  http.get(`${BASE}/market-ev/day`, ({ request }) =>
+    HttpResponse.json(
+      marketEvDayFixture(new URL(request.url).searchParams.get("date") ?? "", [], 1),
+    ),
+  ),
   // Feature 138: typed empty race state, 5 rules at zero picks, empty day.
   http.get(`${BASE}/races/:id/attention`, ({ params }) =>
     HttpResponse.json({ ...attentionNotComputed, race_id: String(params.id) }),

@@ -1073,6 +1073,92 @@ MarketEvResponse = Annotated[
 ]
 
 
+# --- B7 (2026-10-28): the race day's 期待回収率 at a glance (/market-ev/day) ------------------
+# One row per race of the day that HAS stored rows of the displayed version, folded from the SAME
+# per-race shaping as /races/{id}/market-ev (counts and provenance only — no per-horse value, no
+# win_prob). Board order (venue, race number); never ordered by any value (021 規律).
+
+
+class MarketEvDayItem(BaseModel):
+    """One race of the day with stored market-ev rows: its state and the counts a listing needs.
+
+    ``status`` follows the per-race endpoint exactly: ``available`` carries the counts, an
+    ``unavailable`` race (the started field changed after the compute / a started horse has no
+    valid win odds) carries ``reason`` and null counts — a stored value that the per-race page
+    would not show is not counted here either. ``not_computed`` never appears: such races are
+    simply absent from ``items`` (compare ``n_races`` with ``n_computed``)."""
+
+    model_config = {"extra": "forbid"}
+
+    race_id: str
+    venue_code: str | None
+    race_number: int | None
+    post_time: datetime.datetime | None
+    has_results: bool
+    status: Literal["available", "unavailable"]
+    reason: Literal["field_changed", "odds_unavailable"] | None
+    #: newest compute / odds observation across the stored rows (available only)
+    computed_at: datetime.datetime | None
+    odds_observed_at: datetime.datetime | None
+    odds_changed_after_compute: bool | None
+    result_pending_at_compute: bool | None
+    #: started horses with a stored value
+    n_horses: int | None
+    #: horses strictly above ``threshold`` (1.2)
+    n_exceeds_threshold: int | None
+    #: Feature 141 parallel column: whether the mixed value exists for this race
+    mix_status: Literal["available", "unavailable"] | None
+    #: horses strictly above ``mix_threshold`` (1.0); null when ``mix_status`` is not available
+    n_exceeds_mix_threshold: int | None
+
+    @model_validator(mode="after")
+    def _counts_follow_status(self) -> MarketEvDayItem:
+        counted = (
+            self.computed_at, self.odds_observed_at, self.odds_changed_after_compute,
+            self.result_pending_at_compute, self.n_horses, self.n_exceeds_threshold,
+            self.mix_status,
+        )
+        if self.status == "available":
+            if self.reason is not None or any(v is None for v in counted):
+                raise ValueError("an available day item carries every count and no reason")
+            if (self.mix_status == "available") != (self.n_exceeds_mix_threshold is not None):
+                raise ValueError("the mixed count exists exactly when the mix is available")
+        else:
+            if self.reason is None or any(v is not None for v in counted):
+                raise ValueError("an unavailable day item carries a reason and no counts")
+            if self.n_exceeds_mix_threshold is not None:
+                raise ValueError("an unavailable day item carries no mixed count")
+        return self
+
+
+class MarketEvDayResponse(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    date: datetime.date
+    #: the displayed market-aware version (138 D8) — the only version counted
+    model_version: str
+    threshold: float
+    mix_threshold: float
+    #: races held on ``date`` (the board's population)
+    n_races: int
+    #: races with stored rows of the displayed version (= ``len(items)``)
+    n_computed: int
+    #: items whose status is available
+    n_available: int
+    #: venue_code ascending (unknown last), race_number ascending (unknown last), race_id
+    items: list[MarketEvDayItem]
+
+    @model_validator(mode="after")
+    def _totals_match_the_items(self) -> MarketEvDayResponse:
+        if self.n_computed != len(self.items):
+            raise ValueError("n_computed must equal len(items)")
+        if self.n_available != sum(1 for i in self.items if i.status == "available"):
+            raise ValueError("n_available must count the available items")
+        if self.n_computed > self.n_races:
+            raise ValueError("n_computed cannot exceed n_races")
+        return self
+
+
 # --- Feature 138: 注目条件 (attention conditions) S1-S5 --------------------------------------
 # Rule ids and stage names are the eval registry's own Literal types (single definition). Stage
 # values are ASCII; the Japanese labels live only in the front's label table (FR-014). No win

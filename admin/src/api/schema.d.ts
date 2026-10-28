@@ -205,6 +205,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/market-ev/day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Market Ev Day */
+        get: operations["market_ev_day_api_v1_market_ev_day_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/models": {
         parameters: {
             query?: never;
@@ -1736,6 +1753,73 @@ export interface components {
             threshold: number;
         };
         /**
+         * MarketEvDayItem
+         * @description One race of the day with stored market-ev rows: its state and the counts a listing needs.
+         *
+         *     ``status`` follows the per-race endpoint exactly: ``available`` carries the counts, an
+         *     ``unavailable`` race (the started field changed after the compute / a started horse has no
+         *     valid win odds) carries ``reason`` and null counts — a stored value that the per-race page
+         *     would not show is not counted here either. ``not_computed`` never appears: such races are
+         *     simply absent from ``items`` (compare ``n_races`` with ``n_computed``).
+         */
+        MarketEvDayItem: {
+            /** Computed At */
+            computed_at: string | null;
+            /** Has Results */
+            has_results: boolean;
+            /** Mix Status */
+            mix_status: ("available" | "unavailable") | null;
+            /** N Exceeds Mix Threshold */
+            n_exceeds_mix_threshold: number | null;
+            /** N Exceeds Threshold */
+            n_exceeds_threshold: number | null;
+            /** N Horses */
+            n_horses: number | null;
+            /** Odds Changed After Compute */
+            odds_changed_after_compute: boolean | null;
+            /** Odds Observed At */
+            odds_observed_at: string | null;
+            /** Post Time */
+            post_time: string | null;
+            /** Race Id */
+            race_id: string;
+            /** Race Number */
+            race_number: number | null;
+            /** Reason */
+            reason: ("field_changed" | "odds_unavailable") | null;
+            /** Result Pending At Compute */
+            result_pending_at_compute: boolean | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "available" | "unavailable";
+            /** Venue Code */
+            venue_code: string | null;
+        };
+        /** MarketEvDayResponse */
+        MarketEvDayResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Items */
+            items: components["schemas"]["MarketEvDayItem"][];
+            /** Mix Threshold */
+            mix_threshold: number;
+            /** Model Version */
+            model_version: string;
+            /** N Available */
+            n_available: number;
+            /** N Computed */
+            n_computed: number;
+            /** N Races */
+            n_races: number;
+            /** Threshold */
+            threshold: number;
+        };
+        /**
          * MarketEvUnavailable
          * @description Typed empty state: not computed yet, the started field changed after the compute, or a
          *     started horse currently has no valid win odds (so the stored values must not be shown).
@@ -3258,6 +3342,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    market_ev_day_api_v1_market_ev_day_get: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketEvDayResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

@@ -11,6 +11,7 @@ import type {
   ImportanceResponse,
   JockeyHistoryPage,
   JockeyProfile,
+  MarketEvDayResponse,
   MarketEvResponse,
   OddsResponse,
   PredictionResponse,
@@ -160,6 +161,23 @@ export function useMarketEv(raceId: string) {
       unwrap(
         await api.GET("/api/v1/races/{race_id}/market-ev", {
           params: { path: { race_id: raceId } },
+        }),
+      ),
+  });
+}
+
+/** B7: the day's races that have a stored 期待回収率 (state + counts above the thresholds), in
+ *  board order. `date` is required by the API (an empty one is a 422), so the query waits for it.
+ *  Every non-error answer is a typed 200, so retrying cannot change the outcome. */
+export function useMarketEvDay(date: string) {
+  return useQuery<MarketEvDayResponse, ErrorInfo>({
+    queryKey: ["market-ev-day", date],
+    enabled: !!date,
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/api/v1/market-ev/day", {
+          params: { query: { date } },
         }),
       ),
   });

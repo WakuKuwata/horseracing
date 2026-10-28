@@ -273,8 +273,9 @@ th.colgroup {
 }
 .race-card {
   display: flex;
+  flex-wrap: wrap; /* B7: the 期待回収率 hint takes a full-width last row */
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.3rem 0.6rem;
   padding: 0.55rem 0.7rem;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -308,6 +309,16 @@ th.colgroup {
 .race-card__meta {
   font-size: 0.78rem;
   color: var(--muted);
+}
+.race-card__ev {
+  flex-basis: 100%;
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: var(--muted);
+  white-space: normal;
+}
+.day-ev-summary {
+  margin: 0 0 0.6rem;
 }
 .race-card__post {
   margin-left: auto;

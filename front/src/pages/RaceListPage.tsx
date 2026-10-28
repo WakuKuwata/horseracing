@@ -1,8 +1,9 @@
 import { useSearchParams } from "react-router-dom";
 
-import { useAttentionDay, useRaces } from "../api/queries";
+import { useAttentionDay, useMarketEvDay, useRaces } from "../api/queries";
 import { AttentionDayList } from "../components/AttentionDayList";
 import { DayRefreshButton } from "../components/DayRefreshButton";
+import { MarketEvDaySummary } from "../components/MarketEvDaySummary";
 import { RaceDayBoard } from "../components/RaceDayBoard";
 import { EmptyView, QueryStateView } from "../components/StateView";
 
@@ -27,6 +28,8 @@ export function RaceListPage() {
   );
   // Feature 138: the day's 注目条件 horses (judged at each race's first computation), post order.
   const attentionDay = useAttentionDay(effectiveDate);
+  // B7: the day's stored 期待回収率 (state + counts per race) for the cards and the summary line.
+  const marketEvDay = useMarketEvDay(effectiveDate);
 
   function selectDate(value: string) {
     const sp = new URLSearchParams(searchParams);
@@ -69,7 +72,16 @@ export function RaceListPage() {
           loadingLabel="レース一覧を読み込み中…"
           emptyMessage="この日のレースがありません"
         >
-          {(d) => <RaceDayBoard races={d.items} />}
+          {(d) => (
+            <>
+              <MarketEvDaySummary
+                day={marketEvDay.data}
+                isLoading={marketEvDay.isLoading}
+                error={marketEvDay.error ?? null}
+              />
+              <RaceDayBoard races={d.items} marketEvDay={marketEvDay.data} />
+            </>
+          )}
         </QueryStateView>
       )}
 

@@ -1,4 +1,4 @@
-"""market-ev router (Feature 137): /races/{race_id}/market-ev.
+"""market-ev router (Feature 137): /races/{race_id}/market-ev (+ B7: /market-ev/day).
 
 Read-only view of the SEPARATE market-aware model's stored expected return (期待回収率). There is
 no ``model_version`` query parameter: this is independent of the win-probability model selection
@@ -7,20 +7,39 @@ on /predictions. 422 invalid_race_id / 404 race_not_found; every other state is 
 
 Feature 138 (D8): the version shown is the registry constant ``DISPLAYED_MARKET_EV_MODEL_VERSION``
 (the 15-seed average); a newer single-seed recompute of the same race never replaces the column.
+
+B7 (2026-10-28): ``GET /market-ev/day?date=`` — the day's races that have stored rows, each folded
+from the same shaping (state, provenance, counts above the thresholds). ``date`` is required
+(missing or malformed → 422 validation_error); a day without races or rows is 200 with
+``items=[]``. Board order only.
 """
 
 from __future__ import annotations
 
+import datetime
 import re
+from collections import defaultdict
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..deps import get_session
-from ..market_ev import DISPLAYED_MARKET_EV_MODEL_VERSION, build_market_ev
-from ..queries import get_race, market_ev_rows, started_win_odds_by_horse
-from ..schemas import MarketEvResponse
+from ..market_ev import (
+    DISPLAYED_MARKET_EV_MODEL_VERSION,
+    build_market_ev,
+    build_market_ev_day,
+)
+from ..queries import (
+    get_race,
+    market_ev_rows,
+    market_ev_rows_for_races,
+    race_ids_with_results,
+    races_on_date,
+    started_win_odds_by_horse,
+    started_win_odds_by_race,
+)
+from ..schemas import MarketEvDayResponse, MarketEvResponse
 
 router = APIRouter()
 
@@ -45,4 +64,23 @@ def race_market_ev(race_id: str, session: Session = Depends(get_session)):
         market_ev_rows(session, race_id, model_version=DISPLAYED_MARKET_EV_MODEL_VERSION),
         started_win_odds_by_horse(session, race_id),
         race_date=race.race_date,
+    )
+
+
+@router.get("/market-ev/day", response_model=MarketEvDayResponse, tags=["market-ev"])
+def market_ev_day(date: datetime.date, session: Session = Depends(get_session)):
+    races = races_on_date(session, date)
+    race_ids = [r.race_id for r in races]
+    rows_by_race: dict[str, list] = defaultdict(list)
+    for row in market_ev_rows_for_races(
+        session, race_ids, model_version=DISPLAYED_MARKET_EV_MODEL_VERSION
+    ):
+        rows_by_race[row.race_id].append(row)
+    computed_ids = [rid for rid in race_ids if rid in rows_by_race]
+    return build_market_ev_day(
+        date=date,
+        races=races,
+        rows_by_race=rows_by_race,
+        started_odds_by_race=started_win_odds_by_race(session, computed_ids),
+        race_ids_with_results=race_ids_with_results(session, computed_ids),
     )

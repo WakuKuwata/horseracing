@@ -652,6 +652,42 @@ def entries_for_races(session: Session, race_ids: list[str]):
     ).all()
 
 
+def races_on_date(session: Session, date: datetime.date) -> list[Race]:
+    """Every race held on ``date`` in board order (venue, race number, race_id; unknown last) —
+    the population of the day listing (B7 /market-ev/day)."""
+    return list(
+        session.scalars(
+            select(Race)
+            .where(Race.race_date == date)
+            .order_by(
+                Race.venue_code.asc().nulls_last(),
+                Race.race_number.asc().nulls_last(),
+                Race.race_id.asc(),
+            )
+        )
+    )
+
+
+def started_win_odds_by_race(
+    session: Session, race_ids: list[str]
+) -> dict[str, dict[str, Decimal | None]]:
+    """``started_win_odds_by_horse`` for several races at once: {race_id -> {horse_id -> odds}}.
+
+    A race without any started entry is ABSENT (the caller treats absent as an empty field, which
+    the per-race shaping reports as ``field_changed`` — same as the single-race path)."""
+    if not race_ids:
+        return {}
+    rows = session.execute(
+        select(RaceHorse.race_id, RaceHorse.horse_id, RaceHorse.odds)
+        .where(RaceHorse.race_id.in_(race_ids))
+        .where(RaceHorse.entry_status == EntryStatus.STARTED)
+    ).all()
+    out: dict[str, dict[str, Decimal | None]] = {}
+    for race_id, horse_id, odds in rows:
+        out.setdefault(race_id, {})[horse_id] = odds
+    return out
+
+
 def market_ev_rows_for_races(
     session: Session, race_ids: list[str], *, model_version: str
 ) -> list[MarketEvPrediction]:

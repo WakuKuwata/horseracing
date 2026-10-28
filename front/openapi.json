@@ -3859,6 +3859,243 @@
         "title": "MarketEvAvailable",
         "type": "object"
       },
+      "MarketEvDayItem": {
+        "additionalProperties": false,
+        "description": "One race of the day with stored market-ev rows: its state and the counts a listing needs.\n\n``status`` follows the per-race endpoint exactly: ``available`` carries the counts, an\n``unavailable`` race (the started field changed after the compute / a started horse has no\nvalid win odds) carries ``reason`` and null counts — a stored value that the per-race page\nwould not show is not counted here either. ``not_computed`` never appears: such races are\nsimply absent from ``items`` (compare ``n_races`` with ``n_computed``).",
+        "properties": {
+          "computed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Computed At"
+          },
+          "has_results": {
+            "title": "Has Results",
+            "type": "boolean"
+          },
+          "mix_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "available",
+                  "unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mix Status"
+          },
+          "n_exceeds_mix_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Exceeds Mix Threshold"
+          },
+          "n_exceeds_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Exceeds Threshold"
+          },
+          "n_horses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Horses"
+          },
+          "odds_changed_after_compute": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Changed After Compute"
+          },
+          "odds_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odds Observed At"
+          },
+          "post_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Time"
+          },
+          "race_id": {
+            "title": "Race Id",
+            "type": "string"
+          },
+          "race_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Race Number"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "field_changed",
+                  "odds_unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "result_pending_at_compute": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Pending At Compute"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "venue_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Code"
+          }
+        },
+        "required": [
+          "race_id",
+          "venue_code",
+          "race_number",
+          "post_time",
+          "has_results",
+          "status",
+          "reason",
+          "computed_at",
+          "odds_observed_at",
+          "odds_changed_after_compute",
+          "result_pending_at_compute",
+          "n_horses",
+          "n_exceeds_threshold",
+          "mix_status",
+          "n_exceeds_mix_threshold"
+        ],
+        "title": "MarketEvDayItem",
+        "type": "object"
+      },
+      "MarketEvDayResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MarketEvDayItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "mix_threshold": {
+            "title": "Mix Threshold",
+            "type": "number"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "n_available": {
+            "title": "N Available",
+            "type": "integer"
+          },
+          "n_computed": {
+            "title": "N Computed",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "model_version",
+          "threshold",
+          "mix_threshold",
+          "n_races",
+          "n_computed",
+          "n_available",
+          "items"
+        ],
+        "title": "MarketEvDayResponse",
+        "type": "object"
+      },
       "MarketEvUnavailable": {
         "additionalProperties": false,
         "description": "Typed empty state: not computed yet, the started field changed after the compute, or a\nstarted horse currently has no valid win odds (so the stored values must not be shown).",
@@ -7661,6 +7898,49 @@
         "summary": "Get Jockey History",
         "tags": [
           "jockeys"
+        ]
+      }
+    },
+    "/api/v1/market-ev/day": {
+      "get": {
+        "operationId": "market_ev_day_api_v1_market_ev_day_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketEvDayResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Market Ev Day",
+        "tags": [
+          "market-ev"
         ]
       }
     },

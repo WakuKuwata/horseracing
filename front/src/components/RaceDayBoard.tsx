@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import type { RaceSummary } from "../api/types";
+import type { MarketEvDayItem, MarketEvDayResponse, RaceSummary } from "../api/types";
 import { venueName } from "../lib/venues";
 import { RaceCard } from "./RaceCard";
 
@@ -26,8 +26,22 @@ function groupByVenue(races: RaceSummary[]): VenueGroup[] {
     }));
 }
 
-export function RaceDayBoard({ races }: { races: RaceSummary[] }) {
+export function RaceDayBoard({
+  races,
+  marketEvDay,
+}: {
+  races: RaceSummary[];
+  /** B7: the day's `/market-ev/day` answer; omit while unknown (cards then show no hint). The
+   *  board order never changes with it. */
+  marketEvDay?: MarketEvDayResponse;
+}) {
   const groups = useMemo(() => groupByVenue(races), [races]);
+  const evByRace = useMemo(() => {
+    if (!marketEvDay) return undefined;
+    const map = new Map<string, MarketEvDayItem>();
+    for (const item of marketEvDay.items) map.set(item.race_id, item);
+    return map;
+  }, [marketEvDay]);
 
   return (
     <div className="day-board">
@@ -39,7 +53,11 @@ export function RaceDayBoard({ races }: { races: RaceSummary[] }) {
           </h2>
           <div className="venue-group__cards">
             {g.races.map((r) => (
-              <RaceCard key={r.race_id} race={r} />
+              <RaceCard
+                key={r.race_id}
+                race={r}
+                marketEv={evByRace === undefined ? undefined : (evByRace.get(r.race_id) ?? null)}
+              />
             ))}
           </div>
         </section>
