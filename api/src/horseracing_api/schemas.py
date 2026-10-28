@@ -586,7 +586,17 @@ class ModelListResponse(BaseModel):
 # --- coverage / jobs (Feature 052 admin console, read-only) --------------------------------------
 class CoverageDay(BaseModel):
     """One race day's product coverage. n_predicted_active uses the ACTIVE model only (044
-    idempotency semantics); 0 when no model is active."""
+    idempotency semantics); 0 when no model is active.
+
+    B11 (2026-10-28): the ROI columns count races by their STORED ``market_ev_predictions`` rows
+    of the displayed version (``CoverageResponse.market_ev_model_version``):
+    ``n_market_ev_computed`` = races with rows; ``n_market_ev_quote`` = of those, every row
+    carries 140's genuine-quote token (``CoverageResponse.quote_token``);
+    ``n_market_ev_mix_available`` = of those, the 141 mixture is computable from the stored rows.
+    Nested: quote ≤ computed, mix ≤ computed ≤ races.
+    The table keeps only the latest compute per race, so a post-race recompute replaces a
+    pre-race quote row (B8's limitation) — the quote count is a present-tense fact, not history.
+    """
 
     date: datetime.date
     n_races: int
@@ -594,12 +604,27 @@ class CoverageDay(BaseModel):
     n_with_results: int
     n_predicted_active: int
     n_with_recommendations: int
+    n_market_ev_computed: int
+    n_market_ev_quote: int
+    n_market_ev_mix_available: int
+
+    @model_validator(mode="after")
+    def _nested_counts(self):
+        if not 0 <= self.n_market_ev_computed <= self.n_races:
+            raise ValueError("n_market_ev_computed must be within [0, n_races]")
+        for name in ("n_market_ev_quote", "n_market_ev_mix_available"):
+            if not 0 <= getattr(self, name) <= self.n_market_ev_computed:
+                raise ValueError(f"{name} must be within [0, n_market_ev_computed]")
+        return self
 
 
 class CoverageResponse(BaseModel):
     date_from: datetime.date
     date_to: datetime.date
     active_model_version: str | None = None  # null = no active model (predicted counts are 0)
+    #: B11: the ROI columns' fixed model version (138's registry constant) and 140's token
+    market_ev_model_version: str
+    quote_token: str
     days: list[CoverageDay] = []
 
 

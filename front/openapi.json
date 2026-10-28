@@ -2089,12 +2089,24 @@
         "type": "object"
       },
       "CoverageDay": {
-        "description": "One race day's product coverage. n_predicted_active uses the ACTIVE model only (044\nidempotency semantics); 0 when no model is active.",
+        "description": "One race day's product coverage. n_predicted_active uses the ACTIVE model only (044\nidempotency semantics); 0 when no model is active.\n\nB11 (2026-10-28): the ROI columns count races by their STORED ``market_ev_predictions`` rows\nof the displayed version (``CoverageResponse.market_ev_model_version``):\n``n_market_ev_computed`` = races with rows; ``n_market_ev_quote`` = of those, every row\ncarries 140's genuine-quote token (``CoverageResponse.quote_token``);\n``n_market_ev_mix_available`` = of those, the 141 mixture is computable from the stored rows.\nNested: quote ≤ computed, mix ≤ computed ≤ races.\nThe table keeps only the latest compute per race, so a post-race recompute replaces a\npre-race quote row (B8's limitation) — the quote count is a present-tense fact, not history.",
         "properties": {
           "date": {
             "format": "date",
             "title": "Date",
             "type": "string"
+          },
+          "n_market_ev_computed": {
+            "title": "N Market Ev Computed",
+            "type": "integer"
+          },
+          "n_market_ev_mix_available": {
+            "title": "N Market Ev Mix Available",
+            "type": "integer"
+          },
+          "n_market_ev_quote": {
+            "title": "N Market Ev Quote",
+            "type": "integer"
           },
           "n_predicted_active": {
             "title": "N Predicted Active",
@@ -2123,7 +2135,10 @@
           "n_with_odds",
           "n_with_results",
           "n_predicted_active",
-          "n_with_recommendations"
+          "n_with_recommendations",
+          "n_market_ev_computed",
+          "n_market_ev_quote",
+          "n_market_ev_mix_available"
         ],
         "title": "CoverageDay",
         "type": "object"
@@ -2158,11 +2173,21 @@
             },
             "title": "Days",
             "type": "array"
+          },
+          "market_ev_model_version": {
+            "title": "Market Ev Model Version",
+            "type": "string"
+          },
+          "quote_token": {
+            "title": "Quote Token",
+            "type": "string"
           }
         },
         "required": [
           "date_from",
-          "date_to"
+          "date_to",
+          "market_ev_model_version",
+          "quote_token"
         ],
         "title": "CoverageResponse",
         "type": "object"

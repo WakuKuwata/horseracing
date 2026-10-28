@@ -49,7 +49,15 @@ from horseracing_eval.bootstrap import (
     race_block_ratio_bootstrap_ci_v1,
 )
 
-from .market_ev import MARKET_EV_THRESHOLD, StoredMarketEv, exceeds_threshold
+from .market_ev import (
+    MARKET_EV_THRESHOLD,
+    StoredMarketEv,
+    exceeds_threshold,
+    has_quote_token,
+)
+from .market_ev import (
+    QUOTE_TOKEN as _QUOTE_TOKEN,
+)
 from .schemas import (
     MarketEvProspectiveResponse,
     ProspectiveBootstrap,
@@ -69,8 +77,9 @@ __all__ = [
     "earliest_start_date",
 ]
 
-#: the per-row token of 140 that marks a genuine win-quote observation (training's constant)
-QUOTE_TOKEN = "oddsobs=quote"
+#: the per-row token of 140 that marks a genuine win-quote observation (training's constant),
+#: shared with the coverage fold (B11) through market_ev.py
+QUOTE_TOKEN = _QUOTE_TOKEN
 #: the pre-registered minimum number of 100-yen points before any reading (138's first checkpoint)
 MIN_BETS = ar.CHECKPOINTS[0]
 #: Feature 138's bootstrap (same impl / b / seed / block) — reused, not re-declared
@@ -108,8 +117,7 @@ class ProspectiveRace:
     payouts: Mapping[int, int] = field(default_factory=dict)
 
 
-def _has_quote_token(logic_version: str) -> bool:
-    return QUOTE_TOKEN in [seg.strip() for seg in str(logic_version).split(";")]
+_has_quote_token = has_quote_token
 
 
 def classify_race(race: ProspectiveRace, *, since: datetime.date) -> str:

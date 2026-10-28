@@ -1238,6 +1238,15 @@ export interface components {
          * CoverageDay
          * @description One race day's product coverage. n_predicted_active uses the ACTIVE model only (044
          *     idempotency semantics); 0 when no model is active.
+         *
+         *     B11 (2026-10-28): the ROI columns count races by their STORED ``market_ev_predictions`` rows
+         *     of the displayed version (``CoverageResponse.market_ev_model_version``):
+         *     ``n_market_ev_computed`` = races with rows; ``n_market_ev_quote`` = of those, every row
+         *     carries 140's genuine-quote token (``CoverageResponse.quote_token``);
+         *     ``n_market_ev_mix_available`` = of those, the 141 mixture is computable from the stored rows.
+         *     Nested: quote ≤ computed, mix ≤ computed ≤ races.
+         *     The table keeps only the latest compute per race, so a post-race recompute replaces a
+         *     pre-race quote row (B8's limitation) — the quote count is a present-tense fact, not history.
          */
         CoverageDay: {
             /**
@@ -1245,6 +1254,12 @@ export interface components {
              * Format: date
              */
             date: string;
+            /** N Market Ev Computed */
+            n_market_ev_computed: number;
+            /** N Market Ev Mix Available */
+            n_market_ev_mix_available: number;
+            /** N Market Ev Quote */
+            n_market_ev_quote: number;
             /** N Predicted Active */
             n_predicted_active: number;
             /** N Races */
@@ -1275,6 +1290,10 @@ export interface components {
              * @default []
              */
             days: components["schemas"]["CoverageDay"][];
+            /** Market Ev Model Version */
+            market_ev_model_version: string;
+            /** Quote Token */
+            quote_token: string;
         };
         /** ErrorBody */
         ErrorBody: {

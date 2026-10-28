@@ -38,6 +38,12 @@ the unmixed value. The mixed probability itself is not returned either.
 B7 (2026-10-28): ``build_market_ev_day`` folds the SAME per-race shaping over one race day for the
 date listing (``/market-ev/day``): per race its state, provenance and the counts of horses above
 the two thresholds — never a per-horse value, never ordered by a value (board order only).
+
+B11 (2026-10-28): ``market_ev_coverage_by_date`` counts, per race day, the races whose STORED rows
+of the displayed version exist / carry 140's genuine-quote token on every row / let the 141
+mixture be computed (the same ``_mix`` checks the race page runs, on the stored rows alone — the
+current-odds conditions ``field_changed``/``odds_unavailable`` are the day listing's business, not
+the coverage page's). Feeds the admin coverage page (052) so its holes are ROI holes.
 """
 
 from __future__ import annotations
@@ -63,11 +69,16 @@ from .schemas import (
 __all__ = [
     "DISPLAYED_MARKET_EV_MODEL_VERSION",
     "MARKET_EV_THRESHOLD",
+    "QUOTE_TOKEN",
     "DayRace",
+    "MarketEvCoverage",
     "StoredMarketEv",
     "build_market_ev",
     "build_market_ev_day",
     "exceeds_threshold",
+    "has_quote_token",
+    "market_ev_coverage_by_date",
+    "stored_mix_available",
 ]
 
 #: The ONLY place the highlight threshold is defined (ratio, strict ``>``).
@@ -75,6 +86,16 @@ MARKET_EV_THRESHOLD = 1.2
 
 #: Odds are quoted to 0.1; anything above this is a real difference, not float noise.
 _ODDS_TOLERANCE = 1e-9
+
+#: Feature 140's per-row token for a genuine win-quote observation (training's constant; a row
+#: whose observation time is the ``updated_at`` proxy carries ``oddsobs=proxy`` instead).
+QUOTE_TOKEN = "oddsobs=quote"
+
+
+def has_quote_token(logic_version: str) -> bool:
+    """True when ``logic_version`` carries ``oddsobs=quote`` as a whole ``;``-separated token
+    (never a substring match: ``oddsobs=quoteX`` would not count)."""
+    return QUOTE_TOKEN in [seg.strip() for seg in str(logic_version).split(";")]
 
 
 class StoredMarketEv(Protocol):
@@ -136,6 +157,14 @@ def _mix(
         threshold=threshold,
     )
     return info, [float(p) * o for p, o in zip(p_mix, odds, strict=True)]
+
+
+def stored_mix_available(rows: Sequence[StoredMarketEv], race_date: datetime.date | None) -> bool:
+    """Whether the 141 mixture can be computed from the stored rows of ONE race (the same checks
+    ``build_market_ev`` runs: display flag, source version, frozen coefficients for the race year,
+    the matching booster, valid inputs). The race page can still be ``unavailable`` for reasons
+    that need the current odds; those are not judged here."""
+    return _mix(rows, race_date)[0].status == "available"
 
 
 def _odds_differ(current: Decimal | float | None, used: Decimal | float) -> bool:
@@ -304,3 +333,43 @@ def build_market_ev_day(
         n_available=sum(1 for i in items if i.status == "available"),
         items=items,
     )
+
+
+class MarketEvCoverage(Protocol):
+    """The stored-row columns the coverage fold reads (a ``market_ev_coverage_rows`` row)."""
+
+    race_id: str
+    race_date: datetime.date | None
+    model_version: str
+    logic_version: str
+    booster: str
+    win_prob: Decimal | float
+    odds_used: Decimal | float
+
+
+def market_ev_coverage_by_date(
+    rows: Sequence[MarketEvCoverage],
+) -> dict[datetime.date, dict[str, int]]:
+    """B11: per race day, how many races have stored rows of the model version the rows belong
+    to (``computed``), how many of those carry the genuine-quote token on EVERY row (``quote``),
+    and how many of those can have the 141 mixture computed from the stored rows
+    (``mix_available``). Rows are grouped by race; a race whose rows span two dates is a data
+    error and raises. Days without rows are simply absent (the caller fills 0)."""
+    by_race: dict[str, list[MarketEvCoverage]] = {}
+    for row in rows:
+        by_race.setdefault(row.race_id, []).append(row)
+    out: dict[datetime.date, dict[str, int]] = {}
+    for race_id, race_rows in by_race.items():
+        dates = {r.race_date for r in race_rows}
+        if len(dates) != 1:
+            raise ValueError(f"market-ev rows of race {race_id} span several dates: {dates}")
+        (race_date,) = dates
+        if race_date is None:
+            continue
+        day = out.setdefault(race_date, {"computed": 0, "quote": 0, "mix_available": 0})
+        day["computed"] += 1
+        if all(has_quote_token(r.logic_version) for r in race_rows):
+            day["quote"] += 1
+        if stored_mix_available(race_rows, race_date):
+            day["mix_available"] += 1
+    return out

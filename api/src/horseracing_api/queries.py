@@ -546,6 +546,32 @@ def coverage_by_date(session: Session, date_from, date_to) -> list[dict]:
     ]
 
 
+def market_ev_coverage_rows(
+    session: Session, date_from, date_to, *, model_version: str
+) -> list:
+    """B11: the stored ``market_ev_predictions`` rows of ONE model version for every race in
+    [date_from, date_to], as light column rows (race_id, race_date, model_version, logic_version,
+    booster, win_prob, odds_used) — what the coverage page needs to count races by their stored
+    state (computed / quote provenance / mixture computable) without loading ORM objects."""
+    stmt = (
+        select(
+            MarketEvPrediction.race_id,
+            Race.race_date,
+            MarketEvPrediction.model_version,
+            MarketEvPrediction.logic_version,
+            MarketEvPrediction.booster,
+            MarketEvPrediction.win_prob,
+            MarketEvPrediction.odds_used,
+        )
+        .join(Race, Race.race_id == MarketEvPrediction.race_id)
+        .where(Race.race_date >= date_from)
+        .where(Race.race_date <= date_to)
+        .where(MarketEvPrediction.model_version == model_version)
+        .order_by(MarketEvPrediction.race_id, MarketEvPrediction.horse_id)
+    )
+    return list(session.execute(stmt).all())
+
+
 def list_jobs(
     session: Session, *, status: str | None, job_type: str | None, limit: int
 ) -> list[IngestionJob]:
