@@ -41,6 +41,8 @@ describe("openapi snapshot", () => {
         "/api/v1/races/{race_id}/market-ev",
         // B7 (2026-10-28): the race day's 期待回収率 at a glance
         "/api/v1/market-ev/day",
+        // B8 (2026-10-28): the columns' prospective record
+        "/api/v1/market-ev/prospective",
         // feature 138: 注目条件(判断時点の該当・凍結表と前向き現況・当日一覧)
         "/api/v1/races/{race_id}/attention",
         "/api/v1/attention-rules",

@@ -4096,6 +4096,70 @@
         "title": "MarketEvDayResponse",
         "type": "object"
       },
+      "MarketEvProspectiveResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "by_day": {
+            "items": {
+              "$ref": "#/components/schemas/ProspectiveDay"
+            },
+            "title": "By Day",
+            "type": "array"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ProspectiveColumn"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/ProspectiveFunnel"
+          },
+          "last_eligible_race_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Eligible Race Date"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "quote_token": {
+            "title": "Quote Token",
+            "type": "string"
+          },
+          "settlement": {
+            "const": "official_win_payout",
+            "title": "Settlement",
+            "type": "string"
+          },
+          "stake_yen_per_bet": {
+            "const": 100,
+            "title": "Stake Yen Per Bet",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_version",
+          "quote_token",
+          "stake_yen_per_bet",
+          "settlement",
+          "funnel",
+          "columns",
+          "by_day",
+          "last_eligible_race_date"
+        ],
+        "title": "MarketEvProspectiveResponse",
+        "type": "object"
+      },
       "MarketEvUnavailable": {
         "additionalProperties": false,
         "description": "Typed empty state: not computed yet, the started field changed after the compute, or a\nstarted horse currently has no valid win odds (so the stored values must not be shown).",
@@ -4736,6 +4800,336 @@
           "race_id"
         ],
         "title": "PredictionResponse",
+        "type": "object"
+      },
+      "ProspectiveBootstrap": {
+        "additionalProperties": false,
+        "properties": {
+          "b": {
+            "title": "B",
+            "type": "integer"
+          },
+          "block": {
+            "title": "Block",
+            "type": "string"
+          },
+          "block_universe": {
+            "title": "Block Universe",
+            "type": "string"
+          },
+          "impl": {
+            "title": "Impl",
+            "type": "string"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "impl",
+          "b",
+          "seed",
+          "block",
+          "block_universe"
+        ],
+        "title": "ProspectiveBootstrap",
+        "type": "object"
+      },
+      "ProspectiveColumn": {
+        "additionalProperties": false,
+        "description": "One column's tally: 100 yen on every horse STRICTLY above the threshold (no cap, no\nranking), settled at the official win payout of its 馬番.",
+        "properties": {
+          "bootstrap": {
+            "$ref": "#/components/schemas/ProspectiveBootstrap"
+          },
+          "ci": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci"
+          },
+          "column": {
+            "enum": [
+              "expected_return",
+              "expected_return_mix"
+            ],
+            "title": "Column",
+            "type": "string"
+          },
+          "is_pseudo_selection": {
+            "const": true,
+            "title": "Is Pseudo Selection",
+            "type": "boolean"
+          },
+          "min_bets": {
+            "title": "Min Bets",
+            "type": "integer"
+          },
+          "n_bets": {
+            "title": "N Bets",
+            "type": "integer"
+          },
+          "n_days": {
+            "title": "N Days",
+            "type": "integer"
+          },
+          "n_hits": {
+            "title": "N Hits",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          },
+          "n_races_mix_unavailable": {
+            "title": "N Races Mix Unavailable",
+            "type": "integer"
+          },
+          "n_races_with_bets": {
+            "title": "N Races With Bets",
+            "type": "integer"
+          },
+          "p_one_sided": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P One Sided"
+          },
+          "recovery_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Rate"
+          },
+          "remaining_to_min": {
+            "title": "Remaining To Min",
+            "type": "integer"
+          },
+          "return_yen": {
+            "title": "Return Yen",
+            "type": "integer"
+          },
+          "stake_yen": {
+            "title": "Stake Yen",
+            "type": "integer"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          },
+          "valuation_basis": {
+            "const": "official_win_payout",
+            "title": "Valuation Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "column",
+          "threshold",
+          "start_date",
+          "n_races",
+          "n_races_mix_unavailable",
+          "n_races_with_bets",
+          "n_bets",
+          "n_hits",
+          "stake_yen",
+          "return_yen",
+          "recovery_rate",
+          "ci",
+          "p_one_sided",
+          "n_days",
+          "min_bets",
+          "remaining_to_min",
+          "valuation_basis",
+          "is_pseudo_selection",
+          "bootstrap"
+        ],
+        "title": "ProspectiveColumn",
+        "type": "object"
+      },
+      "ProspectiveDay": {
+        "additionalProperties": false,
+        "description": "One race day of the window: eligible races and each column's bets (board facts).",
+        "properties": {
+          "expected_return": {
+            "$ref": "#/components/schemas/ProspectiveDayColumn"
+          },
+          "expected_return_mix": {
+            "$ref": "#/components/schemas/ProspectiveDayColumn"
+          },
+          "n_eligible": {
+            "title": "N Eligible",
+            "type": "integer"
+          },
+          "n_pending_result": {
+            "title": "N Pending Result",
+            "type": "integer"
+          },
+          "race_date": {
+            "format": "date",
+            "title": "Race Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "race_date",
+          "n_eligible",
+          "n_pending_result",
+          "expected_return",
+          "expected_return_mix"
+        ],
+        "title": "ProspectiveDay",
+        "type": "object"
+      },
+      "ProspectiveDayColumn": {
+        "additionalProperties": false,
+        "properties": {
+          "n_bets": {
+            "title": "N Bets",
+            "type": "integer"
+          },
+          "n_hits": {
+            "title": "N Hits",
+            "type": "integer"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          },
+          "return_yen": {
+            "title": "Return Yen",
+            "type": "integer"
+          },
+          "stake_yen": {
+            "title": "Stake Yen",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n_races",
+          "n_bets",
+          "n_hits",
+          "stake_yen",
+          "return_yen"
+        ],
+        "title": "ProspectiveDayColumn",
+        "type": "object"
+      },
+      "ProspectiveFunnel": {
+        "additionalProperties": false,
+        "description": "Exclusive classification of every race with stored rows since the earliest start date\n(first failing rule wins, in this order); the counts sum to ``n_candidate_races``.",
+        "properties": {
+          "computed_after_post": {
+            "title": "Computed After Post",
+            "type": "integer"
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "integer"
+          },
+          "field_mismatch": {
+            "title": "Field Mismatch",
+            "type": "integer"
+          },
+          "invalid_values": {
+            "title": "Invalid Values",
+            "type": "integer"
+          },
+          "jump_race": {
+            "title": "Jump Race",
+            "type": "integer"
+          },
+          "n_candidate_races": {
+            "title": "N Candidate Races",
+            "type": "integer"
+          },
+          "not_quote": {
+            "title": "Not Quote",
+            "type": "integer"
+          },
+          "not_single_snapshot": {
+            "title": "Not Single Snapshot",
+            "type": "integer"
+          },
+          "observed_after_compute": {
+            "title": "Observed After Compute",
+            "type": "integer"
+          },
+          "payout_inconsistent": {
+            "title": "Payout Inconsistent",
+            "type": "integer"
+          },
+          "payout_race_missing": {
+            "title": "Payout Race Missing",
+            "type": "integer"
+          },
+          "pending_result": {
+            "title": "Pending Result",
+            "type": "integer"
+          },
+          "post_time_unknown": {
+            "title": "Post Time Unknown",
+            "type": "integer"
+          },
+          "result_known_at_compute": {
+            "title": "Result Known At Compute",
+            "type": "integer"
+          },
+          "since": {
+            "format": "date",
+            "title": "Since",
+            "type": "string"
+          }
+        },
+        "required": [
+          "since",
+          "n_candidate_races",
+          "jump_race",
+          "not_quote",
+          "result_known_at_compute",
+          "not_single_snapshot",
+          "post_time_unknown",
+          "observed_after_compute",
+          "computed_after_post",
+          "field_mismatch",
+          "invalid_values",
+          "pending_result",
+          "payout_race_missing",
+          "payout_inconsistent",
+          "eligible"
+        ],
+        "title": "ProspectiveFunnel",
         "type": "object"
       },
       "PurchaseBetView": {
@@ -7939,6 +8333,27 @@
           }
         },
         "summary": "Market Ev Day",
+        "tags": [
+          "market-ev"
+        ]
+      }
+    },
+    "/api/v1/market-ev/prospective": {
+      "get": {
+        "operationId": "market_ev_prospective_api_v1_market_ev_prospective_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketEvProspectiveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Market Ev Prospective",
         "tags": [
           "market-ev"
         ]

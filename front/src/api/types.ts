@@ -45,6 +45,11 @@ export type MarketEvResponse = MarketEvAvailable | MarketEvUnavailable;
 // B7 (2026-10-28): the race day's 期待回収率 at a glance (counts + state per computed race)
 export type MarketEvDayResponse = S["MarketEvDayResponse"];
 export type MarketEvDayItem = S["MarketEvDayItem"];
+// B8 (2026-10-28): the columns' prospective record (genuine pre-race quotes, official payout)
+export type MarketEvProspectiveResponse = S["MarketEvProspectiveResponse"];
+export type ProspectiveColumn = S["ProspectiveColumn"];
+export type ProspectiveFunnel = S["ProspectiveFunnel"];
+export type ProspectiveDay = S["ProspectiveDay"];
 
 // Feature 138: 注目条件 (attention conditions S1–S5). Judgment-time chips + frozen backtest +
 // prospective tally. Stages are ASCII on the wire; Japanese lives only in lib/attention.ts.

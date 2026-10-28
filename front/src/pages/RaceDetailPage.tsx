@@ -106,6 +106,10 @@ function RaceDetailContent({ raceId }: { raceId: string }) {
                 isLoading={marketEvQuery.isLoading}
                 error={marketEvQuery.error ?? null}
               />
+              {/* B8: where the columns' prospective record (pre-race quotes, official payout) lives */}
+              <p className="note" data-testid="prospective-link">
+                <Link to="/market-ev/prospective">発走前オッズでの前向き現況(公式払戻で精算)を見る</Link>
+              </p>
               <AttentionNote error={attentionQuery.error ?? null} isLoading={attentionQuery.isLoading} />
               <HorseEntriesTable
                 variant="roi"

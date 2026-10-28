@@ -12,6 +12,7 @@ import type {
   JockeyHistoryPage,
   JockeyProfile,
   MarketEvDayResponse,
+  MarketEvProspectiveResponse,
   MarketEvResponse,
   OddsResponse,
   PredictionResponse,
@@ -180,6 +181,15 @@ export function useMarketEvDay(date: string) {
           params: { query: { date } },
         }),
       ),
+  });
+}
+
+/** B8: the 期待回収率 columns' prospective record — counts, pooled recovery at the official win
+ *  payout and its race-day bootstrap interval, read-time. Facts only; the API decides nothing. */
+export function useMarketEvProspective() {
+  return useQuery<MarketEvProspectiveResponse, ErrorInfo>({
+    queryKey: ["market-ev-prospective"],
+    queryFn: async () => unwrap(await api.GET("/api/v1/market-ev/prospective", {})),
   });
 }
 

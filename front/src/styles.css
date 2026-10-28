@@ -1229,3 +1229,15 @@ th.colgroup {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* --- B8: 期待回収率の前向き現況 --- */
+.prospective-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 0.6rem 0 1rem;
+}
+.prospective-columns > .panel {
+  flex: 1 1 320px;
+  margin: 0;
+}

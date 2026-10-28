@@ -19,6 +19,8 @@ import type {
   MarketEvAvailable,
   MarketEvDayItem,
   MarketEvDayResponse,
+  MarketEvProspectiveResponse,
+  ProspectiveColumn,
   MarketEvUnavailable,
   OddsResponse,
   PredictionResponse,
@@ -297,6 +299,88 @@ export function marketEvDayFixture(
     n_computed: items.length,
     n_available: items.filter((i) => i.status === "available").length,
     items,
+  };
+}
+
+// B8: one column of `/market-ev/prospective` (default: the 1.2 column with 8 points so far).
+export function prospectiveColumnFixture(
+  overrides: Partial<ProspectiveColumn> = {},
+): ProspectiveColumn {
+  return {
+    column: "expected_return",
+    threshold: 1.2,
+    start_date: "2026-10-05",
+    n_races: 38,
+    n_races_mix_unavailable: 0,
+    n_races_with_bets: 7,
+    n_bets: 8,
+    n_hits: 1,
+    stake_yen: 800,
+    return_yen: 1160,
+    recovery_rate: 1.45,
+    ci: [0.0, 2.32],
+    p_one_sided: 0.15,
+    n_days: 3,
+    min_bets: 300,
+    remaining_to_min: 292,
+    valuation_basis: "official_win_payout",
+    is_pseudo_selection: true,
+    bootstrap: {
+      impl: "horseracing_eval.bootstrap.race_block_ratio_bootstrap_ci_v1",
+      b: 20000,
+      seed: 20260905,
+      block: "race_day",
+      block_universe: "race-days with >=1 bet of the column",
+    },
+    ...overrides,
+  };
+}
+
+/** `/market-ev/prospective` with a small record (what the real database held on 2026-10-28). */
+export function marketEvProspectiveFixture(
+  overrides: Partial<MarketEvProspectiveResponse> = {},
+): MarketEvProspectiveResponse {
+  return {
+    model_version: "mev-ens15-v1",
+    quote_token: "oddsobs=quote",
+    stake_yen_per_bet: 100,
+    settlement: "official_win_payout",
+    funnel: {
+      since: "2026-10-05",
+      n_candidate_races: 156,
+      jump_race: 0,
+      not_quote: 35,
+      result_known_at_compute: 0,
+      not_single_snapshot: 0,
+      post_time_unknown: 0,
+      observed_after_compute: 0,
+      computed_after_post: 79,
+      field_mismatch: 3,
+      invalid_values: 0,
+      pending_result: 1,
+      payout_race_missing: 0,
+      payout_inconsistent: 0,
+      eligible: 38,
+    },
+    columns: [
+      prospectiveColumnFixture(),
+      prospectiveColumnFixture({
+        column: "expected_return_mix", threshold: 1.0, start_date: "2026-10-19",
+        n_races: 12, n_races_with_bets: 3, n_bets: 4, n_hits: 1, stake_yen: 400,
+        return_yen: 2590, recovery_rate: 6.475, ci: null, p_one_sided: null, n_days: 1,
+        remaining_to_min: 296,
+      }),
+    ],
+    by_day: [
+      { race_date: "2026-10-12", n_eligible: 2, n_pending_result: 0,
+        expected_return: { n_races: 2, n_bets: 2, n_hits: 0, stake_yen: 200, return_yen: 0 },
+        expected_return_mix: { n_races: 0, n_bets: 0, n_hits: 0, stake_yen: 0, return_yen: 0 } },
+      { race_date: "2026-10-24", n_eligible: 6, n_pending_result: 0,
+        expected_return: { n_races: 6, n_bets: 1, n_hits: 1, stake_yen: 100, return_yen: 1160 },
+        expected_return_mix: { n_races: 6, n_bets: 4, n_hits: 1, stake_yen: 400, return_yen: 2590 } },
+    ],
+    last_eligible_race_date: "2026-10-25",
+    ...overrides,
   };
 }
 
@@ -741,6 +825,33 @@ export const happyHandlers = [
   http.get(`${BASE}/market-ev/day`, ({ request }) =>
     HttpResponse.json(
       marketEvDayFixture(new URL(request.url).searchParams.get("date") ?? "", [], 1),
+    ),
+  ),
+  // B8: an empty prospective record (nothing eligible yet).
+  http.get(`${BASE}/market-ev/prospective`, () =>
+    HttpResponse.json(
+      marketEvProspectiveFixture({
+        funnel: {
+          since: "2026-10-05", n_candidate_races: 0, jump_race: 0, not_quote: 0,
+          result_known_at_compute: 0, not_single_snapshot: 0, post_time_unknown: 0,
+          observed_after_compute: 0, computed_after_post: 0, field_mismatch: 0,
+          invalid_values: 0, pending_result: 0, payout_race_missing: 0, payout_inconsistent: 0,
+          eligible: 0,
+        },
+        columns: [
+          prospectiveColumnFixture({
+            n_races: 0, n_races_with_bets: 0, n_bets: 0, n_hits: 0, stake_yen: 0, return_yen: 0,
+            recovery_rate: null, ci: null, p_one_sided: null, n_days: 0, remaining_to_min: 300,
+          }),
+          prospectiveColumnFixture({
+            column: "expected_return_mix", threshold: 1.0, start_date: "2026-10-19",
+            n_races: 0, n_races_with_bets: 0, n_bets: 0, n_hits: 0, stake_yen: 0, return_yen: 0,
+            recovery_rate: null, ci: null, p_one_sided: null, n_days: 0, remaining_to_min: 300,
+          }),
+        ],
+        by_day: [],
+        last_eligible_race_date: null,
+      }),
     ),
   ),
   // Feature 138: typed empty race state, 5 rules at zero picks, empty day.

@@ -652,6 +652,47 @@ def entries_for_races(session: Session, race_ids: list[str]):
     ).all()
 
 
+def market_ev_rows_since(
+    session: Session, *, model_version: str, since: datetime.date
+) -> list[tuple[MarketEvPrediction, Race]]:
+    """Every stored row of ``model_version`` for races held on/after ``since`` with its race
+    (B8 /market-ev/prospective). Latest-only table, so these ARE the current values."""
+    return list(
+        session.execute(
+            select(MarketEvPrediction, Race)
+            .join(Race, Race.race_id == MarketEvPrediction.race_id)
+            .where(MarketEvPrediction.model_version == model_version)
+            .where(Race.race_date >= since)
+            .order_by(
+                Race.race_date, MarketEvPrediction.race_id,
+                MarketEvPrediction.horse_number.asc().nulls_last(), MarketEvPrediction.horse_id,
+            )
+        ).all()
+    )
+
+
+def race_results_for_races(session: Session, race_ids: list[str]):
+    """(race_id, horse_id, finish_order, result_status) of every result row of the races."""
+    if not race_ids:
+        return []
+    return session.execute(
+        select(RaceResult.race_id, RaceResult.horse_id, RaceResult.finish_order,
+               RaceResult.result_status)
+        .where(RaceResult.race_id.in_(race_ids))
+    ).all()
+
+
+def official_win_payouts_for_races(session: Session, race_ids: list[str]):
+    """(race_id, horse_number, payout_yen) of every official win payout row of the races."""
+    if not race_ids:
+        return []
+    return session.execute(
+        select(OfficialWinPayout.race_id, OfficialWinPayout.horse_number,
+               OfficialWinPayout.payout_yen)
+        .where(OfficialWinPayout.race_id.in_(race_ids))
+    ).all()
+
+
 def races_on_date(session: Session, date: datetime.date) -> list[Race]:
     """Every race held on ``date`` in board order (venue, race number, race_id; unknown last) —
     the population of the day listing (B7 /market-ev/day)."""

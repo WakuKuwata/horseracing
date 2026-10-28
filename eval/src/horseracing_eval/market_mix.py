@@ -22,6 +22,7 @@ the S1–S5 conditions. The mixed probability is not a 1着率 and is never retu
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -33,6 +34,7 @@ __all__ = [
     "MIX_COEFFICIENTS",
     "MIX_DISPLAY_ENABLED",
     "MIX_EV_THRESHOLD",
+    "MIX_PROSPECTIVE_START_DATE",
     "MIX_SOURCE_MODEL_VERSION",
     "MIX_VERSION",
     "MixCoefficients",
@@ -53,6 +55,12 @@ MIX_EV_THRESHOLD = 1.0
 
 #: Decided by the pre-registered held-out check (spec FR-006); see plan §4.
 MIX_DISPLAY_ENABLED = True
+
+#: B8 (2026-10-28): the first race day whose stored pre-race quotes count as PROSPECTIVE evidence
+#: for the mixed column. The threshold (1.0) was chosen on data through 2026-06 and the one-shot
+#: held-out check used 2026-08-10..10-18, so nothing before 2026-10-19 is untouched. Races before
+#: this date are reported as ``before_start`` and never tallied (constitution III).
+MIX_PROSPECTIVE_START_DATE = datetime.date(2026, 10, 19)
 
 
 @dataclass(frozen=True)

@@ -12,6 +12,9 @@ B7 (2026-10-28): ``GET /market-ev/day?date=`` — the day's races that have stor
 from the same shaping (state, provenance, counts above the thresholds). ``date`` is required
 (missing or malformed → 422 validation_error); a day without races or rows is 200 with
 ``items=[]``. Board order only.
+
+B8 (2026-10-28): ``GET /market-ev/prospective`` — the two columns' prospective record (genuine
+pre-race quotes settled at the official win payout, spec 158's rules), counts and interval only.
 """
 
 from __future__ import annotations
@@ -30,16 +33,25 @@ from ..market_ev import (
     build_market_ev,
     build_market_ev_day,
 )
+from ..market_ev_prospective import (
+    build_market_ev_prospective,
+    earliest_start_date,
+    races_from_queries,
+)
 from ..queries import (
+    entries_for_races,
     get_race,
     market_ev_rows,
     market_ev_rows_for_races,
+    market_ev_rows_since,
+    official_win_payouts_for_races,
     race_ids_with_results,
+    race_results_for_races,
     races_on_date,
     started_win_odds_by_horse,
     started_win_odds_by_race,
 )
-from ..schemas import MarketEvDayResponse, MarketEvResponse
+from ..schemas import MarketEvDayResponse, MarketEvProspectiveResponse, MarketEvResponse
 
 router = APIRouter()
 
@@ -84,3 +96,20 @@ def market_ev_day(date: datetime.date, session: Session = Depends(get_session)):
         started_odds_by_race=started_win_odds_by_race(session, computed_ids),
         race_ids_with_results=race_ids_with_results(session, computed_ids),
     )
+
+
+@router.get(
+    "/market-ev/prospective", response_model=MarketEvProspectiveResponse, tags=["market-ev"]
+)
+def market_ev_prospective(session: Session = Depends(get_session)):
+    rows_with_race = market_ev_rows_since(
+        session, model_version=DISPLAYED_MARKET_EV_MODEL_VERSION, since=earliest_start_date()
+    )
+    race_ids = sorted({row.race_id for row, _race in rows_with_race})
+    races = races_from_queries(
+        rows_with_race,
+        entries_for_races(session, race_ids),
+        race_results_for_races(session, race_ids),
+        official_win_payouts_for_races(session, race_ids),
+    )
+    return build_market_ev_prospective(races, model_version=DISPLAYED_MARKET_EV_MODEL_VERSION)

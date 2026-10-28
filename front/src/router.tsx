@@ -4,6 +4,7 @@ import App from "./App";
 import { AttentionPage } from "./pages/AttentionPage";
 import { HorseDetailPage } from "./pages/HorseDetailPage";
 import { JockeyDetailPage } from "./pages/JockeyDetailPage";
+import { MarketEvProspectivePage } from "./pages/MarketEvProspectivePage";
 import { RaceDetailPage } from "./pages/RaceDetailPage";
 import { PurchaseComparisonPage } from "./pages/PurchaseComparisonPage";
 import { PurchaseListPage } from "./pages/PurchaseListPage";
@@ -24,6 +25,8 @@ export const routes = [
       { path: "purchase-comparison", element: <PurchaseComparisonPage /> },
       // Feature 138: 注目条件 S1〜S5 の一覧(凍結した過去検証 + 前向き検証の現況)
       { path: "attention", element: <AttentionPage /> },
+      // B8: 期待回収率の列の前向き現況(発走前オッズ・公式払戻)
+      { path: "market-ev/prospective", element: <MarketEvProspectivePage /> },
     ],
   },
 ];

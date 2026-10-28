@@ -222,6 +222,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/market-ev/prospective": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Market Ev Prospective */
+        get: operations["market_ev_prospective_api_v1_market_ev_prospective_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/models": {
         parameters: {
             query?: never;
@@ -1819,6 +1836,30 @@ export interface components {
             /** Threshold */
             threshold: number;
         };
+        /** MarketEvProspectiveResponse */
+        MarketEvProspectiveResponse: {
+            /** By Day */
+            by_day: components["schemas"]["ProspectiveDay"][];
+            /** Columns */
+            columns: components["schemas"]["ProspectiveColumn"][];
+            funnel: components["schemas"]["ProspectiveFunnel"];
+            /** Last Eligible Race Date */
+            last_eligible_race_date: string | null;
+            /** Model Version */
+            model_version: string;
+            /** Quote Token */
+            quote_token: string;
+            /**
+             * Settlement
+             * @constant
+             */
+            settlement: "official_win_payout";
+            /**
+             * Stake Yen Per Bet
+             * @constant
+             */
+            stake_yen_per_bet: 100;
+        };
         /**
          * MarketEvUnavailable
          * @description Typed empty state: not computed yet, the started field changed after the compute, or a
@@ -2042,6 +2083,148 @@ export interface components {
             /** Race Id */
             race_id: string;
             run?: components["schemas"]["RunAudit"] | null;
+        };
+        /** ProspectiveBootstrap */
+        ProspectiveBootstrap: {
+            /** B */
+            b: number;
+            /** Block */
+            block: string;
+            /** Block Universe */
+            block_universe: string;
+            /** Impl */
+            impl: string;
+            /** Seed */
+            seed: number;
+        };
+        /**
+         * ProspectiveColumn
+         * @description One column's tally: 100 yen on every horse STRICTLY above the threshold (no cap, no
+         *     ranking), settled at the official win payout of its 馬番.
+         */
+        ProspectiveColumn: {
+            bootstrap: components["schemas"]["ProspectiveBootstrap"];
+            /** Ci */
+            ci: [
+                number,
+                number
+            ] | null;
+            /**
+             * Column
+             * @enum {string}
+             */
+            column: "expected_return" | "expected_return_mix";
+            /**
+             * Is Pseudo Selection
+             * @constant
+             */
+            is_pseudo_selection: true;
+            /** Min Bets */
+            min_bets: number;
+            /** N Bets */
+            n_bets: number;
+            /** N Days */
+            n_days: number;
+            /** N Hits */
+            n_hits: number;
+            /** N Races */
+            n_races: number;
+            /** N Races Mix Unavailable */
+            n_races_mix_unavailable: number;
+            /** N Races With Bets */
+            n_races_with_bets: number;
+            /** P One Sided */
+            p_one_sided: number | null;
+            /** Recovery Rate */
+            recovery_rate: number | null;
+            /** Remaining To Min */
+            remaining_to_min: number;
+            /** Return Yen */
+            return_yen: number;
+            /** Stake Yen */
+            stake_yen: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Threshold */
+            threshold: number;
+            /**
+             * Valuation Basis
+             * @constant
+             */
+            valuation_basis: "official_win_payout";
+        };
+        /**
+         * ProspectiveDay
+         * @description One race day of the window: eligible races and each column's bets (board facts).
+         */
+        ProspectiveDay: {
+            expected_return: components["schemas"]["ProspectiveDayColumn"];
+            expected_return_mix: components["schemas"]["ProspectiveDayColumn"];
+            /** N Eligible */
+            n_eligible: number;
+            /** N Pending Result */
+            n_pending_result: number;
+            /**
+             * Race Date
+             * Format: date
+             */
+            race_date: string;
+        };
+        /** ProspectiveDayColumn */
+        ProspectiveDayColumn: {
+            /** N Bets */
+            n_bets: number;
+            /** N Hits */
+            n_hits: number;
+            /** N Races */
+            n_races: number;
+            /** Return Yen */
+            return_yen: number;
+            /** Stake Yen */
+            stake_yen: number;
+        };
+        /**
+         * ProspectiveFunnel
+         * @description Exclusive classification of every race with stored rows since the earliest start date
+         *     (first failing rule wins, in this order); the counts sum to ``n_candidate_races``.
+         */
+        ProspectiveFunnel: {
+            /** Computed After Post */
+            computed_after_post: number;
+            /** Eligible */
+            eligible: number;
+            /** Field Mismatch */
+            field_mismatch: number;
+            /** Invalid Values */
+            invalid_values: number;
+            /** Jump Race */
+            jump_race: number;
+            /** N Candidate Races */
+            n_candidate_races: number;
+            /** Not Quote */
+            not_quote: number;
+            /** Not Single Snapshot */
+            not_single_snapshot: number;
+            /** Observed After Compute */
+            observed_after_compute: number;
+            /** Payout Inconsistent */
+            payout_inconsistent: number;
+            /** Payout Race Missing */
+            payout_race_missing: number;
+            /** Pending Result */
+            pending_result: number;
+            /** Post Time Unknown */
+            post_time_unknown: number;
+            /** Result Known At Compute */
+            result_known_at_compute: number;
+            /**
+             * Since
+             * Format: date
+             */
+            since: string;
         };
         /** PurchaseBetView */
         PurchaseBetView: {
@@ -3381,6 +3564,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    market_ev_prospective_api_v1_market_ev_prospective_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketEvProspectiveResponse"];
                 };
             };
         };

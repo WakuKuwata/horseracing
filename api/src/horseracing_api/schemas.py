@@ -1159,6 +1159,150 @@ class MarketEvDayResponse(BaseModel):
         return self
 
 
+# --- B8 (2026-10-28): the 期待回収率 columns' PROSPECTIVE record (/market-ev/prospective) --------
+# Read-time tally of the stored market-ev rows that are genuine pre-race quotes (140
+# ``oddsobs=quote``, computed before post time with the result still pending, one whole-field
+# snapshot — spec 158's extraction rules), settled at the official win payout (139/156). Facts only:
+# never decides anything (no pass/fail rule is registered for these columns), it says how much has
+# been recorded and shows the pooled recovery with its race-day bootstrap interval.
+
+ProspectiveColumnId = Literal["expected_return", "expected_return_mix"]
+ProspectiveClass = Literal[
+    "jump_race", "not_quote", "result_known_at_compute", "not_single_snapshot",
+    "post_time_unknown", "observed_after_compute", "computed_after_post", "field_mismatch",
+    "invalid_values", "pending_result", "payout_race_missing", "payout_inconsistent", "eligible",
+]
+
+
+class ProspectiveFunnel(BaseModel):
+    """Exclusive classification of every race with stored rows since the earliest start date
+    (first failing rule wins, in this order); the counts sum to ``n_candidate_races``."""
+
+    model_config = {"extra": "forbid"}
+
+    #: races held on/after this date are the candidates (earlier races are not read)
+    since: datetime.date
+    n_candidate_races: int
+    jump_race: int
+    not_quote: int
+    result_known_at_compute: int
+    not_single_snapshot: int
+    post_time_unknown: int
+    observed_after_compute: int
+    computed_after_post: int
+    field_mismatch: int
+    invalid_values: int
+    #: eligible so far but the race has no result yet (精算待ち)
+    pending_result: int
+    payout_race_missing: int
+    payout_inconsistent: int
+    eligible: int
+
+    @model_validator(mode="after")
+    def _classes_sum_to_candidates(self) -> ProspectiveFunnel:
+        total = (
+            self.jump_race + self.not_quote + self.result_known_at_compute
+            + self.not_single_snapshot + self.post_time_unknown + self.observed_after_compute
+            + self.computed_after_post + self.field_mismatch + self.invalid_values
+            + self.pending_result + self.payout_race_missing + self.payout_inconsistent
+            + self.eligible
+        )
+        if total != self.n_candidate_races:
+            raise ValueError("the exclusive classes must sum to n_candidate_races")
+        return self
+
+
+class ProspectiveBootstrap(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    impl: str
+    b: int
+    seed: int
+    block: str
+    block_universe: str
+
+
+class ProspectiveColumn(BaseModel):
+    """One column's tally: 100 yen on every horse STRICTLY above the threshold (no cap, no
+    ranking), settled at the official win payout of its 馬番."""
+
+    model_config = {"extra": "forbid"}
+
+    column: ProspectiveColumnId
+    threshold: float
+    start_date: datetime.date
+    #: eligible races on/after start_date (both columns share the population)
+    n_races: int
+    #: of those, races whose mixed value cannot be computed (no bet; mixed column only)
+    n_races_mix_unavailable: int
+    n_races_with_bets: int
+    n_bets: int
+    n_hits: int
+    stake_yen: int
+    return_yen: int
+    #: Σreturn / Σstake (ratio; 1.0 = 100%); null while no bet was placed
+    recovery_rate: float | None
+    ci: tuple[float, float] | None
+    p_one_sided: float | None
+    n_days: int
+    #: pre-registered minimum before any reading is offered (138's first checkpoint)
+    min_bets: int
+    remaining_to_min: int
+    valuation_basis: Literal["official_win_payout"]
+    is_pseudo_selection: Literal[True]
+    bootstrap: ProspectiveBootstrap
+
+    @model_validator(mode="after")
+    def _totals_are_consistent(self) -> ProspectiveColumn:
+        if self.stake_yen != 100 * self.n_bets:
+            raise ValueError("stake must be 100 yen per bet")
+        if self.n_hits > self.n_bets or self.n_races_with_bets > self.n_races:
+            raise ValueError("hits/bet races cannot exceed bets/races")
+        if (self.n_bets == 0) != (self.recovery_rate is None):
+            raise ValueError("recovery_rate exists exactly when a bet was placed")
+        if self.remaining_to_min != max(0, self.min_bets - self.n_bets):
+            raise ValueError("remaining_to_min must follow min_bets - n_bets")
+        return self
+
+
+class ProspectiveDayColumn(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    n_races: int
+    n_bets: int
+    n_hits: int
+    stake_yen: int
+    return_yen: int
+
+
+class ProspectiveDay(BaseModel):
+    """One race day of the window: eligible races and each column's bets (board facts)."""
+
+    model_config = {"extra": "forbid"}
+
+    race_date: datetime.date
+    n_eligible: int
+    n_pending_result: int
+    expected_return: ProspectiveDayColumn
+    expected_return_mix: ProspectiveDayColumn
+
+
+class MarketEvProspectiveResponse(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    model_version: str
+    quote_token: str
+    stake_yen_per_bet: Literal[100]
+    settlement: Literal["official_win_payout"]
+    funnel: ProspectiveFunnel
+    #: fixed order: expected_return, expected_return_mix
+    columns: list[ProspectiveColumn]
+    #: race_date ascending; only days with at least one candidate race
+    by_day: list[ProspectiveDay]
+    #: newest eligible race date tallied (null when none)
+    last_eligible_race_date: datetime.date | None
+
+
 # --- Feature 138: 注目条件 (attention conditions) S1-S5 --------------------------------------
 # Rule ids and stage names are the eval registry's own Literal types (single definition). Stage
 # values are ASCII; the Japanese labels live only in the front's label table (FR-014). No win
