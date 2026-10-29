@@ -1,5 +1,7 @@
 # 利用者の判断が要る 7 件(2026-10-29)
 
+> **決定(2026-10-29 15:00 JST・利用者)**: 全件推奨どおり= **A1 B1 C1 D1 E1 F1 G1**。反映: A1→残タスク 13・161 proposal に終了を記録 / B1→`eval/display_update_rule.py`+凍結 JSON / C1→方針記録(実装は worker 再開前) / D1→残タスク 16 を閉じる / E1・F1→d17 文書 / G1→`capture_only_dates` に 11/7〜12/27 の 17 日を追加(計 19 日)。
+
 残タスク一覧(`docs/plan/remaining-tasks-roi-main-20261027.md`)の C13〜C16 と D17 の論点 1・2・4 を、**決めやすい形**に並べた。各件は「何を決めるか / 選択肢 / 推奨 / 決めないとどうなるか / 決めた後に私がやること」。番号+選択肢の記号(例: `A1 B1 C1 D1 E1 F1 G1`)で返せる。
 
 前提(今日時点): 174 の T−3 捕捉は実装済み・0022 適用済み・`capture_only_dates`=10/31・11/1・11/7・11/8。取得は capture-only(前日 entries・当日 T−3・夜 results)で、`collection_paused=true` と worker 停止は変えていない。10/31 の出走表は枠順確定を待って今夜取り込む(`scripts/near_post_ops.sh entries 2026-10-31 --wait-for-draw` が稼働中)。

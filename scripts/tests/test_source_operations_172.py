@@ -18,6 +18,10 @@ from scripts.source_operations_172 import (
 
 def policy_file(tmp_path, **changes):
     value = json.loads(CONFIG.read_text())
+    # The checked-in policy may legitimately carry the capture-only trio (174); the "partial
+    # trio" cases below must start from a base without it, or they stop testing anything.
+    for key in ("capture_only_dates", "capture_only_approved_by", "capture_only_approved_at"):
+        value.pop(key, None)
     value.update(changes)
     path = tmp_path / "policy.json"
     path.write_text(json.dumps(value))

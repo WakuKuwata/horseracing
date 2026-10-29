@@ -1,0 +1,25 @@
+{
+  "bootstrap": {
+    "b": 20000,
+    "block": "race_day",
+    "block_universe": "race-days with >=1 counted pick of the rule",
+    "impl": "horseracing_eval.bootstrap.race_block_ratio_bootstrap_ci_v1",
+    "rng": "numpy.default_rng(PCG64)",
+    "seed": 20260905
+  },
+  "decided_by": "kuwatawaku",
+  "display_fixed_unless_rule_met": [
+    "displayed market-ev model version (mev-ens15-v1)",
+    "120% mark (MARKET_EV_THRESHOLD=1.2)",
+    "market-mix 100% mark (141)"
+  ],
+  "evidence_source": "decision_quotes",
+  "min_diff_ci_low": 0.0,
+  "min_points": 300,
+  "outside_this_rule": [
+    "yearly coefficient/booster refresh (D17)"
+  ],
+  "registered_on": "2026-10-29",
+  "rule_version": "display-update-rule-v1",
+  "settlement": "official_win_payout_100yen_per_marked_horse"
+}

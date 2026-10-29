@@ -1,6 +1,6 @@
 # 174 発走直前(T−3 分)の判断記録 `decision_quotes`
 
-**Status: 実装完了・ローカル本番 DB に 0022 適用済み・`capture_only_dates`=10/31・11/1・11/7・11/8 登録済み(2026-10-29・main 未 push)。運用は `manual.md`・実装の記録は `result-review.md`。利用者の決定: ①憲法 V は「表ごとに 1 レース 1 行の判断記録」として可(憲法 1.0.1 の注記)②1 日単位の明示起動は手動実行の範囲 ③T−10 の 2 点目は v1 で持たない。capture-only モードも承認。判断材料は `docs/plan/t3-capture-decision-materials-20261029.md`。**
+**Status: 実装完了・ローカル本番 DB に 0022 適用済み・`capture_only_dates`=2026 年の残り全開催日 19 日(10/31〜12/27・11/21〜23 は 3 日間・承認者 kuwatawaku 2026-10-29 15:03 JST・main 未 push)。表示値の更新規則(C14)は `display-update-rule.md`/`.json` に凍結。運用 wrapper は `scripts/near_post_ops.sh`。運用は `manual.md`・実装の記録は `result-review.md`。利用者の決定: ①憲法 V は「表ごとに 1 レース 1 行の判断記録」として可(憲法 1.0.1 の注記)②1 日単位の明示起動は手動実行の範囲 ③T−10 の 2 点目は v1 で持たない。capture-only モードも承認。判断材料は `docs/plan/t3-capture-decision-materials-20261029.md`。**
 
 ## 目的
 
