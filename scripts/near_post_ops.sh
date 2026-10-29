@@ -44,9 +44,9 @@ with psycopg.connect(url) as c:
 PY
 }
 
-entries_one() {  # $1 = shutuba url ; returns the CLI's exit code, prints its summary line
+entries_one() {  # $1 = shutuba url ; prints the CLI's summary line, never aborts the script (set -e)
   (cd "$ROOT/scrape" && "$SCRAPE_PY" -m horseracing_scrape scrape-entries --url "$1" \
-      --archive-dir "$ARCHIVE" --database-url "$DATABASE_URL" 2>&1 | tail -1)
+      --archive-dir "$ARCHIVE" --database-url "$DATABASE_URL" 2>&1 | tail -1) || true
 }
 
 case "$cmd" in
@@ -62,13 +62,15 @@ case "$cmd" in
         [ "$attempt" = 8 ] && { log "枠順が出ないまま 8 回。終了"; exit 3; }
       done
     fi
-    n=0
+    n=0; failed=0
     while IFS=$'\t' read -r rid shutuba _rest; do
       n=$((n+1))
       if [ "$n" = 1 ] && [ "$skip_first" = 1 ]; then log "entries 1: $rid (probe で取得済み)"; continue; fi
       log "entries $n: $rid"
-      entries_one "$shutuba" | sed 's/^/    /'
+      line="$(entries_one "$shutuba")"; echo "    $line"
+      case "$line" in *"status=failed"*|"") failed=$((failed+1)) ;; esac
     done < "$RACES"
+    log "entries failed: $failed / $n"
     log "post_time check (n, with_post_time, with_horse_number_rows):"
     sql "select count(*), count(post_time), (select count(*) from race_horses h join races r using(race_id) where r.race_date=%(d)s and h.horse_number is not null) from races where race_date=%(d)s"
     ;;
@@ -91,7 +93,7 @@ case "$cmd" in
     while IFS=$'\t' read -r rid _shutuba result _rest; do
       n=$((n+1)); log "results $n: $rid"
       (cd "$ROOT/scrape" && "$SCRAPE_PY" -m horseracing_scrape scrape-results --url "$result" \
-          --archive-dir "$ARCHIVE" --database-url "$DATABASE_URL" 2>&1 | tail -1 | sed 's/^/    /')
+          --archive-dir "$ARCHIVE" --database-url "$DATABASE_URL" 2>&1 | tail -1 | sed 's/^/    /') || true
     done < "$RACES"
     log "settlement check (races, races_with_results, official_win_payout_rows):"
     sql "select count(distinct r.race_id), count(distinct res.race_id), (select count(*) from official_win_payouts p join races x using(race_id) where x.race_date=%(d)s) from races r left join race_results res using(race_id) where r.race_date=%(d)s"
