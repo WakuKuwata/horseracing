@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 174 capture-only 運用の 1 日分を 1 コマンドずつにまとめた wrapper(specs/174-near-post-decision-quotes/manual.md の §1〜§3)。
 #
-#   scripts/near_post_ops.sh entries 2026-10-31 [--wait-for-draw]   前日: list-races → 各レース scrape-entries(共有リミッタ 60 秒)→ post_time 検査
+#   scripts/near_post_ops.sh entries 2026-10-31 [--wait-for-draw]   前日 10 時過ぎ以降: list-races → 各レース scrape-entries(共有リミッタ 60 秒)→ post_time 検査
 #   scripts/near_post_ops.sh morning 2026-10-31                      当日朝: robots 再取得(171・1 GET)→ near-post-capture --dry-run
 #   scripts/near_post_ops.sh capture 2026-10-31                      当日: near-post-capture 本番(最初のレースの T−4 までに起動)
 #   scripts/near_post_ops.sh results 2026-10-31                      夜: 各レース scrape-results(公式払戻・確定オッズ込み)→ 払戻件数検査
@@ -10,6 +10,9 @@
 # 新しい取得経路は作らない。既存 CLI を日付で束ねるだけ。policy(config/source-operations.json)は触らない。
 # すべての取得は DB 背後の共有リミッタ(60 秒)を通る(093/172)。--wait-for-draw は枠順未確定(horse_number 欠落で
 # parser が fail-closed)のあいだ 1 時間おきに 1 req だけ再試行する(最大 8 回)。
+# 馬番付き出馬表(枠順)は JRA が「前日の 10 時過ぎ」に発表する(重賞以外。2026-10-29 木曜は 22 時まで空のまま=実測)。
+# 前日 10 時より前に起動すると 8 回を無駄に使う。開催日の翌日分の entries は、その日の捕捉がすべて終わってから起動する
+# (entries の取得が共有リミッタの 60 秒枠を使うと捕捉の 18 秒締切と取り合う)。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

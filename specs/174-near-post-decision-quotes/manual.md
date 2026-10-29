@@ -5,13 +5,13 @@
 **短縮形(2026-10-29 追加)**: 以下 §1〜§3 を日付 1 つで束ねた wrapper が `scripts/near_post_ops.sh` にある(既存 CLI を順に呼ぶだけ・policy は触らない・取得は共有リミッタ 60 秒)。
 
 ```bash
-scripts/near_post_ops.sh entries 2026-10-31 --wait-for-draw   # 前日(枠順未確定なら 1 時間おきに 1 req で再試行・最大 8 回)
+scripts/near_post_ops.sh entries 2026-10-31 --wait-for-draw   # 前日 10 時過ぎ以降(枠順未確定なら 1 時間おきに 1 req で再試行・最大 8 回)
 scripts/near_post_ops.sh morning 2026-10-31                    # 当日朝: robots 再取得(171)+ dry-run
 scripts/near_post_ops.sh capture 2026-10-31                    # 当日: 本番(最初のレースの T−4 までに)
 scripts/near_post_ops.sh results 2026-10-31                    # 夜: 結果+公式払戻
 ```
 
-レース一覧は `artifacts/near_post/<date>/races.tsv`、取得ページの原本は `artifacts/scrape_archive/<date>/`、要約 JSON は `artifacts/near_post/<date>/` に残る。枠順確定前(土曜分は木曜夕方・日曜分は金曜夕方)の出走表は parser が `missing required int: horse_number` で fail-closed になり何も書かない(2026-10-29 14:50 に実測)。
+レース一覧は `artifacts/near_post/<date>/races.tsv`、取得ページの原本は `artifacts/scrape_archive/<date>/`、要約 JSON は `artifacts/near_post/<date>/` に残る。馬番付き出走表(枠順)は JRA が**前日の 10 時過ぎ**に発表する(重賞以外・JRA 告知 2026-10 で確認。土曜分は金曜、日曜分は土曜)。それより前の出走表は parser が `missing required int: horse_number` で fail-closed になり何も書かない(2026-10-29 木曜は 14:50〜21:57 の 9 回すべて枠・馬番セルが空=実測。騎手・斤量は出ている)。開催日の翌日分の entries は、その日の捕捉がすべて終わった夕方に起動する(entries の取得が共有リミッタを使うと捕捉の 18 秒締切と競合する)。
 
 ## 0. 承認の登録(開催日より前・1 回)
 
