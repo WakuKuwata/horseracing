@@ -13,7 +13,8 @@ from horseracing_features.registry import REGISTRY, materialized_columns, model_
 
 _ROOT = Path(__file__).resolve().parents[3]
 _FEATURES_SRC = _ROOT / "features" / "src" / "horseracing_features"
-_FORBIDDEN = ("decision_quotes", "DecisionQuote", "decision_quote", "near_post")
+_FORBIDDEN = ("decision_quotes", "DecisionQuote", "decision_quote", "near_post",
+              "decision_quote_scoring", "near_post_score", "artifacts/near_post")
 
 
 def test_no_features_source_references_decision_quotes():
@@ -28,5 +29,5 @@ def test_no_decision_quote_named_feature_columns():
     names = {f.lower() for f in REGISTRY}
     names |= {c.lower() for c in materialized_columns()}
     names |= {c.lower() for c in model_input_features()}
-    hits = [n for n in names if "decision" in n or "near_post" in n]
+    hits = [n for n in names if "decision" in n or "near_post" in n or "quote_score" in n]
     assert not hits, hits

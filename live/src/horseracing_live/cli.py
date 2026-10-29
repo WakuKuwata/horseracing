@@ -393,6 +393,8 @@ def _cmd_near_post_capture(args) -> int:
         day_features = np_.build_day_features(session.connection(), args.date)
         session.rollback()
         print(f"features built rows={len(day_features.frame)} sha256={day_features.sha256[:12]}", flush=True)
+        saved = np_.save_day_features(day_features, args.features_dir or np_.DEFAULT_FEATURES_DIR)
+        print(f"features parquet {'written ' + str(saved) if saved else 'not written (exists or failed)'}", flush=True)
         fetcher = None
         if not args.dry_run:
             fetcher = make_capture_fetcher(database_url=args.database_url, deadline_s=np_.DEADLINE_S)
@@ -412,6 +414,88 @@ def _cmd_near_post_capture(args) -> int:
         out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps({k: v for k, v in doc.items() if k != "races"}, ensure_ascii=False))
     return 3 if summary.stopped_early else 0
+
+
+def _cmd_near_post_score(args) -> int:
+    """175: score the decision quotes of [--from, --to] (read-only; writes one new JSON)."""
+    import functools
+    import uuid
+    from pathlib import Path
+
+    from horseracing_eval import decision_quote_scoring as dqs
+
+    from . import near_post as np_
+    from . import near_post_score as nps
+
+    run_id = uuid.uuid4().hex[:12]
+    computed_at = np_._now()
+    repo = Path(__file__).resolve().parents[3]
+    try:
+        rule_sha = nps.assert_rule_frozen()
+        if args.date_from > args.date_to:
+            raise nps.ScoreRefused("--from must not be after --to")
+        out_path = Path(args.out) if args.out else nps.default_out_path(args.date_from, args.date_to, run_id)
+        if out_path.exists():
+            raise nps.ScoreRefused(f"--out {out_path} exists (append-only)")
+        cands, cands_sha = [], None
+        if args.candidate:
+            cands, cands_sha = nps.load_candidates(
+                Path(args.candidates) if args.candidates else nps.DEFAULT_CANDIDATES_PATH,
+                names=args.candidate, year=args.date_from.year,
+            )
+    except (nps.ScoreRefused, OSError, ValueError) as exc:
+        print(f"REFUSED: {exc}")
+        return 2
+    features_dir = Path(args.features_dir) if args.features_dir else np_.DEFAULT_FEATURES_DIR
+    ensemble_dir = Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
+    single_dir = Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
+    engine = create_db_engine(args.database_url)
+    with Session(engine) as session:
+        records = nps.load_quote_records(session, date_from=args.date_from, date_to=args.date_to)
+        print(f"near-post-score from={args.date_from} to={args.date_to} rows={len(records)} "
+              f"candidates={[c.name for c in cands]}", flush=True)
+        candidate_races: dict = {}
+        replay_stats = None
+        if cands:
+            @functools.cache
+            def predictor_for(year: int):
+                return np_.ProductionPredictor(ensemble_dir=ensemble_dir, single_dir=single_dir, year=year)
+
+            @functools.cache
+            def ensemble_for(name: str, year: int):
+                cand = next(c for c in cands if c.name == name)
+                return nps.CandidateEnsemble(cand, year=year)
+
+            def rebuild(day):
+                df = np_.build_day_features(session.connection(), day)
+                session.rollback()
+                return df
+
+            candidate_races, replay_stats = nps.candidate_races(
+                records, cands, predictor_for=predictor_for, features_dir=features_dir,
+                rebuild=rebuild, ensemble_for=ensemble_for,
+            )
+        session.rollback()
+    report = dqs.build_report(
+        records,
+        candidates={c.name: {"registered_on": c.registered_on.isoformat(),
+                             "mark_rule": {"threshold": c.threshold}} for c in cands},
+        candidate_races=candidate_races, tz=np_.JST,
+    )
+    for p in report["paired"]:
+        cand = next(c for c in cands if c.name == p["name"])
+        p["kind"] = cand.kind
+        p["artifact_sha256"] = cand.artifact_sha256
+    doc = nps.assemble(
+        report, date_from=args.date_from, date_to=args.date_to, n_rows=len(records), rule_sha=rule_sha,
+        candidates_sha=cands_sha, run_id=run_id, computed_at=computed_at, replay_stats=replay_stats,
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
+    for line in nps.summary_lines(doc):
+        print(line)
+    print(f"written {out_path}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -501,11 +585,30 @@ def main(argv: list[str] | None = None) -> int:
     npc.add_argument("--ensemble-dir", default=None)
     npc.add_argument("--single-dir", default=None)
     npc.add_argument("--out", default=None, help="summary JSON path (append-only: must not exist)")
+    npc.add_argument("--features-dir", default=None,
+                     help="175: where the morning feature rows are saved (default artifacts/near_post)")
     npc.add_argument("--database-url", default=None)
+
+    nps_p = sub.add_parser(
+        "near-post-score",
+        help="175: score the decision quotes of a date range (read-only; one new JSON per run)",
+    )
+    nps_p.add_argument("--from", dest="date_from", type=_parse_date, required=True)
+    nps_p.add_argument("--to", dest="date_to", type=_parse_date, required=True)
+    nps_p.add_argument("--candidate", action="append", default=None,
+                       help="registered candidate name (repeatable; none = incumbent only)")
+    nps_p.add_argument("--candidates", default=None, help="candidates.json (default: specs/175)")
+    nps_p.add_argument("--features-dir", default=None, help="morning parquet dir (default artifacts/near_post)")
+    nps_p.add_argument("--ensemble-dir", default=None)
+    nps_p.add_argument("--single-dir", default=None)
+    nps_p.add_argument("--out", default=None, help="report JSON path (append-only: must not exist)")
+    nps_p.add_argument("--database-url", default=None)
 
     args = parser.parse_args(argv)
     if args.command == "near-post-capture":
         return _cmd_near_post_capture(args)
+    if args.command == "near-post-score":
+        return _cmd_near_post_score(args)
     if args.command == "capture-chaos":
         if args.json and args.date is not None:
             parser.error("--json is only valid with --race-id")

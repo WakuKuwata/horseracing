@@ -154,3 +154,52 @@ def test_frame_sha256_is_order_independent():
     a = pd.DataFrame({"race_id": ["r1", "r1"], "horse_number": [2.0, 1.0], "x": [1, 2]})
     b = a.iloc[::-1].reset_index(drop=True)
     assert np_.frame_sha256(a) == np_.frame_sha256(b)
+
+
+# ----------------------------------------------------------------------------- 175: morning parquet
+
+
+def _day_features(tmp_frame=None):
+    frame = tmp_frame if tmp_frame is not None else pd.DataFrame({
+        "race_id": ["202610310101"] * 2, "horse_id": ["A", "B"], "horse_number": [1.0, 2.0],
+        "odds": [2.5, 4.0], "popularity": [1.0, 2.0], "race_date": pd.to_datetime(["2026-10-31"] * 2),
+        "grade": pd.array([None, "G3"], dtype="string"),
+    })
+    return np_.DayFeatures(day=datetime.date(2026, 10, 31), frame=frame, sha256=np_.frame_sha256(frame),
+                           built_at=T)
+
+
+def test_save_then_load_day_features_roundtrips_sha(tmp_path):
+    df = _day_features()
+    path = np_.save_day_features(df, tmp_path)
+    assert path == tmp_path / "2026-10-31" / f"features-{df.sha256[:12]}.parquet" and path.is_file()
+    back = np_.load_day_features(df.day, df.sha256, tmp_path)
+    assert back is not None and back.sha256 == df.sha256
+    assert np_.frame_sha256(back.frame) == df.sha256
+    assert np_.load_day_features(df.day, "0" * 64, tmp_path) is None
+
+
+def test_save_day_features_never_rewrites_an_existing_file(tmp_path):
+    df = _day_features()
+    first = np_.save_day_features(df, tmp_path)
+    assert first is not None
+    before = first.read_bytes()
+    assert np_.save_day_features(df, tmp_path) is None
+    assert first.read_bytes() == before
+
+
+def test_save_day_features_failure_is_a_warning_not_an_exception(tmp_path, capsys):
+    df = _day_features()
+    blocker = tmp_path / "2026-10-31"
+    blocker.write_text("not a directory")  # mkdir(parents=True) fails on a file
+    assert np_.save_day_features(df, tmp_path) is None
+    assert "WARNING: features parquet not written" in capsys.readouterr().out
+
+
+def test_load_day_features_rejects_a_frame_that_hashes_differently(tmp_path):
+    df = _day_features()
+    path = np_.save_day_features(df, tmp_path)
+    other = df.frame.copy()
+    other.loc[0, "odds"] = 9.9
+    other.to_parquet(path, index=False)  # tampered content under the old name
+    assert np_.load_day_features(df.day, df.sha256, tmp_path) is None

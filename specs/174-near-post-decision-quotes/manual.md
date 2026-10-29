@@ -77,3 +77,13 @@ from decision_quotes where captured_at::date = '2026-11-07' order by captured_at
 - `capture_only_dates` に無い日の起動、`collection_paused` を false にすること、worker の起動、refresh の反復。
 - T−10 の 2 点目(v1 では持たない)。
 - 保存行の訂正(append-only)。出走取消などは読み取り側が `field_digest` で検出する。
+
+
+## §4 夜の 4 番目(175・採点)
+
+`results` の後に `scripts/near_post_ops.sh score <日付> [<終端日>] [候補名...]` を 1 回。読み取り専用で
+`artifacts/near_post/score/<from>_<to>_<stamp>.json` を 1 件書く(上書きしない)。先頭行は 300 点未満のあいだ
+三値が `insufficient` である旨。funnel の合計が行数に一致すること、`payout_race_missing` が 0 であること
+(0 でなければ `results` の取り直し)を見る。候補名は `specs/175-decision-quote-scoring/candidates.json` の
+`name`(現在 `ens15-norm148-v1`)。候補を付けると朝の parquet(`artifacts/near_post/<日付>/features-*.parquet`・
+`capture`/`morning` が書く)から現行を再予測し、ビット一致したレースだけで候補を精算する。

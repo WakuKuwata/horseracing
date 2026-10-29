@@ -1,0 +1,16 @@
+[
+ {
+  "name": "ens15-norm148-v1",
+  "kind": "postprocess",
+  "artifact_path": null,
+  "artifact_sha256": "77fcdd5343ac3c2e8e864149aae9439d94a6de9e850bf30361b5cfea5e9fc0ab",
+  "artifact_version": "mev-ens15-v1",
+  "mark_rule": {
+   "column": "expected_return",
+   "threshold": 1.2
+  },
+  "registered_on": "2026-10-29",
+  "train_through": null,
+  "note": "148: p_norm = p_ens / Σ_started p_ens, EV_norm = p_norm × win_odds, mark EV_norm > 1.2. Post-processing of the displayed mev-ens15-v1 at the same T−3 quote; no training. Registered before any decision_quotes row exists (first capture 2026-10-31). The read-back-period reading of this transform on the current ens15 (N1/N2, 2026-10-25) was undetermined; nothing is promised."
+ }
+]

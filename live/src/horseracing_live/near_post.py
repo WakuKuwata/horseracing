@@ -211,6 +211,49 @@ def build_day_features(conn, day: datetime.date, *, clock: Callable[[], datetime
     return DayFeatures(day=day, frame=mine, sha256=frame_sha256(mine), built_at=clock())
 
 
+DEFAULT_FEATURES_DIR = Path(__file__).resolve().parents[3] / "artifacts" / "near_post"
+
+
+def features_parquet_path(day: datetime.date, sha256: str, features_dir: Path | str = DEFAULT_FEATURES_DIR) -> Path:
+    """``<features_dir>/<day>/features-<sha12>.parquet`` — the morning rows, named by their hash."""
+    return Path(features_dir) / day.isoformat() / f"features-{sha256[:12]}.parquet"
+
+
+def save_day_features(day_features: DayFeatures, features_dir: Path | str = DEFAULT_FEATURES_DIR) -> Path | None:
+    """175: persist the morning rows so a later scoring run can replay the SAME inputs.
+
+    Append-only (an existing file is never rewritten) and never fatal: a failure here must not
+    stop the capture (the rows are a reproduction aid, not an input of the capture). Returns the
+    path written, or None when nothing was written (already present, or the write failed)."""
+    path = features_parquet_path(day_features.day, day_features.sha256, features_dir)
+    if path.exists():
+        return None
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        day_features.frame.to_parquet(tmp, index=False)
+        tmp.replace(path)
+    except Exception as exc:  # noqa: BLE001 — the capture goes on without the aid
+        print(f"WARNING: features parquet not written ({type(exc).__name__}: {exc})", flush=True)
+        return None
+    return path
+
+
+def load_day_features(
+    day: datetime.date, sha256: str, features_dir: Path | str = DEFAULT_FEATURES_DIR,
+) -> DayFeatures | None:
+    """The saved morning rows for ``(day, sha256)``, or None when absent or when the re-read frame
+    does not hash back to ``sha256`` (a silently different file is worse than none)."""
+    path = features_parquet_path(day, sha256, features_dir)
+    if not path.is_file():
+        return None
+    frame = pd.read_parquet(path)
+    if frame_sha256(frame) != sha256:
+        return None
+    built_at = datetime.datetime.fromtimestamp(path.stat().st_mtime, tz=datetime.UTC)
+    return DayFeatures(day=day, frame=frame, sha256=sha256, built_at=built_at)
+
+
 # --------------------------------------------------------------------------- prediction
 
 

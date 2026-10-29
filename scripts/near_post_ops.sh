@@ -5,6 +5,7 @@
 #   scripts/near_post_ops.sh morning 2026-10-31                      当日朝: robots 再取得(171・1 GET)→ near-post-capture --dry-run
 #   scripts/near_post_ops.sh capture 2026-10-31                      当日: near-post-capture 本番(最初のレースの T−4 までに起動)
 #   scripts/near_post_ops.sh results 2026-10-31                      夜: 各レース scrape-results(公式払戻・確定オッズ込み)→ 払戻件数検査
+#   scripts/near_post_ops.sh score 2026-10-31 [2026-11-01] [cand...]  夜: 175 near-post-score(読み取り専用・JSON 1 件・候補名は任意)
 #
 # 新しい取得経路は作らない。既存 CLI を日付で束ねるだけ。policy(config/source-operations.json)は触らない。
 # すべての取得は DB 背後の共有リミッタ(60 秒)を通る(093/172)。--wait-for-draw は枠順未確定(horse_number 欠落で
@@ -17,7 +18,7 @@ SCRAPE_PY="$ROOT/scrape/.venv/bin/python"
 LIVE_PY="$ROOT/live/.venv/bin/python"
 PROFILE="$ROOT/config/.env.manual-observer"   # 171 の private profile(表示・コミット禁止)
 
-usage() { sed -n '2,12p' "$0"; exit 2; }
+usage() { sed -n '2,13p' "$0"; exit 2; }
 [ $# -ge 2 ] || usage
 cmd="$1"; day="$2"; shift 2
 [[ "$day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "date must be YYYY-MM-DD" >&2; exit 2; }
@@ -80,12 +81,12 @@ case "$cmd" in
     log "robots refresh (171, 1 GET)"
     (cd "$ROOT" && "$SCRAPE_PY" -m scripts.roi_explore.robots_refresh_171 --profile "$PROFILE" --out "$ROOT/artifacts/robots_refresh/$stamp")
     log "near-post-capture --dry-run"
-    (cd "$ROOT/live" && "$LIVE_PY" -m horseracing_live near-post-capture --date "$day" --dry-run --out "$DAYDIR/dry-$stamp.json")
+    (cd "$ROOT/live" && "$LIVE_PY" -m horseracing_live near-post-capture --date "$day" --dry-run --out "$DAYDIR/dry-$stamp.json" --features-dir "$ROOT/artifacts/near_post")
     ;;
   capture)
     stamp="$(date +%Y%m%d-%H%M%S)"
     log "near-post-capture LIVE (ends after the last race)"
-    (cd "$ROOT/live" && "$LIVE_PY" -m horseracing_live near-post-capture --date "$day" --out "$DAYDIR/capture-$stamp.json")
+    (cd "$ROOT/live" && "$LIVE_PY" -m horseracing_live near-post-capture --date "$day" --out "$DAYDIR/capture-$stamp.json" --features-dir "$ROOT/artifacts/near_post")
     ;;
   results)
     list_races
@@ -97,6 +98,16 @@ case "$cmd" in
     done < "$RACES"
     log "settlement check (races, races_with_results, official_win_payout_rows):"
     sql "select count(distinct r.race_id), count(distinct res.race_id), (select count(*) from official_win_payouts p join races x using(race_id) where x.race_date=%(d)s) from races r left join race_results res using(race_id) where r.race_date=%(d)s"
+    ;;
+  score)
+    to="$day"; cands=()
+    if [ $# -ge 1 ] && [[ "$1" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then to="$1"; shift; fi
+    for c in "$@"; do cands+=(--candidate "$c"); done
+    stamp="$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$ROOT/artifacts/near_post/score"
+    log "near-post-score $day..$to ${cands[*]:-}"
+    (cd "$ROOT/live" && "$LIVE_PY" -m horseracing_live near-post-score --from "$day" --to "$to" "${cands[@]}" \
+        --features-dir "$ROOT/artifacts/near_post" --out "$ROOT/artifacts/near_post/score/${day}_${to}_$stamp.json")
     ;;
   *) usage ;;
 esac
