@@ -5,6 +5,7 @@ from __future__ import annotations
 from .attention import AttentionCheckpoint, AttentionPick, AttentionRaceScan
 from .chaos import ChaosReadout, ChaosSnapshot, FetchThrottleState
 from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
+from .decision_quotes import DecisionQuote
 from .ingestion import IdMapping, IngestionJob
 from .market import ExoticOdds, ExoticQuote, OfficialWinPayout, RaceLaps
 from .market_ev import MarketEvPrediction
@@ -26,6 +27,7 @@ __all__ = [
     "PURCHASE_KINDS",
     "PurchaseRecord",
     "ChaosSnapshot",
+    "DecisionQuote",
     "FetchThrottleState",
     "DiagnosticRun",
     "Race",

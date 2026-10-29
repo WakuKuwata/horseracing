@@ -91,6 +91,7 @@ def _add_race_and_snapshot(session, *, status: str = "active") -> ChaosSnapshot:
 _TABLES_ADDED_AFTER_0012 = {
     "fetch_throttle_state", "exotic_quotes", "purchase_records", "market_ev_predictions",
     "attention_race_scans", "attention_picks", "attention_checkpoints", "official_win_payouts",
+    "decision_quotes",
 }
 
 

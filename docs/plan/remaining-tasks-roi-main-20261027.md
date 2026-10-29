@@ -37,7 +37,7 @@
 
 19. **候補 B(オッズノイズ学習)の受入測定(173・2026-10-29)= REJECT**。10/08 独立評価の候補 B は 140 ①-a(`mev-ens15-judged-v0`)として学習済みだったので再学習せず、未測定だった受入(締切保持率 ≥0.5・EV_F/EV_J ≥0.95)を R02 443 集合で一度だけ測った。judged は S3 該当が 82→177 に倍増(前日帯)し、締切保持率 0.011(現行 0.171)・EV 比 0.53(現行 0.81)。該当馬の判断時確率は較正されている(Σwon/Σp̂ 1.02)のに締切までに売れて払戻が半分になる=**価格ずれは判断時モデルの精度では埋まらず、支払価格が違うことが正体**。判断時側の軸は 140 ①-c に続き 2 度目の否定。残る経路は T−3 分捕捉(C13 の家族)。`specs/173-odds-noise-retention/result-review.md`。
 
-20. **T−3 分捕捉の決定 3 件と capture-only の承認(2026-10-29・利用者判断)**(**決定済み 2026-10-29・推奨どおり**: ①可(憲法 1.0.1 注記)②可 ③持たない・capture-only 承認 → 174 実装へ)。173 の結果を受けた唯一残る測定手段。判断材料 `docs/plan/t3-capture-decision-materials-20261029.md`・spec Draft `specs/174-near-post-decision-quotes/spec.md`。推奨: ①憲法 V は「表ごとに 1 レース 1 行の判断記録」として可(注記 1 行)②1 日単位の明示起動なら手動実行の範囲 ③T−10 の 2 点目は v1 で持たない。取得は全面再開でなく capture-only(前日 entries・当日 T−3・夜 results=約 110 req/日)。決まれば実装 1〜2 週・測定 2〜3 か月。
+20. **T−3 分捕捉の決定 3 件と capture-only の承認(2026-10-29・利用者判断)**(**決定済み 2026-10-29・推奨どおり**: ①可(憲法 1.0.1 注記)②可 ③持たない・capture-only 承認 → **174 実装完了(2026-10-29)**: migration 0022 `decision_quotes`・`live near-post-capture`・172 policy の `capture_only_dates`・runbook `specs/174-near-post-decision-quotes/manual.md`。**残る運用**: 開催日の `capture_only_dates` 登録(承認者と日時)→前日 entries→当日 robots 再取得+dry-run→本番→夜 results。読み取り API/ページは後段 spec)。173 の結果を受けた唯一残る測定手段。判断材料 `docs/plan/t3-capture-decision-materials-20261029.md`・spec Draft `specs/174-near-post-decision-quotes/spec.md`。推奨: ①憲法 V は「表ごとに 1 レース 1 行の判断記録」として可(注記 1 行)②1 日単位の明示起動なら手動実行の範囲 ③T−10 の 2 点目は v1 で持たない。取得は全面再開でなく capture-only(前日 entries・当日 T−3・夜 results=約 110 req/日)。決まれば実装 1〜2 週・測定 2〜3 か月。
 
 ## D. 期限があるもの
 

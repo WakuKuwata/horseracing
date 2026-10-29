@@ -9,6 +9,8 @@ dependencies = [
     "horseracing-betting",
     "horseracing-probability",
     "horseracing-scrape",
+    "horseracing-training",
+    "horseracing-eval",
     "sqlalchemy>=2.0",
     "psycopg[binary]>=3.1",
 ]
@@ -26,6 +28,8 @@ horseracing-serving = { path = "../serving", editable = true }
 horseracing-betting = { path = "../betting", editable = true }
 horseracing-probability = { path = "../probability", editable = true }
 horseracing-scrape = { path = "../scrape", editable = true }
+horseracing-training = { path = "../training", editable = true }
+horseracing-eval = { path = "../eval", editable = true }
 
 [build-system]
 requires = ["hatchling"]

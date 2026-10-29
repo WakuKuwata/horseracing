@@ -179,3 +179,43 @@ def test_detached_service_has_separate_session_and_no_secret_arguments(
     assert "private-value" not in " ".join(command)
     assert options["env"]["DATABASE_URL"] == "private-value-not-for-arguments"
     assert args.pidfile.read_text() == "123456\n"
+
+
+# ---- Feature 174: capture-only days -------------------------------------------------------
+
+
+def test_capture_only_keys_accepted_together(tmp_path):
+    policy = load_policy(
+        policy_file(
+            tmp_path,
+            capture_only_dates=["2026-11-07", "2026-11-08"],
+            capture_only_approved_by="owner",
+            capture_only_approved_at="2026-10-29T10:00:00+09:00",
+        )
+    )
+    assert policy["collection_paused"] is True
+    assert policy["capture_only_dates"] == ["2026-11-07", "2026-11-08"]
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"capture_only_dates": ["2026-11-07"]},  # partial trio
+        {"capture_only_dates": ["2026-11-07"], "capture_only_approved_by": "owner"},
+        {"capture_only_dates": "2026-11-07", "capture_only_approved_by": "owner",
+         "capture_only_approved_at": "2026-10-29T10:00:00+09:00"},
+        {"capture_only_dates": ["2026/11/07"], "capture_only_approved_by": "owner",
+         "capture_only_approved_at": "2026-10-29T10:00:00+09:00"},
+        {"capture_only_dates": ["2026-11-07", "2026-11-07"], "capture_only_approved_by": "owner",
+         "capture_only_approved_at": "2026-10-29T10:00:00+09:00"},
+        {"capture_only_dates": ["2026-11-07"], "capture_only_approved_by": " ",
+         "capture_only_approved_at": "2026-10-29T10:00:00+09:00"},
+        {"capture_only_dates": ["2026-11-07"], "capture_only_approved_by": "owner",
+         "capture_only_approved_at": "yesterday"},
+        {"capture_only_dates": ["2026-11-07"], "capture_only_approved_by": "owner",
+         "capture_only_approved_at": "2026-10-29T10:00:00+09:00", "collection_paused": False},
+    ],
+)
+def test_capture_only_keys_rejected_when_incomplete_or_invalid(tmp_path, changes):
+    with pytest.raises(ValueError):
+        load_policy(policy_file(tmp_path, **changes))

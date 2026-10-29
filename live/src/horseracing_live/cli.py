@@ -351,6 +351,69 @@ def _cmd_refresh(session: Session, args) -> int:
     return 0 if rep.ok else 1
 
 
+def _cmd_near_post_capture(args) -> int:
+    """Feature 174: one manually started race day of near-post decision records."""
+    from pathlib import Path
+
+    from . import near_post as np_
+    from .chaos_politeness import make_capture_fetcher
+
+    repo = Path(__file__).resolve().parents[3]
+    policy_path = Path(args.policy) if args.policy else np_.DEFAULT_POLICY_PATH
+    out_path = Path(args.out) if args.out else None
+    if out_path is not None and out_path.exists():
+        print(f"ERROR: --out {out_path} exists (append-only)")
+        return 2
+    now = np_._now()
+    try:
+        policy = np_.load_capture_policy(policy_path)
+        np_.assert_day_allowed(policy, args.date, today=now.astimezone(np_.JST).date())
+    except np_.NearPostRefused as exc:
+        print(f"REFUSED: {exc}")
+        return 2
+    fresh, detail = np_.robots_fresh(now)
+    if not fresh and not args.dry_run:
+        print(f"REFUSED: robots: {detail}")
+        return 2
+    ensemble_dir = Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
+    single_dir = Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
+    engine = create_db_engine(args.database_url)
+    with Session(engine) as session:
+        races = np_.day_races(session, args.date)
+        if not races:
+            print(f"REFUSED: no races with post_time on {args.date} (ingest the entries first)")
+            return 2
+        schedule = np_.schedule_day(races)
+        print(f"near-post-capture date={args.date} races={len(schedule)} dry_run={args.dry_run} "
+              f"first_target={schedule[0].target_at.isoformat()} robots={'fresh' if fresh else detail}",
+              flush=True)
+        predictor = np_.ProductionPredictor(
+            ensemble_dir=ensemble_dir, single_dir=single_dir, year=args.date.year
+        )
+        day_features = np_.build_day_features(session.connection(), args.date)
+        session.rollback()
+        print(f"features built rows={len(day_features.frame)} sha256={day_features.sha256[:12]}", flush=True)
+        fetcher = None
+        if not args.dry_run:
+            fetcher = make_capture_fetcher(database_url=args.database_url, deadline_s=np_.DEADLINE_S)
+        try:
+            summary = np_.run_day(
+                session, day=args.date, schedule=schedule, fetcher=fetcher, predictor=predictor,
+                day_features=day_features, dry_run=args.dry_run,
+            )
+        finally:
+            close = getattr(fetcher, "close", None)
+            if close is not None:
+                close()
+    doc = summary.as_dict()
+    doc["policy_approval"] = policy["approved"]
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps({k: v for k, v in doc.items() if k != "races"}, ensure_ascii=False))
+    return 3 if summary.stopped_early else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="live")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -428,7 +491,21 @@ def main(argv: list[str] | None = None) -> int:
     cc.add_argument("--allow-outside-horizon", action="store_true")
     cc.add_argument("--database-url", default=None)
 
+    npc = sub.add_parser(
+        "near-post-capture",
+        help="174: one race day — freeze the T−3 min quote + predictions per race (manual start)",
+    )
+    npc.add_argument("--date", type=_parse_date, required=True)
+    npc.add_argument("--dry-run", action="store_true", help="no fetch, no write: times and gates only")
+    npc.add_argument("--policy", default=None, help="config/source-operations.json (default)")
+    npc.add_argument("--ensemble-dir", default=None)
+    npc.add_argument("--single-dir", default=None)
+    npc.add_argument("--out", default=None, help="summary JSON path (append-only: must not exist)")
+    npc.add_argument("--database-url", default=None)
+
     args = parser.parse_args(argv)
+    if args.command == "near-post-capture":
+        return _cmd_near_post_capture(args)
     if args.command == "capture-chaos":
         if args.json and args.date is not None:
             parser.error("--json is only valid with --race-id")

@@ -31,20 +31,52 @@ def unique(pairs):
     return result
 
 
+#: Feature 174 (capture-only days): an explicit, approved list of race days on which the manual
+#: near-post capture may run. All three keys travel together; collection stays paused.
+CAPTURE_ONLY_KEYS = frozenset(
+    {"capture_only_dates", "capture_only_approved_by", "capture_only_approved_at"}
+)
+
+
+def validate_capture_only(result):
+    keys = CAPTURE_ONLY_KEYS & set(result)
+    if not keys:
+        return
+    require(keys == CAPTURE_ONLY_KEYS, "capture_only_keys_incomplete")
+    dates = result["capture_only_dates"]
+    require(isinstance(dates, list), "capture_only_dates_not_list")
+    seen = set()
+    for value in dates:
+        require(isinstance(value, str), "capture_only_date_not_string")
+        try:
+            day = dt.date.fromisoformat(value)
+        except ValueError:
+            raise ValueError("capture_only_date_not_iso") from None
+        require(day not in seen, "capture_only_date_duplicate")
+        seen.add(day)
+    by = result["capture_only_approved_by"]
+    require(isinstance(by, str) and by.strip() != "", "capture_only_approved_by_empty")
+    at = result["capture_only_approved_at"]
+    require(isinstance(at, str), "capture_only_approved_at_not_string")
+    try:
+        dt.datetime.fromisoformat(at)
+    except ValueError:
+        raise ValueError("capture_only_approved_at_not_iso") from None
+
+
 def load_policy(path=CONFIG):
     require(not path.is_symlink() and path.is_file(), "policy_missing_or_symlink")
     result = json.loads(path.read_text(), object_pairs_hook=unique)
-    require(
-        set(result)
-        == {
-            "schema_version",
-            "source_interval_seconds",
-            "ops_fetch_min_interval_seconds",
-            "shared_limiter_enabled",
-            "collection_paused",
-        },
-        "policy_keys_invalid",
-    )
+    required = {
+        "schema_version",
+        "source_interval_seconds",
+        "ops_fetch_min_interval_seconds",
+        "shared_limiter_enabled",
+        "collection_paused",
+    }
+    present = set(result)
+    require(required <= present and present <= required | CAPTURE_ONLY_KEYS, "policy_keys_invalid")
+    validate_capture_only(result)
     require(result["schema_version"] == "172-v1", "policy_version_invalid")
     for key in ("source_interval_seconds", "ops_fetch_min_interval_seconds"):
         value = result[key]

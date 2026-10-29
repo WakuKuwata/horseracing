@@ -256,6 +256,48 @@ def final_odds_provenance_missing(session: Session) -> int:
     ).scalar_one())
 
 
+#: The 13 columns ``market_structure`` derives from the current ``odds`` of a race's started field.
+MARKET_STRUCTURE_COLUMNS = (
+    "field_size", "race_ok", "q", "odds_rank", "fav_odds", "second_odds", "odds_gap12", "fav_q",
+    "q_share_of_fav", "q_entropy_norm", "n_fav_under_2", "n_odds_under_10", "is_fav",
+)
+
+
+def market_structure(df: pd.DataFrame) -> pd.DataFrame:
+    """Recompute the race-level market-structure columns from ``df['odds']`` (float, NaN allowed).
+
+    This is the ONLY place these columns are defined: ``build_features`` calls it on the whole
+    history, and Feature 174 calls it again on one day's rows after swapping in the T−3 quote
+    (``odds`` / ``popularity``), so the near-post prediction sees exactly the production columns.
+    ``df`` must carry ``race_id`` (str), ``horse_id``, ``horse_number`` (float) and ``odds``
+    (float); the index is preserved and the other columns are untouched."""
+    df = df.copy()
+    g = df.groupby("race_id", sort=False)
+    df["field_size"] = g["horse_id"].transform("size").astype(float)
+    df["race_ok"] = g["odds"].transform(lambda s: bool(s.notna().all() and (s > 0).all()))
+    inv = 1.0 / df["odds"]
+    df["q"] = inv / _group_sum(inv, df["race_id"])
+    order = df.sort_values(["race_id", "odds", "horse_number"]).index
+    rank = np.empty(len(df), dtype=float)
+    rank[df.index.get_indexer(order)] = (
+        df.loc[order].groupby("race_id", sort=False).cumcount().to_numpy() + 1
+    )
+    df["odds_rank"] = rank
+    fav = df[df["odds_rank"] == 1].set_index("race_id")["odds"]
+    sec = df[df["odds_rank"] == 2].set_index("race_id")["odds"]
+    df["fav_odds"] = df["race_id"].map(fav).astype(float)
+    df["second_odds"] = df["race_id"].map(sec).astype(float)
+    df["odds_gap12"] = df["second_odds"] - df["fav_odds"]
+    df["fav_q"] = df.groupby("race_id", sort=False)["q"].transform("max")
+    df["q_share_of_fav"] = df["q"] / df["fav_q"]
+    ent = _group_sum(-(df["q"] * np.log(df["q"].clip(lower=1e-12))), df["race_id"])
+    df["q_entropy_norm"] = ent / np.log(df["field_size"].clip(lower=2))
+    df["n_fav_under_2"] = _group_sum((df["odds"] < 2.0).astype(float), df["race_id"])
+    df["n_odds_under_10"] = _group_sum((df["odds"] < 10.0).astype(float), df["race_id"])
+    df["is_fav"] = df["odds_rank"] == 1
+    return df
+
+
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
     """Rebuild the research features (build_dataset.py) for every row. Outcome columns of a row are
     never used for that row's own features; they enter only through strictly-earlier races/dates."""
@@ -285,27 +327,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     df["grade"] = df["grade"].map(_GRADE_CANON).astype(object)
 
     # ---- race-level market structure (current odds)
-    g = df.groupby("race_id", sort=False)
-    df["field_size"] = g["horse_id"].transform("size").astype(float)
-    df["race_ok"] = g["odds"].transform(lambda s: bool(s.notna().all() and (s > 0).all()))
-    inv = 1.0 / df["odds"]
-    df["q"] = inv / _group_sum(inv, df["race_id"])
-    order = df.sort_values(["race_id", "odds", "horse_number"]).index
-    rank = np.empty(len(df), dtype=float)
-    rank[order] = df.loc[order].groupby("race_id", sort=False).cumcount().to_numpy() + 1
-    df["odds_rank"] = rank
-    fav = df[df["odds_rank"] == 1].set_index("race_id")["odds"]
-    sec = df[df["odds_rank"] == 2].set_index("race_id")["odds"]
-    df["fav_odds"] = df["race_id"].map(fav).astype(float)
-    df["second_odds"] = df["race_id"].map(sec).astype(float)
-    df["odds_gap12"] = df["second_odds"] - df["fav_odds"]
-    df["fav_q"] = g["q"].transform("max")
-    df["q_share_of_fav"] = df["q"] / df["fav_q"]
-    ent = _group_sum(-(df["q"] * np.log(df["q"].clip(lower=1e-12))), df["race_id"])
-    df["q_entropy_norm"] = ent / np.log(df["field_size"].clip(lower=2))
-    df["n_fav_under_2"] = _group_sum((df["odds"] < 2.0).astype(float), df["race_id"])
-    df["n_odds_under_10"] = _group_sum((df["odds"] < 10.0).astype(float), df["race_id"])
-    df["is_fav"] = df["odds_rank"] == 1
+    df = market_structure(df)
     rn = df.groupby(["race_date", "venue_code"])["race_number"]
     df["is_last_race"] = df["race_number"] == rn.transform("max")
     df["is_first_race"] = df["race_number"] == rn.transform("min")

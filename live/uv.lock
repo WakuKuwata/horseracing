@@ -344,9 +344,11 @@ source = { editable = "." }
 dependencies = [
     { name = "horseracing-betting" },
     { name = "horseracing-db" },
+    { name = "horseracing-eval" },
     { name = "horseracing-probability" },
     { name = "horseracing-scrape" },
     { name = "horseracing-serving" },
+    { name = "horseracing-training" },
     { name = "psycopg", extra = ["binary"] },
     { name = "sqlalchemy" },
 ]
@@ -362,9 +364,11 @@ dev = [
 requires-dist = [
     { name = "horseracing-betting", editable = "../betting" },
     { name = "horseracing-db", editable = "../db" },
+    { name = "horseracing-eval", editable = "../eval" },
     { name = "horseracing-probability", editable = "../probability" },
     { name = "horseracing-scrape", editable = "../scrape" },
     { name = "horseracing-serving", editable = "../serving" },
+    { name = "horseracing-training", editable = "../training" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "sqlalchemy", specifier = ">=2.0" },
 ]

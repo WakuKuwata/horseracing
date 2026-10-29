@@ -857,3 +857,38 @@ def test_cli_attention_checkpoints(fake_checkpoints, capsys):
     outcome["error"] = "CheckpointStartDateMismatch: S1/300"
     assert cli.main(["attention-checkpoints"]) == 1
     assert "ERROR: attention-checkpoints: CheckpointStartDateMismatch" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------- market_structure (174)
+
+
+def test_market_structure_is_the_single_definition_build_features_uses():
+    """Feature 174 recomputes the market block from a T−3 quote: the extracted function must
+    reproduce build_features' 13 columns exactly, on any index, and touch nothing else."""
+    raw = raw_frame()
+    feats = market_ev.build_features(raw)
+    cols = list(market_ev.MARKET_STRUCTURE_COLUMNS)
+    prepared = feats.drop(columns=cols).sample(frac=1.0, random_state=7)  # shuffled index
+    again = market_ev.market_structure(prepared)
+    pd.testing.assert_frame_equal(
+        again[cols].sort_index(), feats[cols].sort_index(), check_exact=True
+    )
+    pd.testing.assert_frame_equal(again.drop(columns=cols), prepared, check_exact=True)
+    assert list(again.index) == list(prepared.index)
+
+
+def test_market_structure_follows_a_swapped_quote_and_only_the_market_block_moves():
+    raw = raw_frame()
+    feats = market_ev.build_features(raw)
+    rid = feats["race_id"].iloc[0]
+    swapped = feats.copy()
+    m = swapped["race_id"] == rid
+    swapped.loc[m, "odds"] = swapped.loc[m, "odds"].to_numpy()[::-1]
+    out = market_ev.market_structure(swapped)
+    cols = list(market_ev.MARKET_STRUCTURE_COLUMNS)
+    assert not out.loc[m, "q"].equals(feats.loc[m, "q"])
+    pd.testing.assert_frame_equal(out.loc[~m, cols], feats.loc[~m, cols], check_exact=True)
+    pd.testing.assert_frame_equal(
+        out.drop(columns=cols + ["odds"]), feats.drop(columns=cols + ["odds"]), check_exact=True
+    )
+    assert abs(out.loc[m, "q"].sum() - 1.0) < 1e-12
