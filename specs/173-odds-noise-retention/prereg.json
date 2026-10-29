@@ -1,0 +1,52 @@
+{
+ "name": "173 odds-noise training (candidate B) acceptance: judgement-time retention and EV_F/EV_J",
+ "frozen_at": "2026-10-29",
+ "spec": "specs/173-odds-noise-retention/spec.md",
+ "no_retraining": true,
+ "arms": {
+  "ens15": {"artifact": "artifacts/market_ev/mev-ens15-v1", "version": "mev-ens15-v1", "year": 2026, "seeds": 15},
+  "judged": {"artifact": "artifacts/market_ev/judged/mev-ens15-judged-v0", "version": "mev-ens15-judged-v0", "year": 2026, "seeds": 15, "extra_feature": "log_min = log(h minutes)"}
+ },
+ "primary_set": {
+  "path": "artifacts/roi_comprehensive_20261005/price_robustness/scored_pairs.parquet",
+  "expected": {"races": 443, "rows": 5967, "race_days": 17, "pairs": 443},
+  "judged_odds": "O_J", "closing_odds": "O_F", "horizon_hours": "hours",
+  "generator_fit_overlap": "in-sample for the 140 generator (same 17 race days); labels not used for training"
+ },
+ "secondary_set": {
+  "source": "db read-only, 140 protocol v2 population",
+  "from": "2026-10-05", "to": "2026-10-25",
+  "judged_odds": "market_ev_predictions.odds_used (result_pending_at_compute)",
+  "closing_odds": "race_horses.odds (current)",
+  "role": "record only (out of generator fit period, h mostly 10-30 min)"
+ },
+ "closing_side": "production ens15 (mev-ens15-v1, 2026) evaluated at O_F; diagnostic: judged at log_min=0 and O_F",
+ "market_block": "scripts/roi_explore/missed_20261004/r02_drift.py market_block (popularity := odds_rank), same as 140",
+ "rules": ["S1", "S2", "S3", "S4"],
+ "rules_not_defined_for_judged": ["S5"],
+ "metrics": {
+  "retention": "|J_r(arm) & F_r(ens15,O_F)| / |J_r(arm)|",
+  "ev_ratio_median": "median over J_r(arm) of EV_F(ens15,O_F) / EV_J(arm,O_J)",
+  "calibration": "sum(won)/sum(p_J) over J_r(arm)",
+  "hours_bands": [0.25, 0.5, 1.0, 3.0, 10.0, 40.0],
+  "roi_official": "official_race rows only, 100 yen per J pick, official win payout; reference only"
+ },
+ "bootstrap": {"impl": "horseracing_eval.bootstrap.block_bootstrap_counts", "block": "race_day", "b": 4000, "seed": 20261029, "ci": "percentile 95%"},
+ "parity_fail_closed": {
+  "ens15_ev_j_vs_EVe_J_max_abs": 1e-6,
+  "ens15_ev_f_vs_EVe_F_max_abs": 1e-6,
+  "ens15_flags_vs_J_S_F_S": "exact for S1..S4"
+ },
+ "verdict": {
+  "primary": {"set": "primary_set", "arm": "judged", "rule": "S3"},
+  "min_n_j": 20,
+  "pass_if": {"retention_ge": 0.5, "ev_ratio_median_ge": 0.95},
+  "outcomes": ["PASS", "REJECT", "NO_DECISION"],
+  "pass_meaning": "worth a next stage; not an ROI claim; no production wiring"
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "本番非結線・表示不変",
+  "主集合は 140 生成器の fit 期間と同一(注入分布に対して in-sample)"
+ ]
+}

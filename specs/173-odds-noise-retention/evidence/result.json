@@ -1,0 +1,1241 @@
+{
+ "name": "173 odds-noise training (candidate B) acceptance: judgement-time retention and EV_F/EV_J",
+ "run_at": "2026-10-29T00:35:49.071389+00:00",
+ "prereg_sha256": "18a4fc5db892d29ea39ea1830b67e4b689e5a715f4b54d351ea6de83fe4a6499",
+ "models": {
+  "ens15": {
+   "manifest": "ensemble_2026.json",
+   "manifest_sha256": "6a4f42895b7c7b622559fc30458f84eff39744099a3a80778c7d1a541de1c7d9"
+  },
+  "judged": {
+   "dir": "/Users/kuwatawaku/workspace/horseracing/artifacts/market_ev/judged/mev-ens15-judged-v0",
+   "seeds_found": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "seeds_missing": [],
+   "partial": false,
+   "generator_sha256": "8b760a777f5dd3dffb97dd0b365d0f1a8470e1b16fb692862848fda3dbd56ae7"
+  },
+  "judged_model_sha256": {
+   "seed_01": "72484c421fc29318bc7276d10ac2146440a7ab9ddf00968f6bf840f981f803d7",
+   "seed_02": "34efd4460c97cd5fb6eb7c853cec8027b6cb6e24fd8f51345e176096238944a3",
+   "seed_03": "685554db0aa015d501ded8a9c3581cea817aad4880d960271cf15f2b5c8b2e01",
+   "seed_04": "4b0f5be79ed0c67cf3c340414188db47759aafdbffc1e9817d51fbceaa61f65b",
+   "seed_05": "9e245f395a0855c9bb5f60246b2e7f777c60fc10723fbf6737062e750ed5dd9a",
+   "seed_06": "7b5aa5c8eb3a3de8d554b22a8a475ffdcd4eb690389bc82d4a297e0738782a62",
+   "seed_07": "161815c03814530de8bbe42bf85bf15cb174233a25dcc196750d87892daab71b",
+   "seed_08": "673389d3602f29f81f22667240cd691586d75e4ef9a0a8decba02db1f685cf89",
+   "seed_09": "be0c8f8ce80bd3a94d4daf29326a76d17010b1ed655125a806d2e521786af236",
+   "seed_10": "2db95acce066c38f824bd6c7cbda26ddba7bdd4267b2192eca262c3fa32be6c9",
+   "seed_11": "a297ccbd690f0aefbfd503e891c14d6587ef17d94feb6e6ffaa653b2a4c3c9cb",
+   "seed_12": "cdd58d31ca035d030fa78c17eac6bc3532b27cce5410a8ccbbdd95fb3bb6c4d8",
+   "seed_13": "7020a8d8ce1e67d3cea5203cfc5c67474c85750bdb44d7269e245bdd19184c35",
+   "seed_14": "902cbfc27268b67828798e02d9b1ea40a920d43d56f4de3088a3b879755853ef",
+   "seed_15": "bb3e7b3369b0edb3578c0fc090cba59341b34c4a4bf3ea81c37d0674dfd5097a"
+  }
+ },
+ "primary": {
+  "n_rows": 5967,
+  "n_races": 443,
+  "n_days": 17,
+  "arms": {
+   "ens15": {
+    "S1": {
+     "n_j": 39,
+     "n_retained": 5,
+     "n_f": 8,
+     "retention": 0.1282051282051282,
+     "ev_ratio_median": 0.8080040955550637,
+     "ev_j_median": 1.2652940015401024,
+     "won": 2,
+     "sum_p_j": 1.8152856780813629,
+     "calib_won_over_p": 1.1017549601966055,
+     "retention_ci": [
+      0.02631578947368421,
+      0.24324324324324326
+     ],
+     "ev_ratio_median_ci": [
+      0.6882991577282003,
+      0.8437835281584141
+     ],
+     "roi_official_reference": {
+      "n": 23,
+      "roi": 0.9043478260869565,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.05128205128205128,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 1,
+       "n_retained": 1,
+       "retention": 1.0,
+       "ev_ratio_median": 1.0290581032974604
+      },
+      "(0.25,0.5]": {
+       "n_j": 9,
+       "n_retained": 3,
+       "retention": 0.3333333333333333,
+       "ev_ratio_median": 0.8168980517910063
+      },
+      "(0.5,1]": {
+       "n_j": 5,
+       "n_retained": 1,
+       "retention": 0.2,
+       "ev_ratio_median": 0.8437835281584141
+      },
+      "(1,3]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.6414734310603346
+      },
+      "(3,10]": {
+       "n_j": 14,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.5802044694297719
+      },
+      "(10,40]": {
+       "n_j": 9,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8080040955550637
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S2": {
+     "n_j": 15,
+     "n_retained": 1,
+     "n_f": 1,
+     "retention": 0.06666666666666667,
+     "ev_ratio_median": 0.8168980517910063,
+     "ev_j_median": 1.3948958055126521,
+     "won": 1,
+     "sum_p_j": 0.7177027337064094,
+     "calib_won_over_p": 1.3933345283997065,
+     "retention_ci": [
+      0.0,
+      0.25
+     ],
+     "ev_ratio_median_ci": [
+      0.5755850983497708,
+      0.8938146992671838
+     ],
+     "roi_official_reference": {
+      "n": 9,
+      "roi": 2.3111111111111113,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.0,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.25,0.5]": {
+       "n_j": 3,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.9076263412484752
+      },
+      "(0.5,1]": {
+       "n_j": 2,
+       "n_retained": 1,
+       "retention": 0.5,
+       "ev_ratio_median": 0.88163763158106
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 9,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.5755850983497708
+      },
+      "(10,40]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8938146992671838
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S3": {
+     "n_j": 82,
+     "n_retained": 14,
+     "n_f": 30,
+     "retention": 0.17073170731707318,
+     "ev_ratio_median": 0.8080040955550637,
+     "ev_j_median": 1.258917118785864,
+     "won": 2,
+     "sum_p_j": 3.975435004971166,
+     "calib_won_over_p": 0.503089598370759,
+     "retention_ci": [
+      0.08045977011494253,
+      0.2619047619047619
+     ],
+     "ev_ratio_median_ci": [
+      0.7675520205008963,
+      0.8369894431148311
+     ],
+     "roi_official_reference": {
+      "n": 50,
+      "roi": 0.41600000000000004,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.036585365853658534,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 4,
+       "n_retained": 3,
+       "retention": 0.75,
+       "ev_ratio_median": 1.0177645635620642
+      },
+      "(0.25,0.5]": {
+       "n_j": 14,
+       "n_retained": 4,
+       "retention": 0.2857142857142857,
+       "ev_ratio_median": 0.8110358402568771
+      },
+      "(0.5,1]": {
+       "n_j": 7,
+       "n_retained": 1,
+       "retention": 0.14285714285714285,
+       "ev_ratio_median": 0.8381234431861982
+      },
+      "(1,3]": {
+       "n_j": 4,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.7342920974914602
+      },
+      "(3,10]": {
+       "n_j": 27,
+       "n_retained": 2,
+       "retention": 0.07407407407407407,
+       "ev_ratio_median": 0.6825482890649106
+      },
+      "(10,40]": {
+       "n_j": 26,
+       "n_retained": 4,
+       "retention": 0.15384615384615385,
+       "ev_ratio_median": 0.8173531671220311
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S4": {
+     "n_j": 83,
+     "n_retained": 11,
+     "n_f": 27,
+     "retention": 0.13253012048192772,
+     "ev_ratio_median": 0.8168980517910063,
+     "ev_j_median": 1.1913630710694623,
+     "won": 2,
+     "sum_p_j": 3.584917857382872,
+     "calib_won_over_p": 0.557892838710697,
+     "retention_ci": [
+      0.05950630252100841,
+      0.2159090909090909
+     ],
+     "ev_ratio_median_ci": [
+      0.7675520205008963,
+      0.8437835281584141
+     ],
+     "roi_official_reference": {
+      "n": 41,
+      "roi": 0.5073170731707317,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.07228915662650602,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 6,
+       "n_retained": 1,
+       "retention": 0.16666666666666666,
+       "ev_ratio_median": 0.9587840114284218
+      },
+      "(0.25,0.5]": {
+       "n_j": 14,
+       "n_retained": 4,
+       "retention": 0.2857142857142857,
+       "ev_ratio_median": 0.8245427991151866
+      },
+      "(0.5,1]": {
+       "n_j": 6,
+       "n_retained": 1,
+       "retention": 0.16666666666666666,
+       "ev_ratio_median": 0.852667833586098
+      },
+      "(1,3]": {
+       "n_j": 9,
+       "n_retained": 2,
+       "retention": 0.2222222222222222,
+       "ev_ratio_median": 0.8541764915686312
+      },
+      "(3,10]": {
+       "n_j": 31,
+       "n_retained": 2,
+       "retention": 0.06451612903225806,
+       "ev_ratio_median": 0.6767722750255396
+      },
+      "(10,40]": {
+       "n_j": 17,
+       "n_retained": 1,
+       "retention": 0.058823529411764705,
+       "ev_ratio_median": 0.7909744726604017
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    }
+   },
+   "judged": {
+    "S1": {
+     "n_j": 52,
+     "n_retained": 0,
+     "n_f": 8,
+     "retention": 0.0,
+     "ev_ratio_median": 0.5170622371565253,
+     "ev_j_median": 1.4353220717274442,
+     "won": 2,
+     "sum_p_j": 3.22607182197347,
+     "calib_won_over_p": 0.6199490000122035,
+     "retention_ci": [
+      0.0,
+      0.0
+     ],
+     "ev_ratio_median_ci": [
+      0.43305493210116575,
+      0.5956656166182761
+     ],
+     "roi_official_reference": {
+      "n": 30,
+      "roi": 0.5966666666666666,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.0,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.25,0.5]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.5,1]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(10,40]": {
+       "n_j": 52,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.5175908861022926
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S2": {
+     "n_j": 38,
+     "n_retained": 0,
+     "n_f": 1,
+     "retention": 0.0,
+     "ev_ratio_median": 0.48371891373433934,
+     "ev_j_median": 1.5500182634264428,
+     "won": 2,
+     "sum_p_j": 2.4908729854385006,
+     "calib_won_over_p": 0.8029313464363235,
+     "retention_ci": [
+      0.0,
+      0.0
+     ],
+     "ev_ratio_median_ci": [
+      0.4249076407654952,
+      0.57598782978861
+     ],
+     "roi_official_reference": {
+      "n": 22,
+      "roi": 0.8136363636363636,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.0,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.25,0.5]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.5,1]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(10,40]": {
+       "n_j": 38,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.48596811033058335
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S3": {
+     "n_j": 177,
+     "n_retained": 2,
+     "n_f": 30,
+     "retention": 0.011299435028248588,
+     "ev_ratio_median": 0.5285236536968209,
+     "ev_j_median": 1.4023863287953617,
+     "won": 16,
+     "sum_p_j": 15.72864797327035,
+     "calib_won_over_p": 1.0172520884942426,
+     "retention_ci": [
+      0.0,
+      0.03225806451612903
+     ],
+     "ev_ratio_median_ci": [
+      0.4881048470970152,
+      0.6057379543902924
+     ],
+     "roi_official_reference": {
+      "n": 88,
+      "roi": 0.7056818181818183,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.005649717514124294,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8356605850906954
+      },
+      "(0.25,0.5]": {
+       "n_j": 2,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.7466505231578411
+      },
+      "(0.5,1]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.7253635282293595
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 9,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.692354373236482
+      },
+      "(10,40]": {
+       "n_j": 164,
+       "n_retained": 2,
+       "retention": 0.012195121951219513,
+       "ev_ratio_median": 0.5175908861022926
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S4": {
+     "n_j": 55,
+     "n_retained": 0,
+     "n_f": 27,
+     "retention": 0.0,
+     "ev_ratio_median": 0.5281050931001383,
+     "ev_j_median": 1.4177624501143404,
+     "won": 3,
+     "sum_p_j": 3.366115998483602,
+     "calib_won_over_p": 0.8912348835724814,
+     "retention_ci": [
+      0.0,
+      0.0
+     ],
+     "ev_ratio_median_ci": [
+      0.4375333122023579,
+      0.600106324628501
+     ],
+     "roi_official_reference": {
+      "n": 32,
+      "roi": 0.559375,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.0,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.25,0.5]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.5,1]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(10,40]": {
+       "n_j": 55,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.5281050931001383
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    }
+   }
+  },
+  "ev_gt_1_2_counts_J": {
+   "ens15": 82,
+   "judged": 177
+  },
+  "parity_ens15": {
+   "ev_j_max_abs": 0.0,
+   "ev_f_max_abs": 0.0,
+   "flags": {
+    "S1": {
+     "J_mismatch": 0,
+     "F_mismatch": 0
+    },
+    "S2": {
+     "J_mismatch": 0,
+     "F_mismatch": 0
+    },
+    "S3": {
+     "J_mismatch": 0,
+     "F_mismatch": 0
+    },
+    "S4": {
+     "J_mismatch": 0,
+     "F_mismatch": 0
+    }
+   },
+   "ok": true
+  },
+  "input_sha256": "876fddc7651e0a7b1aa2f7323e6c403a4a0440359e4b1fa4ae55f39827dbdeb1",
+  "popularity_inputs_sha256": {
+   "db_chaos.parquet": "b2824e2cdf681e5e5d772a14d3b037fa566d430d1971b060485e3eaef1d34d47",
+   "db_race_horses.parquet": "8d70705a4c03a3d55224cb193a40ffa4363045b5240478ab8f0c29a5377a0ca9",
+   "archived_final_odds.csv": "b1e6a6b899f686a313cd656a592d8491c4c156325378db5e146802348137dd1a"
+  },
+  "popularity_convention": {
+   "ens15": "observed 人気 (CHAOS snapshot field / stored row / R05 archive page), rank-of-odds fallback",
+   "judged": "popularity := odds_rank (training convention of mev-ens15-judged-v0)"
+  },
+  "hours_quantiles": {
+   "0.1": 0.33423204061111117,
+   "0.5": 3.6808229391666667,
+   "0.9": 18.34516666666667
+  }
+ },
+ "disclaimers": [
+  "ROI の改善を示すものではない",
+  "本番非結線・表示不変",
+  "主集合は 140 生成器の fit 期間と同一(注入分布に対して in-sample)"
+ ],
+ "verdict": {
+  "primary": {
+   "set": "primary",
+   "arm": "judged",
+   "rule": "S3"
+  },
+  "outcome": "REJECT",
+  "reason": "retention 0.011 (>= 0.5: False), ev_ratio_median 0.529 (>= 0.95: False)"
+ },
+ "secondary": {
+  "n_rows": 2015,
+  "n_races": 152,
+  "n_days": 7,
+  "arms": {
+   "ens15": {
+    "S1": {
+     "n_j": 11,
+     "n_retained": 3,
+     "n_f": 4,
+     "retention": 0.2727272727272727,
+     "ev_ratio_median": 0.8675162714002598,
+     "ev_j_median": 1.2818047160291444,
+     "won": 1,
+     "sum_p_j": 0.49429335955068715,
+     "calib_won_over_p": 2.0230900955436675,
+     "retention_ci": [
+      0.09090909090909091,
+      0.6
+     ],
+     "ev_ratio_median_ci": [
+      0.8161126321676955,
+      0.916040749313003
+     ],
+     "roi_official_reference": {
+      "n": 11,
+      "roi": 1.0545454545454545,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.18181818181818182,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 4,
+       "n_retained": 1,
+       "retention": 0.25,
+       "ev_ratio_median": 0.8418144517839776
+      },
+      "(0.25,0.5]": {
+       "n_j": 3,
+       "n_retained": 1,
+       "retention": 0.3333333333333333,
+       "ev_ratio_median": 0.885930610379316
+      },
+      "(0.5,1]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8410069686344399
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 1,
+       "n_retained": 1,
+       "retention": 1.0,
+       "ev_ratio_median": 0.916040749313003
+      },
+      "(10,40]": {
+       "n_j": 2,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8597395750469105
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S2": {
+     "n_j": 4,
+     "n_retained": 1,
+     "n_f": 2,
+     "retention": 0.25,
+     "ev_ratio_median": 0.8410069686344399,
+     "ev_j_median": 1.3576964784154835,
+     "won": 0,
+     "sum_p_j": 0.18801309107197375,
+     "calib_won_over_p": 0.0,
+     "retention_ci": [
+      0.0,
+      0.75
+     ],
+     "ev_ratio_median_ci": [
+      0.8132505115216252,
+      1.0769383866262545
+     ],
+     "roi_official_reference": {
+      "n": 4,
+      "roi": 0.0,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.25,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8132505115216252
+      },
+      "(0.25,0.5]": {
+       "n_j": 1,
+       "n_retained": 1,
+       "retention": 1.0,
+       "ev_ratio_median": 1.0769383866262545
+      },
+      "(0.5,1]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8410069686344399
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.916040749313003
+      },
+      "(10,40]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S3": {
+     "n_j": 36,
+     "n_retained": 8,
+     "n_f": 12,
+     "retention": 0.2222222222222222,
+     "ev_ratio_median": 0.8696915007547681,
+     "ev_j_median": 1.2528868217017295,
+     "won": 3,
+     "sum_p_j": 2.1685234444177897,
+     "calib_won_over_p": 1.3834298207485818,
+     "retention_ci": [
+      0.09090909090909091,
+      0.2978723404255319
+     ],
+     "ev_ratio_median_ci": [
+      0.858111464064344,
+      0.885930610379316
+     ],
+     "roi_official_reference": {
+      "n": 36,
+      "roi": 1.6444444444444444,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.1111111111111111,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 8,
+       "n_retained": 2,
+       "retention": 0.25,
+       "ev_ratio_median": 0.8943229481960508
+      },
+      "(0.25,0.5]": {
+       "n_j": 18,
+       "n_retained": 4,
+       "retention": 0.2222222222222222,
+       "ev_ratio_median": 0.877811055567042
+      },
+      "(0.5,1]": {
+       "n_j": 2,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8495592163493919
+      },
+      "(1,3]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.3839931885691806
+      },
+      "(3,10]": {
+       "n_j": 5,
+       "n_retained": 2,
+       "retention": 0.4,
+       "ev_ratio_median": 0.916040749313003
+      },
+      "(10,40]": {
+       "n_j": 2,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.8597395750469105
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S4": {
+     "n_j": 25,
+     "n_retained": 8,
+     "n_f": 14,
+     "retention": 0.32,
+     "ev_ratio_median": 0.8744710022932638,
+     "ev_j_median": 1.171401303989818,
+     "won": 1,
+     "sum_p_j": 1.139254646863459,
+     "calib_won_over_p": 0.8777668827185843,
+     "retention_ci": [
+      0.23076923076923078,
+      0.4375
+     ],
+     "ev_ratio_median_ci": [
+      0.823134285444546,
+      0.916040749313003
+     ],
+     "roi_official_reference": {
+      "n": 25,
+      "roi": 0.46399999999999997,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.08,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 7,
+       "n_retained": 2,
+       "retention": 0.2857142857142857,
+       "ev_ratio_median": 0.8744710022932638
+      },
+      "(0.25,0.5]": {
+       "n_j": 11,
+       "n_retained": 3,
+       "retention": 0.2727272727272727,
+       "ev_ratio_median": 0.8587508424620217
+      },
+      "(0.5,1]": {
+       "n_j": 1,
+       "n_retained": 1,
+       "retention": 1.0,
+       "ev_ratio_median": 0.8410069686344399
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 3,
+       "n_retained": 1,
+       "retention": 0.3333333333333333,
+       "ev_ratio_median": 0.9920468620894368
+      },
+      "(10,40]": {
+       "n_j": 3,
+       "n_retained": 1,
+       "retention": 0.3333333333333333,
+       "ev_ratio_median": 0.823134285444546
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    }
+   },
+   "judged": {
+    "S1": {
+     "n_j": 0,
+     "n_retained": 0,
+     "n_f": 4,
+     "retention": null,
+     "retention_ci": null,
+     "ev_ratio_median": null,
+     "ev_ratio_median_ci": null,
+     "calib_won_over_p": null,
+     "won": 0,
+     "sum_p_j": 0.0,
+     "ev_j_median": null,
+     "retention_vs_judged_closing_diag": null,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.25,0.5]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.5,1]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(10,40]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S2": {
+     "n_j": 0,
+     "n_retained": 0,
+     "n_f": 2,
+     "retention": null,
+     "retention_ci": null,
+     "ev_ratio_median": null,
+     "ev_ratio_median_ci": null,
+     "calib_won_over_p": null,
+     "won": 0,
+     "sum_p_j": 0.0,
+     "ev_j_median": null,
+     "retention_vs_judged_closing_diag": null,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.25,0.5]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.5,1]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(10,40]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S3": {
+     "n_j": 4,
+     "n_retained": 0,
+     "n_f": 12,
+     "retention": 0.0,
+     "ev_ratio_median": 0.5366559531357415,
+     "ev_j_median": 1.246230506673065,
+     "won": 0,
+     "sum_p_j": 0.4628195146484717,
+     "calib_won_over_p": 0.0,
+     "retention_ci": [
+      0.0,
+      0.0
+     ],
+     "ev_ratio_median_ci": [
+      0.5366559531357415,
+      0.6422544301582847
+     ],
+     "roi_official_reference": {
+      "n": 4,
+      "roi": 0.0,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.0,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.25,0.5]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.5,1]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 1,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.5366559531357415
+      },
+      "(10,40]": {
+       "n_j": 3,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.6422544301582847
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    },
+    "S4": {
+     "n_j": 5,
+     "n_retained": 0,
+     "n_f": 14,
+     "retention": 0.0,
+     "ev_ratio_median": 0.7079024416261321,
+     "ev_j_median": 1.1457496865572128,
+     "won": 0,
+     "sum_p_j": 0.19269385332706268,
+     "calib_won_over_p": 0.0,
+     "retention_ci": [
+      0.0,
+      0.0
+     ],
+     "ev_ratio_median_ci": [
+      0.6821560657362158,
+      0.977998830510014
+     ],
+     "roi_official_reference": {
+      "n": 5,
+      "roi": 0.0,
+      "note": "official-payout rows only; reference, not a decision input"
+     },
+     "retention_vs_judged_closing_diag": 0.2,
+     "by_hours_band": {
+      "(0,0.25]": {
+       "n_j": 2,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.9294180709176527
+      },
+      "(0.25,0.5]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(0.5,1]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(1,3]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(3,10]": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      },
+      "(10,40]": {
+       "n_j": 3,
+       "n_retained": 0,
+       "retention": 0.0,
+       "ev_ratio_median": 0.6821560657362158
+      },
+      ">40": {
+       "n_j": 0,
+       "n_retained": 0,
+       "retention": null,
+       "ev_ratio_median": null
+      }
+     }
+    }
+   }
+  },
+  "ev_gt_1_2_counts_J": {
+   "ens15": 36,
+   "judged": 4
+  },
+  "excluded_races": {
+   "no_results": 1,
+   "results_incomplete": 0,
+   "dead_heat_or_no_winner": 0,
+   "prediction_rows_mismatch": 3,
+   "odds_used_missing": 0,
+   "post_time_missing": 0,
+   "odds_observed_at_missing": 0,
+   "odds_observed_at_mixed_within_race": 0
+  },
+  "dry_run_days": [
+   "2026-10-10",
+   "2026-10-11"
+  ],
+  "quote_days": [
+   "2026-10-12",
+   "2026-10-17",
+   "2026-10-18",
+   "2026-10-24",
+   "2026-10-25"
+  ],
+  "h_min_quantiles": {
+   "0.1": 15.949153870000004,
+   "0.5": 24.059074866666666,
+   "0.9": 445.2971202783334
+  }
+ }
+}
