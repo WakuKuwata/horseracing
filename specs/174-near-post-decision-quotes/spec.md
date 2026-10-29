@@ -1,6 +1,6 @@
-# 174 発走直前(T−3 分)の判断記録 `decision_quotes` — Draft(利用者の決定待ち)
+# 174 発走直前(T−3 分)の判断記録 `decision_quotes`
 
-**Status: Draft・未着手。前提の決定 3 件と capture-only モードの承認は `docs/plan/t3-capture-decision-materials-20261029.md` §0。**
+**Status: 承認済み・実装中(2026-10-29)。利用者の決定: ①憲法 V は「表ごとに 1 レース 1 行の判断記録」として可(憲法 1.0.1 の注記)②1 日単位の明示起動は手動実行の範囲 ③T−10 の 2 点目は v1 で持たない。capture-only モードも承認。判断材料は `docs/plan/t3-capture-decision-materials-20261029.md`。**
 
 ## 目的
 
@@ -43,4 +43,4 @@ T−10 の 2 点目・買い目の提示・実購入の自動化・スケジュ�
 
 ## 未決
 
-決定 1〜3(上記)・capture-only の承認・試運転日(次の開催: 決定後の最初の土日)。
+試運転日(次の開催: 決定後の最初の土日)と `capture_only_dates` への登録。
