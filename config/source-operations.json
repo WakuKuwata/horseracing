@@ -5,9 +5,11 @@
   "shared_limiter_enabled": true,
   "collection_paused": true,
   "capture_only_dates": [
+    "2026-10-31",
+    "2026-11-01",
     "2026-11-07",
     "2026-11-08"
   ],
   "capture_only_approved_by": "kuwatawaku",
-  "capture_only_approved_at": "2026-10-29T10:56:50+09:00"
+  "capture_only_approved_at": "2026-10-29T11:32:54+09:00"
 }
