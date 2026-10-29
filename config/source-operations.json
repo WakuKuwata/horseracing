@@ -3,5 +3,11 @@
   "source_interval_seconds": 60,
   "ops_fetch_min_interval_seconds": 60,
   "shared_limiter_enabled": true,
-  "collection_paused": true
+  "collection_paused": true,
+  "capture_only_dates": [
+    "2026-11-07",
+    "2026-11-08"
+  ],
+  "capture_only_approved_by": "kuwatawaku",
+  "capture_only_approved_at": "2026-10-29T10:56:50+09:00"
 }

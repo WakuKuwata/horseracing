@@ -1,6 +1,6 @@
 # 174 発走直前(T−3 分)の判断記録 `decision_quotes`
 
-**Status: 実装完了(2026-10-29・main 未 push)。運用は `manual.md`・実装の記録は `result-review.md`。利用者の決定: ①憲法 V は「表ごとに 1 レース 1 行の判断記録」として可(憲法 1.0.1 の注記)②1 日単位の明示起動は手動実行の範囲 ③T−10 の 2 点目は v1 で持たない。capture-only モードも承認。判断材料は `docs/plan/t3-capture-decision-materials-20261029.md`。**
+**Status: 実装完了・ローカル本番 DB に 0022 適用済み・`capture_only_dates`=11/7・11/8 登録済み(2026-10-29・main 未 push)。運用は `manual.md`・実装の記録は `result-review.md`。利用者の決定: ①憲法 V は「表ごとに 1 レース 1 行の判断記録」として可(憲法 1.0.1 の注記)②1 日単位の明示起動は手動実行の範囲 ③T−10 の 2 点目は v1 で持たない。capture-only モードも承認。判断材料は `docs/plan/t3-capture-decision-materials-20261029.md`。**
 
 ## 目的
 
@@ -43,4 +43,4 @@ T−10 の 2 点目・買い目の提示・実購入の自動化・スケジュ�
 
 ## 未決
 
-試運転日(次の開催: 決定後の最初の土日)と `capture_only_dates` への登録。
+試運転は 11/7(dry-run を先に・同日に本番)。11/8 は 2 日目。
