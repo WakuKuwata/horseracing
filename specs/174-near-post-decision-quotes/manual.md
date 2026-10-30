@@ -2,7 +2,7 @@
 
 前提: `collection_paused=true` のまま。worker は起動しない。ops の更新 POST は 503 のまま。以下はすべて人が起動する。
 
-**短縮形(2026-10-29 追加)**: 以下 §1〜§3 を日付 1 つで束ねた wrapper が `scripts/near_post_ops.sh` にある(既存 CLI を順に呼ぶだけ・policy は触らない・取得は共有リミッタ 60 秒)。
+**短縮形(2026-10-29 追加)**: 以下 §1〜§3 を日付 1 つで束ねた wrapper が `scripts/near_post_ops.sh` にある(既存 CLI を順に呼ぶだけ・policy は触らない・取得は共有リミッタ 60 秒)。**間隔は wrapper が `config/source-operations.json` の `source_interval_seconds` を環境変数 `HORSERACING_NETKEIBA_MIN_INTERVAL_S` に写して渡す**(scrape/live の共有リミッタはこの環境変数が無いと既定 1 秒で動く。2026-10-30 の 10/31 entries は wrapper がこれを渡しておらず **48 req を 1 req/秒**で取った=実測・同日修正。60 未満・欠落の policy では起動しない)。起動前に `scripts/near_post_ops.sh check <date>` で実効間隔(60s)を確認できる。24 レース+nk 馬の profile 補完で entries は約 50 分、results も同程度かかる。
 
 ```bash
 scripts/near_post_ops.sh entries 2026-10-31 --wait-for-draw   # 前日 10 時過ぎ以降(枠順未確定なら 1 時間おきに 1 req で再試行・最大 8 回)
@@ -31,7 +31,7 @@ scripts/near_post_ops.sh results 2026-10-31                    # 夜: 結果+公
 cd scrape && uv run python -m horseracing_scrape list-races --date 2026-11-07
 ```
 
-出た race_id ごとに `scrape-entries`(URL 指定)を 60 秒間隔で実行する(36 req)。`races.post_time` が全レースで入ることを確認:
+出た race_id ごとに `scrape-entries`(URL 指定)を 60 秒間隔で実行する(36 req。**手で叩くときも `HORSERACING_NETKEIBA_MIN_INTERVAL_S=60` を付ける**=付けないと 1 秒間隔になる)。`races.post_time` が全レースで入ることを確認:
 
 ```bash
 psql "$DATABASE_URL" -c "select count(*) n, count(post_time) with_post from races where race_date='2026-11-07'"

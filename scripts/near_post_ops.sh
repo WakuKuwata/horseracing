@@ -8,7 +8,12 @@
 #   scripts/near_post_ops.sh score 2026-10-31 [2026-11-01] [cand...]  夜: 175 near-post-score(読み取り専用・JSON 1 件・候補名は任意)
 #
 # 新しい取得経路は作らない。既存 CLI を日付で束ねるだけ。policy(config/source-operations.json)は触らない。
-# すべての取得は DB 背後の共有リミッタ(60 秒)を通る(093/172)。--wait-for-draw は枠順未確定(horse_number 欠落で
+#   scripts/near_post_ops.sh check 2026-10-31                        起動前: 共有リミッタの実効間隔(scrape/live が実際に使う値)を表示する
+#
+# すべての取得は DB 背後の共有リミッタを通る(093/172)。間隔は config/source-operations.json の
+# `source_interval_seconds`(60)を環境変数 HORSERACING_NETKEIBA_MIN_INTERVAL_S に写して渡す。**この環境変数が無いと
+# scrape/live の既定は 1 秒**で、2026-10-30 の 10/31 entries は 48 req を 1 req/秒で取ってしまった(実測・この wrapper の欠陥)。
+# 60 未満・欠落・読めない policy では起動しない。--wait-for-draw は枠順未確定(horse_number 欠落で
 # parser が fail-closed)のあいだ 1 時間おきに 1 req だけ再試行する(最大 8 回)。
 # 馬番付き出馬表(枠順)は JRA が「前日の 10 時過ぎ」に発表する(重賞以外。2026-10-29 木曜は 22 時まで空のまま=実測)。
 # 前日 10 時より前に起動すると 8 回を無駄に使う。開催日の翌日分の entries は、その日の捕捉がすべて終わってから起動する
@@ -20,8 +25,29 @@ export DATABASE_URL="${DATABASE_URL:-postgresql+psycopg://aiuma:aiuma@localhost:
 SCRAPE_PY="$ROOT/scrape/.venv/bin/python"
 LIVE_PY="$ROOT/live/.venv/bin/python"
 PROFILE="$ROOT/config/.env.manual-observer"   # 171 の private profile(表示・コミット禁止)
+POLICY="$ROOT/config/source-operations.json"  # 172 の policy(読むだけ・触らない)
 
-usage() { sed -n '2,13p' "$0"; exit 2; }
+# 情報源の間隔を policy から読み、共有リミッタの環境変数に写す(172 の apply_policy と同じ値・同じキー)。
+# 継承した環境変数がより厳しければそちらを残す(弱める方向には倒さない=politeness._interval_for と同じ規律)。
+SOURCE_INTERVAL_S="$("$SCRAPE_PY" - "$POLICY" <<'PY'
+import json, math, os, sys
+policy = json.load(open(sys.argv[1]))
+value = policy.get("source_interval_seconds")
+if type(value) not in (int, float) or not math.isfinite(value) or value < 60:
+    sys.exit("source_interval_seconds must be a finite number >= 60: %r" % (value,))
+inherited = os.environ.get("HORSERACING_NETKEIBA_MIN_INTERVAL_S")
+if inherited:
+    try:
+        value = max(value, float(inherited))
+    except ValueError:
+        sys.exit("inherited HORSERACING_NETKEIBA_MIN_INTERVAL_S is not a number: %r" % (inherited,))
+print(int(value) if float(value).is_integer() else value)
+PY
+)" || { echo "policy interval unusable ($POLICY); not starting" >&2; exit 2; }
+export HORSERACING_NETKEIBA_MIN_INTERVAL_S="$SOURCE_INTERVAL_S"
+export HORSERACING_SHARED_LIMITER=1
+
+usage() { sed -n '2,15p' "$0"; exit 2; }
 [ $# -ge 2 ] || usage
 cmd="$1"; day="$2"; shift 2
 [[ "$day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "date must be YYYY-MM-DD" >&2; exit 2; }
@@ -31,6 +57,7 @@ ARCHIVE="$ROOT/artifacts/scrape_archive/$day"
 RACES="$DAYDIR/races.tsv"
 mkdir -p "$DAYDIR" "$ARCHIVE"
 log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
+log "source interval ${SOURCE_INTERVAL_S}s per request (shared limiter; policy $POLICY)"
 
 list_races() {
   if [ ! -s "$RACES" ]; then
@@ -54,6 +81,14 @@ entries_one() {  # $1 = shutuba url ; prints the CLI's summary line, never abort
 }
 
 case "$cmd" in
+  check)
+    # scrape と live(chaos_politeness)は同じ source_interval_s を読むので、ここで見える値が両方の実効値。
+    (cd "$ROOT/scrape" && "$SCRAPE_PY" - <<'PY'
+from horseracing_scrape.politeness import source_interval_s
+print("effective netkeiba interval: %.0fs" % source_interval_s("netkeiba.com"))
+PY
+    )
+    ;;
   entries)
     wait_for_draw=0; [ "${1:-}" = "--wait-for-draw" ] && wait_for_draw=1
     list_races
