@@ -311,7 +311,10 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     # tracking — same pattern as run_predict's recommend follow-up).
     # patch-up は確定済みレースの 1 列を埋めるだけなので予測の先回りは要らない(そのレースの
     # 予測はとうに存在し、通過順は「その馬の次走の as-of 特徴」に効く=このレースの再予測ではない)。
-    if (entries is not None and entries.status != JobStatus.FAILED
+    # C1: off by default — the comparison-only prediction is made from the 予測 button, not as a
+    # side effect of fetching data (CONFIG.predict_on_refresh re-enables the old follow-up).
+    if (CONFIG.predict_on_refresh
+            and entries is not None and entries.status != JobStatus.FAILED
             and not _has_active_prediction(session, race_id)):
         followup, reused = enqueue_predict(
             session,

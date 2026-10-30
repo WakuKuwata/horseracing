@@ -24,7 +24,16 @@ def _succeed(session, secs_ago: int):
     return job
 
 
+def _predict_query(race_id):
+    return (
+        select(IngestionJob)
+        .where(IngestionJob.job_type == "predict")
+        .where(IngestionJob.scope_value == race_id)
+    )
+
+
 def test_fresh_success_reused(session):
+    """C1 (2026-10-31): reusing a fresh refresh no longer chases a predict by default."""
     seed_race(session, race_id=RID)
     done = _succeed(session, secs_ago=5)
     job, reused = enqueue_race(
@@ -35,11 +44,21 @@ def test_fresh_success_reused(session):
     )
     session.commit()
     assert reused is True and job.ingestion_job_id == done.ingestion_job_id
-    predict = session.scalar(
-        select(IngestionJob)
-        .where(IngestionJob.job_type == "predict")
-        .where(IngestionJob.scope_value == RID)
-    )
+    assert session.scalar(_predict_query(RID)) is None
+
+
+def test_fresh_success_reused_chases_predict_when_opted_in(session, monkeypatch):
+    from dataclasses import replace
+
+    from horseracing_ops import enqueue as enqueue_mod
+
+    monkeypatch.setattr(enqueue_mod, "CONFIG", replace(enqueue_mod.CONFIG, predict_on_refresh=True))
+    seed_race(session, race_id=RID)
+    done = _succeed(session, secs_ago=5)
+    job, reused = enqueue_race(session, RID, origin="manual_ui", fresh_seconds=600)
+    session.commit()
+    assert reused is True and job.ingestion_job_id == done.ingestion_job_id
+    predict = session.scalar(_predict_query(RID))
     assert predict is not None
     assert predict.summary["predict_origin"] == "manual_ui"
 

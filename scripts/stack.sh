@@ -3,8 +3,9 @@
 # 使い方: scripts/stack.sh {start|stop|restart|status} [component]
 #   component 省略時は全体。指定可: postgres api ops-api worker front admin
 #
-# API/ops は172 wrapperの新OS session、front/adminはnohupで起動し、
-# workerは共通設定のpauseによりmain前で停止する。
+# API/ops は172 wrapperの新OS session、front/adminはnohupで起動する。
+# worker は config/source-operations.json の collection_paused が true なら main 前で停止し、
+# false(active・2026-10-31 利用者決定)なら wrapper 経由で daemon として起動する。
 # PID とログを logs/ (gitignore 済み) に置く。停止は PID からプロセスツリーを
 # 再帰的に辿って子孫ごと止める(macOS に setsid が無いため。uv run→python、
 # pnpm→node のように親だけ殺すと本体が孤児で生き残るのを防ぐ)。
@@ -40,12 +41,28 @@ start_ops_api() {
     --log "$LOGS/ops-api.log" --pidfile "$LOGS/ops-api.pid"
 }
 
+# policy の collection_paused を読む(true/false 以外は wrapper が起動を拒むので、ここでは表示用)
+collection_paused() {
+  "$ROOT/ops/.venv/bin/python" -c 'import json,sys; v=json.load(open(sys.argv[1]))["collection_paused"]; print("true" if v is True else "false")' \
+    "$ROOT/config/source-operations.json" 2>/dev/null || echo "unknown"
+}
+
 start_worker() {
   cd "$ROOT/ops" || return 1
-  DATABASE_URL="$DB_URL" \
-  "$ROOT/ops/.venv/bin/python" "$ROOT/scripts/source_operations_172.py" worker \
-    --report "$LOGS/worker-policy172-$(date +%s)-$$.json"
-  # Paused wrapper exits BEFORE importing worker.main; never records a stale daemon PID.
+  if [ "$(collection_paused)" = "true" ]; then
+    DATABASE_URL="$DB_URL" \
+    "$ROOT/ops/.venv/bin/python" "$ROOT/scripts/source_operations_172.py" worker \
+      --report "$LOGS/worker-policy172-$(date +%s)-$$.json"
+    # Paused wrapper exits BEFORE importing worker.main; never records a stale daemon PID.
+  else
+    # active(collection_paused=false): wrapper が policy を環境に写した上で worker.main を同一
+    # プロセスで起動する(新 OS session・pidfile)。間隔 60 秒・共有リミッタ・auto capture off は不変。
+    DATABASE_URL="$DB_URL" \
+    "$ROOT/ops/.venv/bin/python" "$ROOT/scripts/source_operations_172.py" worker --detach \
+      --report "$LOGS/worker-policy172-$(date +%s)-$$.json" \
+      --log "$LOGS/worker.log" --pidfile "$LOGS/worker.pid" \
+    && echo "[start] worker (active)"
+  fi
 }
 
 start_front() {
@@ -79,7 +96,11 @@ is_up() {
     postgres)
       docker ps --filter name=docker-postgres-1 --format '{{.Status}}' | grep -q Up ;;
     worker)
-      pgrep -f "horseracing_ops\.worker" >/dev/null 2>&1 ;;
+      # active 時は wrapper プロセス自身が daemon(pidfile)。旧式の直接起動も拾う。
+      { [ -f "$LOGS/worker.pid" ] && ps -p "$(cat "$LOGS/worker.pid")" -o command= 2>/dev/null \
+          | grep -q "source_operations_172\.py worker"; } \
+        || pgrep -f "source_operations_172\.py worker" >/dev/null 2>&1 \
+        || pgrep -f "horseracing_ops\.worker" >/dev/null 2>&1 ;;
     *)
       local p; p="$(port_of "$c")"
       lsof -nP -iTCP:"$p" -sTCP:LISTEN -t >/dev/null 2>&1 ;;
@@ -121,7 +142,7 @@ wait_gone() {
   if is_up "$c"; then
     echo "[warn] $c が 20 秒経っても停止しない。強制終了する" >&2
     case "$c" in
-      worker) for pid in $(pgrep -f "horseracing_ops\.worker"); do kill -9 "$pid" 2>/dev/null; done ;;
+      worker) for pid in $(pgrep -f "horseracing_ops\.worker"; pgrep -f "source_operations_172\.py worker"); do kill -9 "$pid" 2>/dev/null; done ;;
       *) local p; p="$(port_of "$c")"
          [ -n "$p" ] && for pid in $(lsof -nP -iTCP:"$p" -sTCP:LISTEN -t); do kill -9 "$pid" 2>/dev/null; done ;;
     esac
@@ -144,7 +165,7 @@ stop_one() {
           for pid in $(lsof -nP -iTCP:"$p" -sTCP:LISTEN -t); do kill_tree "$pid"; done
           echo "[stop] $c (pidfile 無し・ポートから停止)"
         elif [ "$c" = "worker" ]; then
-          for pid in $(pgrep -f "horseracing_ops\.worker"); do kill "$pid" 2>/dev/null; done
+          for pid in $(pgrep -f "horseracing_ops\.worker"; pgrep -f "source_operations_172\.py worker"); do kill "$pid" 2>/dev/null; done
           echo "[stop] worker (pidfile 無し・パターンから停止)"
         else
           echo "[warn] $c の pidfile が無く停止方法不明" >&2

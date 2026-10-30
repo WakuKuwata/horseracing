@@ -10,8 +10,9 @@ Two facts are reported SEPARATELY because they can disagree:
 * ``collection_paused`` — what THIS process enforces (the env var the wrapper sets). An ops process
   started without the wrapper does not reject writes, so it must not claim to.
 * ``policy_file`` — what the repository's public policy (``config/source-operations.json``) says.
-  When the file says paused but this process does not enforce it, ``policy_mismatch`` is true so
-  an operator can see that a service bypassed the wrapper.
+  When the two disagree in either direction (file paused / process accepting, or file active /
+  process still rejecting = not restarted after the 2026-10-31 switch), ``policy_mismatch`` is
+  true so an operator can see that a service bypassed the wrapper or is stale.
 
 No database access, no worker liveness (nothing records a worker heartbeat; claiming one would
 be a guess). GET only, so the wrapper lets it through.
@@ -80,7 +81,11 @@ def build_status(*, environ=os.environ, policy_path: Path | None = None,
         writes_accepted=not paused,
         collection_mode=mode,
         policy_file=policy,
-        policy_mismatch=(policy.collection_paused is True) and not paused,
+        # Either direction is a bypassed wrapper or a stale process: the file says paused but this
+        # process accepts writes, or the file says active (2026-10-31) but this process still
+        # rejects them (an ops-api not restarted after the policy changed).
+        policy_mismatch=(policy.collection_paused is not None
+                         and policy.collection_paused != paused),
         ops_fetch_min_interval_seconds=float(interval),
         detail=PAUSED_DETAIL if paused else ACTIVE_DETAIL,
     )

@@ -13,7 +13,7 @@
 1. **未コミット差分を系統別に分けてコミット**。同じ作業ツリーに 4 系統が混在: (a) 154+156 の front/api、(b) 136 系の calib_manifest・mixture(probability/serving/training/scripts/candidate_mixture_build.py)、(c) 142〜172 の研究(specs・scripts/roi_explore・docs/roi-*・新規 scripts)、(d) 172 の stack.sh・launch.json・config/source-operations.json。`git add -A` は禁止(memory: no-git-add-all-shared-checkout)。(b) は別セッション由来なので所有者を確認してから。
 2. **CLAUDE.md と memory の追随**。142〜172 の結論(ROI 主・予測は比較用・研究候補は全部不採用・取得停止中)を正本に書く。今は CLAUDE.md を読んだセッションが 141 までしか知らない。
 3. **全パッケージのテストを緑に戻す**。141 時点で api/training の一部が (b) の calib_manifest 変更で落ちていた。(b) を確定させてから api/training/probability/serving を通す。
-4. **スタックの再開手順を明文化**。`scripts/stack.sh` は 172 の wrapper 経由になり、`collection_paused` を外す条件(承認済み interval 60 秒・robots TTL・担当)が runbook(172 manual.md)にしかない。アプリを「使う」状態と「観測する」状態を分けた起動手順を docs に置く。
+4. **スタックの再開手順を明文化**(**完了 2026-10-31**: policy の `collection_paused` が唯一の切替。`specs/172-source-interval/manual.md` の「active モード」に「使う状態(active)」と「観測する状態(paused+capture-only)」の起動手順と排他を記載)。`scripts/stack.sh` は 172 の wrapper 経由になり、`collection_paused` を外す条件(承認済み interval 60 秒・robots TTL・担当)が runbook(172 manual.md)にしかない。アプリを「使う」状態と「観測する」状態を分けた起動手順を docs に置く。
 
 ## B. アプリの ROI 主経路に欠けている機能
 
@@ -30,7 +30,7 @@
 
 13. **前向き比較の開始可否**(**閉じた 2026-10-29・利用者決定 A1**: 174 が発走直前価格を全レースで残し、B 腕=旧 preweight の追加価値は 151/157/159 で否定済み。161〜172 は「道具は完成・開始せず」で終了。再開条件=174 の結果で旧予測を足す価値を改めて問う必要が出たとき。`docs/plan/decisions-pending-20261029.md`)。161〜172 で道具は揃い、残りは「対象レースの将来出走表が保存されていない(168)」「担当時間」「robots TTL(10/28 15:59 失効)」「`collection_paused` 解除の承認」。最初の 2 開催日は試運転扱い(161 §6)。開始しない限り、ROI 系の発走前成績は永久に 9 レースのまま。(**材料整理 2026-10-28**: `docs/plan/c13-prospective-start-materials-20261028.md`。robots は失効済み・将来出走表 0 行・pause 解除は policy のコード変更が要る・次の開催は 10/31–11/1。167 の 1 日 1 レースだと 1 開催日 ≈ 1 点で、B8 の 300 点には約 3 年=今決められるのは試運転 2 開催日の可否のみ。C14 は開始前に要決定。)(**保留 2026-10-28・利用者判断**: 理由は①167 の 1 日 1 レースでは本比較の標本が育つ経路が未整備(試運転 2 開催日で得られるのは保存契約の確認のみ)、②担当時間が確保できていない、③pause 解除・robots 再取得・C14 の 3 つの前提が未了。再開するときは同文書の §6 の順で。それまで `collection_paused=true` を維持し、9 レース・差 0 の結論保留が続く。)
 14. **製品 ROI 値の更新規則を事前登録**(**登録済み 2026-10-29・利用者決定 B1**: `eval/display_update_rule.py`+凍結 `specs/174-near-post-decision-quotes/display-update-rule.json`(sha256 付き・テストで一致を固定)。表示版・1.2・混合 1.0 は前向き記録でしか変えない。置き換え条件=174 の decision_quotes で現行と候補を同一レース・同一 quote・公式払戻 100 円/頭で精算し、300 点以上かつ差(候補−現行)の開催日ブロック bootstrap 95% 区間下限 > 0。年次更新(D17)は規則の外)。③完全正規化(127%)や予測後正規化(148)は既読期間の点推定で、採用規則が存在しない。「前向き比較で何が出たら表示値を変えるか」を 13 の開始前に決める。
-15. **旧予測モデルの自動生成を止めるか**(**決定 2026-10-29・C1 止める**: ops の既定を「expected_return は自動・predict/recommend は手動ボタンのみ」へ。実装は worker を再開する前に行う(capture-only 中は worker を動かさないので未実装のまま影響なし)。**実装は未了**)。151/157 で ROI 追加価値なし。worker 再開時は refresh→predict_auto の自動追随が走り、1 レース 24〜60 秒の CPU を比較用の値に使う。ops の既定を「expected_return は自動・predict は手動」に変えるか決める。
+15. **旧予測モデルの自動生成を止めるか**(**決定 2026-10-29・C1 止める → 実装 2026-10-31**: `OPS_PREDICT_ON_REFRESH` 既定 false で refresh の予測自動追随を 2 箇所(run_one・enqueue_race の fresh 再利用)で止めた。expected_return は自動のまま。predict→recommend の追随は「予測する」ボタンの帰結なので据え置き。ops 244 テスト緑)。151/157 で ROI 追加価値なし。worker 再開時は refresh→predict_auto の自動追随が走り、1 レース 24〜60 秒の CPU を比較用の値に使う。ops の既定を「expected_return は自動・predict は手動」に変えるか決める。
 16. **過去データの価格修復**(**閉じた 2026-10-29・D1 修復しない**: 製品表示に無関係・再取得 504 req・過去探索は閉鎖済。研究用 parquet の該当期間は注記のまま)。155 で研究用 parquet に確定値と異なる価格が残ると判明。139 のアーカイブ無し 504 レースの修復は許可待ちのまま。研究母集団の信頼度に効くが、製品表示には効かない。
 
 ## E. 取得停止中に保存資料だけで進めた研究

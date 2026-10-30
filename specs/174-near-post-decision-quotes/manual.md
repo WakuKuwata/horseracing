@@ -2,6 +2,8 @@
 
 前提: `collection_paused=true` のまま。worker は起動しない。ops の更新 POST は 503 のまま。以下はすべて人が起動する。
 
+**2026-10-31 追記**: 利用者決定で policy を active(`collection_paused=false`・手動更新と予測を受け付ける)に切り替えた(`specs/172-source-interval/manual.md` の「active モード」)。`near-post-capture` は paused=true を要求するので **active 中は起動できない**。10/31 の試運転は 08:21 に起動し 08:32 に停止(最初の窓 09:47 の前)・記録 0 行。捕捉に戻す日は policy を true に戻し ops-api 再起動+worker 停止してから §1〜§3。更新ボタンや worker の取得が T−3 の 60 秒枠と取り合うので、同じ日に両方は動かさない。
+
 **短縮形(2026-10-29 追加)**: 以下 §1〜§3 を日付 1 つで束ねた wrapper が `scripts/near_post_ops.sh` にある(既存 CLI を順に呼ぶだけ・policy は触らない・取得は共有リミッタ 60 秒)。**間隔は wrapper が `config/source-operations.json` の `source_interval_seconds` を環境変数 `HORSERACING_NETKEIBA_MIN_INTERVAL_S` に写して渡す**(scrape/live の共有リミッタはこの環境変数が無いと既定 1 秒で動く。2026-10-30 の 10/31 entries は wrapper がこれを渡しておらず **48 req を 1 req/秒**で取った=実測・同日修正。60 未満・欠落の policy では起動しない)。起動前に `scripts/near_post_ops.sh check <date>` で実効間隔(60s)を確認できる。24 レース+nk 馬の profile 補完で entries は約 50 分、results も同程度かかる。
 
 ```bash

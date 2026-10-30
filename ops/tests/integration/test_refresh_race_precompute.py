@@ -1,13 +1,19 @@
 """Precompute: a successful refresh_race (entries landed) chases the race with a predict job so the
 detail page reads a persisted run instead of blocking on the ~1-minute on-demand build. Guarded on
-"active model has no run yet" so repeated odds refreshes don't re-predict."""
+"active model has no run yet" so repeated odds refreshes don't re-predict.
+
+C1 (2026-10-31): the follow-up is OFF by default (``OPS_PREDICT_ON_REFRESH``); the tests below that
+exercise it switch it on explicitly."""
 
 from __future__ import annotations
+
+from dataclasses import replace
 
 import pytest
 from horseracing_db.models import IngestionJob, ModelVersion, PredictionRun
 from sqlalchemy import func, select
 
+from horseracing_ops import runner
 from horseracing_ops.enqueue import enqueue_race
 from horseracing_ops.worker import drain
 from tests._synth import seed_race
@@ -31,7 +37,29 @@ def _queued_predicts(session, race_id):
     ).all()
 
 
-def test_refresh_enqueues_predict_when_no_active_run(session, fixture_fetcher):
+def _predict_on_refresh(monkeypatch, enabled: bool) -> None:
+    monkeypatch.setattr(runner, "CONFIG", replace(runner.CONFIG, predict_on_refresh=enabled))
+
+
+def test_refresh_does_not_enqueue_predict_by_default(session, fixture_fetcher):
+    """C1 (2026-10-31): fetching data never chases itself with the comparison-only prediction."""
+    seed_race(session, race_id=RID)
+    _seed_active_model(session)
+    assert runner.CONFIG.predict_on_refresh is False  # default OFF
+    job, _ = enqueue_race(session, RID, origin="manual_ui")
+    session.commit()
+
+    drain(session, fetcher=fixture_fetcher, max_jobs=1)
+
+    session.refresh(job)
+    assert job.status in ("succeeded", "partial")
+    assert "predict_job_id" not in job.summary
+    assert _queued_predicts(session, RID) == []
+    assert job.summary["refresh_origin"] == "manual_ui"
+
+
+def test_refresh_enqueues_predict_when_no_active_run(session, fixture_fetcher, monkeypatch):
+    _predict_on_refresh(monkeypatch, True)
     seed_race(session, race_id=RID)
     _seed_active_model(session)
     job, _ = enqueue_race(session, RID, origin="manual_ui")
@@ -48,7 +76,8 @@ def test_refresh_enqueues_predict_when_no_active_run(session, fixture_fetcher):
     assert job.summary["refresh_origin"] == "manual_ui"
 
 
-def test_daily_bulk_refresh_enqueues_automatic_predict_origin(session, fixture_fetcher):
+def test_daily_bulk_refresh_enqueues_automatic_predict_origin(session, fixture_fetcher, monkeypatch):
+    _predict_on_refresh(monkeypatch, True)
     seed_race(session, race_id=RID)
     _seed_active_model(session)
     job, _ = enqueue_race(session, RID, origin="daily_bulk")
@@ -63,7 +92,8 @@ def test_daily_bulk_refresh_enqueues_automatic_predict_origin(session, fixture_f
     assert job.summary["refresh_origin"] == "daily_bulk"
 
 
-def test_refresh_skips_predict_when_active_run_exists(session, fixture_fetcher):
+def test_refresh_skips_predict_when_active_run_exists(session, fixture_fetcher, monkeypatch):
+    _predict_on_refresh(monkeypatch, True)
     seed_race(session, race_id=RID)
     mv = _seed_active_model(session)
     session.add(  # already predicted by active model

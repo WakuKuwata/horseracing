@@ -42,6 +42,15 @@ def test_unwrapped_process_does_not_claim_to_pause_but_flags_the_mismatch(tmp_pa
     assert live.ops_fetch_min_interval_seconds == 1.0
 
 
+def test_stale_paused_process_against_active_policy_flags_the_mismatch(tmp_path):
+    path = _policy(tmp_path, collection_paused=False)
+    stale = st.build_status(environ={st.COLLECTION_MODE_ENV: "paused"}, policy_path=path,
+                            fetch_min_interval=60)
+    assert stale.collection_paused is True and stale.writes_accepted is False
+    # The file was switched to active but this process was never restarted: say so.
+    assert stale.policy_mismatch is True
+
+
 @pytest.mark.parametrize("mode", ["", "active", "PAUSE", "0"])
 def test_only_the_exact_paused_mode_pauses(tmp_path, mode):
     path = _policy(tmp_path, collection_paused=False)

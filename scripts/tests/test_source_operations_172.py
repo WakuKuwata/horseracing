@@ -10,6 +10,7 @@ from scripts.source_operations_172 import (
     CONFIG,
     PausedOps,
     apply_policy,
+    collection_mode,
     load_policy,
     no_outbound_python_connections,
     spawn_detached,
@@ -29,7 +30,7 @@ def policy_file(tmp_path, **changes):
 
 
 @pytest.mark.parametrize(
-    "value", [0, 1, 59.9, True, False, "60", None, float("nan"), float("inf")]
+    "value", [0, 1, 9.9, True, False, "10", None, float("nan"), float("inf")]
 )
 def test_bad_source_interval_is_rejected(tmp_path, value):
     with pytest.raises(ValueError):
@@ -39,8 +40,10 @@ def test_bad_source_interval_is_rejected(tmp_path, value):
 @pytest.mark.parametrize(
     "changes",
     [
-        {"collection_paused": False},
         {"collection_paused": "true"},
+        {"collection_paused": "false"},
+        {"collection_paused": 0},
+        {"collection_paused": None},
         {"shared_limiter_enabled": False},
         {"shared_limiter_enabled": 1},
         {"schema_version": "unknown"},
@@ -52,6 +55,14 @@ def test_bad_source_interval_is_rejected(tmp_path, value):
 def test_policy_cannot_enable_collection_or_drift(tmp_path, changes):
     with pytest.raises(ValueError):
         load_policy(policy_file(tmp_path, **changes))
+
+
+@pytest.mark.parametrize("value", [10, 10.0, 60, 61.5])
+def test_source_interval_at_or_above_floor_is_accepted(tmp_path, value):
+    policy = load_policy(
+        policy_file(tmp_path, source_interval_seconds=value, ops_fetch_min_interval_seconds=value)
+    )
+    assert policy["source_interval_seconds"] == value
 
 
 def test_duplicate_keys_rejected(tmp_path):
@@ -80,25 +91,39 @@ def test_disabled_shared_limiter_refuses(monkeypatch, value):
         apply_policy(load_policy())
 
 
-def test_policy_applies_all_intervals_and_pause(monkeypatch):
+_POLICY_ENV = (
+    "HORSERACING_NETKEIBA_MIN_INTERVAL_S",
+    "OPS_FETCH_MIN_INTERVAL",
+    "HORSERACING_SHARED_LIMITER",
+    "HORSERACING_COLLECTION_MODE",
+    "OPS_CAPTURE_ON_AUTO_PREDICT",
+)
+
+
+@pytest.mark.parametrize("paused", [True, False])
+def test_policy_applies_all_intervals_and_mode(monkeypatch, tmp_path, paused):
+    """Both modes carry the same source interval, shared limiter and auto-capture off; only the
+    collection mode differs (2026-10-31: ``false`` is the explicit active mode)."""
     import os
 
-    for key in (
-        "HORSERACING_NETKEIBA_MIN_INTERVAL_S",
-        "OPS_FETCH_MIN_INTERVAL",
-        "HORSERACING_SHARED_LIMITER",
-        "HORSERACING_COLLECTION_MODE",
-        "OPS_CAPTURE_ON_AUTO_PREDICT",
-    ):
+    for key in _POLICY_ENV:
         monkeypatch.delenv(key, raising=False)
-    apply_policy(load_policy())
+    policy = load_policy(policy_file(tmp_path, collection_paused=paused))
+    assert collection_mode(policy) == ("paused" if paused else "active")
+    apply_policy(policy)
     assert (
         os.environ["HORSERACING_NETKEIBA_MIN_INTERVAL_S"]
         == os.environ["OPS_FETCH_MIN_INTERVAL"]
-        == "60"
+        == str(policy["source_interval_seconds"])
     )
-    assert os.environ["HORSERACING_COLLECTION_MODE"] == "paused"
+    assert os.environ["HORSERACING_COLLECTION_MODE"] == ("paused" if paused else "active")
     assert os.environ["HORSERACING_SHARED_LIMITER"] == "1"
+    assert os.environ["OPS_CAPTURE_ON_AUTO_PREDICT"] == "0"
+
+
+def test_checked_in_policy_is_a_valid_mode():
+    policy = load_policy()
+    assert collection_mode(policy) in ("paused", "active")
 
 
 @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE", "TRACE"])
@@ -154,6 +179,18 @@ def test_python_outbound_connect_is_blocked_and_restored():
     ) == original
 
 
+def test_paused_worker_cannot_detach(tmp_path):
+    """A paused worker exits before main, so detaching would only record a dead PID."""
+    import scripts.source_operations_172 as module
+
+    policy = policy_file(tmp_path, collection_paused=True)
+    with pytest.raises(ValueError, match="only_paused_apis_detach"):
+        module.main(
+            ["worker", "--policy", str(policy), "--report", str(tmp_path / "r.json"),
+             "--detach", "--log", str(tmp_path / "w.log"), "--pidfile", str(tmp_path / "w.pid")]
+        )
+
+
 def test_detached_service_has_separate_session_and_no_secret_arguments(
     tmp_path, monkeypatch
 ):
@@ -192,6 +229,7 @@ def test_capture_only_keys_accepted_together(tmp_path):
     policy = load_policy(
         policy_file(
             tmp_path,
+            collection_paused=True,
             capture_only_dates=["2026-11-07", "2026-11-08"],
             capture_only_approved_by="owner",
             capture_only_approved_at="2026-10-29T10:00:00+09:00",
@@ -216,10 +254,24 @@ def test_capture_only_keys_accepted_together(tmp_path):
          "capture_only_approved_at": "2026-10-29T10:00:00+09:00"},
         {"capture_only_dates": ["2026-11-07"], "capture_only_approved_by": "owner",
          "capture_only_approved_at": "yesterday"},
-        {"capture_only_dates": ["2026-11-07"], "capture_only_approved_by": "owner",
-         "capture_only_approved_at": "2026-10-29T10:00:00+09:00", "collection_paused": False},
     ],
 )
 def test_capture_only_keys_rejected_when_incomplete_or_invalid(tmp_path, changes):
     with pytest.raises(ValueError):
         load_policy(policy_file(tmp_path, **changes))
+
+
+def test_capture_only_keys_stay_inert_in_active_mode(tmp_path):
+    """The approved day list is still valid policy while collection is active; starting a capture
+    on such a day is refused by live/near_post.py (it requires collection_paused=true)."""
+    policy = load_policy(
+        policy_file(
+            tmp_path,
+            collection_paused=False,
+            capture_only_dates=["2026-11-07"],
+            capture_only_approved_by="owner",
+            capture_only_approved_at="2026-10-29T10:00:00+09:00",
+        )
+    )
+    assert collection_mode(policy) == "active"
+    assert policy["capture_only_dates"] == ["2026-11-07"]

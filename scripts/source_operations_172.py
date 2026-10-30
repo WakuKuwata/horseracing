@@ -23,6 +23,13 @@ def require(ok, code):
         raise ValueError(code)
 
 
+#: Floor for the per-request interval owed to the source. 172 (2026-10-27) launched at 60 s;
+#: on 2026-10-31 the user set the operating value to 10 s ("netkeiba は 1 req/10 s・外部でない
+#: ものは制限不要"). The floor is the smallest value the policy may ask for; the shared DB-backed
+#: limiter still serialises every caller, and internal (non-source) work is never throttled.
+MIN_SOURCE_INTERVAL_S = 10.0
+
+
 def unique(pairs):
     result = {}
     for key, value in pairs:
@@ -32,7 +39,8 @@ def unique(pairs):
 
 
 #: Feature 174 (capture-only days): an explicit, approved list of race days on which the manual
-#: near-post capture may run. All three keys travel together; collection stays paused.
+#: near-post capture may run. All three keys travel together. The capture itself only starts while
+#: ``collection_paused`` is true (live/near_post.py), so the list stays inert in active mode.
 CAPTURE_ONLY_KEYS = frozenset(
     {"capture_only_dates", "capture_only_approved_by", "capture_only_approved_at"}
 )
@@ -81,17 +89,25 @@ def load_policy(path=CONFIG):
     for key in ("source_interval_seconds", "ops_fetch_min_interval_seconds"):
         value = result[key]
         require(
-            type(value) in (int, float) and math.isfinite(value) and value >= 60,
-            "source_interval_must_be_finite_at_least_60",
+            type(value) in (int, float)
+            and math.isfinite(value)
+            and value >= MIN_SOURCE_INTERVAL_S,
+            "source_interval_must_be_finite_at_least_10",
         )
     require(
         result["source_interval_seconds"] == result["ops_fetch_min_interval_seconds"],
         "source_intervals_not_equal",
     )
     require(result["shared_limiter_enabled"] is True, "shared_limiter_must_be_enabled")
-    # This rollout has no enable/start-collection mode. Resume needs a separate explicit change.
-    require(result["collection_paused"] is True, "collection_pause_required")
+    # 2026-10-31 (user decision): ``false`` is the explicit "active" mode — ops accepts writes and
+    # the worker runs. Everything else in the policy (60 s interval, shared limiter, auto-capture
+    # off) is enforced the same way in both modes; only the pause itself is a switch.
+    require(type(result["collection_paused"]) is bool, "collection_paused_must_be_bool")
     return result
+
+
+def collection_mode(policy):
+    return "paused" if policy["collection_paused"] else "active"
 
 
 def apply_policy(policy):
@@ -118,7 +134,7 @@ def apply_policy(policy):
         HORSERACING_NETKEIBA_MIN_INTERVAL_S=str(policy["source_interval_seconds"]),
         OPS_FETCH_MIN_INTERVAL=str(policy["ops_fetch_min_interval_seconds"]),
         HORSERACING_SHARED_LIMITER="1",
-        HORSERACING_COLLECTION_MODE="paused",
+        HORSERACING_COLLECTION_MODE=collection_mode(policy),
         OPS_CAPTURE_ON_AUTO_PREDICT="0",
     )
 
@@ -158,12 +174,13 @@ def runtime_settings(policy, component):
         component=component,
         source_interval_seconds=policy["source_interval_seconds"],
         effective_intervals=intervals,
-        collection_paused=True,
+        collection_paused=policy["collection_paused"],
+        collection_mode=collection_mode(policy),
         shared_limiter_enabled=True,
         worker_main_imported="horseracing_ops.worker" in sys.modules,
         worker_main_called=False,
         recovery_called=False,
-        race_data_collection=False,
+        race_data_collection=bool(component == "worker" and not policy["collection_paused"]),
         external_http_requests=0,
         model_inference=False,
         secret_values_saved=False,
@@ -307,9 +324,14 @@ def main(argv=None):
     policy = load_policy(args.policy)
     apply_policy(policy)
     if args.detach:
-        require(args.component in ("api", "ops-api"), "only_paused_apis_detach")
+        # A paused worker exits before main; detaching it would only record a dead PID.
+        require(
+            args.component in ("api", "ops-api")
+            or (args.component == "worker" and not policy["collection_paused"]),
+            "only_paused_apis_detach",
+        )
         return spawn_detached(args)
-    if args.component in ("api", "ops-api") and not args.policy_loaded:
+    if args.component in ("api", "ops-api", "worker") and not args.policy_loaded:
         # exec (same PID) exposes the applied policy in the new process's initial environment,
         # as well as the runtime receipt. No credential is placed in command arguments.
         forwarded = list(sys.argv[1:] if argv is None else argv)
@@ -330,17 +352,31 @@ def main(argv=None):
         result = manual_preflight(policy, args.profile, args.out, args.report)
         print(json.dumps(dict(state=result["state"], can_collect=False)))
         return 0
+    paused = policy["collection_paused"]
+    # The read-only api never talks to a source, in either mode; ops-api in active mode must
+    # (its enqueue path confirms robots/limiter state through the scrape layer) and the worker always.
+    block_outbound = args.component == "api" or (paused and args.component == "ops-api")
     settings = runtime_settings(policy, args.component)
-    settings["outbound_python_connections_blocked"] = args.component != "worker"
-    settings["ops_mutations_blocked_before_app"] = args.component == "ops-api"
-    settings["worker_state"] = (
-        "PAUSED_NOT_STARTED" if args.component == "worker" else "NOT_A_WORKER"
-    )
+    settings["outbound_python_connections_blocked"] = block_outbound
+    settings["ops_mutations_blocked_before_app"] = paused and args.component == "ops-api"
+    if args.component == "worker":
+        settings["worker_state"] = "PAUSED_NOT_STARTED" if paused else "ACTIVE_STARTING"
+    else:
+        settings["worker_state"] = "NOT_A_WORKER"
     save_report(args.report, settings)
     if args.component == "worker":
-        print("[paused] worker: no recovery, claim, fetch or model subprocess started")
+        if paused:
+            print("[paused] worker: no recovery, claim, fetch or model subprocess started")
+            return 0
+        # Active: the real daemon, in this process, with the policy already in its environment
+        # (60 s interval, shared limiter, auto-capture off). Blocks until SIGTERM.
+        from horseracing_ops.worker import main as worker_main
+
+        print("[active] worker: starting horseracing_ops.worker.main", flush=True)
+        worker_main()
         return 0
-    with no_outbound_python_connections():
+    serve = no_outbound_python_connections() if block_outbound else contextlib.nullcontext()
+    with serve:
         import uvicorn
 
         if args.component == "api":
@@ -350,7 +386,7 @@ def main(argv=None):
         else:
             from horseracing_ops.app import app as base
 
-            app = PausedOps(base)
+            app = PausedOps(base) if paused else base
             port = 8001
         uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
     return 0

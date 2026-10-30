@@ -13,7 +13,7 @@
 # すべての取得は DB 背後の共有リミッタを通る(093/172)。間隔は config/source-operations.json の
 # `source_interval_seconds`(60)を環境変数 HORSERACING_NETKEIBA_MIN_INTERVAL_S に写して渡す。**この環境変数が無いと
 # scrape/live の既定は 1 秒**で、2026-10-30 の 10/31 entries は 48 req を 1 req/秒で取ってしまった(実測・この wrapper の欠陥)。
-# 60 未満・欠落・読めない policy では起動しない。--wait-for-draw は枠順未確定(horse_number 欠落で
+# 10 未満・欠落・読めない policy では起動しない(下限は scripts/source_operations_172.py の MIN_SOURCE_INTERVAL_S と同じ・2026-10-31 に 60→10)。--wait-for-draw は枠順未確定(horse_number 欠落で
 # parser が fail-closed)のあいだ 1 時間おきに 1 req だけ再試行する(最大 8 回)。
 # 馬番付き出馬表(枠順)は JRA が「前日の 10 時過ぎ」に発表する(重賞以外。2026-10-29 木曜は 22 時まで空のまま=実測)。
 # 前日 10 時より前に起動すると 8 回を無駄に使う。開催日の翌日分の entries は、その日の捕捉がすべて終わってから起動する
@@ -33,8 +33,8 @@ SOURCE_INTERVAL_S="$("$SCRAPE_PY" - "$POLICY" <<'PY'
 import json, math, os, sys
 policy = json.load(open(sys.argv[1]))
 value = policy.get("source_interval_seconds")
-if type(value) not in (int, float) or not math.isfinite(value) or value < 60:
-    sys.exit("source_interval_seconds must be a finite number >= 60: %r" % (value,))
+if type(value) not in (int, float) or not math.isfinite(value) or value < 10:
+    sys.exit("source_interval_seconds must be a finite number >= 10: %r" % (value,))
 inherited = os.environ.get("HORSERACING_NETKEIBA_MIN_INTERVAL_S")
 if inherited:
     try:

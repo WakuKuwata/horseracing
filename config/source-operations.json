@@ -1,9 +1,9 @@
 {
   "schema_version": "172-v1",
-  "source_interval_seconds": 60,
-  "ops_fetch_min_interval_seconds": 60,
+  "source_interval_seconds": 10,
+  "ops_fetch_min_interval_seconds": 10,
   "shared_limiter_enabled": true,
-  "collection_paused": true,
+  "collection_paused": false,
   "capture_only_dates": [
     "2026-10-31",
     "2026-11-01",

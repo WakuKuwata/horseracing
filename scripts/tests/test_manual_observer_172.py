@@ -10,7 +10,13 @@ import pytest
 import scripts.manual_observer_172 as manual
 
 
-def profile(tmp_path, interval=60, **endpoint_changes):
+def policy_interval():
+    return json.loads(manual.CONFIG.read_text())["source_interval_seconds"]
+
+
+def profile(tmp_path, interval=None, **endpoint_changes):
+    if interval is None:
+        interval = policy_interval()
     # Build a private test profile; this does not read the actual private profile or connect.
     from sqlalchemy.engine import URL
 
@@ -46,10 +52,21 @@ def forbid_network(monkeypatch):
     monkeypatch.setattr(socket.socket, "connect", forbidden)
 
 
+def paused_policy(tmp_path):
+    """The observer entry point is frozen on the paused policy; the checked-in file may be active
+    (2026-10-31), so stage an explicit paused copy."""
+    value = json.loads(manual.CONFIG.read_text())
+    value["collection_paused"] = True
+    path = tmp_path / "paused-policy.json"
+    path.write_text(json.dumps(value))
+    return path
+
+
 def test_observe_stops_with_nonzero_status_before_observer_import_or_call(
     tmp_path, monkeypatch
 ):
-    policy = manual.load_policy()
+    policy_path = paused_policy(tmp_path)
+    policy = manual.load_policy(policy_path)
     saved = []
     monkeypatch.setattr(
         manual,
@@ -57,7 +74,7 @@ def test_observe_stops_with_nonzero_status_before_observer_import_or_call(
         lambda p, c: dict(
             component=c,
             source_interval_seconds=p["source_interval_seconds"],
-            effective_intervals=dict(source=60),
+            effective_intervals=dict(source=policy_interval()),
         ),
     )
     monkeypatch.setattr(
@@ -71,6 +88,8 @@ def test_observe_stops_with_nonzero_status_before_observer_import_or_call(
     code = manual.main(
         [
             "observe",
+            "--policy",
+            str(policy_path),
             "--profile",
             str(profile(tmp_path)),
             "--report",
@@ -84,7 +103,7 @@ def test_observe_stops_with_nonzero_status_before_observer_import_or_call(
     assert saved[0]["manual_observer_imported"] is False
     assert saved[0]["source_slot_reserved"] is False
     assert "scripts.roi_explore.manual_observation_165.cli" not in sys.modules
-    assert policy["source_interval_seconds"] == 60
+    assert policy["source_interval_seconds"] == policy_interval()
 
 
 @pytest.mark.parametrize("interval", [1, 59, 120])

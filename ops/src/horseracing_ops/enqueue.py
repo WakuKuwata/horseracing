@@ -102,15 +102,18 @@ def enqueue_race(
             .order_by(IngestionJob.completed_at.desc())
         ).first()
         if fresh is not None:
-            enqueue_predict(
-                session,
-                race_id,
-                origin=(
-                    "manual_ui"
-                    if origin == "manual_ui"
-                    else "auto_after_refresh"
-                ),
-            )
+            # C1: a refresh (fresh or reused) never chases the comparison-only prediction unless
+            # the operator opts in; the 予測 button enqueues predict explicitly.
+            if CONFIG.predict_on_refresh:
+                enqueue_predict(
+                    session,
+                    race_id,
+                    origin=(
+                        "manual_ui"
+                        if origin == "manual_ui"
+                        else "auto_after_refresh"
+                    ),
+                )
             return fresh, True
 
     job = IngestionJob(

@@ -93,6 +93,11 @@ class OpsConfig:
     #: of that race date's 期待回収率 (the value is win_prob × the odds it was computed from, so
     #: new odds make the stored one stale). Off-switch for the operator; default on.
     expected_return_on_refresh: bool = _bool("OPS_EXPECTED_RETURN_ON_REFRESH", True)
+    #: C1 (user decision 2026-10-29, wired 2026-10-31): a race refresh no longer chases itself with
+    #: a predict job for the comparison-only win model (154 showed the old predictions add nothing
+    #: to the ROI columns, and each run costs 24-60 s of CPU). Predictions are made from the 予測
+    #: button only; expected_return stays automatic. Opt-in for the previous behaviour.
+    predict_on_refresh: bool = _bool("OPS_PREDICT_ON_REFRESH", False)
     #: Feature 137: absolute model directory handed to `horseracing_training market-ev`.
     market_ev_model_dir: str = _str("OPS_MARKET_EV_MODEL_DIR", str(_DEFAULT_MARKET_EV_MODEL_DIR))
     #: Feature 138: absolute ensemble directory handed to `market-ev --ensemble-dir`. ops always

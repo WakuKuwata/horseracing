@@ -71,6 +71,9 @@ def main(argv=None):
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     policy = load_policy(args.policy)
+    # The manual-observation entry point (165-172) is frozen on the paused policy: it never ran
+    # with collection enabled and the 2026-10-31 active mode is for ops/worker only.
+    require(policy["collection_paused"] is True, "collection_pause_required")
     apply_policy(policy)
     if args.command == "observe":
         result = observe_paused(policy, args.profile, args.report)
