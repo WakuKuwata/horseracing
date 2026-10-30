@@ -28,7 +28,7 @@ from horseracing_db.enums import EntryStatus, ResultStatus
 from horseracing_db.models import DecisionQuote, OfficialWinPayout, Race, RaceHorse, RaceResult
 from horseracing_eval import decision_quote_scoring as dqs
 from horseracing_eval import display_update_rule as dur
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from . import near_post as np_
@@ -113,6 +113,9 @@ def load_quote_records(
     pays: dict[str, dict[int, int]] = defaultdict(dict)
     for rid, hn, yen in payouts:
         pays[rid][int(hn)] = int(yen)
+    gaps = _days_since_last(session, {
+        (race.race_date, str(f["horse_id"])) for q, race in rows for f in q.field
+    })
     out = []
     for q, race in rows:
         pred_by = {int(p["horse_number"]): p for p in q.pred}
@@ -126,6 +129,7 @@ def load_quote_records(
                 p_ens=_f(p.get("p_ens")), ev_ens=_f(p.get("ev_ens")),
                 p_single=_f(p.get("p_single")), ev_single=_f(p.get("ev_single")),
                 p_mix=_f(p.get("p_mix")), ev_mix=_f(p.get("ev_mix")),
+                days_since_last=gaps.get((race.race_date, str(f["horse_id"]))),
             ))
         final = (race.win_odds_observed_at is not None and race.win_odds_official_at is None
                  and q.race_id in has_results)
@@ -146,6 +150,32 @@ def load_quote_records(
                 "mix_coefficient_year": q.mix_coefficient_year,
             },
         ))
+    return out
+
+
+def _days_since_last(
+    session: Session, keys: set[tuple[datetime.date, str]]
+) -> dict[tuple[datetime.date, str], float | None]:
+    """``dqs.GAP_DEFINITION``: per (race_date, horse_id), the days since the horse's most recent
+    STARTED race strictly before that date (None when there is none). Read-only; one query per
+    distinct race_date. Same lag as market_ev's ``days_since_last`` (started rows per horse), so
+    the 138 picks and this readout agree on the gap for any horse with a start on record."""
+    by_date: dict[datetime.date, set[str]] = defaultdict(set)
+    for d, hid in keys:
+        by_date[d].add(hid)
+    out: dict[tuple[datetime.date, str], float | None] = {}
+    for d in sorted(by_date):
+        hids = sorted(by_date[d])
+        rows = session.execute(
+            select(RaceHorse.horse_id, func.max(Race.race_date))
+            .join(Race, Race.race_id == RaceHorse.race_id)
+            .where(RaceHorse.horse_id.in_(hids), RaceHorse.entry_status == EntryStatus.STARTED,
+                   Race.race_date < d)
+            .group_by(RaceHorse.horse_id)
+        ).all()
+        last = {str(hid): rd for hid, rd in rows}
+        for hid in hids:
+            out[(d, hid)] = float((d - last[hid]).days) if hid in last else None
     return out
 
 
@@ -401,6 +431,13 @@ def summary_lines(report: dict) -> list[str]:
             f"diff={p['diff']} diff_ci={p['diff_ci']} verdict={p['verdict']}"
         )
     lines.append(f"verdict_overall={report['verdict_overall']}")
+    for r in report["attention"]["rules"]:
+        rr = r["recovery_rate"]
+        lines.append(
+            f"attention {r['rule_id']}: n_bets={r['n_bets']} n_hits={r['n_hits']} "
+            f"recovery_rate={'—' if rr is None else f'{rr:.4f}'} ci={r['ci']} "
+            f"drift_marked_p50={r['price_drift_marked']['p50']}"
+        )
     d = report["diagnostics"]
     lines.append(
         f"diagnostic: closing_unavailable={d['price_drift']['n_races_closing_unavailable']} "

@@ -3,7 +3,7 @@
   "name": "ens15-norm148-v1",
   "kind": "postprocess",
   "artifact_path": null,
-  "artifact_sha256": "77fcdd5343ac3c2e8e864149aae9439d94a6de9e850bf30361b5cfea5e9fc0ab",
+  "artifact_sha256": "a82f1e57a5ae8589f27096600aa2cd596ca2e828a997080a5042c42bce9c1471",
   "artifact_version": "mev-ens15-v1",
   "mark_rule": {
    "column": "expected_return",

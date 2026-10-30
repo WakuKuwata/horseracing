@@ -71,13 +71,37 @@ def _seed_two_races(session):
     _seed_race_reusing_horses(session, OTHER, post_time=POST_TIME + datetime.timedelta(minutes=30))
     _seed_quote(session, OTHER, post_time=POST_TIME + datetime.timedelta(minutes=30), p_ens=(0.5, 0.2, 0.2, 0.1))
     settle_race(session, race_id=OTHER, horse_id="H01")
+    # an earlier meeting 30 days before: H03 started (→ days_since_last 30), H01 only cancelled
+    # (→ no earlier START on record → None), H02/H04 never ran before (→ None)
+    _seed_prior_race(session, "202609260101", RACE_DATE - datetime.timedelta(days=30),
+                     started=("H03",), cancelled=("H01",))
     session.commit()
+
+
+def _seed_prior_race(session, race_id, race_date, *, started=(), cancelled=()):
+    from decimal import Decimal
+
+    from horseracing_db.enums import EntryStatus
+    from horseracing_db.models import RaceHorse
+
+    session.add(Race(race_id=race_id, race_number=1, race_date=race_date,
+                     post_time=POST_TIME - (RACE_DATE - race_date)))
+    session.flush()
+    for i, hid in enumerate(tuple(started) + tuple(cancelled), start=1):
+        session.add(RaceHorse(
+            race_id=race_id, horse_id=hid, horse_number=i, odds=Decimal("5.0"), popularity=i,
+            entry_status=(EntryStatus.STARTED if hid in started else EntryStatus.CANCELLED)))
+    session.flush()
 
 
 def test_loader_joins_and_settlement_match_hand_calculation(session):
     _seed_two_races(session)
     recs = nps.load_quote_records(session, date_from=RACE_DATE, date_to=RACE_DATE)
     assert [r.race_id for r in recs] == [RACE_ID, OTHER]
+    # days_since_last: the most recent earlier START only (the cancelled entry does not count)
+    gaps = {h.horse_id: h.days_since_last for h in recs[0].horses}
+    assert gaps == {"H01": None, "H02": None, "H03": 30.0, "H04": None}
+    assert {h.horse_id: h.days_since_last for h in recs[1].horses} == gaps
     r1 = recs[0]
     assert r1.started == {f"H{i:02d}": i for i in range(1, 5)} and r1.has_results
     assert r1.winner_horse_ids == frozenset({"H03"}) and r1.payouts == {3: 480}

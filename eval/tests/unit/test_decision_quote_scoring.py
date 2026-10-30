@@ -17,11 +17,13 @@ POST = datetime.datetime(2026, 10, 31, 6, 0, tzinfo=UTC)
 DAY = datetime.date(2026, 10, 31)
 
 
-def horse(n, odds, p_ens, *, p_mix=None, pop=None):
+def horse(n, odds, p_ens, *, p_mix=None, pop=None, gap=None, p_single=None):
+    ps = p_ens if p_single is None else p_single
     return dqs.QuoteHorse(
         horse_id=f"H{n:02d}", horse_number=n, win_odds=odds, popularity=pop or n,
-        p_ens=p_ens, ev_ens=p_ens * odds, p_single=p_ens, ev_single=p_ens * odds,
+        p_ens=p_ens, ev_ens=p_ens * odds, p_single=ps, ev_single=ps * odds,
         p_mix=p_mix, ev_mix=(p_mix * odds) if p_mix is not None else None,
+        days_since_last=gap,
     )
 
 
@@ -266,3 +268,71 @@ def test_report_is_deterministic_and_free_of_forbidden_words():
     assert dqs.forbidden_vocabulary(a) == []
     assert dqs.build_report(recs, tz=JST)["verdict_overall"] == "no_candidate"
     assert not math.isnan(a["columns"][0]["recovery_rate"])
+
+
+# ----------------------------------------------------------------------------- attention (138 S1〜S5)
+
+
+def test_attention_marks_follow_the_frozen_definitions():
+    from horseracing_eval import attention_rules as ar
+
+    hs = [
+        horse(1, 25.0, 0.05, gap=30.0),                # ens EV 1.25, band, gap → S1/S3/S4/S5 (not S2: ≤1.3)
+        horse(2, 25.0, 0.06, gap=None),                # gap unknown → S3 only
+        horse(3, 25.0, 0.06, gap=113.0),               # gap out of range → S3 only
+        horse(4, 40.0, 0.04, gap=30.0),                # odds 40 (band is < 40) → S3 only
+        horse(5, 30.0, 0.045, gap=14.0),               # EV 1.35 → S1+S2+S3+S4
+        horse(6, 2.0, 0.3, gap=30.0, p_single=0.65),   # ens 0.6 / single 1.3 → S5 only
+        horse(7, 39.9, 0.03, gap=112.0),               # EV 1.197 → S4 only (>1.1)
+    ]
+    rec = record(horses=hs, mix_status="no_coefficients")
+    assert dqs.classify(rec) == "eligible"
+    assert dqs.attention_marks(rec, "S1") == [1, 5]
+    assert dqs.attention_marks(rec, "S2") == [5]
+    assert dqs.attention_marks(rec, "S3") == [1, 2, 3, 4, 5]
+    assert dqs.attention_marks(rec, "S4") == [1, 5, 7]
+    assert dqs.attention_marks(rec, "S5") == [1, 2, 3, 4, 5, 6]
+    # the eval definitions are the single source: each mark agrees with attention_rules.matches
+    for h in hs:
+        for rid in dqs.ATTENTION_RULE_IDS:
+            assert (h.horse_number in dqs.attention_marks(rec, rid)) == ar.matches(
+                ar.definition(rid), ens_ev=h.ev_ens, single_ev=h.ev_single, odds=h.win_odds,
+                days_since_last=h.days_since_last)
+
+
+def test_attention_tally_settles_like_the_columns_and_keeps_marked_drift():
+    hs = [horse(1, 25.0, 0.06, gap=30.0), horse(2, 30.0, 0.05, gap=20.0), horse(3, 2.0, 0.5)]
+    rec = record(horses=hs, winners=("H02",), payouts={2: 2800}, closing={1: 20.0, 2: 28.0, 3: 2.0},
+                 mix_status="no_coefficients")
+    t = dqs.attention_tally([rec], "S1")
+    assert t["n_bets"] == 2 and t["n_hits"] == 1 and t["stake_yen"] == 200 and t["return_yen"] == 2800
+    assert t["recovery_rate"] == pytest.approx(14.0) and t["ci"] is None and t["n_days"] == 1
+    assert t["valuation_basis"] == "official_win_payout"
+    assert t["bootstrap"]["impl"] == dur.BOOTSTRAP["impl"]
+    d = t["price_drift_marked"]
+    assert d["n"] == 2 and d["p50"] == pytest.approx((math.log(20 / 25) + math.log(28 / 30)) / 2)
+    # a race whose payout is missing leaves the funnel and the tally alike
+    t2 = dqs.attention_tally([rec, record("202610310102", horses=hs, payouts={},
+                                           mix_status="no_coefficients")], "S1")
+    assert t2["n_races"] == 1 and t2["n_bets"] == 2
+    # closing unavailable: counted, no drift
+    t3 = dqs.attention_tally([record(horses=hs, winners=("H02",), payouts={2: 2800},
+                                     mix_status="no_coefficients")], "S1")
+    assert t3["n_races_with_bets_closing_unavailable"] == 1 and t3["price_drift_marked"]["n"] == 0
+
+
+def test_attention_section_is_diagnostic_and_tied_to_the_frozen_definitions():
+    from horseracing_eval import attention_rules as ar
+
+    rep = dqs.build_report(_many_days(), tz=JST)
+    sec = rep["attention"]
+    assert sec["diagnostic"] is True and sec["not_used_for_verdict"] is True
+    assert sec["rule_set_version"] == ar.RULE_SET_VERSION
+    assert sec["definitions_sha256"] == ar.definitions_sha256()
+    assert [r["rule_id"] for r in sec["rules"]] == list(ar.RULE_IDS)
+    assert [r["rank"] for r in sec["rules"]] == sorted(r["rank"] for r in sec["rules"])
+    for r in sec["rules"]:
+        assert r["stake_yen"] == 100 * r["n_bets"]
+        assert r["definition_ja"] == ar.definition(r["rule_id"]).definition_ja
+    assert rep["verdict_overall"] == "no_candidate"     # unchanged by the attention section
+    assert dqs.forbidden_vocabulary(rep) == []

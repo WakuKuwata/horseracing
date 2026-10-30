@@ -92,6 +92,7 @@
 - FR-018 憲法 V: 精算・診断は保存しない(読み取り時計算)。再実行は決定論(同 seed)で同じ JSON を出す(テスト)。
 - FR-019 eval の純関数は DB・training に依存しない(predictor-agnostic・入力は plain dict/dataclass)。候補の再現(training artifact)は live 側に置く。API 後段は eval の同じ関数を呼ぶ(B8 と同型の「per-race と同じ builder」)。
 - FR-020 出力の語彙: 「採用」「改善」「利益」を使わない。回収率は `recovery_rate`、目印は `marked`、差は `diff`。
+- FR-021(2026-10-30 追加・10/31 の結果を読む前に登録)注目条件の T−3 集計: 138 の S1〜S5 を**凍結定義のまま**(`attention_rules.match_mask`・`definitions_sha256` を出力に束ねる)T−3 の判断記録に当て、規則ごとに目印 100 円→公式払戻で精算・開催日ブロック区間・目印馬の価格ずれを `attention` 節に出す。`diagnostic: true`・判定に使わない(三値にも 138 のチェックポイントにも影響しない)。前走からの日数は保存行に無いので採点時に DB から読み取り専用で導く(`days_since_last`=直前の STARTED 出走との日数・market_ev と同じ lag・無ければ間隔つき規則は不一致)。帯・閾値は 138 の凍結値で、結果を見て動かさない。
 
 ## 6. 成功基準
 

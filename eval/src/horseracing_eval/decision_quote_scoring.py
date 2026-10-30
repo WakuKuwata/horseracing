@@ -107,6 +107,9 @@ class QuoteHorse:
     ev_single: float | None
     p_mix: float | None
     ev_mix: float | None
+    #: race_date − the horse's most recent STARTED race_date strictly before it (138/market_ev
+    #: ``days_since_last``); None = no earlier start known → gap rules do not match.
+    days_since_last: float | None = None
 
 
 @dataclass
@@ -583,6 +586,93 @@ def retention(records: Sequence[QuoteRecord]) -> dict:
             "rate": (n_still / n_marked) if n_marked else None}
 
 
+# --------------------------------------------------------------------------- attention (138 S1〜S5)
+
+ATTENTION_RULE_IDS: tuple[str, ...] = tuple(ar.RULE_IDS)
+GAP_DEFINITION = (
+    "days_since_last = race_date − the horse's most recent STARTED race_date strictly before it "
+    "(the same lag market_ev/138 picks use; None → the gap rules do not match)"
+)
+ATTENTION_NOTE = (
+    "138 の S1〜S5(凍結定義)を T−3 の判断記録に当てた集計。138 の前向き記録(attention_picks)"
+    "とは母集団も時刻も別で、138 のチェックポイント判定にも本 spec の三値にも使わない。"
+)
+
+
+def _nan_if_none(x) -> float:
+    return math.nan if x is None else float(x)
+
+
+def attention_marks(rec: QuoteRecord, rule_id: str) -> list[int]:
+    """馬番 the frozen rule marks on the capture-time quote (``attention_rules.match_mask`` is THE
+    implementation; nothing is re-derived here)."""
+    defn = ar.definition(rule_id)
+    hs = rec.horses
+    mask = ar.match_mask(
+        defn,
+        ens_ev=[_nan_if_none(h.ev_ens) for h in hs],
+        single_ev=[_nan_if_none(h.ev_single) for h in hs],
+        odds=[_nan_if_none(h.win_odds) for h in hs],
+        days_since_last=[_nan_if_none(h.days_since_last) for h in hs],
+    )
+    return [h.horse_number for h, m in zip(hs, mask, strict=True) if bool(m)]
+
+
+def attention_tally(records: Sequence[QuoteRecord], rule_id: str) -> dict:
+    """One rule's T−3 tally over the ELIGIBLE records: 100 yen per marked horse at the official
+    win payout (same settlement/bootstrap as the columns) + the marked horses' price drift."""
+    defn = ar.definition(rule_id)
+    t = _Tally()
+    drift: list[float] = []
+    n_closing_unavailable = 0
+    for rec in records:
+        if classify(rec) != "eligible":
+            continue
+        numbers = attention_marks(rec, rule_id)
+        t.add(rec.race_date, _bets(rec, numbers))
+        if not numbers:
+            continue
+        if rec.closing is None:
+            n_closing_unavailable += 1
+            continue
+        marked = set(numbers)
+        for h in rec.horses:
+            if h.horse_number not in marked:
+                continue
+            of = rec.closing.get(h.horse_number)
+            if _finite(of) and float(of) >= 1.0 and _finite(h.win_odds):
+                drift.append(math.log(float(of) / float(h.win_odds)))
+    stats = ratio_ci(t.by_day)
+    out = {
+        "rule_id": defn.id, "rank": int(defn.rank), "definition_ja": defn.definition_ja,
+        "uses_ensemble": bool(defn.uses_ensemble), "ev_gt": float(defn.ev_gt),
+        "odds_band": (list(defn.odds_band) if defn.odds_band is not None else None),
+        "gap_days": (list(defn.gap_days) if defn.gap_days is not None else None),
+        **_tally_payload(t),
+        "ci": stats["ci"], "p_one_sided": stats["p_one_sided"], "n_days": stats["n_days"],
+        "valuation_basis": "official_win_payout",
+        "bootstrap": _bootstrap_payload("race-days with >=1 bet of the rule"),
+        "price_drift_marked": {"definition": "log(closing_win_odds / quoted_win_odds)",
+                               **_dist(drift)},
+        "n_races_with_bets_closing_unavailable": n_closing_unavailable,
+    }
+    if stats["point"] is not None:
+        out["recovery_rate"] = stats["point"]
+    return out
+
+
+def attention_section(records: Sequence[QuoteRecord]) -> dict:
+    return {
+        "diagnostic": True, "not_used_for_verdict": True,
+        "rule_set_version": ar.RULE_SET_VERSION,
+        "definitions_sha256": ar.definitions_sha256(),
+        "match_impl": "horseracing_eval.attention_rules.match_mask",
+        "gap_definition": GAP_DEFINITION,
+        "note": ATTENTION_NOTE,
+        "rules": [attention_tally(records, r) for r in ATTENTION_RULE_IDS],
+    }
+
+
 # --------------------------------------------------------------------------- report
 
 
@@ -628,6 +718,7 @@ def build_report(
         "paired": paired,
         "verdict_overall": (paired[0]["verdict"] if len(paired) == 1 else
                             ("no_candidate" if not paired else "per_candidate")),
+        "attention": attention_section(records),
         "diagnostics": {
             "diagnostic": True, "not_used_for_verdict": True,
             "calibration": calibration_cells(records),

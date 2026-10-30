@@ -41,6 +41,15 @@ eval 709(+31)/ live 186(+13)/ api unit 231(+11)/ features leak-guard 2。ruff: l
 
 research D13 のとおり。追加で確認: 読み取り専用は統合テストで DB 行数不変を固定・同期再標本化は `race_block_ratio_bootstrap_ci_v1` の複数行入力で実現(別々に呼ばない)・`n_points`=候補の目印本数(登録日以降・対のみ)・語彙は `forbidden_vocabulary` を統合テストと単体テストで固定。
 
+## 追加(2026-10-30・10/31 の結果を読む前): S1〜S5 の T−3 集計
+
+- 動機: 138 の前向き記録(`attention_picks`)は 10/05〜10/25 の 7 開催日で 126 点(S1 9・S2 6・S3 28・S4 31・S5 52)、発走までの中央値 ≈80 分、取得停止後は増えない(174 の capture-only は `attention_picks` を書かない)。注目条件を T−3 の価格で測る唯一の経路が本 spec の `decision_quotes` なので、報告に `attention` 節を純追加した(FR-021・contracts/report.md)。
+- 実装: eval `attention_marks`/`attention_tally`/`attention_section`(目印は `attention_rules.match_mask` そのまま・精算と bootstrap は `columns` と同一・`definitions_sha256` を出力に束ねる)/ live loader が `days_since_last`(直前の STARTED 出走との日数・開催日ごとに 1 クエリ・読み取り専用)を `QuoteHorse` に載せる / CLI 要約に `attention S*:` 行。
+- 候補 sha: eval モジュールを編集したので `ens15-norm148-v1` の `artifact_sha256` を再登録(`a82f1e57…`・登録日は 2026-10-29 のまま=まだ 1 行も無い)。
+- 実 DB(行 0): 候補つきで完走(rc 0)・`attention.rules` は S1〜S5 の順で全て n_bets 0。
+- 見込み(10/05〜10/25 の密度から 19 日で): S1 ≈25・S2 ≈15・S3 ≈75・S4 ≈85・S5 ≈140 点。300 点は年内どの条件も届かない=年内に読めるのは較正と価格ずれ(S1/S2 の採否は 2027 以降)。
+- テスト: eval +3(定義一致を `attention_rules.matches` と突き合わせ・精算/価格ずれ/除外・報告節と禁止語)/ live 統合 +1 項目(前走 30 日前の STARTED と CANCELLED の区別)。
+
 ## 残り
 
 - 10/31 の試運転後に `score 2026-10-31` を回し、funnel・`not_reproducible` の実測を本ファイルに追記。
