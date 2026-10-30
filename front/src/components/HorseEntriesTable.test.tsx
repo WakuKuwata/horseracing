@@ -179,7 +179,52 @@ describe("HorseEntriesTable p/q presentation (021 invariants)", () => {
     expect(screen.getByText(/^モデル勝率/)).toBeInTheDocument();
   });
 
-  it("sorts by モデル勝率 DESC by default (prediction-first screen)", () => {
+  it("sorts by 単勝 ASC by default whenever odds are present (人気順; user decision 2026-10-31)", async () => {
+    const withOdds: HorseEntry[] = [
+      { ...entries[0], odds: 12.5 },
+      { ...entries[1], odds: 2.1 },
+      { ...entries[2], odds: null }, // no price yet → last, regardless of direction
+    ];
+    const { container, rerender } = renderWithProviders(
+      <HorseEntriesTable entries={withOdds} predictions={predictions} canonicalConsistent={true} />,
+    );
+    const names = () =>
+      Array.from(container.querySelectorAll("tbody tr.entry-row td:nth-child(2) .cell-main"))
+        .map((n) => n.textContent);
+    expect(screen.getByRole("columnheader", { name: /^単勝/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByText(/^モデル勝率/).closest("th")?.getAttribute("aria-sort")).toBe("none");
+    expect(names()).toEqual(["サロゲート馬", "本登録馬", "騎手なし馬"]);
+    // the ROI overview follows the same rule (odds beat starter order)
+    rerender(<HorseEntriesTable entries={withOdds} predictions={[]} variant="roi" />);
+    const roiTable = screen.getByRole("table", { name: "期待回収率の出走表" });
+    expect(within(roiTable).getByRole("columnheader", { name: /^単勝/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(names()).toEqual(["サロゲート馬", "本登録馬", "騎手なし馬"]);
+    // a header click is the user's choice and survives a data refresh
+    await userEvent.click(within(roiTable).getByRole("columnheader", { name: /枠\/馬番/ }));
+    expect(names()).toEqual(["本登録馬", "サロゲート馬", "騎手なし馬"]);
+    rerender(<HorseEntriesTable entries={withOdds.map((e) => ({ ...e, odds: 3.0 }))} predictions={[]} variant="roi" />);
+    expect(names()).toEqual(["本登録馬", "サロゲート馬", "騎手なし馬"]);
+  });
+
+  it("switches from starter order to 単勝 when odds arrive after a refresh (no click yet)", () => {
+    const { container, rerender } = renderWithProviders(
+      <HorseEntriesTable entries={[entries[1], entries[0], entries[2]]} predictions={[]} variant="roi" />,
+    );
+    const names = () =>
+      Array.from(container.querySelectorAll("tbody tr.entry-row td:nth-child(2) .cell-main"))
+        .map((n) => n.textContent);
+    expect(names()).toEqual(["本登録馬", "サロゲート馬", "騎手なし馬"]);
+    rerender(
+      <HorseEntriesTable
+        entries={[{ ...entries[1], odds: 8.0 }, { ...entries[0], odds: 1.9 }, { ...entries[2], odds: 4.4 }]}
+        predictions={[]}
+        variant="roi"
+      />,
+    );
+    expect(names()).toEqual(["本登録馬", "騎手なし馬", "サロゲート馬"]);
+  });
+
+  it("sorts by モデル勝率 DESC by default when there are predictions but no odds (comparison tab)", () => {
     const { container } = renderWithProviders(
       <HorseEntriesTable
         entries={entries}
@@ -274,7 +319,7 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     return cell;
   }
 
-  it("154 ROI variant orders by horse number and excludes legacy predictions even when supplied", async () => {
+  it("154 ROI variant orders by horse number (no odds) and excludes legacy predictions even when supplied", async () => {
     const { container } = renderWithProviders(
       <HorseEntriesTable entries={[evEntries[2], evEntries[0], evEntries[3], evEntries[1]]}
         predictions={[...predictions].reverse()} canonicalConsistent={true} marketEv={marketEv} variant="roi" />,

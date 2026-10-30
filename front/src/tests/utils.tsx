@@ -11,15 +11,17 @@ export function renderWithProviders(
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
-  const result = render(
+  const wrap = (node: ReactElement) => (
     <QueryClientProvider client={client}>
       <MemoryRouter
         initialEntries={[route]}
         future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
       >
-        {ui}
+        {node}
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
-  return { ...result, queryClient: client };
+  const result = render(wrap(ui));
+  // RTL's bare `rerender` drops the providers; re-wrap so a re-render keeps the same client/router.
+  return { ...result, rerender: (next: ReactElement) => result.rerender(wrap(next)), queryClient: client };
 }

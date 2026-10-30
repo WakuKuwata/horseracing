@@ -202,12 +202,23 @@ export function HorseEntriesTable({
   /** 描画時刻(価格鮮度の評価)。省略時は描画のたびに現在時刻 — 自動では再描画しない。 */
   now?: Date | number;
 }) {
-  // ROI overview uses starter order; comparison retains the legacy model-win ordering.
-  const [sortKey, setSortKey] = useState<ColKey>(variant === "roi" ? "horse_number" : "win");
-  const [asc, setAsc] = useState(variant === "roi");
+  // Sort = the user's explicit choice (a header click) or, until they click, a default derived
+  // from the data: 単勝 ascending (人気順 — the market's own order, not a model/edge ordering)
+  // whenever any horse carries odds (user decision 2026-10-31). Without odds the ROI overview
+  // falls back to starter order and the comparison tab to the legacy model-win ordering. The
+  // default is derived on every render so odds landing after a refresh re-order the table —
+  // unless the user has already picked a column.
+  const [userSort, setUserSort] = useState<{ key: ColKey; asc: boolean } | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const hasPreds = variant !== "roi" && predictions.length > 0;
+  const hasOdds = entries.some((e) => e.odds != null);
+  const defaultSort: { key: ColKey; asc: boolean } = hasOdds
+    ? { key: "odds", asc: true }
+    : variant === "roi" || !hasPreds
+      ? { key: "horse_number", asc: true }
+      : { key: "win", asc: false };
+  const { key: sortKey, asc } = userSort ?? defaultSort;
   // 差(p−q) is only meaningful when the API confirms p and q share one canonical field (021 R1).
   const comparable = hasPreds && canonicalConsistent === true;
   const evAvailable = marketEv?.status === "available";
@@ -273,11 +284,8 @@ export function HorseEntriesTable({
   }, [rows, sortKey, asc]);
 
   function toggle(key: ColKey) {
-    if (key === sortKey) setAsc((v) => !v);
-    else {
-      setSortKey(key);
-      setAsc(true);
-    }
+    if (key === sortKey) setUserSort({ key, asc: !asc });
+    else setUserSort({ key, asc: true });
   }
 
   const sortableColumns = hasPreds ? [...BASE_COLUMNS, ...PRED_COLUMNS] : BASE_COLUMNS;
