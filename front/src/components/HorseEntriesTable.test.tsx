@@ -319,7 +319,7 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     return cell;
   }
 
-  it("154 ROI variant orders by horse number (no odds) and excludes legacy predictions even when supplied", async () => {
+  it("154 ROI variant orders by horse number (no odds), excludes legacy predictions, and sorts by 期待回収率 on click", async () => {
     const { container } = renderWithProviders(
       <HorseEntriesTable entries={[evEntries[2], evEntries[0], evEntries[3], evEntries[1]]}
         predictions={[...predictions].reverse()} canonicalConsistent={true} marketEv={marketEv} variant="roi" />,
@@ -334,12 +334,14 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     expect(within(table).queryByText("32.0%")).toBeNull();
     const evHeaders = within(table).getAllByRole("columnheader", { name: /期待回収率/ });
     expect(evHeaders).toHaveLength(2);
-    for (const header of evHeaders) {
-      expect(header).not.toHaveClass("sortable");
-      expect(header).not.toHaveAttribute("aria-sort");
-      await userEvent.click(header);
-    }
-    expect(names()).toEqual(before);
+    // 2026-10-31: both 期待回収率 columns are sortable; a first click shows the largest first and
+    // rows without a value (no stored row / cancelled) go last.
+    await userEvent.click(evHeaders[0]);
+    expect(evHeaders[0]).toHaveAttribute("aria-sort", "descending");
+    expect(names()).toEqual(["本登録馬", "サロゲート馬", "騎手なし馬", "取消馬cancelled"]);
+    await userEvent.click(evHeaders[0]);
+    expect(evHeaders[0]).toHaveAttribute("aria-sort", "ascending");
+    expect(names()).toEqual(["サロゲート馬", "本登録馬", "騎手なし馬", "取消馬cancelled"]);
     assertPseudoLabelCoverage(container, ["124.3%", "120.0%"]);
   });
 
@@ -389,7 +391,7 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     });
   });
 
-  it("is NOT sortable and sits right after モデル勝率", async () => {
+  it("is sortable (largest first on the first click) and sits right after モデル勝率", async () => {
     const { container } = renderWithProviders(
       <HorseEntriesTable entries={evEntries} predictions={predictions}
         canonicalConsistent={true} marketEv={marketEv} />,
@@ -397,21 +399,21 @@ describe("HorseEntriesTable 期待回収率 (137)", () => {
     const headers = headerTexts(container);
     expect(headers[headers.indexOf("モデル勝率") + 1]).toBe("期待回収率");
     const evHeader = screen.getByText("期待回収率").closest("th");
-    expect(evHeader?.className).not.toContain("sortable");
-    expect(evHeader?.getAttribute("aria-sort")).toBeNull();
+    expect(evHeader?.className).toContain("sortable");
+    expect(evHeader?.getAttribute("aria-sort")).toBe("none");
     expect(evHeader?.getAttribute("title")).toMatch(/別の市場連動モデル/);
-
-    const namesBefore = Array.from(
-      container.querySelectorAll("tbody tr td:nth-child(2) .cell-main"),
-    ).map((n) => n.textContent);
-    await userEvent.click(evHeader!);
-    const namesAfter = Array.from(
-      container.querySelectorAll("tbody tr td:nth-child(2) .cell-main"),
-    ).map((n) => n.textContent);
-    // clicking the header changes nothing: the default モデル勝率 sort stays in force
-    expect(namesAfter).toEqual(namesBefore);
+    // the default (no odds in this fixture) is still モデル勝率 DESC, not 期待回収率
     const winHeader = screen.getByText(/^モデル勝率/).closest("th");
     expect(winHeader?.getAttribute("aria-sort")).toBe("descending");
+
+    await userEvent.click(evHeader!);
+    expect(evHeader?.getAttribute("aria-sort")).toBe("descending");
+    expect(winHeader?.getAttribute("aria-sort")).toBe("none");
+    const names = Array.from(
+      container.querySelectorAll("tbody tr.entry-row td:nth-child(2) .cell-main"),
+    ).map((n) => n.textContent);
+    // 124.3% → 120.0% → no stored row → cancelled (its stale row is ignored, like the cell)
+    expect(names).toEqual(["本登録馬", "サロゲート馬", "騎手なし馬", "取消馬cancelled"]);
   });
 
   it("is shown without predictions (right after 単勝) — independent of the win model", () => {

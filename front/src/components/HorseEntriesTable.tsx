@@ -43,11 +43,15 @@ type ColKey =
   | "jockey_name"
   | "weight"
   | "odds"
-  | "win";
+  | "win"
+  | "ev"
+  | "ev_mix";
 
 type Row = HorseEntry & { pred?: Pred };
 
-const NUMERIC: ColKey[] = ["horse_number", "weight", "odds", "win"];
+const NUMERIC: ColKey[] = ["horse_number", "weight", "odds", "win", "ev", "ev_mix"];
+//: a first click on a "bigger is better" value column shows the largest first.
+const DESC_FIRST: ColKey[] = ["ev", "ev_mix"];
 
 // 市場評価 (q = odds converted to a win share) lives INSIDE the 単勝 cell as a sub-line — it is
 // the same information as the odds, so it shares the column (user decision 2026-07-02). Sorting
@@ -92,14 +96,15 @@ const DIVERGENCE_TOOLTIP =
   "モデル勝率と市場評価の差です。意見の相違であり、的中や利益を保証するものではありません";
 
 // Feature 137: 期待回収率 comes from a SEPARATE market-aware model (current win odds are among its
-// inputs), not from the モデル勝率 column. Pseudo → always via <PseudoValue>. Deliberately NOT
-// sortable (ordering by it would be an edge sort, 021 R3) and never green/red.
+// inputs), not from the モデル勝率 column. Pseudo → always via <PseudoValue>, never green/red.
+// Sortable since 2026-10-31 (user decision; it overrides 137's "no edge sort" choice for this
+// column — the default order stays 単勝/人気順, sorting by 期待回収率 is the user's own click).
 const EV_HEADER_TITLE =
   "「予測モデルとの比較」の勝率とは別の市場連動モデルが推定した勝率 × 単勝オッズ。推定値であり実績ではありません";
 
 // Feature 141: the market-mixed PARALLEL value of 期待回収率 (API `expected_return_mix`). Never
-// replaces the 期待回収率 column, never sortable, and its >100% mark is neutral text (no colour,
-// fill or weight) so it cannot be confused with the 137/138 emphasis.
+// replaces the 期待回収率 column; sortable like it (2026-10-31); its >100% mark is neutral text
+// (no colour, fill or weight) so it cannot be confused with the 137/138 emphasis.
 const MIX_HEADER_TITLE =
   "期待回収率の推定勝率を市場の評価と混ぜ直した値。期待回収率が高く出た馬ほど過大になりやすい分を抑えた推定で、実績ではありません";
 export const MIX_MARK_TEXT = "100%超";
@@ -174,7 +179,7 @@ function ProbBar({
  *  vote-share): its disclosure lives in the 単勝 header tooltip + the always-visible note under
  *  the table (user decision 2026-07-02 — badges were noise; the labelled sub-line + note keep
  *  021's "q never unlabelled" intent). Cancelled horses are dimmed with a badge next to the name
- *  (no dedicated 状態 column). Feature 137 adds a non-sortable 期待回収率 column (a separate
+ *  (no dedicated 状態 column). Feature 137 adds a 期待回収率 column (sortable since 2026-10-31; a separate
  *  market-aware model, pseudo-badged) whenever that value is available. Feature 138 puts the
  *  注目条件 chip (judgment-time, from the API) in that cell and the breakdown (AttentionPanel) in the
  *  expansion row; the outline + left bar fire only at emphasis level 3 (never colour-only, never
@@ -272,21 +277,35 @@ export function HorseEntriesTable({
 
   const sorted = useMemo(() => {
     const dir = asc ? 1 : -1;
+    // 期待回収率 columns sort on exactly the value the cell shows: nothing for a cancelled horse or
+    // when the race's market-ev is unavailable (those rows go last, like any other null).
+    const sortValue = (row: Row, key: ColKey): number | string | null | undefined => {
+      if (key === "ev" || key === "ev_mix") {
+        if (!evAvailable || row.entry_status !== "started") return null;
+        const ev = evByHorse.get(row.horse_id);
+        return (key === "ev" ? ev?.expected_return : ev?.expected_return_mix) ?? null;
+      }
+      return value(row, key);
+    };
     return [...rows].sort((a, b) => {
-      const av = value(a, sortKey);
-      const bv = value(b, sortKey);
+      const av = sortValue(a, sortKey);
+      const bv = sortValue(b, sortKey);
       if (av == null && bv == null) return 0;
       if (av == null) return 1; // nulls last regardless of direction
       if (bv == null) return -1;
       if (NUMERIC.includes(sortKey)) return ((av as number) - (bv as number)) * dir;
       return String(av).localeCompare(String(bv), "ja") * dir;
     });
-  }, [rows, sortKey, asc]);
+  }, [rows, sortKey, asc, evAvailable, evByHorse]);
 
   function toggle(key: ColKey) {
     if (key === sortKey) setUserSort({ key, asc: !asc });
-    else setUserSort({ key, asc: true });
+    else setUserSort({ key, asc: !DESC_FIRST.includes(key) });
   }
+
+  const sortMark = (key: ColKey) => (sortKey === key ? (asc ? " ▲" : " ▼") : "");
+  const ariaSort = (key: ColKey) =>
+    sortKey === key ? (asc ? ("ascending" as const) : ("descending" as const)) : ("none" as const);
 
   const sortableColumns = hasPreds ? [...BASE_COLUMNS, ...PRED_COLUMNS] : BASE_COLUMNS;
   // total columns for the expansion row colSpan
@@ -306,27 +325,37 @@ export function HorseEntriesTable({
               <th
                 key={c.key}
                 className={`sortable ${NUMERIC.includes(c.key) ? "num" : ""}`}
-                aria-sort={sortKey === c.key ? (asc ? "ascending" : "descending") : "none"}
+                aria-sort={ariaSort(c.key)}
                 title={variant === "roi" && c.key === "odds"
                   ? "現在保存されている単勝オッズと人気。期待回収率に使用したオッズとは異なる場合があります。"
                   : c.title}
                 onClick={() => toggle(c.key)}
               >
                 {c.label}
-                {sortKey === c.key ? (asc ? " ▲" : " ▼") : ""}
+                {sortMark(c.key)}
               </th>
             ))}
-            {/* 137: right after モデル勝率 (or after 単勝 without predictions) — NOT sortable */}
+            {/* 137: right after モデル勝率 (or after 単勝 without predictions); sortable (2026-10-31) */}
             {evColumn && (
-              <th className="num ev-head" title={EV_HEADER_TITLE}>
-                期待回収率
+              <th
+                className="sortable num ev-head"
+                title={EV_HEADER_TITLE}
+                aria-sort={ariaSort("ev")}
+                onClick={() => toggle("ev")}
+              >
+                期待回収率{sortMark("ev")}
               </th>
             )}
             {mixColumn && (
-              <th className="num ev-mix-head" title={MIX_HEADER_TITLE}>
+              <th
+                className="sortable num ev-mix-head"
+                title={MIX_HEADER_TITLE}
+                aria-sort={ariaSort("ev_mix")}
+                onClick={() => toggle("ev_mix")}
+              >
                 期待回収率
                 <br />
-                (市場混合)
+                (市場混合){sortMark("ev_mix")}
               </th>
             )}
             {comparable && (
