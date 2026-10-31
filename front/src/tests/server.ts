@@ -28,6 +28,19 @@ export const OPS_STATUS_PAUSED = {
   detail: "データ取得を停止中です。更新・予測・買い目生成・購入記録の受付を止めています。",
 };
 
+// 2026-10-31: today's T−3 capture window is open → only the refresh buttons are disabled.
+export const OPS_STATUS_CAPTURING = {
+  ...OPS_STATUS_ACTIVE,
+  capture_window: {
+    date: "2026-10-31",
+    starts_at: "2026-10-31T00:44:00+00:00",
+    ends_at: "2026-10-31T07:25:00+00:00",
+    active: true,
+    n_races: 23,
+    detail: "発走直前の判断記録(T−3 捕捉)を取得中のため、データ更新は 16:25 まで受け付けません。予測・買い目生成・購入記録はそのまま使えます。",
+  },
+};
+
 export const server = setupServer(
   http.get("*/ops/v1/status", () => HttpResponse.json(OPS_STATUS_ACTIVE)),
 );

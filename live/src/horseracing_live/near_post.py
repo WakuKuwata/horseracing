@@ -72,15 +72,18 @@ class NearPostRefused(ValueError):
 
 
 def load_capture_policy(path: Path | str = DEFAULT_POLICY_PATH) -> dict:
-    """The public source-operations policy as data. Collection must still be paused; the
-    capture-only days are an explicit, approved list (scripts/source_operations_172.py validates
-    the full file; this reader only needs the keys it gates on)."""
+    """The public source-operations policy as data. The capture days are an explicit, approved
+    list (scripts/source_operations_172.py validates the full file; this reader only needs the
+    keys it gates on). Until 2026-10-31 this also required ``collection_paused`` to be true; the
+    user then chose to keep manual refresh and predictions available at all times, so the capture
+    now runs under either mode and ops yields the shared request slot during the window instead
+    (ops/capture_window.py: refresh is refused 409 and queued refresh jobs wait)."""
     p = Path(path)
     if p.is_symlink() or not p.is_file():
         raise NearPostRefused(f"policy file missing or a symlink: {p}")
     raw = json.loads(p.read_text(encoding="utf-8"))
-    if raw.get("collection_paused") is not True:
-        raise NearPostRefused("collection_paused must be true (capture-only never resumes collection)")
+    if not isinstance(raw.get("collection_paused"), bool):
+        raise NearPostRefused("collection_paused must be a boolean")
     dates = raw.get("capture_only_dates")
     approved_by = raw.get("capture_only_approved_by")
     approved_at = raw.get("capture_only_approved_at")

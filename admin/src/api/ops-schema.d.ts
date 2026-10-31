@@ -266,6 +266,32 @@ export interface components {
             /** Selection */
             selection: number[];
         };
+        /**
+         * CaptureWindowStatus
+         * @description Today's near-post capture window (2026-10-31): while ``active`` the refresh endpoints answer
+         *     409 ``capture_window`` and the worker leaves refresh jobs queued; predict/recommend/purchase
+         *     records/expected_return are unaffected. See capture_window.py.
+         */
+        CaptureWindowStatus: {
+            /** Active */
+            active: boolean;
+            /** Date */
+            date: string;
+            /** Detail */
+            detail: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** N Races */
+            n_races: number;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -354,6 +380,7 @@ export interface components {
          * @description GET /status — whether THIS ops process accepts writes (B5). See routers/status.py.
          */
         OpsStatus: {
+            capture_window?: components["schemas"]["CaptureWindowStatus"] | null;
             /** Collection Mode */
             collection_mode: string | null;
             /** Collection Paused */
@@ -563,6 +590,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -787,6 +823,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

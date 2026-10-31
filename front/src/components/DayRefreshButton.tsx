@@ -13,8 +13,8 @@ import {
   type BatchAccepted,
   type Job,
 } from "../api/opsClient";
-import { usePauseState } from "../api/opsStatus";
-import { OpsPauseNotice } from "./OpsPauseNotice";
+import { useCaptureWindowState, usePauseState } from "../api/opsStatus";
+import { CaptureWindowNotice, OpsPauseNotice } from "./OpsPauseNotice";
 
 // US2: refresh every race on the selected day (ops write service). The display stays on 014 — on a
 // batch with any progress we invalidate the races query so the list (and its 結果確定 badges)
@@ -153,6 +153,7 @@ export function DayRefreshButton({
   }
 
   const { paused } = usePauseState(); // B5: 172 pause → disabled with the reason
+  const { active: capturing } = useCaptureWindowState(); // 2026-10-31: T−3 capture window open
 
   return (
     <span className="refresh">
@@ -160,11 +161,14 @@ export function DayRefreshButton({
         type="button"
         className="refresh__btn"
         onClick={() => start.mutate(false)}
-        disabled={running || !date || paused}
+        disabled={running || !date || paused || capturing}
       >
         {running ? "更新中…" : "この日を更新"}
       </button>
       {paused && !b && !start.isError && <OpsPauseNotice className="refresh__status" />}
+      {!paused && capturing && !b && !start.isError && (
+        <CaptureWindowNotice className="refresh__status" />
+      )}
 
       {start.isError && (
         <span className="refresh__status refresh__status--error" role="status">

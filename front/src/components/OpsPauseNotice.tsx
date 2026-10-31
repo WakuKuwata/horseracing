@@ -1,4 +1,4 @@
-import { usePauseState } from "../api/opsStatus";
+import { useCaptureWindowState, usePauseState } from "../api/opsStatus";
 
 export const PAUSE_SHORT = "データ取得を停止中のため受け付けていません";
 export const PAUSE_BANNER =
@@ -26,5 +26,22 @@ export function OpsPauseBanner() {
     <p className="ops-pause-banner" role="status" data-testid="ops-pause-banner">
       {PAUSE_BANNER}
     </p>
+  );
+}
+
+export const CAPTURE_SHORT = "発走直前の判断記録を取得中のため、データ更新は";
+
+/**
+ * 2026-10-31: one line next to a disabled refresh button while today's T−3 capture window is
+ * open. Neutral tone: the capture is an operating state the operator chose. Other write buttons
+ * stay enabled, so this notice is only rendered by the refresh buttons.
+ */
+export function CaptureWindowNotice({ className = "refresh__status" }: { className?: string }) {
+  const { active, until } = useCaptureWindowState();
+  if (!active) return null;
+  return (
+    <span className={`${className} ${className}--muted`} role="status" data-testid="capture-window-notice">
+      {CAPTURE_SHORT} {until ?? "--:--"} まで受け付けません
+    </span>
   );
 }

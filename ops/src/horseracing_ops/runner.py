@@ -37,11 +37,12 @@ from horseracing_scrape.pipeline import (
     scrape_odds,
     scrape_results,
 )
-from horseracing_scrape.politeness import background_policy
+from horseracing_scrape.politeness import PolitenessRefused, background_policy
 from horseracing_scrape.urls import entries_url, result_url, win_odds_url
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from . import capture_window as cw
 from .config import CONFIG
 from .deps import owner_database_url
 from .enqueue import (
@@ -96,7 +97,21 @@ def _archive_dir() -> str | None:
     return raw or None
 
 
-def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None) -> HttpFetcher:
+class CaptureWindowRefused(PolitenessRefused):
+    """2026-10-31: a request was about to go out inside today's near-post capture window. Not a
+    source refusal (no cooldown is recorded — ``record_refusal`` ignores PolitenessRefused); the
+    sub-step records the reason and the job lands PARTIAL/FAILED like any other refused fetch."""
+
+    def __init__(self, window: cw.CaptureWindow, url: str):
+        super().__init__("deadline_exceeded", url)
+        self.window = window
+        self.args = (
+            f"request skipped (capture_window until {window.ends_at_jst()} JST) for {url}",
+        )
+
+
+def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None,
+                 capture_guard: Callable[[], cw.CaptureWindow | None] | None = None) -> HttpFetcher:
     """A polite fetcher reusing scrape's robots/rate-limit/backoff/archive (FR-014).
 
     Crucially passes a real httpx client — without it the fetcher can only serve cached pages and
@@ -118,11 +133,30 @@ def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None
     if min_interval is None:
         min_interval = CONFIG.fetch_min_interval
     _policy = background_policy(min_interval_s=min_interval, database_url=owner_database_url())
+    pre_request = None if _policy is None else _policy.pre_request
+
+    if capture_guard is not None:
+        base_pre_request = pre_request
+
+        def pre_request(url: str) -> None:  # noqa: F811 — guarded variant of the hook above
+            # ``capture_guard`` (worker): the window may open while a refresh claimed earlier is
+            # still running; refuse BEFORE reserving the shared slot so the T−3 record keeps it.
+            window = capture_guard()
+            if window is not None:
+                raise CaptureWindowRefused(window, url)
+            if base_pre_request is not None:
+                base_pre_request(url)
+                # The slot wait (or a source cooldown wait) can outlast the window's opening:
+                # re-check after it, still before anything is sent.
+                window = capture_guard()
+                if window is not None:
+                    raise CaptureWindowRefused(window, url)
+
     return HttpFetcher(
         user_agent=_USER_AGENT, min_interval_s=min_interval, cache_dir=cache_dir,
         robots_cache_store=robots_cache.shared_cache(),
         archive_dir=None if cache_dir else _archive_dir(),
-        pre_request=None if _policy is None else _policy.pre_request,
+        pre_request=pre_request,
         on_refusal=None if _policy is None else _policy.record_refusal,
         client=httpx.Client(headers={"User-Agent": _USER_AGENT}, timeout=20.0),
     )
@@ -627,6 +661,15 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
                 "state": "done",
                 "outcome": "skipped",
                 "reason": "auto_capture_disabled",
+            }
+        elif cw.active_capture_window(session) is not None:
+            # 2026-10-31: the 086 snapshot is one more request on the shared slot; inside the
+            # near-post capture window that slot belongs to the T−3 record. Prediction itself
+            # needs no request and runs as usual.
+            capture = {
+                "state": "done",
+                "outcome": "skipped",
+                "reason": "capture_window",
             }
         else:
             try:

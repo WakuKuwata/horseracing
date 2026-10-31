@@ -31,6 +31,7 @@ from . import (
     JOB_TYPE_RECOMMEND,
     JOB_TYPE_REFRESH_RANGE,
 )
+from . import capture_window as cw
 from .config import CONFIG
 from .deps import create_ops_engine
 from .runner import (
@@ -49,6 +50,10 @@ from .runner import (
 #: expected_return recomputes one date's 期待回収率 via the training CLI — Feature 137).
 _CLAIMABLE = (JOB_TYPE_RACE, JOB_TYPE_DAY, JOB_TYPE_PREDICT, JOB_TYPE_RECOMMEND,
               JOB_TYPE_REFRESH_RANGE, JOB_TYPE_EXPECTED_RETURN)
+
+#: job types that request pages from netkeiba (refresh_day discovers races, refresh_race scrapes).
+#: predict's 086 chaos snapshot is the one other request and run_predict gates it itself.
+FETCHING_JOB_TYPES = (JOB_TYPE_RACE, JOB_TYPE_DAY)
 
 #: Lane split (interactive latency): scrape-bound jobs (netkeiba politeness caps their
 #: concurrency) vs compute-bound jobs (subprocesses that never touch netkeiba). Before the split
@@ -496,12 +501,28 @@ def drain(
     while max_jobs is None or n < max_jobs:
         if _SHUTDOWN.is_set():
             break
-        job = claim_one(session, job_types=job_types, interactive_first=interactive_first)
+        # 2026-10-31: re-evaluated before EVERY claim, not once per pass — a day refresh queues
+        # dozens of jobs and the capture window can open while this pass is still draining them.
+        types = _claimable_now(session, job_types, fetches=fetcher is not None)
+        if not types:
+            break
+        job = claim_one(session, job_types=types, interactive_first=interactive_first)
         if job is None:
             break
         _run_claimed(session, job, fetcher=fetcher)
         n += 1
     return n
+
+
+def _claimable_now(
+    session: Session, job_types: tuple[str, ...], *, fetches: bool
+) -> tuple[str, ...]:
+    """The job types this lane may claim right now. While today's near-post capture window is
+    open, the fetching types stay in the queue (not claimed, not failed) so the T−3 record keeps
+    the shared request slot; a lane without a fetcher never fetches and is never narrowed."""
+    if not fetches or cw.active_capture_window(session) is None:
+        return job_types
+    return tuple(t for t in job_types if t not in FETCHING_JOB_TYPES)
 
 
 def _worker_loop(
@@ -590,6 +611,7 @@ def _lane_daemon(
         iterations += 1
         try:
             with factory() as session:
+                # (the capture-window hold on fetching job types is applied per claim in drain)
                 processed = drain(
                     session,
                     fetcher=fetcher_factory() if fetcher_factory is not None else None,
@@ -665,11 +687,21 @@ def main() -> None:  # pragma: no cover — daemon entrypoint
     # refresh fanout never delays the CPU lane re-polling for a fresh interactive click, and CPU
     # threads pick up predict follow-ups the moment a refresh enqueues them.
     recovery_singleton = singleton if sole_worker else None
+
+    def capture_guard():
+        with factory() as session:
+            return cw.active_capture_window(session)
+
+    def guarded_fetcher():
+        # A refresh claimed before the capture window opened must not request inside it: the
+        # guard runs before every request (one cheap read) and refuses with a typed reason.
+        return make_fetcher(capture_guard=capture_guard)
+
     threads = [
         Thread(
             target=_lane_daemon, daemon=True,
             kwargs={"factory": factory, "job_types": _IO_LANE, "interactive_first": False,
-                    "fetcher_factory": make_fetcher, "singleton": recovery_singleton},
+                    "fetcher_factory": guarded_fetcher, "singleton": recovery_singleton},
         )
         for _ in range(CONFIG.worker_concurrency)
     ] + [

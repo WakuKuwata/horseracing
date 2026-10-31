@@ -13,7 +13,7 @@
 1. **未コミット差分を系統別に分けてコミット**。同じ作業ツリーに 4 系統が混在: (a) 154+156 の front/api、(b) 136 系の calib_manifest・mixture(probability/serving/training/scripts/candidate_mixture_build.py)、(c) 142〜172 の研究(specs・scripts/roi_explore・docs/roi-*・新規 scripts)、(d) 172 の stack.sh・launch.json・config/source-operations.json。`git add -A` は禁止(memory: no-git-add-all-shared-checkout)。(b) は別セッション由来なので所有者を確認してから。
 2. **CLAUDE.md と memory の追随**。142〜172 の結論(ROI 主・予測は比較用・研究候補は全部不採用・取得停止中)を正本に書く。今は CLAUDE.md を読んだセッションが 141 までしか知らない。
 3. **全パッケージのテストを緑に戻す**。141 時点で api/training の一部が (b) の calib_manifest 変更で落ちていた。(b) を確定させてから api/training/probability/serving を通す。
-4. **スタックの再開手順を明文化**(**完了 2026-10-31**: policy の `collection_paused` が唯一の切替。`specs/172-source-interval/manual.md` の「active モード」に「使う状態(active)」と「観測する状態(paused+capture-only)」の起動手順と排他を記載)。`scripts/stack.sh` は 172 の wrapper 経由になり、`collection_paused` を外す条件(承認済み interval 60 秒・robots TTL・担当)が runbook(172 manual.md)にしかない。アプリを「使う」状態と「観測する」状態を分けた起動手順を docs に置く。
+4. **スタックの再開手順を明文化**(**完了 2026-10-31**: policy の `collection_paused` が唯一の切替。`specs/172-source-interval/manual.md` の「active モード」と「捕捉時間帯の譲り合い」。同日午後に捕捉と active を共存させた=ops が `capture_only_dates` の日の窓 [min(post)−6 分, max(post)) だけ更新を譲る(409・worker 取り置き・fetcher ゲート・086 見送り)。予測・買い目・購入記録は常時 OK)。`scripts/stack.sh` は 172 の wrapper 経由になり、`collection_paused` を外す条件(承認済み interval 60 秒・robots TTL・担当)が runbook(172 manual.md)にしかない。アプリを「使う」状態と「観測する」状態を分けた起動手順を docs に置く。
 
 ## B. アプリの ROI 主経路に欠けている機能
 

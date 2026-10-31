@@ -31,6 +31,18 @@ class PolicyFileStatus(BaseModel):
     shared_limiter_enabled: bool | None = None
 
 
+class CaptureWindowStatus(BaseModel):
+    """Today's near-post capture window (2026-10-31): while ``active`` the refresh endpoints answer
+    409 ``capture_window`` and the worker leaves refresh jobs queued; predict/recommend/purchase
+    records/expected_return are unaffected. See capture_window.py."""
+    date: str
+    starts_at: datetime.datetime
+    ends_at: datetime.datetime
+    active: bool
+    n_races: int
+    detail: str
+
+
 class OpsStatus(BaseModel):
     """GET /status — whether THIS ops process accepts writes (B5). See routers/status.py."""
     collection_paused: bool
@@ -40,6 +52,8 @@ class OpsStatus(BaseModel):
     policy_mismatch: bool
     ops_fetch_min_interval_seconds: float
     detail: str
+    #: null when today is not a capture day (or the window could not be read: fail-open)
+    capture_window: CaptureWindowStatus | None = None
 
 
 class ErrorBody(BaseModel):

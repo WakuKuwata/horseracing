@@ -14,20 +14,27 @@ Two facts are reported SEPARATELY because they can disagree:
   process still rejecting = not restarted after the 2026-10-31 switch), ``policy_mismatch`` is
   true so an operator can see that a service bypassed the wrapper or is stale.
 
-No database access, no worker liveness (nothing records a worker heartbeat; claiming one would
-be a guess). GET only, so the wrapper lets it through.
+No worker liveness (nothing records a worker heartbeat; claiming one would be a guess). GET only,
+so the wrapper lets it through. Since 2026-10-31 it also reports today's near-post capture window
+(one cheap read of races.post_time; a failure there is reported as null = fail-open, same as the
+status call itself on the front).
 """
 
 from __future__ import annotations
 
+import datetime
 import json
+import logging
 import os
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from .. import capture_window as cw
 from ..config import _REPO_ROOT, CONFIG
-from ..schemas import OpsStatus, PolicyFileStatus
+from ..deps import get_session
+from ..schemas import CaptureWindowStatus, OpsStatus, PolicyFileStatus
 
 router = APIRouter(tags=["status"])
 
@@ -69,8 +76,28 @@ def read_policy_file(path: Path) -> PolicyFileStatus:
     return PolicyFileStatus(present=True, **fields)
 
 
+def capture_window_status(session: Session | None, *, now: datetime.datetime | None = None,
+                          policy_path: Path | None = None) -> CaptureWindowStatus | None:
+    """Today's capture window as data; None when today is not a capture day or it cannot be read."""
+    if session is None:
+        return None
+    now = now or datetime.datetime.now(datetime.UTC)
+    try:
+        w = cw.today_capture_window(session, now=now, path=policy_path)
+    except Exception as exc:  # noqa: BLE001 — status must not 500 over a window read
+        logging.getLogger(__name__).warning("capture window unreadable: %s", type(exc).__name__)
+        return None
+    if w is None:
+        return None
+    return CaptureWindowStatus(
+        date=w.date.isoformat(), starts_at=w.starts_at, ends_at=w.ends_at,
+        active=w.active_at(now), n_races=w.n_races, detail=cw.refusal_detail(w),
+    )
+
+
 def build_status(*, environ=os.environ, policy_path: Path | None = None,
-                 fetch_min_interval: float | None = None) -> OpsStatus:
+                 fetch_min_interval: float | None = None, session: Session | None = None,
+                 now: datetime.datetime | None = None) -> OpsStatus:
     mode = environ.get(COLLECTION_MODE_ENV)
     paused = (mode or "").strip().lower() == "paused"
     path = policy_path or Path(environ.get(POLICY_PATH_ENV) or DEFAULT_POLICY_PATH)
@@ -88,9 +115,10 @@ def build_status(*, environ=os.environ, policy_path: Path | None = None,
                          and policy.collection_paused != paused),
         ops_fetch_min_interval_seconds=float(interval),
         detail=PAUSED_DETAIL if paused else ACTIVE_DETAIL,
+        capture_window=capture_window_status(session, now=now, policy_path=policy_path),
     )
 
 
 @router.get("/status", response_model=OpsStatus)
-def get_status() -> OpsStatus:
-    return build_status()
+def get_status(session: Session = Depends(get_session)) -> OpsStatus:
+    return build_status(session=session)

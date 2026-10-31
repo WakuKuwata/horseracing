@@ -55,3 +55,15 @@ curl -s http://127.0.0.1:8001/ops/v1/status
 ### 2026-10-31 追記: 情報源の間隔を 10 秒に
 
 利用者決定「netkeiba は 1 req/10 秒・外部でないものは制限不要」。policy の `source_interval_seconds`/`ops_fetch_min_interval_seconds` を 60→**10** にし、wrapper の下限を `MIN_SOURCE_INTERVAL_S = 10`(`scripts/source_operations_172.py`)・`scripts/near_post_ops.sh` の下限も 10 に揃えた。共有リミッタ(DB 背後・全経路)はそのまま。予測・買い目生成・購入記録・期待回収率は情報源に触らないので従来どおり無制限(CPU レーン並列 3)。1 レースの更新(6 req)は約 1 分、日単位 24 レースは約 25 分。08:51 JST に ops-api/worker を再起動し、status・runtime report・`near_post_ops.sh check` の 3 箇所で実効 10 秒を確認。手動観測 CLI の private profile(`config/.env.manual-observer`)は 60 のままで、`manual-preflight` は policy との不一致で止まる(凍結経路なので触らない)。
+
+
+## 捕捉時間帯の譲り合い(2026-10-31・同日午後)
+
+利用者の決定「予測は直前でなくても実行したい・制限はかけたくない」を受け、**active のまま 174 の T−3 捕捉を動かせる**ようにした。捕捉側の `collection_paused=true` 要求は外し(bool であればよい)、代わりに ops が捕捉時間帯だけ取得を譲る(`ops/src/horseracing_ops/capture_window.py`):
+
+- 窓 = policy の `capture_only_dates` に今日(JST)が載っているとき、DB の平地レース(`track_type≠障`・post_time あり)の `[min(post_time) − 6 分, max(post_time))`。6 分 = 目標 180 秒 + 窓 60 秒 + 同時刻ずらし 60 秒 + 余裕 60 秒。捕捉プロセスの登録はしないので、**捕捉を起動しなくても窓は効く**(その日に捕捉しないなら policy から日付を外す)。
+- 窓の中: 更新 POST(レース・日)は `409 capture_window`、worker の IO レーンは refresh_race/refresh_day を claim しない(queued のまま待つ・失敗にしない)、窓の前に claim されて走り続けている refresh は fetcher の `pre_request` で `CaptureWindowRefused`(408・cooldown なし)となり sub-step が partial/failed で終わる。手動予測の 086 荒れ度取得は `capture.reason=capture_window` で見送る。**予測・買い目生成・購入記録・期待回収率の再計算・範囲更新(取得なし)は常に通る**。
+- `GET /ops/v1/status` の `capture_window`(date/starts_at/ends_at/active/n_races/detail)。front は `データ更新`/`この日を更新` だけを「〜HH:MM まで受け付けません」で無効化(他のボタンは有効)。admin の範囲更新は取得をしないので対象外。
+- 限界: 同時刻 3 会場だと捕捉の 3 本目は目標 +120 秒で、窓の前縁の余裕は 60 秒ぶん食われる(捕捉自体は ±60 秒の窓を持つ)。post_time が当日変わると窓も動く(status は読むたびに再計算)。
+
+運用(active 中の捕捉日): 前日 `scripts/near_post_ops.sh entries <date>`(60 秒間隔・時間帯外に)→ 当日朝 `morning`(robots 1 GET・dry-run は 1 日歩く作りなので gate 行を見たら止めてよい)→ `capture` を最初のレースの 6 分前より早く起動 → 夜 `results`。worker を止める必要はない。

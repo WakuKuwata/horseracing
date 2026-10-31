@@ -72,8 +72,17 @@ def test_policy_day_gate_requires_listed_and_today(tmp_path):
         np_.assert_day_allowed(pol, datetime.date(2026, 11, 1), today=datetime.date(2026, 11, 1))
 
 
+def test_policy_active_mode_still_allows_capture_days(tmp_path):
+    """2026-10-31: collection_paused=false (manual refresh/predict accepted) no longer blocks the
+    capture; ops yields the request slot during the window instead."""
+    pol = np_.load_capture_policy(_policy(
+        tmp_path, collection_paused=False, capture_only_dates=["2026-10-31"],
+        capture_only_approved_by="owner", capture_only_approved_at="2026-10-29T10:00:00+09:00"))
+    assert pol["capture_only_dates"] == frozenset({datetime.date(2026, 10, 31)})
+
+
 @pytest.mark.parametrize("extra", [
-    {"collection_paused": False, "capture_only_dates": ["2026-10-31"], "capture_only_approved_by": "o",
+    {"collection_paused": "true", "capture_only_dates": ["2026-10-31"], "capture_only_approved_by": "o",
      "capture_only_approved_at": "2026-10-29T10:00:00+09:00"},
     {"capture_only_dates": ["2026-10-31"]},
     {"capture_only_dates": ["2026-10-31", "2026-10-31"], "capture_only_approved_by": "o",

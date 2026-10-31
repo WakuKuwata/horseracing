@@ -11,8 +11,8 @@ import {
   type JobAccepted,
   type JobStatus,
 } from "../api/opsClient";
-import { usePauseState } from "../api/opsStatus";
-import { OpsPauseNotice } from "./OpsPauseNotice";
+import { useCaptureWindowState, usePauseState } from "../api/opsStatus";
+import { CaptureWindowNotice, OpsPauseNotice } from "./OpsPauseNotice";
 
 // One label per state (FR-008): 受付/取得中/成功/一部成功/失敗/対象なし(skipped). The display path
 // stays on the read-only 014 data — on success we invalidate the race query so it refetches; we
@@ -115,6 +115,8 @@ export function RefreshButton({
   const running = start.isPending || (jobId != null && !isTerminal(status));
   // B5: ops confirmed it rejects writes (172 pause) → disabled with the reason; unknown = enabled.
   const { paused } = usePauseState();
+  // 2026-10-31: today's T−3 capture window is open → a refresh would be refused 409, say so.
+  const { active: capturing } = useCaptureWindowState();
 
   // What to show next to the button.
   let tone = "";
@@ -143,11 +145,12 @@ export function RefreshButton({
         type="button"
         className="refresh__btn"
         onClick={() => start.mutate()}
-        disabled={running || paused}
+        disabled={running || paused || capturing}
       >
         {running ? "更新中…" : "データ更新"}
       </button>
       {paused && !text && <OpsPauseNotice className="refresh__status" />}
+      {!paused && capturing && !text && <CaptureWindowNotice className="refresh__status" />}
       {text && (
         <span className={`refresh__status refresh__status--${tone}`} role="status">
           {text}

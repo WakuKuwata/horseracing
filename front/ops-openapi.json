@@ -185,6 +185,47 @@
         "title": "BetIn",
         "type": "object"
       },
+      "CaptureWindowStatus": {
+        "description": "Today's near-post capture window (2026-10-31): while ``active`` the refresh endpoints answer\n409 ``capture_window`` and the worker leaves refresh jobs queued; predict/recommend/purchase\nrecords/expected_return are unaffected. See capture_window.py.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "n_races": {
+            "title": "N Races",
+            "type": "integer"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "starts_at",
+          "ends_at",
+          "active",
+          "n_races",
+          "detail"
+        ],
+        "title": "CaptureWindowStatus",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -446,6 +487,16 @@
       "OpsStatus": {
         "description": "GET /status — whether THIS ops process accepts writes (B5). See routers/status.py.",
         "properties": {
+          "capture_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaptureWindowStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "collection_mode": {
             "anyOf": [
               {
@@ -942,6 +993,16 @@
             },
             "description": "Not Found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1238,6 +1299,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "422": {
             "content": {
