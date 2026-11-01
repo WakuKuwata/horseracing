@@ -21,8 +21,8 @@ export function useOpsStatus() {
     staleTime: 30_000,
     retry: false,
     refetchOnWindowFocus: true,
-    // 2026-10-31: the capture window opens/closes on the clock while a race page sits open, so
-    // re-ask once a minute (one tiny GET) instead of only on focus; the ops 409 still protects.
+    // 2026-10-31: the capture holds open/close on the clock while a race page sits open, so
+    // re-ask once a minute (one tiny GET) instead of only on focus; ops waits regardless.
     refetchInterval: 60_000,
   });
 }
@@ -41,9 +41,9 @@ export function usePauseState(): PauseState {
 }
 
 export type CaptureWindowState = {
-  /** true only when ops CONFIRMED today's near-post capture window is open right now. */
+  /** true only when ops CONFIRMED a per-race hold of today's near-post capture is open right now. */
   active: boolean;
-  /** JST "HH:MM" the window closes at; null when not active / unknown */
+  /** JST "HH:MM:SS" the open hold ends at; null when not active / unknown */
   until: string | null;
   /** the service's own wording; null when not active */
   detail: string | null;
@@ -53,23 +53,27 @@ function jstClock(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat("ja-JP", {
-    hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Tokyo",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Tokyo",
   }).format(d);
 }
 
 /**
- * 2026-10-31: while today's T−3 capture (174) is running, a data refresh would compete with it
- * for the one shared request slot, so ops refuses refreshes (409 capture_window) until the last
- * race's post time. Only データ更新 / この日を更新 read this; 予測・買い目生成・購入記録 never do
- * (they make no source request). Fail-open like usePauseState: unknown = not active.
+ * 2026-11-02: on a capture day (174) ops holds its own fetching for ~35 s around each race's T−3
+ * record (post − 4 min). A refresh clicked inside a hold is ACCEPTED and simply starts a few
+ * seconds later (the worker waits the hold out; nothing is refused), so the refresh buttons
+ * stay enabled and only show a muted note while a hold is open. Until 2026-11-02 the hold was
+ * the whole race day and the buttons were disabled (409); the user rejected that. Status is
+ * polled once a minute, so a 35 s hold can pass unnoticed here — the ops side guarantees the
+ * wait regardless. Fail-open like usePauseState: unknown = not active.
  */
 export function useCaptureWindowState(): CaptureWindowState {
   const q = useOpsStatus();
   const w = q.data?.capture_window ?? null;
   const active = w?.active === true;
+  const end = w?.hold_ends_at ?? null;
   return {
     active,
-    until: active && w ? jstClock(w.ends_at) : null,
+    until: active && end ? jstClock(end) : null,
     detail: active && w ? w.detail : null,
   };
 }

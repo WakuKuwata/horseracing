@@ -501,28 +501,12 @@ def drain(
     while max_jobs is None or n < max_jobs:
         if _SHUTDOWN.is_set():
             break
-        # 2026-10-31: re-evaluated before EVERY claim, not once per pass — a day refresh queues
-        # dozens of jobs and the capture window can open while this pass is still draining them.
-        types = _claimable_now(session, job_types, fetches=fetcher is not None)
-        if not types:
-            break
-        job = claim_one(session, job_types=types, interactive_first=interactive_first)
+        job = claim_one(session, job_types=job_types, interactive_first=interactive_first)
         if job is None:
             break
         _run_claimed(session, job, fetcher=fetcher)
         n += 1
     return n
-
-
-def _claimable_now(
-    session: Session, job_types: tuple[str, ...], *, fetches: bool
-) -> tuple[str, ...]:
-    """The job types this lane may claim right now. While today's near-post capture window is
-    open, the fetching types stay in the queue (not claimed, not failed) so the T−3 record keeps
-    the shared request slot; a lane without a fetcher never fetches and is never narrowed."""
-    if not fetches or cw.active_capture_window(session) is None:
-        return job_types
-    return tuple(t for t in job_types if t not in FETCHING_JOB_TYPES)
 
 
 def _worker_loop(
@@ -611,7 +595,6 @@ def _lane_daemon(
         iterations += 1
         try:
             with factory() as session:
-                # (the capture-window hold on fetching job types is applied per claim in drain)
                 processed = drain(
                     session,
                     fetcher=fetcher_factory() if fetcher_factory is not None else None,
@@ -689,12 +672,14 @@ def main() -> None:  # pragma: no cover — daemon entrypoint
     recovery_singleton = singleton if sole_worker else None
 
     def capture_guard():
+        # one short read in a session of its own; the hold wait sleeps between reads
         with factory() as session:
-            return cw.active_capture_window(session)
+            return cw.active_hold(session)
 
     def guarded_fetcher():
-        # A refresh claimed before the capture window opened must not request inside it: the
-        # guard runs before every request (one cheap read) and refuses with a typed reason.
+        # 2026-11-02: the near-post capture's per-race hold (~35 s): the fetcher waits it out
+        # before every slot reservation (never refuses), so refresh jobs keep running on capture
+        # days and the T−3 record still gets the slot at its instant.
         return make_fetcher(capture_guard=capture_guard)
 
     threads = [

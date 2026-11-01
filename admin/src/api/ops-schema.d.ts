@@ -268,9 +268,12 @@ export interface components {
         };
         /**
          * CaptureWindowStatus
-         * @description Today's near-post capture window (2026-10-31): while ``active`` the refresh endpoints answer
-         *     409 ``capture_window`` and the worker leaves refresh jobs queued; predict/recommend/purchase
-         *     records/expected_return are unaffected. See capture_window.py.
+         * @description Today's near-post capture holds (2026-11-02). ``starts_at``/``ends_at`` are the day's
+         *     envelope (first hold start, last hold end); ``active`` says a per-race hold (~``hold_seconds``
+         *     around each race's T−4 fetch instant) is open NOW, until ``hold_ends_at``. Refresh requests
+         *     are accepted at all times: the worker's fetcher waits a hold out before reserving the shared
+         *     slot (it never refuses). Predict/recommend/purchase records/expected_return are unaffected.
+         *     See capture_window.py.
          */
         CaptureWindowStatus: {
             /** Active */
@@ -284,6 +287,10 @@ export interface components {
              * Format: date-time
              */
             ends_at: string;
+            /** Hold Ends At */
+            hold_ends_at?: string | null;
+            /** Hold Seconds */
+            hold_seconds?: number | null;
             /** N Races */
             n_races: number;
             /**

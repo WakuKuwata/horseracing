@@ -153,7 +153,7 @@ export function DayRefreshButton({
   }
 
   const { paused } = usePauseState(); // B5: 172 pause → disabled with the reason
-  const { active: capturing } = useCaptureWindowState(); // 2026-10-31: T−3 capture window open
+  const { active: capturing } = useCaptureWindowState(); // 2026-11-02: T−3 hold open (informational)
 
   return (
     <span className="refresh">
@@ -161,7 +161,7 @@ export function DayRefreshButton({
         type="button"
         className="refresh__btn"
         onClick={() => start.mutate(false)}
-        disabled={running || !date || paused || capturing}
+        disabled={running || !date || paused}
       >
         {running ? "更新中…" : "この日を更新"}
       </button>

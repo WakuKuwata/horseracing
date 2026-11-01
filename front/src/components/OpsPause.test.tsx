@@ -93,10 +93,11 @@ describe("ops pause (B5)", () => {
 });
 
 /**
- * 2026-10-31: while today's T−3 capture window is open, only the two refresh buttons are disabled
- * (ops answers 409 capture_window); predict / recommend stay usable — they make no source request.
+ * 2026-11-02: while a per-race hold of today's T−3 capture is open, every button stays ENABLED;
+ * the two refresh buttons show a muted note with the hold's end (the worker waits it out, the
+ * click is accepted). Until 2026-11-02 they were disabled for the whole race day (409).
  */
-describe("capture window (2026-10-31)", () => {
+describe("capture hold (2026-11-02)", () => {
   function capturing() {
     server.use(http.get(`${BASE}/status`, () => HttpResponse.json(OPS_STATUS_CAPTURING)));
   }
@@ -104,23 +105,37 @@ describe("capture window (2026-10-31)", () => {
   it.each([
     ["データ更新", () => <RefreshButton raceId={RID} pollMs={10} />],
     ["この日を更新", () => <DayRefreshButton date="2026-10-31" pollMs={10} />],
-  ])("disables %s with the window's closing time and never POSTs", async (name, render) => {
+  ])("keeps %s enabled and notes the hold's end", async (name, render) => {
     capturing();
-    let posted = 0;
-    server.use(http.post(`${BASE}/*`, () => { posted += 1; return HttpResponse.json({}, { status: 409 }); }));
     renderWithProviders(render());
     const button = screen.getByRole("button", { name });
-    await waitFor(() => expect(button).toBeDisabled());
-    expect(screen.getByTestId("capture-window-notice")).toHaveTextContent("16:25 まで受け付けません");
+    await waitFor(() => expect(screen.getByTestId("capture-window-notice")).toBeInTheDocument());
+    expect(button).toBeEnabled();
+    expect(screen.getByTestId("capture-window-notice")).toHaveTextContent("09:46:20");
+    expect(screen.getByTestId("capture-window-notice")).toHaveTextContent("その後に進みます");
+    expect(screen.getByTestId("capture-window-notice")).not.toHaveTextContent("受け付けません");
     expect(screen.queryByTestId("ops-paused-notice")).toBeNull();
-    await userEvent.click(button);
-    expect(posted).toBe(0);
+  });
+
+  it("still POSTs a refresh during a hold (accepted, not refused)", async () => {
+    capturing();
+    let posted = 0;
+    server.use(http.post(`${BASE}/races/${RID}/refresh`, () => {
+      posted += 1;
+      return HttpResponse.json(
+        { job_id: "j1", status: "queued", reused: false, scope_value: RID, poll_url: "/ops/v1/jobs/j1" },
+        { status: 202 },
+      );
+    }));
+    renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
+    await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
+    await waitFor(() => expect(posted).toBe(1));
   });
 
   it.each([
     ["予測する", () => <PredictButton raceId={RID} pollMs={10} />],
     ["買い目生成", () => <RecommendButton raceId={RID} pollMs={10} />],
-  ])("keeps %s enabled", async (name, render) => {
+  ])("keeps %s enabled without the note", async (name, render) => {
     capturing();
     renderWithProviders(render());
     await new Promise((r) => setTimeout(r, 30));
@@ -128,10 +143,10 @@ describe("capture window (2026-10-31)", () => {
     expect(screen.queryByTestId("capture-window-notice")).toBeNull();
   });
 
-  it("shows no capture notice when the window is listed but not active", async () => {
+  it("shows no note when today is a capture day but no hold is open", async () => {
     server.use(http.get(`${BASE}/status`, () => HttpResponse.json({
       ...OPS_STATUS_CAPTURING,
-      capture_window: { ...OPS_STATUS_CAPTURING.capture_window, active: false },
+      capture_window: { ...OPS_STATUS_CAPTURING.capture_window, active: false, hold_ends_at: null },
     })));
     renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
     await new Promise((r) => setTimeout(r, 30));

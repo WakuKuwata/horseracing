@@ -32,15 +32,22 @@ class PolicyFileStatus(BaseModel):
 
 
 class CaptureWindowStatus(BaseModel):
-    """Today's near-post capture window (2026-10-31): while ``active`` the refresh endpoints answer
-    409 ``capture_window`` and the worker leaves refresh jobs queued; predict/recommend/purchase
-    records/expected_return are unaffected. See capture_window.py."""
+    """Today's near-post capture holds (2026-11-02). ``starts_at``/``ends_at`` are the day's
+    envelope (first hold start, last hold end); ``active`` says a per-race hold (~``hold_seconds``
+    around each race's T−4 fetch instant) is open NOW, until ``hold_ends_at``. Refresh requests
+    are accepted at all times: the worker's fetcher waits a hold out before reserving the shared
+    slot (it never refuses). Predict/recommend/purchase records/expected_return are unaffected.
+    See capture_window.py."""
     date: str
     starts_at: datetime.datetime
     ends_at: datetime.datetime
     active: bool
     n_races: int
     detail: str
+    #: end of the hold open now (overlapping holds merged); null when none is open
+    hold_ends_at: datetime.datetime | None = None
+    #: length of one race's hold in seconds (interval + margins)
+    hold_seconds: float | None = None
 
 
 class OpsStatus(BaseModel):

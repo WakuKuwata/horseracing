@@ -212,3 +212,22 @@ def test_load_day_features_rejects_a_frame_that_hashes_differently(tmp_path):
     other.loc[0, "odds"] = 9.9
     other.to_parquet(path, index=False)  # tampered content under the old name
     assert np_.load_day_features(df.day, df.sha256, tmp_path) is None
+
+
+def test_schedule_matches_the_ops_parity_fixture():
+    """2026-11-02: ops replicates this schedule (it must not import live) to hold its fetching
+    for ~35 s around each race's fetch instant. The shared fixture pins ``window_open`` (the
+    instant ``run_day`` sends the one request); regenerate it from THIS function only."""
+    from pathlib import Path
+
+    path = (Path(__file__).resolve().parents[3] / "specs" / "174-near-post-decision-quotes"
+            / "fixtures" / "capture-schedule-parity.json")
+    fx = json.loads(path.read_text(encoding="utf-8"))
+    c = fx["constants"]
+    assert (np_.TARGET_S, np_.WINDOW_S, np_.COLLISION_STEP_S, np_.DEADLINE_S) == (
+        c["target_s"], c["window_s"], c["collision_step_s"], c["deadline_s"])
+    races = [(r["race_id"], datetime.datetime.fromisoformat(r["post_time"])) for r in fx["races"]]
+    got = [(s.race_id, s.window_open.isoformat(), s.offset_s, s.capture_target)
+           for s in np_.schedule_day(races)]
+    assert got == [(e["race_id"], e["fetch_at"], e["offset_s"], e["capture_target"])
+                   for e in fx["expected"]]

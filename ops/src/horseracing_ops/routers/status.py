@@ -78,20 +78,22 @@ def read_policy_file(path: Path) -> PolicyFileStatus:
 
 def capture_window_status(session: Session | None, *, now: datetime.datetime | None = None,
                           policy_path: Path | None = None) -> CaptureWindowStatus | None:
-    """Today's capture window as data; None when today is not a capture day or it cannot be read."""
+    """Today's capture holds as data; None when today is not a capture day or it cannot be read."""
     if session is None:
         return None
     now = now or datetime.datetime.now(datetime.UTC)
     try:
-        w = cw.today_capture_window(session, now=now, path=policy_path)
-    except Exception as exc:  # noqa: BLE001 — status must not 500 over a window read
-        logging.getLogger(__name__).warning("capture window unreadable: %s", type(exc).__name__)
+        d = cw.today_capture_day(session, now=now, path=policy_path)
+    except Exception as exc:  # noqa: BLE001 — status must not 500 over a hold read
+        logging.getLogger(__name__).warning("capture holds unreadable: %s", type(exc).__name__)
         return None
-    if w is None:
+    if d is None:
         return None
+    hold_end = d.hold_ends_at(now)
     return CaptureWindowStatus(
-        date=w.date.isoformat(), starts_at=w.starts_at, ends_at=w.ends_at,
-        active=w.active_at(now), n_races=w.n_races, detail=cw.refusal_detail(w),
+        date=d.date.isoformat(), starts_at=d.starts_at, ends_at=d.ends_at,
+        active=hold_end is not None, n_races=d.n_races, detail=cw.hold_detail(d, now=now),
+        hold_ends_at=hold_end, hold_seconds=d.hold_seconds,
     )
 
 

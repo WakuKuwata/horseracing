@@ -14,7 +14,6 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from .. import API_PREFIX
-from .. import capture_window as cw
 from ..deps import get_session
 from ..enqueue import enqueue_day_parent, enqueue_race, race_exists
 from ..schemas import BatchAccepted, ErrorBody, JobAccepted, RefreshRequest
@@ -23,16 +22,6 @@ router = APIRouter(tags=["refresh"])
 
 _RACE_ID = re.compile(r"^[0-9]{12}$")
 _ERRORS = {404: {"model": ErrorBody}, 409: {"model": ErrorBody}, 422: {"model": ErrorBody}}
-
-
-def _capture_window_refusal(session: Session) -> JSONResponse | None:
-    """2026-10-31: while today's near-post capture window is open, a refresh would compete with
-    the T−3 record for the shared 60 s request slot (and that record has one chance per race).
-    Reject with the reason instead of queueing a job the worker would hold anyway."""
-    w = cw.active_capture_window(session)
-    if w is None:
-        return None
-    return _err(409, "capture_window", cw.refusal_detail(w))
 
 
 def _err(status: int, code: str, detail: str) -> JSONResponse:
@@ -57,8 +46,6 @@ def refresh_race(race_id: str, body: RefreshRequest | None = None,
         return _err(422, "invalid_race_id", "race_id must be 12 digits")
     if not race_exists(session, race_id):
         return _err(404, "race_not_found", f"race {race_id} not found")
-    if (refused := _capture_window_refusal(session)) is not None:
-        return refused
     force = bool(body.force) if body else False
     job, reused = enqueue_race(session, race_id, origin="manual_ui", force=force)
     return _accepted(job, reused)
@@ -71,8 +58,6 @@ def refresh_day(date: datetime.date, body: RefreshRequest | None = None,
     """Accept a day refresh and return 202 immediately. The worker discovers the day's races from
     netkeiba and fans out refresh_race children; poll the batch for progress. No netkeiba round-trip
     here (never block), and any date is accepted — discovery (not the DB) decides the race set."""
-    if (refused := _capture_window_refusal(session)) is not None:
-        return refused
     force = bool(body.force) if body else False
     parent = enqueue_day_parent(session, date, force=force)
     return BatchAccepted(

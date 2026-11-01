@@ -76,8 +76,10 @@ def load_capture_policy(path: Path | str = DEFAULT_POLICY_PATH) -> dict:
     list (scripts/source_operations_172.py validates the full file; this reader only needs the
     keys it gates on). Until 2026-10-31 this also required ``collection_paused`` to be true; the
     user then chose to keep manual refresh and predictions available at all times, so the capture
-    now runs under either mode and ops yields the shared request slot during the window instead
-    (ops/capture_window.py: refresh is refused 409 and queued refresh jobs wait)."""
+    now runs under either mode and ops yields the shared request slot for ~35 s around each
+    race's fetch instant instead (ops/capture_window.py, 2026-11-02: the worker's fetcher waits
+    the hold out before reserving; refreshes are never refused). ops replicates ``schedule_day``
+    for that; the shared fixture in specs/174-near-post-decision-quotes/fixtures pins the two."""
     p = Path(path)
     if p.is_symlink() or not p.is_file():
         raise NearPostRefused(f"policy file missing or a symlink: {p}")

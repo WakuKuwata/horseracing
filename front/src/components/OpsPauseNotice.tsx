@@ -29,19 +29,19 @@ export function OpsPauseBanner() {
   );
 }
 
-export const CAPTURE_SHORT = "発走直前の判断記録を取得中のため、データ更新は";
+export const CAPTURE_SHORT = "発走直前の判断記録を取得中(〜";
 
 /**
- * 2026-10-31: one line next to a disabled refresh button while today's T−3 capture window is
- * open. Neutral tone: the capture is an operating state the operator chose. Other write buttons
- * stay enabled, so this notice is only rendered by the refresh buttons.
+ * 2026-11-02: one muted line next to an ENABLED refresh button while a per-race hold of today's
+ * T−3 capture is open (~35 s around each race's record). The click is accepted; the worker just
+ * waits the hold out before its first request, so the note says "will proceed", not "refused".
  */
 export function CaptureWindowNotice({ className = "refresh__status" }: { className?: string }) {
   const { active, until } = useCaptureWindowState();
   if (!active) return null;
   return (
     <span className={`${className} ${className}--muted`} role="status" data-testid="capture-window-notice">
-      {CAPTURE_SHORT} {until ?? "--:--"} まで受け付けません
+      {CAPTURE_SHORT}{until ?? "--:--:--"})。更新はその後に進みます
     </span>
   );
 }

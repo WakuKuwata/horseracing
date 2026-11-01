@@ -1,0 +1,103 @@
+{
+  "_note": "Shared parity fixture: live near_post.schedule_day(window_open) == ops capture_window.fetch_times(). Inputs include same-post-time collisions (k steps of 60 s), a triple, and posts one minute apart. Regenerate ONLY from live (scripts: see ops/tests/unit/test_capture_schedule_parity.py docstring).",
+  "constants": {
+    "target_s": 180,
+    "window_s": 60,
+    "collision_step_s": 60,
+    "deadline_s": 18.0
+  },
+  "races": [
+    {
+      "race_id": "202605050101",
+      "post_time": "2026-11-07T00:50:00+00:00"
+    },
+    {
+      "race_id": "202608050101",
+      "post_time": "2026-11-07T01:05:00+00:00"
+    },
+    {
+      "race_id": "202609050101",
+      "post_time": "2026-11-07T01:05:00+00:00"
+    },
+    {
+      "race_id": "202605050102",
+      "post_time": "2026-11-07T01:20:00+00:00"
+    },
+    {
+      "race_id": "202609050102",
+      "post_time": "2026-11-07T01:20:00+00:00"
+    },
+    {
+      "race_id": "202605050103",
+      "post_time": "2026-11-07T01:21:00+00:00"
+    },
+    {
+      "race_id": "202608050103",
+      "post_time": "2026-11-07T01:45:00+00:00"
+    },
+    {
+      "race_id": "202605050104",
+      "post_time": "2026-11-07T01:45:00+00:00"
+    },
+    {
+      "race_id": "202609050104",
+      "post_time": "2026-11-07T01:45:00+00:00"
+    }
+  ],
+  "expected": [
+    {
+      "race_id": "202605050101",
+      "fetch_at": "2026-11-07T00:46:00+00:00",
+      "offset_s": 180,
+      "capture_target": "t_minus_3"
+    },
+    {
+      "race_id": "202609050101",
+      "fetch_at": "2026-11-07T01:00:00+00:00",
+      "offset_s": 240,
+      "capture_target": "t_minus_4"
+    },
+    {
+      "race_id": "202608050101",
+      "fetch_at": "2026-11-07T01:01:00+00:00",
+      "offset_s": 180,
+      "capture_target": "t_minus_3"
+    },
+    {
+      "race_id": "202609050102",
+      "fetch_at": "2026-11-07T01:15:00+00:00",
+      "offset_s": 240,
+      "capture_target": "t_minus_4"
+    },
+    {
+      "race_id": "202605050102",
+      "fetch_at": "2026-11-07T01:16:00+00:00",
+      "offset_s": 180,
+      "capture_target": "t_minus_3"
+    },
+    {
+      "race_id": "202605050103",
+      "fetch_at": "2026-11-07T01:17:00+00:00",
+      "offset_s": 180,
+      "capture_target": "t_minus_3"
+    },
+    {
+      "race_id": "202609050104",
+      "fetch_at": "2026-11-07T01:39:00+00:00",
+      "offset_s": 300,
+      "capture_target": "t_minus_5"
+    },
+    {
+      "race_id": "202608050103",
+      "fetch_at": "2026-11-07T01:40:00+00:00",
+      "offset_s": 240,
+      "capture_target": "t_minus_4"
+    },
+    {
+      "race_id": "202605050104",
+      "fetch_at": "2026-11-07T01:41:00+00:00",
+      "offset_s": 180,
+      "capture_target": "t_minus_3"
+    }
+  ]
+}

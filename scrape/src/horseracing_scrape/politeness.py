@@ -121,6 +121,7 @@ class RequestPoliteness:
         max_wait_s: float | None = _DEFAULT_MAX_WAIT_S,
         sleep: Callable[[float], None] = time.sleep,
         deadline_budget: DeadlineSource | None = None,
+        before_reserve: Callable[[str], None] | None = None,
     ) -> None:
         if min_interval_s < 0:
             raise ValueError("min_interval_s must be non-negative")
@@ -133,6 +134,11 @@ class RequestPoliteness:
         self.max_wait_s = None if max_wait_s is None else float(max_wait_s)
         self._sleep = sleep
         self._deadline_budget = deadline_budget
+        #: 2026-11-02: called immediately before EVERY ``reserve`` attempt (not once per request).
+        #: ops uses it to wait out the near-post capture's per-race hold (ops/capture_window.py);
+        #: a hook that only ran before the loop would let a caller that lost one slot race keep
+        #: retrying inside the hold and take the slot the capture needs. None = unchanged.
+        self._before_reserve = before_reserve
 
     @classmethod
     def for_engine(
@@ -143,6 +149,7 @@ class RequestPoliteness:
         max_wait_s: float | None = _DEFAULT_MAX_WAIT_S,
         sleep: Callable[[float], None] = time.sleep,
         deadline_budget: DeadlineSource | None = None,
+        before_reserve: Callable[[str], None] | None = None,
     ) -> RequestPoliteness:
         factory = sessionmaker(bind=engine, expire_on_commit=False)
         return cls(
@@ -151,6 +158,7 @@ class RequestPoliteness:
             max_wait_s=max_wait_s,
             sleep=sleep,
             deadline_budget=deadline_budget,
+            before_reserve=before_reserve,
         )
 
     def reserve(self, url: str) -> ReservationDecision:
@@ -240,6 +248,9 @@ class RequestPoliteness:
         key = throttle_key(url)
         while True:
             self._ensure_deadline(url)
+            if self._before_reserve is not None:
+                self._before_reserve(url)
+                self._ensure_deadline(url)
             decision = self.reserve(url)
             if decision.allowed:
                 break
@@ -363,6 +374,7 @@ def background_policy(
     min_interval_s: float,
     database_url: str | None = None,
     sleep: Callable[[float], None] = time.sleep,
+    before_reserve: Callable[[str], None] | None = None,
 ) -> RequestPoliteness | None:
     """The policy for a caller with no deadline: the daily ingest pass and the backfill script.
 
@@ -391,5 +403,6 @@ def background_policy(
             f"{SHARED_LIMITER_ENV}=0 to scrape uncoordinated on purpose."
         ) from exc
     return RequestPoliteness.for_engine(
-        engine, min_interval_s=min_interval_s, max_wait_s=None, sleep=sleep
+        engine, min_interval_s=min_interval_s, max_wait_s=None, sleep=sleep,
+        before_reserve=before_reserve,
     )

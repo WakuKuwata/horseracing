@@ -138,3 +138,53 @@ def test_the_status_netkeiba_actually_blocks_with_installs_a_cooldown():
     assert set(_COOLDOWN_S) >= REFUSAL_STATUSES, (
         "every status treated as a refusal should also back the source off"
     )
+
+
+# --- before_reserve hook (2026-11-02, ops near-post hold) -------------------
+
+def test_before_reserve_runs_before_every_reservation_attempt():
+    """ops waits out the T−3 capture's per-race hold in this hook. It must run before EVERY
+    reserve attempt (not once per request): a caller that lost a slot race and retries inside the
+    hold would otherwise take the slot the capture needs. The default (None) leaves the loop as
+    it was."""
+    from horseracing_scrape.politeness import ReservationDecision
+
+    calls: list[str] = []
+    decisions = iter([
+        ReservationDecision(domain="netkeiba.com", allowed=False, reason="throttle_backlog", wait_s=0.5),
+        ReservationDecision(domain="netkeiba.com", allowed=True),
+    ])
+    p = RequestPoliteness(lambda: None, max_wait_s=None, sleep=lambda _s: None,
+                          before_reserve=lambda url: calls.append(url))
+    p.reserve = lambda url: next(decisions)  # type: ignore[method-assign]
+    p._is_blocked = lambda key: False  # type: ignore[method-assign]
+    p.pre_request("https://race.netkeiba.com/odds/x")
+    assert calls == ["https://race.netkeiba.com/odds/x"] * 2  # once per attempt, two attempts
+
+    plain = RequestPoliteness(lambda: None, max_wait_s=None, sleep=lambda _s: None)
+    plain.reserve = lambda url: ReservationDecision(domain="netkeiba.com", allowed=True)  # type: ignore[method-assign]
+    plain._is_blocked = lambda key: False  # type: ignore[method-assign]
+    plain.pre_request("https://race.netkeiba.com/odds/x")  # no hook → unchanged
+
+
+def test_hook_time_counts_against_a_bounded_deadline():
+    """A capture-style caller whose budget expires while the hook waits must refuse rather than
+    take the slot after its deadline."""
+    class _Budget:
+        def __init__(self):
+            self.left = 1.0
+
+        def remaining(self):
+            return self.left
+
+    budget = _Budget()
+
+    def hook(_url):
+        budget.left = 0.0  # the wait consumed the whole budget
+
+    from horseracing_scrape.politeness import PolitenessRefused
+
+    p = RequestPoliteness(lambda: None, max_wait_s=3.0, deadline_budget=budget, before_reserve=hook)
+    p.reserve = lambda url: pytest.fail("reserved after the deadline")  # type: ignore[method-assign]
+    with pytest.raises(PolitenessRefused, match="deadline_exceeded"):
+        p.pre_request("https://race.netkeiba.com/odds/x")

@@ -115,7 +115,8 @@ export function RefreshButton({
   const running = start.isPending || (jobId != null && !isTerminal(status));
   // B5: ops confirmed it rejects writes (172 pause) → disabled with the reason; unknown = enabled.
   const { paused } = usePauseState();
-  // 2026-10-31: today's T−3 capture window is open → a refresh would be refused 409, say so.
+  // 2026-11-02: a per-race hold of today's T−3 capture is open → the click is accepted, the
+  // worker waits ~35 s before fetching; say so (informational, the button stays enabled).
   const { active: capturing } = useCaptureWindowState();
 
   // What to show next to the button.
@@ -145,7 +146,7 @@ export function RefreshButton({
         type="button"
         className="refresh__btn"
         onClick={() => start.mutate()}
-        disabled={running || paused || capturing}
+        disabled={running || paused}
       >
         {running ? "更新中…" : "データ更新"}
       </button>

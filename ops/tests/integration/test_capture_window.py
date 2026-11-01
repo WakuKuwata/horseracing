@@ -1,13 +1,16 @@
-"""2026-10-31: ops yields the shared request slot to the near-post (T−3) capture.
+"""2026-11-02: ops yields the shared request slot to the near-post (T−3) capture per race, briefly.
 
-While today's capture window is open — today is listed in ``capture_only_dates`` and the clock is
-between (first flat post − 6 min) and the last flat post — a refresh POST is refused 409, the IO
-lane leaves queued refresh jobs alone, a fetcher built with the guard refuses before requesting,
-and the 086 snapshot on a manual predict is skipped. Predict/recommend/expected_return run as usual.
+On a day listed in ``capture_only_dates`` every flat race with a post time has a ~35 s hold around
+its capture instant (post − 240 s for the first race of a post time). Inside a hold the worker's
+fetcher waits before reserving the slot (never refuses), the manual predict waits before launching
+the 086 snapshot, refresh POSTs are accepted as always, and ``GET /status`` reports the holds.
+Until 2026-11-02 the hold was the whole race day and refreshes were refused 409 (rejected by the
+user: odds move all day).
 """
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
 import json
 import subprocess
@@ -31,13 +34,15 @@ UTC = datetime.UTC
 def _policy(tmp_path, monkeypatch, dates):
     path = tmp_path / "source-operations.json"
     path.write_text(json.dumps({
-        "schema_version": "172-v1", "source_interval_seconds": 60,
-        "ops_fetch_min_interval_seconds": 60, "shared_limiter_enabled": True,
+        "schema_version": "172-v1", "source_interval_seconds": 10,
+        "ops_fetch_min_interval_seconds": 10, "shared_limiter_enabled": True,
         "collection_paused": False, "capture_only_dates": [d.isoformat() for d in dates],
         "capture_only_approved_by": "owner", "capture_only_approved_at": "2026-10-29T10:00:00+09:00",
     }))
     monkeypatch.setenv(cw.POLICY_PATH_ENV, str(path))
     monkeypatch.setenv(st.POLICY_PATH_ENV, str(path))
+    monkeypatch.setenv("HORSERACING_NETKEIBA_MIN_INTERVAL_S", "10")
+    monkeypatch.setattr(cw, "CONFIG", dataclasses.replace(cw.CONFIG, fetch_min_interval=10.0))
     return path
 
 
@@ -57,40 +62,46 @@ def _today_jst():
     return datetime.datetime.now(cw.JST).date()
 
 
-def _in_window_posts(now):
-    # first post 5 min out → window opened 1 min ago (LEAD_S = 6 min); last post 40 min out
-    return [now + datetime.timedelta(minutes=5), now + datetime.timedelta(minutes=40)]
+def _in_hold_posts(now):
+    # first race's capture fetch is 240 s before its post; a post 4 min + 5 s out puts us 5 s
+    # into that race's hold (hold = fetch − 15 s … fetch + 20 s); a second race 40 min out
+    return [now + datetime.timedelta(seconds=245), now + datetime.timedelta(minutes=40)]
 
 
-def _future_posts(now):
-    # first post 30 min out → window opens in 24 min
+def _between_holds_posts(now):
+    # first post 30 min out → its hold opens in ~25.7 min; nothing open now
     return [now + datetime.timedelta(minutes=30), now + datetime.timedelta(minutes=60)]
 
 
-# ---- window arithmetic ----------------------------------------------------------------------
+# ---- hold arithmetic from the DB -------------------------------------------------------------
 
 
-def test_window_spans_first_flat_post_minus_lead_to_last_flat_post(session):
+def test_holds_cover_flat_races_with_a_post_time_only(session):
     day = datetime.date(2030, 1, 4)
     base = datetime.datetime(2030, 1, 4, 0, 50, tzinfo=UTC)
     _seed_day(session, day, [base, base + datetime.timedelta(hours=1),
                              base + datetime.timedelta(hours=7)], jump=(3,))
-    w = cw.window_for_day(session, day)
-    assert w is not None and w.n_races == 2  # the jump race is not captured, so not counted
-    assert w.starts_at == base - datetime.timedelta(seconds=cw.LEAD_S)
-    assert w.ends_at == base + datetime.timedelta(hours=1)  # the jump race's later post is ignored
-    assert w.active_at(w.starts_at) and not w.active_at(w.ends_at)
-    assert cw.window_for_day(session, datetime.date(2030, 1, 5)) is None
+    d = cw.capture_day_for(session, day, interval_s=10.0)
+    assert d is not None and d.n_races == 2  # the jump race is not captured, so has no hold
+    first = d.holds[0]
+    assert first.fetch_at == base - datetime.timedelta(seconds=240)
+    assert first.starts_at == first.fetch_at - datetime.timedelta(seconds=15)
+    assert first.ends_at == first.fetch_at + datetime.timedelta(seconds=20)
+    assert d.ends_at == base + datetime.timedelta(hours=1) - datetime.timedelta(seconds=220)
+    assert cw.capture_day_for(session, datetime.date(2030, 1, 5)) is None
 
 
-def test_only_listed_days_have_a_window(session, tmp_path, monkeypatch):
+def test_only_listed_days_have_holds(session, tmp_path, monkeypatch):
     now = datetime.datetime.now(UTC)
-    _seed_day(session, _today_jst(), _in_window_posts(now))
+    _seed_day(session, _today_jst(), _in_hold_posts(now))
     _policy(tmp_path, monkeypatch, [])
-    assert cw.today_capture_window(session, now=now) is None
+    assert cw.today_capture_day(session, now=now) is None
+    assert cw.active_hold(session, now=now) is None
     _policy(tmp_path, monkeypatch, [_today_jst()])
-    w = cw.today_capture_window(session, now=now)
-    assert w is not None and w.active_at(now)
+    h = cw.active_hold(session, now=now)
+    assert h is not None and h.race_id.endswith("01")
+    # a few seconds after the first hold ends, nothing is open
+    assert cw.active_hold(session, now=h.ends_at + datetime.timedelta(seconds=1)) is None
 
 
 def test_unreadable_policy_means_no_capture_days(tmp_path, monkeypatch):
@@ -104,71 +115,56 @@ def test_unreadable_policy_means_no_capture_days(tmp_path, monkeypatch):
 # ---- routers ----------------------------------------------------------------------------------
 
 
-def test_refresh_is_refused_409_inside_the_window_and_accepted_outside(
-    client, session, tmp_path, monkeypatch
-):
+def test_refresh_is_accepted_inside_a_hold(client, session, tmp_path, monkeypatch):
+    """The 2026-10-31 rule answered 409 for the whole day; now a refresh is always queued."""
     now = datetime.datetime.now(UTC)
     _policy(tmp_path, monkeypatch, [_today_jst()])
-    ids = _seed_day(session, _today_jst(), _in_window_posts(now))
+    ids = _seed_day(session, _today_jst(), _in_hold_posts(now))
+    assert cw.active_hold(session, now=now) is not None
     r = client.post(f"/ops/v1/races/{ids[0]}/refresh")
-    assert r.status_code == 409
-    body = r.json()
-    assert body["code"] == "capture_window" and "判断記録" in body["detail"]
-    assert session.scalar(select(IngestionJob).where(IngestionJob.scope_value == ids[0])) is None
+    assert r.status_code == 202
+    assert session.scalar(select(IngestionJob).where(IngestionJob.scope_value == ids[0])) is not None
     r = client.post(f"/ops/v1/days/{_today_jst().isoformat()}/refresh")
-    assert r.status_code == 409 and r.json()["code"] == "capture_window"
-
-    # the same day, window not yet open → accepted as before
-    _seed_day(session, _today_jst(), _future_posts(now))
-    r = client.post(f"/ops/v1/races/{ids[0]}/refresh")
     assert r.status_code == 202
 
 
 def test_predict_and_recommend_are_not_gated(client, session, tmp_path, monkeypatch):
     now = datetime.datetime.now(UTC)
     _policy(tmp_path, monkeypatch, [_today_jst()])
-    ids = _seed_day(session, _today_jst(), _in_window_posts(now))
+    ids = _seed_day(session, _today_jst(), _in_hold_posts(now))
     assert client.post(f"/ops/v1/races/{ids[0]}/predict").status_code == 202
     assert client.post(f"/ops/v1/races/{ids[0]}/recommend").status_code == 202
 
 
-def test_status_reports_the_window(client, session, tmp_path, monkeypatch):
+def test_status_reports_the_holds(client, session, tmp_path, monkeypatch):
     now = datetime.datetime.now(UTC)
     _policy(tmp_path, monkeypatch, [])
-    _seed_day(session, _today_jst(), _in_window_posts(now))
+    _seed_day(session, _today_jst(), _in_hold_posts(now))
     assert client.get("/ops/v1/status").json()["capture_window"] is None
     _policy(tmp_path, monkeypatch, [_today_jst()])
     body = client.get("/ops/v1/status").json()
-    assert body["capture_window"]["active"] is True
-    assert body["capture_window"]["date"] == _today_jst().isoformat()
-    assert body["capture_window"]["n_races"] == 2
-    assert "受け付けません" in body["capture_window"]["detail"]
-    # writes are still accepted in general (only refresh yields)
+    w = body["capture_window"]
+    assert w["active"] is True and w["hold_ends_at"] is not None and w["hold_seconds"] == 35.0
+    assert w["date"] == _today_jst().isoformat() and w["n_races"] == 2
+    assert "待ってから進みます" in w["detail"] and "受け付けません" not in w["detail"]
     assert body["writes_accepted"] is True
+
+    _seed_day(session, _today_jst(), _between_holds_posts(now))
+    w = client.get("/ops/v1/status").json()["capture_window"]
+    assert w["active"] is False and w["hold_ends_at"] is None and "拒否はされません" in w["detail"]
 
 
 # ---- worker / fetcher / predict ---------------------------------------------------------------
 
 
-def test_io_lane_leaves_refresh_queued_inside_the_window(
-    session, engine, tmp_path, monkeypatch, fixture_fetcher
-):
+def test_io_lane_claims_refresh_inside_a_hold(session, engine, tmp_path, monkeypatch, fixture_fetcher):
+    """Claiming is no longer gated: the fetcher waits, the job runs."""
     now = datetime.datetime.now(UTC)
     _policy(tmp_path, monkeypatch, [_today_jst()])
-    ids = _seed_day(session, _today_jst(), _in_window_posts(now))
+    ids = _seed_day(session, _today_jst(), _in_hold_posts(now))
     job, _ = enqueue_race(session, ids[0], origin="manual_ui")
     session.commit()
     factory = sessionmaker(bind=engine, expire_on_commit=False)
-    monkeypatch.setattr(worker_mod, "POLL_SECONDS", 0.0, raising=False)
-    processed = worker_mod._lane_daemon(
-        factory, job_types=worker_mod._IO_LANE, interactive_first=False,
-        fetcher_factory=lambda: fixture_fetcher, max_iterations=1, idle_sleep=0.0,
-    )
-    session.refresh(job)
-    assert processed == 0 and job.status == "queued"
-
-    # window closed (policy no longer lists today) → the same job is claimed on the next pass
-    _policy(tmp_path, monkeypatch, [])
     processed = worker_mod._lane_daemon(
         factory, job_types=worker_mod._IO_LANE, interactive_first=False,
         fetcher_factory=lambda: fixture_fetcher, max_iterations=1, idle_sleep=0.0,
@@ -177,92 +173,60 @@ def test_io_lane_leaves_refresh_queued_inside_the_window(
     assert processed == 1 and job.status != "queued"
 
 
-def test_io_lane_stops_claiming_when_the_window_opens_mid_pass(
-    session, engine, tmp_path, monkeypatch, fixture_fetcher
-):
-    """A day refresh queues dozens of jobs; the hold is re-evaluated before every claim."""
-    now = datetime.datetime.now(UTC)
-    _policy(tmp_path, monkeypatch, [])
-    ids = _seed_day(session, _today_jst(), _in_window_posts(now))
-    for rid in ids:
-        enqueue_race(session, rid, origin="manual_ui")
-    session.commit()
-    opened = []
+def test_guarded_fetcher_waits_before_every_reservation(monkeypatch):
+    """The hold wait is wired as the politeness ``before_reserve`` hook (runs before EVERY
+    reserve attempt — see scrape's test_politeness_contract) and reads the guard each time."""
+    fa = datetime.datetime(2026, 11, 7, 0, 46, tzinfo=UTC)
+    (hold,) = cw.holds_for([("202605050101", fa + datetime.timedelta(seconds=240))], interval_s=10.0)
+    captured: dict = {}
 
-    def run_and_open(sess, job, *, fetcher=None):
-        # the first job runs; while it runs the policy lists today → the window is now open
-        _policy(tmp_path, monkeypatch, [_today_jst()])
-        opened.append(job.scope_value)
-        job.status = "succeeded"
-        sess.commit()
+    def fake_background_policy(**kw):
+        captured["before_reserve"] = kw["before_reserve"]
 
-    monkeypatch.setattr(worker_mod, "_run_claimed", run_and_open)
-    processed = worker_mod.drain(session, fetcher=fixture_fetcher, job_types=worker_mod._IO_LANE)
-    # exactly one job was claimed (ids share a created_at, so the order is by job id); the window
-    # opened while it ran and the next claim was skipped, leaving the other job queued
-    assert processed == 1 and len(opened) == 1 and opened[0] in ids
-    statuses = {j.scope_value: j.status for j in session.scalars(
-        select(IngestionJob).where(IngestionJob.job_type == "refresh_race"))}
-    other = next(r for r in ids if r != opened[0])
-    assert statuses[other] == "queued"
+        class _Policy:
+            def pre_request(self, url):
+                pass
 
+            def record_refusal(self, *_a, **_k):
+                pass
 
-def test_guarded_fetcher_recheck_after_the_slot_wait(monkeypatch):
-    window = cw.CaptureWindow(
-        date=datetime.date(2026, 10, 31),
-        starts_at=datetime.datetime(2026, 10, 31, 0, 44, tzinfo=UTC),
-        ends_at=datetime.datetime(2026, 10, 31, 7, 25, tzinfo=UTC), n_races=23,
-    )
-    answers = [None, window]  # clear before the wait, open after it
+        return _Policy()
 
-    class _Policy:
-        def pre_request(self, url):
-            pass
-
-        def record_refusal(self, *_a, **_k):
-            pass
-
-    monkeypatch.setattr(runner_mod, "background_policy", lambda **_kw: _Policy())
-    fetcher = runner_mod.make_fetcher(capture_guard=lambda: answers.pop(0))
-    with pytest.raises(runner_mod.CaptureWindowRefused):
-        fetcher._before_request("https://race.netkeiba.com/odds/x")
+    monkeypatch.setattr(runner_mod, "background_policy", fake_background_policy)
+    waits: list = []
+    monkeypatch.setattr(cw, "wait_out_hold", lambda guard, **_k: waits.append(guard()) or 0.0)
+    answers = [hold, None]
+    runner_mod.make_fetcher(capture_guard=lambda: answers.pop(0))
+    hook = captured["before_reserve"]
+    hook("https://race.netkeiba.com/odds/x")
+    hook("https://race.netkeiba.com/odds/x")
+    assert waits == [hold, None]  # the guard is re-read on every attempt
+    runner_mod.make_fetcher(capture_guard=None)
+    assert captured["before_reserve"] is None  # no guard → the policy is unchanged
 
 
-def test_guarded_fetcher_refuses_before_any_request(monkeypatch):
-    window = cw.CaptureWindow(
-        date=datetime.date(2026, 10, 31),
-        starts_at=datetime.datetime(2026, 10, 31, 0, 44, tzinfo=UTC),
-        ends_at=datetime.datetime(2026, 10, 31, 7, 25, tzinfo=UTC), n_races=23,
-    )
-    monkeypatch.setattr(runner_mod, "background_policy", lambda **_kw: None)
-    fetcher = runner_mod.make_fetcher(capture_guard=lambda: window)
-    with pytest.raises(runner_mod.CaptureWindowRefused, match="capture_window until 16:25"):
-        fetcher._before_request("https://race.netkeiba.com/odds/x")
-    # a local refusal (408), never a source refusal: record_refusal ignores it → no cooldown
-    assert runner_mod.CaptureWindowRefused(window, "u").status_code == 408
-    fetcher = runner_mod.make_fetcher(capture_guard=lambda: None)
-    fetcher._before_request("https://race.netkeiba.com/odds/x")  # no window → passes through
-
-
-def test_manual_predict_skips_the_086_snapshot_inside_the_window(
+def test_manual_predict_waits_out_the_hold_then_takes_the_086_snapshot(
     session, tmp_path, monkeypatch
 ):
     now = datetime.datetime.now(UTC)
     _policy(tmp_path, monkeypatch, [_today_jst()])
-    ids = _seed_day(session, _today_jst(), _in_window_posts(now))  # result-pending by construction
+    ids = _seed_day(session, _today_jst(), _in_hold_posts(now))  # result-pending by construction
     job, _ = enqueue_predict(session, ids[0], origin="manual_ui")
     session.commit()
+    waited: list[float] = []
+    monkeypatch.setattr(cw, "wait_out_hold", lambda guard, **_k: waited.append(1) or 7.0)
+    launched = []
+
+    def fake_capture(race_id, *, trigger, on_launched):
+        launched.append((race_id, trigger))
+        return subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=json.dumps({"outcome": "skipped", "reason": "x"}), stderr="")
+
+    monkeypatch.setattr(runner_mod, "_live_capture_chaos", fake_capture)
     monkeypatch.setattr(
-        runner_mod, "_live_capture_chaos",
-        lambda *_a, **_k: pytest.fail("capture subprocess was launched inside the window"),
+        runner_mod, "_serving_predict",
+        lambda _rid: subprocess.CompletedProcess(args=[], returncode=0, stdout="no races inferred", stderr=""),
     )
-    calls = []
-
-    def fake_predict(_rid):
-        calls.append(1)
-        return subprocess.CompletedProcess(args=[], returncode=0, stdout="no races inferred", stderr="")
-
-    monkeypatch.setattr(runner_mod, "_serving_predict", fake_predict)
     runner_mod.run_predict(session, job)
-    assert calls == [1]  # the prediction itself ran
-    assert job.summary["capture"] == {"state": "done", "outcome": "skipped", "reason": "capture_window"}
+    assert waited == [1] and launched == [(ids[0], "predict_manual")]
+    assert job.summary["capture"]["state"] == "done"
