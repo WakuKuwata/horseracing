@@ -9,9 +9,10 @@ wrapper は `config/source-operations.json` の `jra_official_interval_seconds` 
 
 順序が大事(140 の教訓=ops の subprocess は再起動なしで新コードを読む)。
 
-1. **migration を先に**: `cd db && uv run alembic upgrade 0023_jra_official_source`。`head` は使わない
-   (0024 まで上がる)。適用前後の `alembic_current`・5 表の行数・制約の差分を `result-review.md` に残す。
-   `lock_timeout` を短く(例 `SET lock_timeout = '5s'`)して、稼働中の書込みとぶつかったら中断する。
+1. **migration を先に**: `cd db && uv run alembic upgrade head`(0023 と 0024 をまとめて)。新コードを
+   0022 の DB で動かすと netkeiba の取り込みが全部失敗し、API の `/health` は DB が同梱の最新版でないと
+   503 を返すため(2026-11-02 の再生確認・`result-review.md`)。0024 は空の表を 1 つ作るだけ。旧コードは
+   0024 の DB でもそのまま動く。適用前後の `alembic_current`・既存表の行数を記録する。
 2. SC-008 の基準を記録: 直近開催日 24 レースの active 予測と `artifacts/features.parquet` の fingerprint。
 3. 共通コード(Phase 4 = 両経路の規則・来歴・結果の挿入方式)を稼働 checkout に反映 → `scripts/stack.sh` で
    api / ops-api / worker を再起動。
@@ -19,7 +20,7 @@ wrapper は `config/source-operations.json` の `jra_official_interval_seconds` 
    `quarantined_collision` / `status_rejected` / `odds_partial_field` / `odds_conflicts` を集計する。
 5. reader が稼働 wrapper に入ってから policy に `"jra_official_interval_seconds": 10` を足す(キーが無い間は
    JRA CLI は起動しない=安全側)。
-6. 馬場表は最後: `cd db && uv run alembic upgrade 0024_jra_track_conditions`(R7)。
+6. 馬場(`jra-baba`)の取得は最後(R7)。表は手順 1 で作成済み。
 
 ロールバック: JRA の取得を止める(policy のキーを外す)だけ。スキーマは残す。0023/0024 の downgrade は
 `jra_official` の行が 1 行でもあれば中断する。
