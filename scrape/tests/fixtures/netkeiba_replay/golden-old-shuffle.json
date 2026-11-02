@@ -1,0 +1,4623 @@
+{
+"_meta": {
+"crashes": 0,
+"events": 60,
+"head": "0022_decision_quotes",
+"order": "shuffle",
+"seed": 1
+},
+"exotic_odds": {
+"columns": [
+"race_id",
+"bet_type",
+"selection",
+"odds",
+"coverage_scope",
+"source"
+],
+"key": [
+"race_id",
+"bet_type",
+"selection"
+],
+"rows": [
+{
+"bet_type": "place",
+"coverage_scope": "partial",
+"odds": "1.8",
+"race_id": "202605040205",
+"selection": [
+7
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "place",
+"coverage_scope": "partial",
+"odds": "3.3",
+"race_id": "202605040205",
+"selection": [
+3
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "place",
+"coverage_scope": "partial",
+"odds": "2.3",
+"race_id": "202605040205",
+"selection": [
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "quinella",
+"coverage_scope": "partial",
+"odds": "22.9",
+"race_id": "202605040205",
+"selection": [
+3,
+7
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "wide",
+"coverage_scope": "partial",
+"odds": "6.8",
+"race_id": "202605040205",
+"selection": [
+3,
+7
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "wide",
+"coverage_scope": "partial",
+"odds": "4.5",
+"race_id": "202605040205",
+"selection": [
+7,
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "wide",
+"coverage_scope": "partial",
+"odds": "9.7",
+"race_id": "202605040205",
+"selection": [
+3,
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "exacta",
+"coverage_scope": "partial",
+"odds": "31.8",
+"race_id": "202605040205",
+"selection": [
+7,
+3
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "trio",
+"coverage_scope": "partial",
+"odds": "50.8",
+"race_id": "202605040205",
+"selection": [
+3,
+7,
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "trifecta",
+"coverage_scope": "partial",
+"odds": "262.4",
+"race_id": "202605040205",
+"selection": [
+7,
+3,
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "place",
+"coverage_scope": "partial",
+"odds": "1.4",
+"race_id": "202605041106",
+"selection": [
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "place",
+"coverage_scope": "partial",
+"odds": "1.5",
+"race_id": "202605041106",
+"selection": [
+9
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "place",
+"coverage_scope": "partial",
+"odds": "4.6",
+"race_id": "202605041106",
+"selection": [
+15
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "quinella",
+"coverage_scope": "partial",
+"odds": "5.1",
+"race_id": "202605041106",
+"selection": [
+9,
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "wide",
+"coverage_scope": "partial",
+"odds": "2.8",
+"race_id": "202605041106",
+"selection": [
+9,
+12
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "wide",
+"coverage_scope": "partial",
+"odds": "7.0",
+"race_id": "202605041106",
+"selection": [
+12,
+15
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "wide",
+"coverage_scope": "partial",
+"odds": "13.3",
+"race_id": "202605041106",
+"selection": [
+9,
+15
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "exacta",
+"coverage_scope": "partial",
+"odds": "8.4",
+"race_id": "202605041106",
+"selection": [
+12,
+9
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "trio",
+"coverage_scope": "partial",
+"odds": "23.3",
+"race_id": "202605041106",
+"selection": [
+9,
+12,
+15
+],
+"source": "netkeiba"
+},
+{
+"bet_type": "trifecta",
+"coverage_scope": "partial",
+"odds": "70.0",
+"race_id": "202605041106",
+"selection": [
+12,
+9,
+15
+],
+"source": "netkeiba"
+}
+]
+},
+"horses": {
+"columns": [
+"horse_id",
+"horse_name",
+"sex",
+"birth_year",
+"sire_id",
+"dam_id",
+"damsire_id",
+"sire_name",
+"dam_name",
+"damsire_name",
+"data_source",
+"owner_name",
+"breeder_name",
+"sire_line",
+"damsire_line"
+],
+"key": [
+"horse_id"
+],
+"rows": [
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024101928",
+"horse_name": "シダス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024107350",
+"horse_name": "リントヴルム",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024103411",
+"horse_name": "ロジヴィジョン",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024102239",
+"horse_name": "サトノラディアント",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024104502",
+"horse_name": "シャインシュネル",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024103181",
+"horse_name": "シルバータイガー",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024101851",
+"horse_name": "シルヴァノーブル",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024107014",
+"horse_name": "スズノハヤブサ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024102035",
+"horse_name": "エメラルドプレミア",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024103584",
+"horse_name": "マイネルユンフェン",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024100170",
+"horse_name": "ピエナモルタル",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024106528",
+"horse_name": "ランパディアス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024106469",
+"horse_name": "アドマイヤキングス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024102318",
+"horse_name": "レッドカロン",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024100039",
+"horse_name": "ファイナルチューブ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024103783",
+"horse_name": "ネオマイスター",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024102799",
+"horse_name": "サルサベガ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024109093",
+"horse_name": "サウザンボム",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024106393",
+"horse_name": "ブラスオルケスター",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024103647",
+"horse_name": "エンケリ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024100060",
+"horse_name": "フォルミナンテ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024106426",
+"horse_name": "コールセレスト",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024105516",
+"horse_name": "キョウエイタウン",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024105392",
+"horse_name": "ニシノカサブランカ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024102690",
+"horse_name": "イデアブチャラティ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2024100583",
+"horse_name": "クライムザツリー",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023100240",
+"horse_name": "スピニンググローブ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023101146",
+"horse_name": "アンプイットアップ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023106845",
+"horse_name": "ラエトゥス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023102602",
+"horse_name": "スーパーガール",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023104309",
+"horse_name": "エスシーレイジュ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022100323",
+"horse_name": "トキメキジニア",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2020103727",
+"horse_name": "ゴールドシーン",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023103925",
+"horse_name": "ケイツープラ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022104093",
+"horse_name": "ガラク",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023100757",
+"horse_name": "コウユーニポポニコ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023106895",
+"horse_name": "イヌボウノアサヒ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023103931",
+"horse_name": "ゴーゴーパンチ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022105697",
+"horse_name": "ソリッドベーシス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022104619",
+"horse_name": "ヘルヴェティオス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023105474",
+"horse_name": "トワイライトビュー",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022105102",
+"horse_name": "クロワデュノール",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2020100680",
+"horse_name": "エルトンバローズ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2021105898",
+"horse_name": "レガレイラ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022104416",
+"horse_name": "レディネス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2020103075",
+"horse_name": "シャンパンカラー",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2019102632",
+"horse_name": "セイウンハーデス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022105519",
+"horse_name": "マスカレードボール",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2019105118",
+"horse_name": "ジュンブロッサム",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2020103941",
+"horse_name": "ホウオウビスケッツ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022105140",
+"horse_name": "ネブラディスク",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2020103101",
+"horse_name": "シェイクユアハート",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2021106787",
+"horse_name": "コスモキュランダ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2023103604",
+"horse_name": "リアライズシリウス",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2021106548",
+"horse_name": "タガノデュード",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022104094",
+"horse_name": "サクラファレル",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2022103995",
+"horse_name": "ジョバンニ",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+},
+{
+"birth_year": null,
+"breeder_name": null,
+"dam_id": null,
+"dam_name": null,
+"damsire_id": null,
+"damsire_line": null,
+"damsire_name": null,
+"data_source": "netkeiba",
+"horse_id": "nk:2021105143",
+"horse_name": "ダノンデサイル",
+"owner_name": null,
+"sex": null,
+"sire_id": null,
+"sire_line": null,
+"sire_name": null
+}
+]
+},
+"id_mappings": {
+"columns": [
+"entity_type",
+"source",
+"source_id",
+"canonical_id",
+"mapping_status",
+"resolved_at",
+"resolution_note"
+],
+"key": [
+"entity_type",
+"source",
+"source_id"
+],
+"rows": [
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024101928"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01192"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01020"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024107350"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "05339"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01102"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024103411"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01171"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01059"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024102239"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "05386"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01135"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024104502"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01077"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01125"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024103181"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01096"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01114"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024101851"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "00660"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01044"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024107014"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01170"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01103"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024102035"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01197"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01052"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024103584"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01091"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01109"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024100170"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01143"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01024"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024106528"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01163"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01133"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024102690"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024106469"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024106393"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024106426"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024103647"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024105392"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024100039"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024109093"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024105516"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024103783"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024102318"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024100060"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024100583"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "05473"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01061"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01160"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01097"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01135"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01124"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2024102799"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01127"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01077"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01214"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01174"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01174"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01126"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01131"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01218"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01031"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01147"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01162"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01047"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01150"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01109"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01081"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01209"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023100240"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023101146"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01051"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023106845"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01126"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01086"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023102602"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01207"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01023"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023104309"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01100"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022100323"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01117"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01035"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2020103727"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "05203"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01163"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023103925"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022104093"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01179"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01177"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023100757"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01203"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01152"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023106895"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01153"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023103931"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01090"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022105697"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01194"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022104619"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "05678"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01132"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023105474"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01184"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2021105143"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022105140"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2021105898"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2021106548"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022105102"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2020103101"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2019105118"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022104094"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2021106787"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2019102632"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022105519"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022103995"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2020103075"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2020103941"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2023103604"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2020100680"
+},
+{
+"canonical_id": null,
+"entity_type": "horse",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "2022104416"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01151"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01154"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01157"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "00422"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01119"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "00732"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01154"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01038"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01145"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01088"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01203"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01015"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01018"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01169"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01092"
+},
+{
+"canonical_id": null,
+"entity_type": "jockey",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "05212"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01070"
+},
+{
+"canonical_id": null,
+"entity_type": "trainer",
+"mapping_status": "unmapped",
+"resolution_note": null,
+"resolved_at": null,
+"source": "netkeiba",
+"source_id": "01164"
+}
+]
+},
+"ingestion_jobs": [
+[
+"entries",
+"succeeded",
+20
+],
+[
+"odds",
+"skipped",
+6
+],
+[
+"odds",
+"succeeded",
+14
+],
+[
+"results",
+"failed",
+5
+],
+[
+"results",
+"skipped",
+8
+],
+[
+"results",
+"succeeded",
+7
+]
+],
+"jockeys": {
+"columns": [
+"jockey_id",
+"jockey_name"
+],
+"key": [
+"jockey_id"
+],
+"rows": [
+{
+"jockey_id": "nk:01192",
+"jockey_name": "横山琉"
+},
+{
+"jockey_id": "nk:05339",
+"jockey_name": "ルメール"
+},
+{
+"jockey_id": "nk:01171",
+"jockey_name": "西村淳"
+},
+{
+"jockey_id": "nk:05386",
+"jockey_name": "戸崎圭"
+},
+{
+"jockey_id": "nk:01077",
+"jockey_name": "石橋脩"
+},
+{
+"jockey_id": "nk:01096",
+"jockey_name": "大野"
+},
+{
+"jockey_id": "nk:00660",
+"jockey_name": "横山典"
+},
+{
+"jockey_id": "nk:01170",
+"jockey_name": "横山武"
+},
+{
+"jockey_id": "nk:01197",
+"jockey_name": "佐々木"
+},
+{
+"jockey_id": "nk:01091",
+"jockey_name": "丹内"
+},
+{
+"jockey_id": "nk:01143",
+"jockey_name": "原田和"
+},
+{
+"jockey_id": "nk:01163",
+"jockey_name": "坂井"
+},
+{
+"jockey_id": "nk:05473",
+"jockey_name": "Ｃデムーロ"
+},
+{
+"jockey_id": "nk:01160",
+"jockey_name": "荻野極"
+},
+{
+"jockey_id": "nk:01135",
+"jockey_name": "杉原"
+},
+{
+"jockey_id": "nk:01127",
+"jockey_name": "丸山"
+},
+{
+"jockey_id": "nk:01214",
+"jockey_name": "☆長浜"
+},
+{
+"jockey_id": "nk:01174",
+"jockey_name": "岩田望"
+},
+{
+"jockey_id": "nk:01218",
+"jockey_name": "▲遠藤"
+},
+{
+"jockey_id": "nk:01162",
+"jockey_name": "木幡巧"
+},
+{
+"jockey_id": "nk:01150",
+"jockey_name": "石川"
+},
+{
+"jockey_id": "nk:01109",
+"jockey_name": "黛"
+},
+{
+"jockey_id": "nk:01209",
+"jockey_name": "△石神道"
+},
+{
+"jockey_id": "nk:01126",
+"jockey_name": "松山"
+},
+{
+"jockey_id": "nk:01207",
+"jockey_name": "▲佐藤"
+},
+{
+"jockey_id": "nk:01117",
+"jockey_name": "丸田"
+},
+{
+"jockey_id": "nk:05203",
+"jockey_name": "岩田康"
+},
+{
+"jockey_id": "nk:01179",
+"jockey_name": "菅原明"
+},
+{
+"jockey_id": "nk:01203",
+"jockey_name": "△石田"
+},
+{
+"jockey_id": "nk:01194",
+"jockey_name": "大久保"
+},
+{
+"jockey_id": "nk:05678",
+"jockey_name": "プーシャン"
+},
+{
+"jockey_id": "nk:01184",
+"jockey_name": "原"
+},
+{
+"jockey_id": "nk:01154",
+"jockey_name": "松若"
+},
+{
+"jockey_id": "nk:00422",
+"jockey_name": "内田博"
+},
+{
+"jockey_id": "nk:00732",
+"jockey_name": "幸"
+},
+{
+"jockey_id": "nk:01088",
+"jockey_name": "川田"
+},
+{
+"jockey_id": "nk:01015",
+"jockey_name": "古川吉"
+},
+{
+"jockey_id": "nk:01092",
+"jockey_name": "津村"
+},
+{
+"jockey_id": "nk:05212",
+"jockey_name": "Ｍデムーロ"
+}
+]
+},
+"official_win_payouts": {
+"columns": [
+"race_id",
+"horse_number",
+"payout_yen",
+"source",
+"observed_at",
+"html_sha256"
+],
+"key": [
+"race_id",
+"horse_number"
+],
+"rows": [
+{
+"horse_number": 7,
+"html_sha256": "f95fef6334a57d03e9d7e8267bf7320b80ffe36470d5a84a5f530251b9fb6a26",
+"observed_at": "2026-10-04T06:05:24.203107+00:00",
+"payout_yen": 310,
+"race_id": "202605040205",
+"source": "netkeiba_result"
+},
+{
+"horse_number": 12,
+"html_sha256": "708142f69c5d7c614dd3b505533dae6d627b08cebf80bd9c0d7547bfe3bce248",
+"observed_at": "2026-11-01T05:55:10.013197+00:00",
+"payout_yen": 260,
+"race_id": "202605041106",
+"source": "netkeiba_result"
+}
+]
+},
+"race_horses": {
+"columns": [
+"race_id",
+"horse_id",
+"sex",
+"age",
+"frame",
+"horse_number",
+"jockey_id",
+"trainer_id",
+"weight",
+"weight_diff",
+"odds",
+"popularity",
+"running_style",
+"jockey_weight",
+"entry_status",
+"place_odds_low",
+"place_odds_high",
+"place_popularity"
+],
+"key": [
+"race_id",
+"horse_id"
+],
+"rows": [
+{
+"age": 2,
+"entry_status": "started",
+"frame": 1,
+"horse_id": "nk:2024101928",
+"horse_number": 1,
+"jockey_id": "nk:01192",
+"jockey_weight": "56",
+"odds": "15.7",
+"place_odds_high": "7.4",
+"place_odds_low": "4.6",
+"place_popularity": 6,
+"popularity": 5,
+"race_id": "202605040205",
+"running_style": "追込",
+"sex": "牡",
+"trainer_id": "nk:01020",
+"weight": 472,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2024103181",
+"horse_number": 6,
+"jockey_id": "nk:01096",
+"jockey_weight": "56",
+"odds": "99.0",
+"place_odds_high": "33.0",
+"place_odds_low": "20.6",
+"place_popularity": 9,
+"popularity": 9,
+"race_id": "202605040205",
+"running_style": "先行",
+"sex": "牡",
+"trainer_id": "nk:01114",
+"weight": 448,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2024102035",
+"horse_number": 9,
+"jockey_id": "nk:01197",
+"jockey_weight": "56",
+"odds": "199.9",
+"place_odds_high": "77.3",
+"place_odds_low": "48.3",
+"place_popularity": 11,
+"popularity": 11,
+"race_id": "202605040205",
+"running_style": "差し",
+"sex": "牡",
+"trainer_id": "nk:01052",
+"weight": 428,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 4,
+"horse_id": "nk:2024102239",
+"horse_number": 4,
+"jockey_id": "nk:05386",
+"jockey_weight": "56",
+"odds": "16.1",
+"place_odds_high": "5.3",
+"place_odds_low": "3.3",
+"place_popularity": 4,
+"popularity": 6,
+"race_id": "202605040205",
+"running_style": "先行",
+"sex": "牡",
+"trainer_id": "nk:01135",
+"weight": 534,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2024103584",
+"horse_number": 10,
+"jockey_id": "nk:01091",
+"jockey_weight": "56",
+"odds": "8.0",
+"place_odds_high": null,
+"place_odds_low": null,
+"place_popularity": null,
+"popularity": 4,
+"race_id": "202605040205",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01109",
+"weight": null,
+"weight_diff": null
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 1,
+"horse_id": "nk:2024106469",
+"horse_number": 1,
+"jockey_id": "nk:05473",
+"jockey_weight": "56",
+"odds": "2.3",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 2,
+"popularity": 2,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01061",
+"weight": 450,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2024100060",
+"horse_number": 9,
+"jockey_id": "nk:01218",
+"jockey_weight": "53",
+"odds": "56.5",
+"place_odds_high": "22.6",
+"place_odds_low": "14.1",
+"place_popularity": 9,
+"popularity": 9,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01031",
+"weight": 462,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2024106426",
+"horse_number": 10,
+"jockey_id": "nk:05339",
+"jockey_weight": "55",
+"odds": "1.4",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 1,
+"popularity": 1,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01147",
+"weight": 440,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2024105516",
+"horse_number": 11,
+"jockey_id": "nk:01162",
+"jockey_weight": "55",
+"odds": "215.0",
+"place_odds_high": "86.1",
+"place_odds_low": "53.8",
+"place_popularity": 12,
+"popularity": 12,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01047",
+"weight": 420,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 2,
+"horse_id": "nk:2024102318",
+"horse_number": 2,
+"jockey_id": "nk:01160",
+"jockey_weight": "56",
+"odds": "12.5",
+"place_odds_high": "5.0",
+"place_odds_low": "3.1",
+"place_popularity": 5,
+"popularity": 5,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01097",
+"weight": 412,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2024101851",
+"horse_number": 7,
+"jockey_id": "nk:00660",
+"jockey_weight": "56",
+"odds": "3.1",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 2,
+"popularity": 2,
+"race_id": "202605040205",
+"running_style": "逃げ",
+"sex": "牡",
+"trainer_id": "nk:01044",
+"weight": 500,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 3,
+"horse_id": "nk:2024103411",
+"horse_number": 3,
+"jockey_id": "nk:01171",
+"jockey_weight": "55",
+"odds": "14.3",
+"place_odds_high": "6.1",
+"place_odds_low": "3.8",
+"place_popularity": 5,
+"popularity": 4,
+"race_id": "202605040205",
+"running_style": "先行",
+"sex": "牝",
+"trainer_id": "nk:01059",
+"weight": 462,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2024106528",
+"horse_number": 12,
+"jockey_id": "nk:01163",
+"jockey_weight": "56",
+"odds": "5.0",
+"place_odds_high": "1.9",
+"place_odds_low": "1.2",
+"place_popularity": 3,
+"popularity": 3,
+"race_id": "202605040205",
+"running_style": "差し",
+"sex": "牡",
+"trainer_id": "nk:01133",
+"weight": 508,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2024100170",
+"horse_number": 11,
+"jockey_id": "nk:01143",
+"jockey_weight": "56",
+"odds": "105.4",
+"place_odds_high": "41.4",
+"place_odds_low": "25.9",
+"place_popularity": 10,
+"popularity": 10,
+"race_id": "202605040205",
+"running_style": "差し",
+"sex": "牡",
+"trainer_id": "nk:01024",
+"weight": 474,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 2,
+"horse_id": "nk:2024107350",
+"horse_number": 2,
+"jockey_id": "nk:05339",
+"jockey_weight": "56",
+"odds": "2.0",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 1,
+"popularity": 1,
+"race_id": "202605040205",
+"running_style": "中団",
+"sex": "牡",
+"trainer_id": "nk:01102",
+"weight": 496,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2024107014",
+"horse_number": 8,
+"jockey_id": "nk:01170",
+"jockey_weight": "56",
+"odds": "68.9",
+"place_odds_high": "26.6",
+"place_odds_low": "16.6",
+"place_popularity": 7,
+"popularity": 8,
+"race_id": "202605040205",
+"running_style": "先行",
+"sex": "牡",
+"trainer_id": "nk:01103",
+"weight": 490,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2024104502",
+"horse_number": 5,
+"jockey_id": "nk:01077",
+"jockey_weight": "56",
+"odds": "63.1",
+"place_odds_high": "29.0",
+"place_odds_low": "18.1",
+"place_popularity": 8,
+"popularity": 7,
+"race_id": "202605040205",
+"running_style": "差し",
+"sex": "牡",
+"trainer_id": "nk:01125",
+"weight": 422,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 3,
+"horse_id": "nk:2024100039",
+"horse_number": 3,
+"jockey_id": "nk:01135",
+"jockey_weight": "56",
+"odds": "32.0",
+"place_odds_high": "12.8",
+"place_odds_low": "8.0",
+"place_popularity": 7,
+"popularity": 7,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01124",
+"weight": 450,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 3,
+"horse_id": "nk:2024103783",
+"horse_number": 4,
+"jockey_id": "nk:01077",
+"jockey_weight": "56",
+"odds": "84.2",
+"place_odds_high": "33.8",
+"place_odds_low": "21.1",
+"place_popularity": 10,
+"popularity": 10,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01125",
+"weight": 538,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "cancelled",
+"frame": 4,
+"horse_id": "nk:2024102799",
+"horse_number": 5,
+"jockey_id": "nk:01127",
+"jockey_weight": "55",
+"odds": "10.0",
+"place_odds_high": "4.0",
+"place_odds_low": "2.5",
+"place_popularity": 4,
+"popularity": 4,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01077",
+"weight": null,
+"weight_diff": null
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 4,
+"horse_id": "nk:2024109093",
+"horse_number": 6,
+"jockey_id": "nk:01214",
+"jockey_weight": "55",
+"odds": "273.5",
+"place_odds_high": "109.4",
+"place_odds_low": "68.4",
+"place_popularity": 13,
+"popularity": 13,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01174",
+"weight": 426,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2024106393",
+"horse_number": 7,
+"jockey_id": "nk:01174",
+"jockey_weight": "55",
+"odds": "6.5",
+"place_odds_high": "2.6",
+"place_odds_low": "1.6",
+"place_popularity": 3,
+"popularity": 3,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01126",
+"weight": 460,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2024103647",
+"horse_number": 8,
+"jockey_id": "nk:01091",
+"jockey_weight": "55",
+"odds": "40.4",
+"place_odds_high": "16.2",
+"place_odds_low": "10.1",
+"place_popularity": 8,
+"popularity": 8,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01131",
+"weight": 440,
+"weight_diff": 0
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2023100757",
+"horse_number": 10,
+"jockey_id": "nk:01203",
+"jockey_weight": "52",
+"odds": "42.6",
+"place_odds_high": "21.0",
+"place_odds_low": "13.1",
+"place_popularity": 13,
+"popularity": 11,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01152",
+"weight": 470,
+"weight_diff": 6
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2023106895",
+"horse_number": 11,
+"jockey_id": "nk:05386",
+"jockey_weight": "54",
+"odds": "12.3",
+"place_odds_high": "5.9",
+"place_odds_low": "3.7",
+"place_popularity": 9,
+"popularity": 7,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01153",
+"weight": 452,
+"weight_diff": 8
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2023103931",
+"horse_number": 12,
+"jockey_id": "nk:00660",
+"jockey_weight": "56",
+"odds": "2.6",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 1,
+"popularity": 1,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01090",
+"weight": 490,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2024105392",
+"horse_number": 12,
+"jockey_id": "nk:01150",
+"jockey_weight": "55",
+"odds": "155.4",
+"place_odds_high": "62.2",
+"place_odds_low": "38.9",
+"place_popularity": 11,
+"popularity": 11,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01020",
+"weight": 470,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2024102690",
+"horse_number": 13,
+"jockey_id": "nk:01109",
+"jockey_weight": "56",
+"odds": "20.1",
+"place_odds_high": "8.0",
+"place_odds_low": "5.0",
+"place_popularity": 6,
+"popularity": 6,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01081",
+"weight": 520,
+"weight_diff": 0
+},
+{
+"age": 2,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2024100583",
+"horse_number": 14,
+"jockey_id": "nk:01209",
+"jockey_weight": "54",
+"odds": "423.4",
+"place_odds_high": "169.3",
+"place_odds_low": "105.8",
+"place_popularity": 14,
+"popularity": 14,
+"race_id": "202605041104",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01114",
+"weight": 454,
+"weight_diff": 0
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2022105697",
+"horse_number": 13,
+"jockey_id": "nk:01194",
+"jockey_weight": "55",
+"odds": "12.1",
+"place_odds_high": "4.8",
+"place_odds_low": "3.0",
+"place_popularity": 7,
+"popularity": 7,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "セ",
+"trainer_id": "nk:01077",
+"weight": null,
+"weight_diff": null
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2022104619",
+"horse_number": 14,
+"jockey_id": "nk:05678",
+"jockey_weight": "58",
+"odds": "12.2",
+"place_odds_high": "4.0",
+"place_odds_low": "2.5",
+"place_popularity": 4,
+"popularity": 6,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01132",
+"weight": 454,
+"weight_diff": 2
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 1,
+"horse_id": "nk:2022105102",
+"horse_number": 1,
+"jockey_id": "nk:05473",
+"jockey_weight": "58",
+"odds": "1.8",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 1,
+"popularity": 1,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01151",
+"weight": 512,
+"weight_diff": -2
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 1,
+"horse_id": "nk:2023100240",
+"horse_number": 1,
+"jockey_id": "nk:01162",
+"jockey_weight": "56",
+"odds": "31.7",
+"place_odds_high": "13.4",
+"place_odds_low": "8.4",
+"place_popularity": 11,
+"popularity": 10,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01133",
+"weight": 488,
+"weight_diff": 12
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 2,
+"horse_id": "nk:2023101146",
+"horse_number": 2,
+"jockey_id": "nk:01160",
+"jockey_weight": "56",
+"odds": "11.5",
+"place_odds_high": "4.2",
+"place_odds_low": "2.6",
+"place_popularity": 5,
+"popularity": 4,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01051",
+"weight": 504,
+"weight_diff": 4
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 2,
+"horse_id": "nk:2023106845",
+"horse_number": 3,
+"jockey_id": "nk:01126",
+"jockey_weight": "54",
+"odds": "16.2",
+"place_odds_high": "5.4",
+"place_odds_low": "3.4",
+"place_popularity": 8,
+"popularity": 8,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01086",
+"weight": 470,
+"weight_diff": 0
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 3,
+"horse_id": "nk:2023102602",
+"horse_number": 4,
+"jockey_id": "nk:01207",
+"jockey_weight": "51",
+"odds": "9.1",
+"place_odds_high": "4.3",
+"place_odds_low": "2.7",
+"place_popularity": 6,
+"popularity": 3,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01023",
+"weight": 506,
+"weight_diff": 4
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 3,
+"horse_id": "nk:2023104309",
+"horse_number": 5,
+"jockey_id": "nk:01096",
+"jockey_weight": "54",
+"odds": "95.8",
+"place_odds_high": "36.3",
+"place_odds_low": "22.7",
+"place_popularity": 14,
+"popularity": 13,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01100",
+"weight": 458,
+"weight_diff": -4
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 4,
+"horse_id": "nk:2022100323",
+"horse_number": 6,
+"jockey_id": "nk:01117",
+"jockey_weight": "56",
+"odds": "380.0",
+"place_odds_high": "166.7",
+"place_odds_low": "104.2",
+"place_popularity": 15,
+"popularity": 14,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01035",
+"weight": 474,
+"weight_diff": 8
+},
+{
+"age": 6,
+"entry_status": "started",
+"frame": 4,
+"horse_id": "nk:2020103727",
+"horse_number": 7,
+"jockey_id": "nk:05203",
+"jockey_weight": "58",
+"odds": "52.6",
+"place_odds_high": "15.8",
+"place_odds_low": "9.9",
+"place_popularity": 12,
+"popularity": 12,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "セ",
+"trainer_id": "nk:01163",
+"weight": 468,
+"weight_diff": 0
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2023105474",
+"horse_number": 15,
+"jockey_id": "nk:01184",
+"jockey_weight": "56",
+"odds": "22.9",
+"place_odds_high": "11.2",
+"place_odds_low": "7.0",
+"place_popularity": 10,
+"popularity": 9,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "セ",
+"trainer_id": "nk:01081",
+"weight": 526,
+"weight_diff": 0
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2023103925",
+"horse_number": 8,
+"jockey_id": "nk:01174",
+"jockey_weight": "54",
+"odds": "12.1",
+"place_odds_high": "4.0",
+"place_odds_low": "2.5",
+"place_popularity": 3,
+"popularity": 5,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01131",
+"weight": 470,
+"weight_diff": -14
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2022104093",
+"horse_number": 9,
+"jockey_id": "nk:01179",
+"jockey_weight": "56",
+"odds": "4.2",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 2,
+"popularity": 2,
+"race_id": "202605041106",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01177",
+"weight": 444,
+"weight_diff": 0
+},
+{
+"age": 6,
+"entry_status": "started",
+"frame": 1,
+"horse_id": "nk:2020100680",
+"horse_number": 2,
+"jockey_id": "nk:01154",
+"jockey_weight": "58",
+"odds": "289.4",
+"place_odds_high": "115.7",
+"place_odds_low": "72.3",
+"place_popularity": 15,
+"popularity": 15,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01157",
+"weight": 512,
+"weight_diff": -4
+},
+{
+"age": 5,
+"entry_status": "started",
+"frame": 2,
+"horse_id": "nk:2021105898",
+"horse_number": 3,
+"jockey_id": "nk:01174",
+"jockey_weight": "56",
+"odds": "12.3",
+"place_odds_high": "5.0",
+"place_odds_low": "3.1",
+"place_popularity": 5,
+"popularity": 5,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牝",
+"trainer_id": "nk:01126",
+"weight": 494,
+"weight_diff": 4
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 2,
+"horse_id": "nk:2022104416",
+"horse_number": 4,
+"jockey_id": "nk:00660",
+"jockey_weight": "58",
+"odds": "75.6",
+"place_odds_high": "30.2",
+"place_odds_low": "18.9",
+"place_popularity": 10,
+"popularity": 10,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01044",
+"weight": 494,
+"weight_diff": 0
+},
+{
+"age": 5,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2021106548",
+"horse_number": 14,
+"jockey_id": "nk:05212",
+"jockey_weight": "58",
+"odds": "174.8",
+"place_odds_high": "69.9",
+"place_odds_low": "43.7",
+"place_popularity": 14,
+"popularity": 14,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01018",
+"weight": 498,
+"weight_diff": -10
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2022104094",
+"horse_number": 15,
+"jockey_id": "nk:01197",
+"jockey_weight": "58",
+"odds": "172.1",
+"place_odds_high": "68.8",
+"place_odds_low": "43.0",
+"place_popularity": 13,
+"popularity": 13,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01070",
+"weight": 522,
+"weight_diff": 8
+},
+{
+"age": 6,
+"entry_status": "started",
+"frame": 3,
+"horse_id": "nk:2020103075",
+"horse_number": 5,
+"jockey_id": "nk:00422",
+"jockey_weight": "58",
+"odds": "305.9",
+"place_odds_high": "122.4",
+"place_odds_low": "76.5",
+"place_popularity": 16,
+"popularity": 16,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01119",
+"weight": 516,
+"weight_diff": 2
+},
+{
+"age": 7,
+"entry_status": "started",
+"frame": 3,
+"horse_id": "nk:2019102632",
+"horse_number": 6,
+"jockey_id": "nk:00732",
+"jockey_weight": "58",
+"odds": "26.6",
+"place_odds_high": "10.7",
+"place_odds_low": "6.7",
+"place_popularity": 6,
+"popularity": 6,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01154",
+"weight": 478,
+"weight_diff": -2
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 4,
+"horse_id": "nk:2022105519",
+"horse_number": 7,
+"jockey_id": "nk:05339",
+"jockey_weight": "58",
+"odds": "2.0",
+"place_odds_high": "1.6",
+"place_odds_low": "1.0",
+"place_popularity": 2,
+"popularity": 2,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01038",
+"weight": 474,
+"weight_diff": null
+},
+{
+"age": 7,
+"entry_status": "started",
+"frame": 4,
+"horse_id": "nk:2019105118",
+"horse_number": 8,
+"jockey_id": "nk:01135",
+"jockey_weight": "58",
+"odds": "354.3",
+"place_odds_high": "141.8",
+"place_odds_low": "88.6",
+"place_popularity": 17,
+"popularity": 17,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01061",
+"weight": 476,
+"weight_diff": 2
+},
+{
+"age": 6,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2020103941",
+"horse_number": 9,
+"jockey_id": "nk:05203",
+"jockey_weight": "58",
+"odds": "75.7",
+"place_odds_high": "30.2",
+"place_odds_low": "18.9",
+"place_popularity": 11,
+"popularity": 11,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01145",
+"weight": 504,
+"weight_diff": 2
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 5,
+"horse_id": "nk:2022105140",
+"horse_number": 10,
+"jockey_id": "nk:01088",
+"jockey_weight": "58",
+"odds": "34.2",
+"place_odds_high": "13.8",
+"place_odds_low": "8.6",
+"place_popularity": 7,
+"popularity": 7,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01203",
+"weight": 458,
+"weight_diff": 2
+},
+{
+"age": 6,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2020103101",
+"horse_number": 11,
+"jockey_id": "nk:01015",
+"jockey_weight": "58",
+"odds": "8.8",
+"place_odds_high": "3.5",
+"place_odds_low": "2.2",
+"place_popularity": 3,
+"popularity": 3,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01018",
+"weight": 452,
+"weight_diff": 2
+},
+{
+"age": 5,
+"entry_status": "started",
+"frame": 6,
+"horse_id": "nk:2021106787",
+"horse_number": 12,
+"jockey_id": "nk:01091",
+"jockey_weight": "58",
+"odds": "129.0",
+"place_odds_high": "51.5",
+"place_odds_low": "32.2",
+"place_popularity": 12,
+"popularity": 12,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01169",
+"weight": 524,
+"weight_diff": 10
+},
+{
+"age": 3,
+"entry_status": "started",
+"frame": 7,
+"horse_id": "nk:2023103604",
+"horse_number": 13,
+"jockey_id": "nk:01092",
+"jockey_weight": "56",
+"odds": "39.3",
+"place_odds_high": "15.7",
+"place_odds_low": "9.8",
+"place_popularity": 8,
+"popularity": 8,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01038",
+"weight": 530,
+"weight_diff": -8
+},
+{
+"age": 4,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2022103995",
+"horse_number": 16,
+"jockey_id": "nk:01126",
+"jockey_weight": "58",
+"odds": "42.9",
+"place_odds_high": "17.1",
+"place_odds_low": "10.7",
+"place_popularity": 9,
+"popularity": 9,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01157",
+"weight": 476,
+"weight_diff": -2
+},
+{
+"age": 5,
+"entry_status": "started",
+"frame": 8,
+"horse_id": "nk:2021105143",
+"horse_number": 17,
+"jockey_id": "nk:05386",
+"jockey_weight": "58",
+"odds": "9.4",
+"place_odds_high": "3.8",
+"place_odds_low": "2.4",
+"place_popularity": 4,
+"popularity": 4,
+"race_id": "202605041111",
+"running_style": null,
+"sex": "牡",
+"trainer_id": "nk:01164",
+"weight": 516,
+"weight_diff": -4
+}
+]
+},
+"race_laps": {
+"columns": [
+"race_id",
+"lap_times",
+"pace_first_3f",
+"pace_last_3f",
+"source"
+],
+"key": [
+"race_id"
+],
+"rows": []
+},
+"race_results": {
+"columns": [
+"race_id",
+"horse_id",
+"finish_order",
+"finish_time",
+"finish_time_diff",
+"corner_orders",
+"last_3f",
+"result_status",
+"first_3f"
+],
+"key": [
+"race_id",
+"horse_id"
+],
+"rows": [
+{
+"corner_orders": [
+"1",
+"1",
+"1"
+],
+"finish_order": 1,
+"finish_time": 123.9,
+"finish_time_diff": 0.0,
+"first_3f": null,
+"horse_id": "nk:2024101851",
+"last_3f": "34.1",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"3",
+"3",
+"4"
+],
+"finish_order": 2,
+"finish_time": 124.5,
+"finish_time_diff": 0.6,
+"first_3f": null,
+"horse_id": "nk:2024103411",
+"last_3f": "34.5",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"7",
+"6",
+"4"
+],
+"finish_order": 3,
+"finish_time": 124.7,
+"finish_time_diff": 0.8,
+"first_3f": null,
+"horse_id": "nk:2024106528",
+"last_3f": "34.6",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"7",
+"6",
+"8"
+],
+"finish_order": 4,
+"finish_time": 124.7,
+"finish_time_diff": 0.8,
+"first_3f": null,
+"horse_id": "nk:2024100170",
+"last_3f": "34.4",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"6",
+"6",
+"8"
+],
+"finish_order": 5,
+"finish_time": 124.8,
+"finish_time_diff": 0.9,
+"first_3f": null,
+"horse_id": "nk:2024107350",
+"last_3f": "34.5",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"2",
+"2",
+"2"
+],
+"finish_order": 6,
+"finish_time": 124.8,
+"finish_time_diff": 0.9,
+"first_3f": null,
+"horse_id": "nk:2024107014",
+"last_3f": "35",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"9",
+"10",
+"8"
+],
+"finish_order": 7,
+"finish_time": 124.9,
+"finish_time_diff": 1.0,
+"first_3f": null,
+"horse_id": "nk:2024104502",
+"last_3f": "34.6",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"11",
+"10",
+"11"
+],
+"finish_order": 8,
+"finish_time": 125.0,
+"finish_time_diff": 1.1,
+"first_3f": null,
+"horse_id": "nk:2024101928",
+"last_3f": "34.4",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"3",
+"3",
+"2"
+],
+"finish_order": 9,
+"finish_time": 125.2,
+"finish_time_diff": 1.3,
+"first_3f": null,
+"horse_id": "nk:2024103181",
+"last_3f": "35.3",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"9",
+"9",
+"7"
+],
+"finish_order": 10,
+"finish_time": 125.4,
+"finish_time_diff": 1.5,
+"first_3f": null,
+"horse_id": "nk:2024102035",
+"last_3f": "35.2",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": [
+"3",
+"3",
+"4"
+],
+"finish_order": 11,
+"finish_time": 125.6,
+"finish_time_diff": 1.7,
+"first_3f": null,
+"horse_id": "nk:2024102239",
+"last_3f": "35.5",
+"race_id": "202605040205",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 1,
+"finish_time": 84.7,
+"finish_time_diff": 0.0,
+"first_3f": null,
+"horse_id": "nk:2023103931",
+"last_3f": "34.8",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 2,
+"finish_time": 84.8,
+"finish_time_diff": 0.1,
+"first_3f": null,
+"horse_id": "nk:2022104093",
+"last_3f": "35.3",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 3,
+"finish_time": 84.9,
+"finish_time_diff": 0.2,
+"first_3f": null,
+"horse_id": "nk:2023105474",
+"last_3f": "36",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 4,
+"finish_time": 85.2,
+"finish_time_diff": 0.5,
+"first_3f": null,
+"horse_id": "nk:2023102602",
+"last_3f": "36.1",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 5,
+"finish_time": 85.2,
+"finish_time_diff": 0.5,
+"first_3f": null,
+"horse_id": "nk:2023104309",
+"last_3f": "36",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 6,
+"finish_time": 85.2,
+"finish_time_diff": 0.5,
+"first_3f": null,
+"horse_id": "nk:2023106895",
+"last_3f": "36.5",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 7,
+"finish_time": 85.3,
+"finish_time_diff": 0.6,
+"first_3f": null,
+"horse_id": "nk:2023106845",
+"last_3f": "35.9",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 8,
+"finish_time": 85.6,
+"finish_time_diff": 0.9,
+"first_3f": null,
+"horse_id": "nk:2022104619",
+"last_3f": "36.6",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 9,
+"finish_time": 85.9,
+"finish_time_diff": 1.2,
+"first_3f": null,
+"horse_id": "nk:2023103925",
+"last_3f": "36.2",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 10,
+"finish_time": 86.0,
+"finish_time_diff": 1.3,
+"first_3f": null,
+"horse_id": "nk:2023100757",
+"last_3f": "37.2",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 11,
+"finish_time": 86.2,
+"finish_time_diff": 1.5,
+"first_3f": null,
+"horse_id": "nk:2022100323",
+"last_3f": "36.5",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 12,
+"finish_time": 86.4,
+"finish_time_diff": 1.7,
+"first_3f": null,
+"horse_id": "nk:2020103727",
+"last_3f": "36.4",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 13,
+"finish_time": 86.6,
+"finish_time_diff": 1.9,
+"first_3f": null,
+"horse_id": "nk:2023101146",
+"last_3f": "37.6",
+"race_id": "202605041106",
+"result_status": "finished"
+},
+{
+"corner_orders": null,
+"finish_order": 14,
+"finish_time": 87.3,
+"finish_time_diff": 2.6,
+"first_3f": null,
+"horse_id": "nk:2023100240",
+"last_3f": "38.1",
+"race_id": "202605041106",
+"result_status": "finished"
+}
+]
+},
+"races": {
+"columns": [
+"race_id",
+"race_name",
+"race_name_short",
+"venue_code",
+"distance",
+"track_type",
+"race_status",
+"race_date",
+"race_number",
+"grade",
+"race_class",
+"weather",
+"going",
+"post_time",
+"prize_money",
+"place_odds_official_at",
+"place_odds_observed_at",
+"win_odds_official_at",
+"win_odds_observed_at"
+],
+"key": [
+"race_id"
+],
+"rows": [
+{
+"distance": 2000,
+"going": "良",
+"grade": null,
+"place_odds_observed_at": "2026-10-05T06:45:24.389742+00:00",
+"place_odds_official_at": "2026-10-05T06:44:54+00:00",
+"post_time": "2026-10-04T03:25:00+00:00",
+"prize_money": 780,
+"race_class": "新馬",
+"race_date": "2026-10-04",
+"race_id": "202605040205",
+"race_name": "2歳新馬",
+"race_name_short": null,
+"race_number": 5,
+"race_status": null,
+"track_type": "芝",
+"venue_code": "05",
+"weather": "晴",
+"win_odds_observed_at": "2026-10-04T06:05:24.203107+00:00",
+"win_odds_official_at": null
+},
+{
+"distance": 1600,
+"going": null,
+"grade": null,
+"place_odds_observed_at": "2026-10-31T14:36:57.156517+00:00",
+"place_odds_official_at": "2026-10-31T14:36:27+00:00",
+"post_time": "2026-11-01T02:30:00+00:00",
+"prize_money": 780,
+"race_class": "新馬",
+"race_date": "2026-11-01",
+"race_id": "202605041104",
+"race_name": "2歳新馬",
+"race_name_short": null,
+"race_number": 4,
+"race_status": null,
+"track_type": "芝",
+"venue_code": "05",
+"weather": null,
+"win_odds_observed_at": "2026-10-31T14:36:57.156517+00:00",
+"win_odds_official_at": "2026-10-31T14:36:27+00:00"
+},
+{
+"distance": 1400,
+"going": null,
+"grade": null,
+"place_odds_observed_at": "2026-10-31T12:08:54.828774+00:00",
+"place_odds_official_at": "2026-10-31T12:08:24+00:00",
+"post_time": "2026-11-01T03:50:00+00:00",
+"prize_money": 820,
+"race_class": "１勝",
+"race_date": "2026-11-01",
+"race_id": "202605041106",
+"race_name": "3歳以上1勝クラス",
+"race_name_short": null,
+"race_number": 6,
+"race_status": null,
+"track_type": "ダ",
+"venue_code": "05",
+"weather": null,
+"win_odds_observed_at": "2026-11-01T05:55:10.013197+00:00",
+"win_odds_official_at": null
+},
+{
+"distance": 2000,
+"going": null,
+"grade": "G1",
+"place_odds_observed_at": "2026-11-01T23:36:08.140463+00:00",
+"place_odds_official_at": "2026-11-01T23:35:38+00:00",
+"post_time": "2026-11-01T06:40:00+00:00",
+"prize_money": 30000,
+"race_class": "Ｇ１",
+"race_date": "2026-11-01",
+"race_id": "202605041111",
+"race_name": "天皇賞(秋)",
+"race_name_short": null,
+"race_number": 11,
+"race_status": null,
+"track_type": "芝",
+"venue_code": "05",
+"weather": null,
+"win_odds_observed_at": "2026-11-01T23:36:08.140463+00:00",
+"win_odds_official_at": "2026-11-01T23:35:38+00:00"
+}
+]
+},
+"trainers": {
+"columns": [
+"trainer_id",
+"trainer_name"
+],
+"key": [
+"trainer_id"
+],
+"rows": [
+{
+"trainer_id": "nk:01020",
+"trainer_name": "相沢"
+},
+{
+"trainer_id": "nk:01102",
+"trainer_name": "大竹"
+},
+{
+"trainer_id": "nk:01059",
+"trainer_name": "加藤征"
+},
+{
+"trainer_id": "nk:01135",
+"trainer_name": "高橋康"
+},
+{
+"trainer_id": "nk:01125",
+"trainer_name": "小野"
+},
+{
+"trainer_id": "nk:01114",
+"trainer_name": "和田郎"
+},
+{
+"trainer_id": "nk:01044",
+"trainer_name": "昆"
+},
+{
+"trainer_id": "nk:01103",
+"trainer_name": "尾関"
+},
+{
+"trainer_id": "nk:01052",
+"trainer_name": "菊川"
+},
+{
+"trainer_id": "nk:01109",
+"trainer_name": "伊藤大"
+},
+{
+"trainer_id": "nk:01024",
+"trainer_name": "萱野"
+},
+{
+"trainer_id": "nk:01133",
+"trainer_name": "黒岩"
+},
+{
+"trainer_id": "nk:01061",
+"trainer_name": "友道"
+},
+{
+"trainer_id": "nk:01097",
+"trainer_name": "鹿戸"
+},
+{
+"trainer_id": "nk:01124",
+"trainer_name": "大和田"
+},
+{
+"trainer_id": "nk:01077",
+"trainer_name": "加藤和"
+},
+{
+"trainer_id": "nk:01174",
+"trainer_name": "深山"
+},
+{
+"trainer_id": "nk:01126",
+"trainer_name": "木村"
+},
+{
+"trainer_id": "nk:01131",
+"trainer_name": "蛯名利"
+},
+{
+"trainer_id": "nk:01031",
+"trainer_name": "伊藤伸"
+},
+{
+"trainer_id": "nk:01147",
+"trainer_name": "武井"
+},
+{
+"trainer_id": "nk:01047",
+"trainer_name": "勢司"
+},
+{
+"trainer_id": "nk:01081",
+"trainer_name": "中川"
+},
+{
+"trainer_id": "nk:01051",
+"trainer_name": "岩戸"
+},
+{
+"trainer_id": "nk:01086",
+"trainer_name": "斎藤誠"
+},
+{
+"trainer_id": "nk:01023",
+"trainer_name": "伊藤圭"
+},
+{
+"trainer_id": "nk:01100",
+"trainer_name": "松山"
+},
+{
+"trainer_id": "nk:01035",
+"trainer_name": "佐藤吉"
+},
+{
+"trainer_id": "nk:01163",
+"trainer_name": "林"
+},
+{
+"trainer_id": "nk:01177",
+"trainer_name": "伊坂"
+},
+{
+"trainer_id": "nk:01152",
+"trainer_name": "竹内"
+},
+{
+"trainer_id": "nk:01153",
+"trainer_name": "中舘"
+},
+{
+"trainer_id": "nk:01090",
+"trainer_name": "天間"
+},
+{
+"trainer_id": "nk:01132",
+"trainer_name": "金成"
+},
+{
+"trainer_id": "nk:01151",
+"trainer_name": "斉藤崇"
+},
+{
+"trainer_id": "nk:01157",
+"trainer_name": "杉山晴"
+},
+{
+"trainer_id": "nk:01119",
+"trainer_name": "田中剛"
+},
+{
+"trainer_id": "nk:01154",
+"trainer_name": "橋口"
+},
+{
+"trainer_id": "nk:01038",
+"trainer_name": "手塚久"
+},
+{
+"trainer_id": "nk:01145",
+"trainer_name": "奥村武"
+},
+{
+"trainer_id": "nk:01203",
+"trainer_name": "福永"
+},
+{
+"trainer_id": "nk:01018",
+"trainer_name": "宮"
+},
+{
+"trainer_id": "nk:01169",
+"trainer_name": "加藤士"
+},
+{
+"trainer_id": "nk:01070",
+"trainer_name": "堀"
+},
+{
+"trainer_id": "nk:01164",
+"trainer_name": "安田"
+}
+]
+}
+}

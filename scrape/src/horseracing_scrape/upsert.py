@@ -450,7 +450,11 @@ def _write_entry_horse(
         horse_vals["data_source"] = h.data_source
     if h.birth_year is not None:
         horse_vals["birth_year"] = h.birth_year
-    if h.sex is not None and h.data_source is not None:
+    # Only the official route seeds horses.sex at creation (its ids are canonical). The netkeiba
+    # route never did: a surrogate's sex comes from its profile page (complete_profiles, fill-if-
+    # null), which is the CURRENT sex — seeding it here from the first 出馬表 would freeze a later-
+    # gelded horse at 牡 (found by the 176 pre-merge replay parity check).
+    if h.sex is not None and h.data_source == Source.JRA_OFFICIAL:
         horse_vals["sex"] = h.sex
     _insert_ignore(session, Horse, horse_vals, ("horse_id",))
     if h.jockey_id:
