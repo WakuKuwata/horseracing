@@ -1,4 +1,4 @@
-# 176 実装の結果記録(2026-11-02・別 worktree・ブランチ `176-jra-official-source` にコミット・main 未マージ・本番未反映)
+# 176 実装の結果記録(2026-11-02・main マージ済み・本番 DB に 0023/0024 適用済み・JRA 取得は未有効)
 
 実装は `.claude/worktrees/176-jra-official-source`(起点 `8e373520` = 今日の 174 捕捉の譲り合い縮小を含む)。
 稼働 checkout・本番 DB・policy・稼働プロセスには触れていない。開いているのは T050(policy へのキー追加)と
@@ -92,6 +92,13 @@ netkeiba はオッズを返さないので起きない)・脚質 1(実際の出�
 常設テスト `scrape/tests/integration/test_netkeiba_replay_regression.py`: 東京 4 レースの実ページ(取消 2 件を
 含む・script/style を除去=除去前と最終状態が同じことを確認済み)と旧コードの最終状態を正解として固定し、
 時系列順・二重取得は完全一致、崩した順序は差が真実の方向だけであることを毎回確かめる。
+
+## 本番反映(2026-11-02・利用者承認)
+
+1. 本番 DB を dump(`artifacts/db_backups/horseracing-pre176-20261102.dump`・364MB)。
+2. `alembic upgrade head`(0022 → 0024)。既存表の行数は不変(races 140,097・race_horses 1,876,452・horses 177,836・race_results 1,865,833・official_win_payouts 768・exotic_odds 36,873)。
+3. main を早送り(`7b253232`)→ `scripts/stack.sh restart`。`/api/v1/health` は 200・`schema_in_sync=true`・ops は書込み受付。
+4. 確定済みの 11/01 東京 11R を ops から 1 回更新: `refresh_race` 成功(10.5 秒)。変わったのは通過順とそこから導く脚質の空欄補完だけ(当夜は未公開だった=旧挙動どおり)。着順・タイム・オッズ・単勝払戻・配当は不変。来歴は netkeiba で記録。
 
 ## 残り(開催終了後・利用者の指示で)
 

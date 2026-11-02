@@ -4,7 +4,7 @@
 
 **Input**: Feature specification from `/specs/176-jra-official-source/spec.md`
 
-**Status**: 実装済み 2026-11-02(別 worktree のブランチ `176-jra-official-source` にコミット済み・main 未マージ・本番未反映・記録 [result-review.md](result-review.md)・残りは T050 と rollout T100〜T107)。以下は tasks 時点: tasks 済み 2026-11-02([tasks.md](tasks.md)・101 タスク+rollout 8 段(T100〜T107)・codex tasks レビュー Q1 8/Q2 8/SC 12 を全件反映・採否は research.md 末尾)。**利用者決定 2026-11-02**: US2 シナリオ 1/4 の単勝人気は保存せず監査に使う(別表 `jra_result_popularity` は作らない)。実装は開催中でも可のタスク(⏸ なし=新規ファイルのみ)から着手できる。**推奨は別 worktree で実装し、稼働 checkout への反映は開催終了後に 1 回**(ops の subprocess が稼働 checkout を毎ジョブ import するため)。
+**Status**: 実装済み 2026-11-02(main マージ済み 2026-11-02・本番 DB に 0023/0024 適用済み・JRA 取得は未有効・記録 [result-review.md](result-review.md)・残りは T050 と rollout T100〜T107)。以下は tasks 時点: tasks 済み 2026-11-02([tasks.md](tasks.md)・101 タスク+rollout 8 段(T100〜T107)・codex tasks レビュー Q1 8/Q2 8/SC 12 を全件反映・採否は research.md 末尾)。**利用者決定 2026-11-02**: US2 シナリオ 1/4 の単勝人気は保存せず監査に使う(別表 `jra_result_popularity` は作らない)。実装は開催中でも可のタスク(⏸ なし=新規ファイルのみ)から着手できる。**推奨は別 worktree で実装し、稼働 checkout への反映は開催終了後に 1 回**(ops の subprocess が稼働 checkout を毎ジョブ import するため)。
 
 ## Summary
 
