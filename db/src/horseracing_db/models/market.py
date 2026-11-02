@@ -33,7 +33,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import conv
 
 from ..base import Base
-from ..constraints import COVERAGE_SCOPE, EXOTIC_BET_TYPE, JOB_SOURCE
+from ..constraints import (
+    COVERAGE_SCOPE,
+    EXOTIC_BET_TYPE,
+    JOB_SOURCE,
+    OFFICIAL_WIN_PAYOUT_SOURCE_CHECK,
+    OFFICIAL_WIN_PAYOUT_SOURCES,
+)
 from ..enums import CoverageScope, Source
 from ._mixins import TimestampMixin
 
@@ -121,8 +127,11 @@ class ExoticQuote(TimestampMixin, Base):
     source: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'netkeiba'"))
 
 
-#: the only source of an official win payout so far (CHECK on the column, migration 0020)
-OFFICIAL_WIN_PAYOUT_SOURCE = "netkeiba_result"
+#: the default source of an official win payout (migration 0020). Migration 0023 (Feature 176)
+#: widened the CHECK to ``OFFICIAL_WIN_PAYOUT_SOURCES`` (adds ``jra_official_result``); the
+#: default and this name are unchanged so existing writers are untouched.
+OFFICIAL_WIN_PAYOUT_SOURCE = OFFICIAL_WIN_PAYOUT_SOURCES[0]
+assert OFFICIAL_WIN_PAYOUT_SOURCE == "netkeiba_result"
 
 
 class OfficialWinPayout(TimestampMixin, Base):
@@ -145,7 +154,7 @@ class OfficialWinPayout(TimestampMixin, Base):
         CheckConstraint("horse_number >= 1", name=conv("ck_official_win_payouts_horse_number")),
         CheckConstraint("payout_yen >= 100", name=conv("ck_official_win_payouts_payout_yen")),
         CheckConstraint(
-            f"source IN ('{OFFICIAL_WIN_PAYOUT_SOURCE}')",
+            OFFICIAL_WIN_PAYOUT_SOURCE_CHECK,
             name=conv("ck_official_win_payouts_source"),
         ),
     )

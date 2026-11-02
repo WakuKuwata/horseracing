@@ -117,23 +117,39 @@ def _now() -> datetime.datetime:
     return datetime.datetime.now(datetime.UTC)
 
 
+#: Counts.extra keys that mark a race as quarantined / stopped: errors=0 does not make such a run
+#: SUCCEEDED (176 research D16).
+QUARANTINE_KEYS = (
+    "quarantined_collision", "quarantined_unknown_id", "quarantined_cancel_unresolved",
+    "stopped_for_capture_window",
+)
+
+
 def _run_job(
     session: Session, *, job_type: str, scope: str, scope_value: str | None,
-    work: Callable[[], Counts],
+    work: Callable[..., Counts],
+    source: str = Source.NETKEIBA,
+    pass_job_id: bool = False,
 ) -> JobSummary:
+    """Run ``work`` as one audited ingestion job.
+
+    ``source`` names the route (176: ``Source.JRA_OFFICIAL`` for the official site) and is written
+    to ``ingestion_jobs.source``. With ``pass_job_id=True`` the job's id (flushed first) is passed
+    to ``work`` as its only argument, so provenance rows can reference the job."""
     job = IngestionJob(
-        source=Source.NETKEIBA, job_type=job_type, scope=scope, scope_value=scope_value,
+        source=source, job_type=job_type, scope=scope, scope_value=scope_value,
         status=JobStatus.RUNNING, started_at=_now(),
     )
     session.add(job)
     session.flush()
     try:
-        c = work()
+        c = work(job.ingestion_job_id) if pass_job_id else work()
         # Nothing failed but nothing was done either: report that, rather than a "succeeded" row
         # the operator has to open to discover it wrote nothing (086 made the same reclassification
         # for chaos capture, and for the same reason — the console exists to show what needs
         # attention).
-        if c.errors:
+        quarantined = any(c.extra.get(k, 0) for k in QUARANTINE_KEYS)
+        if c.errors or quarantined:
             status = JobStatus.PARTIAL
         elif c.processed == 0 and c.written == 0 and c.skipped > 0:
             status = JobStatus.SKIPPED
@@ -142,7 +158,7 @@ def _run_job(
     except Exception as exc:  # noqa: BLE001 — fatal: record FAILED, never leave 'running'
         session.rollback()
         job = IngestionJob(
-            source=Source.NETKEIBA, job_type=job_type, scope=scope, scope_value=scope_value,
+            source=source, job_type=job_type, scope=scope, scope_value=scope_value,
             status=JobStatus.FAILED, started_at=_now(), completed_at=_now(),
             error_message=str(exc), summary={"parser_version": SCRAPE_PARSER_VERSION},
         )

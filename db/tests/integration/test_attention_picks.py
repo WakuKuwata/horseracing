@@ -234,14 +234,21 @@ def test_triggers_exist(engine):
     assert names == {f"trg_{t}_reject_{k}" for t in _TABLES for k in ("mutation", "truncate")}
 
 
+_LATER_TABLES = {
+    "official_win_payouts",
+    "decision_quotes", "race_horse_field_provenance", "race_field_provenance",
+    "jra_track_conditions",
+}
+
+
 def test_downgrade_to_0018_removes_tables_and_function(alembic_cfg, engine, _migrated):
     tables_at_head = set(inspect(engine).get_table_names())
     assert set(_TABLES) <= tables_at_head
     try:
         command.downgrade(alembic_cfg, "0018_market_ev_predictions")
-        # Feature 139's official_win_payouts (0020) goes down with them
+        # every table created after 0018 goes down with them (139 payouts, 174 quotes, 176)
         assert set(inspect(engine).get_table_names()) == (
-            tables_at_head - set(_TABLES) - {"official_win_payouts"}
+            tables_at_head - set(_TABLES) - _LATER_TABLES
         )
         with engine.connect() as conn:
             fn = conn.execute(text(

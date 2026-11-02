@@ -288,6 +288,12 @@ def main(argv: list[str] | None = None) -> int:
                     help="do the whole pass, print the counts, write nothing")
     rf.add_argument("--database-url", default=None)
 
+    # Feature 176: JRA official site (jra-entries / jra-odds / jra-results / jra-payouts /
+    # jra-baba / jra-fetch / jra-audit). Registration only; the commands live in jra/cli.py.
+    from .jra.cli import register_jra_subcommands
+
+    register_jra_subcommands(sub)
+
     cap = sub.add_parser("capture-fixture", help="one-off: save a real netkeiba page as a fixture")
     cap.add_argument("--kind", required=True, choices=list(_CAPTURE))
     cap.add_argument("--race-id", help="JRA-VAN 12-digit race_id (entries/results/odds)")
@@ -297,6 +303,11 @@ def main(argv: list[str] | None = None) -> int:
     cap.add_argument("--min-interval", type=float, default=1.0)
 
     args = parser.parse_args(argv)
+
+    if args.command.startswith("jra-"):
+        from .jra.cli import run_jra
+
+        return run_jra(args)
 
     if args.command == "capture-fixture":
         return _capture_fixture(args)

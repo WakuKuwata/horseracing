@@ -48,9 +48,12 @@ _CHECKS = {
     "ck_market_ev_predictions_expected_return",
 }
 _INDEX = "ix_market_ev_predictions_model_version_computed_at"
-#: created after 0018 — they also disappear when downgrading to 0017 (Features 138, 139)
+#: created after 0018 — they also disappear when downgrading to 0017 (Features 138, 139, 174,
+#: 176)
 _TABLES_ADDED_AFTER_0018 = {
     "attention_race_scans", "attention_picks", "attention_checkpoints", "official_win_payouts",
+    "decision_quotes", "race_horse_field_provenance", "race_field_provenance",
+    "jra_track_conditions",
 }
 
 

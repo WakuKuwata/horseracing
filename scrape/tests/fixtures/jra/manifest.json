@@ -1,0 +1,247 @@
+{
+  "source": "www.jra.go.jp (survey 2026-11-01, docs/research/jra-official-site-survey-20261101.md)",
+  "policy": "raw bytes, never transcoded; cname never stored in plaintext (FR-001); odds pages are evidence fixtures only",
+  "fixtures": [
+    {
+      "kind": "index_d",
+      "file": "index_d_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessD.html",
+      "cname_sha256": "6e61e7cab5f608e15301c838d8c90fb65076f95b1c4b083f4003dd20a3f5307c",
+      "fetched_at": "2026-11-01T08:24:04+09:00",
+      "raw_sha256": "f2bfdb0472b37ba33c1e7d10d9b0e9b26d38f302bffc3ee4fdb14c36309da383",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "出馬表の索引(固定 cname)"
+    },
+    {
+      "kind": "daylist_d",
+      "file": "daylist_d_tokyo_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessD.html",
+      "cname_sha256": "bfca70ea9622fa521f5dfd229e486a0e26cd51990817bb02e29f704ef96cd4d2",
+      "fetched_at": "2026-11-01T08:25:25+09:00",
+      "raw_sha256": "63544cbb6a7208006f6443a7157c03b06a3dc1ad7141e9cc8ac76a4d27c2a683",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": "05",
+      "note": "4回東京11日のレース一覧(出馬表 1 ページへのリンクを含む)"
+    },
+    {
+      "kind": "entries",
+      "file": "entries_tokyo_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessD.html",
+      "cname_sha256": "391bd3e404fa59742b192262d5d59991ff2f565fe5e9fb4f087b9170ac5df3f9",
+      "fetched_at": "2026-11-01T08:29:44+09:00",
+      "raw_sha256": "ec645953642a33a5256cec8efc1da42f171cb6ce75632783cfe2622a14e62caf",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": "05",
+      "note": "出馬表(全 12 レース・朝 8:29 JST・馬体重未公表・取消 2 頭)"
+    },
+    {
+      "kind": "changes",
+      "file": "changes_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessI.html",
+      "cname_sha256": "0f6b5cda4f557ec6522bca54107f12dd35a87cdfdcac2168bff06a100804b5eb",
+      "fetched_at": "2026-11-01T08:24:05+09:00",
+      "raw_sha256": "099d511d0b5bb161ebe3620f062e19a2d6aba4e0d5ef3ba617e2ae7a6c0b7238",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "変更情報(東京 4R/6R 出走取消・10R 発走時刻変更)"
+    },
+    {
+      "kind": "daylist_o",
+      "file": "daylist_o_tokyo_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessO.html",
+      "cname_sha256": null,
+      "fetched_at": "2026-11-01T08:24:03+09:00",
+      "raw_sha256": "845ba5ec6ca973d2b0bb626daad755ed580c143cd0683430d933141e5a9ef996",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": "05",
+      "note": "オッズの開催日ページ(レース別 cname)。到達に使った cname は調査時に記録しておらず不明"
+    },
+    {
+      "kind": "odds_win",
+      "file": "odds_tokyo11r_20261101_0822.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessO.html",
+      "cname_sha256": "b273396f6a641080319ef59f3acb62adda350cc58eff4174f6b5068b0e1486a7",
+      "fetched_at": "2026-11-01T08:24:03+09:00",
+      "raw_sha256": "4b381d23b5cd104f693d4c61299887f0f260bb561107095ef600c64912198234",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": "05",
+      "note": "東京 11R 単複オッズ 8時22分現在。証跡 fixture(FR-001 例外)。archive/収集工程では保存しない kind"
+    },
+    {
+      "kind": "index_s",
+      "file": "index_s_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessS.html",
+      "cname_sha256": "2e464c0978784644d90318a73a2a434ce23284f2bdb20e9094e3c959a7e5e735",
+      "fetched_at": "2026-11-01T08:24:04+09:00",
+      "raw_sha256": "9ddf8809d14c0a0916951cd747c0e56432c368c0037ab779509c7eabe238a74c",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "レース結果の索引(固定 cname)"
+    },
+    {
+      "kind": "daylist_s",
+      "file": "daylist_s_tokyo_20261031.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessS.html",
+      "cname_sha256": "86b352e5bfa9d1c0ff57c57b5e48676ddcaf7e9c87a346f6a6682e763ae5998f",
+      "fetched_at": "2026-11-01T08:27:08+09:00",
+      "raw_sha256": "b4e9276c4b1619ed032c26b3b8b761d025534152c7d498bfb39d05e7ec4bee70",
+      "charset": "shift_jis",
+      "race_date": "2026-10-31",
+      "venue_code": "05",
+      "note": "4回東京10日の結果一覧"
+    },
+    {
+      "kind": "results",
+      "file": "results_tokyo_20261031.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessS.html",
+      "cname_sha256": "05d8758c2aaabda7eeb17ba81e6cd4f791084954c6590e7f005b122c20669e8e",
+      "fetched_at": "2026-11-01T08:29:45+09:00",
+      "raw_sha256": "3f93d7b8df03a75931c4eec39a48d5d3a42ca3986eb71f1ee08aa51ec0ea8276",
+      "charset": "shift_jis",
+      "race_date": "2026-10-31",
+      "venue_code": "05",
+      "note": "結果(全 12 レース・払戻 refund_area 同梱)"
+    },
+    {
+      "kind": "index_h",
+      "file": "index_h_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessH.html",
+      "cname_sha256": "68281ba82f5fd041d4e6f5c495e9a2c4b02d7b3a82ef126fc5952338ac1b7ab8",
+      "fetched_at": "2026-11-01T08:24:04+09:00",
+      "raw_sha256": "6aee8c8c08470fa7a17dc5c75e01f19e19a84299f60991ad55518e9fc87e89ff",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "払戻金の索引(固定 cname)"
+    },
+    {
+      "kind": "payouts",
+      "file": "payouts_tokyo_20261031.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessH.html",
+      "cname_sha256": "9d914b43b6377593fc0fcdeb01b5735eac9ae369f17a06fe549cd0f70fbb8c7a",
+      "fetched_at": "2026-11-01T08:27:09+09:00",
+      "raw_sha256": "df16e8439d4ae8febd4a3f05d7b15734c52cae4c765c32a48775ae7ff0685c08",
+      "charset": "shift_jis",
+      "race_date": "2026-10-31",
+      "venue_code": "05",
+      "note": "払戻金(全 12 レース)"
+    },
+    {
+      "kind": "baba_cushion",
+      "file": "baba_cushion_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/keiba/baba/_data_cushion.html",
+      "cname_sha256": null,
+      "fetched_at": "2026-11-01T08:33:32+09:00",
+      "raw_sha256": "8bfea568b4214aebc676f4d680063f9f2fd13bab367abc07ff57f605f2e4d7d4",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "クッション値断片(GET・競馬場別履歴)"
+    },
+    {
+      "kind": "baba_moist",
+      "file": "baba_moist_20261101.sjis.html",
+      "url": "https://www.jra.go.jp/keiba/baba/_data_moist.html",
+      "cname_sha256": null,
+      "fetched_at": "2026-11-01T08:33:33+09:00",
+      "raw_sha256": "08a418b722a468348693a0145dfb4e77207821d49368da8c804b77e614117270",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "含水率断片(GET)"
+    },
+    {
+      "kind": "baba_weather_json",
+      "file": "baba_week_weather_20261101.json",
+      "url": "https://www.jra.go.jp/keiba/baba/_data_week_weather.json",
+      "cname_sha256": null,
+      "fetched_at": "2026-11-01T08:33:33+09:00",
+      "raw_sha256": "2386a239322b487dbd721c4e889dfa87adbb9ce2002e78a7e653963d03f3177a",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "週間天候 JSON(参考・v1 では読まない)"
+    },
+    {
+      "kind": "accessJ",
+      "file": "accessJ_20261101.json",
+      "url": "https://www.jra.go.jp/JRADB/accessJ.html",
+      "cname_sha256": "8d43479da32e6f8f3f307b52bd6d348f12851fb8a68f225eaeceb88606a8d5f7",
+      "fetched_at": "2026-11-01T08:33:47+09:00",
+      "raw_sha256": "8d5bd535b076441acae1b96f99a15f6cd4c6d160c1065634d7cef71839ab682d",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "開催情報 JSON(Shift_JIS・UTF-8 ではない)"
+    },
+    {
+      "kind": "error_redirect",
+      "file": "error_get_redirect.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessO.html",
+      "cname_sha256": null,
+      "fetched_at": "2026-11-01T08:32:01+09:00",
+      "raw_sha256": "608e01bf941bda7aa9dd061b297c5ee0f2c1d38f6a0018de6ce6e0454dc4493f",
+      "charset": "ascii",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "GET で来る 301 本文(Location は error013)"
+    },
+    {
+      "kind": "error_param",
+      "file": "error_param.sjis.html",
+      "url": "https://www.jra.go.jp/JRADB/accessO.html",
+      "cname_sha256": null,
+      "fetched_at": "2026-11-01T08:27:09+09:00",
+      "raw_sha256": "436f42fd9e29e458ffb7ba57aed856133ad871ebf0f3fcda3337b48dada04aa2",
+      "charset": "shift_jis",
+      "race_date": "2026-11-01",
+      "venue_code": null,
+      "note": "cname 改変時の HTTP 200 パラメータエラー画面"
+    }
+  ],
+  "derived": [
+    {
+      "file": "derived/entries_missing_h_weight.sjis.html",
+      "derived_from": "entries_tokyo_20261101.sjis.html",
+      "raw_sha256": "eef05ae43ff58c76b871a555c90ae7c9c01c0d6a3588a069b2b2d49508d3490b",
+      "charset": "shift_jis",
+      "note": "出馬表から馬体重列(th/td.h_weight)を削除=列欠落で ParseError"
+    },
+    {
+      "file": "derived/entries_other_day.sjis.html",
+      "derived_from": "entries_tokyo_20261101.sjis.html",
+      "raw_sha256": "34662bc7fc2f88cb4cb56ba31d4972ef7f566bc7e4c0b717cfc218672a0280e0",
+      "charset": "shift_jis",
+      "note": "出馬表の全見出しを別日(4回東京12日・11/2)に書換え=expected_date 不一致で parse_failed"
+    },
+    {
+      "file": "derived/results_other_day.sjis.html",
+      "derived_from": "results_tokyo_20261031.sjis.html",
+      "raw_sha256": "d7651efbc2dd2002adcb4caeb6bad43fe4294f78f79cf89aa25e32edd7c9fbe1",
+      "charset": "shift_jis",
+      "note": "結果の全見出しを別日に書換え=expected_date 不一致で parse_failed"
+    },
+    {
+      "file": "derived/payouts_duplicate_combo.sjis.html",
+      "derived_from": "payouts_tokyo_20261031.sjis.html",
+      "raw_sha256": "f179b37af54f601008bfd68952a7eb95bf17e88260c691a1ea08d9865d637606",
+      "charset": "shift_jis",
+      "note": "1R 3連複ブロックの組番行を複製=組番重複で parse_failed(その券種のみ)"
+    },
+    {
+      "file": "derived/odds_missing_time.sjis.html",
+      "derived_from": "odds_tokyo11r_20261101_0822.sjis.html",
+      "raw_sha256": "ab4ef016adc82fb9951362ca3f559f45721efde1b6f5f154d3c5368eb520595d",
+      "charset": "shift_jis",
+      "note": "単複オッズの「HH時MM分現在オッズ」セルを削除=official_at 不明で ParseError"
+    }
+  ]
+}

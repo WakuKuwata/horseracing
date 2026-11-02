@@ -145,6 +145,46 @@ class ScrapedResult:
 
 
 @dataclass(frozen=True)
+class ResolvedResultRow:
+    """One result row with the CANONICAL ``horse_id`` already resolved — the common input of
+    ``upsert._insert_results`` for both routes (Feature 176, contracts/precedence.md §5).
+
+    ``finish_time`` keeps the page spelling ('1:38.5'); the writer converts it."""
+
+    horse_id: str
+    finish_order: int | None
+    result_status: str
+    finish_time: str | None
+    last_3f: float | None = None
+    corner_orders: tuple[str, ...] | None = None
+
+
+@dataclass(frozen=True)
+class ResolvedEntryHorse:
+    """One entry row with canonical ids already resolved — the common input of
+    ``upsert.upsert_entries`` (Feature 176). The netkeiba route builds it through
+    ``resolve_entity``; the official route passes the official ids straight through."""
+
+    horse_id: str
+    horse_name: str | None
+    frame: int | None
+    horse_number: int | None
+    jockey_id: str | None
+    jockey_name: str | None
+    trainer_id: str | None
+    trainer_name: str | None
+    weight: int | None
+    weight_diff: int | None
+    jockey_weight: float | None
+    sex: str | None
+    age: int | None
+    entry_status: str
+    #: extra columns for a NEW horses row only (never overwrite an existing master)
+    birth_year: int | None = None
+    data_source: str | None = None
+
+
+@dataclass(frozen=True)
 class ScrapedWinPayout:
     """Feature 139: one official 単勝 payout from the result page (dead heat = one per winner).
 

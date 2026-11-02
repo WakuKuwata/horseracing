@@ -138,5 +138,14 @@ def test_protection_is_not_pinned_to_a_column_list(session):
     """
     import inspect
 
-    src = inspect.getsource(upsert_entries)
-    assert src.count("never_blank=NEVER_BLANK_ALL") == 2  # Race と RaceHorse の両方
+    from horseracing_scrape.upsert import _write_entry_horse, _write_race_static
+
+    # races: the shared _upsert with the all-columns protection (176 kept it)
+    assert inspect.getsource(_write_race_static).count("never_blank=NEVER_BLANK_ALL") == 1
+    # race_horses: 176 replaced the COALESCE upsert with the per-group transition table; the
+    # "None keeps" rule is now the filter that builds the provided-column set, applied to every
+    # static column by iterating the group's column tuple rather than naming columns.
+    horse_src = inspect.getsource(_write_entry_horse)
+    assert "for k in _ENTRY_STATIC_COLS if getattr(h, k) is not None" in horse_src
+    assert "if h.weight is not None or h.weight_diff is not None" in horse_src
+    assert "upsert_entries" in inspect.getsource(upsert_entries)  # keeps the import honest

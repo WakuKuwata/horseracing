@@ -17,7 +17,9 @@ from .prediction import (
     RacePrediction,
     Recommendation,
 )
+from .provenance import RaceFieldProvenance, RaceHorseFieldProvenance
 from .purchase import PURCHASE_KINDS, PurchaseRecord
+from .track_conditions import JraTrackCondition
 
 __all__ = [
     "AttentionCheckpoint",
@@ -48,4 +50,7 @@ __all__ = [
     "RacePrediction",
     "FeatureSnapshot",
     "Recommendation",
+    "RaceFieldProvenance",
+    "RaceHorseFieldProvenance",
+    "JraTrackCondition",
 ]

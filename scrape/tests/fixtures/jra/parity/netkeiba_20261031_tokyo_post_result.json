@@ -1,0 +1,1666 @@
+{
+ "stage": "post_result",
+ "day": "2026-10-31",
+ "venue": "05",
+ "source": "netkeiba archive (no DB read)",
+ "id_resolution": "netkeiba_id_as_is",
+ "generated_at": "2026-11-02T01:21:45.125862+00:00",
+ "races": [
+  {
+   "race_id": "202605041001",
+   "archived_at": "2026-11-01T23:45:10.340749+00:00",
+   "page_sha256": "84533a586773823f3f5319d814ef77d6b55721c3bdc8d6435375094f880c6547",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2024106410",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:38.5",
+     "last_3f": 37.4,
+     "corner_orders": null,
+     "win_odds": 4.6,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2024103168",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:38.9",
+     "last_3f": 38.3,
+     "corner_orders": null,
+     "win_odds": 1.3,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2024102763",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:39.1",
+     "last_3f": 38.7,
+     "corner_orders": null,
+     "win_odds": 47.2,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2024105705",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:39.1",
+     "last_3f": 38.2,
+     "corner_orders": null,
+     "win_odds": 30.2,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2024106163",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:39.4",
+     "last_3f": 38.9,
+     "corner_orders": null,
+     "win_odds": 25.5,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2024108276",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:39.8",
+     "last_3f": 38.6,
+     "corner_orders": null,
+     "win_odds": 11.9,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2024100161",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:39.8",
+     "last_3f": 38.4,
+     "corner_orders": null,
+     "win_odds": 20.4,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2024102617",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:40.2",
+     "last_3f": 39.2,
+     "corner_orders": null,
+     "win_odds": 134.5,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2024104637",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:40.4",
+     "last_3f": 38.4,
+     "corner_orders": null,
+     "win_odds": 537.4,
+     "popularity": 15
+    },
+    {
+     "netkeiba_horse_id": "2024101415",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:40.5",
+     "last_3f": 38.1,
+     "corner_orders": null,
+     "win_odds": 64.2,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2024107184",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "1:41.3",
+     "last_3f": 40.5,
+     "corner_orders": null,
+     "win_odds": 141.9,
+     "popularity": 11
+    },
+    {
+     "netkeiba_horse_id": "2024103688",
+     "finish_order": 12,
+     "result_status": "finished",
+     "finish_time": "1:41.7",
+     "last_3f": 39.8,
+     "corner_orders": null,
+     "win_odds": 265.2,
+     "popularity": 14
+    },
+    {
+     "netkeiba_horse_id": "2024104246",
+     "finish_order": 13,
+     "result_status": "finished",
+     "finish_time": "1:41.8",
+     "last_3f": 39.7,
+     "corner_orders": null,
+     "win_odds": 97.9,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2024101719",
+     "finish_order": 14,
+     "result_status": "finished",
+     "finish_time": "1:41.8",
+     "last_3f": 39.6,
+     "corner_orders": null,
+     "win_odds": 176.2,
+     "popularity": 12
+    },
+    {
+     "netkeiba_horse_id": "2024102841",
+     "finish_order": 15,
+     "result_status": "finished",
+     "finish_time": "1:42.3",
+     "last_3f": 40.7,
+     "corner_orders": null,
+     "win_odds": 220.2,
+     "popularity": 13
+    },
+    {
+     "netkeiba_horse_id": "2024101618",
+     "finish_order": 16,
+     "result_status": "finished",
+     "finish_time": "1:44.4",
+     "last_3f": 42.5,
+     "corner_orders": null,
+     "win_odds": 616.8,
+     "popularity": 16
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 12,
+     "payout_yen": 460
+    }
+   ]
+  },
+  {
+   "race_id": "202605041002",
+   "archived_at": "2026-11-01T23:47:11.017541+00:00",
+   "page_sha256": "23a2bb8924ef2b881b80c2e0827e484407c340a5ca398babb5d85b27080ef7ac",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2024106751",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:35.2",
+     "last_3f": 33.6,
+     "corner_orders": null,
+     "win_odds": 1.1,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2024102437",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:36.0",
+     "last_3f": 34.3,
+     "corner_orders": null,
+     "win_odds": 29.1,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2024106838",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:36.1",
+     "last_3f": 34.6,
+     "corner_orders": null,
+     "win_odds": 41.5,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2024102379",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:36.2",
+     "last_3f": 34.3,
+     "corner_orders": null,
+     "win_odds": 5.3,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2024103626",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:36.4",
+     "last_3f": 33.9,
+     "corner_orders": null,
+     "win_odds": 22.3,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2024108317",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:36.4",
+     "last_3f": 34.2,
+     "corner_orders": null,
+     "win_odds": 43.6,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2024105504",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:36.4",
+     "last_3f": 33.9,
+     "corner_orders": null,
+     "win_odds": 49.2,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2024105070",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:36.6",
+     "last_3f": 34.7,
+     "corner_orders": null,
+     "win_odds": 269.8,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2024101835",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:36.9",
+     "last_3f": 35.4,
+     "corner_orders": null,
+     "win_odds": 20.6,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2024103657",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:37.9",
+     "last_3f": 35.6,
+     "corner_orders": null,
+     "win_odds": 451.0,
+     "popularity": 10
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 9,
+     "payout_yen": 110
+    }
+   ]
+  },
+  {
+   "race_id": "202605041003",
+   "archived_at": "2026-11-01T23:43:59.943147+00:00",
+   "page_sha256": "e92b68cccee6940ec95c2338658fea6631cee33fc8cf90a27eab30369379fdd5",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2024106508",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "2:01.0",
+     "last_3f": 33.6,
+     "corner_orders": null,
+     "win_odds": 1.3,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2024102027",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "2:01.5",
+     "last_3f": 34.4,
+     "corner_orders": null,
+     "win_odds": 21.4,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2024105988",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "2:01.7",
+     "last_3f": 34.6,
+     "corner_orders": null,
+     "win_odds": 13.5,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2024104331",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "2:01.8",
+     "last_3f": 34.4,
+     "corner_orders": null,
+     "win_odds": 12.1,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2024105910",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "2:01.9",
+     "last_3f": 34.3,
+     "corner_orders": null,
+     "win_odds": 45.3,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2024105832",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "2:02.2",
+     "last_3f": 35.2,
+     "corner_orders": null,
+     "win_odds": 5.6,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2024101275",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "2:03.0",
+     "last_3f": 35.3,
+     "corner_orders": null,
+     "win_odds": 11.6,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2024103169",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "2:03.2",
+     "last_3f": 35.9,
+     "corner_orders": null,
+     "win_odds": 87.6,
+     "popularity": 8
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 8,
+     "payout_yen": 130
+    }
+   ]
+  },
+  {
+   "race_id": "202605041004",
+   "archived_at": "2026-11-01T23:45:50.540469+00:00",
+   "page_sha256": "0cbccfa0f2287ca67f77e084beaf1aa4fec391332299b9b243e51c7634d5858f",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2024103840",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:25.6",
+     "last_3f": 36.4,
+     "corner_orders": null,
+     "win_odds": 9.3,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2024108139",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:25.7",
+     "last_3f": 36.3,
+     "corner_orders": null,
+     "win_odds": 8.8,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2024100741",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:25.8",
+     "last_3f": 36.2,
+     "corner_orders": null,
+     "win_odds": 3.7,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2024100472",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:26.4",
+     "last_3f": 36.6,
+     "corner_orders": null,
+     "win_odds": 4.3,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2024108136",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:27.3",
+     "last_3f": 37.2,
+     "corner_orders": null,
+     "win_odds": 91.7,
+     "popularity": 12
+    },
+    {
+     "netkeiba_horse_id": "2024101913",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:27.3",
+     "last_3f": 37.7,
+     "corner_orders": null,
+     "win_odds": 51.4,
+     "popularity": 11
+    },
+    {
+     "netkeiba_horse_id": "2024101831",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:27.6",
+     "last_3f": 36.7,
+     "corner_orders": null,
+     "win_odds": 11.4,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2024104068",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:27.6",
+     "last_3f": 37.0,
+     "corner_orders": null,
+     "win_odds": 196.6,
+     "popularity": 15
+    },
+    {
+     "netkeiba_horse_id": "2024102324",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:27.8",
+     "last_3f": 37.4,
+     "corner_orders": null,
+     "win_odds": 11.1,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2024103252",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:28.1",
+     "last_3f": 37.6,
+     "corner_orders": null,
+     "win_odds": 32.4,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2024106959",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "1:28.2",
+     "last_3f": 38.0,
+     "corner_orders": null,
+     "win_odds": 12.1,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2024106230",
+     "finish_order": 12,
+     "result_status": "finished",
+     "finish_time": "1:28.4",
+     "last_3f": 38.5,
+     "corner_orders": null,
+     "win_odds": 5.9,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2024104622",
+     "finish_order": 13,
+     "result_status": "finished",
+     "finish_time": "1:28.6",
+     "last_3f": 37.6,
+     "corner_orders": null,
+     "win_odds": 118.9,
+     "popularity": 13
+    },
+    {
+     "netkeiba_horse_id": "2024105784",
+     "finish_order": 14,
+     "result_status": "finished",
+     "finish_time": "1:29.0",
+     "last_3f": 37.0,
+     "corner_orders": null,
+     "win_odds": 127.9,
+     "popularity": 14
+    },
+    {
+     "netkeiba_horse_id": "2024103897",
+     "finish_order": 15,
+     "result_status": "finished",
+     "finish_time": "1:29.9",
+     "last_3f": 39.2,
+     "corner_orders": null,
+     "win_odds": 44.2,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2024102014",
+     "finish_order": 16,
+     "result_status": "finished",
+     "finish_time": "1:31.9",
+     "last_3f": 39.2,
+     "corner_orders": null,
+     "win_odds": 247.4,
+     "popularity": 16
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 3,
+     "payout_yen": 930
+    }
+   ]
+  },
+  {
+   "race_id": "202605041005",
+   "archived_at": "2026-11-01T23:45:00.235907+00:00",
+   "page_sha256": "3d06dc1440eedaa3c93b578ef21580b45d5c4f161ece92aa3675e29fb21bd703",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2024106349",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:48.8",
+     "last_3f": 33.8,
+     "corner_orders": null,
+     "win_odds": 1.4,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2024107202",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:49.3",
+     "last_3f": 34.7,
+     "corner_orders": null,
+     "win_odds": 5.3,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2024103186",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:49.3",
+     "last_3f": 34.6,
+     "corner_orders": null,
+     "win_odds": 48.2,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2024106359",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:49.3",
+     "last_3f": 34.0,
+     "corner_orders": null,
+     "win_odds": 7.4,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2024100722",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:49.5",
+     "last_3f": 34.7,
+     "corner_orders": null,
+     "win_odds": 93.0,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2024103777",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:49.6",
+     "last_3f": 34.5,
+     "corner_orders": null,
+     "win_odds": 12.1,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2024104962",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:49.6",
+     "last_3f": 34.3,
+     "corner_orders": null,
+     "win_odds": 42.7,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2024103604",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:51.7",
+     "last_3f": 36.9,
+     "corner_orders": null,
+     "win_odds": 60.0,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2024106511",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:52.1",
+     "last_3f": 37.1,
+     "corner_orders": null,
+     "win_odds": 12.6,
+     "popularity": 5
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 8,
+     "payout_yen": 140
+    }
+   ]
+  },
+  {
+   "race_id": "202605041006",
+   "archived_at": "2026-11-01T23:45:30.418008+00:00",
+   "page_sha256": "b9067bded8a293c7f1342e13512681ebd5b7b9126128d6de77af503030777efa",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2023105177",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "2:10.4",
+     "last_3f": 36.2,
+     "corner_orders": null,
+     "win_odds": 10.0,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2023104958",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "2:11.3",
+     "last_3f": 36.9,
+     "corner_orders": null,
+     "win_odds": 4.7,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2023102833",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "2:11.7",
+     "last_3f": 37.2,
+     "corner_orders": null,
+     "win_odds": 9.6,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2023103731",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "2:11.8",
+     "last_3f": 37.2,
+     "corner_orders": null,
+     "win_odds": 11.7,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2023101301",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "2:11.9",
+     "last_3f": 37.8,
+     "corner_orders": null,
+     "win_odds": 11.2,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2023102750",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "2:12.5",
+     "last_3f": 37.5,
+     "corner_orders": null,
+     "win_odds": 5.3,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2023107348",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "2:12.6",
+     "last_3f": 37.5,
+     "corner_orders": null,
+     "win_odds": 12.8,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2019103219",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "2:12.7",
+     "last_3f": 37.4,
+     "corner_orders": null,
+     "win_odds": 31.8,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2022105863",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "2:12.8",
+     "last_3f": 38.0,
+     "corner_orders": null,
+     "win_odds": 3.1,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2023101644",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "2:13.0",
+     "last_3f": 37.5,
+     "corner_orders": null,
+     "win_odds": 81.0,
+     "popularity": 11
+    },
+    {
+     "netkeiba_horse_id": "2022105337",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "2:13.5",
+     "last_3f": 38.7,
+     "corner_orders": null,
+     "win_odds": 296.8,
+     "popularity": 15
+    },
+    {
+     "netkeiba_horse_id": "2023106177",
+     "finish_order": 12,
+     "result_status": "finished",
+     "finish_time": "2:14.2",
+     "last_3f": 37.2,
+     "corner_orders": null,
+     "win_odds": 245.6,
+     "popularity": 14
+    },
+    {
+     "netkeiba_horse_id": "2022102991",
+     "finish_order": 13,
+     "result_status": "finished",
+     "finish_time": "2:14.3",
+     "last_3f": 39.0,
+     "corner_orders": null,
+     "win_odds": 173.3,
+     "popularity": 13
+    },
+    {
+     "netkeiba_horse_id": "2023103698",
+     "finish_order": 14,
+     "result_status": "finished",
+     "finish_time": "2:16.3",
+     "last_3f": 42.2,
+     "corner_orders": null,
+     "win_odds": 54.7,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2023105654",
+     "finish_order": 15,
+     "result_status": "finished",
+     "finish_time": "2:19.6",
+     "last_3f": 42.1,
+     "corner_orders": null,
+     "win_odds": 143.6,
+     "popularity": 12
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 16,
+     "payout_yen": 1000
+    }
+   ]
+  },
+  {
+   "race_id": "202605041007",
+   "archived_at": "2026-11-01T23:46:00.598496+00:00",
+   "page_sha256": "645c7db7754177e0e77c287e9779d1bcd3acd4f1a23f0f73f3ebc5450c6a18df",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2023107164",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:58.5",
+     "last_3f": 33.9,
+     "corner_orders": null,
+     "win_odds": 2.6,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2022105153",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:58.6",
+     "last_3f": 33.8,
+     "corner_orders": null,
+     "win_odds": 10.3,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2022105365",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:58.6",
+     "last_3f": 33.9,
+     "corner_orders": null,
+     "win_odds": 32.9,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2023105783",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:58.7",
+     "last_3f": 34.8,
+     "corner_orders": null,
+     "win_odds": 3.3,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2022105864",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:59.2",
+     "last_3f": 35.0,
+     "corner_orders": null,
+     "win_odds": 6.2,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2023105375",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:59.2",
+     "last_3f": 35.0,
+     "corner_orders": null,
+     "win_odds": 7.2,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2022104716",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:59.7",
+     "last_3f": 35.1,
+     "corner_orders": null,
+     "win_odds": 38.8,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2023104576",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:59.8",
+     "last_3f": 35.3,
+     "corner_orders": null,
+     "win_odds": 40.3,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2023101812",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "2:00.3",
+     "last_3f": 35.9,
+     "corner_orders": null,
+     "win_odds": 237.6,
+     "popularity": 11
+    },
+    {
+     "netkeiba_horse_id": "2023104628",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "2:00.5",
+     "last_3f": 36.1,
+     "corner_orders": null,
+     "win_odds": 43.0,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2023105002",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "2:00.6",
+     "last_3f": 36.6,
+     "corner_orders": null,
+     "win_odds": 13.4,
+     "popularity": 6
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 5,
+     "payout_yen": 260
+    }
+   ]
+  },
+  {
+   "race_id": "202605041008",
+   "archived_at": "2026-11-01T23:47:21.010828+00:00",
+   "page_sha256": "8a5f06bc829d88de1bb0d75b972d0f313224a53341d6c6cdc8dca409feedfe30",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2023103365",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:25.0",
+     "last_3f": 36.0,
+     "corner_orders": null,
+     "win_odds": 1.6,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2023104852",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:25.1",
+     "last_3f": 35.3,
+     "corner_orders": null,
+     "win_odds": 83.9,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2022104758",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:25.2",
+     "last_3f": 35.6,
+     "corner_orders": null,
+     "win_odds": 24.1,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2022106699",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:25.2",
+     "last_3f": 36.3,
+     "corner_orders": null,
+     "win_odds": 5.2,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2021103776",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:25.3",
+     "last_3f": 35.9,
+     "corner_orders": null,
+     "win_odds": 24.6,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2020101412",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:25.5",
+     "last_3f": 36.2,
+     "corner_orders": null,
+     "win_odds": 85.1,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2020101764",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:25.6",
+     "last_3f": 36.3,
+     "corner_orders": null,
+     "win_odds": 85.1,
+     "popularity": 11
+    },
+    {
+     "netkeiba_horse_id": "2023103171",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:25.7",
+     "last_3f": 36.6,
+     "corner_orders": null,
+     "win_odds": 23.9,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2022102026",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:25.9",
+     "last_3f": 36.8,
+     "corner_orders": null,
+     "win_odds": 9.5,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2020104174",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:25.9",
+     "last_3f": 36.7,
+     "corner_orders": null,
+     "win_odds": 61.6,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2021101015",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "1:26.2",
+     "last_3f": 37.4,
+     "corner_orders": null,
+     "win_odds": 144.4,
+     "popularity": 12
+    },
+    {
+     "netkeiba_horse_id": "2021101121",
+     "finish_order": 12,
+     "result_status": "finished",
+     "finish_time": "1:26.3",
+     "last_3f": 36.8,
+     "corner_orders": null,
+     "win_odds": 6.6,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2020107095",
+     "finish_order": 13,
+     "result_status": "finished",
+     "finish_time": "1:26.7",
+     "last_3f": 37.0,
+     "corner_orders": null,
+     "win_odds": 207.3,
+     "popularity": 13
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 7,
+     "payout_yen": 160
+    }
+   ]
+  },
+  {
+   "race_id": "202605041009",
+   "archived_at": "2026-11-01T23:45:40.459008+00:00",
+   "page_sha256": "c2203e5062cc53870cd5528bf89b3464db4dcdcbcd181f7b0fbc6923e6d7df66",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2024105753",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:24.9",
+     "last_3f": 36.7,
+     "corner_orders": null,
+     "win_odds": 1.8,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2024101076",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:25.2",
+     "last_3f": 37.2,
+     "corner_orders": null,
+     "win_odds": 21.7,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2024101716",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:25.4",
+     "last_3f": 37.4,
+     "corner_orders": null,
+     "win_odds": 8.4,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2024101709",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:25.6",
+     "last_3f": 36.5,
+     "corner_orders": null,
+     "win_odds": 3.1,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2024102461",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:26.0",
+     "last_3f": 36.7,
+     "corner_orders": null,
+     "win_odds": 155.2,
+     "popularity": 12
+    },
+    {
+     "netkeiba_horse_id": "2024101206",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:26.4",
+     "last_3f": 37.3,
+     "corner_orders": null,
+     "win_odds": 128.7,
+     "popularity": 11
+    },
+    {
+     "netkeiba_horse_id": "2024103097",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:26.6",
+     "last_3f": 37.9,
+     "corner_orders": null,
+     "win_odds": 65.1,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2024105078",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:26.8",
+     "last_3f": 38.2,
+     "corner_orders": null,
+     "win_odds": 68.9,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2024101687",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:26.8",
+     "last_3f": 38.1,
+     "corner_orders": null,
+     "win_odds": 12.4,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2024101581",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:26.9",
+     "last_3f": 38.8,
+     "corner_orders": null,
+     "win_odds": 70.2,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2024100292",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "1:27.3",
+     "last_3f": 38.4,
+     "corner_orders": null,
+     "win_odds": 97.6,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2024100744",
+     "finish_order": 12,
+     "result_status": "finished",
+     "finish_time": "1:27.7",
+     "last_3f": 39.0,
+     "corner_orders": null,
+     "win_odds": 14.2,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2024105532",
+     "finish_order": 13,
+     "result_status": "finished",
+     "finish_time": "1:28.0",
+     "last_3f": 39.6,
+     "corner_orders": null,
+     "win_odds": 240.4,
+     "popularity": 14
+    },
+    {
+     "netkeiba_horse_id": "2024103977",
+     "finish_order": 14,
+     "result_status": "finished",
+     "finish_time": "1:28.0",
+     "last_3f": 39.0,
+     "corner_orders": null,
+     "win_odds": 172.4,
+     "popularity": 13
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 4,
+     "payout_yen": 180
+    }
+   ]
+  },
+  {
+   "race_id": "202605041010",
+   "archived_at": "2026-11-01T23:44:50.168046+00:00",
+   "page_sha256": "f11e7b50c6a8f776657d58e073d294cff4a8ba9ebfb36bd7c3386cd30d921e63",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2023101566",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:33.2",
+     "last_3f": 33.9,
+     "corner_orders": null,
+     "win_odds": 2.1,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2022105038",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:33.3",
+     "last_3f": 34.1,
+     "corner_orders": null,
+     "win_odds": 2.0,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2021103799",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:33.4",
+     "last_3f": 33.7,
+     "corner_orders": null,
+     "win_odds": 46.9,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2021105252",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:33.5",
+     "last_3f": 34.0,
+     "corner_orders": null,
+     "win_odds": 23.1,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2023100504",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:33.6",
+     "last_3f": 34.4,
+     "corner_orders": null,
+     "win_odds": 12.5,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2020101184",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:34.0",
+     "last_3f": 34.1,
+     "corner_orders": null,
+     "win_odds": 95.2,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2023106960",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:34.1",
+     "last_3f": 35.1,
+     "corner_orders": null,
+     "win_odds": 9.6,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2022105807",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:34.1",
+     "last_3f": 35.1,
+     "corner_orders": null,
+     "win_odds": 28.1,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2021102468",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:34.7",
+     "last_3f": 35.0,
+     "corner_orders": null,
+     "win_odds": 244.8,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2021100008",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:34.7",
+     "last_3f": 35.2,
+     "corner_orders": null,
+     "win_odds": 337.1,
+     "popularity": 10
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 7,
+     "payout_yen": 210
+    }
+   ]
+  },
+  {
+   "race_id": "202605041011",
+   "archived_at": "2026-11-01T23:45:20.445812+00:00",
+   "page_sha256": "cc0cb9e3629c4248a4de95673b9cfb3a1789f6f49d199e8c82b39708be54605c",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2020103331",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:35.1",
+     "last_3f": 35.1,
+     "corner_orders": null,
+     "win_odds": 6.9,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2023106651",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:35.2",
+     "last_3f": 35.4,
+     "corner_orders": null,
+     "win_odds": 12.9,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2022104743",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:35.4",
+     "last_3f": 36.0,
+     "corner_orders": null,
+     "win_odds": 5.1,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2022100204",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:35.5",
+     "last_3f": 36.4,
+     "corner_orders": null,
+     "win_odds": 3.3,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2020102724",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:35.6",
+     "last_3f": 36.2,
+     "corner_orders": null,
+     "win_odds": 10.5,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2021110069",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:35.7",
+     "last_3f": 36.8,
+     "corner_orders": null,
+     "win_odds": 104.6,
+     "popularity": 15
+    },
+    {
+     "netkeiba_horse_id": "2022102117",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:35.7",
+     "last_3f": 36.3,
+     "corner_orders": null,
+     "win_odds": 9.5,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2020103005",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:35.8",
+     "last_3f": 35.2,
+     "corner_orders": null,
+     "win_odds": 8.4,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2020101808",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:36.0",
+     "last_3f": 37.3,
+     "corner_orders": null,
+     "win_odds": 30.6,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2019103593",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:36.1",
+     "last_3f": 36.5,
+     "corner_orders": null,
+     "win_odds": 93.1,
+     "popularity": 14
+    },
+    {
+     "netkeiba_horse_id": "2020103148",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "1:36.2",
+     "last_3f": 36.1,
+     "corner_orders": null,
+     "win_odds": 76.0,
+     "popularity": 12
+    },
+    {
+     "netkeiba_horse_id": "2022100653",
+     "finish_order": 12,
+     "result_status": "finished",
+     "finish_time": "1:36.2",
+     "last_3f": 36.6,
+     "corner_orders": null,
+     "win_odds": 41.2,
+     "popularity": 11
+    },
+    {
+     "netkeiba_horse_id": "2022104584",
+     "finish_order": 13,
+     "result_status": "finished",
+     "finish_time": "1:36.2",
+     "last_3f": 36.6,
+     "corner_orders": null,
+     "win_odds": 24.9,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2022104983",
+     "finish_order": 14,
+     "result_status": "finished",
+     "finish_time": "1:37.0",
+     "last_3f": 37.8,
+     "corner_orders": null,
+     "win_odds": 15.7,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2021100895",
+     "finish_order": 15,
+     "result_status": "finished",
+     "finish_time": "1:39.3",
+     "last_3f": 40.6,
+     "corner_orders": null,
+     "win_odds": 112.9,
+     "popularity": 16
+    },
+    {
+     "netkeiba_horse_id": "2020103275",
+     "finish_order": 16,
+     "result_status": "finished",
+     "finish_time": "1:40.3",
+     "last_3f": 41.2,
+     "corner_orders": null,
+     "win_odds": 76.4,
+     "popularity": 13
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 6,
+     "payout_yen": 690
+    }
+   ]
+  },
+  {
+   "race_id": "202605041012",
+   "archived_at": "2026-11-01T23:46:50.878727+00:00",
+   "page_sha256": "6f0b0de2b6f56267c313ed4291b06c0e2e2ee21cf8174d84f9379dd3e5f15d1a",
+   "rows": [
+    {
+     "netkeiba_horse_id": "2023105238",
+     "finish_order": 1,
+     "result_status": "finished",
+     "finish_time": "1:47.7",
+     "last_3f": 33.3,
+     "corner_orders": null,
+     "win_odds": 1.6,
+     "popularity": 1
+    },
+    {
+     "netkeiba_horse_id": "2022104875",
+     "finish_order": 2,
+     "result_status": "finished",
+     "finish_time": "1:47.8",
+     "last_3f": 33.1,
+     "corner_orders": null,
+     "win_odds": 3.5,
+     "popularity": 2
+    },
+    {
+     "netkeiba_horse_id": "2023103814",
+     "finish_order": 3,
+     "result_status": "finished",
+     "finish_time": "1:47.9",
+     "last_3f": 33.3,
+     "corner_orders": null,
+     "win_odds": 13.7,
+     "popularity": 3
+    },
+    {
+     "netkeiba_horse_id": "2023106905",
+     "finish_order": 4,
+     "result_status": "finished",
+     "finish_time": "1:48.0",
+     "last_3f": 33.5,
+     "corner_orders": null,
+     "win_odds": 13.7,
+     "popularity": 4
+    },
+    {
+     "netkeiba_horse_id": "2023110018",
+     "finish_order": 5,
+     "result_status": "finished",
+     "finish_time": "1:48.2",
+     "last_3f": 32.9,
+     "corner_orders": null,
+     "win_odds": 16.8,
+     "popularity": 5
+    },
+    {
+     "netkeiba_horse_id": "2023103045",
+     "finish_order": 6,
+     "result_status": "finished",
+     "finish_time": "1:48.2",
+     "last_3f": 33.4,
+     "corner_orders": null,
+     "win_odds": 253.0,
+     "popularity": 12
+    },
+    {
+     "netkeiba_horse_id": "2023102504",
+     "finish_order": 7,
+     "result_status": "finished",
+     "finish_time": "1:48.3",
+     "last_3f": 33.4,
+     "corner_orders": null,
+     "win_odds": 78.8,
+     "popularity": 10
+    },
+    {
+     "netkeiba_horse_id": "2023107329",
+     "finish_order": 8,
+     "result_status": "finished",
+     "finish_time": "1:48.4",
+     "last_3f": 33.8,
+     "corner_orders": null,
+     "win_odds": 30.6,
+     "popularity": 7
+    },
+    {
+     "netkeiba_horse_id": "2023103298",
+     "finish_order": 9,
+     "result_status": "finished",
+     "finish_time": "1:48.7",
+     "last_3f": 33.6,
+     "corner_orders": null,
+     "win_odds": 37.5,
+     "popularity": 8
+    },
+    {
+     "netkeiba_horse_id": "2023107111",
+     "finish_order": 10,
+     "result_status": "finished",
+     "finish_time": "1:48.7",
+     "last_3f": 33.7,
+     "corner_orders": null,
+     "win_odds": 55.0,
+     "popularity": 9
+    },
+    {
+     "netkeiba_horse_id": "2023106432",
+     "finish_order": 11,
+     "result_status": "finished",
+     "finish_time": "1:48.7",
+     "last_3f": 34.4,
+     "corner_orders": null,
+     "win_odds": 20.2,
+     "popularity": 6
+    },
+    {
+     "netkeiba_horse_id": "2023104389",
+     "finish_order": 12,
+     "result_status": "finished",
+     "finish_time": "1:50.4",
+     "last_3f": 34.8,
+     "corner_orders": null,
+     "win_odds": 165.1,
+     "popularity": 11
+    }
+   ],
+   "win_payouts": [
+    {
+     "horse_number": 7,
+     "payout_yen": 160
+    }
+   ]
+  }
+ ]
+}

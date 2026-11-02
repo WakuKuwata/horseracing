@@ -39,6 +39,12 @@ _NETKEIBA_KEY = "netkeiba.com"
 #: the policy in ONE place; a caller cannot weaken it (see RequestPoliteness._interval_for).
 SOURCE_INTERVAL_ENV = "HORSERACING_NETKEIBA_MIN_INTERVAL_S"
 _DEFAULT_NETKEIBA_INTERVAL_S = 1.0
+#: Feature 176: the JRA official site is a second operator with its own bucket. Its interval has NO
+#: default — it must arrive from the policy file through this env var (research D3 / FR-003), and
+#: anything below the floor is refused. A missing value means "send nothing", not "send fast".
+_JRA_KEY = "jra.go.jp"
+JRA_SOURCE_INTERVAL_ENV = "HORSERACING_JRA_MIN_INTERVAL_S"
+JRA_MIN_INTERVAL_FLOOR_S = 10.0
 
 
 def throttle_key(url: str) -> str:
@@ -50,11 +56,42 @@ def throttle_key(url: str) -> str:
     host = (urlsplit(url).hostname or "").lower()
     if host == _NETKEIBA_KEY or host.endswith("." + _NETKEIBA_KEY):
         return _NETKEIBA_KEY
+    if host == _JRA_KEY or host.endswith("." + _JRA_KEY):
+        return _JRA_KEY
     return _domain(url)
 
 
+def jra_source_interval_s(raw: str | None) -> float:
+    """Parse the JRA interval setting strictly. Raises ``SourceIntervalUnconfigured`` on anything
+    that is not a finite number ≥ the floor (unset, blank, NaN, inf, too small)."""
+    from .jra.errors import SourceIntervalUnconfigured
+
+    if raw is None or not raw.strip():
+        raise SourceIntervalUnconfigured(
+            f"{JRA_SOURCE_INTERVAL_ENV} is not set; the JRA route sends nothing without it"
+        )
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise SourceIntervalUnconfigured(
+            f"{JRA_SOURCE_INTERVAL_ENV}={raw!r} is not a number"
+        ) from exc
+    if value != value or value in (float("inf"), float("-inf")):
+        raise SourceIntervalUnconfigured(f"{JRA_SOURCE_INTERVAL_ENV}={raw!r} is not finite")
+    if value < JRA_MIN_INTERVAL_FLOOR_S:
+        raise SourceIntervalUnconfigured(
+            f"{JRA_SOURCE_INTERVAL_ENV}={raw!r} is below the floor of {JRA_MIN_INTERVAL_FLOOR_S:g}s"
+        )
+    return value
+
+
 def source_interval_s(key: str) -> float:
-    """Seconds between requests owed to ``key``. One contract, read from one place."""
+    """Seconds between requests owed to ``key``. One contract, read from one place.
+
+    netkeiba and every other host behave exactly as before 176. The JRA key alone is strict:
+    see :func:`jra_source_interval_s`."""
+    if key == _JRA_KEY:
+        return jra_source_interval_s(os.environ.get(JRA_SOURCE_INTERVAL_ENV))
     if key != _NETKEIBA_KEY:
         return 0.0
     raw = os.environ.get(SOURCE_INTERVAL_ENV)
@@ -122,6 +159,7 @@ class RequestPoliteness:
         sleep: Callable[[float], None] = time.sleep,
         deadline_budget: DeadlineSource | None = None,
         before_reserve: Callable[[str], None] | None = None,
+        wait_out_cooldown: bool = True,
     ) -> None:
         if min_interval_s < 0:
             raise ValueError("min_interval_s must be non-negative")
@@ -132,6 +170,11 @@ class RequestPoliteness:
         #: None = background contract: wait for the slot (and through a cooldown) instead of
         #: refusing. A number = bounded caller (capture): refuse once the wait exceeds it.
         self.max_wait_s = None if max_wait_s is None else float(max_wait_s)
+        #: Feature 176: the JRA CLI waits for its SLOT but never waits out a source COOLDOWN — a
+        #: refusal means "stop today's run" (FR-005), and a run that quietly sat through a 30- to
+        #: 60-minute cooldown would hide that from the operator. netkeiba callers keep the old
+        #: behaviour (True).
+        self.wait_out_cooldown = bool(wait_out_cooldown)
         self._sleep = sleep
         self._deadline_budget = deadline_budget
         #: 2026-11-02: called immediately before EVERY ``reserve`` attempt (not once per request).
@@ -269,7 +312,7 @@ class RequestPoliteness:
         # process while we were queuing.
         self._ensure_deadline(url)
         if self._is_blocked(key):
-            if self.max_wait_s is None:
+            if self.max_wait_s is None and self.wait_out_cooldown:
                 self._sleep(_COOLDOWN_POLL_S)
                 return self.pre_request(url)
             raise PolitenessRefused("source_cooldown", url)
@@ -278,8 +321,11 @@ class RequestPoliteness:
     def _wait_for(self, decision: ReservationDecision, key: str) -> float | None:
         """How long to pause before retrying, or None if this caller must refuse instead."""
         if decision.reason == "source_cooldown":
-            # Unbounded callers wait a blocked source out; bounded ones cannot.
-            return _COOLDOWN_POLL_S if self.max_wait_s is None else None
+            # Unbounded callers wait a blocked source out; bounded ones cannot. A caller that
+            # opted out of waiting through cooldowns (JRA, 176) refuses as well.
+            if self.max_wait_s is None and self.wait_out_cooldown:
+                return _COOLDOWN_POLL_S
+            return None
         if self.max_wait_s is None:
             return decision.wait_s
         return decision.wait_s if decision.wait_s <= self.max_wait_s else None
@@ -334,6 +380,13 @@ class RequestPoliteness:
                 row.blocked_until = proposed_until
                 row.block_reason = reason
             row.updated_at = now
+
+    def ping(self) -> None:
+        """Open one short session and run ``SELECT 1`` — proves the shared limiter's database is
+        reachable BEFORE any HTTP is attempted (Feature 176 startup check; engines are lazy, so
+        constructing one proves nothing). Raises the driver's error on failure."""
+        with self._session_factory() as session:
+            session.execute(select(1))
 
     def _remaining(self) -> float | None:
         return None if self._deadline_budget is None else self._deadline_budget.remaining()

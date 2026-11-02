@@ -20,9 +20,11 @@ HOLD_AFTER_S]`` per race (≈35 s at the 10 s interval, ≈13 min over a 23-race
 
 The holds are DERIVED, not negotiated: a day listed in ``capture_only_dates`` of the public
 policy (``config/source-operations.json``) has holds, computed from the DB's flat races with a
-post time (the same filter as live/near_post.py ``day_races``); the schedule rule is replicated
-here because ops must not import live, and pinned to live's ``schedule_day`` by the shared
-fixture ``specs/174-near-post-decision-quotes/fixtures/capture-schedule-parity.json``. No process
+post time (the same filter as live/near_post.py ``day_races``); the schedule rule lives in
+``horseracing_scrape.capture_window`` (Feature 176 moved it there so the JRA official route can
+observe the same holds without importing ops; ops must not import live), and is pinned to live's
+``schedule_day`` by the shared fixture
+``specs/174-near-post-decision-quotes/fixtures/capture-schedule-parity.json``. No process
 registration: a hold without a running capture costs a refresh at most ~35 s.
 
 Consumers: the worker's fetcher waits (never refuses) through a hold before each slot reservation
@@ -33,102 +35,46 @@ today's holds. Predict, recommend, purchase records and expected_return never to
 
 from __future__ import annotations
 
-import dataclasses
 import datetime
-import json
 import logging
 import os
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from pathlib import Path
 
-from horseracing_db.models import Race
+from horseracing_scrape import capture_window as _shared
+from horseracing_scrape.capture_window import (  # noqa: F401 — re-exported for ops callers
+    CAPTURE_DEADLINE_S,
+    COLLISION_STEP_S,
+    HOLD_AFTER_S,
+    HOLD_BEFORE_MARGIN_S,
+    JST,
+    JUMP_TRACK,
+    TARGET_S,
+    WINDOW_S,
+    CaptureDay,
+    CaptureHold,
+    FetchTime,
+    day_races,
+    fetch_times,
+    holds_for,
+)
+from horseracing_scrape.capture_window import (
+    capture_dates as _capture_dates,
+)
 from horseracing_scrape.politeness import source_interval_s, throttle_key
-from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .config import _REPO_ROOT, CONFIG
 
-JST = datetime.timezone(datetime.timedelta(hours=9))
 POLICY_PATH_ENV = "OPS_SOURCE_OPERATIONS_PATH"
 DEFAULT_POLICY_PATH = _REPO_ROOT / "config" / "source-operations.json"
-JUMP_TRACK = "障"
-
-#: live/near_post.py schedule constants, replicated (ops must not import live). Drift between the
-#: two is caught by the shared parity fixture (tests/integration/test_capture_window.py).
-TARGET_S = 180
-WINDOW_S = 60
-COLLISION_STEP_S = 60
-CAPTURE_DEADLINE_S = 18.0
-#: hold = [fetch_at − (interval + HOLD_BEFORE_MARGIN_S), fetch_at + HOLD_AFTER_S]
-HOLD_BEFORE_MARGIN_S = 5.0
-HOLD_AFTER_S = 20.0
 #: a hold can never be longer than this by construction (interval ≤ 60 s is the policy's range);
 #: the waiting hook refuses to wait longer, so a bad clock or policy cannot stall a worker lane.
 MAX_WAIT_S = 120.0
 _NETKEIBA_URL = "https://race.netkeiba.com/"
 
 log = logging.getLogger(__name__)
-
-
-@dataclasses.dataclass(frozen=True)
-class CaptureHold:
-    """One race's hold: ops reserves no slot inside ``[starts_at, ends_at)``."""
-
-    race_id: str
-    post_time: datetime.datetime
-    fetch_at: datetime.datetime
-    starts_at: datetime.datetime
-    ends_at: datetime.datetime
-
-    def active_at(self, now: datetime.datetime) -> bool:
-        return self.starts_at <= now < self.ends_at
-
-    def ends_at_jst(self) -> str:
-        return self.ends_at.astimezone(JST).strftime("%H:%M:%S")
-
-
-@dataclasses.dataclass(frozen=True)
-class CaptureDay:
-    """Today's holds (the policy lists the day and the DB has flat races with a post time)."""
-
-    date: datetime.date
-    holds: tuple[CaptureHold, ...]
-    interval_s: float
-
-    @property
-    def n_races(self) -> int:
-        return len(self.holds)
-
-    @property
-    def starts_at(self) -> datetime.datetime:
-        return self.holds[0].starts_at
-
-    @property
-    def ends_at(self) -> datetime.datetime:
-        return self.holds[-1].ends_at
-
-    @property
-    def hold_seconds(self) -> float:
-        return self.interval_s + HOLD_BEFORE_MARGIN_S + HOLD_AFTER_S
-
-    def active_hold(self, now: datetime.datetime) -> CaptureHold | None:
-        return next((h for h in self.holds if h.active_at(now)), None)
-
-    def next_hold(self, now: datetime.datetime) -> CaptureHold | None:
-        return next((h for h in self.holds if h.starts_at > now), None)
-
-    def hold_ends_at(self, now: datetime.datetime) -> datetime.datetime | None:
-        """When fetching resumes: the end of the run of overlapping/adjacent holds that is open
-        now (two venues posting a minute apart make one longer pause), else None."""
-        h = self.active_hold(now)
-        if h is None:
-            return None
-        end = h.ends_at
-        for nxt in self.holds:
-            if nxt.starts_at <= end < nxt.ends_at:
-                end = nxt.ends_at
-        return end
 
 
 def policy_path() -> Path:
@@ -139,14 +85,7 @@ def capture_dates(path: Path | None = None) -> frozenset[datetime.date]:
     """The approved capture days as data. A missing or malformed policy means "no capture days"
     (logged): the hold is a courtesy to the capture, not the source-politeness contract, which the
     shared limiter enforces regardless."""
-    p = path or policy_path()
-    try:
-        raw = json.loads(p.read_text(encoding="utf-8"))
-        dates = raw.get("capture_only_dates") or []
-        return frozenset(datetime.date.fromisoformat(str(d)) for d in dates)
-    except (OSError, ValueError, AttributeError, TypeError) as exc:
-        log.warning("capture_only_dates unreadable from %s: %s", p, type(exc).__name__)
-        return frozenset()
+    return _capture_dates(path or policy_path())
 
 
 def effective_interval_s() -> float:
@@ -155,59 +94,11 @@ def effective_interval_s() -> float:
     return max(float(CONFIG.fetch_min_interval), source_interval_s(throttle_key(_NETKEIBA_URL)))
 
 
-FetchTime = tuple[str, datetime.datetime, datetime.datetime]
-
-
-def fetch_times(races: Sequence[tuple[str, datetime.datetime]]) -> list[FetchTime]:
-    """``(race_id, post_time, fetch_at)`` per race — live ``schedule_day``'s ``window_open``:
-    post − (TARGET_S + k·COLLISION_STEP_S) − WINDOW_S, k = index among same-post races in race_id
-    order. Sorted by (fetch_at, race_id)."""
-    by_post: dict[datetime.datetime, list[str]] = {}
-    for rid, pt in races:
-        if pt is None or pt.tzinfo is None or pt.utcoffset() is None:
-            raise ValueError(f"{rid}: post_time must be timezone-aware")
-        by_post.setdefault(pt, []).append(rid)
-    out: list[FetchTime] = []
-    for pt in sorted(by_post):
-        for k, rid in enumerate(sorted(by_post[pt])):
-            offset = TARGET_S + k * COLLISION_STEP_S + WINDOW_S
-            out.append((rid, pt, pt - datetime.timedelta(seconds=offset)))
-    out.sort(key=lambda t: (t[2], t[0]))
-    return out
-
-
-def holds_for(
-    races: Sequence[tuple[str, datetime.datetime]], *, interval_s: float
-) -> tuple[CaptureHold, ...]:
-    before = datetime.timedelta(seconds=interval_s + HOLD_BEFORE_MARGIN_S)
-    after = datetime.timedelta(seconds=HOLD_AFTER_S)
-    return tuple(
-        CaptureHold(race_id=rid, post_time=pt, fetch_at=fa,
-                    starts_at=fa - before, ends_at=fa + after)
-        for rid, pt, fa in fetch_times(races)
-    )
-
-
-def day_races(session: Session, day: datetime.date) -> list[tuple[str, datetime.datetime]]:
-    """The flat races of ``day`` with a post time — the same selection as live ``day_races``."""
-    rows = session.execute(
-        select(Race.race_id, Race.post_time)
-        .where(Race.race_date == day)
-        .where(Race.post_time.is_not(None))
-        .where(or_(Race.track_type.is_(None), Race.track_type != JUMP_TRACK))
-        .order_by(Race.post_time, Race.race_id)
-    ).all()
-    return [(str(r), p) for r, p in rows]
-
-
 def capture_day_for(
     session: Session, day: datetime.date, *, interval_s: float | None = None
 ) -> CaptureDay | None:
-    races = day_races(session, day)
-    if not races:
-        return None
     interval = effective_interval_s() if interval_s is None else float(interval_s)
-    return CaptureDay(date=day, holds=holds_for(races, interval_s=interval), interval_s=interval)
+    return _shared.capture_day_for(session, day, interval_s=interval)
 
 
 def today_capture_day(

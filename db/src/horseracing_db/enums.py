@@ -49,11 +49,18 @@ class EntityType:
 
 
 class Source:
-    """Data source identifiers."""
+    """Data source identifiers.
+
+    ``JRA_OFFICIAL`` (Feature 176, migration 0023) is the JRA official site route. It is a valid
+    value for ingestion_jobs / exotic_odds / race_laps / the provenance tables; ``id_mappings``
+    accepts it through the shared CHECK but the official route never writes there (its ids ARE
+    the canonical ids — constitution I interpretation recorded in specs/176 plan.md).
+    """
 
     JRA_VAN = "jra_van"
     NETKEIBA = "netkeiba"
-    ALL = (JRA_VAN, NETKEIBA)
+    JRA_OFFICIAL = "jra_official"
+    ALL = (JRA_VAN, NETKEIBA, JRA_OFFICIAL)
 
 
 class JobStatus:

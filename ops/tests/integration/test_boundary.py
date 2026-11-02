@@ -40,3 +40,17 @@ def test_ops_has_no_forbidden_imports():
         if bad:
             offenders[str(py.relative_to(OPS_SRC))] = bad
     assert not offenders, f"forbidden imports in ops (leak/separation boundary): {offenders}"
+
+
+SCRAPE_SRC = pathlib.Path(__file__).resolve().parents[3] / "scrape" / "src" / "horseracing_scrape"
+
+
+def test_scrape_never_imports_ops():
+    """Feature 176 moved the capture-window computation from ops into scrape (ops re-exports it).
+    The dependency stays one-way: scrape — and so every JRA route — never imports ops."""
+    offenders = {
+        str(py.relative_to(SCRAPE_SRC)): bad
+        for py in SCRAPE_SRC.rglob("*.py")
+        if (bad := _imports(py) & {"horseracing_ops"})
+    }
+    assert not offenders, f"scrape imports ops (reverse dependency): {offenders}"

@@ -44,6 +44,13 @@ def unique(pairs):
 CAPTURE_ONLY_KEYS = frozenset(
     {"capture_only_dates", "capture_only_approved_by", "capture_only_approved_at"}
 )
+#: Feature 176: the JRA official site's per-request interval. OPTIONAL in the policy so an older
+#: reader keeps working (rollout order: this reader first, then the key, research D3). When present
+#: it must be a finite number >= the floor, and ``apply_policy`` copies it to the env var the JRA
+#: CLI requires (``HORSERACING_JRA_MIN_INTERVAL_S``); absent, the JRA CLI refuses to start by
+#: itself.
+JRA_INTERVAL_KEY = "jra_official_interval_seconds"
+OPTIONAL_KEYS = CAPTURE_ONLY_KEYS | {JRA_INTERVAL_KEY}
 
 
 def validate_capture_only(result):
@@ -83,8 +90,16 @@ def load_policy(path=CONFIG):
         "collection_paused",
     }
     present = set(result)
-    require(required <= present and present <= required | CAPTURE_ONLY_KEYS, "policy_keys_invalid")
+    require(required <= present and present <= required | OPTIONAL_KEYS, "policy_keys_invalid")
     validate_capture_only(result)
+    if JRA_INTERVAL_KEY in result:
+        value = result[JRA_INTERVAL_KEY]
+        require(
+            type(value) in (int, float)
+            and math.isfinite(value)
+            and value >= MIN_SOURCE_INTERVAL_S,
+            "jra_interval_must_be_finite_at_least_10",
+        )
     require(result["schema_version"] == "172-v1", "policy_version_invalid")
     for key in ("source_interval_seconds", "ops_fetch_min_interval_seconds"):
         value = result[key]
@@ -111,10 +126,13 @@ def collection_mode(policy):
 
 
 def apply_policy(policy):
-    for key, value in (
+    pairs = [
         ("HORSERACING_NETKEIBA_MIN_INTERVAL_S", policy["source_interval_seconds"]),
         ("OPS_FETCH_MIN_INTERVAL", policy["ops_fetch_min_interval_seconds"]),
-    ):
+    ]
+    if JRA_INTERVAL_KEY in policy:
+        pairs.append(("HORSERACING_JRA_MIN_INTERVAL_S", policy[JRA_INTERVAL_KEY]))
+    for key, value in pairs:
         inherited = os.getenv(key)
         if inherited is not None:
             try:
@@ -137,6 +155,8 @@ def apply_policy(policy):
         HORSERACING_COLLECTION_MODE=collection_mode(policy),
         OPS_CAPTURE_ON_AUTO_PREDICT="0",
     )
+    if JRA_INTERVAL_KEY in policy:
+        os.environ["HORSERACING_JRA_MIN_INTERVAL_S"] = str(policy[JRA_INTERVAL_KEY])
 
 
 def source_paths():

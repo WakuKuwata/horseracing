@@ -1,0 +1,47 @@
+{
+  "kaisai_info" : [ {
+    "sort" : "A",
+    "kai" : "4",
+    "day" : "11",
+    "decided" : "",
+    "cancel_info" : "",
+    "weather" : "°",
+    "changes" : [ {
+      "grade_change" : "0",
+      "course_change" : "0",
+      "start_change" : "1",
+      "entry_cancel" : "2",
+      "exclusion" : "0",
+      "jockey_change" : "0",
+      "weight_over" : "0",
+      "blinkers_cancel" : "0"
+    } ],
+    "class" : "ajo",
+    "jyoname" : "“Œ‹",
+    "kaisai_ymd" : "20261101",
+    "youbi" : "“ú—j“ú",
+    "decided_link_para" : "",
+    "decided_link_para_sp" : "",
+    "ba_s" : "—Ç",
+    "ba_d" : "—Ç",
+    "race" : [ ]
+  }, {
+    "sort" : "B",
+    "kai" : "4",
+    "day" : "11",
+    "decided" : "",
+    "cancel_info" : "",
+    "weather" : "°",
+    "changes" : [ ],
+    "class" : "bjo",
+    "jyoname" : "‹“s",
+    "kaisai_ymd" : "20261101",
+    "youbi" : "“ú—j“ú",
+    "decided_link_para" : "",
+    "decided_link_para_sp" : "",
+    "ba_s" : "—Ç",
+    "ba_d" : "âcd",
+    "race" : [ ]
+  } ]
+}
+                                                                                                    

@@ -26,6 +26,8 @@ _REVISION_0012 = "0012_chaos_readout"
 _TABLES_ADDED_AFTER_0012 = {
     "fetch_throttle_state", "exotic_quotes", "purchase_records", "market_ev_predictions",
     "attention_race_scans", "attention_picks", "attention_checkpoints", "official_win_payouts",
+    "decision_quotes", "race_horse_field_provenance", "race_field_provenance",
+    "jra_track_conditions",
 }
 _QUARANTINE_TABLE = "chaos_snapshots_quarantine"
 _READOUT_QUARANTINE_TABLE = "chaos_readouts_quarantine"

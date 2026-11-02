@@ -145,8 +145,9 @@ def test_real_dividends_are_untouched_by_quote_ingestion(session):
     assert len(div) == 1
     assert div[0].odds == Decimal("81.2"), "settled dividend must survive quote ingestion"
     assert session.scalar(select(func.count()).select_from(ExoticOdds)) == 1
-    # and the quote landed in its own column, distinct from the dividend
-    assert _quotes(session)[1] == (Decimal("1.5"), Decimal("2.1"), 1)
+    # 176 contract (precedence §4): a quote is a PRE-RACE fact — once the race has results the
+    # payload is not applied, so the quote columns stay as they were (here: never set).
+    assert _quotes(session)[1] == (None, None, None)
 
 
 def test_win_odds_protection_is_unchanged_by_the_place_addition(session):
@@ -159,8 +160,9 @@ def test_win_odds_protection_is_unchanged_by_the_place_addition(session):
         select(RaceHorse.odds).where(RaceHorse.race_id == RID).order_by(RaceHorse.horse_number)
     ).all()
     assert odds[0] == Decimal("3.3"), "existing (JRA-VAN) win odds must never be clobbered"
-    # place quotes have no such value to protect and are written even post-result
-    assert _quotes(session)[1] == (Decimal("1.5"), Decimal("2.1"), 1)
+    # 176 contract: place quotes are pre-race facts too and are not written once results exist
+    # (before 176 they were; the settled fill-if-null of WIN odds is the only post-result write).
+    assert _quotes(session)[1] == (None, None, None)
 
 
 def test_reingesting_the_same_payload_is_a_no_op(session):

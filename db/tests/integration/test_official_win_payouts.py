@@ -194,7 +194,10 @@ def test_downgrade_to_0019_removes_the_table_and_upgrade_restores_it(
     assert _TABLE in tables_at_head
     try:
         command.downgrade(alembic_cfg, "0019_attention_picks")
-        assert set(inspect(engine).get_table_names()) == tables_at_head - {_TABLE}
+        # Later migrations (0022 decision_quotes, 0023/0024 of Feature 176) add tables of their
+        # own, so "head minus this table" is no longer the 0019 shape; what 0020 owes is only
+        # that ITS table is gone on the way down and back at head.
+        assert _TABLE not in set(inspect(engine).get_table_names())
         with engine.connect() as conn:
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
             # the shared set_updated_at() function belongs to 0001 and must survive
@@ -208,6 +211,9 @@ def test_downgrade_to_0019_removes_the_table_and_upgrade_restores_it(
         assert set(inspect(engine).get_table_names()) == tables_at_head
         with engine.connect() as conn:
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        assert version == "0021_win_odds_provenance"  # head moved past 0020 (140 columns)
+        from alembic.script import ScriptDirectory
+
+        head = ScriptDirectory.from_config(alembic_cfg).get_current_head()
+        assert version == head  # head has moved past 0020 (0021 columns, 0022-0024 tables)
     finally:
         command.upgrade(alembic_cfg, "head")

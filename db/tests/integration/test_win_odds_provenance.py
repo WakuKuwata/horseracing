@@ -11,6 +11,7 @@ import datetime
 
 import pytest
 from alembic import command
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, text
 
 from horseracing_db.models import Race
@@ -73,6 +74,6 @@ def test_downgrade_to_0020_drops_the_columns_and_upgrade_restores_them(
         assert set(_race_columns(engine)) == at_head
         with engine.connect() as conn:
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        assert version == "0021_win_odds_provenance"
+        assert version == ScriptDirectory.from_config(alembic_cfg).get_current_head()
     finally:
         command.upgrade(alembic_cfg, "head")

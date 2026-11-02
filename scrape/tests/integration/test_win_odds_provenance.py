@@ -181,7 +181,10 @@ def test_older_official_at_writes_neither_odds_nor_provenance(session):
     assert _prov(session) == (official_before, observed_before)
 
 
-def test_payload_without_official_at_moves_only_observed_at(session):
+def test_payload_without_official_at_is_skipped_once_a_timed_quote_is_stored(session):
+    """176 contract (precedence §4): observation time alone never proves a quote is newer. A
+    payload without ``official_at`` while one is stored writes neither odds nor provenance
+    (before 176 it moved observed_at and overwrote the values)."""
     _seed(session)
     update_odds(session, RID, _payload(official=T2))
     session.commit()
@@ -190,10 +193,10 @@ def test_payload_without_official_at_moves_only_observed_at(session):
     c = update_odds(session, RID, _payload(official=None))
     session.commit()
 
-    assert c.written == 3
+    assert c.written == 0 and c.skipped == 3
     official_2, observed_2 = _prov(session)
-    assert official_2 == official_1 == _jst(T2)   # kept: nothing to replace it with
-    assert observed_2 > observed_1
+    assert official_2 == official_1 == _jst(T2)
+    assert observed_2 == observed_1
 
 
 def test_payload_without_official_at_on_a_fresh_race(session):

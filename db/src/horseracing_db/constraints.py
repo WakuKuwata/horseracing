@@ -65,3 +65,29 @@ BET_TYPE = _in_list("bet_type", BetType.ALL)
 # exotic_odds (012): win excluded (no exotic pool); coverage full/partial
 EXOTIC_BET_TYPE = _in_list("bet_type", BetType.EXOTIC)
 COVERAGE_SCOPE = _in_list("coverage_scope", CoverageScope.ALL)
+
+# official_win_payouts (139 → 176): the result page a 単勝 payout was read from. Kept separate from
+# Source: these name the PAGE KIND, not the feed, and the default stays netkeiba_result.
+OFFICIAL_WIN_PAYOUT_SOURCES: tuple[str, ...] = ("netkeiba_result", "jra_official_result")
+OFFICIAL_WIN_PAYOUT_SOURCE_CHECK = _in_list("source", OFFICIAL_WIN_PAYOUT_SOURCES)
+
+# provenance tables (176, migration 0023): which field group a row describes
+RACE_HORSE_FIELD_GROUPS: tuple[str, ...] = (
+    "entry_static", "jockey", "trainer", "body_weight", "entry_status",
+)
+RACE_FIELD_GROUPS: tuple[str, ...] = (
+    "race_static", "post_time", "win_odds", "place_odds", "results", "laps",
+    "win_payouts", "exotic_payouts",
+)
+RACE_HORSE_FIELD_GROUP = _in_list("field_group", RACE_HORSE_FIELD_GROUPS)
+RACE_FIELD_GROUP = _in_list("field_group", RACE_FIELD_GROUPS)
+
+# jra_track_conditions (176, migration 0024)
+TRACK_CONDITION_ITEMS: tuple[str, ...] = (
+    "moisture_turf_goal", "moisture_turf_corner4", "moisture_dirt_goal", "moisture_dirt_corner4",
+    "cushion_turf", "going_turf", "going_dirt", "weather",
+)
+TRACK_CONDITION_TIME_BASES: tuple[str, ...] = ("measured", "fetched")
+TRACK_CONDITION_ITEM = _in_list("item", TRACK_CONDITION_ITEMS)
+TRACK_CONDITION_TIME_BASIS = _in_list("time_basis", TRACK_CONDITION_TIME_BASES)
+TRACK_CONDITION_VENUE = r"venue_code ~ '^[0-9]{2}$'"
