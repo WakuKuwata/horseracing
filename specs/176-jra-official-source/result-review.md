@@ -137,6 +137,10 @@ race_horses / race_results / races の値の変化 0、horses / jockeys / traine
 来歴: リンクなし・未解決の人は項目を書かないので来歴も付かない(確認済み)/ 追加テスト: 人の解決表・文字項目
 を埋めない は追加、別接続の競合テストは上の運用排他で代える。
 
+## 有効化(2026-11-03・利用者承認「マージして有効化」)
+
+main を早送り(265e0df9)→ `config/source-operations.json` に `"jra_official_interval_seconds": 10` を追加。読み手(172 wrapper・live の捕捉 policy・ops の status・`scripts/tests/test_source_operations_176_jra.py` 16 件)は全部正常。`scripts/jra_ops.sh entries 2026-11-07 --dry-run` は送信 1 件で `unsupported_date`(11/07 はまだ索引に無い=11/06 公開)・exit 0。netkeiba 経路のコードは不変なので ops / worker の再起動はしていない。
+
 ## 残り(開催終了後・利用者の指示で)
 
 T100(0023 適用と SC-008 の基準記録)→ 共通コードの反映と再起動 → T101(1 開催日の観察)→ T050(policy キー)

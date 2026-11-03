@@ -2,6 +2,7 @@
   "schema_version": "172-v1",
   "source_interval_seconds": 10,
   "ops_fetch_min_interval_seconds": 10,
+  "jra_official_interval_seconds": 10,
   "shared_limiter_enabled": true,
   "collection_paused": false,
   "capture_only_dates": [
