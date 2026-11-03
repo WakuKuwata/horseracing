@@ -10,6 +10,7 @@ import itertools
 import math
 import random
 import typing
+from decimal import Decimal
 from pathlib import Path
 
 import numpy as np
@@ -696,3 +697,200 @@ def test_buy_time_expectation_is_served_once_verified(monkeypatch):
     monkeypatch.setitem(ar.BUY_TIME_EXPECTATION_SOURCE, "status", "provisional")
     with pytest.raises(ValueError):
         ar.buy_time_expectation("S1")
+
+
+# ---------------------------------------------------------------- 177: component states (T001-T006)
+#
+# Feature 177 rewrote ``match_mask`` as the AND of per-component masks so the api can show WHY a
+# horse matched. The pre-177 body is kept here VERBATIM as the oracle (copied from
+# eval/src/horseracing_eval/attention_rules.py at main 625bfda, 2026-11-03): the rewrite must agree
+# with it bit for bit on every input shape the callers use. Keep this copy; it guards any later edit.
+
+
+def _as_float_array_138(x) -> np.ndarray:
+    if x is None:
+        return np.array(np.nan)
+    return np.asarray(x, dtype=float)
+
+
+def _match_mask_138_reference(defn, *, ens_ev, single_ev, odds, days_since_last) -> np.ndarray:
+    ev = _as_float_array_138(ens_ev if defn.uses_ensemble else single_ev)
+    with np.errstate(invalid="ignore"):
+        mask = ev > defn.ev_gt
+        if defn.odds_band is not None:
+            o = _as_float_array_138(odds)
+            lo, hi = defn.odds_band
+            mask = mask & (o >= lo) & (o < hi)
+        if defn.gap_days is not None:
+            g = _as_float_array_138(days_since_last)
+            glo, ghi = defn.gap_days
+            mask = mask & (g >= glo) & (g <= ghi)
+    return np.asarray(mask, dtype=bool)
+
+
+def _neighbours(x: float) -> list[float]:
+    return [np.nextafter(x, -np.inf), x, np.nextafter(x, np.inf)]
+
+
+# every threshold the definitions use, with its representable neighbours on both sides
+_EV_POINTS = sorted({v for d in ar.RULE_DEFINITIONS for v in _neighbours(d.ev_gt)} | {0.5, 2.0})
+_ODDS_POINTS = sorted(set(_neighbours(20.0) + _neighbours(40.0) + [1.0, 30.0, 80.0]))
+_GAP_POINTS = sorted(set(_neighbours(14.0) + _neighbours(112.0) + [0.0, 60.0, 112.5, 400.0]))
+_SPECIALS = [None, float("nan"), float("inf"), -float("inf")]
+
+
+def _reference_inputs():
+    """Grids + randoms + specials + Decimal + scalar/vector mixes + empty arrays."""
+    rng = np.random.default_rng(177)
+    n = 20_000
+    yield dict(ens_ev=rng.uniform(0.8, 1.6, n), single_ev=rng.uniform(0.8, 1.6, n),
+               odds=rng.uniform(1.0, 80.0, n), days_since_last=rng.integers(0, 200, n).astype(float))
+    grid = np.array(list(itertools.product(_ODDS_POINTS, _GAP_POINTS, _EV_POINTS, _EV_POINTS)))
+    yield dict(ens_ev=grid[:, 2], single_ev=grid[:, 3], odds=grid[:, 0], days_since_last=grid[:, 1])
+    # the existing grid (test_scalar_and_vector_agree_on_a_grid)
+    odds = [1.5, 19.99, 20.0, 25.0, 39.99, 40.0, 80.0, np.nan]
+    gaps = [np.nan, 0, 13, 14, 60, 112, 113, 400]
+    evs = [np.nan, 0.9, 1.1, 1.1 + 1e-9, 1.2, 1.25, 1.3, 1.31, 2.0]
+    g2 = np.array(list(itertools.product(odds, gaps, evs, evs)), dtype=float)
+    yield dict(ens_ev=g2[:, 2], single_ev=g2[:, 3], odds=g2[:, 0], days_since_last=g2[:, 1])
+    # specials as scalars against vectors (broadcast), and scalar/vector mixes
+    vec = np.array([1.25, 1.35, np.nan, 0.9])
+    for s in _SPECIALS:
+        yield dict(ens_ev=s, single_ev=vec, odds=30.0, days_since_last=[40, 13, 112, np.nan])
+        yield dict(ens_ev=vec, single_ev=s, odds=s, days_since_last=40)
+        yield dict(ens_ev=vec, single_ev=vec, odds=[30.0, 45.0, 20.0, 39.99], days_since_last=s)
+    # Decimal inputs (the api passes floats, picks are Decimal in the DB)
+    yield dict(ens_ev=[Decimal("1.3"), Decimal("1.2")], single_ev=[Decimal("1.0"), Decimal("1.0")],
+               odds=[Decimal("20.0"), Decimal("39.99")], days_since_last=[Decimal("14"), Decimal("112.5")])
+    yield dict(ens_ev=Decimal("1.25"), single_ev=None, odds=Decimal("32.5"), days_since_last=Decimal("41"))
+    # empty
+    yield dict(ens_ev=[], single_ev=[], odds=[], days_since_last=[])
+    # all scalars
+    yield dict(ens_ev=1.25, single_ev=1.0, odds=30.0, days_since_last=40)
+    yield dict(ens_ev=None, single_ev=None, odds=None, days_since_last=None)
+
+
+def test_177_match_mask_is_bit_identical_to_the_138_reference():
+    for kw in _reference_inputs():
+        for d in ar.RULE_DEFINITIONS:
+            ref = _match_mask_138_reference(d, **kw)
+            got = ar.match_mask(d, **kw)
+            assert got.dtype == ref.dtype == np.bool_, (d.id, kw)
+            assert got.shape == ref.shape, (d.id, kw)
+            assert np.array_equal(got, ref), (d.id, kw)
+
+
+def test_177_definitions_hash_is_pinned():
+    # the hash covers definitions + semantics, not code — unchanged by the 177 rewrite (INV-R6)
+    assert ar.definitions_sha256() == (
+        "923913faf79034a495ce6a07b5ca3f6dc3c493ce060d0347e6b60fcd36f48547"
+    )
+
+
+def _states(rule_id, *, ens=None, single=None, odds=None, gap=None):
+    return ar.component_states(ar.definition(rule_id), ens_ev=ens, single_ev=single, odds=odds,
+                               days_since_last=gap)
+
+
+def test_177_component_kinds_follow_the_definition():
+    for rid in ("S1", "S2", "S4"):
+        assert [c.kind for c in _states(rid, ens=1.3, odds=30.0, gap=40)] == [
+            "ens_expected_return", "win_odds", "days_since_last"]
+    assert [c.kind for c in _states("S3", ens=1.3)] == ["ens_expected_return"]
+    # the control rule explains itself with the single-seed value, never the ensemble
+    s5 = _states("S5", ens=5.0, single=1.21)
+    assert [c.kind for c in s5] == ["single_expected_return"]
+    assert s5[0].value == 1.21 and s5[0].status == "met"
+
+
+def test_177_non_control_rules_use_the_ensemble():
+    # INV-R7: the api explains every chip rule with ens15; no non-control rule is single-seed
+    assert all(d.uses_ensemble for d in ar.RULE_DEFINITIONS if not d.control)
+
+
+@pytest.mark.parametrize(
+    ("kind", "kw", "expected"),
+    [
+        ("ens_expected_return", dict(ens=1.2, odds=30.0, gap=40), "not_met"),
+        ("ens_expected_return", dict(ens=np.nextafter(1.2, 2.0), odds=30.0, gap=40), "met"),
+        ("win_odds", dict(ens=1.3, odds=19.99, gap=40), "not_met"),
+        ("win_odds", dict(ens=1.3, odds=20.0, gap=40), "met"),
+        ("win_odds", dict(ens=1.3, odds=39.99, gap=40), "met"),
+        ("win_odds", dict(ens=1.3, odds=40.0, gap=40), "not_met"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=13), "not_met"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=14), "met"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=112), "met"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=112.5), "not_met"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=Decimal("112.5")), "not_met"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=113), "not_met"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=None), "missing"),
+        ("days_since_last", dict(ens=1.3, odds=30.0, gap=float("nan")), "missing"),
+        ("ens_expected_return", dict(ens=None, odds=30.0, gap=40), "missing"),
+        ("win_odds", dict(ens=1.3, odds=float("nan"), gap=40), "missing"),
+    ],
+)
+def test_177_component_boundaries_and_missing(kind, kw, expected):
+    by_kind = {c.kind: c for c in _states("S1", **kw)}
+    c = by_kind[kind]
+    assert c.status == expected
+    if expected == "missing":
+        assert c.value is None
+    else:
+        assert isinstance(c.value, float) and not math.isnan(c.value)
+
+
+def test_177_component_values_are_floats_of_the_input():
+    c = {s.kind: s for s in _states("S1", ens=Decimal("1.31"), odds=Decimal("32.5"),
+                                    gap=Decimal("41"))}
+    assert c["ens_expected_return"].value == 1.31
+    assert c["win_odds"].value == 32.5
+    assert c["days_since_last"].value == 41.0
+    assert all(s.status == "met" for s in c.values())
+
+
+def test_177_component_states_take_one_horse():
+    with pytest.raises(ValueError):
+        ar.component_states(ar.definition("S1"), ens_ev=[1.3, 1.4], single_ev=None, odds=30.0,
+                            days_since_last=40)
+
+
+def test_177_all_components_met_is_the_match():
+    # INV-R1: match_mask[i] <=> every component of row i is met (grid + randoms, all rules)
+    for kw in list(_reference_inputs())[:3]:
+        n = len(kw["ens_ev"])
+        for d in ar.RULE_DEFINITIONS:
+            mask = ar.match_mask(d, **kw)
+            for i in range(0, n, 7):   # every 7th row keeps the run short; the grids are dense
+                states = ar.component_states(
+                    d, ens_ev=kw["ens_ev"][i], single_ev=kw["single_ev"][i],
+                    odds=kw["odds"][i], days_since_last=kw["days_since_last"][i])
+                assert all(s.status == "met" for s in states) == bool(mask[i]), (d.id, i)
+
+
+def test_177_chip_now_matches_iff_all_components_met():
+    # INV-R5: unchanged chip_now; "matches" <=> all met. missing is NOT unknown (NaN -> no_longer)
+    s1 = ar.definition("S1")
+    cases = [
+        dict(ens=1.25, odds=30.0, gap=40),
+        dict(ens=1.25, odds=45.0, gap=40),
+        dict(ens=1.25, odds=30.0, gap=None),
+        dict(ens=1.25, odds=30.0, gap=float("nan")),
+        dict(ens=float("nan"), odds=30.0, gap=40),
+        dict(ens=1.2, odds=30.0, gap=40),
+        dict(ens=1.25, odds=float("nan"), gap=40),
+    ]
+    for kw in cases:
+        now = ar.chip_now(s1, current_ens_ev=kw["ens"], current_single_ev=1.0,
+                          current_odds=kw["odds"], days_since_last=kw["gap"])
+        states = _states("S1", single=1.0, **kw)
+        assert now != "unknown"
+        assert (now == "matches") == all(s.status == "met" for s in states), kw
+    # None EV / None odds stay unknown (the existing contract), even though a component is missing
+    assert ar.chip_now(s1, current_ens_ev=None, current_single_ev=1.0, current_odds=30.0,
+                       days_since_last=40) == "unknown"
+    assert ar.chip_now(s1, current_ens_ev=1.25, current_single_ev=1.0, current_odds=None,
+                       days_since_last=40) == "unknown"
+    # S3 has no odds component but keeps the odds=None -> unknown contract
+    assert ar.chip_now(ar.definition("S3"), current_ens_ev=1.25, current_single_ev=1.0,
+                       current_odds=None, days_since_last=None) == "unknown"
+    assert [c.kind for c in _states("S3", ens=1.25)] == ["ens_expected_return"]

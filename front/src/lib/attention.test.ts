@@ -444,3 +444,111 @@ describe("ruleFlags / ruleIdText (registry attributes come from the API, not con
     expect(ruleIdText("S5", null)).toBe("S5");
   });
 });
+
+
+// --- 177: 該当理由の文 ----------------------------------------------------------------------------
+
+import type { AttentionReason, ReasonComponent } from "../api/types";
+import { attentionReasonFixture, evSnapshotFixture, stageDetail } from "../tests/fixtures";
+import {
+  alsoApplicableText,
+  componentValueText,
+  criterionText,
+  formatEvAgainstThreshold,
+  REASON_STATUS_GLYPHS,
+  REASON_STATUS_LABELS,
+  reasonStatusKey,
+  reasonSummaryText,
+  thresholdPctText,
+} from "./attention";
+
+describe("177 reason text (pure, from the response structure only)", () => {
+  const s1 = attentionReasonFixture();
+  const [ev, band, gap] = s1.components as [ReasonComponent, ReasonComponent, ReasonComponent];
+
+  it("criterionText spells the three criteria from the response values", () => {
+    expect(criterionText(ev)).toBe("期待回収率(15 seed 平均)が 120% 超");
+    expect(criterionText(band)).toBe("単勝オッズが 20 倍以上 40 倍未満");
+    expect(criterionText(gap)).toBe("前走から 14〜112 日");
+    expect(criterionText({ ...ev, ev_gt: 1.3 } as ReasonComponent)).toBe("期待回収率(15 seed 平均)が 130% 超");
+    expect(thresholdPctText(1.1)).toBe("110%");
+  });
+
+  it("status words: met / not_met / missing / no current — four distinct words", () => {
+    expect(reasonStatusKey({ value: 1, status: "met" })).toBe("met");
+    expect(reasonStatusKey({ value: null, status: "missing" })).toBe("missing");
+    expect(reasonStatusKey(null)).toBe("no_current");
+    expect(new Set(Object.values(REASON_STATUS_LABELS)).size).toBe(4);
+    expect(REASON_STATUS_LABELS).toEqual({
+      met: "満たす", not_met: "満たさない", missing: "値なし", no_current: "最新の計算なし",
+    });
+    expect(Object.keys(REASON_STATUS_GLYPHS).sort()).toEqual(Object.keys(REASON_STATUS_LABELS).sort());
+  });
+
+  it("formatEvAgainstThreshold adds digits only when the rounded value would equal the threshold", () => {
+    expect(formatEvAgainstThreshold(1.246, 1.2)).toBe("124.6%");
+    expect(formatEvAgainstThreshold(1.2004, 1.2)).toBe("120.04%");
+    expect(formatEvAgainstThreshold(1.20004, 1.2)).toBe("120.004%");
+    expect(formatEvAgainstThreshold(1.2, 1.2)).toBe("120.000%");
+    expect(formatEvAgainstThreshold(1.31, 1.3)).toBe("131.0%");
+  });
+
+  it("componentValueText: odds 1 digit, gap as-is (fractions kept), EV against its threshold", () => {
+    expect(componentValueText(band, 32.5)).toBe("32.5 倍");
+    expect(componentValueText(gap, 41)).toBe("41 日");
+    expect(componentValueText(gap, 112.5)).toBe("112.5 日");
+    expect(componentValueText(ev, 1.25)).toBe("125.0%");
+  });
+
+  it("reasonSummaryText follows the frozen sentence forms", () => {
+    const at = "2026/11/08 09:12";
+    expect(reasonSummaryText(s1, at)).toBe(
+      "判断時点(2026/11/08 09:12)では S1 の 3 条件をすべて満たしました。現在値でも満たしています。",
+    );
+    const noLonger = attentionReasonFixture({ current: evSnapshotFixture({ odds: 45.0 }) });
+    expect(reasonSummaryText(noLonger, at)).toBe(
+      "判断時点(2026/11/08 09:12)では S1 の 3 条件をすべて満たしました。現在値では単勝オッズ帯の条件を満たしていません。",
+    );
+    const twoOut = attentionReasonFixture({ current: evSnapshotFixture({ odds: 45.0, ens_expected_return: 1.1 }) });
+    expect(reasonSummaryText(twoOut, at)).toBe(
+      "判断時点(2026/11/08 09:12)では S1 の 3 条件をすべて満たしました。現在値では期待回収率・単勝オッズ帯の条件を満たしていません。",
+    );
+    const none = attentionReasonFixture({ current: null });
+    expect(reasonSummaryText(none, at)).toBe(
+      "判断時点(2026/11/08 09:12)では S1 の 3 条件をすべて満たしました。現在値はありません(再計算待ち・オッズ欠落など)。",
+    );
+    const s3 = attentionReasonFixture({ rule: "S3", applicable: ["S3"] });
+    expect(reasonSummaryText(s3, null)).toBe("判断時点では S3 の条件を満たしました。現在値でも満たしています。");
+    const gapMissing = attentionReasonFixture({ gap: null });
+    expect(reasonSummaryText(gapMissing, at)).toBe(
+      "判断時点(2026/11/08 09:12)では S1 の 3 条件のうち 2 つを満たしました(満たさない: 前走からの間隔は値なし)。" +
+        "現在値では前走からの間隔が値なしです。",
+    );
+    const mixed = attentionReasonFixture({ gap: null, current: evSnapshotFixture({ odds: 45.0 }) });
+    expect(reasonSummaryText(mixed, at)).toBe(
+      "判断時点(2026/11/08 09:12)では S1 の 3 条件のうち 2 つを満たしました(満たさない: 前走からの間隔は値なし)。" +
+        "現在値では単勝オッズ帯の条件を満たしていません(前走からの間隔は値なし)。",
+    );
+    for (const r of [s1, noLonger, twoOut, none, s3, gapMissing, mixed]) {
+      const text = reasonSummaryText(r, at);
+      expect(text).not.toMatch(ATTENTION_SCOPE);
+      expect(text).not.toMatch(UNMEASURED_ODDS_DRIFT);
+      expect(text).not.toMatch(/勝率|確実|有望|自信/);
+    }
+  });
+
+  it("alsoApplicableText: threshold only where the API put a note, tags for closed stages", () => {
+    const withS2 = attentionReasonFixture({ applicable: ["S1", "S2", "S3", "S4", "S5"] });
+    expect(alsoApplicableText(withS2, {}, ["S5"])).toBe(
+      "S2(期待回収率 130% 超)にも該当。S3・S4 にも該当(表示する条件は S1)。対照 S5 にも該当。",
+    );
+    const onS3 = attentionReasonFixture({ rule: "S3", applicable: ["S1", "S3", "S4"] });
+    const failed = stageDetail("failed", 300);
+    expect(alsoApplicableText(onS3, { S1: failed }, [])).toBe(
+      `S1(${stageLabel(failed)})・S4 にも該当(表示する条件は S3)。`,
+    );
+    const alone: AttentionReason = { ...attentionReasonFixture({ rule: "S3", applicable: ["S3"] }) };
+    expect(alsoApplicableText(alone, {}, [])).toBeNull();
+    expect(alsoApplicableText(alone, {}, ["S5"])).toBe("対照 S5 にも該当。");
+  });
+});

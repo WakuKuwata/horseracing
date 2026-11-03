@@ -60,6 +60,16 @@ export type AttentionUnavailable = S["AttentionUnavailable"];
 export type AttentionResponse = AttentionAvailable | AttentionUnavailable;
 export type AttentionHorse = S["AttentionHorse"];
 export type EvSnapshot = S["EvSnapshot"];
+// Feature 177: why the chip — per-component criteria and statuses (judged / current)
+export type AttentionReason = S["AttentionReason"];
+export type AttentionReasonUnavailable = S["AttentionReasonUnavailable"];
+export type AttentionReasonResponse = AttentionReason | AttentionReasonUnavailable;
+export type ReasonComponent = AttentionReason["components"][number];
+export type EvReasonComponent = S["EvReasonComponent"];
+export type OddsBandReasonComponent = S["OddsBandReasonComponent"];
+export type GapReasonComponent = S["GapReasonComponent"];
+export type ReasonValue = S["ReasonValue"];
+export type AlsoApplicable = S["AlsoApplicable"];
 export type StageDetail = S["StageDetail"];
 export type AttentionLevels = S["AttentionLevels"];
 export type AttentionRulesResponse = S["AttentionRulesResponse"];

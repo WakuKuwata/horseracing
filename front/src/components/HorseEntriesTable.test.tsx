@@ -651,8 +651,18 @@ describe("HorseEntriesTable 注目条件 (138)", () => {
     expect(chip.getAttribute("aria-label")).toBe("注目条件 S1・研究中");
     // levels {backtest 3, prospective 1, price noise 2} + freshness 2 → min = 1 (text only)
     expect(chip.className).toContain("attn-chip--1");
-    // no threshold figure, no sub chip, no 「判断時点のみ該当」 while the current values match
-    expect(within(cell).getByTestId("attention-chips").textContent).not.toMatch(/%|倍|超/);
+    // no threshold figure (visible text AND accessible names), no sub chip, no 「判断時点のみ該当」
+    // while the current values match (177 FR-008: thresholds only in the expanded table)
+    const chipGroup = within(cell).getByTestId("attention-chips");
+    expect(chipGroup.textContent).not.toMatch(/\d\s*(%|倍|日|超)/);
+    for (const el of [chipGroup, ...Array.from(chipGroup.querySelectorAll("*"))]) {
+      expect(el.getAttribute("aria-label") ?? "").not.toMatch(/\d\s*(%|倍|日|超)/);
+      expect(el.getAttribute("title") ?? "").not.toMatch(/\d\s*(%|倍|日|超)/);
+      const labelledBy = el.getAttribute("aria-labelledby");
+      if (labelledBy) {
+        expect(document.getElementById(labelledBy)?.textContent ?? "").not.toMatch(/\d\s*(%|倍|日|超)/);
+      }
+    }
     expect(cell.querySelector(".attn-chip--sub")).toBeNull();
     expect(cell.querySelector(".attn-now")).toBeNull();
     // the value column keeps the latest (ens15) market-ev with its 推定 badge
@@ -863,7 +873,12 @@ describe("HorseEntriesTable 注目条件 (138)", () => {
     const panel = await screen.findByTestId("attention-panel");
     expect(await within(panel).findByText(/通算\(2010〜26\)/)).toBeInTheDocument();
     const expansion = container.querySelector<HTMLTableCellElement>("tr.explanation-row td");
-    expect(expansion?.colSpan).toBe(container.querySelectorAll("thead th").length);
+    // the entries table's own header only (the reason table inside the expansion has a thead too)
+    expect(expansion?.colSpan).toBe(
+      container.querySelector("table")!.querySelectorAll(":scope > thead > tr > th").length,
+    );
+    // 177: the reason table opens with the breakdown; thresholds appear there and nowhere above
+    expect(within(panel).getByTestId("attention-reason-table")).toHaveTextContent("120% 超");
     // the score-contribution panel shares the row (predictions exist)
     expect(within(expansion!).getByText(/スコア寄与/)).toBeInTheDocument();
 
@@ -898,6 +913,11 @@ describe("HorseEntriesTable 注目条件 (138)", () => {
     const panels = await screen.findAllByTestId("attention-panel");
     expect(panels).toHaveLength(3);
     await screen.findAllByText(/通算\(2010〜26\)/);
+    // 177: open every 「検証の根拠」 fold too (closed content is still DOM, but be explicit)
+    for (const d of Array.from(container.querySelectorAll<HTMLDetailsElement>('[data-testid="attention-evidence"]'))) {
+      await userEvent.click(d.querySelector("summary")!);
+      expect(d.open).toBe(true);
+    }
     const chipGroups = Array.from(container.querySelectorAll('[data-testid="attention-chips"]'));
     expect(chipGroups).toHaveLength(3);
     assertAttentionDiscipline([...chipGroups, ...panels]);

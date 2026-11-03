@@ -482,6 +482,21 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AlsoApplicable
+         * @description Another non-control rule the horse was judged to match (first computation). ``note_ev_gt``
+         *     is set only for a stricter sibling that differs from the chip rule by its EV threshold alone
+         *     (S2 under an S1 chip) — the front spells that threshold out and nothing else.
+         */
+        AlsoApplicable: {
+            /** Note Ev Gt */
+            note_ev_gt: number | null;
+            /**
+             * Rule Id
+             * @enum {string}
+             */
+            rule_id: "S1" | "S2" | "S3" | "S4" | "S5";
+        };
+        /**
          * AttentionAvailable
          * @description The race's first ensemble computation is recorded; ``horses`` covers every currently
          *     started horse plus any judged horse that was scratched later (horse_number order).
@@ -772,6 +787,8 @@ export interface components {
             pick_status: {
                 [key: string]: "pick" | "void:scratched" | "none";
             };
+            /** Reason */
+            reason: (components["schemas"]["AttentionReason"] | components["schemas"]["AttentionReasonUnavailable"]) | null;
             /** Stages */
             stages: {
                 [key: string]: components["schemas"]["StageDetail"];
@@ -906,6 +923,42 @@ export interface components {
             rng: string;
             /** Seed */
             seed: number;
+        };
+        /** AttentionReason */
+        AttentionReason: {
+            /** Also Applicable */
+            also_applicable: components["schemas"]["AlsoApplicable"][];
+            /** Components */
+            components: (components["schemas"]["EvReasonComponent"] | components["schemas"]["OddsBandReasonComponent"] | components["schemas"]["GapReasonComponent"])[];
+            /**
+             * Rule Id
+             * @enum {string}
+             */
+            rule_id: "S1" | "S2" | "S3" | "S4" | "S5";
+            /** Rule Set Version */
+            rule_set_version: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "available";
+        };
+        /**
+         * AttentionReasonUnavailable
+         * @description The builder found the reason inconsistent with the horse (a bug, logged at WARNING): the
+         *     existing fields are served, the explanation is withheld rather than served wrong.
+         */
+        AttentionReasonUnavailable: {
+            /**
+             * Reason
+             * @constant
+             */
+            reason: "inconsistent";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "unavailable";
         };
         /** AttentionRuleLevels */
         AttentionRuleLevels: {
@@ -1337,6 +1390,26 @@ export interface components {
             selection: number[];
         };
         /**
+         * EvReasonComponent
+         * @description 15-seed expected return strictly above ``ev_gt`` (ratio; 1.2 = 120%).
+         */
+        EvReasonComponent: {
+            current: components["schemas"]["ReasonValue"] | null;
+            /** Ev Gt */
+            ev_gt: number;
+            /**
+             * Is Pseudo
+             * @constant
+             */
+            is_pseudo: true;
+            judged: components["schemas"]["ReasonValue"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "ens_expected_return";
+        };
+        /**
          * EvSnapshot
          * @description Expected returns (ratio, pseudo) at one moment. ``judged`` = the frozen pick values;
          *     ``current`` = the displayed version's latest row (single seed only from the same run).
@@ -1428,6 +1501,29 @@ export interface components {
             settled: boolean;
             /** Valuation Basis */
             valuation_basis?: string | null;
+        };
+        /**
+         * GapReasonComponent
+         * @description Days since the last start in ``lo <= days <= hi``. The current value is the pick's frozen
+         *     value (it depends on the race date and the previous start only — never recomputed at render).
+         */
+        GapReasonComponent: {
+            current: components["schemas"]["ReasonValue"] | null;
+            /**
+             * Current Source
+             * @constant
+             */
+            current_source: "pick_frozen";
+            /** Hi */
+            hi: number;
+            judged: components["schemas"]["ReasonValue"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "days_since_last";
+            /** Lo */
+            lo: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2027,6 +2123,23 @@ export interface components {
             /** Win Log Loss */
             win_log_loss?: number | null;
         };
+        /**
+         * OddsBandReasonComponent
+         * @description Win odds in ``lo <= odds < hi``.
+         */
+        OddsBandReasonComponent: {
+            current: components["schemas"]["ReasonValue"] | null;
+            /** Hi */
+            hi: number;
+            judged: components["schemas"]["ReasonValue"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "win_odds";
+            /** Lo */
+            lo: number;
+        };
         /** OddsResponse */
         OddsResponse: {
             /**
@@ -2610,6 +2723,20 @@ export interface components {
             selection: number[];
             /** Updated At */
             updated_at?: string | null;
+        };
+        /**
+         * ReasonValue
+         * @description One value against one criterion. ``missing`` (value None) = the input was absent — shown as
+         *     「値なし」, never as 「満たさない」.
+         */
+        ReasonValue: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "met" | "not_met" | "missing";
+            /** Value */
+            value: number | null;
         };
         /** RecommendationResponse */
         RecommendationResponse: {

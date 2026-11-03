@@ -842,4 +842,292 @@ def test_prospective_start_date_is_never_copied_at_import():
 
 def test_new_modules_are_inside_the_no_write_scan():
     scanned = {p.relative_to(_SRC).as_posix() for p in _SRC.rglob("*.py")}
-    assert {"attention.py", "routers/attention.py"} <= scanned
+    assert {"attention.py", "attention_reason.py", "routers/attention.py"} <= scanned
+
+
+# --- 177: the reason (why the chip) ------------------------------------------------------------
+# contracts/api.md + data-model §2. The reason is a pure addition: every existing field keeps its
+# value; the per-component statuses come from the same eval helpers as chip_now (eval 177 tests).
+
+import logging  # noqa: E402
+
+import pydantic  # noqa: E402
+
+from horseracing_api import attention_reason  # noqa: E402
+from horseracing_api.schemas import AttentionHorse, AttentionReason, EvSnapshot  # noqa: E402
+
+
+def _s1_picks(entries, **kw):
+    return _picks_for("H3", 3, ("S1", "S2", "S3", "S4", "S5"), digest=_digest(entries),
+                      ens=1.35, single=1.25, odds=30.0, gap=40, **kw)
+
+
+def _kinds(reason):
+    return [c.kind for c in reason.components]
+
+
+def test_177_s1_chip_carries_its_reason():
+    entries = _field()
+    ens = _ev_rows(entries, overrides={"H3": {"ev": 1.3, "odds": 30.8}})
+    h = _horse(_build(entries, _s1_picks(entries), ens=ens), "H3")
+    r = h.reason
+    assert isinstance(r, AttentionReason) and r.status == "available"
+    assert r.rule_id == "S1" == h.chip_rule
+    assert r.rule_set_version == ar.RULE_SET_VERSION
+    assert _kinds(r) == ["ens_expected_return", "win_odds", "days_since_last"]
+    ev, band, gap = r.components
+    assert ev.ev_gt == 1.2 and ev.is_pseudo is True
+    assert (band.lo, band.hi) == (20.0, 40.0)
+    assert (gap.lo, gap.hi) == (14, 112) and gap.current_source == "pick_frozen"
+    # judged = the frozen pick (same numbers as the judged snapshot), all met
+    assert [c.judged.value for c in r.components] == [1.35, 30.0, 40.0]
+    assert h.judged.ens_expected_return == 1.35 and h.judged.odds == 30.0
+    assert all(c.judged.status == "met" for c in r.components)
+    # current = the displayed version's latest row; the gap is the frozen value
+    assert [c.current.value for c in r.components] == [1.3, 30.8, 40.0]
+    assert h.current.ens_expected_return == 1.3 and h.current.odds == 30.8
+    assert all(c.current.status == "met" for c in r.components)
+    assert h.chip_now == "matches"
+    # other judged rules: S2 (stricter sibling) carries its threshold, S3/S4 only their id, no S5
+    assert [(a.rule_id, a.note_ev_gt) for a in r.also_applicable] == [
+        ("S2", 1.3), ("S3", None), ("S4", None)]
+
+
+def test_177_no_chip_means_no_reason_even_when_the_current_values_would_match():
+    entries = _field()
+    # H1 has no pick; its current row now satisfies S1 — the chip is judged once, never attached later
+    ens = _ev_rows(entries, overrides={"H1": {"ev": 1.5, "odds": 30.0}})
+    resp = _build(entries, _s1_picks(entries), ens=ens)
+    h1 = _horse(resp, "H1")
+    assert h1.chip_rule is None and h1.reason is None
+    # S5 only → no chip → no reason
+    s5 = _picks_for("H4", 4, ("S5",), digest=_digest(entries))
+    h4 = _horse(_build(entries, _s1_picks(entries) + s5, ens=ens), "H4")
+    assert h4.chip_rule is None and h4.reason is None
+    # all picks voided → no chip → no reason
+    picks = _picks_for("H5", 5, ("S1", "S3", "S4"), digest=_digest(entries))
+    h5 = _horse(_build(entries, picks + [_void(p) for p in picks]), "H5")
+    assert h5.chip_rule is None and h5.reason is None
+
+
+def test_177_current_odds_outside_the_band_is_one_component_not_met():
+    entries = _field()
+    ens = _ev_rows(entries, overrides={"H3": {"ev": 1.3, "odds": 45.0}})
+    h = _horse(_build(entries, _s1_picks(entries), ens=ens), "H3")
+    assert h.chip_now == "no_longer"
+    statuses = {c.kind: c.current.status for c in h.reason.components}
+    assert statuses == {"ens_expected_return": "met", "win_odds": "not_met",
+                        "days_since_last": "met"}
+    assert all(c.judged.status == "met" for c in h.reason.components)
+
+
+def test_177_no_current_computation_leaves_every_current_null():
+    entries = _field()
+    picks = _s1_picks(entries)
+    ens = _ev_rows(entries)
+    for build_kw in (
+        dict(entries=entries + [_entry(7)], ens=ens, single=ens),   # field changed
+        dict(entries=_field(H5=None), ens=ens, single=ens),         # odds missing now
+        dict(entries=entries, ens=[]),                               # no displayed rows
+    ):
+        h = _horse(_build(build_kw.pop("entries"), picks, **build_kw), "H3")
+        assert h.current is None and h.chip_now == "unknown"
+        assert h.reason.status == "available"
+        assert all(c.current is None for c in h.reason.components)
+        assert [c.judged.value for c in h.reason.components] == [1.35, 30.0, 40.0]
+
+
+def test_177_s3_chip_has_the_ev_component_only_even_with_a_null_gap():
+    entries = _field()
+    picks = _picks_for("H3", 3, ("S3",), digest=_digest(entries), ens=1.3, odds=5.0, gap=None)
+    h = _horse(_build(entries, picks, ens=_ev_rows(entries, overrides={"H3": {"ev": 1.25}})),
+               "H3")
+    assert h.chip_rule == "S3"
+    assert _kinds(h.reason) == ["ens_expected_return"]
+    assert h.reason.components[0].judged.value == 1.3
+    assert h.reason.components[0].current.value == 1.25
+    assert h.reason.also_applicable == []
+    assert h.chip_now == "matches"
+
+
+def test_177_missing_gap_on_an_s1_pick_is_reported_missing_and_the_total_no_longer():
+    entries = _field()
+    picks = _picks_for("H3", 3, ("S1", "S3", "S4"), digest=_digest(entries), ens=1.3, gap=None)
+    h = _horse(_build(entries, picks, ens=_ev_rows(entries, overrides={"H3": {"ev": 1.3}})), "H3")
+    gap = next(c for c in h.reason.components if c.kind == "days_since_last")
+    assert gap.judged.status == "missing" and gap.judged.value is None
+    assert gap.current.status == "missing" and gap.current.value is None
+    assert h.chip_now == "no_longer"          # the 138 rule: a NaN gap is not matched (not unknown)
+
+
+def test_177_fractional_gap_is_compared_as_is():
+    entries = _field()
+    picks = _picks_for("H3", 3, ("S1", "S3", "S4"), digest=_digest(entries), ens=1.3,
+                       gap=Decimal("112.5"))
+    h = _horse(_build(entries, picks, ens=_ev_rows(entries, overrides={"H3": {"ev": 1.3}})), "H3")
+    gap = next(c for c in h.reason.components if c.kind == "days_since_last")
+    assert gap.judged.value == 112.5 and gap.judged.status == "not_met"
+    assert h.chip_now == "no_longer"
+
+
+def test_177_single_seed_rows_from_another_run_do_not_touch_the_reason():
+    entries = _field()
+    picks = _s1_picks(entries)
+    ens = _ev_rows(entries, overrides={"H3": {"ev": 1.3}})
+    same = _horse(_build(entries, picks, ens=ens, single=_ev_rows(entries, ev=1.1)), "H3")
+    later = datetime.datetime(2026, 10, 3, 5, 0, tzinfo=_UTC)
+    newer_single = _ev_rows(entries, ev=0.5, run_id=uuid.uuid4(), computed_at=later,
+                            observed=later, overrides={"H3": {"ev": 0.5, "odds": 45.0}})
+    moved = _horse(_build(entries, picks, ens=ens, single=newer_single), "H3")
+    assert moved.reason == same.reason
+
+
+def test_177_closed_stages_keep_the_reason_on_the_chip_rule():
+    entries = _field()
+    picks = _picks_for("H3", 3, ("S1", "S3", "S4"), digest=_digest(entries), ens=1.3)
+    ens = _ev_rows(entries, overrides={"H3": {"ev": 1.3}})
+    moved = _horse(_build(entries, picks, ens=ens, tallies=_tallies(S1=_stage("failed", 300))),
+                   "H3")
+    assert moved.chip_rule == "S3" and moved.reason.rule_id == "S3"
+    assert _kinds(moved.reason) == ["ens_expected_return"]
+    assert [(a.rule_id, a.note_ev_gt) for a in moved.reason.also_applicable] == [
+        ("S1", None), ("S4", None)]
+    dead = _tallies(**{r: _stage("failed", 300) for r in ("S1", "S3", "S4")})
+    kept = _horse(_build(entries, picks, ens=ens, tallies=dead), "H3")
+    assert kept.chip_rule == "S1" and kept.reason.rule_id == "S1"
+    assert len(kept.reason.components) == 3
+
+
+def test_177_field_change_keeps_the_judged_values_of_the_pick():
+    entries = _field()
+    picks = _s1_picks(entries)
+    ens = _ev_rows(entries)
+    h = _horse(_build(entries + [_entry(7)], picks, ens=ens, single=ens), "H3")
+    assert h.field_changed_after_pick is True
+    assert [c.judged.value for c in h.reason.components] == [1.35, 30.0, 40.0]
+
+
+# --- consistency (V1-V10) -------------------------------------------------------------------------
+
+
+def _valid_horse() -> AttentionHorse:
+    entries = _field()
+    ens = _ev_rows(entries, overrides={"H3": {"ev": 1.3, "odds": 30.8}})
+    return _horse(_build(entries, _s1_picks(entries), ens=ens), "H3")
+
+
+def _revalidate(h: AttentionHorse, mutate) -> AttentionHorse:
+    data = h.model_dump(mode="python")
+    mutate(data)
+    return AttentionHorse.model_validate(data)
+
+
+def _set_all_current(data, status):
+    for c in data["reason"]["components"]:
+        c["current"]["status"] = status
+
+
+@pytest.mark.parametrize(
+    ("name", "mutate"),
+    [
+        ("V6 all met but no_longer", lambda d: d.__setitem__("chip_now", "no_longer")),
+        ("V6 one not_met but matches",
+         lambda d: d["reason"]["components"][1]["current"].__setitem__("status", "not_met")),
+        ("V6 current None but matches",
+         lambda d: (d.__setitem__("current", None),
+                    [c.__setitem__("current", None) for c in d["reason"]["components"]])),
+        ("V6 current present but unknown", lambda d: d.__setitem__("chip_now", "unknown")),
+        ("V1 reason without chip", lambda d: (d.__setitem__("chip_rule", None),
+                                             d.__setitem__("chip_stage", None),
+                                             d.__setitem__("chip_now", None),
+                                             d.__setitem__("levels", None))),
+        ("V1 chip without reason", lambda d: d.__setitem__("reason", None)),
+        ("V2 rule_id", lambda d: d["reason"].__setitem__("rule_id", "S3")),
+        ("V3 rule_set_version", lambda d: d["reason"].__setitem__("rule_set_version", "other")),
+        ("V4 component order", lambda d: d["reason"]["components"].reverse()),
+        ("V4 component missing", lambda d: d["reason"]["components"].pop()),
+        ("V5 ev_gt", lambda d: d["reason"]["components"][0].__setitem__("ev_gt", 1.3)),
+        ("V5 band", lambda d: d["reason"]["components"][1].__setitem__("hi", 50.0)),
+        ("V5 gap", lambda d: d["reason"]["components"][2].__setitem__("lo", 7)),
+        ("V7 judged value", lambda d: d["reason"]["components"][0]["judged"].__setitem__("value", 1.0)),
+        ("V8 current value", lambda d: d["reason"]["components"][1]["current"].__setitem__("value", 31.0)),
+        ("V8 gap current != judged",
+         lambda d: d["reason"]["components"][2]["current"].__setitem__("value", 41.0)),
+        ("V9 also contains the chip",
+         lambda d: d["reason"]["also_applicable"].append({"rule_id": "S1", "note_ev_gt": None})),
+        ("V9 also contains S5",
+         lambda d: d["reason"]["also_applicable"].append({"rule_id": "S5", "note_ev_gt": None})),
+        ("V9 also not applicable", lambda d: (d.__setitem__("applicable", ["S1", "S3", "S4", "S5"]),
+                                              d["stages"].pop("S2"),
+                                              d["pick_status"].__setitem__("S2", "none"))),
+        ("V9 order", lambda d: d["reason"]["also_applicable"].reverse()),
+        ("V10 note on S4", lambda d: d["reason"]["also_applicable"][2].__setitem__("note_ev_gt", 1.1)),
+        ("V10 note missing on S2", lambda d: d["reason"]["also_applicable"][0].__setitem__("note_ev_gt", None)),
+    ],
+)
+def test_177_inconsistent_horses_are_rejected_by_the_model(name, mutate):
+    h = _valid_horse()
+    with pytest.raises(pydantic.ValidationError):
+        _revalidate(h, mutate)
+    # the untouched horse round-trips (the validator is not rejecting valid data)
+    assert _revalidate(h, lambda d: None) == h
+
+
+def test_177_judged_statuses_are_not_forced_to_met():
+    # a stored inconsistency stays truthful: a judged "not_met" is NOT a V-violation (D5)
+    h = _valid_horse()
+    ok = _revalidate(h, lambda d: d["reason"]["components"][0]["judged"].__setitem__("status", "not_met"))
+    assert ok.reason.components[0].judged.status == "not_met"
+
+
+def test_177_builder_turns_an_inconsistency_into_unavailable_with_a_warning(monkeypatch, caplog):
+    monkeypatch.setattr(attention, "check_reason_consistency", lambda **_kw: ["forced"])
+    entries = _field()
+    ens = _ev_rows(entries, overrides={"H3": {"ev": 1.3, "odds": 30.8}})
+    with caplog.at_level(logging.WARNING, logger="horseracing_api.attention"):
+        resp = _build(entries, _s1_picks(entries), ens=ens)
+    h = _horse(resp, "H3")
+    assert h.reason.status == "unavailable" and h.reason.reason == "inconsistent"
+    assert h.chip_rule == "S1" and h.chip_now == "matches"       # existing fields untouched
+    assert h.judged.ens_expected_return == 1.35 and h.current.odds == 30.8
+    rec = next(r for r in caplog.records if r.levelno == logging.WARNING)
+    assert _RACE in rec.getMessage() and "H3" in rec.getMessage() and "forced" in rec.getMessage()
+    # no-chip horses are untouched by the forced violation
+    assert _horse(resp, "H1").reason is None
+
+
+def test_177_check_is_the_same_function_in_builder_and_model():
+    assert attention.check_reason_consistency is attention_reason.check_reason_consistency
+    from horseracing_api import schemas
+
+    assert schemas.check_reason_consistency is attention_reason.check_reason_consistency
+
+
+# --- the contract stays additive ------------------------------------------------------------------
+
+
+_ATTENTION_HORSE_138 = [
+    "horse_id", "horse_number", "applicable", "chip_rule", "chip_stage", "chip_s2", "chip_now",
+    "judged", "current", "field_changed_after_pick", "levels", "stages", "pick_status",
+]
+
+
+def test_177_attention_horse_schema_adds_only_reason():
+    schema = AttentionHorse.model_json_schema()
+    assert list(schema["properties"]) == _ATTENTION_HORSE_138 + ["reason"]
+    assert set(schema["required"]) == set(_ATTENTION_HORSE_138) | {"reason"}
+    # nullable, no default
+    assert "default" not in schema["properties"]["reason"]
+    assert any(opt.get("type") == "null" for opt in schema["properties"]["reason"]["anyOf"])
+
+
+def test_177_sibling_schemas_are_unchanged():
+    assert list(EvSnapshot.model_json_schema()["properties"]) == [
+        "ens_expected_return", "single_expected_return", "odds", "odds_observed_at",
+        "computed_at", "run_id", "is_pseudo"]
+    from horseracing_api.schemas import AttentionDayItem
+
+    assert list(AttentionDayItem.model_json_schema()["properties"]) == [
+        "race_id", "post_time", "has_results", "venue_code", "race_number", "horse_id",
+        "horse_number", "horse_name", "chip_rule", "chip_stage", "chip_s2", "chip_now", "stages",
+        "levels", "current_odds_observed_at"]

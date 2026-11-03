@@ -9,6 +9,7 @@ import type {
   AttentionHorse,
   AttentionPriceNoise,
   AttentionProspective,
+  AttentionReason,
   AttentionRulesResponse,
   AttentionSelectedCalibration,
   AttentionUnavailable,
@@ -20,13 +21,15 @@ import type {
   MarketEvDayItem,
   MarketEvDayResponse,
   MarketEvProspectiveResponse,
-  ProspectiveColumn,
-  RaceChaosResponse,
   MarketEvUnavailable,
   OddsResponse,
   PredictionResponse,
+  ProspectiveColumn,
+  RaceChaosResponse,
   RaceDetail,
   RacePage,
+  ReasonComponent,
+  ReasonValue,
   RecommendationResponse,
   RuleId,
   RuleSummary,
@@ -683,6 +686,95 @@ export function attentionRulesFixture(
   };
 }
 
+function reasonValueFixture(
+  value: number | null | undefined,
+  ok: (x: number) => boolean,
+): ReasonValue {
+  if (value == null || Number.isNaN(value)) return { value: null, status: "missing" };
+  return { value, status: ok(value) ? "met" : "not_met" };
+}
+
+/**
+ * Feature 177: the `reason` of a chip horse, derived from the SAME judged/current snapshots the
+ * horse fixture carries so fixtures stay consistent with the API's V7/V8 rules. Thresholds come from
+ * `attentionRulesFixture()` (the frozen registry copy), never typed here twice.
+ */
+export function attentionReasonFixture(
+  opts: {
+    rule?: RuleId;
+    judged?: EvSnapshot | null;
+    current?: EvSnapshot | null;
+    applicable?: RuleId[];
+    gap?: number | null;
+  } & Partial<AttentionReason> = {},
+): AttentionReason {
+  const { rule = "S1", judged: judgedIn, current: currentIn, applicable, gap: gapIn, ...rest } = opts;
+  const rules = Object.fromEntries(attentionRulesFixture().items.map((r) => [r.id, r])) as Record<
+    RuleId,
+    RuleSummary
+  >;
+  const d = rules[rule];
+  const judged =
+    judgedIn === undefined
+      ? evSnapshotFixture({ ens_expected_return: 1.25, single_expected_return: 1.28 })
+      : judgedIn;
+  const current =
+    currentIn === undefined
+      ? evSnapshotFixture({
+          ens_expected_return: 1.246, single_expected_return: 1.26, odds: 30.8,
+          odds_observed_at: "2008-06-01T05:58:00Z", computed_at: "2008-06-01T06:00:00Z",
+          run_id: "66666666-7777-8888-9999-000000000000",
+        })
+      : currentIn;
+  const gap = gapIn === undefined ? 41 : gapIn;
+  const applicableIds = applicable ?? ["S1", "S3", "S4", "S5"];
+  const components: ReasonComponent[] = [
+    {
+      kind: "ens_expected_return",
+      ev_gt: d.ev_gt,
+      is_pseudo: true,
+      judged: reasonValueFixture(judged?.ens_expected_return, (x) => x > d.ev_gt),
+      current: current ? reasonValueFixture(current.ens_expected_return, (x) => x > d.ev_gt) : null,
+    },
+  ];
+  if (d.odds_band) {
+    const [lo, hi] = d.odds_band;
+    components.push({
+      kind: "win_odds",
+      lo,
+      hi,
+      judged: reasonValueFixture(judged?.odds, (x) => x >= lo && x < hi),
+      current: current ? reasonValueFixture(current.odds, (x) => x >= lo && x < hi) : null,
+    });
+  }
+  if (d.gap_days) {
+    const [lo, hi] = d.gap_days;
+    const g = reasonValueFixture(gap, (x) => x >= lo && x <= hi);
+    components.push({
+      kind: "days_since_last", lo, hi, judged: g, current: current ? g : null,
+      current_source: "pick_frozen",
+    });
+  }
+  const also = applicableIds
+    .filter((id) => id !== rule && !rules[id].control)
+    .map((id) => {
+      const o = rules[id];
+      const sameShape =
+        o.uses_ensemble === d.uses_ensemble &&
+        JSON.stringify(o.odds_band) === JSON.stringify(d.odds_band) &&
+        JSON.stringify(o.gap_days) === JSON.stringify(d.gap_days);
+      return { rule_id: id, note_ev_gt: sameShape && o.ev_gt > d.ev_gt ? o.ev_gt : null };
+    });
+  return {
+    status: "available",
+    rule_id: rule,
+    rule_set_version: "attention-S1-S5-v1",
+    components,
+    also_applicable: also,
+    ...rest,
+  };
+}
+
 export function evSnapshotFixture(overrides: Partial<EvSnapshot> = {}): EvSnapshot {
   return {
     ens_expected_return: 1.31,
@@ -716,6 +808,19 @@ export function pickStatusFor(applicable: RuleId[]): AttentionHorse["pick_status
  *  `stages`/`pick_status` follow the final `applicable` unless overridden. */
 export function attentionHorseFixture(overrides: Partial<AttentionHorse> = {}): AttentionHorse {
   const applicable = overrides.applicable ?? ["S1", "S3", "S4", "S5"];
+  const chipRule = overrides.chip_rule === undefined ? "S1" : overrides.chip_rule;
+  const judged =
+    overrides.judged === undefined
+      ? evSnapshotFixture({ ens_expected_return: 1.25, single_expected_return: 1.28 })
+      : overrides.judged;
+  const current =
+    overrides.current === undefined
+      ? evSnapshotFixture({
+          ens_expected_return: 1.246, single_expected_return: 1.26, odds: 30.8,
+          odds_observed_at: "2008-06-01T05:58:00Z", computed_at: "2008-06-01T06:00:00Z",
+          run_id: "66666666-7777-8888-9999-000000000000",
+        })
+      : overrides.current;
   return {
     horse_id: "h1",
     horse_number: 1,
@@ -724,16 +829,17 @@ export function attentionHorseFixture(overrides: Partial<AttentionHorse> = {}): 
     chip_stage: stageDetail(),
     chip_s2: false,
     chip_now: "matches",
-    judged: evSnapshotFixture({ ens_expected_return: 1.25, single_expected_return: 1.28 }),
-    current: evSnapshotFixture({
-      ens_expected_return: 1.246, single_expected_return: 1.26, odds: 30.8,
-      odds_observed_at: "2008-06-01T05:58:00Z", computed_at: "2008-06-01T06:00:00Z",
-      run_id: "66666666-7777-8888-9999-000000000000",
-    }),
+    judged,
+    current,
     field_changed_after_pick: false,
     levels: { backtest: 3, prospective: 1, price_noise: 2 },
     stages: stagesFor(applicable),
     pick_status: pickStatusFor(applicable),
+    // 177: derived from the same snapshots/applicable so the fixture is consistent (V7/V8/V9)
+    reason:
+      chipRule == null
+        ? null
+        : attentionReasonFixture({ rule: chipRule, judged, current, applicable }),
     ...overrides,
   };
 }

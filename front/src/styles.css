@@ -644,6 +644,57 @@ th.colgroup {
 .attn-panel > .attn-panel__note {
   margin: 0.4rem 0 0;
 }
+/* 177: 該当理由の照合表と「検証の根拠」の折りたたみ。損益色は使わない(適合は語で示す)。 */
+.attn-reason__summary {
+  margin: 0 0 0.35rem;
+}
+.attn-reason__table {
+  width: auto;
+  max-width: 100%;
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  border-collapse: collapse;
+}
+.attn-reason__table th,
+.attn-reason__table td {
+  padding: 0.15rem 0.6rem 0.15rem 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+.attn-reason__table thead th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.attn-reason__table tbody th {
+  font-weight: 500;
+}
+.attn-reason__status {
+  white-space: nowrap;
+}
+.attn-reason__glyph {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+.attn-reason .attn-panel__note {
+  margin: 0.15rem 0;
+}
+.attn-panel__evidence {
+  margin-top: 0.4rem;
+}
+.attn-panel__evidence > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-bottom: 0.3rem;
+}
+@media (max-width: 640px) {
+  .attn-reason__table {
+    display: block;
+    overflow-x: auto;
+  }
+}
 .ev-note {
   margin: 0.5rem 0;
   padding: 0.45rem 0.7rem;

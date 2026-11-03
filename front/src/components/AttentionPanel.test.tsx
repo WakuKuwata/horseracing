@@ -1,4 +1,5 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import type { AttentionAvailable, AttentionHorse } from "../api/types";
@@ -171,14 +172,16 @@ describe("AttentionPanel (138 T035)", () => {
       "この間にオッズがどれだけ動くかは測っていません",
     );
 
-    // 期待回収率: judged (frozen pick) vs current (latest ens15 row), both pseudo-badged
+    // 期待回収率(単 seed・参考): the single-seed values only — the ens15 values and the odds now
+    // live in the reason table at the top (177); every expected return still carries the badge
     expect(screen.getByTestId("attention-judged").textContent).toBe(
-      "判断時点(2008/06/01 09:12): 15 seed 平均 125.0% 推定・単 seed 128.0% 推定・単勝 32.5 倍",
+      "判断時点(2008/06/01 09:12): 単 seed 128.0% 推定",
     );
     expect(screen.getByTestId("attention-current").textContent).toBe(
-      "現在値(2008/06/01 15:00): 15 seed 平均 124.6% 推定・単 seed 126.0% 推定・単勝 30.8 倍" +
-        "・S1 の条件を現在値でも満たす",
+      "現在値(2008/06/01 15:00): 単 seed 126.0% 推定",
     );
+    expect(screen.getByTestId("attention-reason-table")).toHaveTextContent("125.0%");
+    expect(screen.getByTestId("attention-reason-table")).toHaveTextContent("30.8 倍");
     assertPseudoLabelCoverage(container, ["125.0%", "128.0%", "124.6%", "126.0%", "140.6%"]);
     expect(screen.queryByTestId("attention-field-changed")).toBeNull();
     expect(screen.getByTestId("attention-panel-disclaimer")).toHaveTextContent(
@@ -235,11 +238,16 @@ describe("AttentionPanel (138 T035)", () => {
     );
     await panel();
     expect(screen.getByTestId("attention-progress").textContent).toBe("検証の進み具合●○○(3 段階中 1)");
-    const current = screen.getByTestId("attention-current");
-    expect(current).toHaveTextContent("単勝 45.0 倍");
-    expect(current).toHaveTextContent("判断時点のみ該当(現在値では S1 の条件を満たしません)");
-    // judged values stay the frozen pick values (32.5 倍)
-    expect(screen.getByTestId("attention-judged")).toHaveTextContent("単勝 32.5 倍");
+    // the reason table carries the odds: judged 32.5 (met) vs current 45.0 (not met), and the
+    // summary names the component that no longer holds (177)
+    const rows = screen.getAllByTestId("attention-reason-row");
+    expect(rows[1]).toHaveTextContent("32.5 倍");
+    expect(rows[1]).toHaveTextContent("45.0 倍");
+    expect(Array.from(rows[1].querySelectorAll("[data-status]")).map((e) => e.getAttribute("data-status")))
+      .toEqual(["met", "not_met"]);
+    expect(screen.getByTestId("attention-reason-summary").textContent).toBe(
+      "判断時点(2026/10/03 09:12)では S1 の 3 条件をすべて満たしました。現在値では単勝オッズ帯の条件を満たしていません。",
+    );
   });
 
   it("「現在値なし」 + field changed after the pick (US1 scenario 11)", async () => {
@@ -572,8 +580,9 @@ describe("AttentionPanel (138 T035)", () => {
     expect((await screen.findAllByTestId("attention-rules-error")).length).toBe(4);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(container.querySelector(".state--error")).toBeNull();
-    // the horse-level facts still render without the registry
-    expect(screen.getByTestId("attention-judged")).toHaveTextContent("単勝 32.5 倍");
+    // the horse-level facts still render without the registry (the reason table needs no rules)
+    expect(screen.getByTestId("attention-reason-table")).toHaveTextContent("32.5 倍");
+    expect(screen.getByTestId("attention-reason-summary")).toHaveTextContent("すべて満たしました");
   });
 
   it("探索後固定 / 対照 follow the API's posthoc / control flags (no hard-coded rule ids)", async () => {
@@ -680,5 +689,97 @@ describe("AttentionPanel (138 T035)", () => {
     assertRoiBasisLabels(root);
     expect(root.textContent).not.toMatch(/印|通常/);
     expect(root.querySelector("button, input, select, a")).toBeNull();
+  });
+
+  // --- 177: the reason table at the top, the statistics behind 「検証の根拠」 -------------------
+
+  it("177: order — head, summary, table, also-line, sources, the evidence fold, the disclaimer", async () => {
+    useRules();
+    renderPanel(s2Horse());
+    const root = await panel();
+    const ids = Array.from(root.querySelectorAll("[data-testid]")).map((e) =>
+      e.getAttribute("data-testid"),
+    );
+    const order = [
+      "attention-panel-title",
+      "attention-reason-summary",
+      "attention-reason-table",
+      "attention-reason-also",
+      "attention-reason-sources",
+      "attention-evidence",
+      "attention-panel-disclaimer",
+    ];
+    const seen = ids.filter((id) => order.includes(id as string));
+    expect(seen).toEqual(order);
+  });
+
+  it("177: 「検証の根拠」 starts closed, opens from its summary, and holds every 138 row in order", async () => {
+    useRules();
+    renderPanel(attentionHorseFixture());
+    const root = await panel();
+    const details = root.querySelector<HTMLDetailsElement>('[data-testid="attention-evidence"]')!;
+    expect(details.open).toBe(false);
+    expect(details.querySelector("summary")?.textContent).toBe(
+      "検証の根拠(過去検証・判断時点の見込み・前向き検証・価格ずれ試験・価格鮮度)",
+    );
+    await userEvent.click(details.querySelector("summary")!);
+    expect(details.open).toBe(true);
+    expect(Array.from(details.querySelectorAll("dt")).map((dt) => dt.textContent)).toEqual([
+      "該当する条件",
+      "過去検証",
+      "判断時点の見込み(過去データからの換算)",
+      "前向き検証",
+      "価格ずれ試験",
+      "価格鮮度",
+      "期待回収率(単 seed・参考)",
+    ]);
+    // the 138 disclosures survive the move: basis labels, freshness, disclaimer, pseudo badges
+    expect(assertRoiBasisCoverage(details)).toBeGreaterThanOrEqual(8);
+    expect(within(details).getByTestId("attention-freshness")).toHaveTextContent(
+      "この間にオッズがどれだけ動くかは測っていません",
+    );
+    expect(screen.getByTestId("attention-panel-disclaimer")).toHaveTextContent(
+      "的中や利益を保証するものではありません",
+    );
+    assertAttentionDiscipline(root);
+    assertRoiBasisLabels(root);
+  });
+
+  it("177: thresholds live in the table only — never in the title, badges or sub chip", async () => {
+    useRules();
+    renderPanel(s2Horse());
+    const root = await panel();
+    const figure = /\d\s*(%|倍|日)/;
+    const head = root.querySelector(".attn-panel__head")!;
+    expect(head.textContent).not.toMatch(figure);
+    for (const el of Array.from(head.querySelectorAll("*"))) {
+      expect(el.getAttribute("aria-label") ?? "").not.toMatch(figure);
+      expect(el.getAttribute("title") ?? "").not.toMatch(figure);
+    }
+    const table = screen.getByTestId("attention-reason-table");
+    expect(table).toHaveTextContent("期待回収率(15 seed 平均)が 120% 超");
+    expect(table).toHaveTextContent("単勝オッズが 20 倍以上 40 倍未満");
+    expect(table).toHaveTextContent("前走から 14〜112 日");
+    expect(screen.getByTestId("attention-reason-also").textContent).toBe(
+      "S2(期待回収率 130% 超)にも該当。S3・S4 にも該当(表示する条件は S1)。対照 S5 にも該当。",
+    );
+  });
+
+  it("177: no reason table for an S5-only or a cancelled horse", () => {
+    useRules();
+    const s5 = attentionHorseFixture({
+      applicable: ["S5"], chip_rule: null, chip_stage: null, chip_now: null, judged: null,
+      levels: null, stages: stagesFor(["S5"]), pick_status: pickStatusFor(["S5"]),
+    });
+    expect(s5.reason).toBeNull();
+    renderPanel(s5);
+    expect(screen.queryByTestId("attention-reason-table")).toBeNull();
+    expect(screen.getByTestId("attention-control-only")).toHaveTextContent("対照 S5 に該当");
+  });
+
+  it("177: a cancelled horse keeps the minimal view (no reason table)", () => {
+    renderPanel(attentionHorseFixture(), SETTLED, NOW, true);
+    expect(screen.queryByTestId("attention-reason-table")).toBeNull();
+    expect(screen.getByTestId("attention-cancelled")).toHaveTextContent("出走取消");
   });
 });

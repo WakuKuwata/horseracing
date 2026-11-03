@@ -21,6 +21,13 @@ Display sources (plan D17, FR-016):
 Prospective tally (plan 0.5, FR-005): computed at read time from every pick of a rule (no date
 filter), memoised per rule in ``TALLY_MEMO`` under the key from ``queries.attention_memo_key``
 (D22), so a race-detail or day read reuses the tally and its bootstrap instead of re-running them.
+Reason (feature 177): ``AttentionHorse.reason`` spells the chip's rule out per component
+(EV threshold / odds band / gap) with the judged (pick) and current values and their statuses,
+produced by ``attention_rules.component_states`` — the same helpers ``chip_now`` goes through — so
+"all components met" is exactly ``chip_now == "matches"``. ``build_reason`` composes it,
+``check_reason_consistency`` (shared with the response model) guards it; a violation is a bug and
+is served as ``unavailable`` with a WARNING, never as a wrong table and never as a silent None.
+
 Win probabilities and p̂ are never returned (constitution IV).
 
 Settlement (selection policy v2, 139): the counted picks are settled at the OFFICIAL win payout
@@ -31,6 +38,7 @@ Settlement (selection policy v2, 139): the counted picks are settled at the OFFI
 from __future__ import annotations
 
 import datetime
+import logging
 import math
 import threading
 import uuid
@@ -43,8 +51,10 @@ import numpy as np
 from horseracing_db.enums import EntryStatus, ResultStatus
 from horseracing_eval import attention_rules as ar
 
+from .attention_reason import check_reason_consistency, note_ev_gt
 from .market_ev import build_market_ev
 from .schemas import (
+    AlsoApplicable,
     AttentionAvailable,
     AttentionBacktest,
     AttentionBacktestBootstrap,
@@ -66,6 +76,8 @@ from .schemas import (
     AttentionPriceNoise,
     AttentionProspective,
     AttentionProspectiveBootstrap,
+    AttentionReason,
+    AttentionReasonUnavailable,
     AttentionRuleLevels,
     AttentionRulesResponse,
     AttentionSelectedCalibration,
@@ -73,11 +85,17 @@ from .schemas import (
     AttentionStoredBasis,
     AttentionUnavailable,
     CheckpointDecision,
+    EvReasonComponent,
     EvSnapshot,
+    GapReasonComponent,
     MarketEvAvailable,
+    OddsBandReasonComponent,
+    ReasonValue,
     RuleSummary,
     StageDetail,
 )
+
+logger = logging.getLogger(__name__)
 
 DISCLAIMER = (
     "注目条件は過去データで最も有望だった条件で、検証済みの条件ではありません。"
@@ -610,6 +628,59 @@ def _current(ens_row, single_row) -> EvSnapshot:
     )
 
 
+def _reason_value(state: ar.ComponentState) -> ReasonValue:
+    return ReasonValue(value=state.value, status=state.status)
+
+
+def build_reason(
+    *, chip: str, pick: StoredPick, current: EvSnapshot | None, applicable: Sequence[str]
+) -> AttentionReason:
+    """The chip rule's components for one horse: judged from the frozen pick, current from the
+    displayed version's latest row (the gap stays the frozen value), both through
+    ``attention_rules.component_states``. Only ensemble rules get a reason (every non-control
+    rule is one — eval INV-R7); S5 is never a chip."""
+    defn = ar.definition(chip)
+    if not defn.uses_ensemble:   # pragma: no cover - chip_rule never returns the control rule
+        raise ValueError(f"reason requested for the single-seed rule {chip}")
+    gap = _f(pick.days_since_last)
+    judged_states = ar.component_states(
+        defn, ens_ev=_f(pick.ens_expected_return), single_ev=_f(pick.single_expected_return),
+        odds=_f(pick.odds_used), days_since_last=gap,
+    )
+    current_states = None if current is None else ar.component_states(
+        defn, ens_ev=current.ens_expected_return, single_ev=current.single_expected_return,
+        odds=current.odds, days_since_last=gap,
+    )
+    components = []
+    for i, j in enumerate(judged_states):
+        cur = None if current_states is None else _reason_value(current_states[i])
+        if j.kind == "ens_expected_return":
+            components.append(EvReasonComponent(
+                kind="ens_expected_return", ev_gt=defn.ev_gt, is_pseudo=True,
+                judged=_reason_value(j), current=cur,
+            ))
+        elif j.kind == "win_odds":
+            lo, hi = defn.odds_band
+            components.append(OddsBandReasonComponent(
+                kind="win_odds", lo=lo, hi=hi, judged=_reason_value(j), current=cur,
+            ))
+        else:
+            lo, hi = defn.gap_days
+            components.append(GapReasonComponent(
+                kind="days_since_last", lo=lo, hi=hi, judged=_reason_value(j), current=cur,
+                current_source="pick_frozen",
+            ))
+    also = [
+        AlsoApplicable(rule_id=r, note_ev_gt=note_ev_gt(defn, ar.definition(r)))
+        for r in ar.RULE_IDS
+        if r in applicable and r != chip and not ar.definition(r).control
+    ]
+    return AttentionReason(
+        status="available", rule_id=chip, rule_set_version=ar.RULE_SET_VERSION,
+        components=components, also_applicable=also,
+    )
+
+
 def _horse_order(number: int | None, horse_id: str) -> tuple[bool, int, str]:
     return (number is None, int(number) if number is not None else 0, horse_id)
 
@@ -697,6 +768,19 @@ def build_attention(
                 current_odds=current.odds,
                 days_since_last=_f(source.days_since_last),
             )
+        reason = None
+        if chip is not None:
+            reason = build_reason(chip=chip, pick=source, current=current, applicable=applicable)
+            bad = check_reason_consistency(
+                chip_rule=chip, chip_now=chip_now, judged=_judged(source), current=current,
+                applicable=applicable, reason=reason,
+            )
+            if bad:
+                logger.warning(
+                    "attention reason inconsistent race=%s horse=%s violations=%s — served as "
+                    "unavailable", race_id, hid, ",".join(bad),
+                )
+                reason = AttentionReasonUnavailable(status="unavailable", reason="inconsistent")
         horses.append(
             AttentionHorse(
                 horse_id=hid,
@@ -712,6 +796,7 @@ def build_attention(
                 levels=_levels(chip, tallies) if chip is not None else None,
                 stages={rule_id: stage_of[rule_id] for rule_id in applicable},
                 pick_status=pick_status,
+                reason=reason,
             )
         )
     return AttentionAvailable(

@@ -15,6 +15,8 @@ from typing import Annotated, Literal
 from horseracing_eval.attention_rules import Decision, RuleId, Stage
 from pydantic import BaseModel, Field, model_validator
 
+from .attention_reason import check_reason_consistency
+
 
 class ErrorBody(BaseModel):
     status: int
@@ -1385,6 +1387,106 @@ class AttentionLevels(BaseModel):
     price_noise: Literal[1, 2, 3]
 
 
+# --- Feature 177: the reason (why the chip) — pure addition to AttentionHorse ------------------
+# Per-component criteria and statuses so the front can draw 「条件 / 判断時点 / 現在値」 without
+# re-deriving the match or holding any threshold. Values come from the same rows as ``judged`` /
+# ``current``; the statuses from the same eval helpers as ``chip_now`` (attention_rules 177).
+
+
+class ReasonValue(BaseModel):
+    """One value against one criterion. ``missing`` (value None) = the input was absent — shown as
+    「値なし」, never as 「満たさない」."""
+
+    model_config = {"extra": "forbid"}
+
+    value: float | None
+    status: Literal["met", "not_met", "missing"]
+
+
+class EvReasonComponent(BaseModel):
+    """15-seed expected return strictly above ``ev_gt`` (ratio; 1.2 = 120%)."""
+
+    model_config = {"extra": "forbid"}
+
+    kind: Literal["ens_expected_return"]
+    ev_gt: float
+    is_pseudo: Literal[True]
+    judged: ReasonValue
+    #: None whenever the horse has no current computation (AttentionHorse.current is None)
+    current: ReasonValue | None
+
+
+class OddsBandReasonComponent(BaseModel):
+    """Win odds in ``lo <= odds < hi``."""
+
+    model_config = {"extra": "forbid"}
+
+    kind: Literal["win_odds"]
+    lo: float
+    hi: float
+    judged: ReasonValue
+    current: ReasonValue | None
+
+
+class GapReasonComponent(BaseModel):
+    """Days since the last start in ``lo <= days <= hi``. The current value is the pick's frozen
+    value (it depends on the race date and the previous start only — never recomputed at render)."""
+
+    model_config = {"extra": "forbid"}
+
+    kind: Literal["days_since_last"]
+    lo: int
+    hi: int
+    judged: ReasonValue
+    current: ReasonValue | None
+    current_source: Literal["pick_frozen"]
+
+
+ReasonComponent = Annotated[
+    EvReasonComponent | OddsBandReasonComponent | GapReasonComponent,
+    Field(discriminator="kind"),
+]
+
+
+class AlsoApplicable(BaseModel):
+    """Another non-control rule the horse was judged to match (first computation). ``note_ev_gt``
+    is set only for a stricter sibling that differs from the chip rule by its EV threshold alone
+    (S2 under an S1 chip) — the front spells that threshold out and nothing else."""
+
+    model_config = {"extra": "forbid"}
+
+    rule_id: RuleId
+    note_ev_gt: float | None
+
+
+class AttentionReason(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    status: Literal["available"]
+    rule_id: RuleId
+    rule_set_version: str
+    #: definition order (EV → odds band → gap); parts the rule does not have are absent
+    components: list[ReasonComponent]
+    #: rank order, no duplicates, never the chip rule or a control rule
+    also_applicable: list[AlsoApplicable]
+
+
+class AttentionReasonUnavailable(BaseModel):
+    """The builder found the reason inconsistent with the horse (a bug, logged at WARNING): the
+    existing fields are served, the explanation is withheld rather than served wrong."""
+
+    model_config = {"extra": "forbid"}
+
+    status: Literal["unavailable"]
+    reason: Literal["inconsistent"]
+
+
+AttentionReasonResponse = Annotated[
+    AttentionReason | AttentionReasonUnavailable,
+    Field(discriminator="status"),
+]
+
+
 class AttentionHorse(BaseModel):
     model_config = {"extra": "forbid"}
 
@@ -1409,6 +1511,19 @@ class AttentionHorse(BaseModel):
     #: stage of every applicable rule
     stages: dict[RuleId, StageDetail]
     pick_status: dict[RuleId, Literal["pick", "void:scratched", "none"]]
+    #: 177: why the chip (None iff there is no chip). ``unavailable`` only when the builder found
+    #: its own explanation inconsistent (never served wrong, never silently dropped).
+    reason: AttentionReasonResponse | None
+
+    @model_validator(mode="after")
+    def _reason_is_consistent(self) -> AttentionHorse:
+        bad = check_reason_consistency(
+            chip_rule=self.chip_rule, chip_now=self.chip_now, judged=self.judged,
+            current=self.current, applicable=self.applicable, reason=self.reason,
+        )
+        if bad:
+            raise ValueError(f"attention reason inconsistent with the horse: {', '.join(bad)}")
+        return self
 
 
 class AttentionAvailable(BaseModel):

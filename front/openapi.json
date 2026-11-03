@@ -1,6 +1,40 @@
 {
   "components": {
     "schemas": {
+      "AlsoApplicable": {
+        "additionalProperties": false,
+        "description": "Another non-control rule the horse was judged to match (first computation). ``note_ev_gt``\nis set only for a stricter sibling that differs from the chip rule by its EV threshold alone\n(S2 under an S1 chip) — the front spells that threshold out and nothing else.",
+        "properties": {
+          "note_ev_gt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Ev Gt"
+          },
+          "rule_id": {
+            "enum": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5"
+            ],
+            "title": "Rule Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule_id",
+          "note_ev_gt"
+        ],
+        "title": "AlsoApplicable",
+        "type": "object"
+      },
       "AttentionAvailable": {
         "additionalProperties": false,
         "description": "The race's first ensemble computation is recorded; ``horses`` covers every currently\nstarted horse plus any judged horse that was scratched later (horse_number order).",
@@ -882,6 +916,31 @@
             "title": "Pick Status",
             "type": "object"
           },
+          "reason": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "available": "#/components/schemas/AttentionReason",
+                    "unavailable": "#/components/schemas/AttentionReasonUnavailable"
+                  },
+                  "propertyName": "status"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AttentionReason"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AttentionReasonUnavailable"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
           "stages": {
             "additionalProperties": {
               "$ref": "#/components/schemas/StageDetail"
@@ -912,7 +971,8 @@
           "field_changed_after_pick",
           "levels",
           "stages",
-          "pick_status"
+          "pick_status",
+          "reason"
         ],
         "title": "AttentionHorse",
         "type": "object"
@@ -1306,6 +1366,94 @@
           "numpy_version"
         ],
         "title": "AttentionProspectiveBootstrap",
+        "type": "object"
+      },
+      "AttentionReason": {
+        "additionalProperties": false,
+        "properties": {
+          "also_applicable": {
+            "items": {
+              "$ref": "#/components/schemas/AlsoApplicable"
+            },
+            "title": "Also Applicable",
+            "type": "array"
+          },
+          "components": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "days_since_last": "#/components/schemas/GapReasonComponent",
+                  "ens_expected_return": "#/components/schemas/EvReasonComponent",
+                  "win_odds": "#/components/schemas/OddsBandReasonComponent"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/EvReasonComponent"
+                },
+                {
+                  "$ref": "#/components/schemas/OddsBandReasonComponent"
+                },
+                {
+                  "$ref": "#/components/schemas/GapReasonComponent"
+                }
+              ]
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "rule_id": {
+            "enum": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5"
+            ],
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "rule_set_version": {
+            "title": "Rule Set Version",
+            "type": "string"
+          },
+          "status": {
+            "const": "available",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "rule_id",
+          "rule_set_version",
+          "components",
+          "also_applicable"
+        ],
+        "title": "AttentionReason",
+        "type": "object"
+      },
+      "AttentionReasonUnavailable": {
+        "additionalProperties": false,
+        "description": "The builder found the reason inconsistent with the horse (a bug, logged at WARNING): the\nexisting fields are served, the explanation is withheld rather than served wrong.",
+        "properties": {
+          "reason": {
+            "const": "inconsistent",
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "const": "unavailable",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "reason"
+        ],
+        "title": "AttentionReasonUnavailable",
         "type": "object"
       },
       "AttentionRuleLevels": {
@@ -2271,6 +2419,48 @@
         "title": "EstimatedOddsRow",
         "type": "object"
       },
+      "EvReasonComponent": {
+        "additionalProperties": false,
+        "description": "15-seed expected return strictly above ``ev_gt`` (ratio; 1.2 = 120%).",
+        "properties": {
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReasonValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ev_gt": {
+            "title": "Ev Gt",
+            "type": "number"
+          },
+          "is_pseudo": {
+            "const": true,
+            "title": "Is Pseudo",
+            "type": "boolean"
+          },
+          "judged": {
+            "$ref": "#/components/schemas/ReasonValue"
+          },
+          "kind": {
+            "const": "ens_expected_return",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ev_gt",
+          "is_pseudo",
+          "judged",
+          "current"
+        ],
+        "title": "EvReasonComponent",
+        "type": "object"
+      },
       "EvSnapshot": {
         "additionalProperties": false,
         "description": "Expected returns (ratio, pseudo) at one moment. ``judged`` = the frozen pick values;\n``current`` = the displayed version's latest row (single seed only from the same run).",
@@ -2566,6 +2756,53 @@
           }
         },
         "title": "FavoriteBaseline",
+        "type": "object"
+      },
+      "GapReasonComponent": {
+        "additionalProperties": false,
+        "description": "Days since the last start in ``lo <= days <= hi``. The current value is the pick's frozen\nvalue (it depends on the race date and the previous start only — never recomputed at render).",
+        "properties": {
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReasonValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_source": {
+            "const": "pick_frozen",
+            "title": "Current Source",
+            "type": "string"
+          },
+          "hi": {
+            "title": "Hi",
+            "type": "integer"
+          },
+          "judged": {
+            "$ref": "#/components/schemas/ReasonValue"
+          },
+          "kind": {
+            "const": "days_since_last",
+            "title": "Kind",
+            "type": "string"
+          },
+          "lo": {
+            "title": "Lo",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "lo",
+          "hi",
+          "judged",
+          "current",
+          "current_source"
+        ],
+        "title": "GapReasonComponent",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -4512,6 +4749,47 @@
         "title": "ModelVersionRow",
         "type": "object"
       },
+      "OddsBandReasonComponent": {
+        "additionalProperties": false,
+        "description": "Win odds in ``lo <= odds < hi``.",
+        "properties": {
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReasonValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hi": {
+            "title": "Hi",
+            "type": "number"
+          },
+          "judged": {
+            "$ref": "#/components/schemas/ReasonValue"
+          },
+          "kind": {
+            "const": "win_odds",
+            "title": "Kind",
+            "type": "string"
+          },
+          "lo": {
+            "title": "Lo",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "lo",
+          "hi",
+          "judged",
+          "current"
+        ],
+        "title": "OddsBandReasonComponent",
+        "type": "object"
+      },
       "OddsResponse": {
         "properties": {
           "estimated": {
@@ -6170,6 +6448,38 @@
           "selection"
         ],
         "title": "RealExoticOddsRow",
+        "type": "object"
+      },
+      "ReasonValue": {
+        "additionalProperties": false,
+        "description": "One value against one criterion. ``missing`` (value None) = the input was absent — shown as\n「値なし」, never as 「満たさない」.",
+        "properties": {
+          "status": {
+            "enum": [
+              "met",
+              "not_met",
+              "missing"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value",
+          "status"
+        ],
+        "title": "ReasonValue",
         "type": "object"
       },
       "RecommendationResponse": {

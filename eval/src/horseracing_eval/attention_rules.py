@@ -6,6 +6,9 @@ Three parts, in the order they were built (plan 0.3):
 * **Definitions** — what each condition selects. ``match_mask`` is the only implementation; the
   freeze script selects its backtest rows with it and ``definitions_sha256`` ties the frozen
   statistics to these exact definitions (a changed boundary changes the hash).
+  Feature 177: ``match_mask`` is the AND of three component masks and ``component_states`` reports
+  them for one horse (met / not_met / missing) so the api can show why a chip was given; the
+  semantics, signature and callers are unchanged.
 * **Prospective rules** — how a judged horse (a "pick") is classified, how the 300/600-point
   checkpoints are decided and how a stage follows from the recorded decisions. Selection policy
   v2 (feature 139) settles at the official win payout; v1 (judged odds) is kept as a reference.
@@ -127,22 +130,100 @@ def _as_float_array(x) -> np.ndarray:
     return np.asarray(x, dtype=float)
 
 
+# --- the three component masks (feature 177) --------------------------------------------------
+# ``match_mask`` is their AND; ``component_states`` reports each one for a single horse. Both go
+# through these helpers so "the whole = AND of the parts" holds by construction and the api can
+# never explain a chip with a different rule than the one that decided it. The expressions are the
+# pre-177 ``match_mask`` body moved verbatim (no new normalisation, conversion or broadcasting);
+# ``test_177_match_mask_is_bit_identical_to_the_138_reference`` holds the old body as the oracle.
+
+
+def _ev_input(defn: RuleDefinition, ens_ev, single_ev):
+    return ens_ev if defn.uses_ensemble else single_ev
+
+
+def _ev_mask(defn: RuleDefinition, ens_ev, single_ev) -> np.ndarray:
+    ev = _as_float_array(_ev_input(defn, ens_ev, single_ev))
+    with np.errstate(invalid="ignore"):
+        return ev > defn.ev_gt
+
+
+def _band_mask(defn: RuleDefinition, odds) -> np.ndarray:
+    o = _as_float_array(odds)
+    lo, hi = defn.odds_band
+    with np.errstate(invalid="ignore"):
+        return (o >= lo) & (o < hi)
+
+
+def _gap_mask(defn: RuleDefinition, days_since_last) -> np.ndarray:
+    g = _as_float_array(days_since_last)
+    glo, ghi = defn.gap_days
+    with np.errstate(invalid="ignore"):
+        return (g >= glo) & (g <= ghi)
+
+
 def match_mask(defn: RuleDefinition, *, ens_ev, single_ev, odds, days_since_last) -> np.ndarray:
     """Vectorised selection — THE implementation (freeze, training and api all go through it).
 
-    ``None`` / NaN in any input the rule uses means "not matched" (never an error)."""
-    ev = _as_float_array(ens_ev if defn.uses_ensemble else single_ev)
-    with np.errstate(invalid="ignore"):
-        mask = ev > defn.ev_gt
-        if defn.odds_band is not None:
-            o = _as_float_array(odds)
-            lo, hi = defn.odds_band
-            mask = mask & (o >= lo) & (o < hi)
-        if defn.gap_days is not None:
-            g = _as_float_array(days_since_last)
-            glo, ghi = defn.gap_days
-            mask = mask & (g >= glo) & (g <= ghi)
+    ``None`` / NaN in any input the rule uses means "not matched" (never an error). Since 177 the
+    mask is the AND of the component masks above (``&`` keeps numpy broadcasting between scalar
+    and vector inputs exactly as before)."""
+    mask = _ev_mask(defn, ens_ev, single_ev)
+    if defn.odds_band is not None:
+        mask = mask & _band_mask(defn, odds)
+    if defn.gap_days is not None:
+        mask = mask & _gap_mask(defn, days_since_last)
     return np.asarray(mask, dtype=bool)
+
+
+ComponentKind = Literal[
+    "ens_expected_return", "single_expected_return", "win_odds", "days_since_last"
+]
+ComponentStatus = Literal["met", "not_met", "missing"]
+
+
+@dataclass(frozen=True)
+class ComponentState:
+    """One component of a rule for ONE horse (feature 177): which part, whether the value meets
+    it, and the value itself. ``missing`` (value None) when the input is None / NaN — the api
+    shows that as 「値なし」 and never as 「満たさない」; the total (``match_mask`` / ``chip_now``)
+    treats a missing input as not matched exactly as before."""
+
+    kind: ComponentKind
+    status: ComponentStatus
+    value: float | None
+
+
+def _component(kind: ComponentKind, raw, ok: np.ndarray) -> ComponentState:
+    v = _as_float_array(raw)
+    if v.shape != ():
+        raise ValueError("component_states takes one horse (scalar inputs)")
+    f = float(v)
+    if math.isnan(f):
+        return ComponentState(kind, "missing", None)
+    return ComponentState(kind, "met" if bool(ok) else "not_met", f)
+
+
+def component_states(
+    defn: RuleDefinition, *, ens_ev, single_ev, odds, days_since_last
+) -> tuple[ComponentState, ...]:
+    """The rule's components for one horse, in definition order (EV → odds band → gap; parts the
+    rule does not have are absent). Same helpers as ``match_mask``: ``all(status == "met")`` is
+    exactly ``matches(...)`` (``test_177_all_components_met_is_the_match``)."""
+    out = [
+        _component(
+            "ens_expected_return" if defn.uses_ensemble else "single_expected_return",
+            _ev_input(defn, ens_ev, single_ev),
+            _ev_mask(defn, ens_ev, single_ev),
+        )
+    ]
+    if defn.odds_band is not None:
+        out.append(_component("win_odds", odds, _band_mask(defn, odds)))
+    if defn.gap_days is not None:
+        out.append(
+            _component("days_since_last", days_since_last, _gap_mask(defn, days_since_last))
+        )
+    return tuple(out)
 
 
 def matches(defn: RuleDefinition, *, ens_ev, single_ev, odds, days_since_last) -> bool:

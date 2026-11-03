@@ -26,7 +26,7 @@ import {
   ruleIdText,
   stageLabel,
 } from "../lib/attention";
-import { formatJstDateTime, formatNum, formatPct, PLACEHOLDER } from "../lib/format";
+import { formatJstDateTime, formatPct, PLACEHOLDER } from "../lib/format";
 import {
   formatCi,
   formatCount,
@@ -36,6 +36,7 @@ import {
   RoiValue,
 } from "./AttentionRoi";
 import { AttentionProgress } from "./AttentionProgress";
+import { AttentionReasonTable } from "./AttentionReasonTable";
 import { BuyTimeExpectationLine } from "./AttentionRulesPanel";
 import { PseudoValue } from "./PseudoValue";
 
@@ -45,6 +46,9 @@ import { PseudoValue } from "./PseudoValue";
  * どの条件に該当するか・チップの条件・段階は API の値をそのまま使い、**導き直さない**。
  * front がここで決めるのは価格鮮度(最新の計算のオッズ取得時刻 × 描画時刻)と強調レベル
  * (4 軸の最小値)だけで、どちらも `lib/attention.ts` の関数を呼ぶ。
+ *
+ * 177: 冒頭に該当理由(`AttentionReasonTable` = 要約・照合表・「…にも該当」・値源の注記)を置き、
+ * 138 の統計は `<details>`「検証の根拠」(初期状態 閉)に移した。内容と数値は変えない。
  *
  * 凍結した過去検証・価格ずれ試験・前向きの現況は `GET /attention-rules`(`useAttentionRules`)から
  * チップの条件の分を引く。回収率の数値はすべて `RoiValue` を通し計算基準のラベルを添える。
@@ -214,6 +218,10 @@ function ChipPanel({
         <AttentionProgress level={level} testId="attention-progress" />
       </div>
 
+      <AttentionReasonTable horse={horse} judgedAt={race.judged_at} controlIds={control} />
+
+      <details className="attn-panel__evidence" data-testid="attention-evidence">
+        <summary>検証の根拠(過去検証・判断時点の見込み・前向き検証・価格ずれ試験・価格鮮度)</summary>
       <dl className="attn-panel__rows">
         <dt>該当する条件</dt>
         <dd data-testid="attention-applicable">
@@ -276,42 +284,28 @@ function ChipPanel({
           </div>
         </dd>
 
-        <dt>期待回収率</dt>
+        <dt>期待回収率(単 seed・参考)</dt>
         <dd data-testid="attention-ev">
           <EvLine testId="attention-judged" label="判断時点" snap={horse.judged} />
           {horse.current ? (
-            <EvLine testId="attention-current" label="現在値" snap={horse.current}>
-              {chipNowText(chip, horse.chip_now)}
-            </EvLine>
+            <EvLine testId="attention-current" label="現在値" snap={horse.current} />
           ) : (
             <div data-testid="attention-current">
               現在値: {CHIP_NOW_LABELS.unknown}(再計算待ち・オッズ欠落などで最新の計算がありません)
             </div>
           )}
           <div className="attn-panel__note">
-            判断時点の値はこのレースの最初の計算で凍結したもの、現在値は最新の計算の値です
+            15 seed 平均と単勝オッズは上の照合表。単 seed(137 のモデル)は S1〜S4 の判定に使わない参考値
           </div>
-          {horse.field_changed_after_pick && (
-            <div data-testid="attention-field-changed">
-              出走馬がその後変わっています(判断時点の値は変わる前の出走馬で計算したものです)
-            </div>
-          )}
         </dd>
       </dl>
+      </details>
 
       <p className="attn-panel__note" data-testid="attention-panel-disclaimer">
         注目条件は過去データで最も有望だった条件で、検証済みの条件ではありません。的中や利益を保証するものではありません。
       </p>
     </div>
   );
-}
-
-function chipNowText(chip: RuleId, chipNow: AttentionHorse["chip_now"]): string {
-  if (chipNow === "matches") return `・${chip} の条件を現在値でも満たす`;
-  if (chipNow === "no_longer") {
-    return `・${CHIP_NOW_LABELS.no_longer}(現在値では ${chip} の条件を満たしません)`;
-  }
-  return `・${CHIP_NOW_LABELS.unknown}`;
 }
 
 /** 「最新の計算に使ったオッズの取得から 42 分・発走まで 3 時間 10 分」。発走後は経過を言わない。 */
@@ -333,17 +327,8 @@ function freshnessDetail(
   return parts.length > 0 ? `(${parts.join("・")})` : "";
 }
 
-function EvLine({
-  testId,
-  label,
-  snap,
-  children,
-}: {
-  testId: string;
-  label: string;
-  snap: EvSnapshot | null;
-  children?: string;
-}) {
+/** 単 seed の期待回収率だけの 1 行(177)。15 seed 平均と単勝オッズは照合表に移った。 */
+function EvLine({ testId, label, snap }: { testId: string; label: string; snap: EvSnapshot | null }) {
   if (!snap) {
     return (
       <div data-testid={testId}>
@@ -355,14 +340,12 @@ function EvLine({
   return (
     <div data-testid={testId}>
       <span className="attn-panel__ev-label">{label}</span>
-      {at ? `(${at})` : ""}: 15 seed 平均{" "}
-      <EvValue ratio={snap.ens_expected_return} />
-      {snap.single_expected_return != null && (
-        <>
-          ・単 seed <EvValue ratio={snap.single_expected_return} />
-        </>
+      {at ? `(${at})` : ""}: 単 seed{" "}
+      {snap.single_expected_return != null ? (
+        <EvValue ratio={snap.single_expected_return} />
+      ) : (
+        `${PLACEHOLDER}(同じ計算の値なし)`
       )}
-      ・単勝 {formatNum(snap.odds, 1)} 倍{children}
     </div>
   );
 }

@@ -20,15 +20,20 @@
 import type {
   AttentionBuyTimeSource,
   AttentionExclusionCounts,
+  AttentionHorse,
   AttentionLevels,
+  AttentionReason,
   AxisLevel,
   CheckpointDecision,
   ChipNow,
+  ReasonComponent,
+  ReasonValue,
   RuleId,
   RuleSummary,
   Stage,
   StageDetail,
 } from "../api/types";
+import { formatNum, formatPct } from "./format";
 
 export type Level = AxisLevel;
 
@@ -412,4 +417,159 @@ export const CHIP_NOW_LABELS = {
 export function chipNowLabel(chipNow: ChipNow | null | undefined): string | null {
   if (chipNow === "no_longer" || chipNow === "unknown") return CHIP_NOW_LABELS[chipNow];
   return null;
+}
+
+// --- 177: 該当理由(照合表・要約・「…にも該当」) ---------------------------------------------------
+//
+// 部品ごとの条件値と適合は API の `AttentionHorse.reason` が運ぶ(eval の同じ判定関数から生成)。
+// ここにあるのは**文の組み立てだけ**で、閾値・帯・日数の定数は持たない — すべて応答の構造
+// (`ev_gt` / `lo` / `hi` / `status`)から出す。適合を導き直さない(138 の規律)。
+
+/** 部品の名前(要約文の列挙に使う)。 */
+export const COMPONENT_NAMES = {
+  ens_expected_return: "期待回収率",
+  win_odds: "単勝オッズ帯",
+  days_since_last: "前走からの間隔",
+} as const satisfies Record<ReasonComponent["kind"], string>;
+
+/** 適合の語。`no_current` は「最新の計算そのものが無い」(部品の `current == null`)で、入力が欠けた
+ *  `missing`(「値なし」)とは別の状態。片方で他方を置き換えない。 */
+export const REASON_STATUS_LABELS = {
+  met: "満たす",
+  not_met: "満たさない",
+  missing: "値なし",
+  no_current: "最新の計算なし",
+} as const;
+export type ReasonStatusKey = keyof typeof REASON_STATUS_LABELS;
+
+/** 記号は語に添える飾り(`aria-hidden`)。読み上げは語だけ。 */
+export const REASON_STATUS_GLYPHS: Record<ReasonStatusKey, string> = {
+  met: "○",
+  not_met: "×",
+  missing: "—",
+  no_current: "—",
+};
+
+export function reasonStatusKey(value: ReasonValue | null | undefined): ReasonStatusKey {
+  return value ? value.status : "no_current";
+}
+
+/** 比率の閾値を「120%」の形に(浮動小数の 120.00000000000001 を丸める)。 */
+export function thresholdPctText(ratio: number): string {
+  return `${Number((ratio * 100).toFixed(2))}%`;
+}
+
+function plainNumber(value: number): string {
+  return `${Number(value.toFixed(3))}`;
+}
+
+/** 部品の条件の文(閾値は応答の値)。 */
+export function criterionText(c: ReasonComponent): string {
+  switch (c.kind) {
+    case "ens_expected_return":
+      return `期待回収率(15 seed 平均)が ${thresholdPctText(c.ev_gt)} 超`;
+    case "win_odds":
+      return `単勝オッズが ${plainNumber(c.lo)} 倍以上 ${plainNumber(c.hi)} 倍未満`;
+    case "days_since_last":
+      return `前走から ${c.lo}〜${c.hi} 日`;
+  }
+}
+
+/**
+ * 期待回収率の表示桁。既定は 1 桁。丸めた文字列が閾値の表示と同じになるとき(例 1.2004 と
+ * 1.2 が両方「120.0%」)は 2 桁、まだ同じなら 3 桁まで増やす。ちょうど閾値の値は 3 桁でも
+ * 同じなので「120.000%」で打ち切り — 適合の語(「満たさない」)が状態を言う。
+ */
+export function formatEvAgainstThreshold(value: number, evGt: number): string {
+  for (const digits of [1, 2, 3]) {
+    const shown = formatPct(value, digits);
+    if (shown !== formatPct(evGt, digits)) return shown;
+  }
+  return formatPct(value, 3);
+}
+
+/** オッズ・間隔の値の文(期待回収率は推定バッジ付きの別経路)。間隔の小数はそのまま。 */
+export function componentValueText(c: ReasonComponent, value: number): string {
+  if (c.kind === "win_odds") return `${formatNum(value, 1)} 倍`;
+  if (c.kind === "days_since_last") return `${plainNumber(value)} 日`;
+  return formatEvAgainstThreshold(value, c.ev_gt);
+}
+
+function listNames(components: readonly ReasonComponent[]): string {
+  return components.map((c) => COMPONENT_NAMES[c.kind]).join("・");
+}
+
+/**
+ * 要約の一文(contracts/display.md §3 の文型・凍結)。判断時点の文 + 現在値の文。
+ * 購入を促す語・確信度の語は入れない。
+ */
+export function reasonSummaryText(reason: AttentionReason, judgedAtText: string | null): string {
+  const comps = reason.components;
+  const n = comps.length;
+  const rule = reason.rule_id;
+  const when = judgedAtText ? `判断時点(${judgedAtText})` : "判断時点";
+  const judgedBad = comps.filter((c) => c.judged.status !== "met");
+  let first: string;
+  if (judgedBad.length === 0) {
+    first =
+      n === 1
+        ? `${when}では ${rule} の条件を満たしました。`
+        : `${when}では ${rule} の ${n} 条件をすべて満たしました。`;
+  } else {
+    const met = n - judgedBad.length;
+    const detail = judgedBad
+      .map((c) =>
+        c.judged.status === "missing"
+          ? `${COMPONENT_NAMES[c.kind]}は値なし`
+          : COMPONENT_NAMES[c.kind],
+      )
+      .join("・");
+    first = `${when}では ${rule} の ${n} 条件のうち ${met} つを満たしました(満たさない: ${detail})。`;
+  }
+  if (comps.some((c) => c.current == null)) {
+    return `${first}現在値はありません(再計算待ち・オッズ欠落など)。`;
+  }
+  const notMet = comps.filter((c) => c.current?.status === "not_met");
+  const missing = comps.filter((c) => c.current?.status === "missing");
+  if (notMet.length === 0 && missing.length === 0) {
+    return `${first}現在値でも満たしています。`;
+  }
+  if (notMet.length === 0) {
+    return `${first}現在値では${listNames(missing)}が値なしです。`;
+  }
+  const tail = missing.length > 0 ? `(${listNames(missing)}は値なし)` : "";
+  return `${first}現在値では${listNames(notMet)}の条件を満たしていません${tail}。`;
+}
+
+/**
+ * 「…にも該当」の文。`note_ev_gt` を持つ条件(チップと帯・間隔が同じで閾値だけ厳しい=S1 の
+ * S2)は閾値を添え、他は id だけ。閉じた段階はタグ。包含関係の図・順位・確信度は出さない。
+ * 対照の該当は `controlIds` から「対照 S5 にも該当」。何も無ければ null。
+ */
+export function alsoApplicableText(
+  reason: AttentionReason,
+  stages: AttentionHorse["stages"],
+  controlIds: readonly RuleId[],
+): string | null {
+  const withNote = reason.also_applicable.filter((a) => a.note_ev_gt != null);
+  const plain = reason.also_applicable.filter((a) => a.note_ev_gt == null);
+  const tag = (id: RuleId) => {
+    const st = stages[id];
+    return st && isClosedStage(st.stage) ? `(${stageLabel(st)})` : "";
+  };
+  const parts: string[] = [];
+  if (withNote.length > 0) {
+    parts.push(
+      `${withNote
+        .map((a) => `${a.rule_id}(期待回収率 ${thresholdPctText(a.note_ev_gt as number)} 超)${tag(a.rule_id)}`)
+        .join("・")}にも該当。`,
+    );
+  }
+  if (plain.length > 0) {
+    parts.push(
+      `${plain.map((a) => `${a.rule_id}${tag(a.rule_id)}`).join("・")} にも該当(表示する条件は ${reason.rule_id})。`,
+    );
+  }
+  if (controlIds.length > 0) parts.push(`対照 ${controlIds.join(", ")} にも該当。`);
+  return parts.length > 0 ? parts.join("") : null;
 }
