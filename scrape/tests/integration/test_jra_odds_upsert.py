@@ -1,4 +1,7 @@
-"""176 T057: the official 単複 page → update_odds under the shared contract (SC-004)."""
+"""176 T057: the official 単複 page → update_odds under the shared contract (SC-004).
+
+The field is the netkeiba route's ``nk:`` rows (FR-011a): the page's official ids reach them
+through the alias rule."""
 
 from __future__ import annotations
 
@@ -15,6 +18,7 @@ from horseracing_scrape.jra.parse.entries import parse_entries_day
 from horseracing_scrape.jra.parse.odds import parse_win_odds
 from horseracing_scrape.jra.upsert_jra import popularity_ranks, upsert_jra_entries, upsert_jra_odds
 from horseracing_scrape.upsert import update_odds
+from tests._netkeiba_first import netkeiba_first, nk
 from tests._seed176 import odds_payload, race_prov
 from tests.jra_fixtures import JST, fetched_at, jra_text
 
@@ -28,14 +32,13 @@ T0822 = datetime.datetime(2026, 11, 1, 8, 22, tzinfo=JST)
 def _seed_entries(session):
     page = parse_entries_day(jra_text("entries_tokyo_20261101.sjis.html"), expected_date=D)
     changes = parse_changes(jra_text("changes_20261101.sjis.html"), expected_date=D)
-    upsert_jra_entries(
-        session,
-        page,
-        changes,
-        observed_at=fetched_at("entries_tokyo_20261101.sjis.html"),
-        race_ids=[RID],
+    obs = fetched_at("entries_tokyo_20261101.sjis.html")
+    netkeiba_first(
+        session, page, changes, observed_at=obs - datetime.timedelta(hours=10), race_ids=[RID]
     )
+    c = upsert_jra_entries(session, page, changes, observed_at=obs, race_ids=[RID])
     session.commit()
+    assert c.extra.get("alias_horses")  # the 2026 state: the field is nk: rows
 
 
 def _odds():
@@ -60,6 +63,7 @@ def test_official_odds_written_with_page_time_and_rank_popularity(session):
     race, rows = _stored(session)
     assert c.extra.get("odds_written_races") == 1
     assert race.win_odds_official_at == T0822 and race.win_odds_observed_at == obs
+    assert rows[1].horse_id == nk("2022105102")  # written onto the netkeiba row
     assert rows[1].odds == Decimal("2.7") and rows[1].popularity == 1
     assert rows[2].odds == Decimal("216.0")
     assert (rows[1].place_odds_low, rows[1].place_odds_high) == (Decimal("1.2"), Decimal("1.6"))

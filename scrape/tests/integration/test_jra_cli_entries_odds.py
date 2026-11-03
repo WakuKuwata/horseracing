@@ -1,4 +1,7 @@
-"""176 T058: jra-entries / jra-odds through run_command with a fixture fetcher and a temp DB."""
+"""176 T058: jra-entries / jra-odds through run_command with a fixture fetcher and a temp DB.
+
+FR-011a: the netkeiba route's 出馬表 is laid down first (``nk:`` rows); the official route writes
+onto it and creates no row."""
 
 from __future__ import annotations
 
@@ -11,13 +14,16 @@ from horseracing_db.models import (
     IngestionJob,
     Race,
     RaceFieldProvenance,
-    RaceHorse,
     RaceHorseFieldProvenance,
 )
 from sqlalchemy import event, func, select
 
 from horseracing_scrape.jra.cli import run_command
+from horseracing_scrape.jra.parse.changes import parse_changes
+from horseracing_scrape.jra.parse.entries import parse_entries_day
 from tests._jra_fake import FakeJraFetcher
+from tests._netkeiba_first import netkeiba_first
+from tests.jra_fixtures import JST, jra_text
 
 pytestmark = pytest.mark.integration
 D = datetime.date(2026, 11, 1)
@@ -47,6 +53,15 @@ def _args(**over):
     )
     base.update(over)
     return argparse.Namespace(**base)
+
+
+def _seed_netkeiba(session):
+    netkeiba_first(
+        session,
+        parse_entries_day(jra_text("entries_tokyo_20261101.sjis.html"), expected_date=D),
+        parse_changes(jra_text("changes_20261101.sjis.html"), expected_date=D),
+        observed_at=datetime.datetime(2026, 10, 31, 18, 0, tzinfo=JST),
+    )
 
 
 def _counts(session):
@@ -85,6 +100,8 @@ def test_dry_run_sends_no_dml_and_writes_nothing(session, session_factory, engin
 
 
 def test_entries_run_writes_jobs_and_rows(session, session_factory):
+    _seed_netkeiba(session)
+    before = _counts(session)
     f = FakeJraFetcher()
     r = run_command("jra-entries", _args(), fetcher=f, session_factory=session_factory, date=D)
     assert r.exit_code == 0, r.to_json()
@@ -99,7 +116,10 @@ def test_entries_run_writes_jobs_and_rows(session, session_factory):
     assert j_changes.extra.get("post_time_changes") == 1  # 10R 15:00 → 15:01
     jobs = session.scalars(select(IngestionJob)).all()
     assert {j.source for j in jobs} == {Source.JRA_OFFICIAL}
-    assert session.scalar(select(func.count()).select_from(Race)) == 12
+    after = _counts(session)
+    for t in ("races", "race_horses", "horses", "jockeys", "trainers"):
+        assert after[t] == before[t], t  # no row created by the official route (FR-011a)
+    assert j_entries.extra.get("alias_horses") == after["race_horses"]
     race10 = session.get(Race, "202605041110")
     assert (
         race10.post_time.astimezone(datetime.timezone(datetime.timedelta(hours=9))).strftime(
@@ -107,17 +127,32 @@ def test_entries_run_writes_jobs_and_rows(session, session_factory):
         )
         == "15:01"
     )
-    # provenance rows reference the job that wrote them
+    # the official provenance rows reference the job that wrote them (the netkeiba seed has none)
     job_ids = {j.ingestion_job_id for j in jobs}
-    prov_jobs = set(session.scalars(select(RaceHorseFieldProvenance.ingestion_job_id)))
+    official = Source.JRA_OFFICIAL
+    prov_jobs = set(
+        session.scalars(
+            select(RaceHorseFieldProvenance.ingestion_job_id).where(
+                RaceHorseFieldProvenance.source == official
+            )
+        )
+    )
     assert prov_jobs <= job_ids and prov_jobs
-    assert set(session.scalars(select(RaceFieldProvenance.ingestion_job_id))) <= job_ids
+    race_jobs = set(
+        session.scalars(
+            select(RaceFieldProvenance.ingestion_job_id).where(
+                RaceFieldProvenance.source == official
+            )
+        )
+    )
+    assert race_jobs <= job_ids and race_jobs
     doc = r.to_json()
     assert doc["command"] == "jra-entries" and doc["jobs"][0]["status"] == "succeeded"
     assert doc["quarantined"] == [] and doc["exit_code"] == 0
 
 
 def test_race_id_filter_and_unsupported_date(session, session_factory):
+    _seed_netkeiba(session)
     f = FakeJraFetcher()
     r = run_command(
         "jra-entries",
@@ -127,7 +162,14 @@ def test_race_id_filter_and_unsupported_date(session, session_factory):
         date=D,
     )
     assert r.exit_code == 0
-    assert session.scalar(select(func.count()).select_from(Race)) == 1
+    official = set(
+        session.scalars(
+            select(RaceHorseFieldProvenance.race_id).where(
+                RaceHorseFieldProvenance.source == Source.JRA_OFFICIAL
+            )
+        )
+    )
+    assert official == {"202605041111"}
     f2 = FakeJraFetcher()
     r2 = run_command(
         "jra-entries",
@@ -141,19 +183,14 @@ def test_race_id_filter_and_unsupported_date(session, session_factory):
 
 
 def test_quarantine_makes_the_job_partial(session, session_factory):
-    # a surrogate row already holds 馬番 1 of 1R
-    from horseracing_db.enums import EntryStatus
+    # 1R 馬番 1 is stored as nk:2024107186 but its master carries another name → no alias
     from horseracing_db.models import Horse
 
-    session.merge(Race(race_id="202605041101", race_date=D, race_number=1, venue_code="05"))
-    session.merge(Horse(horse_id="nk:2024107186", horse_name="インサイドエッジ", birth_year=2024))
-    session.merge(
-        RaceHorse(
-            race_id="202605041101",
-            horse_id="nk:2024107186",
-            horse_number=1,
-            entry_status=EntryStatus.STARTED,
-        )
+    _seed_netkeiba(session)
+    session.execute(
+        Horse.__table__.update()
+        .where(Horse.horse_id == "nk:2024107186")
+        .values(horse_name="別の馬")
     )
     session.commit()
     r = run_command(
@@ -162,18 +199,31 @@ def test_quarantine_makes_the_job_partial(session, session_factory):
     assert r.exit_code == 1
     assert r.jobs[0].status == JobStatus.PARTIAL
     assert r.jobs[0].extra.get("quarantined_collision") == 1
-    assert r.jobs[0].extra.get("merge_candidates") == 1
+    assert r.jobs[0].extra.get("alias_name_mismatch") == 1
     assert any("202605041101" in q for q in r.quarantined)
-    assert session.scalar(select(func.count()).select_from(Race)) == 12  # the other 11 were written
-    assert (
-        session.scalar(
-            select(func.count()).select_from(RaceHorse).where(RaceHorse.race_id == "202605041101")
+    official = set(
+        session.scalars(
+            select(RaceHorseFieldProvenance.race_id).where(
+                RaceHorseFieldProvenance.source == Source.JRA_OFFICIAL
+            )
         )
-        == 1
     )
+    assert len(official) == 11 and "202605041101" not in official  # the other 11 were written
+
+
+def test_entries_before_netkeiba_waits_and_writes_nothing(session, session_factory):
+    r = run_command(
+        "jra-entries", _args(), fetcher=FakeJraFetcher(), session_factory=session_factory, date=D
+    )
+    assert r.jobs[0].extra.get("awaiting_netkeiba_entries") == 12
+    assert not r.jobs[0].extra.get("quarantined_collision")
+    c = _counts(session)
+    for t in ("races", "race_horses", "horses", "jockeys", "trainers"):
+        assert c[t] == 0, t
 
 
 def test_odds_after_entries_limited_to_one_race(session, session_factory):
+    _seed_netkeiba(session)
     run_command(
         "jra-entries", _args(), fetcher=FakeJraFetcher(), session_factory=session_factory, date=D
     )

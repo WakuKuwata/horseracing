@@ -16,6 +16,7 @@ from horseracing_scrape.jra.parse.changes import parse_changes
 from horseracing_scrape.jra.parse.entries import parse_entries_day
 from horseracing_scrape.jra.upsert_jra import upsert_jra_entries
 from tests._jra_fake import FakeJraFetcher
+from tests._netkeiba_first import netkeiba_first
 from tests.jra_fixtures import fetched_at, jra_text
 
 pytestmark = pytest.mark.integration
@@ -45,9 +46,12 @@ def _state(session):
 def _seed(session):
     page = parse_entries_day(jra_text("entries_tokyo_20261101.sjis.html"), expected_date=D)
     changes = parse_changes(jra_text("changes_20261101.sjis.html"), expected_date=D)
-    upsert_jra_entries(
-        session, page, changes, observed_at=fetched_at("entries_tokyo_20261101.sjis.html")
+    obs = fetched_at("entries_tokyo_20261101.sjis.html")
+    # FR-011a: the netkeiba field first (canonical ids here), then the official values on it
+    netkeiba_first(
+        session, page, changes, observed_at=obs - datetime.timedelta(hours=10), alias=False
     )
+    upsert_jra_entries(session, page, changes, observed_at=obs)
     session.commit()
     # one race keeps a surrogate for its 馬番 1 (an nk: twin of the official horse)
     rid = "202605041102"
@@ -91,7 +95,9 @@ def test_audit_compares_and_writes_nothing(session, session_factory, tmp_path):
     jw = fields["jockey_weight"]
     assert jw["mismatched"] == 1 and jw["examples"][0]["race_id"] == "202605041103"
     assert jw["examples"][0]["stored_source"] == "jra_official"
-    assert fields["jockey_id"]["excluded_by_reason"].get("unresolved_id") == 1
+    # FR-011a: the nk: twin of an official horse (no approved mapping) is compared as that horse
+    assert not fields["jockey_id"]["excluded_by_reason"].get("unresolved_id")
+    assert [f"nk:{official}", official] in r.audit["alias_matched"]
     assert [f"nk:{official}", official] in r.audit["merge_candidates"]
     assert fields["horse_id"]["comparable"] == fields["horse_id"]["matched"] > 100
     assert any(m["field"] == "jockey_weight" for m in r.mismatches)

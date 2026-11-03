@@ -77,14 +77,16 @@ def test_mismatch_example_carries_source_or_none():
     )
 
 
-def test_surrogate_rows_are_excluded_and_become_merge_candidates():
+def test_surrogate_rows_are_compared_as_the_alias_and_reported():
     e = _entry()
     rep = AuditReport()
     compare_entries(e, _stored_from(e, nk_first=True), rep)
     first = e.horses[0].horse_id
+    # FR-011a: an nk: twin with no decided mapping is compared as that horse, and still reported
     assert rep.merge_candidates == {(f"nk:{first}", first)}
-    assert rep.f("jockey_id").excluded_by_reason == {"unresolved_id": 1}
-    assert rep.f("jockey_id").comparable == len(e.horses) - 1
+    assert rep.alias_matched == {(f"nk:{first}", first)}
+    assert rep.f("jockey_id").excluded_by_reason == {}
+    assert rep.f("jockey_id").comparable == len(e.horses)
     # an approved mapping whose rows were never re-keyed is reported separately
     rep2 = AuditReport()
     compare_entries(e, _stored_from(e, nk_first=True, mapped={first: first}), rep2)

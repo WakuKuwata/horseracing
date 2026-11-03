@@ -340,6 +340,8 @@ def _jsonable(v):
 class AuditReport:
     fields: dict[str, FieldStats] = field(default_factory=dict)
     merge_candidates: set[tuple[str, str]] = field(default_factory=set)
+    #: (nk:X, X) pairs compared through the stored surrogate row (FR-011a) — still re-key material
+    alias_matched: set[tuple[str, str]] = field(default_factory=set)
     approved_mapping_pending_rekey: set[tuple[str, str]] = field(default_factory=set)
     races_seen: set[str] = field(default_factory=set)
     pages: int = 0
@@ -353,6 +355,7 @@ class AuditReport:
             "races": len(self.races_seen),
             "fields": {k: v.to_json() for k, v in sorted(self.fields.items())},
             "merge_candidates": sorted(map(list, self.merge_candidates)),
+            "alias_matched": sorted(map(list, self.alias_matched)),
             "approved_mapping_pending_rekey": sorted(
                 map(list, self.approved_mapping_pending_rekey)
             ),
@@ -367,6 +370,11 @@ ENTRY_FIELDS = {  # field → provenance group
     "entry_status": P.GROUP_ENTRY_STATUS,
 }
 RESULT_FIELDS = ("finish_order", "result_status", "finish_time", "last_3f")
+
+
+def _unalias(v):
+    """``nk:J`` and ``J`` are the same licence number (FR-011a): compare the digits."""
+    return v[3:] if isinstance(v, str) and v.startswith("nk:") else v
 
 
 def _identity(
@@ -385,7 +393,10 @@ def _identity(
         if stored_race.mapped.get(nk) == official_id:
             report.approved_mapping_pending_rekey.add((st.horse_id, official_id))
         elif nk == official_id:
+            # FR-011a: the same row the writer would use — compare through it
             report.merge_candidates.add((st.horse_id, official_id))
+            report.alias_matched.add((st.horse_id, official_id))
+            return True
         for f in fields:
             report.f(f).exclude("unresolved_id")
         return False
@@ -422,7 +433,7 @@ def compare_entries(entry: JraEntry, stored: StoredRace | None, report: AuditRep
         report.f("horse_id").compare(
             rid,
             h.horse_number,
-            st.horse_id,
+            _unalias(st.horse_id),
             h.horse_id,
             stored.horse_prov.get((st.horse_id, P.GROUP_ENTRY_STATIC)),
         )
@@ -437,10 +448,11 @@ def compare_entries(entry: JraEntry, stored: StoredRace | None, report: AuditRep
             if official[f] is None:
                 report.f(f).exclude("not_published")
                 continue
+            stored_v = getattr(st, f)
             report.f(f).compare(
                 rid,
                 h.horse_number,
-                getattr(st, f),
+                _unalias(stored_v) if f in ("jockey_id", "trainer_id") else stored_v,
                 official[f],
                 stored.horse_prov.get((st.horse_id, group)),
             )

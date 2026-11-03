@@ -1,8 +1,9 @@
 """公式経路の書込み(Feature 176) — 共通 writer(``upsert.py``)を呼ぶ薄い層.
 
 ここでやること: 期間ガード(``race_date < 2025-10-11`` は書かない=JRA-VAN 行の保護)、未知 ID の隔離、
-取消馬の馬番復元、マスタの名前照合(報告のみ)、値オブジェクト→共通 writer の入力への写像。規則
-そのもの(衝突・遷移・オッズ・結果・払戻)は共通 writer にあり、ここでは再実装しない。
+公式 ID → 既存出走行の ID の対応づけ(FR-011a・``alias.py``)、取消馬の馬番復元、マスタの名前照合
+(報告のみ)、値オブジェクト→共通 writer の入力への写像。規則そのもの(衝突・遷移・オッズ・結果・払戻)
+は共通 writer にあり、ここでは再実装しない。公式経路は出走行もマスタ行も新たに作らない(FR-011a §1)。
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from horseracing_db.models import Horse, Jockey, Race, RaceHorse, Trainer
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from .. import SURROGATE_PREFIX
 from .. import precedence as P
 from ..models import (
     ResolvedEntryHorse,
@@ -30,6 +32,7 @@ from ..models import (
 )
 from ..provenance import write_horse_provenance, write_race_provenance
 from ..upsert import (
+    _RACE_STATIC_COLS,
     NETKEIBA_FINAL_ODDS_FROM,
     OFFICIAL_WIN_PAYOUT_SOURCE_JRA,
     RACE_ATOMIC,
@@ -42,6 +45,7 @@ from ..upsert import (
     upsert_official_win_payouts,
     write_entries,
 )
+from . import alias as A
 from .identity import jra_name_key
 from .models import (
     JraChange,
@@ -163,21 +167,38 @@ def resolve_cancelled_numbers(
     return out
 
 
-def _resolved_horses(entry: JraEntry, numbers: dict[str, int]) -> list[ResolvedEntryHorse]:
+def _resolved_horses(
+    session: Session, entry: JraEntry, numbers: dict[str, int], aliases: A.HorseAliases, c: Counts
+) -> list[ResolvedEntryHorse]:
+    """Official values on the stored rows' ids (FR-011a): the horse id is the stored row's, the
+    jockey / trainer the id ``alias.resolve_person`` picks (None = that column is left alone)."""
     year = entry.race.race_date.year
     out = []
     for h in entry.horses:
+        rh = aliases.rows[h.horse_id]  # type: ignore[index] — every horse resolved before
+        jockey_id = A.resolve_person(session, A.EntityType.JOCKEY, h.jockey_id, rh.jockey_id)
+        trainer_id = A.resolve_person(session, A.EntityType.TRAINER, h.trainer_id, rh.trainer_id)
+        for kind, official, picked in (
+            ("jockey", h.jockey_id, jockey_id),
+            ("trainer", h.trainer_id, trainer_id),
+        ):
+            if official is not None and picked is None:
+                c.bump("person_unresolved")
+                c.error_messages.append(
+                    f"{entry.race.race_id}: {kind} {official} for {rh.horse_id} not resolvable"
+                    " (left as stored)"
+                )
         out.append(
             ResolvedEntryHorse(
-                horse_id=h.horse_id,  # type: ignore[arg-type] — unknown ids are quarantined before
+                horse_id=rh.horse_id,
                 horse_name=h.horse_name,
                 frame=h.frame,
                 horse_number=h.horse_number
                 if h.horse_number is not None
-                else numbers.get(h.horse_id),
-                jockey_id=h.jockey_id,
+                else numbers.get(h.horse_id),  # type: ignore[arg-type]
+                jockey_id=jockey_id,
                 jockey_name=h.jockey_name,
-                trainer_id=h.trainer_id,
+                trainer_id=trainer_id,
                 trainer_name=h.trainer_name,
                 weight=h.weight,
                 weight_diff=h.weight_diff,
@@ -190,6 +211,51 @@ def _resolved_horses(entry: JraEntry, numbers: dict[str, int]) -> list[ResolvedE
             )
         )
     return out
+
+
+#: race static columns the official route may FILL when blank: plain numbers spelled the same
+#: way in both sources. The text columns (芝ダ・馬場・天候・クラス・レース名・グレード) are never
+#: written — the official pages use another vocabulary than the DB and the features
+#: (codex 2026-11-03).
+_FILLABLE_RACE_COLS = ("distance", "prize_money")
+
+
+def _fill_only_race_values(c: Counts, rid: str, values: dict, stored: Race | None) -> dict:
+    """FR-011a §6: race static values from the official route only fill blank numeric columns.
+
+    The official pages spell the same facts differently from the netkeiba vocabulary the DB and
+    the features use (``ダート``/``ダ``, ``2勝クラス``/``２勝``, ``秋嶺ステークス``/``秋嶺S``;
+    11/01 replay). A stored value is kept and a disagreement is only counted
+    (``race_static_kept``); a text column is never written, even when blank."""
+    out = dict(values)
+    for col in _RACE_STATIC_COLS:
+        have = getattr(stored, col) if stored is not None else None
+        if have is not None and out.get(col) is not None and out[col] != have:
+            c.bump("race_static_kept")
+            c.error_messages.append(f"{rid}: {col} kept {have!r} (official {out[col]!r})")
+        if have is not None or col not in _FILLABLE_RACE_COLS:
+            out[col] = None
+    return out
+
+
+def _report_unlinked_people(c: Counts, rid: str, rows) -> None:
+    """FR-011a §4: a jockey / trainer printed without a link (no code to read, e.g. 地方所属) leaves
+    that column as stored — the horse is still identified, so the race is not quarantined."""
+    for r in rows:
+        people = [k for k in r.unknown_id_kinds if k != "horse"]
+        if people:
+            c.bump("person_unlinked", len(people))
+            c.error_messages.append(f"{rid}: {r.horse_name} has no {'/'.join(people)} link (kept)")
+
+
+def _alias_quarantine(c: Counts, rid: str, aliases: A.HorseAliases, n: int) -> None:
+    c.skipped += n
+    c.bump(aliases.reason)  # type: ignore[arg-type]
+    if aliases.reason != A.AWAITING:
+        c.bump("quarantined_collision")
+        c.error_messages.append(f"quarantined {rid}: {aliases.reason} {aliases.problems}")
+    else:
+        c.error_messages.append(f"{rid}: {A.AWAITING} (netkeiba entries first)")
 
 
 def upsert_jra_entries(
@@ -215,21 +281,36 @@ def upsert_jra_entries(
             c.skipped += len(entry.horses)
             c.bump("skipped_pre_netkeiba_era")
             continue
-        if any(h.unknown_id_kinds for h in entry.horses):
+        if any("horse" in h.unknown_id_kinds for h in entry.horses):
             c.skipped += len(entry.horses)
             c.bump("quarantined_unknown_id")
             bad = [(h.horse_name, h.unknown_id_kinds) for h in entry.horses if h.unknown_id_kinds]
             c.error_messages.append(f"quarantined {rid}: unknown ids {bad}")
             continue
+        _report_unlinked_people(c, rid, entry.horses)
         try:
             with session.begin_nested():
-                snap = lock_race(session, rid)  # resolve 馬番 under the lock (codex Q2-3)
-                numbers = resolve_cancelled_numbers(entry, changes, snap.horses)
+                snap = lock_race(session, rid)  # resolve ids and 馬番 under the lock (codex Q2-3)
+                aliases = A.resolve_horses(
+                    session,
+                    snap.horses,
+                    [
+                        A.OfficialHorse(h.horse_id, h.horse_number, h.horse_name)  # type: ignore[arg-type]
+                        for h in entry.horses
+                    ],
+                )
+                if aliases.reason is not None:
+                    _alias_quarantine(c, rid, aliases, len(entry.horses))
+                    continue
+                numbers = resolve_cancelled_numbers(entry, changes, aliases.rows)
         except CancelUnresolved as exc:
             c.skipped += len(entry.horses)
             c.bump("quarantined_cancel_unresolved")
             c.error_messages.append(f"quarantined {exc}")
             continue
+        if aliases.aliased:
+            c.bump("alias_horses", aliases.aliased)
+        values = _fill_only_race_values(c, rid, race_values_of(entry.race), snap.race)
         mismatches = master_name_mismatches(session, entry)
         if mismatches:
             c.bump("master_name_mismatch", len(mismatches))
@@ -238,8 +319,8 @@ def upsert_jra_entries(
             write_entries(
                 session,
                 rid,
-                race_values_of(entry.race),
-                _resolved_horses(entry, numbers),
+                values,
+                _resolved_horses(session, entry, numbers, aliases, c),
                 source=JRA,
                 observed_at=observed_at,
                 job_id=job_id,
@@ -359,7 +440,17 @@ def apply_jra_changes(
                         c.bump("status_rejected")
                     continue
                 if ch.kind == "jockey":
-                    new_id = _jockey_id_by_name(session, ch.new_jockey_name)
+                    found = _jockey_id_by_name(session, ch.new_jockey_name)
+                    new_id = (
+                        A.resolve_person(
+                            session,
+                            A.EntityType.JOCKEY,
+                            found.removeprefix(SURROGATE_PREFIX),
+                            rh.jockey_id,
+                        )
+                        if found is not None
+                        else None
+                    )
                     if new_id is None:
                         c.skipped += 1
                         c.bump("jockey_change_unresolved")
@@ -451,13 +542,30 @@ def upsert_jra_odds(
     with session.begin_nested():
         snap = lock_race(session, rid)
         by_number = snap.by_number()
+        aliases = A.resolve_horses(
+            session,
+            snap.horses,
+            [
+                A.OfficialHorse(r.horse_id, r.horse_number, r.horse_name)
+                for r in odds.rows
+                if r.horse_id is not None
+            ],
+            require_all=False,
+        )
+        if aliases.reason is not None:
+            _alias_quarantine(c, rid, aliases, len(odds.rows))
+            return c
+
+        def stored_id(r) -> str | None:
+            return aliases.stored_id(r.horse_id) if r.horse_id in aliases.rows else r.horse_id
+
         collisions = [
             (r.horse_number, by_number[r.horse_number].horse_id, r.horse_id)
             for r in odds.rows
             if r.horse_number is not None
             and r.horse_id is not None
             and r.horse_number in by_number
-            and by_number[r.horse_number].horse_id != r.horse_id
+            and by_number[r.horse_number].horse_id != stored_id(r)
         ]
         if collisions:
             c.skipped += len(odds.rows)
@@ -595,12 +703,13 @@ def upsert_jra_results(
             c.skipped += len(res.rows)
             c.bump("skipped_pre_netkeiba_era")
             continue
-        if any(r.unknown_id_kinds for r in res.rows):
+        if any("horse" in r.unknown_id_kinds for r in res.rows):
             c.skipped += len(res.rows)
             c.bump("quarantined_unknown_id")
             bad = [(r.horse_name, r.unknown_id_kinds) for r in res.rows if r.unknown_id_kinds]
             c.error_messages.append(f"quarantined {rid}: unknown ids {bad}")
             continue
+        _report_unlinked_people(c, rid, res.rows)
         with session.begin_nested():
             snap = lock_race(session, rid)
             if snap.race is None or not snap.horses:
@@ -608,9 +717,23 @@ def upsert_jra_results(
                 c.bump("results_race_not_in_db")
                 c.error_messages.append(f"results {rid}: race/entries not in DB (entries first)")
                 continue
+            aliases = A.resolve_horses(
+                session,
+                snap.horses,
+                [
+                    A.OfficialHorse(r.horse_id, r.horse_number, r.horse_name)  # type: ignore[arg-type]
+                    for r in res.rows
+                ],
+            )
+            if aliases.reason is not None:
+                _alias_quarantine(c, rid, aliases, len(res.rows))
+                continue
+            if aliases.aliased:
+                c.bump("alias_horses", aliases.aliased)
+            sid = {r.horse_id: aliases.stored_id(r.horse_id) for r in res.rows}  # type: ignore[arg-type]
             incoming = [
                 P.EntryRow(
-                    r.horse_id,  # type: ignore[arg-type]
+                    sid[r.horse_id],
                     r.horse_number,
                     r.result_status if r.result_status in _NON_STARTER else EntryStatus.STARTED,
                 )
@@ -629,7 +752,7 @@ def upsert_jra_results(
             for r in res.rows:
                 if r.result_status not in _NON_STARTER:
                     continue
-                rh = snap.horses.get(r.horse_id)
+                rh = snap.horses.get(sid[r.horse_id])
                 if rh is None:
                     continue
                 ctx = P.TransitionContext(
@@ -662,7 +785,7 @@ def upsert_jra_results(
             # 2) race-atomic first insert of the result rows
             rows = [
                 ResolvedResultRow(
-                    horse_id=r.horse_id,  # type: ignore[arg-type] — unknown ids quarantined above
+                    horse_id=sid[r.horse_id],
                     finish_order=r.finish_order,
                     result_status=r.result_status,
                     finish_time=r.finish_time,
@@ -686,7 +809,7 @@ def upsert_jra_results(
             )
             # 3) body weights (pair rule, page_kind=results)
             for r in res.rows:
-                rh = snap.horses.get(r.horse_id)
+                rh = snap.horses.get(sid[r.horse_id])
                 if rh is not None and _write_body_weight(
                     session,
                     snap,
@@ -701,7 +824,7 @@ def upsert_jra_results(
                     c.bump("body_weight_written")
             # 4) popularity: audit material only, never written
             for r in res.rows:
-                rh = snap.horses.get(r.horse_id)
+                rh = snap.horses.get(sid[r.horse_id])
                 if (
                     rh is not None
                     and r.popularity is not None

@@ -29,12 +29,17 @@ wrapper は `config/source-operations.json` の `jra_official_interval_seconds` 
 
 | いつ | コマンド | 書く先 |
 |---|---|---|
-| 前日 10 時過ぎ(枠順確定後) | netkeiba の `entries` → `jra_ops.sh entries <day>` | races / race_horses / マスタ / 来歴 |
+| 前日 10 時過ぎ(枠順確定後) | netkeiba の `entries` → `jra_ops.sh entries <day>` | netkeiba が入れた出走行への公式値・来歴(行もマスタも作らない) |
 | 当日朝 | `jra_ops.sh fetch <day> --save-dir artifacts/jra_raw/<day>` → `jra_ops.sh audit <day> --from-dir artifacts/jra_raw/<day>` | なし(照合結果は標準出力) |
 | 当日・必要なレースだけ | `jra_ops.sh odds <day> --race-id <RID> ...` | 単複オッズ・人気(オッズ順)・来歴 |
 | 夜(全レース確定後) | `jra_ops.sh results <day>` | race_results / laps / 体重 / 単勝払戻 / 6 券種払戻 |
 | 夜 | `jra_ops.sh baba <day>`(0024 以降) | jra_track_conditions |
 
+- **出馬表は netkeiba が先**(FR-011a・2026-11-03): 公式経路は出走行もマスタ行も作らず、netkeiba が入れた
+  出走行(ID が `X` か同じ数字の `nk:X`)に公式の値を書く。netkeiba の出馬表がまだのレースは
+  `awaiting_netkeiba_entries` で見送る(netkeiba の `entries` を入れてから同じコマンドを再実行)。
+  レースの静的項目(芝ダ・クラス・レース名など)は空欄を埋めるだけで既存値は書き換えない(公式は
+  `ダート`/`2勝クラス` と表記が違う・`race_static_kept` に件数)。
 - `entries` は出馬表と変更情報(取消・発走時刻変更・騎手変更)を同じ実行で取り、job は `jra_entries` と
   `jra_changes` の 2 本(取得件数は `jra_entries` 側に計上)。
 - `results` は結果ページ 1 枚から結果と払戻を書き、job は `jra_results` と `jra_payouts` の 2 本。
@@ -42,6 +47,25 @@ wrapper は `config/source-operations.json` の `jra_official_interval_seconds` 
 - `--race-id` は書くブロックを絞るだけで、開催日ページは丸ごと取る(`odds` だけはレース単位で取る)。
 - 1 日分(2 場・オッズ除く)の送信は robots 1 件込みで 15 件前後、全 24 レースのオッズ込みで 42 件前後
   (上限 20 / 50・`scrape/tests/integration/test_jra_request_budget.py`)。
+
+### 初回: 2026-11-06(金)〜11-07(土)
+
+前提: FR-011a のコードが main にある(netkeiba 経路は不変なので ops の再起動は不要)。policy に
+`"jra_official_interval_seconds": 10` があること(**利用者の承認後に追加**)。11/07・11/08 は
+`capture_only_dates` の日なので、各レースの判断時刻の前後は JRA も送らずに止まる(§2)。
+
+1. 11/06 10 時過ぎ: 174 の手順どおり `scripts/near_post_ops.sh entries 2026-11-07`(netkeiba)。
+2. 続けて `scripts/jra_ops.sh entries 2026-11-07 --dry-run` → 問題がなければ `--dry-run` なしで実行。
+   見る値: `awaiting_netkeiba_entries` 0・`quarantined_collision` 0(あれば理由キーを記録)・`alias_horses`。
+3. `scripts/jra_ops.sh fetch 2026-11-07 --save-dir artifacts/jra_raw/2026-11-07 --kinds entries,changes`
+   → `scripts/jra_ops.sh audit 2026-11-07 --from-dir artifacts/jra_raw/2026-11-07`(読むだけ)。
+4. 11/07 当日: 変更情報は `entries` の再実行で取る。オッズは `scripts/jra_ops.sh odds 2026-11-07
+   [--race-id RID ...]`(1 レース 1 件・捕捉時間帯なら止まるので過ぎてから再実行)。
+5. 11/07 夜: netkeiba の `results` の後に `scripts/jra_ops.sh results 2026-11-07` → `baba`。
+6. 記録: 各 job の `summary` を `result-review.md` に転記する。止めるときは policy のキーを外すだけ。
+
+067 の ID 修復 CLI(`resolve_identities` / `repair_splits`)は JRA 経路の書込みと同時に流さない(馬の別名判定の
+前提=正規マスタの有無と `id_mappings` の状態をロックで守っていない・FR-011a §5)。
 
 ## 2. 止まる・譲る
 
@@ -57,9 +81,13 @@ wrapper は `config/source-operations.json` の `jra_official_interval_seconds` 
 ## 3. 読み方
 
 - exit 0 = 全 job SUCCEEDED / SKIPPED、1 = PARTIAL(隔離・不一致・解析失敗・捕捉時間帯停止)、2 = FAILED。
-- `--json` の `quarantined` は書かなかったレース(未知 ID・衝突・取消馬の馬番が復元できない)。
-  衝突の典型は `nk:` サロゲート行が同じ馬番を持っている場合で、`merge_candidates` に対が出る
-  (統合は 067 系の別 spec。この経路は書き換えない)。
+- `--json` の `quarantined` は書かなかったレース(馬のリンクが読めない・衝突・取消馬の馬番が復元できない)。
+  `nk:X` 行への書込みは衝突ではなく `alias_horses` に件数が出る。隔離の理由は
+  `alias_both_ids_exist`(正規 `X` のマスタも在る)・`alias_both_ids_in_race`・`alias_missing_in_field`・
+  `alias_number_mismatch`・`alias_name_mismatch`・`alias_mapping_disputed`・`approved_mapping_pending_rekey`
+  (いずれも `quarantined_collision` と同時に数える)。`nk:` 行の統合は 067 系の別 spec。
+- 騎手・調教師がリンクなしで印字された行(地方所属など)は `person_unlinked`、別人に替わって ID が決まらない
+  ときは `person_unresolved`: どちらもその項目だけ既存値のまま残し、レースは書く。
 - `mismatches` は報告のみ(静的項目の別値・マスタの同 ID 別名・結果の不一致)。
 - 結果ページの単勝人気は保存しない(利用者決定 2026-11-02)。`popularity_mismatch` は件数だけ。
 - `--dry-run` = 取得と解析まで。業務表・job・来歴は書かない(共有スロットの予約行だけ動く)。
