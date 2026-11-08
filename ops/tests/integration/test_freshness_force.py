@@ -47,7 +47,7 @@ def test_fresh_success_reused(session):
     assert session.scalar(_predict_query(RID)) is None
 
 
-def test_fresh_success_reused_chases_predict_when_opted_in(session, monkeypatch):
+def test_fresh_historical_success_does_not_predict_even_when_enabled(session, monkeypatch):
     from dataclasses import replace
 
     from horseracing_ops import enqueue as enqueue_mod
@@ -59,8 +59,7 @@ def test_fresh_success_reused_chases_predict_when_opted_in(session, monkeypatch)
     session.commit()
     assert reused is True and job.ingestion_job_id == done.ingestion_job_id
     predict = session.scalar(_predict_query(RID))
-    assert predict is not None
-    assert predict.summary["predict_origin"] == "manual_ui"
+    assert predict is None
 
 
 def test_stale_success_refetched(session):

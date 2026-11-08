@@ -19,6 +19,7 @@ import {
   type Level,
 } from "../lib/attention";
 import { formatNum, formatPct, PLACEHOLDER } from "../lib/format";
+import { FORECAST_MARKS, isForecastMark, type ForecastMark, type ForecastMarks } from "../lib/useForecastMarks";
 import { AttentionPanel, hasAttentionDetail } from "./AttentionPanel";
 import { DataBackingBadge } from "./DataBackingBadge";
 import { ExplanationPanel } from "./ExplanationPanel";
@@ -44,6 +45,8 @@ type ColKey =
   | "weight"
   | "odds"
   | "win"
+  | "top2"
+  | "top3"
   | "ev"
   | "ev_mix";
 
@@ -51,7 +54,7 @@ type Row = HorseEntry & { pred?: Pred };
 
 const NUMERIC: ColKey[] = ["horse_number", "weight", "odds", "win", "ev", "ev_mix"];
 //: a first click on a "bigger is better" value column shows the largest first.
-const DESC_FIRST: ColKey[] = ["ev", "ev_mix"];
+const DESC_FIRST: ColKey[] = ["win", "ev", "ev_mix"];
 
 // 市場評価 (q = odds converted to a win share) lives INSIDE the 単勝 cell as a sub-line — it is
 // the same information as the odds, so it shares the column (user decision 2026-07-02). Sorting
@@ -72,7 +75,8 @@ const BASE_COLUMNS: { key: ColKey; label: string; title?: string }[] = [
 // win p is sortable (a model-side ordering); the 市場との差 column is intentionally NOT sortable —
 // ordering by the disagreement would be an edge sort (021/040 US3 prohibition).
 // top2/top3 are CUMULATIVE P(2着以内)/P(3着以内) — labelled 連対/複勝, stacked as sub-lines under
-// the 勝率 (user decision: vertical stack, no extra columns). Sorting stays on win only.
+// the 勝率 (user decision: vertical stack, no extra columns; the 予想 table shares this cell since
+// 2026-11-08 — three separate rate columns were judged harder to read). Sorting stays on win only.
 const PRED_COLUMNS: { key: ColKey; label: string; title?: string }[] = [
   {
     key: "win",
@@ -100,7 +104,7 @@ const DIVERGENCE_TOOLTIP =
 // Sortable since 2026-10-31 (user decision; it overrides 137's "no edge sort" choice for this
 // column — the default order stays 単勝/人気順, sorting by 期待回収率 is the user's own click).
 const EV_HEADER_TITLE =
-  "「予測モデルとの比較」の勝率とは別の市場連動モデルが推定した勝率 × 単勝オッズ。推定値であり実績ではありません";
+  "出走表の勝率とは別の市場連動モデルが推定した勝率 × 計算時の単勝オッズ。推定値であり実績ではありません";
 
 // Feature 141: the market-mixed PARALLEL value of 期待回収率 (API `expected_return_mix`). Never
 // replaces the 期待回収率 column; sortable like it (2026-10-31); its >100% mark is neutral text
@@ -147,7 +151,7 @@ function chipLevel(horse: AttentionHorse, race: AttentionAvailable, now: Date | 
 }
 
 function value(row: Row, key: ColKey): number | string | null | undefined {
-  if (key === "win") return row.pred?.win ?? null;
+  if (key === "win" || key === "top2" || key === "top3") return row.pred?.[key] ?? null;
   return (row as Record<string, unknown>)[key] as number | string | null | undefined;
 }
 
@@ -193,8 +197,10 @@ export function HorseEntriesTable({
   marketEv,
   attention,
   now,
+  marks,
+  onMarkChange,
 }: {
-  variant?: "roi" | "prediction";
+  variant?: "roi" | "prediction" | "forecast";
   entries: HorseEntry[];
   predictions: HorsePrediction[];
   oddsAsOf?: string | null;
@@ -206,6 +212,8 @@ export function HorseEntriesTable({
   attention?: AttentionResponse | null;
   /** 描画時刻(価格鮮度の評価)。省略時は描画のたびに現在時刻 — 自動では再描画しない。 */
   now?: Date | number;
+  marks?: ForecastMarks;
+  onMarkChange?: (horseId: string, mark: ForecastMark) => void;
 }) {
   // Sort = the user's explicit choice (a header click) or, until they click, a default derived
   // from the data: 単勝 ascending (人気順 — the market's own order, not a model/edge ordering)
@@ -217,15 +225,17 @@ export function HorseEntriesTable({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const hasPreds = variant !== "roi" && predictions.length > 0;
+  const forecast = variant === "forecast";
+  const diagnostics = variant === "prediction" && hasPreds;
   const hasOdds = entries.some((e) => e.odds != null);
   const defaultSort: { key: ColKey; asc: boolean } = hasOdds
     ? { key: "odds", asc: true }
-    : variant === "roi" || !hasPreds
+    : variant !== "prediction" || !hasPreds
       ? { key: "horse_number", asc: true }
       : { key: "win", asc: false };
   const { key: sortKey, asc } = userSort ?? defaultSort;
   // 差(p−q) is only meaningful when the API confirms p and q share one canonical field (021 R1).
-  const comparable = hasPreds && canonicalConsistent === true;
+  const comparable = diagnostics && canonicalConsistent === true;
   const evAvailable = marketEv?.status === "available";
   const evByHorse = useMemo(
     () =>
@@ -262,8 +272,11 @@ export function HorseEntriesTable({
 
   const rows: Row[] = useMemo(() => {
     const byId = new Map(predictions.map((p) => [p.horse_id, p]));
-    return entries.map((e) => ({ ...e, pred: byId.get(e.horse_id) }));
-  }, [entries, predictions]);
+    return entries.map((e) => ({
+      ...e,
+      pred: forecast && e.entry_status !== "started" ? undefined : byId.get(e.horse_id),
+    }));
+  }, [entries, predictions, forecast]);
 
   // Shared bar scale: max over BOTH p and q so the two columns compare visually.
   const probMax = useMemo(
@@ -307,32 +320,38 @@ export function HorseEntriesTable({
   const ariaSort = (key: ColKey) =>
     sortKey === key ? (asc ? ("ascending" as const) : ("descending" as const)) : ("none" as const);
 
-  const sortableColumns = hasPreds ? [...BASE_COLUMNS, ...PRED_COLUMNS] : BASE_COLUMNS;
+  // 予想 keeps the モデル勝率 column even while predictions are unavailable (cells stay "—"),
+  // so marks can be entered against a stable layout.
+  const probColumn = forecast || hasPreds;
+  const sortableColumns = probColumn ? [...BASE_COLUMNS, ...PRED_COLUMNS] : BASE_COLUMNS;
   // total columns for the expansion row colSpan
   const totalCols =
     sortableColumns.length +
     (evColumn ? 1 : 0) +
     (mixColumn ? 1 : 0) +
     (comparable ? 1 : 0) +
-    (hasPreds ? 1 : 0);
+    (diagnostics ? 1 : 0) +
+    (forecast ? 1 : 0);
 
   return (
     <div className="table-scroll">
-      <table className="entries-table" aria-label={variant === "roi" ? "期待回収率の出走表" : "予測モデルの出走表"}>
+      <table className={`entries-table${forecast ? " entries-table--forecast" : ""}`} aria-label={forecast ? "予想の出走表" : variant === "roi" ? "期待回収率の出走表" : "予測モデルの出走表"}>
         <thead>
           <tr>
+            {forecast && <th className="forecast-mark-head">自分の印</th>}
             {sortableColumns.map((c) => (
               <th
                 key={c.key}
                 className={`sortable ${NUMERIC.includes(c.key) ? "num" : ""}`}
                 aria-sort={ariaSort(c.key)}
-                title={variant === "roi" && c.key === "odds"
+                title={variant !== "prediction" && c.key === "odds"
                   ? "現在保存されている単勝オッズと人気。期待回収率に使用したオッズとは異なる場合があります。"
                   : c.title}
                 onClick={() => toggle(c.key)}
               >
-                {c.label}
-                {sortMark(c.key)}
+                <button type="button" className="table-sort-button">
+                  {c.label}{sortMark(c.key)}
+                </button>
               </th>
             ))}
             {/* 137: right after モデル勝率 (or after 単勝 without predictions); sortable (2026-10-31) */}
@@ -366,7 +385,7 @@ export function HorseEntriesTable({
                 市場との差
               </th>
             )}
-            {hasPreds && <th className="expand-head">寄与</th>}
+            {diagnostics && <th className="expand-head">寄与</th>}
           </tr>
         </thead>
         <tbody>
@@ -397,6 +416,24 @@ export function HorseEntriesTable({
                     cancelled ? " entry--cancelled" : ""
                   }${evOver ? " entry--ev-over" : ""}`}
                 >
+                  {forecast && (
+                    <td className="forecast-mark-cell">
+                      <select
+                        aria-label={`${r.horse_number ?? ""}番 ${r.horse_name ?? r.horse_id}の自分の印`}
+                        value={marks?.[r.horse_id] ?? ""}
+                        disabled={cancelled || !onMarkChange}
+                        className={marks?.[r.horse_id] ? "forecast-mark-select forecast-mark-select--chosen" : "forecast-mark-select"}
+                        onChange={(event) => {
+                          const mark = event.target.value;
+                          if (isForecastMark(mark)) onMarkChange?.(r.horse_id, mark);
+                        }}
+                      >
+                        {FORECAST_MARKS.map((mark) => (
+                          <option key={mark.value} value={mark.value}>{mark.label}</option>
+                        ))}
+                      </select>
+                    </td>
+                  )}
                   <td>
                     <span className="umaban-cell">
                       <span className={`waku waku-${r.frame ?? 0}`}>{r.frame ?? PLACEHOLDER}</span>
@@ -444,7 +481,7 @@ export function HorseEntriesTable({
                         : ""}
                     </span>
                   </td>
-                  <td className={`num${hasPreds ? " prob-cell" : ""}`}>
+                  <td className={`num${diagnostics ? " prob-cell" : ""}`}>
                     <span
                       className={
                         "cell-main" +
@@ -458,12 +495,12 @@ export function HorseEntriesTable({
                     </span>
                     {/* q = this odds column converted to a win share — same column, labelled
                         sub-line (pseudo disclosure in the header tooltip + table note) */}
-                    {hasPreds && q != null && (
+                    {diagnostics && q != null && (
                       <span className="cell-sub">市場評価 {formatPct(q)}</span>
                     )}
-                    {hasPreds && <ProbBar value={q} max={probMax} variant="q" />}
+                    {diagnostics && <ProbBar value={q} max={probMax} variant="q" />}
                   </td>
-                  {hasPreds && (
+                  {probColumn && (
                     <td className="num prob-cell">
                       <span className="prob-text">{formatPct(p)}</span>
                       {r.pred?.top2 != null && (
@@ -539,7 +576,7 @@ export function HorseEntriesTable({
                         : `${diff >= 0 ? "+" : ""}${(diff * 100).toFixed(1)}pt`}
                     </td>
                   )}
-                  {hasPreds && (
+                  {diagnostics && (
                     <td className="expand-cell">
                       <button
                         type="button"
@@ -557,7 +594,7 @@ export function HorseEntriesTable({
                 {isOpen && (
                   <tr className="explanation-row">
                     <td colSpan={totalCols}>
-                      {hasPreds && <ExplanationPanel explanation={r.pred?.explanation} />}
+                      {diagnostics && <ExplanationPanel explanation={r.pred?.explanation} />}
                       {attnDetail && attn && attentionRace && (
                         <AttentionPanel
                           horse={attn}

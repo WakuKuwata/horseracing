@@ -106,6 +106,8 @@ class Job(BaseModel):
     # a job this one enqueued as a follow-up (predict → auto recommend, transcribed from
     # summary["recommend_job_id"]) — lets the front keep polling until the buy-ups land too.
     followup_job_id: str | None = None
+    # Refresh may update both ROI and the probability forecast; keep the two jobs independent.
+    prediction_job_id: str | None = None
     processed_rows: int | None = None
     skipped_rows: int | None = None
     error_count: int | None = None

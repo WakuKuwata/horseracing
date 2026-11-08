@@ -3,18 +3,22 @@ import type { KeyboardEvent } from "react";
 
 import { Link, useParams } from "react-router-dom";
 
-import { useAttention, useMarketEv, useRace, useRaceChaos } from "../api/queries";
+import { useAttention, useMarketEv, usePredictions, useRace, useRaceChaos } from "../api/queries";
 import { AttentionNote } from "../components/AttentionNote";
 import { AttentionRulesPanel } from "../components/AttentionRulesPanel";
 import { ExpectedReturnNote } from "../components/ExpectedReturnNote";
+import { ForecastSummary } from "../components/ForecastSummary";
 import { HorseEntriesTable } from "../components/HorseEntriesTable";
 import { LegacyPredictionComparison } from "../components/LegacyPredictionComparison";
 import { OddsPanel } from "../components/OddsPanel";
+import { PredictButton } from "../components/PredictButton";
 import { RaceChaosPanel } from "../components/RaceChaosPanel";
 import { RefreshButton } from "../components/RefreshButton";
 import { RoiPurchaseRecord } from "../components/RoiPurchaseRecord";
 import { QueryStateView } from "../components/StateView";
-import { PLACEHOLDER } from "../lib/format";
+import { formatJstDateTime, PLACEHOLDER } from "../lib/format";
+import { useForecastMarks } from "../lib/useForecastMarks";
+import { useForecastLiveRefresh } from "../lib/useForecastLiveRefresh";
 import { venueName } from "../lib/venues";
 
 type Tab = "odds" | "comparison";
@@ -30,8 +34,15 @@ export function RaceDetailPage() {
 
 function RaceDetailContent({ raceId }: { raceId: string }) {
   const raceQuery = useRace(raceId);
+  useForecastLiveRefresh(raceId, raceQuery.data);
   const marketEvQuery = useMarketEv(raceId);
   const attentionQuery = useAttention(raceId);
+  const predictionQuery = usePredictions(raceId);
+  const { marks, error: marksError, setMark } = useForecastMarks(raceId);
+  const prediction = predictionQuery.data;
+  const predictionUnavailable = (predictionQuery.error?.status === 404
+    && predictionQuery.error.code === "prediction_unavailable") || prediction?.horses.length === 0;
+  const model = prediction?.available_models?.find((item) => item.is_selected);
   // B9: the 084 chaos readout (market-only) comes from its own endpoint, so the ROI view shows it
   // without touching the legacy /predictions response.
   const chaosQuery = useRaceChaos(raceId);
@@ -88,13 +99,35 @@ function RaceDetailContent({ raceId }: { raceId: string }) {
 
       <section className="panel roi-overview" aria-labelledby="roi-overview-title">
         <div className="roi-overview__heading">
-          <h2 id="roi-overview-title">期待回収率・出走表</h2>
-          <span className="badge">検証中</span>
+          <h2 id="roi-overview-title">予想・出走表</h2>
+          <span className="badge">期待回収率は検証中</span>
         </div>
         <p className="note">
-          市場連動モデルの期待回収率・市場混合と、注目条件を確認できます。
-          いずれも推定・検証中の情報です。
+          勝率・連対率（2着以内）・複勝率（3着以内）と期待回収率を見比べ、自分の印を付けて予想できます。
+          勝率順は勝つ可能性の順です。期待回収率は別の市場連動モデルで計算しています。
         </p>
+        <div className="forecast-toolbar">
+          <div className="forecast-model-status" aria-live="polite">
+            {predictionQuery.isLoading && <p className="note">確率予測を読み込み中…</p>}
+            {predictionUnavailable && <p className="note">確率予測は未生成です。「予測する」で採用モデルの予測を生成できます。</p>}
+            {predictionQuery.error && !predictionUnavailable && (
+              <p className="note">確率予測を取得できませんでした（HTTP {predictionQuery.error.status}）。出走表と印付けは引き続き使えます。</p>
+            )}
+            {prediction && !predictionUnavailable && (
+              <p className="note" data-testid="forecast-model-info">
+                確率予測: {model?.display_name ?? prediction.run?.model_version ?? PLACEHOLDER}
+                {model?.display_name && prediction.run && !model.display_name.includes(prediction.run.model_version) && ` (${prediction.run.model_version})`}
+                {" ／ 計算日時: "}{formatJstDateTime(prediction.run?.computed_at) ?? PLACEHOLDER}
+              </p>
+            )}
+          </div>
+          <PredictButton raceId={raceId} />
+        </div>
+        <p className="note forecast-storage-note">
+          自分の印はこのブラウザに自動保存されます。他の端末とは共有されません。
+          ◎ 本命 ／ ○ 対抗 ／ ▲ 単穴 ／ △ 連下 ／ ☆ 注目 ／ 消 見送り
+        </p>
+        {marksError && <p className="note" role="status">{marksError}</p>}
         <QueryStateView
           isLoading={raceQuery.isLoading}
           error={raceQuery.error ?? null}
@@ -105,26 +138,40 @@ function RaceDetailContent({ raceId }: { raceId: string }) {
         >
           {(r) => (
             <>
-              <ExpectedReturnNote
-                marketEv={marketEvQuery.data}
-                isLoading={marketEvQuery.isLoading}
-                error={marketEvQuery.error ?? null}
-              />
-              {/* B8: where the columns' prospective record (pre-race quotes, official payout) lives */}
-              <p className="note" data-testid="prospective-link">
-                <Link to="/market-ev/prospective">発走前オッズでの前向き現況(公式払戻で精算)を見る</Link>
-              </p>
-              <AttentionNote error={attentionQuery.error ?? null} isLoading={attentionQuery.isLoading} />
-              <HorseEntriesTable
-                variant="roi"
+              <ForecastSummary
+                raceId={raceId}
                 entries={r.horses}
-                predictions={[]}
+                prediction={prediction}
+                marketEv={marketEvQuery.data}
+                predictionLoading={predictionQuery.isLoading}
+                predictionFailed={!!predictionQuery.error}
+                marketEvLoading={marketEvQuery.isLoading}
+                marketEvFailed={!!marketEvQuery.error}
+              />
+              <details className="forecast-notes" open={marketEvQuery.data?.status !== "available" || !!marketEvQuery.error || !!attentionQuery.error}>
+                <summary>期待回収率・注目条件の説明と計算時刻</summary>
+                <ExpectedReturnNote
+                  marketEv={marketEvQuery.data}
+                  isLoading={marketEvQuery.isLoading}
+                  error={marketEvQuery.error ?? null}
+                />
+                <p className="note" data-testid="prospective-link">
+                  <Link to="/market-ev/prospective">発走前オッズでの前向き現況(公式払戻で精算)を見る</Link>
+                </p>
+                <AttentionNote error={attentionQuery.error ?? null} isLoading={attentionQuery.isLoading} />
+              </details>
+              <HorseEntriesTable
+                variant="forecast"
+                entries={r.horses}
+                predictions={prediction?.horses ?? []}
                 marketEv={marketEvQuery.data}
                 attention={attentionQuery.data}
+                marks={marks}
+                onMarkChange={setMark}
               />
               <p className="table-hint">
-                初期表示は馬番順です。列見出しをクリックで並び替えできます。
-                期待回収率と市場混合は並び替えません。
+                初期表示は単勝オッズの低い順（オッズがない場合は馬番順）です。
+                列見出しで並び替えできます。勝率・連対率・複勝率は最初のクリックで高い順に表示します。
                 狭い画面では表を横にスクロールできます。
                 {attentionQuery.data?.status === "available" && "注目条件の「▸」で注目条件の内訳を表示。"}
               </p>

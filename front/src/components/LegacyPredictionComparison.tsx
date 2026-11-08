@@ -10,7 +10,6 @@ import { JointPanel } from "./JointPanel";
 import { ModelMarketStanding } from "./ModelMarketStanding";
 import { ModelSelector } from "./ModelSelector";
 import { OddsFreshness } from "./OddsFreshness";
-import { PredictButton } from "./PredictButton";
 import { RaceDispersionPanel } from "./RaceDispersionPanel";
 import { RaceDivergenceSummary } from "./RaceDivergenceSummary";
 import { RecommendButton } from "./RecommendButton";
@@ -46,11 +45,10 @@ export function LegacyPredictionComparison({ raceId, race }: { raceId: string; r
           上の期待回収率とは別に計算しています。
         </p>
         <p className="note" data-testid="comparison-generation-scope">
-          モデル切替は予測の比較表示だけに適用され、期待回収率は変わりません。
-          「予測する」「買い目生成」は採用モデルを使用します。
+          モデル切替はこの比較表示だけに適用され、主出走表の確率予測・自分の印・期待回収率は変わりません。
+          主出走表の「予測する」と「買い目生成」は採用モデルを使用します。
         </p>
         <div className="comparison-actions" aria-label="比較データの生成">
-          <PredictButton raceId={raceId} />
           <RecommendButton raceId={raceId} />
         </div>
         {(pred?.available_models?.length ?? 0) > 0 && (
@@ -69,7 +67,7 @@ export function LegacyPredictionComparison({ raceId, race }: { raceId: string; r
         ) : query.error && <ErrorView error={query.error} />}
         {query.isSuccess && !hasPreds && (
           <p className="state state--empty" data-testid="no-predictions-cta">
-            このレースの比較用の予測はまだ生成されていません。「予測する」で生成できます。
+            このレースの比較用の予測はまだ生成されていません。主出走表の「予測する」で採用モデルの予測を生成できます。
           </p>
         )}
         {pred?.run && <RunAuditView run={pred.run} />}

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 import os
 import signal
 import subprocess
@@ -26,9 +27,12 @@ from pathlib import Path
 
 import httpx
 from horseracing_db.enums import JobStatus
-from horseracing_db.models import IngestionJob, ModelVersion, PredictionRun, Race, RaceResult
+from horseracing_db.models import IngestionJob, PredictionRun, Race, RaceResult
 from horseracing_scrape import robots_cache
 from horseracing_scrape.fetch import HttpFetcher
+from horseracing_scrape.jra.errors import SourceIntervalUnconfigured
+from horseracing_scrape.jra.fetch import JraFetcher
+from horseracing_scrape.jra.race_odds import refresh_race_win_odds
 from horseracing_scrape.pipeline import (
     complete_profiles,
     discover_races,
@@ -37,7 +41,12 @@ from horseracing_scrape.pipeline import (
     scrape_odds,
     scrape_results,
 )
-from horseracing_scrape.politeness import background_policy
+from horseracing_scrape.politeness import (
+    JRA_SOURCE_INTERVAL_ENV,
+    NoSharedLimiter,
+    background_policy,
+    jra_source_interval_s,
+)
 from horseracing_scrape.urls import entries_url, result_url, win_odds_url
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -47,11 +56,13 @@ from .config import CONFIG
 from .deps import owner_database_url
 from .enqueue import (
     enqueue_expected_return,
-    enqueue_predict,
     enqueue_race,
     enqueue_recommend,
     races_missing_corner_orders,
 )
+from .forecast_refresh import enqueue_forecast_refresh, forecast_inputs
+
+logger = logging.getLogger(__name__)
 
 #: race_date is a JRA calendar date; deriving "today" from UTC would shift the backfill window by a
 #: day for the nine hours after midnight JST.
@@ -141,6 +152,75 @@ def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None
     )
 
 
+_UNSET = object()
+_jra_unavailable_logged: set[str] = set()
+
+
+def make_jra_fetcher(
+    capture_guard: Callable[[], cw.CaptureHold | None] | None = None,
+) -> JraFetcher | None:
+    """The JRA official-site fetcher for a race refresh (176 route, wired to ops 2026-11-07), or
+    ``None`` when the route cannot run — then the refresh uses netkeiba alone, as before.
+
+    Unavailable means: ``HORSERACING_JRA_MIN_INTERVAL_S`` unset/invalid (the 172 wrapper copies
+    the policy's ``jra_official_interval_seconds`` into it; absent = send nothing, never "send
+    fast"), or no shared limiter (``HORSERACING_SHARED_LIMITER=0`` / limiter DB unreachable — the
+    JRA route refuses to run uncoordinated). Each reason is logged ONCE per process, not per job.
+
+    Same politeness shape as ``make_fetcher``: the DB-shared limiter (its own ``jra.go.jp``
+    bucket), the shared robots cache, the near-post hold WAITED OUT before every slot reservation
+    (``before_reserve``, never a ``CaptureWindowRefused``), the archive dir (the 単複 page itself is
+    never archived — constitution V). A cooldown is NOT waited out (176 FR-005): the request is
+    refused, the step fails, the refresh falls back to netkeiba."""
+    def _once(key: str, msg: str) -> None:
+        if key not in _jra_unavailable_logged:
+            _jra_unavailable_logged.add(key)
+            logger.warning("JRA official route unavailable for refresh; netkeiba only: %s", msg)
+
+    try:
+        interval = jra_source_interval_s(os.environ.get(JRA_SOURCE_INTERVAL_ENV))
+    except SourceIntervalUnconfigured as exc:
+        _once("interval", str(exc))
+        return None
+    before_reserve = None
+    if capture_guard is not None:
+        def before_reserve(_url: str) -> None:
+            cw.wait_out_hold(capture_guard)
+    try:
+        policy = background_policy(min_interval_s=interval, database_url=owner_database_url(),
+                                   before_reserve=before_reserve)
+    except NoSharedLimiter as exc:
+        _once("limiter", str(exc))
+        return None
+    if policy is None:
+        _once("limiter_off",
+              "HORSERACING_SHARED_LIMITER=0 — the JRA route needs the shared limiter")
+        return None
+    policy.wait_out_cooldown = False
+    return JraFetcher(
+        policy=policy, capture_guard=None, archive_dir=_archive_dir(),
+        robots_cache_store=robots_cache.shared_cache(),
+    )
+
+
+def _jra_fallback_needed(jra) -> bool:
+    """Whether netkeiba should still be asked after the official step (codex 2026-11-07: decide on
+    the writer's reason, not on ``written`` alone — ``written`` also counts place rows).
+
+    No fallback when the official odds were adopted (``odds_written_races``) or when the writer
+    found the stored quote NEWER than the official page (``odds_skipped_stale``: a netkeiba read is
+    not what is missing). Everything else — refused/failed walk, no page for the race, 前日最終,
+    awaiting netkeiba's entries, partial field, quarantine — leaves the race without today's odds,
+    and netkeiba may still supply them."""
+    if jra is None:
+        return True
+    if jra.extra.get("odds_written_races", 0) > 0:
+        return False
+    if jra.extra.get("odds_skipped_stale", 0) > 0:
+        return False
+    return True
+
+
 def _now() -> datetime.datetime:
     return datetime.datetime.now(datetime.UTC)
 
@@ -185,27 +265,9 @@ def _has_corner_orders(session: Session, race_id: str) -> bool:
     ).first() is not None
 
 
-def _has_active_prediction(session: Session, race_id: str) -> bool:
-    """True if ``race_id`` already has a prediction_run for the currently ACTIVE model — the same
-    run the read API (014 select_prediction_run) would surface. Used to precompute predictions
-    ONCE per race (below) without re-predicting on every odds refresh. Pure DB read (no ML import —
-    boundary II/VI): ops resolves the active model straight from model_versions."""
-    active = session.scalars(
-        select(ModelVersion.model_version).where(ModelVersion.adoption_status == "active")
-    ).first()
-    if active is None:  # no active model → nothing meaningful to precompute; leave it to a click
-        return True
-    return (
-        session.scalars(
-            select(PredictionRun.prediction_run_id)
-            .where(PredictionRun.race_id == race_id)
-            .where(PredictionRun.model_version == active)
-        ).first()
-        is not None
-    )
-
-
-def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJob:
+def run_one(
+    session: Session, job: IngestionJob, *, fetcher=None, jra_fetcher=_UNSET,
+) -> IngestionJob:
     """Refresh one race: entries + results + odds (results only for a 通過順 patch-up, below).
 
     Sets terminal status/counts, commits.
@@ -214,12 +276,11 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     (results INSERT-only, odds fill-null-on-finished / overwrite-on-pending). A not-yet-run race has
     no result page, so its results sub-step fails benignly and the job ends PARTIAL, not FAILED.
 
-    Precompute (predict-ahead): once entries land, chase them with a predict job so the race-detail
-    page reads a persisted run instead of blocking on a ~1-minute on-demand build. Only when entries
-    didn't fail AND the ACTIVE model has no run yet (so repeated odds refreshes don't re-predict);
-    predict itself is odds-independent for the default model (a market-offset model just typed-skips
-    until odds exist). Follow-up job (not in-job chaining) so enqueue_predict's in-flight dedup
-    converges with a concurrent manual 予測生成. The predict job then chains recommend as usual.
+    Forecast follow-up: changed pre-race inputs queue the active model, even when an older run
+    exists. A durable signature suppresses unchanged work; the known market-free mixture ignores
+    odds-only updates. A running predict leaves one coalesced successor, and the worker serializes
+    predictions within the same race. Historical races remain manual-only. The predict job then
+    chains recommend as usual.
 
     EXCEPT for ``corner_backfill``: that origin exists to collect ONE column (通過順) that netkeiba
     publishes about a day after the race, and its races are settled by construction (the selector
@@ -254,11 +315,38 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     results = scrape_results(session, urls=[result_url(race_id)], fetcher=fetcher,
                              scope_value=race_id)
     summaries = [results] if corners_only else [entries, results]
+    # Every sub-step attempted, in order, for the summary's ``calls`` (the operator's view).
+    # ``summaries`` stays the list that decides the terminal status: an official-odds attempt that
+    # netkeiba then covered is reported but must not paint a recovered refresh PARTIAL (codex).
+    calls = list(summaries)
     odds = None
+    jra = None
+    odds_written_by = None
     if not corners_only:
-        odds = scrape_odds(session, urls=[win_odds_url(race_id)], fetcher=fetcher,
-                           scope_value=race_id)
-        summaries.append(odds)
+        # 2026-11-07: official site first (176 route) for a still-pending race of an enabled origin.
+        # Pending is judged AFTER this pass's results sub-step: a race whose result just landed has
+        # final odds coming from the result page, and the official walk would be ~4 wasted requests.
+        if refresh_origin in CONFIG.jra_odds_origins and is_result_pending(session, race_id):
+            jf = jra_fetcher
+            if jf is _UNSET:
+                bind = session.get_bind()
+                jf = make_jra_fetcher(capture_guard=lambda: _active_hold_fresh(bind))
+            race_date = session.scalar(select(Race.race_date).where(Race.race_id == race_id))
+            if jf is not None and race_date is not None:
+                jra = refresh_race_win_odds(session, race_id, fetcher=jf, race_date=race_date)
+                calls.append(jra)
+        if _jra_fallback_needed(jra):
+            odds = scrape_odds(session, urls=[win_odds_url(race_id)], fetcher=fetcher,
+                               scope_value=race_id)
+            summaries.append(odds)
+            calls.append(odds)
+            if odds.written > 0:
+                odds_written_by = "netkeiba"
+        else:
+            odds = jra
+            summaries.append(odds)
+            if jra.written > 0:
+                odds_written_by = "jra_official"
 
     # PRE-RACE exotic price grid, only while the race is still pending. These prices are the only
     # thing that can drive combination selection — `exotic_odds` holds the dividend, which exists
@@ -274,6 +362,7 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
         quotes = scrape_exotic_quotes(session, race_ids=[race_id], bet_types=bet_types,
                                       fetcher=fetcher, scope_value=race_id)
         summaries.append(quotes)
+        calls.append(quotes)
 
     # Enrichment last, once every unrecoverable pre-race capture is safely in. Still BEFORE the
     # predict follow-up is enqueued, so a debut horse's pedigree/sex/birth_year are present by the
@@ -312,8 +401,18 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
         "kind": "results" if corners_only else "entries+results+odds",
         "written": written,
         "calls": [{"job_type": s.job_type, "status": s.status, "written": s.written,
-                   "skipped": s.skipped, "errors": s.errors} for s in summaries],
+                   "skipped": s.skipped, "errors": s.errors} for s in calls],
     }
+    if not corners_only:
+        # which source's win odds THIS refresh wrote (None = neither wrote; the stored value and
+        # its provenance are untouched). Not "which source the DB currently shows".
+        summary["odds_written_by"] = odds_written_by
+        if jra is not None and odds is not jra:
+            summary["jra_odds"] = {"status": jra.status, "fallback": "netkeiba",
+                                   **{k: v for k, v in jra.extra.items()
+                                      if k.startswith(("odds_", "requests_", "rewalks",
+                                                       "unsupported", "quarantined",
+                                                       "skipped_", "alias_"))}}
     if corners_only:
         # 「何も書かなかった」の理由は記録しないと運用側から見分けがつかない — 通過順がまだ
         # 公開されていないのか、別ジョブが先に埋めたのか、この経路が黙って止まったのか。
@@ -331,22 +430,14 @@ def run_one(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     # tracking — same pattern as run_predict's recommend follow-up).
     # patch-up は確定済みレースの 1 列を埋めるだけなので予測の先回りは要らない(そのレースの
     # 予測はとうに存在し、通過順は「その馬の次走の as-of 特徴」に効く=このレースの再予測ではない)。
-    # C1: off by default — the comparison-only prediction is made from the 予測 button, not as a
-    # side effect of fetching data (CONFIG.predict_on_refresh re-enables the old follow-up).
     if (CONFIG.predict_on_refresh
-            and entries is not None and entries.status != JobStatus.FAILED
-            and not _has_active_prediction(session, race_id)):
-        followup, reused = enqueue_predict(
-            session,
-            race_id,
-            origin=(
-                "manual_ui"
-                if refresh_origin == "manual_ui"
-                else "auto_after_refresh"
-            ),
+            and entries is not None and entries.status != JobStatus.FAILED):
+        prediction_id = enqueue_forecast_refresh(
+            session, race_id, now=_now(),
+            origin="manual_ui" if refresh_origin == "manual_ui" else "auto_after_refresh",
         )
-        if not reused:
-            summary["predict_job_id"] = str(followup.ingestion_job_id)
+        if prediction_id is not None:
+            summary["predict_job_id"] = prediction_id
     # Feature 137: the stored 期待回収率 is win_prob × the odds it was computed from, so odds this
     # refresh wrote make it stale — queue that date's recompute (one job per date, QUEUED-only
     # dedup). Only while the race is still pending: a settled race's value is an after-the-fact
@@ -605,6 +696,11 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
     predict_origin = initial_summary.get("predict_origin")
     if predict_origin not in {"manual_ui", "auto_after_refresh"}:
         raise ValueError(f"invalid or missing predict_origin: {predict_origin!r}")
+    forecast_receipt = initial_summary.get("forecast_refresh")
+    if forecast_receipt:
+        _, skip_reason = forecast_inputs(session, race_id, now=_now())
+        if skip_reason is not None:
+            return _skip_forecast(session, job, initial_summary, skip_reason)
     # Validate before capture commits or starts a subprocess for a predict that cannot run.
     _calib_argv("PREDICT")
     capture = initial_summary.get("capture")
@@ -688,6 +784,15 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
         session.add(job)
         session.commit()
 
+    # A queue or the capture hold can cross the post time. Explicit manual predicts (without a
+    # refresh receipt) retain the historical/backfill behaviour; refresh-created work fails closed.
+    before_serving = None
+    if forecast_receipt:
+        before_serving, skip_reason = forecast_inputs(session, race_id, now=_now())
+        if skip_reason is not None:
+            return _skip_forecast(session, job, dict(job.summary or {}), skip_reason)
+        if before_serving["model_version"] != forecast_receipt["model_version"]:
+            return _skip_forecast(session, job, dict(job.summary or {}), "active_model_changed")
     proc = _serving_predict(race_id)
     stdout = proc.stdout or ""
     tail = ((proc.stderr or "") + stdout).strip()[-500:]
@@ -696,6 +801,26 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
         "predict_origin": predict_origin,
         "capture": capture,
     }
+    if forecast_receipt:
+        # Preserve the enqueued signature. Never stamp a later input version as though it was
+        # necessarily the one the subprocess read. Only unchanged target inputs earn dedup credit.
+        after_serving, _ = forecast_inputs(session, race_id, now=_now())
+        latest_run = session.scalar(
+            select(PredictionRun.prediction_run_id)
+            .where(PredictionRun.race_id == race_id,
+                   PredictionRun.model_version == forecast_receipt["model_version"])
+            .order_by(PredictionRun.computed_at.desc(), PredictionRun.prediction_run_id.desc())
+            .limit(1)
+        )
+        audit["forecast_refresh"] = {
+            **forecast_receipt,
+            "inputs_unchanged": (
+                before_serving is not None and after_serving is not None
+                and before_serving["signature"] == forecast_receipt["signature"]
+                and after_serving["signature"] == forecast_receipt["signature"]
+            ),
+            "prediction_run_id": str(latest_run) if latest_run is not None else None,
+        }
     if proc.returncode != 0:
         job.status = JobStatus.FAILED
         job.error_message = tail
@@ -731,6 +856,17 @@ def run_predict(session: Session, job: IngestionJob, *, fetcher=None) -> Ingesti
             "recommend_job_id": str(followup.ingestion_job_id),
             **audit,
         }
+    session.add(job)
+    session.commit()
+    return job
+
+
+def _skip_forecast(
+    session: Session, job: IngestionJob, summary: dict, reason: str,
+) -> IngestionJob:
+    job.status = JobStatus.SKIPPED
+    job.completed_at = _now()
+    job.summary = {**summary, "kind": "predict", "reason": reason}
     session.add(job)
     session.commit()
     return job

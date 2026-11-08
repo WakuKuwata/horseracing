@@ -332,6 +332,8 @@ export interface components {
             job_type: string;
             /** Kind */
             kind?: string | null;
+            /** Prediction Job Id */
+            prediction_job_id?: string | null;
             /** Processed Rows */
             processed_rows?: number | null;
             /** Reason */

@@ -73,14 +73,16 @@ describe("RaceDetailPage model switching (057)", () => {
       ...happyHandlers,
     );
     renderDetail();
-    const roi = await screen.findByRole("table", { name: "期待回収率の出走表" });
+    const roi = await screen.findByRole("table", { name: "予想の出走表" });
     expect(await within(roi).findByText("123.7%")).toBeInTheDocument();
+    await userEvent.selectOptions(within(roi).getByRole("combobox"), "◎");
     await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
     await screen.findByTestId("model-select");
     await userEvent.selectOptions(screen.getByTestId("model-select"), "m-acc");
     expect(await screen.findByTestId("viewing-non-adopted")).toBeInTheDocument();
     expect(within(roi).getByText("123.7%")).toBeVisible();
-    expect(within(roi).queryByText("50.0%")).toBeNull();
+    expect(within(roi).getAllByRole("row")[1].querySelectorAll("td")[6]).toHaveTextContent("32.0%");
+    expect(within(roi).getByRole("combobox")).toHaveValue("◎");
     expect(predictionUrls.every((url) => !new URL(url).searchParams.has("bet_type"))).toBe(true);
     await userEvent.click(screen.getByText("モデル情報・結合確率", { selector: "summary" }));
     await waitFor(() => expect(predictionUrls.some((url) => {
@@ -145,7 +147,7 @@ describe("RaceDetailPage model switching (057)", () => {
     expect(await screen.findByTestId("model-unavailable")).toBeInTheDocument();
     // distinct from the generic error alert
     expect(within(screen.getByRole("region", { name: "予測モデルとの比較" })).queryByRole("alert")).toBeNull();
-    expect(within(screen.getByRole("table", { name: "期待回収率の出走表" })).queryByRole("alert")).toBeNull();
+    expect(within(screen.getByRole("table", { name: "予想の出走表" })).queryByRole("alert")).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: "採用モデルの表示へ戻る" }));
     expect(await screen.findByTestId("viewing-adopted")).toBeInTheDocument();
     expect(screen.queryByTestId("model-unavailable")).toBeNull();

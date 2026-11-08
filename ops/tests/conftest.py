@@ -133,6 +133,14 @@ def _truncate_between_tests(request):
 
 
 @pytest.fixture(autouse=True)
+def _no_jra_route_by_default(monkeypatch):
+    """2026-11-07: the refresh asks the JRA official site first when its interval is configured.
+    Tests must never inherit that from the developer's shell (it would reach the network); the
+    tests that exercise the step pass ``jra_fetcher=`` or stub the step explicitly."""
+    monkeypatch.delenv("HORSERACING_JRA_MIN_INTERVAL_S", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def _isolate_robots_cache(monkeypatch):
     """Keep the shared robots cache out of the tests, in both directions.
 

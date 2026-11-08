@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 
 describe("RaceDetailPage", () => {
-  it("keeps the initial ROI view independent of prediction/recommendation requests and controls", async () => {
+  it("compares existing probabilities and ROI on the main table without fetching recommendations", async () => {
     let predictions = 0;
     let recommendations = 0;
     server.use(
@@ -57,17 +57,22 @@ describe("RaceDetailPage", () => {
       ...happyHandlers,
     );
     renderDetail();
-    const roiTable = await screen.findByRole("table", { name: "期待回収率の出走表" });
+    const roiTable = await screen.findByRole("table", { name: "予想の出走表" });
     expect(await within(roiTable).findByText("123.7%")).toBeInTheDocument();
     const rows = within(roiTable).getAllByRole("row").slice(1);
     expect(within(rows[0]).getByText("イチ")).toBeInTheDocument();
     expect(within(rows[1]).getByText("ニ")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "オッズ" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByRole("button", { name: "予測する" })).toBeNull();
+    expect(screen.getByRole("button", { name: "予測する" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "買い目生成" })).toBeNull();
-    expect(screen.queryByRole("columnheader", { name: /モデル勝率|市場との差|寄与/ })).toBeNull();
+    // the 予想 table shows モデル勝率 (連対/複勝 stacked in that one cell); the comparison-only
+    // columns (市場との差/寄与) must not appear on first render
+    expect(screen.queryByRole("columnheader", { name: /市場との差|寄与/ })).toBeNull();
     expect(screen.queryByRole("heading", { name: /旧予測モデルの買い目/ })).toBeNull();
-    expect(predictions).toBe(0);
+    expect(await within(roiTable).findByText("32.0%")).toBeInTheDocument();
+    expect(within(roiTable).getByText("連対 55%")).toBeInTheDocument();
+    expect(within(roiTable).getByText("複勝 70%")).toBeInTheDocument();
+    expect(predictions).toBeGreaterThan(0);
     expect(recommendations).toBe(0);
     expect(screen.getByRole("button", { name: "データ更新" })).toBeInTheDocument();
     // B6: the purchase record (skip / free-form) is reachable from the ROI view without opening
@@ -80,7 +85,7 @@ describe("RaceDetailPage", () => {
     expect(screen.getByTestId("race-chaos")).toHaveTextContent("発走前の市場スナップショットがないため");
   });
 
-  it("resets the comparison view and does not fetch legacy data for the next race", async () => {
+  it("resets comparison and fetches only main probabilities for the next race", async () => {
     const legacyRaces: string[] = [];
     server.use(
       http.get("*/api/v1/races/:id/predictions", ({ params }) => {
@@ -88,7 +93,7 @@ describe("RaceDetailPage", () => {
         return HttpResponse.json(predictionResponse);
       }),
       http.get("*/api/v1/races/:id/recommendations", ({ params }) => {
-        legacyRaces.push(String(params.id));
+        legacyRaces.push(`recommendations:${params.id}`);
         return HttpResponse.json(recommendationResponse);
       }),
       ...happyHandlers,
@@ -100,10 +105,11 @@ describe("RaceDetailPage", () => {
     await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
     await screen.findByText("run-abc");
     await userEvent.click(screen.getByRole("link", { name: "次のレースへ" }));
-    await screen.findByRole("table", { name: "期待回収率の出走表" });
+    await screen.findByRole("table", { name: "予想の出走表" });
     expect(screen.getByRole("tab", { name: "オッズ" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByRole("button", { name: "予測する" })).toBeNull();
-    expect(legacyRaces).not.toContain("200806010112");
+    expect(screen.getByRole("button", { name: "予測する" })).toBeInTheDocument();
+    await waitFor(() => expect(legacyRaces).toContain("200806010112"));
+    expect(legacyRaces).not.toContain("recommendations:200806010112");
   });
 
   it("keeps recommendation job tracking and refetch when comparison is hidden", async () => {
@@ -165,8 +171,8 @@ describe("RaceDetailPage", () => {
     const comparison = await screen.findByRole("region", { name: "予測モデルとの比較" });
     expect(await within(comparison).findByRole("alert")).toHaveTextContent("prediction_unavailable");
     expect(within(comparison).getByText("prediction fetch failed")).toBeInTheDocument();
-    expect(within(screen.getByRole("table", { name: "期待回収率の出走表" })).getByText("h1")).toBeInTheDocument();
-    expect(within(screen.getByRole("table", { name: "期待回収率の出走表" })).getByText("123.7%")).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "予想の出走表" })).getByText("h1")).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "予想の出走表" })).getByText("123.7%")).toBeInTheDocument();
   });
 
   // Feature 087 (T013A, codex C1): the betting-slip horse names/frames come from the RACE
@@ -230,8 +236,9 @@ describe("RaceDetailPage", () => {
     const { container } = renderDetail();
 
     // distinct values (1.237 / 0.864) so no other test's percentage lookup collides
-    expect(await screen.findByText("123.7%")).toBeInTheDocument();
-    expect(screen.getByText("86.4%")).toBeInTheDocument();
+    const mainTable = await screen.findByRole("table", { name: "予想の出走表" });
+    expect(await within(mainTable).findByText("123.7%")).toBeInTheDocument();
+    expect(within(mainTable).getByText("86.4%")).toBeInTheDocument();
     assertPseudoLabelCoverage(container, ["123.7%", "86.4%"]);
 
     const note = screen.getByTestId("expected-return-note");
@@ -357,7 +364,7 @@ describe("RaceDetailPage", () => {
       ...happyHandlers,
     );
     const { container } = renderDetail();
-    expect(await within(await screen.findByRole("table", { name: "期待回収率の出走表" })).findByText("h1")).toBeInTheDocument();
+    expect(await within(await screen.findByRole("table", { name: "予想の出走表" })).findByText("h1")).toBeInTheDocument();
     // the failure is SAID (a table without chips alone reads exactly like "no horse matches"),
     // neutrally: inside the note, no alert role, no error colour
     const err = await screen.findByTestId("attention-error");

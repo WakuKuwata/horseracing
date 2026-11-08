@@ -37,6 +37,7 @@ def _to_job(j: IngestionJob) -> Job:
         reason=summary.get("reason"),
         # predict → auto recommend (028/043), refresh_race → 期待回収率 recompute (137)
         followup_job_id=summary.get("recommend_job_id") or summary.get("expected_return_job_id"),
+        prediction_job_id=summary.get("predict_job_id"),
         processed_rows=j.processed_rows, skipped_rows=j.skipped_rows, error_count=j.error_count,
         retry_count=j.retry_count, started_at=j.started_at, completed_at=j.completed_at,
         error_message=j.error_message,

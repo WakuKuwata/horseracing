@@ -46,12 +46,14 @@ export function RefreshButton({
   const [jobId, setJobId] = useState<string | null>(null);
   const [invalidated, setInvalidated] = useState(false);
   const [evInvalidated, setEvInvalidated] = useState(false);
+  const [predictionInvalidated, setPredictionInvalidated] = useState(false);
 
   const start = useMutation<JobAccepted, ErrorInfo, void>({
     mutationFn: () => refreshRace(raceId),
     onSuccess: (job) => {
       setInvalidated(false);
       setEvInvalidated(false);
+      setPredictionInvalidated(false);
       setJobId(job.job_id);
     },
   });
@@ -112,6 +114,24 @@ export function RefreshButton({
     }
   }, [followupStatus, evInvalidated, qc, raceId]);
 
+  // The probability forecast and ROI use separate jobs. Observe both, including reused jobs.
+  const predictionId = status === "succeeded" || status === "partial"
+    ? (poll.data?.prediction_job_id ?? null) : null;
+  const predictionPoll = useQuery<Job, ErrorInfo>({
+    queryKey: ["opsJob", predictionId],
+    queryFn: () => getJob(predictionId as string),
+    enabled: predictionId != null,
+    refetchInterval: (q) => (isTerminal(q.state.data?.status) ? false : pollMs),
+    refetchIntervalInBackground: true,
+  });
+  const predictionStatus = predictionPoll.data?.status;
+  useEffect(() => {
+    if (!predictionInvalidated && isTerminal(predictionStatus)) {
+      void qc.invalidateQueries({ queryKey: ["predictions", raceId] });
+      setPredictionInvalidated(true);
+    }
+  }, [predictionStatus, predictionInvalidated, qc, raceId]);
+
   const running = start.isPending || (jobId != null && !isTerminal(status));
   // B5: ops confirmed it rejects writes (172 pause) → disabled with the reason; unknown = enabled.
   const { paused } = usePauseState();
@@ -155,6 +175,15 @@ export function RefreshButton({
       {text && (
         <span className={`refresh__status refresh__status--${tone}`} role="status">
           {text}
+        </span>
+      )}
+      {predictionId && (
+        <span className="refresh__status" role="status">
+          {predictionPoll.isError ? "確率予測の状態を確認できませんでした（再確認中）"
+            : predictionStatus === "succeeded" ? "確率予測も更新済み"
+              : predictionStatus === "failed" ? "確率予測の更新に失敗しました"
+                : predictionStatus === "skipped" || predictionStatus === "partial" ? "確率予測の更新を完了できませんでした"
+                  : "確率予測を更新中…"}
         </span>
       )}
     </span>

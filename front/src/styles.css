@@ -964,11 +964,115 @@ th.colgroup {
 .roi-overview .entries-table {
   min-width: 48rem;
 }
+.roi-overview .entries-table--forecast {
+  min-width: 56rem;
+}
+.forecast-notes {
+  margin: 0 0 1rem;
+}
+.forecast-notes > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+.forecast-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.forecast-model-status .note {
+  margin: 0;
+}
+.forecast-storage-note {
+  line-height: 1.8;
+}
+.forecast-summary {
+  margin: 0.75rem 0 1.25rem;
+}
+.forecast-summary h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.4rem;
+}
+.forecast-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.forecast-summary__card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+  min-width: 0;
+}
+.forecast-summary__card h4 {
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
+}
+.forecast-summary__list {
+  padding-left: 1.3rem;
+  margin: 0;
+}
+.forecast-summary__list li,
+.forecast-summary__comparison {
+  margin: 0.7rem 0;
+}
+.forecast-summary__horse {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.forecast-summary__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.3rem;
+}
+.forecast-summary__note {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0.4rem 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .forecast-summary__grid {
+    grid-template-columns: 1fr;
+  }
+}
+.forecast-mark-select {
+  font: inherit;
+  padding: 0.45rem 0.35rem;
+  min-width: 6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--bg);
+  color: inherit;
+}
+.forecast-mark-select--chosen {
+  font-weight: 700;
+}
+.table-sort-button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
 .legacy-comparison .entries-table {
   min-width: 60rem;
 }
 .roi-overview .entries-table td:nth-child(2),
 .roi-overview .entries-table td:nth-child(3),
+.roi-overview .entries-table--forecast td:nth-child(4),
 .legacy-comparison .entries-table td:nth-child(2),
 .legacy-comparison .entries-table td:nth-child(3) {
   white-space: nowrap;

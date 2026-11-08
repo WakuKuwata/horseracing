@@ -25,6 +25,56 @@ function job(status: string) {
 }
 
 describe("RefreshButton", () => {
+  it("tracks a queued probability update separately from ROI and refetches after it finishes", async () => {
+    const PREDICT = "44444444-4444-4444-4444-444444444444";
+    const ER = "55555555-5555-5555-5555-555555555555";
+    let predictionStatus = "running";
+    server.use(
+      http.post(`${BASE}/races/${RID}/refresh`, () => accept()),
+      http.get(`${BASE}/jobs/${JOB}`, () => HttpResponse.json({
+        job_id: JOB, job_type: "refresh_race", status: "partial", scope: "race",
+        scope_value: RID, retry_count: 0, prediction_job_id: PREDICT, followup_job_id: ER,
+      })),
+      http.get(`${BASE}/jobs/${PREDICT}`, () => HttpResponse.json({
+        job_id: PREDICT, job_type: "predict", status: predictionStatus,
+        scope: "race", scope_value: RID, retry_count: 0,
+      })),
+      http.get(`${BASE}/jobs/${ER}`, () => HttpResponse.json({
+        job_id: ER, job_type: "expected_return", status: "succeeded",
+        scope: "date", scope_value: "2024-06-05", retry_count: 0,
+      })),
+    );
+    const { queryClient } = renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
+    await screen.findByText("確率予測を更新中…");
+    const calls = (key: string) => invalidate.mock.calls.filter(([filter]) => filter?.queryKey?.[0] === key).length;
+    await waitFor(() => expect(calls("market-ev")).toBe(2));
+    expect(calls("predictions")).toBe(1);
+    predictionStatus = "succeeded";
+    await screen.findByText("確率予測も更新済み");
+    await waitFor(() => expect(calls("predictions")).toBe(2));
+  });
+
+  it("surfaces an automatic probability failure without hiding completed data refresh", async () => {
+    const PREDICT = "66666666-6666-6666-6666-666666666666";
+    server.use(
+      http.post(`${BASE}/races/${RID}/refresh`, () => accept()),
+      http.get(`${BASE}/jobs/${JOB}`, () => HttpResponse.json({
+        job_id: JOB, job_type: "refresh_race", status: "succeeded", scope: "race",
+        scope_value: RID, retry_count: 0, prediction_job_id: PREDICT,
+      })),
+      http.get(`${BASE}/jobs/${PREDICT}`, () => HttpResponse.json({
+        job_id: PREDICT, job_type: "predict", status: "failed",
+        scope: "race", scope_value: RID, retry_count: 0,
+      })),
+    );
+    renderWithProviders(<RefreshButton raceId={RID} pollMs={10} />);
+    await userEvent.click(screen.getByRole("button", { name: "データ更新" }));
+    await screen.findByText("確率予測の更新に失敗しました");
+    expect(screen.getByText("更新完了")).toBeInTheDocument();
+  });
+
   it("enqueues, polls to success, and reaches 更新完了", async () => {
     server.use(
       http.post(`${BASE}/races/${RID}/refresh`, () => accept()),

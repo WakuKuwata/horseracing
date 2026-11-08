@@ -102,18 +102,15 @@ def enqueue_race(
             .order_by(IngestionJob.completed_at.desc())
         ).first()
         if fresh is not None:
-            # C1: a refresh (fresh or reused) never chases the comparison-only prediction unless
-            # the operator opts in; the 予測 button enqueues predict explicitly.
             if CONFIG.predict_on_refresh:
-                enqueue_predict(
-                    session,
-                    race_id,
-                    origin=(
-                        "manual_ui"
-                        if origin == "manual_ui"
-                        else "auto_after_refresh"
-                    ),
+                from .forecast_refresh import enqueue_forecast_refresh
+
+                prediction_id = enqueue_forecast_refresh(
+                    session, race_id, now=_now(),
+                    origin="manual_ui" if origin == "manual_ui" else "auto_after_refresh",
                 )
+                if prediction_id is not None:
+                    fresh.summary = {**(fresh.summary or {}), "predict_job_id": prediction_id}
             return fresh, True
 
     job = IngestionJob(
@@ -131,6 +128,8 @@ def enqueue_predict(
     race_id: str,
     *,
     origin: PredictOrigin,
+    reuse_running: bool = True,
+    refresh_trigger: bool = False,
 ) -> tuple[IngestionJob, bool]:
     """Feature 028: enqueue a predict job (in-flight-only dedup). (job, reused); caller commits.
 
@@ -140,16 +139,20 @@ def enqueue_predict(
     refresh's `refresh:race:{race_id}`), so predict and refresh never block each other.
     model_version is not in the dedup key (ingestion_jobs has no payload column) — it is recorded in
     prediction_runs for audit instead.
+
+    Refresh follow-ups pass reuse_running=False: a running job may already have read older
+    entries. Their queued successor is serialized per race by the worker claim transaction.
     """
     if origin not in {"manual_ui", "auto_after_refresh"}:
         raise ValueError(f"unsupported predict origin: {origin!r}")
     session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
                     {"k": f"predict:{race_id}"})
+    reusable = _ACTIVE if reuse_running else (JobStatus.QUEUED,)
     active = session.scalars(
         select(IngestionJob)
         .where(IngestionJob.job_type == JOB_TYPE_PREDICT)
         .where(IngestionJob.scope_value == race_id)
-        .where(IngestionJob.status.in_(_ACTIVE))
+        .where(IngestionJob.status.in_(reusable))
         .order_by(IngestionJob.created_at.desc())
         .with_for_update()
     ).first()
@@ -157,8 +160,13 @@ def enqueue_predict(
         if origin != "manual_ui":
             return active, True
         if active.status == JobStatus.QUEUED:
+            summary = dict(active.summary or {})
+            if not refresh_trigger:
+                # An explicit predict adopts the job as manual work, including its historical
+                # execution semantics. Do not keep an automatic-only post-time guard on it.
+                summary.pop("forecast_refresh", None)
             active.summary = {
-                **(active.summary or {}),
+                **summary,
                 "predict_origin": "manual_ui",
             }
             session.flush()

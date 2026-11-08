@@ -352,6 +352,17 @@
             ],
             "title": "Kind"
           },
+          "prediction_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prediction Job Id"
+          },
           "processed_rows": {
             "anyOf": [
               {

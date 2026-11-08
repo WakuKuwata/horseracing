@@ -224,7 +224,7 @@ describe("RaceChaosPanel", () => {
     );
   });
 
-  it("renders on the ROI view from /races/{id}/chaos without reading /predictions (B9)", async () => {
+  it("renders chaos from its own endpoint alongside the main probability forecast", async () => {
     let predictions = 0;
     server.use(...happyHandlers);
     server.use(
@@ -244,10 +244,10 @@ describe("RaceChaosPanel", () => {
       { route: "/races/200806010111" },
     );
 
-    await screen.findByRole("table", { name: "期待回収率の出走表" });
-    const roi = screen.getByRole("region", { name: "期待回収率・出走表" });
+    await screen.findByRole("table", { name: "予想の出走表" });
+    const roi = screen.getByRole("region", { name: "予想・出走表" });
     expect(await within(roi).findByTestId("race-chaos")).toHaveTextContent("13%");
-    expect(predictions).toBe(0);
+    expect(predictions).toBeGreaterThan(0);
     // the comparison tab no longer repeats the readout (one place on the page)
     await userEvent.click(screen.getByRole("tab", { name: "予測モデルとの比較" }));
     const comparison = screen.getByRole("tabpanel", { name: "予測モデルとの比較" });

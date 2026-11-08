@@ -21,7 +21,7 @@ from threading import Event, Lock, Thread
 from horseracing_db.enums import JobStatus
 from horseracing_db.models import IngestionJob
 from sqlalchemy import Engine, and_, case, or_, select, text
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, aliased, sessionmaker
 
 from . import (
     JOB_TYPE_DAY,
@@ -405,11 +405,27 @@ def claim_one(
     would have two processes concurrently replacing the same races' market_ev_predictions rows.
     Serialising also keeps one full-history load in memory, not three. A stranded RUNNING row
     holds the cap until orphan recovery (grace below) — the same trade refresh_range makes."""
+    # Serialize the short claim transactions, not model execution. The next claimant must see
+    # the committed RUNNING row before testing the per-race exclusion below (NOT EXISTS alone
+    # races between worker threads). Other races still run concurrently in the CPU lane.
+    if JOB_TYPE_PREDICT in job_types:
+        session.execute(text("SELECT pg_advisory_xact_lock(:namespace, :key)"),
+                        {"namespace": 0x6F707377, "key": 2})
     stmt = (
         select(IngestionJob)
         .where(IngestionJob.job_type.in_(job_types))
         .where(IngestionJob.status == JobStatus.QUEUED)
     )
+    if JOB_TYPE_PREDICT in job_types:
+        running_predict = aliased(IngestionJob)
+        same_race_running = (
+            select(running_predict.ingestion_job_id)
+            .where(running_predict.job_type == JOB_TYPE_PREDICT)
+            .where(running_predict.status == JobStatus.RUNNING)
+            .where(running_predict.scope_value == IngestionJob.scope_value)
+            .exists()
+        )
+        stmt = stmt.where(or_(IngestionJob.job_type != JOB_TYPE_PREDICT, ~same_race_running))
     if JOB_TYPE_REFRESH_RANGE in job_types:
         running_range = (
             select(IngestionJob.ingestion_job_id)
@@ -439,6 +455,8 @@ def claim_one(
         stmt.order_by(*order).with_for_update(skip_locked=True).limit(1)
     ).first()
     if job is None:
+        if JOB_TYPE_PREDICT in job_types:
+            session.commit()  # release the claim mutex even when the lane is empty
         return None
     job.status = JobStatus.RUNNING
     job.started_at = _now()
