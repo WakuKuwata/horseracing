@@ -20,16 +20,60 @@ _WS_RE = re.compile(r"\s+")
 # --- names --------------------------------------------------------------------------------
 
 
-def norm_name(value: str | None, *, strip_shi: bool = False) -> str | None:
-    """NFKC, remove every blank (half/full width); optionally drop a trailing 氏 (馬主名)."""
+_CORP_RE = re.compile(r"^\((?:有|株|同|合|資|社)\)|\((?:有|株|同|合|資|社)\)$")
+_SMALL_KANA = str.maketrans("ァィゥェォッャュョヮ", "アイウエオツヤユヨワ")
+
+
+def norm_name(
+    value: str | None,
+    *,
+    strip_shi: bool = False,
+    strip_corp: bool = False,
+    fold_kana: bool = False,
+) -> str | None:
+    """NFKC, remove every blank (half/full width); optionally drop a trailing 氏 (馬主名), a
+    leading/trailing 法人略号 ``(有)(株)…`` (JRDB writes it, JRA-VAN does not — R4 2026-11-09),
+    and fold small kana to their large forms (JRA-VAN's historical 大文字 spelling
+    ``ワツスルタツチ`` vs ``ワッスルタッチ``)."""
 
     if value is None:
         return None
     s = unicodedata.normalize("NFKC", value)
     s = _WS_RE.sub("", s)
+    if strip_corp:
+        s = _CORP_RE.sub("", s)
     if strip_shi and s.endswith("氏"):
         s = s[:-1]
+    if fold_kana:
+        s = s.translate(_SMALL_KANA)
     return s or None
+
+
+def prefix_if_truncated(
+    jrdb_value: str | None,
+    db_value: str | None,
+    width_bytes: int,
+    *,
+    raw: str | None = None,
+):
+    """JRDB fixed-width text is cut at the field: 全角 20 **characters** for owner/breeder
+    (``Ｗｈｉｓｐｅｒ　Ｈｉｌｌ　Ｆａｒｍ　ＬＬ``), 全角 4 for the short race name. ``raw`` is the
+    value as decoded (before the blanks are removed), which is what the cut is measured on; when
+    it fills the field the DB value is compared on the same prefix of the NORMALIZED JRDB value,
+    otherwise both are returned unchanged (R4 2026-11-09, contracts/parity.md)."""
+
+    if jrdb_value is None or db_value is None:
+        return jrdb_value, db_value
+    probe = unicodedata.normalize("NFKC", raw).rstrip() if raw is not None else jrdb_value
+    width_chars = width_bytes // 2
+    try:
+        nbytes = len(probe.encode("cp932"))
+    except UnicodeEncodeError:
+        nbytes = len(probe) * 2
+    filled = len(probe) >= width_chars or nbytes >= width_bytes - 1
+    if filled and len(db_value) > len(jrdb_value):
+        return jrdb_value, db_value[: len(jrdb_value)]
+    return jrdb_value, db_value
 
 
 # --- track / going / weather --------------------------------------------------------------
@@ -126,6 +170,20 @@ def class_norm(value: str | None) -> str | None:
 
 GRADE_FROM_CODE = {1: "G1", 2: "G2", 3: "G3", 4: "重賞", 5: "特別", 6: "L"}
 _ROMAN = {"GIII": "G3", "GII": "G2", "GI": "G1"}
+#: JRA-VAN グレードコード (races.grade in the current DB): A/B/C = G1/G2/G3,
+#: D = 重賞 (グレードなし), E = 特別, F/G/H = JpnI/II/III (JRDB codes them 1/2/3 like the
+#: international grades), L = リステッド
+GRADE_FROM_LETTER = {
+    "A": "G1",
+    "B": "G2",
+    "C": "G3",
+    "D": "重賞",
+    "E": "特別",
+    "F": "G1",
+    "G": "G2",
+    "H": "G3",
+    "L": "L",
+}
 
 
 def grade_from_code(code: int | None) -> str | None:
@@ -136,6 +194,8 @@ def grade_norm(value: str | None) -> str | None:
     if value is None:
         return None
     v = unicodedata.normalize("NFKC", value).replace(" ", "").upper()
+    if v in GRADE_FROM_LETTER:
+        return GRADE_FROM_LETTER[v]
     for roman, arabic in _ROMAN.items():
         if v.startswith(roman):
             return arabic

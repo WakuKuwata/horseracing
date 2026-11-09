@@ -386,9 +386,11 @@ def build_parity(
                 nz.track_norm(race.get("track_type")),
             ),
             "distance": (p.distance if p else None, race.get("distance")),
-            "race_name_short": (
+            "race_name_short": nz.prefix_if_truncated(
                 nz.norm_name(p.race_name_short) if p else None,
                 nz.norm_name(race.get("race_name_short")),
+                8,  # BAC 全角 4; the DB keeps the full short name + 条件 (「日高特別・2勝」)
+                raw=p.race_name_short if p else None,
             ),
             "prize_money": (p.prizes_man[0] if p else None, race.get("prize_money")),
         }
@@ -478,9 +480,11 @@ def build_parity(
                 nz.seconds(r.finish_time) if r else None,
                 nz.seconds(rr.get("finish_time")),
             ),
-            "finish_time_diff": (
-                r.finish_time_diff if r else None,
-                nz.seconds(rr.get("finish_time_diff")),
+            "finish_time_diff": (  # JRDB: 1(2)着との差は正・DB: 後着は負 → 大きさで比べる
+                abs(r.finish_time_diff) if r and r.finish_time_diff is not None else None,
+                abs(nz.seconds(rr.get("finish_time_diff")))
+                if rr.get("finish_time_diff") is not None
+                else None,
             ),
             "last_3f": (r.last_3f if r else None, rr.get("last_3f")),
             "first_3f": (r.first_3f if r else None, rr.get("first_3f")),
@@ -527,22 +531,31 @@ def build_parity(
         )
         pairs = {
             "sire_name": (
-                nz.norm_name(j.sire_name) if j else None,
-                nz.norm_name(h.get("sire_name")),
+                nz.norm_name(j.sire_name, fold_kana=True) if j else None,
+                nz.norm_name(h.get("sire_name"), fold_kana=True),
             ),
-            "dam_name": (nz.norm_name(j.dam_name) if j else None, nz.norm_name(h.get("dam_name"))),
+            "dam_name": (
+                nz.norm_name(j.dam_name, fold_kana=True) if j else None,
+                nz.norm_name(h.get("dam_name"), fold_kana=True),
+            ),
             "damsire_name": (
-                nz.norm_name(j.damsire_name) if j else None,
-                nz.norm_name(h.get("damsire_name")),
+                nz.norm_name(j.damsire_name, fold_kana=True) if j else None,
+                nz.norm_name(h.get("damsire_name"), fold_kana=True),
             ),
             "birth_year": (j.birth_date.year if j and j.birth_date else None, h.get("birth_year")),
-            "owner_name": (
-                nz.norm_name(j.owner_name, strip_shi=True) if j else None,
-                nz.norm_name(h.get("owner_name"), strip_shi=True),
+            "owner_name": nz.prefix_if_truncated(
+                nz.norm_name(j.owner_name, strip_shi=True, strip_corp=True, fold_kana=True)
+                if j
+                else None,
+                nz.norm_name(h.get("owner_name"), strip_shi=True, strip_corp=True, fold_kana=True),
+                40,  # UKC 全角 20 文字
+                raw=j.owner_name if j else None,
             ),
-            "breeder_name": (
-                nz.norm_name(j.breeder_name) if j else None,
-                nz.norm_name(h.get("breeder_name")),
+            "breeder_name": nz.prefix_if_truncated(
+                nz.norm_name(j.breeder_name, fold_kana=True) if j else None,
+                nz.norm_name(h.get("breeder_name"), fold_kana=True),
+                40,  # UKC 全角 20 文字
+                raw=j.breeder_name if j else None,
             ),
             "sire_line": (j.sire_line_code if j else None, h.get("sire_line")),
             "damsire_line": (j.damsire_line_code if j else None, h.get("damsire_line")),

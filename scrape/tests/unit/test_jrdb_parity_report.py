@@ -265,3 +265,33 @@ def test_normalisation_tables():
     assert (
         nz.seconds(datetime.timedelta(seconds=70.3)) == Decimal("70.3") and nz.seconds(None) is None
     )
+
+
+def test_r4_representation_rules():
+    """R4 (2026-11-09): the comparator's representation rules fixed after the first 18-year run —
+    thresholds unchanged. DB grade letters, 法人略号, small kana, JRDB field truncation."""
+
+    from horseracing_scrape.jrdb import normalize as nz
+
+    assert (
+        nz.grade_norm("E") == "特別" and nz.grade_norm("B") == "G2" and nz.grade_norm("H") == "G3"
+    )
+    assert nz.grade_norm("GII") == "G2" and nz.grade_norm("L") == "L"
+    assert nz.norm_name("(有)サンデーレーシング", strip_corp=True) == "サンデーレーシング"
+    assert nz.norm_name("レッドマジック(株)", strip_corp=True) == "レッドマジック"
+    assert nz.norm_name("ワッスルタッチ", fold_kana=True) == nz.norm_name(
+        "ワツスルタツチ", fold_kana=True
+    )
+    # a JRDB value that fills its field (全角 20 文字, measured on the RAW value) is compared on
+    # the prefix of the normalized value; a shorter one is not
+    raw = "Ｗｈｉｓｐｅｒ　Ｈｉｌｌ　Ｆａｒｍ　ＬＬ"  # 20 full-width chars = the UKC cut
+    jv = nz.norm_name(raw, fold_kana=True)  # "WhisperHillFarmLL"
+    assert nz.prefix_if_truncated(jv, "WhisperHillFarmLLC", 40, raw=raw) == (jv, jv)
+    short = "Ｓｍａｌｌ　Ｆａｒｍ"
+    sv = nz.norm_name(short)
+    assert nz.prefix_if_truncated(sv, "SmallFarmLLC", 40, raw=short) == (sv, "SmallFarmLLC")
+    assert nz.prefix_if_truncated("小峰城特", "小峰城特500", 8, raw="小峰城特") == (
+        "小峰城特",
+        "小峰城特",
+    )
+    assert nz.prefix_if_truncated("渡島", "渡島特別", 8, raw="渡島　　") == ("渡島", "渡島特別")

@@ -51,3 +51,32 @@ R1: 一時 policy(`jrdb_enabled: true` だけ変えた複製・本番 config は
 
 R4 への申し送り: `going` と `finish_time_diff` は基準未達のまま allowlist(修復対象)には入れない。残り 17 年の取得は 5 種別 × 18 年=90 要求。
 
+## R4 段 1 parity 2007〜2024(2026-11-09 月 10:41〜11:04 JST)
+
+取得: 年度パック 88 要求(2007 年 5 種別・2008 年 BAC/UKC/HJC・2009〜2024 年 5 種別・5 秒間隔・約 11 分)。展開 11,428 ファイル・273 万行・**桁ずれ 0**。
+`SED_2022.zip`・`HJC_2024.zip` の job は `partial`(errors 1・error_messages なし・行は全件読めている=zip 内の非 txt メンバー 1 件の扱い。要再現・影響なし)。
+`jrdb_files` は 11,644 行(全部 fetched・variant archive)。展開済みテキストは `artifacts/jrdb/`(約 1 GB・gitignore)。
+
+parity は 18 年とも 5〜6 秒(1 年 3,450 レース)。**結合は全年 100%**(レース・出走・馬 ID とも unjoined 0)・JRDB<DB の年なし・
+`uncovered_reference_cells` 0。結果行は毎年 JRDB の方が 220〜340 多い(取消/除外)。
+
+比較側の表現規則を 2 回直して取り直した(`contracts/parity.md`「表現規則の是正」・閾値不変。初回 `artifacts/jrdb/parity/r4-first-run/`、
+2 回目 `r4-second-run/`、確定 `artifacts/jrdb/parity/<year>.json`)。
+
+| 判定 | 列 |
+|---|---|
+| **合格(18 年すべて基準以上)** | finish_order・finish_time・finish_time_diff(大きさ比較)・last_3f・horse_number・frame・sex・odds・popularity・weight・weight_diff・jockey_weight・horse_name(99.97%・DB 側 9 文字切り)・birth_year・**breeder_name**(99.6〜99.9%)・race_date・race_class・**grade**(文字コード写像後 100%)・track_type・distance・weather |
+| **不合格・表現体系の違い** | sire_name 90〜94%・dam_name 90〜97%・damsire_name 51〜75%: JRDB はカナ転写、DB(JRA-VAN)は外国馬を原綴り。現行 DB の血統名は特徴の集計キーなので **JRDB で書かない**(JRDB 正本 DB では JRDB 表記で一貫) |
+| **不合格・時点差** | owner_name 95.4〜98.5%(年を追って改善): 残りは馬主変更(JRDB の UKC 発行時点 vs DB の最終値)と JRDB 独自の略記(`HimRockRacingH`)。**allowlist 列だが基準未達=現行 DB の修復ゲートは拒否する** |
+| **不合格・値の違い** | going 97.9〜100%(7 年で未達・開催内の馬場変更が片側だけに反映)・prize_money 99.3〜99.9%(年 6 レース前後が JRDB の 0.7 倍・頭数規則ではない・原因未特定・**allowlist 列だが未達**)・race_name_short 48〜50%(JRDB の 4 文字略称 `WAJ1` は前方一致にもならない) |
+| **別定義(基準なし・現行 DB に書かない=FR-021a)** | first_3f(1200m のみ 100%・他 7〜27%)・corner_orders 18%・running_style 0%・sire_line/damsire_line 0% |
+| **未比較** | post_time(DB の JRA-VAN 期は NULL=jrdb_only)・win_payout(DB の公式払戻は 2025-10-11 以降のみ=2007〜2024 に重なりなし。2025 年の parity で測る)・jockey_id/trainer_id(人物写像=R3 後) |
+
+修復 allowlist 10 列の R4 時点の可否: odds ✓ popularity ✓ weight ✓ last_3f ✓ breeder_name ✓ race_class ✓ / owner_name ✗ prize_money ✗ /
+post_time(jrdb_only・NULL 埋めのみ可) / win_payouts(2025 parity 待ち)。
+
+見習い騎手の斤量(JRDB 51.0 vs DB 54.0・サンプルで 5 行)は 18 年の jockey_weight が 100% なので再現せず(サンプル固有)。
+
+**利用者判断(R6 の前)**: owner_name と prize_money を基準未達のまま「netkeiba 期(2025-10-11 以降)の NULL 埋めだけ」に限って書くか、
+契約どおり現行 DB には書かず JRDB 正本 DB(R7)だけに持つか。
+
