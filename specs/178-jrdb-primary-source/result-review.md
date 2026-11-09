@@ -238,3 +238,16 @@ unmapped 82 件(netkeiba 期)の内訳を `artifacts/jrdb/persons/persons-confli
 
 `artifacts/features.parquet`(10/04 作成)は既に古く、稼働中のスタックは既定で materialized を使わない。materialized を使う研究を回すときは `features materialize` を取り直す。
 
+## R3 人物写像の書込み(2026-11-09・利用者承認)
+
+利用者が名前だけ一致の候補を承認: 候補 1 件の 51 件+2 候補から推奨 3 件(Ｒ．キング→05643・佐藤裕太→05719・佐々木国明→05736)=**54 件**
+(`artifacts/jrdb/persons/manual-approved-20261109.json`・resolution_note `manual: operator approval 2026-11-09`)。分母は 1999〜2026 の KYI に現れる全コード
+(騎手 1,028・調教師 1,199)。`jrdb-persons --manual` で **本番 DB と正本 DB の両方**の `id_mappings(source=jrdb)` に 2,226 行
+(mapped 682=騎手 389・調教師 293/conflict 30/unmapped 1,514=写像の空白を見える形で残す)。
+
+- netkeiba 期では騎手 164/178・調教師 220/225 が mapped(名前+生年月日 136/194 に承認 28/26 を足した数)。
+- 正本 DB の騎手/調教師 ID: 1 日(2026-11-01)の試行で 0/318 → 騎手 313・調教師 318。全期間は KYI の適用記録を戻して再投入中。
+- 写像の無い人は主に 1999〜2010 年代の地方・海外の騎手/調教師(JRA 名鑑・DB とも正規 ID が無い)で、その出走行の ID は NULL のまま。
+- R5 のゲート「当日の騎手・調教師が全員 mapped」は、候補なし 18 人(DB にも正規 ID が無い地方・外国人)が騎乗する日は満たせない。
+  切替時に「DB に 5 桁 ID がある人は全員 mapped」と読み替えるかは利用者確認事項。
+
