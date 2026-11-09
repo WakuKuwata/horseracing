@@ -106,3 +106,45 @@ R6 の修復対象は odds・popularity・weight・last_3f・breeder_name・race
 netkeiba が先の複製では表記差 13 件として出る(値はどれも JRA-VAN 側の綴りに寄る)。**本番で `jrdb_enabled: true` にして前日 `jrdb-entries` を始めるのは、
 R3 の人物写像(当日の騎手・調教師が全件 mapped)が済んでから**=`unresolved_person` 610/636 はまだ全件(id_mappings 0 行)。
 
+## R3 人物写像(2026-11-09・進行中)
+
+**名鑑の構造(公開サイト `/datafile/meikan/`・2026-11-09 調査)**: 引退騎手 `jretirement.html`(1994〜2026 年度・315 人)と引退調教師 `retirement.html`
+(82 人)は静的ページで `pw04kmk0<5 桁>` / `pw05cmk0<5 桁>` の doAction リンク。現役は「あ行〜わ行」の POST 索引(`accessK.html`+`pw04knlH1<行>/<check>`・
+`accessC.html`+`pw05cnlH1<行>/<check>`)。人物ページは `<h1>` が「騎手情報引退蓑島 靖典（ミノシマ ヤスノリ）」の形、生年月日は `#meikan_jockey_detail .profile` の `<dl>`。
+
+**収集 v1(10:23〜12:24・720 要求・10 秒間隔)**: 騎手 441・調教師 258 ページ、解析失敗 0、拒否 0。**ただし name が全件「検索ウィンドウ」**
+(サイト共通 `<h2>` を拾う parser の欠陥・生年月日と所属は正しい)→ parser を修正(30afb201)し **v2 を再収集中**(`jra-profiles-v2.jsonl`)。
+
+**暫定報告(v1 の生年月日+同じ公式 ID の JRA-VAN 名・KZA/CZA 2026-11-07 版 1,285/1,348 人)**:
+
+| 分母(KYI に現れる JRDB コード) | 騎手 | 調教師 |
+|---|---|---|
+| 2007〜2026 | 660 中 mapped 246・conflict 46・unmapped 368 | 767 中 mapped 240・conflict 25・unmapped 502 |
+| netkeiba 期(2025-10-11〜) | 178 中 mapped 122(68.5%)・conflict 15・unmapped 41 | 225 中 mapped 172(76.4%)・conflict 14・unmapped 39 |
+
+- conflict の中身はすべて「生年月日は一致・名前が違う」で、JRA-VAN 名の 4 文字切り(`五十嵐雄祐` vs `五十嵐雄`)=v2(公式ページの氏名)で解消する見込み。
+- unmapped は **JRDB コード 3xxxx(地方騎手)と短期免許の外国人騎手・地方の調教師**で、JRA 名鑑に載らない=生年月日照合では構造的に写像できない。
+  netkeiba 期の騎乗数では 98.1%(騎手)/99.9%(調教師)が名鑑のある人物。残りは 名前だけの一致 → 憲法 I どおり conflict(手動承認)で、
+  候補一覧を `evidence/persons-conflicts.md` に出す予定。R9 の構成では公式出馬表が騎手/調教師 ID を直接書くので運用上は埋まる。
+- SC-010(2007 年以降に出走行を持つ人の 99%)は名鑑経由だけでは届かない(名鑑に無い人が 2007+ で 3 割)。達成には手動承認分を含める必要がある。
+
+## R6/R7 用の取得と netkeiba 期の parity(2026-11-09 月 12:00〜12:41 JST)
+
+| 取得 | 要求 | 展開 | 行 | 桁ずれ |
+|---|---|---|---|---|
+| 年度パック 2025(5 種別) | 5 | 109 日 × 6 kind(SED に SRB 同梱) | 153,319 | 0 |
+| 年度パック 1999〜2006(5 種別) | 40 | 842〜843 日 × 6 kind | 1,227,790 | 0(`UKC_1999.zip` の job が `partial`・errors 1・message なし・103 日分は全部 written=要再現、影響なし) |
+| 2026 日次(開催日 95 日 × 5 種別) | 475 | 95 日 × 6 kind | 132,474 | 0 |
+
+`jrdb_files` は 17,923 行(1999-01-05〜2026-11-08・全部 fetched)。展開済みテキストは `artifacts/jrdb/`。
+この時点で **JRDB の 1999〜2026 全期間がローカルにある**(製品表には未書込み)。
+
+**parity 2025 / 2026(netkeiba 期を含む・`artifacts/jrdb/parity/netkeiba-era/`・修復ゲートの読み先 2007〜2024 とは別に置く)**:
+- 2025: 結合 100%(entries 47,884 vs DB 47,886・両方 45,286=JRA-VAN→netkeiba 切替後の `nk:` 行は結合しない)。odds 100%・popularity 99.86%・weight 100%・last_3f 100%・breeder 99.75%・race_class 100%・post_time 92.6%(739 セル・netkeiba 期のみ)・prize_money 99.44%。
+- 2026: entries 41,164 のうち結合 23,787(残りは `nk:` 行=writer は別名で書くが parity は結合しない)。**odds 93.3%・popularity 94.9%・post_time 93.3%・finish_time_diff 96.5% が不一致=netkeiba 期の DB 側の値が確定値とずれている列**(R6 の修復対象の根拠)。
+  weight/weight_diff/last_3f/race_class/grade/going/weather 100%、**win_payout 840 セル 100%**(`win_payouts` 修復のゲートはこの報告だけを置いた `parity/win-payout-gate/` で通す)、first_3f は 1200m の 4,535 セルで 100%。
+- 血統名・馬主は 2007〜2024 と同じ表記体系差(書かない)。
+
+次: R6 dry-run(odds・popularity・weight・last_3f・breeder_name・race_class・post_time・win_payouts/owner_name・prize_money は拒否の確認)と
+R7(`horseracing_jrdb` を head で作成 → `jrdb-rebuild 1999-01-01..2026-11-08`)を背景で実行中。
+
