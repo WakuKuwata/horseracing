@@ -166,3 +166,17 @@ R7(`horseracing_jrdb` を head で作成 → `jrdb-rebuild 1999-01-01..2026-11-0
 
 本適用の前後で `scripts/jrdb_repair_impact.py`(T058・SC-006 の波及)を取る。本適用は利用者の承認後。
 
+**収集 v2(parser 修正後・12:31〜14:32・720 要求)**: 騎手 441・調教師 258・名前の欠陥 0。**写像報告 v2**(KZA/CZA 2026-11-07・名前+生年月日):
+
+| 分母 | 騎手 | 調教師 |
+|---|---|---|
+| 2007〜2026 | 660 中 mapped 277(42.0%)・conflict 15・unmapped 368 | 767 中 mapped 258(33.6%)・conflict 7・unmapped 502 |
+| netkeiba 期 | 178 中 **mapped 136(76.4%)**・conflict 1・unmapped 41 | 225 中 **mapped 185(82.2%)**・conflict 1・unmapped 39 |
+
+conflict は全部「生年月日だけ一致・名前が違う」(地方・外国コード 3xxxx/7xxxx の別人、JRDB 略記 `Ｔ．マーカン`)=正しく止めている。
+unmapped 82 件(netkeiba 期)の内訳を `artifacts/jrdb/persons/persons-conflicts.md`(JRDB 由来の名前を含むので repo に置かない)に出した:
+名前だけ一致の候補がちょうど 1 件 **51**(騎手 27・調教師 24・netkeiba 期の騎乗 957 件/出走 41 件を占める)・候補なし 27・複数候補 4。
+候補なしの中に **美浦/栗東の新規調教師 9 人(JRDB 10522〜10532)**がいる=DB には `nk:` 行しかなく、DB 由来の wanted から漏れて名鑑の
+ページを取っていなかった → `persons-collect --all-linked`(索引に載る全員)を追加して追加収集中。承認用の候補 JSON は
+`artifacts/jrdb/persons/manual-proposal.json`(利用者が見て承認したものだけ `jrdb-persons --manual` で書く)。
+
