@@ -212,3 +212,29 @@ unmapped 82 件(netkeiba 期)の内訳を `artifacts/jrdb/persons/persons-confli
 **jockey_id / trainer_id は全行 NULL**(`person_map=0`・id_mappings 未書込み)。R3 の承認後に写像を書き、全期間の entries を再投入して埋める必要がある
 (来歴の jockey/trainer 群は NULL → 値 なので規則上は書ける)。それまでは JRDB 正本 DB の人物特徴は使えない。
 
+## R6 段 3a 修復の本適用(2026-11-09 月 16:12〜16:23 JST・利用者承認)
+
+バックアップ `artifacts/db_backups/horseracing-pre-r6-20261109-161223.dump`(368 MB)→ 8 列を順に適用 → 同じ 8 列を 2 回目実行 → impact post。
+
+| 列 | 1 回目 変更行 | 2 回目 | 充足 2025 / 2026 |
+|---|---|---|---|
+| odds(+popularity は同じ書込みで更新) | 3,555 | 0 | 値の訂正(充足 99.6% / 99.7% 不変) |
+| popularity | 0(odds の回で書かれた) | 0 | 同上 |
+| weight | 5,715 | 0 | 99.8→99.9% / 99.7→99.9% |
+| last_3f | 202 | 0 | 99.6% / 99.1→99.5% |
+| breeder_name | 668 | 0 | 100% / 100% |
+| race_class | 1,893 | 0 | 100%(dry-run の 1,871 より 22 多い=12/13・14 の日次 BAC 別版が loader 修正で読めるようになったぶん) |
+| post_time | 2,920 | 0 | **22.9→100%** / 100% |
+| win_payouts | 2,949 | 0 | **0→22.9%**(netkeiba 期のみ) / **28.0→100%** |
+
+**2 回目は全列 変更 0**(冪等)・エラー 0。owner_name・prize_money は利用者決定どおり書いていない。
+
+**波及(`scripts/jrdb_repair_impact.py`・`artifacts/jrdb/repair/impact-2025-2026/repair-impact.json`・139 と同じ型・判断記録は書き換えない)**:
+- 過去走経由だけ(対象レースのオッズ/人気を修復前に固定): 86,095 頭・6,225 レースで期待回収率の差 |Δ| の中央値 0・p90 0・最大 0.094、
+  0.01 を超えて動いた馬 0.06%、**S1〜S5 の該当は 1 頭も変わらない**=FEATURE_VERSION 据え置きでよい(067/139 の前例どおり)。
+- 対象レース自身の値も含めた場合(確定オッズの訂正がそのまま効く): |Δ| 中央値 0・p90 0.0022・平均 Δ −0.0027・0.01 超 4.6%。
+  S1 199→191(13 外れ・5 入る)・S3 639→615・S5 1,095→1,056=**確定オッズが正しい値に直ったぶん、過去の注目条件の事後集計が少し変わる**。
+  前向き記録(decision_quotes・attention_picks)は判断時点の値で残しており書き換えていない。
+
+`artifacts/features.parquet`(10/04 作成)は既に古く、稼働中のスタックは既定で materialized を使わない。materialized を使う研究を回すときは `features materialize` を取り直す。
+
