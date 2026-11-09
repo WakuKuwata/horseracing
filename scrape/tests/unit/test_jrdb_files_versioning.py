@@ -120,3 +120,32 @@ def test_published_at_is_not_an_input_of_the_decision():
     sig = inspect.signature(files.classify_version)
     assert list(sig.parameters) == ["existing", "incoming"]
     assert "published_at" not in JrdbFileMeta.__dataclass_fields__
+
+
+def test_version_family_puts_daily_and_archive_together_and_tyb_venues_apart():
+    """R7 (2026-11-09): the year pack and a later 日次 file of the same day compete for the same
+    slot (日次→バックナンバー), the TYB 場別上書き files do not."""
+
+    assert files.version_family("daily") == files.version_family("archive") == "day"
+    assert files.version_family("venue_e") == "venue_e" != files.version_family("venue_w")
+
+
+def test_rebuild_loader_reads_second_version_file_names(tmp_path):
+    """``BAC251213.<sha12>.txt`` (the 2nd version saved next to ``BAC251213.txt``) is the same
+    (kind, day) to the rebuild and the repair loaders."""
+
+    from horseracing_scrape.jrdb.rebuild import load_archive_days, plain_file_name
+
+    d = tmp_path / "BAC" / "20251213"
+    d.mkdir(parents=True)
+    (d / "BAC251213.txt").write_bytes(b"x" * 10)
+    (d / "BAC251213.52cfbb39a855.txt").write_bytes(b"y" * 10)
+    assert plain_file_name(d / "BAC251213.52cfbb39a855.txt") == "BAC251213.txt"
+    by_day, skipped = load_archive_days(
+        tmp_path, datetime.date(2025, 12, 1), datetime.date(2025, 12, 31)
+    )
+    assert sorted(f.path.name for f in by_day[datetime.date(2025, 12, 13)]) == [
+        "BAC251213.52cfbb39a855.txt",
+        "BAC251213.txt",
+    ]
+    assert skipped == []

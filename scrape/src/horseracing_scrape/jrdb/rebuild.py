@@ -209,10 +209,11 @@ def load_archive_days(
     years = range(date_from.year, date_to.year + 1)
     for path in sorted(Path(files_dir).rglob("*.txt")):
         parsed = None
+        plain_name = plain_file_name(path)
         for year in years:
             try:
                 kind, _v, day, _var = jfiles.parse_file_name(
-                    path.name, reference=datetime.date(year, 7, 1)
+                    plain_name, reference=datetime.date(year, 7, 1)
                 )
             except JrdbError:
                 break
@@ -239,6 +240,14 @@ def load_archive_days(
     return by_day, skipped
 
 
+def plain_file_name(path: Path) -> str:
+    """``save_extracted`` keeps a second version of the same name as ``KYI260913.<sha12>.txt``;
+    the file's identity (kind, day) is the plain name (R7 2026-11-09: the daily BAC that completed
+    a truncated year-pack BAC was invisible to the rebuild)."""
+
+    return path.name.split(".")[0] + ".txt"
+
+
 def _day_files(
     session: Session, files: Iterable[ArchiveFile], kinds: tuple[str, ...]
 ) -> list[DayFile]:
@@ -247,7 +256,9 @@ def _day_files(
         if f.kind not in kinds:
             continue
         try:
-            meta = jfiles.build_meta(f.path.name, f.raw, variant="archive", fetched_at=f.mtime)
+            meta = jfiles.build_meta(
+                plain_file_name(f.path), f.raw, variant="archive", fetched_at=f.mtime
+            )
             row, _created = jfiles.record_fetched(
                 session,
                 meta,
@@ -255,6 +266,8 @@ def _day_files(
                 fetched_at=f.mtime,
                 published_at=None,
             )
+            if row.status in ("superseded", "held", "rejected"):
+                continue  # retired / not yet approved: the writer's rule
             decoded = decode_file(f.raw, meta, profile=JRDB_CANONICAL.name)
             out.append(DayFile(f.path, meta, row, decoded, None))
         except JrdbError as exc:

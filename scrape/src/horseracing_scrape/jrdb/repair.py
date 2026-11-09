@@ -199,10 +199,11 @@ def load_archive_files(
     years = range(date_from.year, date_to.year + 1)
     for path in sorted(Path(files_dir).rglob("*.txt")):
         parsed = None
+        plain_name = path.name.split(".")[0] + ".txt"  # ``BAC251213.<sha12>.txt`` = a 2nd version
         for year in years:
             try:
                 kind, _v, day, _var = jfiles.parse_file_name(
-                    path.name, reference=datetime.date(year, 7, 1)
+                    plain_name, reference=datetime.date(year, 7, 1)
                 )
             except JrdbError:
                 break
@@ -217,7 +218,7 @@ def load_archive_files(
         raw = path.read_bytes()
         mtime = datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.UTC)
         try:
-            meta = jfiles.build_meta(path.name, raw, variant="archive", fetched_at=mtime)
+            meta = jfiles.build_meta(plain_name, raw, variant="archive", fetched_at=mtime)
             out.append(RepairFile(path, meta, decode_file(raw, meta, profile=profile), mtime))
         except JrdbError as exc:
             errors.append(f"{path.name}: {type(exc).__name__}: {exc}")

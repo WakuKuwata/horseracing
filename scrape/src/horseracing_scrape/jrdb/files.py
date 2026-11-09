@@ -144,18 +144,28 @@ def classify_version(existing: JrdbFileMeta | None, incoming: JrdbFileMeta) -> V
     return "held"
 
 
+def version_family(variant: str) -> str:
+    """Versions that compete for the same (kind, data_date): the 日次 and the バックナンバー are
+    one family (D9: 日次→バックナンバー supersedes), the TYB 場別上書き files are each their own
+    (they coexist with the 日次累積 file and with each other)."""
+
+    return "day" if variant in ("daily", "archive") else variant
+
+
 def find_versions(
     session: Session, kind: str, data_date: datetime.date, variant: str
 ) -> list[JrdbFile]:
-    return list(
-        session.scalars(
-            select(JrdbFile)
-            .where(
-                JrdbFile.kind == kind, JrdbFile.data_date == data_date, JrdbFile.variant == variant
-            )
-            .order_by(JrdbFile.fetched_at)
-        )
+    """Every recorded version of ``(kind, data_date)`` in the same version family as
+    ``variant``, oldest fetch first. R7 (2026-11-09): filtering on the exact variant hid the
+    year pack from a later 日次 file (and vice versa), so the 日次→バックナンバー rule never ran."""
+
+    rows = session.scalars(
+        select(JrdbFile)
+        .where(JrdbFile.kind == kind, JrdbFile.data_date == data_date)
+        .order_by(JrdbFile.fetched_at)
     )
+    fam = version_family(variant)
+    return [r for r in rows if version_family(r.variant) == fam]
 
 
 def record_fetched(
@@ -238,6 +248,7 @@ __all__ = [
     "find_versions",
     "mark_held",
     "mark_rejected",
+    "version_family",
     "mark_superseded",
     "parse_file_name",
     "record_fetched",
