@@ -180,3 +180,8 @@ unmapped 82 件(netkeiba 期)の内訳を `artifacts/jrdb/persons/persons-confli
 ページを取っていなかった → `persons-collect --all-linked`(索引に載る全員)を追加して追加収集中。承認用の候補 JSON は
 `artifacts/jrdb/persons/manual-proposal.json`(利用者が見て承認したものだけ `jrdb-persons --manual` で書く)。
 
+**追加収集(`--all-linked`・14:36〜14:42・要求 34)**: DB が知らなかった 12 人(騎手 1・調教師 11=2026 年新規開業の美浦/栗東調教師ほか)を取得。
+**写像報告 v3(netkeiba 期)**: 騎手 136/178(76.4%・conflict 2・unmapped 40)、調教師 **194/225(86.2%**・conflict 1・unmapped 30)。
+2007〜2026: 騎手 277/660・調教師 267/767。残りの unmapped は地方(3xxxx)と短期免許の外国人(7xxxx)で、名前だけの一致候補(`artifacts/jrdb/persons/manual-proposal.json`)を
+利用者が承認すれば `jrdb-persons --manual` で書ける。承認前は `id_mappings` に 0 行(本番は未書込み)。
+
