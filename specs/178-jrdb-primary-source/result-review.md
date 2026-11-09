@@ -185,3 +185,25 @@ unmapped 82 件(netkeiba 期)の内訳を `artifacts/jrdb/persons/persons-confli
 2007〜2026: 騎手 277/660・調教師 267/767。残りの unmapped は地方(3xxxx)と短期免許の外国人(7xxxx)で、名前だけの一致候補(`artifacts/jrdb/persons/manual-proposal.json`)を
 利用者が承認すれば `jrdb-persons --manual` で書ける。承認前は `id_mappings` に 0 行(本番は未書込み)。
 
+## R7 段 3b 別 DB 再構築(2026-11-09 月 12:42〜15:00 JST・2 時間 18 分)
+
+`horseracing_jrdb` を `alembic upgrade head`(0025)で作り、`jrdb-rebuild --from 1999-01-01 --to 2026-11-08`(profile `jrdb_canonical`・参照=現行 DB・読取のみ)。
+日 × 4 段 = 8,962 job・エラー 0・桁ずれ 0。**実測 0.09 秒/レース**(D17 の見積り 0.1 秒/レース・2.6 時間とほぼ同じ)。
+
+| 表 | 行 |
+|---|---|
+| races | 96,135(1999-01-05〜2026-11-08) |
+| race_horses | 1,353,256(`nk:` 0) |
+| horses | 132,912 |
+| race_results | 1,347,938(first_3f 96.4%・corner_orders 99.9%=JRDB 定義で保持) |
+| race_laps | 92,533 |
+| official_win_payouts | 96,252 / exotic_odds 897,816 |
+| DB サイズ | 2,009 MB |
+
+年次比較(`artifacts/jrdb/rebuild/compare-<year>.json`): 1999〜2024・2026 は races/entries とも現行 DB と同数(結果行は取消・除外ぶん JRDB が多い。
+現行 DB の 1999〜2006 残存レースとも一致)。**2025 だけ blocking**: 12/13・12/14 の 53 レースが無い。原因は年度パック内の **BAC が 2 日分とも 9〜10 レース分しか
+持たない**(KYI/SED は 36 レース分ある)=`skipped_no_program` 27+26。日次単体 BAC で補えるかを確認中(補えれば held→承認→その 2 日を再投入)。
+
+**jockey_id / trainer_id は全行 NULL**(`person_map=0`・id_mappings 未書込み)。R3 の承認後に写像を書き、全期間の entries を再投入して埋める必要がある
+(来歴の jockey/trainer 群は NULL → 値 なので規則上は書ける)。それまでは JRDB 正本 DB の人物特徴は使えない。
+
