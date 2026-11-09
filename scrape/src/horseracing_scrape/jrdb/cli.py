@@ -57,6 +57,7 @@ COMMANDS = (
     "jrdb-repair",
     "jrdb-rebuild",
     "jrdb-apply-held",
+    "jrdb-persons-collect",
     *WRITE_COMMANDS,
 )
 DAILY_KINDS_DEFAULT = ("BAC", "KYI", "UKC", "HJC", "SED", "TYB")
@@ -179,6 +180,28 @@ def register_jrdb_subcommands(sub: argparse._SubParsersAction) -> None:
         "--artifacts-dir", default=None, help=f"展開済みテキスト (default {DEFAULT_ARTIFACTS})"
     )
     h.add_argument("--json", action="store_true")
+
+    # Feature 178 R3 — the one-time collection of JRA official person pages (jra/person_profile.py)
+    pc = sub.add_parser(
+        "jrdb-persons-collect",
+        help="JRA 公式の騎手/調教師ページを 1 回だけ集めて jra-profiles.jsonl に追記 (176 fetcher)",
+    )
+    pc.add_argument("--kind", required=True, choices=["jockey", "trainer"])
+    pc.add_argument(
+        "--index-url", required=True, help="名鑑一覧ページの URL (公開サイトの遷移から)"
+    )
+    pc.add_argument(
+        "--index-cname",
+        required=True,
+        help="その一覧ページの cname (動的・保存しない・ログに出さない)",
+    )
+    pc.add_argument(
+        "--out", default=None, help="jra-profiles.jsonl (default artifacts/jrdb/persons/)"
+    )
+    pc.add_argument("--max-pages", type=int, default=None, help="今回取る人物ページ数の上限")
+    pc.add_argument("--database-url", default=None)
+    pc.add_argument("--policy", default=None, help=f"policy file (default {DEFAULT_POLICY_PATH})")
+    pc.add_argument("--json", action="store_true")
 
 
 # --------------------------------------------------------------------------- results
@@ -503,6 +526,78 @@ def run_apply_held(
     return result
 
 
+# --------------------------------------------------------------------------- persons-collect (R3)
+
+
+def wanted_person_ids(session: Session, kind: str) -> list[str]:
+    """Every official (5-digit) id the DB knows for ``kind``; ``nk:`` surrogates have no official
+    page and are left out."""
+
+    table, col = ("jockeys", "jockey_id") if kind == "jockey" else ("trainers", "trainer_id")
+    rows = session.execute(text(f"SELECT {col} FROM {table}")).scalars()  # noqa: S608 — fixed names
+    return sorted(r for r in rows if r and len(r) == 5 and r.isdigit())
+
+
+def run_persons_collect(args, *, fetcher, session_factory) -> RunResult:
+    """Append the profile of every wanted id not yet collected (``collect_profiles`` stops at the
+    first refusal; a stop other than ``max_pages`` is exit 1 so the operator re-runs later — the
+    file is append-only and ids already present are never fetched again)."""
+
+    import dataclasses as dc
+
+    from ..jra.person_profile import DEFAULT_PROFILES_PATH, collect_profiles
+
+    result = RunResult("jrdb-persons-collect")
+    with session_factory() as session:
+        wanted = wanted_person_ids(session, args.kind)
+    out = Path(args.out) if args.out else DEFAULT_PROFILES_PATH
+    report = collect_profiles(
+        fetcher,
+        kind=args.kind,
+        index=(args.index_url, args.index_cname),
+        wanted_ids=wanted,
+        out_path=out,
+        max_pages=args.max_pages,
+    )
+    result.jobs.append({"kind": args.kind, **dc.asdict(report)})
+    result.report_path = str(out)
+    result.requests_sent = int(getattr(fetcher, "requests_sent", 0))
+    if report.stopped and report.stopped != "max_pages":
+        result.exit_code = 1
+        result.error = f"stopped: {report.stopped}"
+    return result
+
+
+def _jra_fetcher(args, policy_path: Path):
+    """The 176 fetcher exactly as ``jra/cli.py`` builds it (startup checks first; a refusal is
+    raised as ``StartupRefused``)."""
+
+    from .. import robots_cache
+    from ..capture_window import active_hold
+    from ..jra.cli import DEFAULT_ARCHIVE_DIR, _netkeiba_interval_from_policy
+    from ..jra.fetch import JraFetcher
+    from ..jra.policy import validate_startup
+
+    ctx = validate_startup(policy_path=policy_path, database_url=args.database_url)
+    from horseracing_db.session import create_db_engine
+
+    engine = create_db_engine(args.database_url)
+    session_factory = sessionmaker(bind=engine, expire_on_commit=False)
+    nk_interval = _netkeiba_interval_from_policy(policy_path)
+
+    def guard():
+        with session_factory() as s:
+            return active_hold(s, path=policy_path, interval_s=nk_interval)
+
+    fetcher = JraFetcher(
+        policy=ctx.policy,
+        capture_guard=guard,
+        archive_dir=DEFAULT_ARCHIVE_DIR,
+        robots_cache_store=robots_cache.shared_cache(),
+    )
+    return fetcher, session_factory
+
+
 # --------------------------------------------------------------------------- jrdb-parity
 
 
@@ -790,6 +885,26 @@ def run_jrdb(args) -> int:
         )
     elif args.command == "jrdb-rebuild":
         result = run_rebuild(args, env_url=os.environ.get("DATABASE_URL"))
+    elif args.command == "jrdb-persons-collect":
+        from ..jra.policy import StartupRefused
+
+        try:
+            fetcher, session_factory = _jra_fetcher(args, policy_path)
+        except StartupRefused as exc:
+            print(
+                json.dumps(
+                    {
+                        "command": args.command,
+                        "error": exc.code,
+                        "message": str(exc),
+                        "requests_sent": 0,
+                        "exit_code": 2,
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            return 2
+        result = run_persons_collect(args, fetcher=fetcher, session_factory=session_factory)
     elif args.command == "jrdb-apply-held":
         from horseracing_db.session import create_db_engine
 
@@ -870,9 +985,15 @@ __all__ = [
     "run_apply_held",
     "run_fetch",
     "run_jrdb",
+    "run_persons_collect",
     "run_show_held",
+    "wanted_person_ids",
     "run_parity",
     "run_persons",
     "run_rebuild",
     "run_repair",
 ]
+
+
+if __name__ == "__main__":  # ``python -m horseracing_scrape.jrdb.cli`` (scripts/jrdb_ops.sh)
+    sys.exit(main())

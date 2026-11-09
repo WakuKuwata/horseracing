@@ -33,6 +33,7 @@ JRDB(有料会員・Shift_JIS 固定長・zip/LZH 配信)を **第 3 の writer*
 | `jrdb-fetch --show-held [--date D]` | DB・artifacts(読取) | なし(held 行と現行版の差分を表示) |
 | `jrdb-apply-held FILE_ID --profile P [--yes --replaces ID]` | `jrdb_files` | `--yes --replaces <current>` で現行版 `superseded`・held を再適用(writer 経由) |
 | `jrdb-parity --year Y --files-dir ABS` | ファイル+DB(読取) | `artifacts/jrdb/parity/<Y>.json` |
+| `jrdb-persons-collect --kind K --index-url U --index-cname C` | JRA 公式の名鑑一覧(176 fetcher) | `artifacts/jrdb/persons/jra-profiles.jsonl`(append-only) |
 | `jrdb-persons --files-dir ABS [--dry-run]` | KZA/CZA | `id_mappings(source=jrdb)` |
 | `jrdb-entries` / `jrdb-prerace` / `jrdb-results` / `jrdb-payouts --date D --profile P` | 展開済みテキスト | 製品表(+来歴) |
 | `jrdb-repair --column C --from --to [--dry-run]` | アーカイブ+parity 報告 | 段 3a(値が変わる行だけ) |

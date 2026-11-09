@@ -5,6 +5,7 @@
 #   scripts/jrdb_ops.sh archive 2008 [2009] [--kinds SED KYI ...]               年度パック(開催日 08:00〜19:00 は CLI が拒否)
 #   scripts/jrdb_ops.sh parity  2008 --files-dir ABS [--out ABS]               段 1 の照合(DB 読み取り専用)
 #   scripts/jrdb_ops.sh persons --files-dir ABS [--profiles ABS] [--codes-from ABS] [--write]   人物写像(既定 --dry-run)
+#   scripts/jrdb_ops.sh persons-collect jockey|trainer --index-url URL --index-cname CNAME [--max-pages N]   JRA 公式の人物ページ収集(R3・1 回限り・10 秒間隔)
 #   scripts/jrdb_ops.sh entries 2026-11-07 --profile current        前日: BAC+KYI(+UKC) → races/race_horses/horses
 #   scripts/jrdb_ops.sh prerace 2026-11-08 --profile current [--venue E|W|L]   当日: TYB → 馬体重・取消
 #   scripts/jrdb_ops.sh results 2026-11-08 --profile current        木曜: SED 正式版+SRB → race_results/race_laps/確定オッズ
@@ -26,10 +27,10 @@ SCRAPE_PY="$ROOT/scrape/.venv/bin/python"
 POLICY="$ROOT/config/source-operations.json"
 ENV_FILE="$ROOT/config/.env.jrdb"
 
-usage() { sed -n '2,20p' "$0"; exit 2; }
+usage() { sed -n '2,21p' "$0"; exit 2; }
 [ $# -ge 1 ] || usage
 cmd="$1"; shift
-case "$cmd" in fetch|archive|parity|persons|entries|prerace|results|payouts|audit|repair|rebuild|show-held|apply-held) ;; *) usage ;; esac
+case "$cmd" in fetch|archive|parity|persons|persons-collect|entries|prerace|results|payouts|audit|repair|rebuild|show-held|apply-held) ;; *) usage ;; esac
 
 if [ -f "$ENV_FILE" ]; then
   # shellcheck disable=SC1090
@@ -80,6 +81,26 @@ case "$cmd" in
   persons)
     if [ "${1:-}" = "--write" ]; then shift; run jrdb-persons --json "$@"; fi
     run jrdb-persons --dry-run --json "$@"
+    ;;
+  persons-collect)
+    # JRA 公式サイトへ行くので 176 と同じ間隔(policy jra_official_interval_seconds・下限 10)と共有リミッタ
+    [ $# -ge 1 ] || usage
+    kind="$1"; shift
+    JRA_INTERVAL_S="$("$SCRAPE_PY" - "$POLICY" <<'JRAPY'
+import json, math, os, sys
+policy = json.load(open(sys.argv[1]))
+value = policy.get("jra_official_interval_seconds")
+if type(value) not in (int, float) or isinstance(value, bool) or not math.isfinite(value) or value < 10:
+    sys.exit("jra_official_interval_seconds must be a finite number >= 10: %r" % (value,))
+inherited = os.environ.get("HORSERACING_JRA_MIN_INTERVAL_S")
+if inherited:
+    value = max(value, float(inherited))
+print(int(value) if float(value).is_integer() else value)
+JRAPY
+)" || { echo "policy jra interval unusable ($POLICY); not starting" >&2; exit 2; }
+    export HORSERACING_JRA_MIN_INTERVAL_S="$JRA_INTERVAL_S" HORSERACING_SHARED_LIMITER=1
+    log "jra interval ${JRA_INTERVAL_S}s per request (shared limiter)"
+    run jrdb-persons-collect --kind "$kind" --policy "$POLICY" --json "$@"
     ;;
   entries|prerace|results|payouts|audit)
     [ $# -ge 1 ] || usage
