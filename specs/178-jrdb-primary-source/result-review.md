@@ -148,3 +148,21 @@ R3 の人物写像(当日の騎手・調教師が全件 mapped)が済んでか�
 次: R6 dry-run(odds・popularity・weight・last_3f・breeder_name・race_class・post_time・win_payouts/owner_name・prize_money は拒否の確認)と
 R7(`horseracing_jrdb` を head で作成 → `jrdb-rebuild 1999-01-01..2026-11-08`)を背景で実行中。
 
+## R6 段 3a 修復の dry-run(2026-11-09 月 12:42〜12:48 JST・本番 DB・書込みは巻き戻し)
+
+対象 2025-01-01〜2026-11-30・`--parity-dir artifacts/jrdb/parity`(2007〜2024 の 18 本)・`win_payouts` だけ `parity/win-payout-gate/`(2026 の 840 セル 100%)。
+各列 20〜70 秒。owner_name と prize_money は `parity_below_threshold` で拒否(利用者決定どおり)。
+
+| 列 | 値が変わる行 | 不変 | 内訳 | 充足(2025 → / 2026 →) |
+|---|---|---|---|---|
+| odds | 3,555 | 48,511 | netkeiba 期の確定値ずれの訂正(JRA-VAN 期 2,663 レースは skip・別名が両方いるレース 2) | 99.6% / 99.7%(充足は不変=値の訂正) |
+| popularity | 3,555 | 48,511 | 同上 | 同上 |
+| weight | 5,715 | 46,466 | 計測値の訂正+デビュー戦の weight_diff 0→NULL | 99.8→99.9% / 99.7→99.9% |
+| last_3f | 202 | 85,619 | NULL 埋め(結果行なし 14) | 99.6% / 99.1→99.5% |
+| breeder_name | 668 | 76,621 | NULL 埋め。netkeiba の綴りと違う 1,288 は keep・JRA-VAN/公式所有 9,833 は keep | 100% / 100% |
+| race_class | 1,871 | 4,291 | netkeiba 期の全角→半角など(static_mismatch 1,871)・JRA-VAN 期 234 は keep | 100% / 100% |
+| post_time | 2,918 | 3,478 | JRA-VAN 期 2,663 レースの NULL 埋め+netkeiba 期 255 の時刻訂正 | **22.9→100%** / 100% |
+| win_payouts | 2,949 | 0 | 公式払戻のない 2,949 レースに HJC から追加(既存 840 は一致確認のみ) | 0→22.9%(netkeiba 期のみ) / 28.0→100% |
+
+本適用の前後で `scripts/jrdb_repair_impact.py`(T058・SC-006 の波及)を取る。本適用は利用者の承認後。
+
