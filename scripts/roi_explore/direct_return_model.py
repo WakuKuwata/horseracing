@@ -59,6 +59,8 @@ GROUPS = {
                 "jockey_change", "career_starts", "career_wins", "career_win_rate", "career_top3_rate", "is_debut",
                 "prev_running_style", "prev_class_canon", "prev_track_type"],
     "sire": ["sire_line"],
+    # 178: JRDB と netkeiba で語彙が違う 2 列のもう片方(sire と併せて外すと両 DB で同じ入力になる)
+    "runstyle": ["prev_running_style"],
     "weight": ["weight", "weight_diff"],
     "odds": ["odds", "q"],
     # serving-time unavailable before weigh-in (~50 min before post): 当日馬体重とその派生
