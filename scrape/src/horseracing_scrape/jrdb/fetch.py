@@ -132,8 +132,8 @@ class Credentials:
     user: str
     password: str
 
-    def __repr__(self) -> str:  # never echo
-        return f"Credentials(user={self.user!r}, password=***)"
+    def __repr__(self) -> str:  # never echo: the member id is a credential too
+        return "Credentials(user=***, password=***)"
 
 
 def credentials_from_env(env: dict[str, str] | None = None) -> Credentials:

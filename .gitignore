@@ -42,3 +42,6 @@ Thumbs.db
 
 # Claude Code のセッション/メモリ (repo 内に誤生成されることがある)
 .claude/projects/
+
+# 利用者が置く秘匿メモ(値は config/.env.jrdb へ移す)
+secret.md
