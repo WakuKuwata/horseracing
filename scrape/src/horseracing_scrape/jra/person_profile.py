@@ -9,9 +9,12 @@ One-time collection: for every id in the DB's ``jockeys``/``trainers`` (about 1,
 fetched once through the 176 ``JraFetcher`` (shared slot, 10 s interval) and appended to
 ``artifacts/jrdb/persons/jra-profiles.jsonl``; ids already in the file are not fetched again.
 
-Navigation: the person pages are reached from a listing page the operator names (its URL and
-cname, taken from the public site navigation at rollout R3 — a run never stores a dynamic cname).
-Links on that page are filtered with ``identity.official_id``; the per-page POST is the same
+Navigation: the person pages are reached from listing pages the operator names (rollout R3,
+2026-11-09 survey of ``/datafile/meikan/``): the retired lists are static GET pages
+(``jretirement.html`` 315 jockeys 1994〜, ``retirement.html`` 82 trainers) and the current lists
+are ten POST index pages per kind (``accessK.html`` + ``pw04knlH1<行>/<check>`` for jockeys,
+``accessC.html`` + ``pw05cnlH1<行>/<check>`` for trainers — dynamic cnames, never stored). Links
+on those pages are filtered with ``identity.official_id``; the per-page POST is the same
 ``fetcher.post(url, cname, kind=KIND_PERSON)`` the 176 walker uses. ``KIND_PERSON`` is not an
 archivable kind, so no raw page is kept.
 """
@@ -93,23 +96,30 @@ class CollectReport:
     not_linked: int = 0
     parse_failed: int = 0
     stopped: str | None = None
+    linked: int = 0  # distinct official ids the index pages link to (all of them, wanted or not)
 
 
 def collect_profiles(
     fetcher,
     *,
     kind: str,
-    index: tuple[str, str],
+    index: tuple[str, str | None] | None = None,
+    indexes: Iterable[tuple[str, str | None]] = (),
     wanted_ids: Iterable[str],
     out_path: Path | str = DEFAULT_PROFILES_PATH,
     clock: Callable[[], datetime.datetime] = lambda: datetime.datetime.now(datetime.UTC),
     max_pages: int | None = None,
 ) -> CollectReport:
-    """Fetch the profile page of every wanted id not already collected. Stops (and reports) on
-    the first refusal — the 176 contract: a refusal ends today's run."""
+    """Fetch the profile page of every wanted id not already collected. ``indexes`` are the
+    listing pages ``(url, cname)`` — ``cname None`` means a static page fetched with GET, a cname
+    means the POST index of the 176 site. Stops (and reports) on the first refusal — the 176
+    contract: a refusal ends today's run."""
 
     if kind not in (JOCKEY, TRAINER):
         raise ValueError("kind must be jockey or trainer")
+    pages = list(indexes) + ([index] if index is not None else [])
+    if not pages:
+        raise ValueError("at least one index page is required")
     out = Path(out_path)
     have = load_profiles(out)
     wanted = sorted(set(wanted_ids))
@@ -118,13 +128,21 @@ def collect_profiles(
     report.already = len(wanted) - len(todo)
     if not todo:
         return report
-    index_url, index_cname = index
-    page = fetcher.post(index_url, index_cname, kind=KIND_PERSON)
     by_id: dict[str, tuple[str, str]] = {}
-    for url, cname, _label in links(page.text):
-        pid = official_id(kind, cname)
-        if pid is not None and pid not in by_id:
-            by_id[pid] = (url, cname)
+    for index_url, index_cname in pages:
+        try:
+            if index_cname is None:
+                page = fetcher.get(index_url, kind=KIND_PERSON)
+            else:
+                page = fetcher.post(index_url, index_cname, kind=KIND_PERSON)
+        except Exception as exc:  # noqa: BLE001 — refusal/parameter error: stop the run
+            report.stopped = f"index:{type(exc).__name__}"
+            return report
+        for url, cname, _label in links(page.text):
+            pid = official_id(kind, cname)
+            if pid is not None and pid not in by_id:
+                by_id[pid] = (url, cname)
+    report.linked = len(by_id)
     n = 0
     for pid in todo:
         ref = by_id.get(pid)

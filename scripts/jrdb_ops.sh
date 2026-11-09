@@ -5,7 +5,7 @@
 #   scripts/jrdb_ops.sh archive 2008 [2009] [--kinds SED KYI ...]               年度パック(開催日 08:00〜19:00 は CLI が拒否)
 #   scripts/jrdb_ops.sh parity  2008 --files-dir ABS [--out ABS]               段 1 の照合(DB 読み取り専用)
 #   scripts/jrdb_ops.sh persons --files-dir ABS [--profiles ABS] [--codes-from ABS] [--write]   人物写像(既定 --dry-run)
-#   scripts/jrdb_ops.sh persons-collect jockey|trainer --index-url URL --index-cname CNAME [--max-pages N]   JRA 公式の人物ページ収集(R3・1 回限り・10 秒間隔)
+#   scripts/jrdb_ops.sh persons-collect jockey|trainer --index-url URL... --index-post URL CNAME... [--max-pages N]   JRA 公式の人物ページ収集(R3・1 回限り・10 秒間隔)
 #   scripts/jrdb_ops.sh entries 2026-11-07 --profile current        前日: BAC+KYI(+UKC) → races/race_horses/horses
 #   scripts/jrdb_ops.sh prerace 2026-11-08 --profile current [--venue E|W|L]   当日: TYB → 馬体重・取消
 #   scripts/jrdb_ops.sh results 2026-11-08 --profile current        木曜: SED 正式版+SRB → race_results/race_laps/確定オッズ

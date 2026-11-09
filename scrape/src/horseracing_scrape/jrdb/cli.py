@@ -188,12 +188,18 @@ def register_jrdb_subcommands(sub: argparse._SubParsersAction) -> None:
     )
     pc.add_argument("--kind", required=True, choices=["jockey", "trainer"])
     pc.add_argument(
-        "--index-url", required=True, help="名鑑一覧ページの URL (公開サイトの遷移から)"
+        "--index-url",
+        nargs="+",
+        default=[],
+        help="静的な一覧ページの URL (GET・複数可。例: /datafile/meikan/jretirement.html)",
     )
     pc.add_argument(
-        "--index-cname",
-        required=True,
-        help="その一覧ページの cname (動的・保存しない・ログに出さない)",
+        "--index-post",
+        nargs=2,
+        action="append",
+        default=[],
+        metavar=("URL", "CNAME"),
+        help="POST 索引 (accessK/accessC.html と行ごとの cname・複数可・cname は保存しない)",
     )
     pc.add_argument(
         "--out", default=None, help="jra-profiles.jsonl (default artifacts/jrdb/persons/)"
@@ -551,10 +557,16 @@ def run_persons_collect(args, *, fetcher, session_factory) -> RunResult:
     with session_factory() as session:
         wanted = wanted_person_ids(session, args.kind)
     out = Path(args.out) if args.out else DEFAULT_PROFILES_PATH
+    indexes = [(u, None) for u in (args.index_url or [])] + [
+        (u, cn) for u, cn in (args.index_post or [])
+    ]
+    if not indexes:
+        result.exit_code, result.error = 2, "no index page: give --index-url and/or --index-post"
+        return result
     report = collect_profiles(
         fetcher,
         kind=args.kind,
-        index=(args.index_url, args.index_cname),
+        indexes=indexes,
         wanted_ids=wanted,
         out_path=out,
         max_pages=args.max_pages,

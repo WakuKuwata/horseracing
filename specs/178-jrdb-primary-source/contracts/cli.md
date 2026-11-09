@@ -10,7 +10,7 @@
 | `jrdb-fetch --show-held [--date D]` | DB+artifacts(読取) | なし(`held` 行ごとに現行版との行差分: 片側だけの行・変わった項目。要求 0 件・job 行なし) | — |
 | `jrdb-apply-held FILE_ID --profile P [--yes --replaces CURRENT_ID\|none]` | `jrdb_files`+展開済みテキスト | `--yes` 無し: 差分表示のみ(exit 2・書込み 0)。差分が不完全(本文欠落・INV-F1/F3 違反・decode 失敗)・`--replaces` が現行版と違う・同じ鍵に承認済み未適用の版がある → exit 2。`--yes --replaces`: 現行版を `superseded`・held を `fetched` にして同じ日の writer(`COMMAND_FOR_KIND`: KYI/BAC/UKC→entries・TYB→prerace・SED/SRB→results・HJC→payouts)を再実行。先着保持の項目は規則どおり変わらない | 承認後は同 sha の通常取込と同じ |
 | `jrdb-parity --year Y --files-dir ABS` | ファイル+DB(読取) | `artifacts/jrdb/parity/<Y>.json` | 既存パスは拒否 |
-| `jrdb-persons-collect --kind jockey\|trainer --index-url U --index-cname C [--max-pages N]` | JRA 公式の名鑑一覧(運用者が公開サイトの遷移から URL/cname を渡す・cname は保存しない)+DB の 5 桁 ID | `artifacts/jrdb/persons/jra-profiles.jsonl`(append-only・既収集 ID は取らない) | 176 fetcher(共有スロット・10 秒)。拒否で停止=exit 1・再実行で続きから |
+| `jrdb-persons-collect --kind jockey\|trainer --index-url U... --index-post URL CNAME... [--max-pages N]` | JRA 公式の名鑑: 引退一覧は静的 GET(`/datafile/meikan/jretirement.html`・`retirement.html`)、現役は行ごとの POST 索引(`accessK/accessC.html`+`pw04knlH1<行>/..`・`pw05cnlH1<行>/..`・cname は保存しない)+DB の 5 桁 ID | `artifacts/jrdb/persons/jra-profiles.jsonl`(append-only・既収集 ID は取らない) | 176 fetcher(共有スロット・10 秒)。拒否で停止=exit 1・再実行で続きから |
 | `jrdb-persons --files-dir ABS [--dry-run]` | KZA/CZA | `id_mappings(source=jrdb)` mapped/conflict | 既存 mapped は触らない |
 | `jrdb-entries --date D` | BAC+KYI+UKC | races/race_horses/horses(+来歴) | 同 sha は変更 0 |
 | `jrdb-prerace --date D [--venue E|W|L]` | TYB | body_weight/entry_status(+来歴) | 同上 |

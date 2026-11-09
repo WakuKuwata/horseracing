@@ -39,6 +39,7 @@ class FakeFetcher:
     def __init__(self):
         self.requests_sent = 0
         self.posted = []
+        self.got = []
 
     def post(self, url, cname, *, kind):
         self.requests_sent += 1
@@ -46,12 +47,17 @@ class FakeFetcher:
         text = _INDEX if cname == "idx-cname" else _PROFILE
         return SimpleNamespace(text=text)
 
+    def get(self, url, *, kind):
+        self.requests_sent += 1
+        self.got.append((url, kind))
+        return SimpleNamespace(text=_INDEX)
+
 
 def _args(out, **kw):
     base = dict(
         kind="jockey",
-        index_url="https://www.jra.go.jp/JRADB/accessK.html",
-        index_cname="idx-cname",
+        index_url=[],
+        index_post=[["https://www.jra.go.jp/JRADB/accessK.html", "idx-cname"]],
         out=str(out),
         max_pages=None,
     )
@@ -97,6 +103,32 @@ def test_collect_fetches_only_missing_ids_and_appends(tmp_path):
         _args(out), fetcher=FakeFetcher(), session_factory=lambda: FakeSession(["01019", "01234"])
     )
     assert res2.jobs[0]["fetched"] == 0 and res2.requests_sent == 0
+
+
+def test_static_get_index_pages_and_post_indexes_are_merged(tmp_path):
+    out = tmp_path / "p.jsonl"
+    f = FakeFetcher()
+    args = _args(
+        out,
+        index_url=["https://www.jra.go.jp/datafile/meikan/jretirement.html"],
+        index_post=[["https://www.jra.go.jp/JRADB/accessK.html", "idx-cname"]],
+    )
+    res = run_persons_collect(
+        args, fetcher=f, session_factory=lambda: FakeSession(["01019", "01234", "09999"])
+    )
+    job = res.jobs[0]
+    assert f.got == [("https://www.jra.go.jp/datafile/meikan/jretirement.html", "person")]
+    assert job["linked"] == 2 and job["fetched"] == 2 and job["not_linked"] == 1
+    assert res.requests_sent == 4  # GET index + POST index + 2 profiles
+
+
+def test_no_index_page_is_refused_before_any_request(tmp_path):
+    res = run_persons_collect(
+        _args(tmp_path / "p.jsonl", index_post=[]),
+        fetcher=FakeFetcher(),
+        session_factory=lambda: FakeSession(["01019"]),
+    )
+    assert res.exit_code == 2 and res.requests_sent == 0
 
 
 def test_a_refusal_stops_the_run_with_exit_1(tmp_path):
