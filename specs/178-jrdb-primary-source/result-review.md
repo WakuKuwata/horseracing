@@ -202,7 +202,12 @@ unmapped 82 件(netkeiba 期)の内訳を `artifacts/jrdb/persons/persons-confli
 
 年次比較(`artifacts/jrdb/rebuild/compare-<year>.json`): 1999〜2024・2026 は races/entries とも現行 DB と同数(結果行は取消・除外ぶん JRDB が多い。
 現行 DB の 1999〜2006 残存レースとも一致)。**2025 だけ blocking**: 12/13・12/14 の 53 レースが無い。原因は年度パック内の **BAC が 2 日分とも 9〜10 レース分しか
-持たない**(KYI/SED は 36 レース分ある)=`skipped_no_program` 27+26。日次単体 BAC で補えるかを確認中(補えれば held→承認→その 2 日を再投入)。
+持たない**(KYI/SED は 36 レース分ある)=`skipped_no_program` 27+26。**日次単体 BAC(2 要求)は 36 レース分で完全** → 正本 DB で欠けた archive 版を
+`superseded` にして 2 日分を再投入し、**2025 の blocking は解消**(races 3,455/3,455・entries 47,884 vs 47,886・結果 47,715 vs 47,654)。
+ここで欠陥 3 件を修正(コミット参照): (1) `find_versions` が variant で絞っていて年度パックと日次が比較されず「日次→バックナンバー」規則が一度も働かなかった
+→ daily/archive を同じ版族に(TYB 場別は別族)、(2) rebuild/repair の loader が別版名 `BAC251213.<sha12>.txt` を無言で飛ばしていた → 平文名で解釈、
+(3) rebuild が superseded/held/rejected の版も読んでいた → writer と同じ規則で除外。年度パックの BAC 欠落は JRDB 側の事象なので
+`result-review` に残し、他の年に同様の欠落が無いことは compare-<year> の races 一致(全年)で確認済み。
 
 **jockey_id / trainer_id は全行 NULL**(`person_map=0`・id_mappings 未書込み)。R3 の承認後に写像を書き、全期間の entries を再投入して埋める必要がある
 (来歴の jockey/trainer 群は NULL → 値 なので規則上は書ける)。それまでは JRDB 正本 DB の人物特徴は使えない。
