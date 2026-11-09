@@ -26,6 +26,7 @@ applied/failed/skipped(理由)で残し、ファイルの `status='applied'` は
 | entry_status | 一方向遷移(共通) | 共通 | 共通 |
 | jockey / trainer | 写像済み ID だけ write。未解決は **keep**(NULL のままなら NULL)+`unresolved_person` | 時刻規則(共通) | 時刻規則(共通) |
 | entry_static / race_static | stored が無ければ write。stored=jra_official なら keep+`static_mismatch`(値が違えば)。stored=netkeiba なら write+`static_mismatch` | **keep**+`static_mismatch` | write+`static_mismatch`(公式が正) |
+| race_static の going / weather | BAC に無い。SED 正式版の行の多数決を **NULL の列だけ** write(どの経路の値も書き換えない・来歴は書かない・2026-11-09 追加) | 既存どおり | 既存どおり |
 | body_weight | TYB: 対で write(時刻規則)。SED 正式版: 結果確定後の確定値として write | 共通 | 共通 |
 | post_time | BAC: stored が無ければ write。stored=jra_official なら keep | keep | write |
 | win_odds / place_odds | **書かない**(TYB も基準オッズも) | — | — |

@@ -333,3 +333,46 @@ def test_tyb_body_weight_pair_and_one_way_cancel(session):
         == "cancelled"
     )
     assert not c3.extra.get("status_transitions")
+
+
+def test_formal_sed_fills_going_and_weather_without_replacing_stored_values(session):
+    """BAC has no 馬場状態/天候; SED carries them. They fill NULL columns only (the canonical DB
+    starts empty; a netkeiba/official value on the current DB is never replaced)."""
+
+    from horseracing_db.models import Race
+
+    from horseracing_scrape.jrdb import normalize as nz
+
+    results = shifted_results(races=4)
+    _field(session, results)
+    rids = sorted({race_id_from_key(r.key, file_year=YEAR) for r in results})
+    assert all(session.get(Race, rid).going is None for rid in rids)  # entries never set them
+    kept = rids[0]
+    session.execute(
+        text("UPDATE races SET going = '不良', weather = '雪' WHERE race_id = :r"), {"r": kept}
+    )
+    session.commit()
+    c = W.upsert_jrdb_results(
+        session,
+        results,
+        [],
+        profile="current",
+        edition="formal",
+        year=YEAR,
+        observed_at=OBS,
+        job_id=None,
+        race_status=W.RaceStatus(),
+    )
+    session.commit()
+    session.expire_all()
+    assert c.errors == 0
+    for rid in rids:
+        rows = [r for r in results if race_id_from_key(r.key, file_year=YEAR) == rid]
+        race = session.get(Race, rid)
+        if rid == kept:
+            assert (race.going, race.weather) == ("不良", "雪")
+            continue
+        assert race.going == nz.going_from_code(rows[0].going_code) is not None
+        assert race.weather == nz.weather_from_code(rows[0].weather_code) is not None
+    assert c.extra.get("going_filled") == len(rids) - 1
+    assert c.extra.get("weather_filled") == len(rids) - 1

@@ -20,7 +20,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from horseracing_db.enums import BetType, EntityType, EntryStatus, MappingStatus, ResultStatus
-from horseracing_db.models import Horse, IdMapping, RaceHorse
+from horseracing_db.models import Horse, IdMapping, Race, RaceHorse
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
@@ -610,6 +610,26 @@ def _laps_of(srb: JrdbRaceResult, rid: str, distance: int | None) -> ScrapedLaps
     )
 
 
+def race_going_weather(rows: Sequence[JrdbResult]) -> tuple[dict[str, str | None], bool]:
+    """Race-level 馬場状態 / 天候 from the SED rows (every row carries the race's value). The most
+    frequent non-null value wins (ties → the smaller string, deterministic); ``split`` is True
+    when the rows disagree."""
+
+    out: dict[str, str | None] = {}
+    split = False
+    for col, vals in (
+        ("going", [nz.going_from_code(r.going_code) for r in rows]),
+        ("weather", [nz.weather_from_code(r.weather_code) for r in rows]),
+    ):
+        counts: dict[str, int] = {}
+        for v in vals:
+            if v is not None:
+                counts[v] = counts.get(v, 0) + 1
+        out[col] = min(counts, key=lambda v: (-counts[v], v)) if counts else None
+        split = split or len(counts) > 1
+    return out, split
+
+
 def upsert_jrdb_results(
     session: Session,
     results: Sequence[JrdbResult],
@@ -843,6 +863,24 @@ def upsert_jrdb_results(
                     )
                     if lc.written:
                         c.bump("laps_written", lc.written)
+                # 6) 馬場状態・天候 — BAC has none, SED carries them. Fill NULL columns only: a
+                #    netkeiba / official value is never replaced (going missed the R4 parity bar on
+                #    the current DB, so it is not repairable there); the canonical DB starts empty.
+                #    No race_static provenance row: the group's other columns keep their source.
+                gw, split = race_going_weather(rows)
+                if split:
+                    c.bump("going_weather_split")
+                for col, val in gw.items():
+                    if val is None:
+                        continue
+                    check_payload(prof, "races", {col: val})
+                    res = session.execute(
+                        update(Race)
+                        .where(Race.race_id == rid, getattr(Race, col).is_(None))
+                        .values({col: val})
+                    )
+                    if res.rowcount:
+                        c.bump(f"{col}_filled")
                 race_status.set(rid, "applied", None, observed_at)
                 c.bump("races_written")
         except Exception as exc:  # noqa: BLE001
