@@ -251,3 +251,17 @@ unmapped 82 件(netkeiba 期)の内訳を `artifacts/jrdb/persons/persons-confli
 - R5 のゲート「当日の騎手・調教師が全員 mapped」は、候補なし 18 人(DB にも正規 ID が無い地方・外国人)が騎乗する日は満たせない。
   切替時に「DB に 5 桁 ID がある人は全員 mapped」と読み替えるかは利用者確認事項。
 
+### R5 人物ゲートの実装と直近 2 開催日の判定(2026-11-09)
+
+`jrdb-audit` の `stage.persons`(`persons_readiness`): その日の KYI の騎手/調教師コードを `id_mappings(source=jrdb)` と突き合わせ、
+`mapped` / `reviewed_gap`(unmapped・conflict の行がある=写像が無いと確認済み)/ `unreviewed`(行が無い新顔)に分ける。**`unreviewed` 0 で ready**。
+
+| 日 | 騎手 | 調教師 | ready |
+|---|---|---|---|
+| 2026-11-08 | 111 中 mapped 109・gap 2(30620・70370) | 176 中 mapped 175・gap 1(30716) | true |
+| 2026-11-01 | 100 中 mapped 99・gap 1(70370) | 153 中 153 | true |
+
+gap のうち 2 件は承認時の一覧(netkeiba 期の分母を 11/08 の日次取得より前に作った)に入っていなかった:
+**30620(川崎の騎手)は DB に名前だけ一致する公式 ID が 1 つある**=承認候補(未承認のため unmapped のまま)。30716(川崎の調教師)は DB に `nk:` 行しか無く写像不能。
+70370 は生年月日だけ一致・名前が違う外国人騎手で、正しく止めている。
+

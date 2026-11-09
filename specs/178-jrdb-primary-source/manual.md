@@ -113,7 +113,34 @@ writer は `held` を読まない(`notes` に `held: <file>` が出るだけ)。
   (data-model §3a・来歴の job_id から辿る)。アーカイブは mtime しか無いので上限としてしか言えない。
 - `static_mismatch` は報告で拒否ではない(176 と同じ)。`unresolved_person` は id_mappings に無い騎手・調教師コード(NULL のまま)。
 
-## 4. 書かないもの
+## 4. 今週と来週の段取り(2026-11-12〜11-23・R0/R5/R8)
+
+前提: R2 本番反映・R1/R4 parity・R3 人物写像・R6 修復・R7 再構築は 2026-11-09 に済み(`result-review.md`)。
+**R5(`jrdb_enabled: true`)に切り替えるかどうかは利用者判断**。切り替えない週は下の「JRDB 書込み」の行を飛ばし、取得と診断だけ行う。
+年度パック・旧年の単体は開催日 08:00〜19:00 に取らない(下の取得はどれも当週・前週の日次ファイルなので対象外)。
+
+### 人物ゲート(R5 の切替条件・2026-11-09 決定前の提案)
+`jrdb_ops.sh audit <開催日>` の `stage.persons`:
+- `mapped`(公式 ID を書く)・`reviewed_gap`(写像が無いと確認済み=地方・外国人で DB にも正規 ID が無い人。その行の騎手/調教師 ID は NULL)・
+  `unreviewed`(id_mappings に行が無い新顔)。**`unreviewed` が 0 のときだけ `ready: true`**=その日の `jrdb-entries` を流してよい。
+- `unreviewed` が出たら: 木曜の KZA/CZA を取り → `jrdb_ops.sh persons --files-dir … --codes-from …`(dry-run)→ 名鑑にいれば mapped、
+  いなければ名前だけの候補を確認して `--manual` で承認するか unmapped のまま書く(どちらでも `reviewed` になる)。
+
+| いつ | やること | コマンド |
+|---|---|---|
+| 11/12(木)16:00 以降 | 前週 11/07・08 の SED 正式版+SRB を取得(R5 なら結果を書く) | `jrdb_ops.sh fetch 2026-11-07 --kinds SED`・同 11-08 → (R5)`jrdb_ops.sh results <日> --profile current` |
+| 11/12(木) | 週次の騎手/調教師マスタ → 新顔の確認 | `jrdb_ops.sh fetch 2026-11-14 --kinds KZA CZA`(マスタの日付は配信日=木の翌々日表記)→ `persons`(dry-run) |
+| 11/14(金)15:40 以降 | 11/15 の BAC/KYI/UKC を取得 → 人物ゲート → (R5)出走表を JRDB で作る | `jrdb_ops.sh fetch 2026-11-15 --kinds BAC KYI UKC` → `audit 2026-11-15`(`persons.ready`)→ `entries 2026-11-15 --profile current` |
+| 11/15(土)朝 | **R0 段 0 診断**(合否に使わない): JRDB 当日ファイルの到着時刻・公式 T−3 取得率・netkeiba 依存 | `live source-probe --date 2026-11-15 --mode arrivals --until 2026-11-15T20:00`(10 分ごと HEAD)・`--mode official-odds`・`--mode dependencies` |
+| 11/15(土)日中 | 174 の T−3 捕捉は従来どおり(`near_post_source: netkeiba`)・TYB 取得 | `near_post_ops.sh capture 2026-11-15`・`jrdb_ops.sh fetch 2026-11-15 --kinds TYB` → (R5)`prerace` |
+| 11/15(土)15:40 以降 | 11/16 の BAC/KYI/UKC → ゲート → (R5)出走表 | 金曜と同じ手順で 11-16 |
+| 11/15(土)夜 | HJC 払戻 → (R5)払戻を書く・**R2(6)**: 0025 適用後の通常運用を確認(`GET /ops/v1/jobs` に失敗が増えていない・health head 一致) | `jrdb_ops.sh fetch 2026-11-15 --kinds HJC` → `payouts 2026-11-15 --profile current`・`audit 2026-11-15` |
+| 11/16(日) | 11/15 と同じ(R0 の 2 日目) | — |
+| 11/19(木)16:00 以降 | 11/15・16 の SED 正式版 → 結果 | 11/12 と同じ |
+| 11/21(金)〜23(月祝) | **R8 隔離試験**(2 開催日): 当日 00:00 時点の本番複製を作り、netkeiba を遮断して JRDB+公式だけで全レースが揃うか | `createdb horseracing_trial` + restore → `live source-trial --date 2026-11-22 --db-url … --files-dir …/artifacts/jrdb --arrivals artifacts/jrdb/probe/2026-11-15.jsonl`(2 日目は `--delay-kind KYI --by 3h` で緊急モード) |
+| R8 合格後 | **R9**: 前の開催日で `near_post_source: jra_official` を 1 日 → `netkeiba_enabled: false` | §3「netkeiba を止める」 |
+
+## 5. 書かないもの
 - 別定義の 4 列(`first_3f`・`corner_orders`・`running_style`・`sire_line/damsire_line`)は **どの経路でも現行 DB に書かない**(FR-021a)。
 - TYB・基準オッズを単複オッズの現在値に書かない(JRDB は市場値の供給元ではない)。
 - `race_date < 2025-10-11`(JRA-VAN 期)には通常取込で書かない(修復 CLI だけが列単位で NULL を埋める)。

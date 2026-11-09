@@ -411,6 +411,13 @@ def run_audit(args, *, session_factory, artifacts: Path) -> WriteResult:
             audit["stage"] = stage_status(
                 session, day, Path(args.policy) if getattr(args, "policy", None) else None
             )
+            persons = persons_readiness(session, artifacts, day)
+            audit["stage"]["persons"] = persons
+            if persons is not None and not persons["ready"]:
+                n = len(persons["jockey"]["unreviewed"]) + len(persons["trainer"]["unreviewed"])
+                audit["stage"]["stopped"].insert(
+                    0, f"persons: {n} jockey/trainer code(s) never reviewed (run jrdb-persons)"
+                )
         finally:
             session.rollback()
     result.audit = audit
@@ -528,6 +535,56 @@ def stage_status(session: Session, day: datetime.date, policy_path: Path | None)
     return out
 
 
+def persons_readiness(session: Session, artifacts: Path, day: datetime.date) -> dict | None:
+    """R5 gate (2026-11-09): the jockey/trainer codes of the day's KYI against
+    ``id_mappings(source=jrdb)``. ``mapped`` = an official id is written; ``reviewed_gap`` = the
+    code was reviewed (unmapped/conflict row exists — e.g. a 地方/外国人 with no official id in the
+    DB, the row stays NULL by decision); ``unreviewed`` = no row at all (a new person since the
+    last ``jrdb-persons`` run). Only ``unreviewed`` blocks the day. ``None`` when no KYI text."""
+
+    from horseracing_db.enums import MappingStatus
+    from horseracing_db.models import IdMapping
+
+    files = _day_files(session, artifacts, ("KYI",), day, profile="current", venue=None)
+    kyi = [
+        f
+        for f in files
+        if f.decoded is not None and (f.row is None or f.row.status != "superseded")
+    ]
+    if not kyi:
+        return None
+    codes: dict[str, set[str]] = {"jockey": set(), "trainer": set()}
+    for f in kyi:
+        for e in f.decoded.rows:
+            if e.jockey_code:
+                codes["jockey"].add(e.jockey_code)
+            if e.trainer_code:
+                codes["trainer"].add(e.trainer_code)
+    out: dict = {}
+    for kind, cs in codes.items():
+        rows = {
+            r.source_id: r.mapping_status
+            for r in session.scalars(
+                select(IdMapping).where(
+                    IdMapping.entity_type == kind,
+                    IdMapping.source == SOURCE,
+                    IdMapping.source_id.in_(sorted(cs)),
+                )
+            )
+        }
+        mapped = sorted(c for c in cs if rows.get(c) == MappingStatus.MAPPED)
+        unreviewed = sorted(c for c in cs if c not in rows)
+        gap = sorted(c for c in cs if c in rows and c not in mapped)
+        out[kind] = {
+            "codes": len(cs),
+            "mapped": len(mapped),
+            "reviewed_gap": gap,
+            "unreviewed": unreviewed,
+        }
+    out["ready"] = not (out["jockey"]["unreviewed"] or out["trainer"]["unreviewed"])
+    return out
+
+
 def run_write_command(args) -> int:
     from horseracing_db.session import create_db_engine
     from sqlalchemy.orm import sessionmaker
@@ -560,4 +617,5 @@ __all__ = [
     "run_audit",
     "run_write",
     "run_write_command",
+    "persons_readiness",
 ]

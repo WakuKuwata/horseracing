@@ -91,3 +91,66 @@ def test_a_day_with_rows_shows_the_route_and_what_is_still_missing(engine, sessi
     )
     assert res.audit["stage"]["races"] == 2 and res.exit_code == 0
     assert session.execute(text("SELECT count(*) FROM ingestion_jobs")).scalar_one() == before
+
+
+def test_persons_readiness_blocks_only_unreviewed_codes(session, tmp_path):
+    """R5 gate (2026-11-09): mapped codes pass, reviewed gaps (an unmapped/conflict row — a person
+    with no official id, NULL by decision) pass, a code with no id_mappings row at all blocks."""
+
+    from horseracing_db.models import IdMapping
+
+    from horseracing_scrape.jrdb.cli_write import persons_readiness
+    from tests._jrdb_synth import synth_kyi_raw
+
+    results = shifted_results(races=1)
+    folder = tmp_path / "KYI" / DAY.strftime("%Y%m%d")
+    folder.mkdir(parents=True)
+    (folder / f"KYI{DAY:%y%m%d}.txt").write_bytes(synth_kyi_raw(results))
+    jockeys = sorted({r.jockey_code for r in results if r.jockey_code})
+    trainers = sorted({r.trainer_code for r in results if r.trainer_code})
+    assert len(jockeys) >= 3 and trainers
+    assert persons_readiness(session, tmp_path / "none", DAY) is None  # no KYI text
+    session.add_all(
+        [
+            IdMapping(
+                entity_type="jockey",
+                source="jrdb",
+                source_id=c,
+                canonical_id=f"0{i:04d}",
+                mapping_status="mapped",
+            )
+            for i, c in enumerate(jockeys[:-2])
+        ]
+        + [
+            IdMapping(
+                entity_type="jockey",
+                source="jrdb",
+                source_id=jockeys[-2],
+                mapping_status="unmapped",
+            )
+        ]
+        + [
+            IdMapping(
+                entity_type="trainer",
+                source="jrdb",
+                source_id=c,
+                canonical_id=f"1{i:04d}",
+                mapping_status="mapped",
+            )
+            for i, c in enumerate(trainers)
+        ]
+    )
+    session.commit()
+    r = persons_readiness(session, tmp_path, DAY)
+    assert r["jockey"]["mapped"] == len(jockeys) - 2
+    assert r["jockey"]["reviewed_gap"] == [jockeys[-2]] and r["jockey"]["unreviewed"] == [
+        jockeys[-1]
+    ]
+    assert r["trainer"]["unreviewed"] == [] and r["ready"] is False
+    session.add(
+        IdMapping(
+            entity_type="jockey", source="jrdb", source_id=jockeys[-1], mapping_status="conflict"
+        )
+    )
+    session.commit()
+    assert persons_readiness(session, tmp_path, DAY)["ready"] is True
