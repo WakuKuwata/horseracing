@@ -29,7 +29,7 @@ import hashlib
 import math
 import re
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
 
@@ -1179,6 +1179,8 @@ def apply_final_odds(
     rows: Iterable[ScrapedResultRow],
     *,
     observed_at: datetime.datetime,
+    horse_id_of: Callable[[ScrapedResultRow], str | None] | None = None,
+    era_from: datetime.date | None = NETKEIBA_FINAL_ODDS_FROM,
 ) -> FinalOddsCounts:
     """Overwrite ``race_horses.odds`` / ``popularity`` with the result page's FINAL values.
 
@@ -1208,7 +1210,9 @@ def apply_final_odds(
     if race_date is None:
         out.race_unknown = 1
         return out
-    if race_date < NETKEIBA_FINAL_ODDS_FROM:
+    # Feature 178: ``era_from=None`` lifts the era guard — only the JRDB canonical DB (段 3b, a
+    # database with no JRA-VAN rows to protect) passes it; the production DB keeps the default.
+    if era_from is not None and race_date < era_from:
         out.skipped_pre_netkeiba = 1
         return out
     rows = list(rows)
@@ -1226,7 +1230,14 @@ def apply_final_odds(
         if new_odds is None:
             out.unreadable += 1
             continue
-        horse_id = resolve_entity(session, entity_type="horse", netkeiba_id=row.netkeiba_horse_id)
+        # Feature 178: a caller with canonical ids (JRDB) supplies ``horse_id_of``; the netkeiba
+        # route keeps resolving through id_mappings exactly as before.
+        if horse_id_of is not None:
+            horse_id = horse_id_of(row)
+        else:
+            horse_id = resolve_entity(
+                session, entity_type="horse", netkeiba_id=row.netkeiba_horse_id
+            )
         if horse_id not in stored:
             out.unmatched += 1
             continue
@@ -1283,6 +1294,13 @@ class WinPayoutCounts:
 
 OFFICIAL_WIN_PAYOUT_SOURCE_NETKEIBA = "netkeiba_result"
 OFFICIAL_WIN_PAYOUT_SOURCE_JRA = "jra_official_result"
+OFFICIAL_WIN_PAYOUT_SOURCE_JRDB = "jrdb_result"  # Feature 178 (HJC)
+#: payout PAGE kind → the feed (route) name the precedence rules reason about
+_WIN_PAYOUT_FEED = {
+    OFFICIAL_WIN_PAYOUT_SOURCE_NETKEIBA: Source.NETKEIBA,
+    OFFICIAL_WIN_PAYOUT_SOURCE_JRA: Source.JRA_OFFICIAL,
+    OFFICIAL_WIN_PAYOUT_SOURCE_JRDB: P.JRDB,
+}
 
 
 def upsert_official_win_payouts(
@@ -1326,9 +1344,7 @@ def upsert_official_win_payouts(
         if snap.race is None:
             out.no_race = 1
             return out
-        incoming_source = (
-            Source.JRA_OFFICIAL if source == OFFICIAL_WIN_PAYOUT_SOURCE_JRA else Source.NETKEIBA
-        )
+        incoming_source = _WIN_PAYOUT_FEED.get(source, Source.NETKEIBA)
         stored_source = snap.prov.race_source("win_payouts")
         stored_rows = {
             number: (payout_yen, src)
@@ -1383,8 +1399,13 @@ def upsert_official_win_payouts(
                 out.updated += 1
             else:
                 out.inserted += 1
+        # a same-value confirmation moves ``source`` for the official route (176) and for JRDB
+        # over netkeiba rows (178); JRDB over official rows is excluded by the decision itself
+        confirm_moves = incoming_source == Source.JRA_OFFICIAL or (
+            incoming_source == P.JRDB and stored_source != Source.JRA_OFFICIAL
+        )
         for number in decision.to_confirm:
-            if stored_rows[number][1] != source and incoming_source == Source.JRA_OFFICIAL:
+            if stored_rows[number][1] != source and confirm_moves:
                 session.execute(
                     update(OfficialWinPayout)
                     .where(
@@ -1397,11 +1418,12 @@ def upsert_official_win_payouts(
             else:
                 out.unchanged += 1
         if out.written or out.confirmed or stored_source is None:
-            adopted = (
-                Source.JRA_OFFICIAL
-                if incoming_source == Source.JRA_OFFICIAL or stored_source == Source.JRA_OFFICIAL
-                else Source.NETKEIBA
-            )
+            if incoming_source == Source.JRA_OFFICIAL or stored_source == Source.JRA_OFFICIAL:
+                adopted = Source.JRA_OFFICIAL
+            elif incoming_source == P.JRDB or stored_source == P.JRDB:
+                adopted = P.JRDB
+            else:
+                adopted = Source.NETKEIBA
             write_race_provenance(
                 session,
                 race_id,
@@ -1676,11 +1698,16 @@ def replace_exotic_dividends(
                     )
                     .values(source=source)
                 )
+        # Feature 178: JRDB never takes the adoption away from the official route; the two 176
+        # routes keep their exact behaviour (official over anything → official; netkeiba only
+        # reaches here with a non-official stored source).
+        stored_src = snap.prov.race_source("exotic_payouts")
+        adopted = Source.JRA_OFFICIAL if Source.JRA_OFFICIAL in (source, stored_src) else source
         write_race_provenance(
             session,
             race_id,
             "exotic_payouts",
-            source=source,
+            source=adopted,
             observed_at=_observed(observed_at),
             job_id=job_id,
         )

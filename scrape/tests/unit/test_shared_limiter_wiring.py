@@ -114,7 +114,8 @@ def test_the_policy_is_attached_to_both_seams(monkeypatch):
     monkeypatch.setattr(cli, "background_policy", lambda **kw: policy)
     f = cli._make_fetcher(60.0, None)
 
-    assert f._pre_request == policy.pre_request
+    # 178: the policy hook sits behind the netkeiba switch's per-request gate (netkeiba_policy)
+    assert f._pre_request.inner == policy.pre_request
     assert f._on_refusal == policy.record_refusal
 
 
@@ -123,7 +124,7 @@ def test_an_explicit_opt_out_leaves_the_local_limiter(monkeypatch):
     monkeypatch.setattr(cli, "background_policy", lambda **kw: None)
     f = cli._make_fetcher(60.0, None)
 
-    assert f._pre_request is None
+    assert f._pre_request.inner is None  # the gate stays; nothing behind it
     assert f._on_refusal is None
     assert f.min_interval_s == 60.0  # the per-instance floor still applies
 

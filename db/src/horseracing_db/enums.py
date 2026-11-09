@@ -60,7 +60,10 @@ class Source:
     JRA_VAN = "jra_van"
     NETKEIBA = "netkeiba"
     JRA_OFFICIAL = "jra_official"
-    ALL = (JRA_VAN, NETKEIBA, JRA_OFFICIAL)
+    #: Feature 178 (migration 0025): the JRDB member-file route, the third writer. Legal on the
+    #: same tables as JRA_OFFICIAL and on id_mappings (JRDB jockey/trainer codes are private ids).
+    JRDB = "jrdb"
+    ALL = (JRA_VAN, NETKEIBA, JRA_OFFICIAL, JRDB)
 
 
 class JobStatus:

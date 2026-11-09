@@ -12,6 +12,10 @@ dependencies = [
     "psycopg[binary]>=3.1",
 ]
 
+[project.optional-dependencies]
+# Feature 178: LZH (legacy "最近一週間" listing / KYH・SEC formats). zip back-numbers need nothing.
+lzh = ["lhafile>=0.2"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.0",

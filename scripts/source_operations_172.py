@@ -50,7 +50,35 @@ CAPTURE_ONLY_KEYS = frozenset(
 #: CLI requires (``HORSERACING_JRA_MIN_INTERVAL_S``); absent, the JRA CLI refuses to start by
 #: itself.
 JRA_INTERVAL_KEY = "jra_official_interval_seconds"
-OPTIONAL_KEYS = CAPTURE_ONLY_KEYS | {JRA_INTERVAL_KEY}
+#: Feature 178 (T069): the JRDB route and the netkeiba switch. All optional, all at their
+#: defaults in the committed file; a reader that predates them keeps working. Booleans must be
+#: booleans, the interval a finite number >= 2 s (the JRDB CLI's floor), the T−3 source one of
+#: two names. ``netkeiba_enabled: false`` is how 段 4 stops netkeiba (FR-014) — every netkeiba
+#: fetcher reads it at start and sends nothing.
+JRDB_BOOL_KEYS = frozenset(
+    {"jrdb_enabled", "netkeiba_enabled", "jra_emergency_entries", "jrdb_archive_blackout"}
+)
+JRDB_INTERVAL_KEY = "jrdb_interval_seconds"
+JRDB_MIN_INTERVAL_S = 2
+NEAR_POST_SOURCE_KEY = "near_post_source"
+NEAR_POST_SOURCES = ("netkeiba", "jra_official")
+JRDB_KEYS = JRDB_BOOL_KEYS | {JRDB_INTERVAL_KEY, NEAR_POST_SOURCE_KEY}
+OPTIONAL_KEYS = CAPTURE_ONLY_KEYS | {JRA_INTERVAL_KEY} | JRDB_KEYS
+
+
+def validate_jrdb_keys(result):
+    for key in JRDB_BOOL_KEYS & set(result):
+        require(isinstance(result[key], bool), f"{key}_not_boolean")
+    if JRDB_INTERVAL_KEY in result:
+        value = result[JRDB_INTERVAL_KEY]
+        require(
+            type(value) in (int, float)
+            and math.isfinite(value)
+            and value >= JRDB_MIN_INTERVAL_S,
+            "jrdb_interval_invalid",
+        )
+    if NEAR_POST_SOURCE_KEY in result:
+        require(result[NEAR_POST_SOURCE_KEY] in NEAR_POST_SOURCES, "near_post_source_invalid")
 
 
 def validate_capture_only(result):
@@ -92,6 +120,7 @@ def load_policy(path=CONFIG):
     present = set(result)
     require(required <= present and present <= required | OPTIONAL_KEYS, "policy_keys_invalid")
     validate_capture_only(result)
+    validate_jrdb_keys(result)
     if JRA_INTERVAL_KEY in result:
         value = result[JRA_INTERVAL_KEY]
         require(

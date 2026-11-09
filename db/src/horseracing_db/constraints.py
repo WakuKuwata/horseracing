@@ -68,7 +68,11 @@ COVERAGE_SCOPE = _in_list("coverage_scope", CoverageScope.ALL)
 
 # official_win_payouts (139 → 176): the result page a 単勝 payout was read from. Kept separate from
 # Source: these name the PAGE KIND, not the feed, and the default stays netkeiba_result.
-OFFICIAL_WIN_PAYOUT_SOURCES: tuple[str, ...] = ("netkeiba_result", "jra_official_result")
+OFFICIAL_WIN_PAYOUT_SOURCES: tuple[str, ...] = (
+    "netkeiba_result",
+    "jra_official_result",
+    "jrdb_result",  # Feature 178 (migration 0025): HJC 払戻ファイル
+)
 OFFICIAL_WIN_PAYOUT_SOURCE_CHECK = _in_list("source", OFFICIAL_WIN_PAYOUT_SOURCES)
 
 # provenance tables (176, migration 0023): which field group a row describes

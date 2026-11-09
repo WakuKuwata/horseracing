@@ -219,7 +219,11 @@ def cmd_entries(
         )
         return _finish(result)
 
+    from .emergency_entries import create_entries_from_official, emergency_enabled
     from .upsert_jra import apply_jra_changes, upsert_jra_entries
+
+    # Feature 178 (T050a): policy-only switch, read once per call; False = the 176 path unchanged
+    emergency = emergency_enabled(Path(args.policy) if args.policy else DEFAULT_POLICY_PATH)
 
     with session_factory() as session:
 
@@ -230,6 +234,18 @@ def cmd_entries(
             for resp, page in parsed:
                 for k, v in page.state_counts().items():
                     agg.bump(k, v)
+                if emergency:
+                    agg.merge(
+                        create_entries_from_official(
+                            session,
+                            page,
+                            changes,
+                            policy=True,
+                            observed_at=resp.fetched_at,
+                            job_id=job_id,
+                            race_ids=args.race_ids,
+                        )
+                    )
                 agg.merge(
                     upsert_jra_entries(
                         session,

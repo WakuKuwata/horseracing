@@ -48,6 +48,7 @@ def _validate_and_calib(args) -> tuple[str, str | None] | None:
     """Feature 076: shared calib-arg validation for the live commands. Returns (mode, path) or None
     on a validation error (caller prints + returns 2)."""
     from horseracing_betting.cli import _validate_calib_args
+
     try:
         return _validate_calib_args(args)
     except ValueError as exc:
@@ -60,6 +61,7 @@ def _cmd_collect_prospective(session: Session, args) -> int:
     on a date (thin bundle over collect_prospective; scrape/settle stay separate commands)."""
     from horseracing_probability.calib_activation import ActivationError
     from horseracing_probability.calib_manifest import ManifestError
+
     mp = _validate_and_calib(args)
     if mp is None:
         return 2
@@ -67,19 +69,27 @@ def _cmd_collect_prospective(session: Session, args) -> int:
     ids = list_pending(session, date=args.date)
     try:
         from horseracing_betting.cli import _resolve_win_odds_cap
+
         rep = collect_prospective(
-            session, race_ids=ids, scrape_fn=_default_scrape_fn,
+            session,
+            race_ids=ids,
+            scrape_fn=_default_scrape_fn,
             win_odds_cap=_resolve_win_odds_cap(args),  # T029: 本番既定に追随(shadow は本番の影)
-            calib_manifest=path, calib_mode=mode,
+            calib_manifest=path,
+            calib_mode=mode,
         )
     except (ActivationError, ManifestError) as exc:  # Feature 076: fail-closed before the loop
         print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
         return 1
-    print(f"collect-prospective {args.date}  pending={rep.n_races} generated={rep.generated} "
-          f"weak_pretime={rep.weak_pretime}")
-    print(f"  skip: not_pending={rep.skip_not_pending} no_odds={rep.skip_no_odds} "
-          f"no_run={rep.skip_no_run} exists={rep.skip_exists} post_time={rep.skip_post_time} "
-          f"errors={rep.errors}")
+    print(
+        f"collect-prospective {args.date}  pending={rep.n_races} generated={rep.generated} "
+        f"weak_pretime={rep.weak_pretime}"
+    )
+    print(
+        f"  skip: not_pending={rep.skip_not_pending} no_odds={rep.skip_no_odds} "
+        f"no_run={rep.skip_no_run} exists={rep.skip_exists} post_time={rep.skip_post_time} "
+        f"errors={rep.errors}"
+    )
     return 0
 
 
@@ -116,9 +126,7 @@ def _capture_json(report: ChaosCaptureReport, *, elapsed_s: float) -> str:
             "confirmation_eligible": report.confirmation_eligible,
             "seconds_to_post": report.seconds_to_post,
             "chaos_snapshot_id": (
-                None
-                if report.chaos_snapshot_id is None
-                else str(report.chaos_snapshot_id)
+                None if report.chaos_snapshot_id is None else str(report.chaos_snapshot_id)
             ),
             "elapsed_s": elapsed_s,
         },
@@ -145,15 +153,14 @@ def _daily_horizon_refused(
     except ChaosArtifactError:
         # Preserve capture's fail-closed, per-race artifact_unavailable result.
         return False
-    upper_s = int(
-        artifact.preregistration["primary_horizon"]["maximum_seconds_to_post"]
-    )
+    upper_s = int(artifact.preregistration["primary_horizon"]["maximum_seconds_to_post"])
     return (latest_post_time - command_started_at).total_seconds() > upper_s
 
 
 def _cmd_live_serve(session: Session, args) -> int:
     from horseracing_probability.calib_activation import ActivationError
     from horseracing_probability.calib_manifest import ManifestError
+
     mp = _validate_and_calib(args)
     if mp is None:
         return 2
@@ -161,9 +168,15 @@ def _cmd_live_serve(session: Session, args) -> int:
     cfg = KellyConfig(bankroll=args.bankroll, allocation=args.allocation)
     try:
         rep = live_serve(
-            session, race_id=args.race_id, model_version=args.model_version,
-            recommend=not args.no_recommend, cfg=cfg, threshold=args.threshold, top_k=args.top_k,
-            calib_manifest=path, calib_mode=mode,
+            session,
+            race_id=args.race_id,
+            model_version=args.model_version,
+            recommend=not args.no_recommend,
+            cfg=cfg,
+            threshold=args.threshold,
+            top_k=args.top_k,
+            calib_manifest=path,
+            calib_mode=mode,
         )
     except (ActivationError, ManifestError) as exc:  # Feature 076: fail-closed
         print(f"ERROR: manifest activation failed: {type(exc).__name__}: {exc}")
@@ -224,11 +237,7 @@ def _cmd_capture_chaos(session: Session, args) -> int:
         )
         return 2
 
-    race_ids = (
-        [args.race_id]
-        if args.race_id is not None
-        else list_pending(session, date=args.date)
-    )
+    race_ids = [args.race_id] if args.race_id is not None else list_pending(session, date=args.date)
     raw_fetcher = make_capture_fetcher(database_url=getattr(args, "database_url", None))
     fetcher = NetkeibaOddsFetcher(raw_fetcher)
     status_counts: Counter[str] = Counter()
@@ -299,9 +308,9 @@ def _cmd_capture_chaos(session: Session, args) -> int:
         f"skipped_unfetchable={skipped_unfetchable} "
         f"rejected={status_counts['rejected']} failed={status_counts['failed']}"
     )
-    rejected_text = " ".join(
-        f"{reason}={count}" for reason, count in sorted(reason_counts.items())
-    ) or "none"
+    rejected_text = (
+        " ".join(f"{reason}={count}" for reason, count in sorted(reason_counts.items())) or "none"
+    )
     strength_text = " ".join(
         f"{strength}={strength_counts[strength]}"
         for strength in ("confirmatory", "weak", "unknown")
@@ -316,15 +325,22 @@ def _cmd_refresh(session: Session, args) -> int:
     from horseracing_betting.cli import _validate_calib_args
     from horseracing_probability.calib_activation import ActivationError
     from horseracing_probability.calib_manifest import ManifestError
+
     try:
-        mode, path = _validate_calib_args(args)  # Feature 076: abs path / mode↔manifest contradiction
+        mode, path = _validate_calib_args(
+            args
+        )  # Feature 076: abs path / mode↔manifest contradiction
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 2
     try:
         rep = refresh_range(
-            session, date_from=args.from_, date_to=args.to, force=args.force,
-            calib_manifest=path, calib_mode=mode,
+            session,
+            date_from=args.from_,
+            date_to=args.to,
+            force=args.force,
+            calib_manifest=path,
+            calib_mode=mode,
             use_materialized=args.use_materialized,
             materialized_path=args.materialized_path if args.use_materialized else None,
         )
@@ -334,16 +350,20 @@ def _cmd_refresh(session: Session, args) -> int:
     print(f"refresh {rep.date_from}..{rep.date_to}")
     if rep.predict is not None:
         p = rep.predict
-        print(f"  predict:   generated={p['generated']} skip_exists={p['skip_exists']} "
-              f"skip_no_started={p['skip_no_started']} error_days={p['error_days']}")
+        print(
+            f"  predict:   generated={p['generated']} skip_exists={p['skip_exists']} "
+            f"skip_no_started={p['skip_no_started']} error_days={p['error_days']}"
+        )
     else:
         print(f"  predict:   FAILED — {rep.predict_error}")
     if rep.recommend is not None:
         r = rep.recommend
-        print(f"  recommend: races={r['races']} generated={r['generated']} "
-              f"topped_up={r['topped_up']} skip_exists={r['skip_exists']} "
-              f"skip_no_run={r['skip_no_run']} skip_no_odds={r['skip_no_odds']} "
-              f"error={r['error']}")
+        print(
+            f"  recommend: races={r['races']} generated={r['generated']} "
+            f"topped_up={r['topped_up']} skip_exists={r['skip_exists']} "
+            f"skip_no_run={r['skip_no_run']} skip_no_odds={r['skip_no_odds']} "
+            f"error={r['error']}"
+        )
     else:
         print(f"  recommend: FAILED — {rep.recommend_error}")
     for e in (rep.predict or {}).get("errors", []):
@@ -371,12 +391,19 @@ def _cmd_near_post_capture(args) -> int:
     except np_.NearPostRefused as exc:
         print(f"REFUSED: {exc}")
         return 2
-    fresh, detail = np_.robots_fresh(now)
+    quote_source = policy.get(np_.POLICY_SOURCE_KEY, np_.SOURCE)  # 178 T064a
+    fresh, detail = (
+        (True, "official") if quote_source == np_.SOURCE_OFFICIAL else np_.robots_fresh(now)
+    )
     if not fresh and not args.dry_run:
         print(f"REFUSED: robots: {detail}")
         return 2
-    ensemble_dir = Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
-    single_dir = Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
+    ensemble_dir = (
+        Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
+    )
+    single_dir = (
+        Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
+    )
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
         races = np_.day_races(session, args.date)
@@ -384,24 +411,53 @@ def _cmd_near_post_capture(args) -> int:
             print(f"REFUSED: no races with post_time on {args.date} (ingest the entries first)")
             return 2
         schedule = np_.schedule_day(races)
-        print(f"near-post-capture date={args.date} races={len(schedule)} dry_run={args.dry_run} "
-              f"first_target={schedule[0].target_at.isoformat()} robots={'fresh' if fresh else detail}",
-              flush=True)
+        print(
+            f"near-post-capture date={args.date} races={len(schedule)} dry_run={args.dry_run} "
+            f"first_target={schedule[0].target_at.isoformat()} robots={'fresh' if fresh else detail}",
+            flush=True,
+        )
         predictor = np_.ProductionPredictor(
             ensemble_dir=ensemble_dir, single_dir=single_dir, year=args.date.year
         )
         day_features = np_.build_day_features(session.connection(), args.date)
         session.rollback()
-        print(f"features built rows={len(day_features.frame)} sha256={day_features.sha256[:12]}", flush=True)
+        print(
+            f"features built rows={len(day_features.frame)} sha256={day_features.sha256[:12]}",
+            flush=True,
+        )
         saved = np_.save_day_features(day_features, args.features_dir or np_.DEFAULT_FEATURES_DIR)
-        print(f"features parquet {'written ' + str(saved) if saved else 'not written (exists or failed)'}", flush=True)
+        print(
+            f"features parquet {'written ' + str(saved) if saved else 'not written (exists or failed)'}",
+            flush=True,
+        )
         fetcher = None
         if not args.dry_run:
-            fetcher = make_capture_fetcher(database_url=args.database_url, deadline_s=np_.DEADLINE_S)
+            if quote_source == np_.SOURCE_OFFICIAL:
+                # the official route's own startup checks; a refusal is final — never netkeiba
+                from horseracing_scrape.jra.fetch import JraFetcher
+                from horseracing_scrape.jra.policy import StartupRefused, validate_startup
+
+                try:
+                    ctx = validate_startup(policy_path=policy_path, database_url=args.database_url)
+                except StartupRefused as exc:
+                    print(f"REFUSED: official source: {exc.code}: {exc}")
+                    return 2
+                fetcher = JraFetcher(policy=ctx.policy)
+            else:
+                fetcher = make_capture_fetcher(
+                    database_url=args.database_url, deadline_s=np_.DEADLINE_S
+                )
+        print(f"quote source: {quote_source}", flush=True)
         try:
             summary = np_.run_day(
-                session, day=args.date, schedule=schedule, fetcher=fetcher, predictor=predictor,
-                day_features=day_features, dry_run=args.dry_run,
+                session,
+                day=args.date,
+                schedule=schedule,
+                fetcher=fetcher,
+                predictor=predictor,
+                day_features=day_features,
+                dry_run=args.dry_run,
+                quote_source=quote_source,
             )
         finally:
             close = getattr(fetcher, "close", None)
@@ -434,32 +490,47 @@ def _cmd_near_post_score(args) -> int:
         rule_sha = nps.assert_rule_frozen()
         if args.date_from > args.date_to:
             raise nps.ScoreRefused("--from must not be after --to")
-        out_path = Path(args.out) if args.out else nps.default_out_path(args.date_from, args.date_to, run_id)
+        out_path = (
+            Path(args.out)
+            if args.out
+            else nps.default_out_path(args.date_from, args.date_to, run_id)
+        )
         if out_path.exists():
             raise nps.ScoreRefused(f"--out {out_path} exists (append-only)")
         cands, cands_sha = [], None
         if args.candidate:
             cands, cands_sha = nps.load_candidates(
                 Path(args.candidates) if args.candidates else nps.DEFAULT_CANDIDATES_PATH,
-                names=args.candidate, year=args.date_from.year,
+                names=args.candidate,
+                year=args.date_from.year,
             )
     except (nps.ScoreRefused, OSError, ValueError) as exc:
         print(f"REFUSED: {exc}")
         return 2
     features_dir = Path(args.features_dir) if args.features_dir else np_.DEFAULT_FEATURES_DIR
-    ensemble_dir = Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
-    single_dir = Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
+    ensemble_dir = (
+        Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
+    )
+    single_dir = (
+        Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
+    )
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
         records = nps.load_quote_records(session, date_from=args.date_from, date_to=args.date_to)
-        print(f"near-post-score from={args.date_from} to={args.date_to} rows={len(records)} "
-              f"candidates={[c.name for c in cands]}", flush=True)
+        print(
+            f"near-post-score from={args.date_from} to={args.date_to} rows={len(records)} "
+            f"candidates={[c.name for c in cands]}",
+            flush=True,
+        )
         candidate_races: dict = {}
         replay_stats = None
         if cands:
+
             @functools.cache
             def predictor_for(year: int):
-                return np_.ProductionPredictor(ensemble_dir=ensemble_dir, single_dir=single_dir, year=year)
+                return np_.ProductionPredictor(
+                    ensemble_dir=ensemble_dir, single_dir=single_dir, year=year
+                )
 
             @functools.cache
             def ensemble_for(name: str, year: int):
@@ -472,30 +543,189 @@ def _cmd_near_post_score(args) -> int:
                 return df
 
             candidate_races, replay_stats = nps.candidate_races(
-                records, cands, predictor_for=predictor_for, features_dir=features_dir,
-                rebuild=rebuild, ensemble_for=ensemble_for,
+                records,
+                cands,
+                predictor_for=predictor_for,
+                features_dir=features_dir,
+                rebuild=rebuild,
+                ensemble_for=ensemble_for,
             )
         session.rollback()
     report = dqs.build_report(
         records,
-        candidates={c.name: {"registered_on": c.registered_on.isoformat(),
-                             "mark_rule": {"threshold": c.threshold}} for c in cands},
-        candidate_races=candidate_races, tz=np_.JST,
+        candidates={
+            c.name: {
+                "registered_on": c.registered_on.isoformat(),
+                "mark_rule": {"threshold": c.threshold},
+            }
+            for c in cands
+        },
+        candidate_races=candidate_races,
+        tz=np_.JST,
     )
     for p in report["paired"]:
         cand = next(c for c in cands if c.name == p["name"])
         p["kind"] = cand.kind
         p["artifact_sha256"] = cand.artifact_sha256
     doc = nps.assemble(
-        report, date_from=args.date_from, date_to=args.date_to, n_rows=len(records), rule_sha=rule_sha,
-        candidates_sha=cands_sha, run_id=run_id, computed_at=computed_at, replay_stats=replay_stats,
+        report,
+        date_from=args.date_from,
+        date_to=args.date_to,
+        n_rows=len(records),
+        rule_sha=rule_sha,
+        candidates_sha=cands_sha,
+        run_id=run_id,
+        computed_at=computed_at,
+        replay_stats=replay_stats,
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8"
+    )
     for line in nps.summary_lines(doc):
         print(line)
     print(f"written {out_path}")
     return 0
+
+
+def _cmd_source_probe(args) -> int:
+    """178 US0 (T022): the three probes. ``official-odds`` builds the 176 fetcher through the
+    startup checks (shared slot), reads nothing but post times from the DB and writes nothing."""
+    import json as _json
+    from pathlib import Path
+
+    from horseracing_live import source_probe as sp
+
+    day = args.date
+    out = Path(args.out) if args.out else sp.DEFAULT_PROBE_DIR / f"{day.isoformat()}.jsonl"
+    engine = create_db_engine(args.database_url)
+    if args.mode == "arrivals":
+        from horseracing_scrape.jrdb.fetch import (
+            JrdbFetcher,
+            credentials_from_env,
+            interval_from_env,
+        )
+
+        fetcher = JrdbFetcher(
+            credentials=credentials_from_env(), min_interval_s=max(interval_from_env(), 10.0)
+        )
+        until = (
+            datetime.datetime.fromisoformat(args.until)
+            if args.until
+            else datetime.datetime.combine(day, datetime.time(20, 0), tzinfo=sp.JST)
+        )
+        recs = sp.run_arrivals(day, head=fetcher.head, out_path=out, until=until)
+        print(_json.dumps({"mode": "arrivals", "records": len(recs), "out": str(out)}))
+        return 0
+    with Session(engine) as session:
+        if args.mode == "dependencies":
+            rec = sp.probe_dependencies(session, day)
+            sp.append_record(out, rec)
+            print(_json.dumps(rec, ensure_ascii=False, default=str))
+            return 0
+        cfg_path = (
+            Path(args.config)
+            if args.config
+            else sp.DEFAULT_PROBE_DIR / f"{day.isoformat()}-config.json"
+        )
+        cfg = sp.build_config(session, day, modes=("official-odds",))
+        sp.freeze_config(cfg, cfg_path)
+        from horseracing_scrape.jra.fetch import JraFetcher
+        from horseracing_scrape.jra.policy import StartupRefused, validate_startup
+
+        try:
+            ctx = validate_startup(
+                policy_path=Path(args.policy) if args.policy else None,
+                database_url=args.database_url,
+            )
+        except StartupRefused as exc:
+            print(_json.dumps({"error": exc.code, "message": str(exc)}, ensure_ascii=False))
+            return 2
+        fetcher = JraFetcher(policy=ctx.policy)
+        recs = sp.run_official_odds(session, cfg, fetcher=fetcher, out_path=out)
+        print(_json.dumps(sp.summarize_official_odds(recs), ensure_ascii=False))
+        return 0
+
+
+def _cmd_source_trial(args) -> int:
+    """178 US3.5 (T065): the isolation trial on a REPLICA. Refuses the production DATABASE_URL."""
+    import json as _json
+    import os
+    from pathlib import Path
+
+    from horseracing_live import source_trial as st
+    from horseracing_scrape.jra.fetch import JraFetcher
+    from horseracing_scrape.jra.policy import StartupRefused, validate_startup
+    from horseracing_scrape.jrdb.rebuild import db_identity
+
+    day = args.date
+    files_dir = Path(args.files_dir)
+    if not files_dir.is_absolute():
+        print("ERROR: --files-dir must be absolute")
+        return 2
+    env_url = os.environ.get("DATABASE_URL")
+    if env_url:
+        a, b = create_db_engine(args.db_url), create_db_engine(env_url)
+        try:
+            same = db_identity(a) == db_identity(b)
+        finally:
+            a.dispose()
+            b.dispose()
+        if same:
+            print("REFUSED: --db-url is the process DATABASE_URL (the trial needs a replica)")
+            return 2
+    out = Path(args.out) if args.out else st.DEFAULT_TRIAL_DIR / f"{day.isoformat()}.jsonl"
+    cfg_path = (
+        Path(args.config)
+        if args.config
+        else st.DEFAULT_TRIAL_DIR / f"{day.isoformat()}-config.json"
+    )
+    arrivals = st.arrivals_from_probe(Path(args.arrivals), day) if args.arrivals else None
+    if arrivals is not None:
+        arrivals = {**st.default_arrivals(day), **arrivals}
+    delay = {args.delay_kind: st.parse_duration(args.by)} if args.delay_kind else None
+    emergency_at = datetime.datetime.fromisoformat(args.emergency_at) if args.emergency_at else None
+    policy_path = Path(args.policy) if args.policy else None
+    try:
+        ctx = validate_startup(policy_path=policy_path, database_url=args.db_url)
+    except StartupRefused as exc:
+        print(_json.dumps({"error": exc.code, "message": str(exc)}, ensure_ascii=False))
+        return 2
+    fetcher = JraFetcher(policy=ctx.policy)
+    repo = Path(__file__).resolve().parents[3]
+    from . import near_post as np_
+
+    predictor = np_.ProductionPredictor(
+        ensemble_dir=Path(args.ensemble_dir)
+        if args.ensemble_dir
+        else repo / "artifacts/market_ev/mev-ens15-v1",
+        single_dir=Path(args.single_dir)
+        if args.single_dir
+        else repo / "artifacts/market_ev/mev-binary-v2",
+        year=day.year,
+    )
+    block = st.block_outbound_except(st.ALLOWED_HOSTS) if not args.no_outbound_block else None
+    import contextlib
+
+    with block or contextlib.nullcontext():
+        summary = st.run_trial(
+            day,
+            db_url=args.db_url,
+            files_dir=files_dir,
+            out_path=out,
+            config_path=cfg_path,
+            policy_path=policy_path or np_.DEFAULT_POLICY_PATH,
+            jra_fetcher=fetcher,
+            predictor=predictor,
+            arrivals=arrivals,
+            arrivals_basis="probe" if args.arrivals else "default",
+            delay=delay,
+            emergency_at=emergency_at,
+            replay_mode="realtime",
+            cache_dir=Path(args.cache_dir) if args.cache_dir else None,
+        )
+    print(_json.dumps(summary.to_json(), ensure_ascii=False, default=str))
+    return summary.exit_code
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -511,6 +741,7 @@ def main(argv: list[str] | None = None) -> int:
     ls.add_argument("--threshold", type=float, default=1.0)
     ls.add_argument("--top-k", type=int, default=5)
     from horseracing_betting.cli import _add_calib_manifest_args
+
     _add_calib_manifest_args(ls)  # Feature 076: stage-λ (serving) + two-gamma (recommend)
     ls.add_argument("--database-url", default=None)
 
@@ -518,32 +749,53 @@ def main(argv: list[str] | None = None) -> int:
     lp.add_argument("--date", type=_parse_date, required=True)
     lp.add_argument("--database-url", default=None)
 
-    rf = sub.add_parser("refresh",
-                        help="one-command product update: predict backfill → recommend backfill "
-                             "over a date range (050)")
+    rf = sub.add_parser(
+        "refresh",
+        help="one-command product update: predict backfill → recommend backfill "
+        "over a date range (050)",
+    )
     rf.add_argument("--from", dest="from_", type=_parse_date, required=True)
     rf.add_argument("--to", type=_parse_date, required=True)
-    rf.add_argument("--force", action="store_true",
-                    help="re-generate predictions (044 append-only); recommendations stay "
-                         "group-wise idempotent")
-    rf.add_argument("--use-materialized", action="store_true",
-                    help="055: prediction stage reads as-of features from the 025 parquet "
-                         "(bit-parity, fail-closed; recommend stage builds no features)")
+    rf.add_argument(
+        "--force",
+        action="store_true",
+        help="re-generate predictions (044 append-only); recommendations stay "
+        "group-wise idempotent",
+    )
+    rf.add_argument(
+        "--use-materialized",
+        action="store_true",
+        help="055: prediction stage reads as-of features from the 025 parquet "
+        "(bit-parity, fail-closed; recommend stage builds no features)",
+    )
     rf.add_argument("--materialized-path", default="../artifacts/features.parquet")
     from horseracing_betting.cli import _add_calib_manifest_args
+
     _add_calib_manifest_args(rf)  # Feature 076: --calib-manifest / --calib-mode (both stages)
     rf.add_argument("--database-url", default=None)
 
-    cp = sub.add_parser("collect-prospective",
-                        help="065: record prospective win bets on freshly-captured pre-race odds "
-                             "for pending races on a date (fills the shadow-log)")
+    cp = sub.add_parser(
+        "collect-prospective",
+        help="065: record prospective win bets on freshly-captured pre-race odds "
+        "for pending races on a date (fills the shadow-log)",
+    )
     cp.add_argument("--date", type=_parse_date, required=True)
-    cp.add_argument("--win-odds-cap", dest="win_odds_cap", type=float, default=None,
-                    help="064 T029: unspecified = production default (21.0)")
-    cp.add_argument("--no-win-odds-cap", dest="no_win_odds_cap", action="store_true",
-                    help="T029: legacy uncapped policy — a CONTROL lane, no longer the shadow of "
-                         "production (codex: 波及させないなら明示 control として扱う)")
+    cp.add_argument(
+        "--win-odds-cap",
+        dest="win_odds_cap",
+        type=float,
+        default=None,
+        help="064 T029: unspecified = production default (21.0)",
+    )
+    cp.add_argument(
+        "--no-win-odds-cap",
+        dest="no_win_odds_cap",
+        action="store_true",
+        help="T029: legacy uncapped policy — a CONTROL lane, no longer the shadow of "
+        "production (codex: 波及させないなら明示 control として扱う)",
+    )
     from horseracing_betting.cli import _add_calib_manifest_args as _acm
+
     _acm(cp)  # Feature 076: manifest two-gamma for prospective recommendations
     cp.add_argument("--database-url", default=None)
 
@@ -580,13 +832,18 @@ def main(argv: list[str] | None = None) -> int:
         help="174: one race day — freeze the T−3 min quote + predictions per race (manual start)",
     )
     npc.add_argument("--date", type=_parse_date, required=True)
-    npc.add_argument("--dry-run", action="store_true", help="no fetch, no write: times and gates only")
+    npc.add_argument(
+        "--dry-run", action="store_true", help="no fetch, no write: times and gates only"
+    )
     npc.add_argument("--policy", default=None, help="config/source-operations.json (default)")
     npc.add_argument("--ensemble-dir", default=None)
     npc.add_argument("--single-dir", default=None)
     npc.add_argument("--out", default=None, help="summary JSON path (append-only: must not exist)")
-    npc.add_argument("--features-dir", default=None,
-                     help="175: where the morning feature rows are saved (default artifacts/near_post)")
+    npc.add_argument(
+        "--features-dir",
+        default=None,
+        help="175: where the morning feature rows are saved (default artifacts/near_post)",
+    )
     npc.add_argument("--database-url", default=None)
 
     nps_p = sub.add_parser(
@@ -595,16 +852,85 @@ def main(argv: list[str] | None = None) -> int:
     )
     nps_p.add_argument("--from", dest="date_from", type=_parse_date, required=True)
     nps_p.add_argument("--to", dest="date_to", type=_parse_date, required=True)
-    nps_p.add_argument("--candidate", action="append", default=None,
-                       help="registered candidate name (repeatable; none = incumbent only)")
+    nps_p.add_argument(
+        "--candidate",
+        action="append",
+        default=None,
+        help="registered candidate name (repeatable; none = incumbent only)",
+    )
     nps_p.add_argument("--candidates", default=None, help="candidates.json (default: specs/175)")
-    nps_p.add_argument("--features-dir", default=None, help="morning parquet dir (default artifacts/near_post)")
+    nps_p.add_argument(
+        "--features-dir", default=None, help="morning parquet dir (default artifacts/near_post)"
+    )
     nps_p.add_argument("--ensemble-dir", default=None)
     nps_p.add_argument("--single-dir", default=None)
     nps_p.add_argument("--out", default=None, help="report JSON path (append-only: must not exist)")
     nps_p.add_argument("--database-url", default=None)
 
+    sp = sub.add_parser(
+        "source-probe",
+        help="178: 段 0 診断 — 公式 T−3 取得率 / netkeiba 依存の棚卸し / JRDB 到着時刻 (DB には書かない)",
+    )
+    sp.add_argument("--date", type=_parse_date, required=True)
+    sp.add_argument("--mode", required=True, choices=["official-odds", "dependencies", "arrivals"])
+    sp.add_argument(
+        "--config",
+        default=None,
+        help="frozen probe config JSON (default artifacts/jrdb/probe/<date>-config.json)",
+    )
+    sp.add_argument(
+        "--out",
+        default=None,
+        help="records JSONL (default artifacts/jrdb/probe/<date>.jsonl, append)",
+    )
+    sp.add_argument("--policy", default=None)
+    sp.add_argument(
+        "--until", default=None, help="arrivals: stop at this time (ISO, JST); default 20:00"
+    )
+    sp.add_argument("--database-url", default=None)
+
+    tr = sub.add_parser(
+        "source-trial",
+        help="178 US3.5: 隔離複製で JRDB 到着再生+公式 T−3 捕捉の運用成立試験 (netkeiba 供給 0)",
+    )
+    tr.add_argument("--date", type=_parse_date, required=True)
+    tr.add_argument(
+        "--db-url", required=True, help="the REPLICA (the production DATABASE_URL is refused)"
+    )
+    tr.add_argument(
+        "--files-dir", required=True, help="artifacts/jrdb layout: <KIND>/<yyyymmdd>/*.txt"
+    )
+    tr.add_argument(
+        "--arrivals", default=None, help="段 0 arrivals JSONL (default: the member-site schedule)"
+    )
+    tr.add_argument("--delay-kind", default=None, help="inject a delay for this kind (e.g. KYI)")
+    tr.add_argument("--by", default=None, help="delay duration (2h / 30m / 90s)")
+    tr.add_argument(
+        "--emergency-at",
+        default=None,
+        help="ISO time to check for missing entries (default 08:00 JST)",
+    )
+    tr.add_argument(
+        "--out", default=None, help="records JSONL (default artifacts/jrdb/trial/<date>.jsonl)"
+    )
+    tr.add_argument(
+        "--config", default=None, help="frozen trial config (default …/<date>-config.json)"
+    )
+    tr.add_argument("--policy", default=None)
+    tr.add_argument("--cache-dir", default=None, help="HTTP cache dir that must be empty")
+    tr.add_argument("--ensemble-dir", default=None)
+    tr.add_argument("--single-dir", default=None)
+    tr.add_argument(
+        "--no-outbound-block", action="store_true", help="debug only: do not block non-JRA sockets"
+    )
+
     args = parser.parse_args(argv)
+    if args.command == "source-trial":
+        if bool(args.delay_kind) != bool(args.by):
+            parser.error("--delay-kind and --by go together")
+        return _cmd_source_trial(args)
+    if args.command == "source-probe":
+        return _cmd_source_probe(args)
     if args.command == "near-post-capture":
         return _cmd_near_post_capture(args)
     if args.command == "near-post-score":

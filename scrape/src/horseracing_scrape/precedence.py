@@ -18,6 +18,12 @@ from typing import Literal
 from horseracing_db.enums import EntryStatus, Source
 
 JRA_OFFICIAL = "jra_official"  # == Source.JRA_OFFICIAL once db enums gain it (Phase 3)
+#: Feature 178: the JRDB member-file route (contracts/precedence-jrdb.md). Static items: JRDB
+#: writes when nothing is stored, keeps (and counts a mismatch) against an official-owned value,
+#: overwrites a netkeiba value; netkeiba keeps against a JRDB-owned value; the official route
+#: overwrites JRDB (公式が正). JRDB never writes win/place odds and never confirms payouts over
+#: the official route's rows.
+JRDB = "jrdb"
 
 Decision = Literal["write", "keep", "reject"]
 
@@ -268,6 +274,12 @@ def field_transition(group: str, stored, incoming, ctx: TransitionContext) -> Tr
         differs = stored is not None and stored != incoming
         if ctx.stored_source == JRA_OFFICIAL and ctx.incoming_source == Source.NETKEIBA:
             return Transition("keep", mismatch=differs, reason="official_owned")
+        # Feature 178 (precedence-jrdb §3): JRDB defers to the official route's static values;
+        # netkeiba defers to JRDB's. The 176 rows above and below are byte-for-byte unchanged.
+        if ctx.stored_source == JRA_OFFICIAL and ctx.incoming_source == JRDB:
+            return Transition("keep", mismatch=differs, reason="official_owned")
+        if ctx.stored_source == JRDB and ctx.incoming_source == Source.NETKEIBA:
+            return Transition("keep", mismatch=differs, reason="jrdb_owned")
         return Transition("write", mismatch=differs)
 
     raise ValueError(f"unknown field group: {group!r}")
@@ -333,6 +345,8 @@ def odds_decision(
     if kind not in (KIND_WIN, KIND_PLACE):
         raise ValueError(f"unknown odds kind: {kind!r}")
     src = incoming.source
+    if src == JRDB:  # Feature 178: JRDB odds (TYB snapshot / 基準オッズ) are not market values here
+        return OddsDecision("skip", "source_not_allowed")
     if has_results:
         if kind == KIND_WIN and src == Source.NETKEIBA:
             return OddsDecision("settled_fill", "results_settled")
@@ -400,6 +414,10 @@ def payout_block_decision(
         to_confirm = tuple(
             k for k, v in incoming_lines.items() if stored_rows.get(k, _MISSING) == v
         )
+        # Feature 178: a same-value JRDB line over an official-owned set changes nothing — the
+        # adopted source stays official (precedence-jrdb §3). Differing lines still replace.
+        if stored_source == JRA_OFFICIAL and incoming_source == JRDB:
+            to_confirm = ()
         return PayoutDecision("replace", "complete", to_delete, to_update, to_confirm)
     if state == "not_published":
         return PayoutDecision("noop", "not_published")
@@ -415,3 +433,22 @@ class _Missing:
 
 
 _MISSING = _Missing()
+
+
+# ---------------------------------------------------------------------------
+# §4 (178) 速報版と正式版
+# ---------------------------------------------------------------------------
+
+RESULTS_FORMAL = "formal"
+RESULTS_SOKUHO = "sokuho"
+
+
+def results_input_allowed(source: str, edition: str | None) -> tuple[bool, str]:
+    """Feature 178 (precedence-jrdb §4): only the SED 正式版 feeds ``results``. The 速報版 is kept
+    in ``jrdb_files`` as ``fetched`` and never becomes a result row (``sokuho_not_input``). Other
+    sources carry no edition and are always allowed (unchanged 176 behaviour)."""
+    if source != JRDB:
+        return True, "ok"
+    if edition == RESULTS_FORMAL:
+        return True, "ok"
+    return False, "sokuho_not_input"

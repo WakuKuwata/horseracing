@@ -5,6 +5,12 @@
   "jra_official_interval_seconds": 10,
   "shared_limiter_enabled": true,
   "collection_paused": false,
+  "jrdb_enabled": false,
+  "netkeiba_enabled": true,
+  "jra_emergency_entries": false,
+  "jrdb_interval_seconds": 5,
+  "jrdb_archive_blackout": true,
+  "near_post_source": "netkeiba",
   "capture_only_dates": [
     "2026-10-31",
     "2026-11-07",

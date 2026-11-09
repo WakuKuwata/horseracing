@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from . import robots_cache
 from .fetch import HttpFetcher
+from .netkeiba_policy import NetkeibaDisabled, assert_netkeiba_enabled, gate_pre_request
 from .pipeline import (
     complete_corner_orders,
     complete_profiles,
@@ -75,6 +76,9 @@ def _make_fetcher(
     """
     import httpx
 
+    # Feature 178 (T068): the policy switch. False → no client, no request (the caller skips).
+    assert_netkeiba_enabled()
+
     # --archive-dir wins over --cache-dir (which defaults to a path on several subcommands):
     # the two are mutually exclusive by construction, and an archive is only meaningful when
     # every page is actually fetched rather than replayed from a cache.
@@ -86,7 +90,8 @@ def _make_fetcher(
         user_agent=_USER_AGENT, min_interval_s=min_interval, cache_dir=cache_dir,
         archive_dir=archive_dir,
         client=httpx.Client(headers={"User-Agent": _USER_AGENT}, timeout=20.0),
-        pre_request=None if policy is None else policy.pre_request,
+        # the policy is re-read before EVERY request (a stop lands mid-run too, 178 FR-014)
+        pre_request=gate_pre_request(None if policy is None else policy.pre_request),
         on_refusal=None if policy is None else policy.record_refusal,
         # One request per origin, ever — instead of a robots round-trip that used to bypass the
         # limiter entirely on every fetch.
@@ -294,6 +299,12 @@ def main(argv: list[str] | None = None) -> int:
 
     register_jra_subcommands(sub)
 
+    # Feature 178: JRDB member files (jrdb-fetch / jrdb-parity / jrdb-persons / jrdb-entries /
+    # jrdb-prerace / jrdb-results / jrdb-payouts / jrdb-audit). Registration only; see jrdb/cli.py.
+    from .jrdb.cli import register_jrdb_subcommands
+
+    register_jrdb_subcommands(sub)
+
     cap = sub.add_parser("capture-fixture", help="one-off: save a real netkeiba page as a fixture")
     cap.add_argument("--kind", required=True, choices=list(_CAPTURE))
     cap.add_argument("--race-id", help="JRA-VAN 12-digit race_id (entries/results/odds)")
@@ -303,11 +314,24 @@ def main(argv: list[str] | None = None) -> int:
     cap.add_argument("--min-interval", type=float, default=1.0)
 
     args = parser.parse_args(argv)
+    try:
+        return _dispatch(args)
+    except NetkeibaDisabled as exc:
+        # Feature 178 (FR-014): the netkeiba route is stopped by policy — nothing was sent
+        print(f"SKIPPED: {exc.code}: {exc}")
+        return 0
 
+
+def _dispatch(args) -> int:
     if args.command.startswith("jra-"):
         from .jra.cli import run_jra
 
         return run_jra(args)
+
+    if args.command.startswith("jrdb-"):
+        from .jrdb.cli import run_jrdb
+
+        return run_jrdb(args)
 
     if args.command == "capture-fixture":
         return _capture_fixture(args)

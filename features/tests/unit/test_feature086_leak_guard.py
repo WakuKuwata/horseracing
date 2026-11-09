@@ -170,7 +170,7 @@ def test_migration_head_is_0022_decision_quotes():
         path.stem
         for path in (_ROOT / "db" / "migrations" / "versions").glob("0*.py")
     )
-    assert versions[-1] == "0024_jra_track_conditions", versions[-1]
+    assert versions[-1] == "0025_jrdb_source", versions[-1]
 
 
 def test_capture_policy_version_is_not_a_prospective_stratification_key():
