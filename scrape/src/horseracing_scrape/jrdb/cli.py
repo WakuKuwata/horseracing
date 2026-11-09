@@ -379,12 +379,14 @@ def run_fetch(args, *, fetcher: JrdbFetcher, session_factory, artifacts_dir: Pat
                 url = url_single(k, day)
             targets.append((url, url.rsplit("/", 1)[-1], "daily", day))
     fetched_at = datetime.datetime.now(datetime.UTC)
-    files_summary: list[dict] = []
 
     for url, name, variant, data_date in targets:
+        files_summary: list[dict] = []  # per job: summary.files[] is THIS file's members (§3a)
         with session_factory() as session:
 
-            def work(job_id, _url=url, _name=name, _variant=variant, _dd=data_date) -> Counts:
+            def work(
+                job_id, _url=url, _name=name, _variant=variant, _dd=data_date, _fs=files_summary
+            ) -> Counts:
                 counts = Counts()
                 try:
                     got = fetcher.get(_url)
@@ -406,9 +408,9 @@ def run_fetch(args, *, fetcher: JrdbFetcher, session_factory, artifacts_dir: Pat
                     artifacts_dir=artifacts_dir,
                     counts=counts,
                     data_date=_dd,
-                    files_summary=files_summary,
+                    files_summary=_fs,
                 )
-                counts.extra["files"] = list(files_summary)
+                counts.extra["files"] = list(_fs)
                 return counts
 
             summary = _run_job(

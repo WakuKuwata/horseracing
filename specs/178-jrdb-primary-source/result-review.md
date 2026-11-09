@@ -25,3 +25,29 @@
 - `scripts/jrdb_ops.sh` が呼ぶ `python -m horseracing_scrape.jrdb.cli` に `__main__` の入口が無く、**wrapper 経由では何も実行されず exit 0 で終わっていた**(統合テストは関数を直接呼ぶので緑のまま)。入口を追加し、本番 DB への `jrdb_ops.sh audit 2026-11-08` が 36 レース(全行 netkeiba・結果/確定オッズ/払戻 36/36・T−3 記録なし)を返すことを確認。
 - tasks T037/R3 の `persons-collect` が wrapper にも CLI にも無かった(`jra/person_profile.collect_profiles` は関数だけ)。`jrdb-persons-collect --kind --index-url --index-cname [--max-pages]` を追加(176 の `validate_startup`+`JraFetcher` をそのまま使う・DB の 5 桁 ID だけを対象・jsonl は append-only・拒否で exit 1)。一覧ページの URL/cname は R3 当日に公開サイトの遷移から運用者が取る。
 
+## R0a・R1 年度パックの版確認(2026-11-09 月 10:24〜10:27 JST)
+
+R0a: 利用者が規約を確認し「確認済み」(spec FR-018 に転記)。
+
+R1: 一時 policy(`jrdb_enabled: true` だけ変えた複製・本番 config は false のまま)で `jrdb-fetch --archive --from 2008 --to 2008 --kinds SED KYI`。
+要求 2 件・`requests_sent=2`。
+
+| zip | 展開 | 行 | 桁ずれ | 行長 |
+|---|---|---|---|---|
+| `SED_2008.zip` | SED 108 日 + SRB 108 日(非 txt 58 件は skip) | 53,902 | 0 | SED 376・SRB 852 |
+| `KYI_2008.zip` | KYI 108 日 | 50,450 | 0 | KYI 1024 |
+
+→ **年度パックは最新形式(KYI 第 11 版・SED 第 4 版・SRB)で再生成されており、旧版 decoder(T006a)は不要**(research D2/D16 を確定)。
+`jrdb_files` に 324 行(variant archive・status fetched)。
+
+`jrdb-parity --year 2008`(DB 読み取り専用・5 秒・`artifacts/jrdb/parity/2008.json`):
+
+- 結合: レース 3,452/3,452・出走 50,450/50,450・馬 ID 50,450 全結合(unjoined 0)。結果行は JRDB 50,450 vs DB 50,110=JRDB 側だけの 340 行は取消/除外(DB は結果行を持たない・仕様どおり)。
+- 一致 100%: finish_order・finish_time・last_3f・horse_number・frame・sex・odds・popularity・weight・weight_diff・jockey_weight・weather。
+- horse_name 99.97%(不一致 3 件は DB=JRA-VAN が 9 文字で切っている・JRDB が正)。
+- **基準未達**: `going` 99.07%(基準 99.5%・不一致 32 レース・芝に偏る)、`finish_time_diff` 94.6%(基準 99%・全区分で 93〜95%=定義差の疑い。JRDB の「1(2)着タイム差」の符号/単位を R4 で確定)。
+- 別定義の確認: `first_3f` 34.8%(1200m 芝/ダは 100%・他は 7〜27%)、`corner_orders` 18.3%、`running_style` 0%=FR-021a どおり現行 DB には書かない。
+- 未比較(ファイル未取得): UKC/BAC/HJC 由来の列(血統・馬主・生産者・レース静的・払戻)は R4 で。騎手 247・調教師 336 コードは未写像(R3 の収集後)。
+
+R4 への申し送り: `going` と `finish_time_diff` は基準未達のまま allowlist(修復対象)には入れない。残り 17 年の取得は 5 種別 × 18 年=90 要求。
+
