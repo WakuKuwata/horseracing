@@ -167,6 +167,32 @@ def build_report(
     return report
 
 
+def apply_manual(
+    report: PersonMappingReport, manual: Mapping[str, Mapping[str, str]], *, note: str
+) -> dict[str, int]:
+    """Operator-approved name-only matches (憲法 I: never automatic). ``manual`` is
+    ``{kind: {JRDB code: canonical_id}}``; a code already ``mapped`` by name+birth date is left
+    alone, every other code in the report's denominator becomes ``mapped`` with the manual note.
+    Codes not in the denominator are ignored (reported). Returns the counts."""
+
+    out = {"applied": 0, "already_mapped": 0, "not_in_denominator": 0}
+    for kind in ("jockey", "trainer"):
+        kr = report.kind(kind)
+        for code, canonical_id in sorted((manual.get(kind) or {}).items()):
+            m = report.matches.get((kind, code))
+            if m is None:
+                out["not_in_denominator"] += 1
+                continue
+            if m.status == "mapped":
+                out["already_mapped"] += 1
+                continue
+            setattr(kr, m.status, getattr(kr, m.status) - 1)
+            kr.mapped += 1
+            report.matches[(kind, code)] = Match("mapped", str(canonical_id), f"manual: {note}")
+            out["applied"] += 1
+    return out
+
+
 def codes_from_rows(rows: Iterable[tuple[str, str | None, int]]) -> dict[str, dict[str, set[int]]]:
     """``(kind, code, race_year)`` → the ``codes_in_data`` mapping (None codes skipped)."""
 
@@ -180,6 +206,7 @@ def codes_from_rows(rows: Iterable[tuple[str, str | None, int]]) -> dict[str, di
 
 __all__ = [
     "KindReport",
+    "apply_manual",
     "Match",
     "PersonMappingReport",
     "build_report",

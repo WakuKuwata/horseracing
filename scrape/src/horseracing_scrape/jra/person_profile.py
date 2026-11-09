@@ -109,6 +109,7 @@ def collect_profiles(
     out_path: Path | str = DEFAULT_PROFILES_PATH,
     clock: Callable[[], datetime.datetime] = lambda: datetime.datetime.now(datetime.UTC),
     max_pages: int | None = None,
+    all_linked: bool = False,
 ) -> CollectReport:
     """Fetch the profile page of every wanted id not already collected. ``indexes`` are the
     listing pages ``(url, cname)`` — ``cname None`` means a static page fetched with GET, a cname
@@ -126,7 +127,7 @@ def collect_profiles(
     report = CollectReport(wanted=len(wanted))
     todo = [i for i in wanted if (kind, i) not in have]
     report.already = len(wanted) - len(todo)
-    if not todo:
+    if not todo and not all_linked:
         return report
     by_id: dict[str, tuple[str, str]] = {}
     for index_url, index_cname in pages:
@@ -143,6 +144,10 @@ def collect_profiles(
             if pid is not None and pid not in by_id:
                 by_id[pid] = (url, cname)
     report.linked = len(by_id)
+    if all_linked:  # R3 2026-11-09: newly licensed persons exist in the DB only as nk: surrogates
+        extra = sorted(set(by_id) - set(wanted))
+        todo = todo + [i for i in extra if (kind, i) not in have]
+        report.wanted += len(extra)
     n = 0
     for pid in todo:
         ref = by_id.get(pid)

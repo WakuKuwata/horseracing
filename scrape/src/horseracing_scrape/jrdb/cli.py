@@ -119,6 +119,11 @@ def register_jrdb_subcommands(sub: argparse._SubParsersAction) -> None:
         help="対象データの人物コード一覧 JSON (kind → {code: [years]})",
     )
     q.add_argument("--out", default=None)
+    q.add_argument(
+        "--manual",
+        default=None,
+        help="利用者承認の名前だけ一致 {kind: {code: canonical_id}} JSON (mapped・note=manual)",
+    )
     q.add_argument("--dry-run", action="store_true")
     q.add_argument("--database-url", default=None)
     q.add_argument("--json", action="store_true")
@@ -205,6 +210,11 @@ def register_jrdb_subcommands(sub: argparse._SubParsersAction) -> None:
         "--out", default=None, help="jra-profiles.jsonl (default artifacts/jrdb/persons/)"
     )
     pc.add_argument("--max-pages", type=int, default=None, help="今回取る人物ページ数の上限")
+    pc.add_argument(
+        "--all-linked",
+        action="store_true",
+        help="索引に載る全員を対象にする (新規免許の人は DB に nk: 行しか無く wanted から漏れる)",
+    )
     pc.add_argument("--database-url", default=None)
     pc.add_argument("--policy", default=None, help=f"policy file (default {DEFAULT_POLICY_PATH})")
     pc.add_argument("--json", action="store_true")
@@ -572,6 +582,7 @@ def run_persons_collect(args, *, fetcher, session_factory) -> RunResult:
         wanted_ids=wanted,
         out_path=out,
         max_pages=args.max_pages,
+        all_linked=bool(getattr(args, "all_linked", False)),
     )
     result.jobs.append({"kind": args.kind, **dc.asdict(report)})
     result.report_path = str(out)
@@ -703,7 +714,17 @@ def run_persons(args) -> RunResult:
         for kind, m in doc.items():
             codes[kind] = {c: set(int(y) for y in ys) for c, ys in m.items()}
     rep = build_report(persons, profiles, codes_in_data=codes)
+    manual_counts = None
+    if getattr(args, "manual", None):
+        from .persons import apply_manual
+
+        manual_doc = json.loads(Path(args.manual).read_text(encoding="utf-8"))
+        manual_counts = apply_manual(
+            rep, manual_doc, note=f"operator approval {datetime.date.today().isoformat()}"
+        )
     doc = rep.to_json()
+    if manual_counts is not None:
+        doc["manual"] = manual_counts
     doc["matches"] = {
         kind: {code: m.status for (k, code), m in rep.matches.items() if k == kind}
         for kind in ("jockey", "trainer")

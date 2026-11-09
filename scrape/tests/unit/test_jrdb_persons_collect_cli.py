@@ -144,3 +144,18 @@ def test_a_refusal_stops_the_run_with_exit_1(tmp_path):
     )
     assert res.exit_code == 1 and res.error == "stopped: RuntimeError"
     assert not out.exists()
+
+
+def test_all_linked_collects_ids_the_db_does_not_know(tmp_path):
+    """R3 (2026-11-09): a newly licensed trainer has only an nk: row in the DB, so the DB-driven
+    wanted set misses them; --all-linked adds every id the index pages link to."""
+
+    out = tmp_path / "p.jsonl"
+    f = FakeFetcher()
+    res = run_persons_collect(
+        _args(out, all_linked=True), fetcher=f, session_factory=lambda: FakeSession(["01019"])
+    )
+    job = res.jobs[0]
+    assert job["linked"] == 2 and job["fetched"] == 2 and job["wanted"] == 2
+    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert sorted(r["canonical_id"] for r in rows) == ["01019", "01234"]

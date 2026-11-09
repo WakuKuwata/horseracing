@@ -100,3 +100,52 @@ def test_report_denominator_is_unique_codes_in_the_data_by_kind_and_decade():
     assert any(e["code"] == "10077" for e in rep.examples["conflict"])
     # profiles fetched (2) are not the denominator, nor the matched set (1)
     assert rep.jockey.denominator not in (len(profiles), rep.jockey.mapped)
+
+
+def test_apply_manual_maps_only_approved_codes_in_the_denominator():
+    """R3 (2026-11-09): 地方・短期免許の人物は名鑑に無く名前だけの一致になる。利用者承認の JSON だけが
+    mapped にでき、名前+生年月日で既に mapped の code と分母外の code は触らない。"""
+
+    import datetime
+
+    from horseracing_scrape.jra.person_profile import JraPersonProfile
+    from horseracing_scrape.jrdb.models import JrdbPerson
+    from horseracing_scrape.jrdb.persons import apply_manual, build_report
+
+    def person(code, name, birth):
+        return JrdbPerson(
+            kind="jockey",
+            code=code,
+            retired=False,
+            retired_date=None,
+            name=name,
+            kana=None,
+            short_name=None,
+            affiliation_code=3,
+            region_name="地方",
+            birth_date=birth,
+            first_license_year=None,
+            data_date=None,
+        )
+
+    persons = [
+        person("10001", "甲 太郎", datetime.date(1990, 1, 1)),
+        person("30001", "乙 次郎", datetime.date(1991, 2, 2)),
+        person("30002", "丙 三郎", datetime.date(1992, 3, 3)),
+    ]
+    profiles = [JraPersonProfile("jockey", "01001", "甲 太郎", datetime.date(1990, 1, 1), "美浦")]
+    rep = build_report(
+        persons,
+        profiles,
+        codes_in_data={"jockey": {"10001": {2026}, "30001": {2026}}, "trainer": {}},
+    )
+    assert rep.jockey.mapped == 1 and rep.jockey.unmapped == 1
+    counts = apply_manual(
+        rep,
+        {"jockey": {"30001": "05999", "10001": "01001", "30002": "05998"}},
+        note="operator approval 2026-11-09",
+    )
+    assert counts == {"applied": 1, "already_mapped": 1, "not_in_denominator": 1}
+    assert rep.jockey.mapped == 2 and rep.jockey.unmapped == 0
+    m = rep.matches[("jockey", "30001")]
+    assert m.status == "mapped" and m.canonical_id == "05999" and m.note.startswith("manual:")
