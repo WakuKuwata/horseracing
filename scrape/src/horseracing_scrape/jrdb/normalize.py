@@ -94,18 +94,21 @@ def track_norm(value: str | None) -> str | None:
 
 
 def going_from_code(code: int | None) -> str | None:
-    """10〜12 → 良, 20〜22 → 稍重, 30〜32 → 重, 40〜42 → 不良 (速/遅 variants collapse)."""
+    """10〜12 → 良, 20〜22 → 稍, 30〜32 → 重, 40〜42 → 不 (速/遅 variants collapse).
+
+    The short forms are the spelling ``races.going`` already uses (JRA-VAN and netkeiba), so a
+    JRDB fill never mixes two spellings in one column."""
 
     if code is None:
         return None
-    return {1: "良", 2: "稍重", 3: "重", 4: "不良"}.get(code // 10)
+    return {1: "良", 2: "稍", 3: "重", 4: "不"}.get(code // 10)
 
 
 def going_norm(value: str | None) -> str | None:
     if value is None:
         return None
     v = unicodedata.normalize("NFKC", value).strip()
-    return {"良": "良", "稍重": "稍重", "稍": "稍重", "重": "重", "不良": "不良", "不": "不良"}.get(
+    return {"良": "良", "稍重": "稍", "稍": "稍", "重": "重", "不良": "不", "不": "不"}.get(
         v, v or None
     )
 

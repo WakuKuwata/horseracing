@@ -349,7 +349,7 @@ def test_formal_sed_fills_going_and_weather_without_replacing_stored_values(sess
     assert all(session.get(Race, rid).going is None for rid in rids)  # entries never set them
     kept = rids[0]
     session.execute(
-        text("UPDATE races SET going = '不良', weather = '雪' WHERE race_id = :r"), {"r": kept}
+        text("UPDATE races SET going = '不', weather = '雪' WHERE race_id = :r"), {"r": kept}
     )
     session.commit()
     c = W.upsert_jrdb_results(
@@ -370,9 +370,10 @@ def test_formal_sed_fills_going_and_weather_without_replacing_stored_values(sess
         rows = [r for r in results if race_id_from_key(r.key, file_year=YEAR) == rid]
         race = session.get(Race, rid)
         if rid == kept:
-            assert (race.going, race.weather) == ("不良", "雪")
+            assert (race.going, race.weather) == ("不", "雪")
             continue
         assert race.going == nz.going_from_code(rows[0].going_code) is not None
+        assert race.going in {"良", "稍", "重", "不"}  # the spelling races.going already uses
         assert race.weather == nz.weather_from_code(rows[0].weather_code) is not None
     assert c.extra.get("going_filled") == len(rids) - 1
     assert c.extra.get("weather_filled") == len(rids) - 1

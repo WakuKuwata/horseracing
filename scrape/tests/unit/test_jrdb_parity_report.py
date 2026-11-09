@@ -257,7 +257,7 @@ def test_normalisation_tables():
     )
     assert (
         nz.going_from_code(11) == nz.going_from_code(12) == "良"
-        and nz.going_from_code(42) == "不良"
+        and nz.going_from_code(42) == nz.going_norm("不良") == "不"
     )
     assert nz.grade_norm("GIII") == nz.grade_from_code(3) == "G3" and nz.grade_from_code(6) == "L"
     assert nz.sex_norm("セン") == nz.sex_from_code(3) == "セ"

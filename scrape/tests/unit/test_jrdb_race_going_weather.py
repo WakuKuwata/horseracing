@@ -16,10 +16,10 @@ def test_unanimous_rows():
 
 def test_majority_wins_and_split_is_flagged():
     gw, split = race_going_weather([_r(20, 2), _r(20, 2), _r(30, 4)])
-    assert gw == {"going": "稍重", "weather": "曇"} and split is True
+    assert gw == {"going": "稍", "weather": "曇"} and split is True
 
 
 def test_ties_are_deterministic_and_missing_is_none():
     gw, _ = race_going_weather([_r(10, None), _r(40, None)])
-    assert gw["going"] == min("良", "不良") and gw["weather"] is None
+    assert gw["going"] == min("良", "不") and gw["weather"] is None
     assert race_going_weather([]) == ({"going": None, "weather": None}, False)
