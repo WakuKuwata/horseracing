@@ -142,6 +142,21 @@ def request_once(client, policy, cache, output):
 
 
 def refresh(profile_path, output):
+    # Feature 178 (FR-014): the netkeiba switch covers this GET as well — nothing is sent while
+    # ``netkeiba_enabled`` is false; the operator sees SKIPPED and the run writes nothing.
+    import sys as _sys
+
+    for package in ("scrape",):
+        path = str(ROOT / package / "src")
+        if path not in _sys.path:
+            _sys.path.insert(0, path)
+    from horseracing_scrape.netkeiba_policy import NetkeibaDisabled, assert_netkeiba_enabled
+
+    try:
+        assert_netkeiba_enabled()
+    except NetkeibaDisabled as exc:
+        print(f"SKIPPED: {exc.code}: {exc}")
+        return 0
     # Reserve the run directory before IO. A retry must never silently issue another request.
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=False)

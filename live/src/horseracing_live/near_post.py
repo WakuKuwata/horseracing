@@ -43,6 +43,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from . import guards
+from .official_quote import QuoteFetcher, is_official_fetcher, make_quote_fetcher
 
 POLICY_VERSION = "near_post_policy_v1"
 LOGIC_VERSION = (
@@ -54,6 +55,12 @@ WINDOW_S = 60
 COLLISION_STEP_S = 60
 DEADLINE_S = 18.0
 SOURCE = "netkeiba"
+#: Feature 178 (T064a): the quote source of the production capture, chosen by the policy key
+#: ``near_post_source``. ``netkeiba`` keeps every byte of the 174 behaviour; ``jra_official`` reads
+#: the official 単複 page through the 176 walker and NEVER falls back to netkeiba.
+SOURCE_OFFICIAL = "jra_official"
+QUOTE_SOURCES = (SOURCE, SOURCE_OFFICIAL)
+POLICY_SOURCE_KEY = "near_post_source"
 ODDS_ORIGIN = "https://race.netkeiba.com"
 JST = datetime.timezone(datetime.timedelta(hours=9))
 DEFAULT_POLICY_PATH = Path(__file__).resolve().parents[3] / "config" / "source-operations.json"
@@ -86,14 +93,26 @@ def load_capture_policy(path: Path | str = DEFAULT_POLICY_PATH) -> dict:
     raw = json.loads(p.read_text(encoding="utf-8"))
     if not isinstance(raw.get("collection_paused"), bool):
         raise NearPostRefused("collection_paused must be a boolean")
+    extra: dict = {}
+    if POLICY_SOURCE_KEY in raw:  # 178 T064a: optional; absent = netkeiba (the 174 behaviour)
+        src = raw[POLICY_SOURCE_KEY]
+        if src not in QUOTE_SOURCES:
+            raise NearPostRefused(f"{POLICY_SOURCE_KEY} must be one of {QUOTE_SOURCES}: {src!r}")
+        extra[POLICY_SOURCE_KEY] = src
     dates = raw.get("capture_only_dates")
     approved_by = raw.get("capture_only_approved_by")
     approved_at = raw.get("capture_only_approved_at")
     if dates is None and approved_by is None and approved_at is None:
-        return {"capture_only_dates": frozenset(), "approved": None}
-    if not (isinstance(dates, list) and isinstance(approved_by, str) and approved_by.strip()
-            and isinstance(approved_at, str)):
-        raise NearPostRefused("capture_only_dates / _approved_by / _approved_at must all be present")
+        return {"capture_only_dates": frozenset(), "approved": None, **extra}
+    if not (
+        isinstance(dates, list)
+        and isinstance(approved_by, str)
+        and approved_by.strip()
+        and isinstance(approved_at, str)
+    ):
+        raise NearPostRefused(
+            "capture_only_dates / _approved_by / _approved_at must all be present"
+        )
     parsed = set()
     for d in dates:
         try:
@@ -107,7 +126,11 @@ def load_capture_policy(path: Path | str = DEFAULT_POLICY_PATH) -> dict:
         datetime.datetime.fromisoformat(approved_at)
     except ValueError as exc:
         raise NearPostRefused("capture_only_approved_at is not an ISO datetime") from exc
-    return {"capture_only_dates": frozenset(parsed), "approved": {"by": approved_by, "at": approved_at}}
+    return {
+        "capture_only_dates": frozenset(parsed),
+        "approved": {"by": approved_by, "at": approved_at},
+        **extra,
+    }
 
 
 def assert_day_allowed(policy: dict, day: datetime.date, *, today: datetime.date) -> None:
@@ -117,7 +140,9 @@ def assert_day_allowed(policy: dict, day: datetime.date, *, today: datetime.date
         raise NearPostRefused(f"{day} is not today ({today} JST): one day, started on that day")
 
 
-def robots_fresh(now: datetime.datetime, *, cache: robots_cache.RobotsCache | None = None) -> tuple[bool, str]:
+def robots_fresh(
+    now: datetime.datetime, *, cache: robots_cache.RobotsCache | None = None
+) -> tuple[bool, str]:
     """The shared robots cache must hold a fresh (24 h) entry for the odds origin at launch, so the
     day never starts on an expired policy (171 refreshes it; the fetcher never refreshes it here)."""
     c = cache if cache is not None else robots_cache.shared_cache()
@@ -206,7 +231,9 @@ def frame_sha256(frame: pd.DataFrame) -> str:
     return hashlib.sha256(canon.to_csv(index=False).encode("utf-8")).hexdigest()
 
 
-def build_day_features(conn, day: datetime.date, *, clock: Callable[[], datetime.datetime] = _now) -> DayFeatures:
+def build_day_features(
+    conn, day: datetime.date, *, clock: Callable[[], datetime.datetime] = _now
+) -> DayFeatures:
     """``load_rows(through=day)`` → ``build_features`` (the production path), kept for the day."""
     from horseracing_training import market_ev
 
@@ -219,12 +246,16 @@ def build_day_features(conn, day: datetime.date, *, clock: Callable[[], datetime
 DEFAULT_FEATURES_DIR = Path(__file__).resolve().parents[3] / "artifacts" / "near_post"
 
 
-def features_parquet_path(day: datetime.date, sha256: str, features_dir: Path | str = DEFAULT_FEATURES_DIR) -> Path:
+def features_parquet_path(
+    day: datetime.date, sha256: str, features_dir: Path | str = DEFAULT_FEATURES_DIR
+) -> Path:
     """``<features_dir>/<day>/features-<sha12>.parquet`` — the morning rows, named by their hash."""
     return Path(features_dir) / day.isoformat() / f"features-{sha256[:12]}.parquet"
 
 
-def save_day_features(day_features: DayFeatures, features_dir: Path | str = DEFAULT_FEATURES_DIR) -> Path | None:
+def save_day_features(
+    day_features: DayFeatures, features_dir: Path | str = DEFAULT_FEATURES_DIR
+) -> Path | None:
     """175: persist the morning rows so a later scoring run can replay the SAME inputs.
 
     Append-only (an existing file is never rewritten) and never fatal: a failure here must not
@@ -245,7 +276,9 @@ def save_day_features(day_features: DayFeatures, features_dir: Path | str = DEFA
 
 
 def load_day_features(
-    day: datetime.date, sha256: str, features_dir: Path | str = DEFAULT_FEATURES_DIR,
+    day: datetime.date,
+    sha256: str,
+    features_dir: Path | str = DEFAULT_FEATURES_DIR,
 ) -> DayFeatures | None:
     """The saved morning rows for ``(day, sha256)``, or None when absent or when the re-read frame
     does not hash back to ``sha256`` (a silently different file is worse than none)."""
@@ -294,8 +327,11 @@ def rows_with_quote(rows: pd.DataFrame, quote: ScrapedOdds) -> pd.DataFrame:
         for n in numbers
     ]
     out["popularity"] = [
-        (float(by_number[n].popularity) if n in by_number and by_number[n].popularity is not None
-         else np.nan)
+        (
+            float(by_number[n].popularity)
+            if n in by_number and by_number[n].popularity is not None
+            else np.nan
+        )
         for n in numbers
     ]
     out["race_id"] = out["race_id"].astype(str)
@@ -305,8 +341,15 @@ def rows_with_quote(rows: pd.DataFrame, quote: ScrapedOdds) -> pd.DataFrame:
 class ProductionPredictor:
     """The production artifacts, loaded once per day (boosters for the day's year)."""
 
-    def __init__(self, *, ensemble_dir: Path, single_dir: Path, year: int,
-                 ensemble_version: str = "mev-ens15-v1", single_version: str = "mev-binary-v2"):
+    def __init__(
+        self,
+        *,
+        ensemble_dir: Path,
+        single_dir: Path,
+        year: int,
+        ensemble_version: str = "mev-ens15-v1",
+        single_version: str = "mev-binary-v2",
+    ):
         from horseracing_training import market_ev
 
         self.ens = market_ev.EnsembleMarketEvModel.load(ensemble_dir, ensemble_version)
@@ -356,7 +399,9 @@ class ProductionPredictor:
             pred=pred,
             mix_status=status,
             mix_version=market_mix.MIX_VERSION if status == "available" else None,
-            mix_coefficient_year=coef.year if (coef is not None and status == "available") else None,
+            mix_coefficient_year=coef.year
+            if (coef is not None and status == "available")
+            else None,
             ensemble_version=self.ens.version,
             ensemble_manifest=self.manifest_name,
             ensemble_manifest_sha256=self.manifest_sha256,
@@ -422,8 +467,13 @@ def quote_field(quote: ScrapedOdds, started: Sequence[tuple[str, int]]) -> list[
 
 
 def quote_digest(field_rows: Sequence[dict], official_at: datetime.datetime | None) -> str:
-    payload = {"official_at": official_at.isoformat() if official_at else None, "field": list(field_rows)}
-    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    payload = {
+        "official_at": official_at.isoformat() if official_at else None,
+        "field": list(field_rows),
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 def _ensure_deadline(deadline: float, monotonic: Callable[[], float]) -> None:
@@ -443,8 +493,17 @@ def capture_race(
     clock: Callable[[], datetime.datetime] = _now,
     monotonic: Callable[[], float] = time.monotonic,
     deadline: float | None = None,
+    quote_source: str = SOURCE,
+    quote_fetcher: QuoteFetcher | None = None,
 ) -> NearPostReport:
-    """One race, canonical no-fetch-first order; the caller owns the transaction."""
+    """One race, canonical no-fetch-first order; the caller owns the transaction.
+    ``quote_source`` (178 T064a): ``netkeiba`` = the 174 path; ``jra_official`` = the official
+    単複 page through ``fetcher`` (a ``JraFetcher``), no fallback between the two.
+    ``quote_fetcher`` (official only) replaces the walk — the isolation trial injects its fake."""
+    if quote_source not in QUOTE_SOURCES:
+        raise ValueError(f"quote_source must be one of {QUOTE_SOURCES}")
+    if quote_fetcher is not None and quote_source != SOURCE_OFFICIAL:
+        raise ValueError("quote_fetcher is only for the jra_official source")
     rid = scheduled.race_id
     target = scheduled.capture_target
     race = session.get(Race, rid)
@@ -473,16 +532,32 @@ def capture_race(
     if session.scalar(select(DecisionQuote.decision_quote_id).where(DecisionQuote.race_id == rid)):
         return NearPostReport(rid, "skipped", "already_captured", target)
     rows = day_features.race_rows(rid)
-    if set(zip(rows["horse_id"].astype(str), rows["horse_number"].astype(int), strict=True)) != set(started):
+    if set(zip(rows["horse_id"].astype(str), rows["horse_number"].astype(int), strict=True)) != set(
+        started
+    ):
         return NearPostReport(rid, "skipped", "field_mismatch", target)
     if dry_run:
         return NearPostReport(
-            rid, "dry_run", "would_fetch", target,
-            seconds_to_post=int((post_time - now).total_seconds()), n=len(started),
+            rid,
+            "dry_run",
+            "would_fetch",
+            target,
+            seconds_to_post=int((post_time - now).total_seconds()),
+            n=len(started),
         )
-    locked = bool(session.scalar(
-        text("SELECT pg_try_advisory_xact_lock(hashtext(:key))"), {"key": f"near-post:{rid}"}
-    ))
+    if (
+        quote_source == SOURCE_OFFICIAL
+        and quote_fetcher is None
+        and not is_official_fetcher(fetcher)
+    ):
+        # codex D24 Q2-4: the policy says official but the process was handed the netkeiba
+        # fetcher — refuse before any request rather than fetch from the wrong place
+        return NearPostReport(rid, "failed", "fetcher_mismatch", target)
+    locked = bool(
+        session.scalar(
+            text("SELECT pg_try_advisory_xact_lock(hashtext(:key))"), {"key": f"near-post:{rid}"}
+        )
+    )
     if not locked:
         return NearPostReport(rid, "skipped", "concurrent_capture", target)
     if session.scalar(select(DecisionQuote.decision_quote_id).where(DecisionQuote.race_id == rid)):
@@ -493,9 +568,14 @@ def capture_race(
         set_deadline(deadline)
     try:
         _ensure_deadline(deadline, monotonic)
-        payload = fetcher.get(win_odds_url(rid), use_cache=False)
-        captured_at = clock()
-        quote = parse_odds(payload, rid)
+        if quote_source == SOURCE_OFFICIAL:  # the 178 route (no netkeiba fallback)
+            fetch = quote_fetcher or make_quote_fetcher(fetcher)
+            quote = fetch(rid, race.race_date)
+            captured_at = clock()
+        else:
+            payload = fetcher.get(win_odds_url(rid), use_cache=False)
+            captured_at = clock()
+            quote = parse_odds(payload, rid)
         _ensure_deadline(deadline, monotonic)
     except RobotsDisallowed:
         return NearPostReport(rid, "skipped", "robots_disallowed", target)
@@ -504,6 +584,11 @@ def capture_race(
         return NearPostReport(rid, "skipped", f"source_refused:{reason}", target)
     except (FetchError, ParseError):
         return NearPostReport(rid, "failed", "fetch_failed", target)
+    except Exception as exc:  # noqa: BLE001
+        if quote_source != SOURCE_OFFICIAL:
+            raise  # the 174 path: unchanged (the caller maps it to failed:error:<type>)
+        # the official walker's own errors (parameter error, HTTP, cooldown): failed, no fallback
+        return NearPostReport(rid, "failed", f"fetch_failed:{type(exc).__name__}", target)
     # post-fetch rechecks (the fetch took time)
     pending, _ = guards.is_result_pending(session, rid)
     if not pending:
@@ -512,7 +597,15 @@ def capture_race(
         return NearPostReport(rid, "skipped", "field_changed_during_fetch", target)
     if captured_at >= post_time:
         return NearPostReport(rid, "skipped", "post_time_elapsed_during_fetch", target)
-    quoted = {int(r.horse_number) for r in quote.rows if r.odds is not None and float(r.odds) >= 1.0}
+    if quote_source == SOURCE_OFFICIAL:  # codex D24 Q1-8: the slower walk re-checks the window
+        session.expire(race)
+        if race.post_time != scheduled.post_time:
+            return NearPostReport(rid, "skipped", "post_time_changed_during_fetch", target)
+        if window_state(scheduled, captured_at) != "in_window":
+            return NearPostReport(rid, "skipped", "window_closed_during_fetch", target)
+    quoted = {
+        int(r.horse_number) for r in quote.rows if r.odds is not None and float(r.odds) >= 1.0
+    }
     if not {n for _, n in started} <= quoted:
         return NearPostReport(rid, "skipped", "quote_incomplete", target)
     try:
@@ -528,7 +621,7 @@ def capture_race(
         post_time=post_time,
         seconds_to_post=seconds_to_post,
         capture_target=target,
-        source=SOURCE,
+        source=quote_source,
         n=len(started),
         field=frows,
         pred=bundle.pred,
@@ -544,7 +637,9 @@ def capture_race(
         mix_version=bundle.mix_version,
         mix_status=bundle.mix_status,
         mix_coefficient_year=bundle.mix_coefficient_year,
-        logic_version=LOGIC_VERSION,
+        logic_version=LOGIC_VERSION
+        if quote_source == SOURCE
+        else LOGIC_VERSION + f";src={quote_source}",
         policy_version=POLICY_VERSION,
         run_id=run_id,
     )
@@ -552,8 +647,15 @@ def capture_race(
         session.add(row)
         session.flush()
     return NearPostReport(
-        rid, "captured", "ok", target, seconds_to_post=seconds_to_post, captured_at=captured_at,
-        official_at=quote.official_at, decision_quote_id=row.decision_quote_id, n=len(started),
+        rid,
+        "captured",
+        "ok",
+        target,
+        seconds_to_post=seconds_to_post,
+        captured_at=captured_at,
+        official_at=quote.official_at,
+        decision_quote_id=row.decision_quote_id,
+        n=len(started),
     )
 
 
@@ -588,13 +690,19 @@ class DaySummary:
 
     def as_dict(self) -> dict:
         return {
-            "day": self.day, "dry_run": self.dry_run, "run_id": self.run_id,
-            "features_sha256": self.features_sha256, "features_built_at": self.features_built_at,
-            "n_scheduled": self.n_scheduled, "counts": self.counts, "reasons": self.reasons,
+            "day": self.day,
+            "dry_run": self.dry_run,
+            "run_id": self.run_id,
+            "features_sha256": self.features_sha256,
+            "features_built_at": self.features_built_at,
+            "n_scheduled": self.n_scheduled,
+            "counts": self.counts,
+            "reasons": self.reasons,
             "stopped_early": self.stopped_early,
             "in_window_capture_rate": self.in_window_capture_rate,
             "official_lag_median_s": self.official_lag_median_s,
-            "logic_version": LOGIC_VERSION, "policy_version": POLICY_VERSION,
+            "logic_version": LOGIC_VERSION,
+            "policy_version": POLICY_VERSION,
             "races": self.races,
         }
 
@@ -612,12 +720,17 @@ def run_day(
     sleep: Callable[[float], None] = time.sleep,
     monotonic: Callable[[], float] = time.monotonic,
     run_id: uuid.UUID | None = None,
+    quote_source: str = SOURCE,
+    quote_fetcher: QuoteFetcher | None = None,
 ) -> DaySummary:
     """Walk the schedule once: wait for each window, capture, commit per race, stop on refusal."""
     run_id = run_id or uuid.uuid4()
     summary = DaySummary(
-        day=day.isoformat(), dry_run=dry_run, run_id=str(run_id),
-        features_sha256=day_features.sha256, features_built_at=day_features.built_at.isoformat(),
+        day=day.isoformat(),
+        dry_run=dry_run,
+        run_id=str(run_id),
+        features_sha256=day_features.sha256,
+        features_built_at=day_features.built_at.isoformat(),
         n_scheduled=len(schedule),
     )
     counts: Counter[str] = Counter()
@@ -633,9 +746,17 @@ def run_day(
                 sleep(wait)
             try:
                 report = capture_race(
-                    session, scheduled=s, fetcher=fetcher, predictor=predictor,
-                    day_features=day_features, run_id=run_id, dry_run=dry_run, clock=clock,
+                    session,
+                    scheduled=s,
+                    fetcher=fetcher,
+                    predictor=predictor,
+                    day_features=day_features,
+                    run_id=run_id,
+                    dry_run=dry_run,
+                    clock=clock,
                     monotonic=monotonic,
+                    quote_source=quote_source,
+                    quote_fetcher=quote_fetcher,
                 )
                 if report.changed:
                     session.commit()
@@ -643,7 +764,9 @@ def run_day(
                     session.rollback()
             except Exception as exc:  # noqa: BLE001 — one race never aborts the day
                 session.rollback()
-                report = NearPostReport(s.race_id, "failed", f"error:{type(exc).__name__}", s.capture_target)
+                report = NearPostReport(
+                    s.race_id, "failed", f"error:{type(exc).__name__}", s.capture_target
+                )
             if report.reason.startswith("source_refused"):
                 stopped = True
                 summary.stopped_early = report.reason
@@ -653,20 +776,28 @@ def run_day(
             lags.append((report.captured_at - report.official_at).total_seconds())
         summary.races.append(
             {
-                "race_id": report.race_id, "status": report.status, "reason": report.reason,
-                "capture_target": report.capture_target, "seconds_to_post": report.seconds_to_post,
+                "race_id": report.race_id,
+                "status": report.status,
+                "reason": report.reason,
+                "capture_target": report.capture_target,
+                "seconds_to_post": report.seconds_to_post,
                 "captured_at": report.captured_at.isoformat() if report.captured_at else None,
                 "official_at": report.official_at.isoformat() if report.official_at else None,
-                "decision_quote_id": str(report.decision_quote_id) if report.decision_quote_id else None,
+                "decision_quote_id": str(report.decision_quote_id)
+                if report.decision_quote_id
+                else None,
                 "n": report.n,
             }
         )
     summary.counts = dict(counts)
     summary.reasons = dict(reasons)
-    eligible = sum(v for k, v in counts.items() if k in ("captured", "dry_run")) + reasons.get("window_late", 0)
+    eligible = sum(v for k, v in counts.items() if k in ("captured", "dry_run")) + reasons.get(
+        "window_late", 0
+    )
     if eligible:
-        summary.in_window_capture_rate = (counts.get("captured", 0) + counts.get("dry_run", 0)) / eligible
+        summary.in_window_capture_rate = (
+            counts.get("captured", 0) + counts.get("dry_run", 0)
+        ) / eligible
     if lags:
         summary.official_lag_median_s = float(np.median(lags))
     return summary
-

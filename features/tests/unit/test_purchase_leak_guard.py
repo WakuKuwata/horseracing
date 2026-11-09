@@ -41,4 +41,4 @@ def test_purchase_records_migration_present_and_head_is_0022():
         p.stem for p in (_ROOT / "db" / "migrations" / "versions").glob("0*.py")
     )
     assert "0017_purchase_records" in versions
-    assert versions[-1] == "0024_jra_track_conditions", versions[-1]
+    assert versions[-1] == "0025_jrdb_source", versions[-1]

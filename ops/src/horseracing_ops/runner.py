@@ -33,6 +33,12 @@ from horseracing_scrape.fetch import HttpFetcher
 from horseracing_scrape.jra.errors import SourceIntervalUnconfigured
 from horseracing_scrape.jra.fetch import JraFetcher
 from horseracing_scrape.jra.race_odds import refresh_race_win_odds
+from horseracing_scrape.netkeiba_policy import (
+    NetkeibaDisabled,
+    assert_netkeiba_enabled,
+    gate_pre_request,
+    policy_fingerprint,
+)
 from horseracing_scrape.pipeline import (
     complete_profiles,
     discover_races,
@@ -128,6 +134,7 @@ def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None
     cache matters especially here because this factory runs once per worker loop iteration: a
     fresh in-process robots memo every time is what made robots a third to a half of the daily
     request budget."""
+    assert_netkeiba_enabled()  # Feature 178 (T068): policy false → no client, the job SKIPs
     if min_interval is None:
         min_interval = CONFIG.fetch_min_interval
     before_reserve = None
@@ -140,7 +147,8 @@ def make_fetcher(min_interval: float | None = None, cache_dir: str | None = None
 
     _policy = background_policy(min_interval_s=min_interval, database_url=owner_database_url(),
                                 before_reserve=before_reserve)
-    pre_request = None if _policy is None else _policy.pre_request
+    # 178 FR-014: the policy is re-read before EVERY request, so a stop lands mid-job as well
+    pre_request = gate_pre_request(None if _policy is None else _policy.pre_request)
 
     return HttpFetcher(
         user_agent=_USER_AGENT, min_interval_s=min_interval, cache_dir=cache_dir,
@@ -265,6 +273,26 @@ def _has_corner_orders(session: Session, race_id: str) -> bool:
     ).first() is not None
 
 
+def _skip_netkeiba_disabled(
+    session: Session, job: IngestionJob, exc: NetkeibaDisabled,
+) -> IngestionJob:
+    """Feature 178 (FR-014): the policy stopped netkeiba — the job ends SKIPPED with the reason,
+    zero requests sent, nothing written."""
+    job.status = JobStatus.SKIPPED
+    job.completed_at = _now()
+    job.error_message = None
+    job.summary = {
+        **(job.summary or {}),
+        "reason": exc.code,
+        "policy_disabled": "netkeiba",
+        "policy": policy_fingerprint(),
+        "requests_sent": 0,  # this attempt; earlier attempts of the same job are not counted here
+    }
+    session.add(job)
+    session.commit()
+    return job
+
+
 def run_one(
     session: Session, job: IngestionJob, *, fetcher=None, jra_fetcher=_UNSET,
 ) -> IngestionJob:
@@ -291,7 +319,10 @@ def run_one(
     and the result fetch takes over the load-bearing role entries has in a normal pass: if it fails,
     the job FAILED (it had exactly one thing to do), and a page that simply has no passing order yet
     writes nothing and lands on SKIPPED — the same meaning those statuses already carry."""
-    fetcher = fetcher or make_fetcher()
+    try:
+        fetcher = fetcher or make_fetcher()
+    except NetkeibaDisabled as exc:
+        return _skip_netkeiba_disabled(session, job, exc)
     race_id = job.scope_value or ""
     refresh_origin = (job.summary or {}).get("refresh_origin")
     if refresh_origin not in {"manual_ui", "daily_bulk", "corner_backfill"}:
@@ -1126,7 +1157,10 @@ def run_day(session: Session, job: IngestionJob, *, fetcher=None) -> IngestionJo
     Runs in the worker (not the request handler). The children share the parent's trace_id so the
     batch poll (/batches/{trace_id}) aggregates them. 0 races (no JRA racing that day) is a clean
     no-op SUCCEEDED parent. The children are drained in subsequent worker iterations."""
-    fetcher = fetcher or make_fetcher()
+    try:
+        fetcher = fetcher or make_fetcher()
+    except NetkeibaDisabled as exc:
+        return _skip_netkeiba_disabled(session, job, exc)
     date = datetime.date.fromisoformat(job.scope_value or "")
     # read BEFORE the summary is reassigned below (that assignment replaces the dict wholesale)
     force = bool((job.summary or {}).get("force"))

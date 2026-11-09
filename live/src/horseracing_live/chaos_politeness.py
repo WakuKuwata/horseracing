@@ -214,6 +214,9 @@ def make_capture_fetcher(
 ) -> CaptureHttpFetcher:
     """Build the capture-only client without changing scrape's shared ingest factory."""
 
+    from horseracing_scrape.netkeiba_policy import assert_netkeiba_enabled
+
+    assert_netkeiba_enabled()  # Feature 178 (T068): policy false → no client, the capture skips
     if deadline_s is not None and deadline_s <= 0:
         raise ValueError("deadline_s must be positive")
     if deadline_s is not None and deadline is not None:

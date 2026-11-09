@@ -340,10 +340,12 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "horseracing-db", editable = "../db" },
     { name = "httpx", specifier = ">=0.27" },
+    { name = "lhafile", marker = "extra == 'lzh'", specifier = ">=0.2" },
     { name = "lxml", specifier = ">=5.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "sqlalchemy", specifier = ">=2.0" },
 ]
+provides-extras = ["lzh"]
 
 [package.metadata.requires-dev]
 dev = [

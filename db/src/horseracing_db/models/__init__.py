@@ -7,6 +7,7 @@ from .chaos import ChaosReadout, ChaosSnapshot, FetchThrottleState
 from .core import Horse, Jockey, Race, RaceHorse, RaceResult, Trainer
 from .decision_quotes import DecisionQuote
 from .ingestion import IdMapping, IngestionJob
+from .jrdb import JrdbFile
 from .market import ExoticOdds, ExoticQuote, OfficialWinPayout, RaceLaps
 from .market_ev import MarketEvPrediction
 from .prediction import (
@@ -40,6 +41,7 @@ __all__ = [
     "RaceResult",
     "IdMapping",
     "IngestionJob",
+    "JrdbFile",
     "ExoticOdds",
     "ExoticQuote",
     "MarketEvPrediction",

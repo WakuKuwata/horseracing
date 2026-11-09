@@ -19,7 +19,7 @@ _EXISTING_TABLES_SQL = """
 SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public' AND table_name NOT IN
   ('alembic_version', 'race_horse_field_provenance', 'race_field_provenance',
-   'jra_track_conditions')
+   'jra_track_conditions', 'jrdb_files')
 """
 _COLUMNS_SQL = """
 SELECT table_name, column_name, data_type, is_nullable, column_default
