@@ -5,7 +5,7 @@
   "jra_official_interval_seconds": 10,
   "shared_limiter_enabled": true,
   "collection_paused": false,
-  "jrdb_enabled": false,
+  "jrdb_enabled": true,
   "netkeiba_enabled": true,
   "jra_emergency_entries": false,
   "jrdb_interval_seconds": 5,

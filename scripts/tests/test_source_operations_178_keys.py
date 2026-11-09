@@ -21,9 +21,10 @@ def policy_file(tmp_path, **changes):
     return path
 
 
-def test_the_committed_policy_carries_the_six_keys_at_their_defaults():
+def test_the_committed_policy_carries_the_six_keys():
+    # jrdb_enabled is true since R5 (operator decision 2026-11-09); netkeiba stays on until R9.
     policy = load_policy(CONFIG)
-    assert policy["jrdb_enabled"] is False and policy["netkeiba_enabled"] is True
+    assert policy["jrdb_enabled"] is True and policy["netkeiba_enabled"] is True
     assert policy["jra_emergency_entries"] is False and policy["jrdb_archive_blackout"] is True
     assert policy[JRDB_INTERVAL_KEY] == 5 and policy[NEAR_POST_SOURCE_KEY] == "netkeiba"
 
