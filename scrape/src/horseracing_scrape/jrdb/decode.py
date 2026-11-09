@@ -295,6 +295,17 @@ def _require(d: dict[str, Any], name: str, line_no: int) -> Any:
     return v
 
 
+def _body_weight(d: dict[str, Any]) -> tuple[int | None, int | None]:
+    """JRDB writes ``000`` for 馬体重 when there is no measurement (取消・除外・未計量). A 0 kg
+    horse does not exist, so 0 → None, and a 増減 without a weight is dropped with it (the pair
+    rule of the body_weight group; R5 2026-11-09 found 4 取消馬 written as 0)."""
+
+    w = d.get("weight")
+    if w is None or int(w) == 0:
+        return None, None
+    return w, d.get("weight_diff")
+
+
 def _race_key(d: dict[str, Any], line_no: int) -> JrdbRaceKey:
     try:
         return JrdbRaceKey(
@@ -357,8 +368,8 @@ def _build_kyi(d, line_no) -> JrdbEntry:
         frame=d.get("frame"),
         jockey_code=_code5(d.get("jockey_code"), line_no, "jockey_code"),
         trainer_code=_code5(d.get("trainer_code"), line_no, "trainer_code"),
-        weight=d.get("weight"),
-        weight_diff=d.get("weight_diff"),
+        weight=_body_weight(d)[0],
+        weight_diff=_body_weight(d)[1],
         cancelled=bool(d.get("cancelled")),
         sex_code=d.get("sex_code"),
         owner_name=d.get("owner_name"),
@@ -416,8 +427,8 @@ def _build_tyb(d, line_no) -> JrdbPreRace:
         apprentice_code=d.get("apprentice_code"),
         going_code=d.get("going_code"),
         weather_code=d.get("weather_code"),
-        weight=d.get("weight"),
-        weight_diff=d.get("weight_diff"),
+        weight=_body_weight(d)[0],
+        weight_diff=_body_weight(d)[1],
         post_time=d.get("post_time"),
     )
 
@@ -458,8 +469,8 @@ def _build_sed(d, line_no, *, include_canonical: bool) -> JrdbResult:
         last_3f=d.get("last_3f"),
         jockey_code=_code5(d.get("jockey_code"), line_no, "jockey_code"),
         trainer_code=_code5(d.get("trainer_code"), line_no, "trainer_code"),
-        weight=d.get("weight"),
-        weight_diff=d.get("weight_diff"),
+        weight=_body_weight(d)[0],
+        weight_diff=_body_weight(d)[1],
         weather_code=d.get("weather_code"),
         win_payout_yen=d.get("win_payout_yen"),
         place_payout_yen=d.get("place_payout_yen"),

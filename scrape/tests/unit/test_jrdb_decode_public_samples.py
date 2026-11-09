@@ -289,3 +289,28 @@ def test_ukc_canonical_columns_are_dropped_even_through_the_builder():
     assert row.sire_line_code is None and row.damsire_line_code is None
     row = dec._build_row("UKC", d, line_no=1, include_canonical=True)
     assert row.sire_line_code == "1104"
+
+
+def test_body_weight_zero_means_no_measurement():
+    """R5 (2026-11-09): SED/TYB/KYI ``000`` 馬体重 (取消・除外・未計量) decodes to None, never 0 kg,
+    and the 増減 is dropped with it; a real weight keeps its diff."""
+
+    import datetime
+
+    from horseracing_scrape.jrdb.decode import decode_file
+    from horseracing_scrape.jrdb.models import JrdbFileMeta
+    from tests._jrdb_synth import _template, patch_record
+
+    def one(kind, values, day):
+        rec = patch_record(kind, _template(kind), values) + b"\r\n"
+        meta = JrdbFileMeta(kind, None, day, "daily", "x", len(rec), 0)
+        return decode_file(rec, meta, profile="jrdb_canonical").rows[0]
+
+    sed_zero = one("SED", {"weight": 0, "weight_diff": None}, datetime.date(2008, 9, 13))
+    assert sed_zero.weight is None and sed_zero.weight_diff is None
+    sed_real = one("SED", {"weight": 480, "weight_diff": -4}, datetime.date(2008, 9, 13))
+    assert sed_real.weight == 480 and sed_real.weight_diff == -4
+    tyb_zero = one("TYB", {"weight": 0, "weight_diff": 0}, datetime.date(2021, 9, 12))
+    assert tyb_zero.weight is None and tyb_zero.weight_diff is None
+    kyi_zero = one("KYI", {"weight": 0, "weight_diff": None}, datetime.date(2015, 7, 12))
+    assert kyi_zero.weight is None

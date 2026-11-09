@@ -77,6 +77,32 @@ post_time(jrdb_only・NULL 埋めのみ可) / win_payouts(2025 parity 待ち)。
 
 見習い騎手の斤量(JRDB 51.0 vs DB 54.0・サンプルで 5 行)は 18 年の jockey_weight が 100% なので再現せず(サンプル固有)。
 
-**利用者判断(R6 の前)**: owner_name と prize_money を基準未達のまま「netkeiba 期(2025-10-11 以降)の NULL 埋めだけ」に限って書くか、
-契約どおり現行 DB には書かず JRDB 正本 DB(R7)だけに持つか。
+**利用者判断(2026-11-09)**: **外す(契約どおり)**。owner_name と prize_money は現行 DB の修復対象から外し、JRDB 正本 DB(R7)でだけ JRDB の定義で持つ。
+R6 の修復対象は odds・popularity・weight・last_3f・breeder_name・race_class(+post_time の NULL 埋め・win_payouts は 2025 parity 後)。
+`repair.assert_repairable` は parity 報告の rate を実行時に読むので、owner_name/prize_money は `parity_below_threshold` で拒否される(コード変更不要)。
+
+## R5 段 2 を本番 DB 複製で再生(2026-11-09 月 11:40〜11:58 JST)
+
+複製 = R2 のリハーサル DB(`horseracing_r2_rehearsal`・本番の 10:08 時点の dump・0025 適用済み)。対象は直近の開催日 **2026-10-31・11-01**
+(11/02 は非開催日。正式版 SED は 11/05 木に公開済み)。日次ファイル 5 種別 × 2 日 = 10 要求(一時 policy・レプリカの `jrdb_files` に登録・桁ずれ 0)。
+複製には netkeiba(+公式)が先に書いた行がある=**本番で R9 までのあいだ JRDB が置かれる順序そのもの**(netkeiba 先・JRDB 後)。
+逆順(JRDB 先 → 公式 → netkeiba)は SC-004 の合成再生 `test_jrdb_replay_order.py` が固定している。
+
+`jrdb-entries` → `jrdb-results` → `jrdb-payouts` を両日に流し、製品表を PK 付きの値+xmin で前後比較(`r5_snapshot.py`):
+
+| 観点 | 結果 |
+|---|---|
+| 新規行 | races/race_horses/horses とも追加 0・**新規 `nk:` 0**(全 DB の nk: 馬 5,696 で不変)。alias_horses 191+162=既存 nk: 行への別名書込み(FR-011a) |
+| 先着保持 | race_results 619 行は値・xmin とも不変(レース単位初回挿入)。horses 不変 |
+| 静的項目 | `static_mismatch` 13+13(契約の行 28: stored=netkeiba なら write+報告)。中身は **表記差**=race_class 全角→半角 24(`２勝`→`2勝`・JRA-VAN と同じ綴り=098 の分裂を JRDB が戻す向き)・race_name 8(`紅葉S`→`紅葉ステークス`・`天皇賞(秋)`→`天皇賞（秋）`=JRA-VAN と同じ)・grade 1(L) |
+| 時刻規則 | post_time 3 件(netkeiba 15:01→JRDB 15:00、16:30→16:25=BAC の発走予定) |
+| 体重 | weight_diff 0→NULL 110 行=**全部デビュー戦**(JRA-VAN 期の慣行は NULL 473/478・netkeiba 期が 0 を書いていた=JRDB が慣行を戻す)。**weight NULL→0 が 4 行(取消馬)=欠陥**: JRDB の `000` は計測なしなのに 0 kg として書いた → decode で 0→None に正規化(同日修正・単体テスト追加)し、複製を戻して再実行 |
+| 確定オッズ・人気 | `final_odds_updated` 3+8(人気の ±1 入れ替わり 11 行・SED 正式版を採用=契約の行 32)・`win_odds_observed_at` 6 |
+| 払戻 | 値は全 48 行不変・採用元が `netkeiba_result`→`jrdb_result`(jrdb > netkeiba)。exotic_odds 483 行も同じ(値不変・source のみ) |
+| 新規データ | race_laps 46 レース(netkeiba 期は 0 だった)・来歴 2 表に jrdb 行 860 |
+| **2 回目・3 回目** | 製品表の値変更 **0**・不要書込み(xmin 移動)**0**。来歴 `race_field_provenance` の払戻 2 群 48 行だけ observed_at/job_id が更新(確認時刻の記録・値不変) |
+
+判定: SC-003(新規 nk: 0・保護対象不変)・SC-004(2 回目変更 0)は成立。`static_mismatch=0` は「JRDB が先」の順序でしか成立しない指標で、
+netkeiba が先の複製では表記差 13 件として出る(値はどれも JRA-VAN 側の綴りに寄る)。**本番で `jrdb_enabled: true` にして前日 `jrdb-entries` を始めるのは、
+R3 の人物写像(当日の騎手・調教師が全件 mapped)が済んでから**=`unresolved_person` 610/636 はまだ全件(id_mappings 0 行)。
 
