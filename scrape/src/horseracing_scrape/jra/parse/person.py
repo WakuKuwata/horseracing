@@ -48,14 +48,44 @@ def _labelled_values(doc) -> dict[str, str]:
     return out
 
 
+_NAME_PREFIX_RE = re.compile(r"^(騎手|調教師)(情報|プロフィール)?\s*")
+_NAME_STATUS_RE = re.compile(r"^(引退|現役|短期免許|外国人|地方)\s*")
+_NAME_SUFFIX_RE = re.compile(r"\s*(騎手|調教師)$")
+_KANA_PAREN_RE = re.compile(r"[（(][^（）()]*[）)]")
+
+
+def _clean_name(text: str) -> str | None:
+    """The real <h1> (R3 2026-11-09) reads ``騎手情報引退<姓> <名>（<カナ>）``.
+
+    Only ``<姓> <名>`` is kept."""
+
+    t = _KANA_PAREN_RE.sub("", nfkc(text))
+    t = _NAME_PREFIX_RE.sub("", t)
+    t = _NAME_STATUS_RE.sub("", t)
+    t = _NAME_SUFFIX_RE.sub("", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t or None
+
+
 def _name(doc) -> str | None:
-    for sel in ("h1", ".name", ".profile_name", "h2"):
-        el = doc.select_one(sel)
-        if el is not None:
-            t = nfkc(el.get_text(" ", strip=True))
-            t = re.sub(r"(騎手|調教師)(プロフィール|情報)?$", "", t).strip()
-            if t:
-                return t
+    """The person's name from the page headings. Real pages carry an EMPTY first <h1>, the name in
+    a second <h1> prefixed with 騎手情報/調教師情報 and a status word, and site chrome <h2>s
+    (検索ウィンドウ・緊急情報・プロフィール) that must never be taken for a name."""
+
+    heads = [h.get_text(" ", strip=True) for h in doc.select("h1")]
+    heads += [el.get_text(" ", strip=True) for el in doc.select(".name, .profile_name")]
+    heads += [h.get_text(" ", strip=True) for h in doc.select("h2")]
+    preferred = [t for t in heads if "騎手情報" in nfkc(t) or "調教師情報" in nfkc(t)]
+    for t in preferred + heads:
+        if not t or any(w in t for w in ("検索", "緊急情報", "お知らせ", "プロフィール")):
+            if "プロフィール" in t and not preferred:
+                cleaned = _clean_name(t)
+                if cleaned and cleaned != "プロフィール":
+                    return cleaned
+            continue
+        cleaned = _clean_name(t)
+        if cleaned:
+            return cleaned
     return None
 
 
