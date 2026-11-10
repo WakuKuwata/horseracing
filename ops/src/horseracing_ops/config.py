@@ -18,7 +18,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_MARKET_EV_MODEL_DIR = _REPO_ROOT / "artifacts" / "market_ev" / "mev-binary-v2"
 #: Feature 138: the 15-seed ensemble (`mev-ens15-v1`, the displayed 期待回収率 version). Same
 #: absolute-path rule; the training CLI writes both versions in one run when it is given this.
-_DEFAULT_MARKET_EV_ENSEMBLE_DIR = _REPO_ROOT / "artifacts" / "market_ev" / "mev-ens15-v1"
+#: 2026-11-10: the directory is named after the displayed version (now mev-ens15-jrdb-v5).
+_DEFAULT_MARKET_EV_ENSEMBLE_DIR = _REPO_ROOT / "artifacts" / "market_ev" / "mev-ens15-jrdb-v5"
 
 _FALSE_WORDS = frozenset({"0", "false", "no", "off"})
 

@@ -34,6 +34,7 @@ import pandas as pd
 from horseracing_db.enums import EntryStatus
 from horseracing_db.models import DecisionQuote, Race, RaceHorse
 from horseracing_eval import market_mix
+from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
 from horseracing_scrape import robots_cache
 from horseracing_scrape.fetch import FetchError, FetchRefused, PoliteFetcher, RobotsDisallowed
 from horseracing_scrape.models import ParseError, ScrapedOdds
@@ -46,9 +47,11 @@ from . import guards
 from .official_quote import QuoteFetcher, is_official_fetcher, make_quote_fetcher
 
 POLICY_VERSION = "near_post_policy_v1"
+#: 2026-11-10: ``ens=`` is the displayed version (mev-ens15-v1 → mev-ens15-jrdb-v5); the stored
+#: rows keep the string they were captured with.
 LOGIC_VERSION = (
     "near-post-v1;target=180s;window=60s;collision_step=60s;features=morning_once;"
-    "market=market_structure;ens=mev-ens15-v1;single=mev-binary-v2;mix=141"
+    f"market=market_structure;ens={DISPLAYED_MARKET_EV_MODEL_VERSION};single=mev-binary-v2;mix=141"
 )
 TARGET_S = 180
 WINDOW_S = 60
@@ -347,7 +350,7 @@ class ProductionPredictor:
         ensemble_dir: Path,
         single_dir: Path,
         year: int,
-        ensemble_version: str = "mev-ens15-v1",
+        ensemble_version: str = DISPLAYED_MARKET_EV_MODEL_VERSION,
         single_version: str = "mev-binary-v2",
     ):
         from horseracing_training import market_ev
@@ -374,8 +377,9 @@ class ProductionPredictor:
             status = "disabled"
         elif coef is None:
             status = "no_coefficients"
-        elif self.manifest_name != f"ensemble_{coef.year}.json":
-            status = "model_mismatch"  # the same check the race page runs (141)
+        elif (self.manifest_name != f"ensemble_{coef.year}.json"
+              or self.ens.version != market_mix.MIX_SOURCE_MODEL_VERSION):
+            status = "model_mismatch"  # the same checks the race page runs (141)
         else:
             try:
                 p_mix = market_mix.mix_probabilities(p_ens.tolist(), odds.tolist(), coef)

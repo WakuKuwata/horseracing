@@ -552,7 +552,7 @@ def test_config_defaults():
 
     ensemble = config_mod._DEFAULT_MARKET_EV_ENSEMBLE_DIR  # Feature 138
     assert ensemble.is_absolute()
-    assert ensemble.parts[-3:] == ("artifacts", "market_ev", "mev-ens15-v1")
+    assert ensemble.parts[-3:] == ("artifacts", "market_ev", "mev-ens15-jrdb-v5")  # 2026-11-10
     assert ensemble.parent == default.parent
     if "OPS_MARKET_EV_ENSEMBLE_DIR" not in os.environ:
         assert config_mod.CONFIG.market_ev_ensemble_dir == str(ensemble)

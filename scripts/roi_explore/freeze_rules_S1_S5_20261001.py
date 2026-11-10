@@ -105,16 +105,28 @@ def ci_and_p(pay: np.ndarray, days: np.ndarray, sel: np.ndarray) -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(DEFAULT_OUT))
+    # 2026-11-10(表示版の切替): 入力の行と 15 本の run の接尾辞を指定できるようにした。既定は従来どおり。
+    ap.add_argument("--rows", default=str(ROWS))
+    ap.add_argument("--ens-suffix", default="_ens15")
+    ap.add_argument("--single-join-by-number", action="store_true",
+                    help="join the single-seed predictions on (race_id, horse_number) via rows_2007 (its own rows);"
+                         " needed when --rows uses another DB's horse ids")
+    ap.add_argument("--drop-incomplete-races", action="store_true",
+                    help="drop races where any evaluated row lacks a prediction (count recorded) instead of failing")
     args = ap.parse_args(argv)
     out_path = pathlib.Path(args.out)
+    rows_path = pathlib.Path(args.rows)
+    ens_runs = {s: tag.replace("_ens15", args.ens_suffix) if tag.endswith("_ens15") else tag
+                for s, tag in ENS_RUNS.items()}
 
-    raw = pd.read_parquet(ROWS, columns=["race_id", "horse_id", "race_date", "year", "odds", "won",
+    raw = pd.read_parquet(rows_path, columns=["race_id", "horse_id", "horse_number", "race_date", "year", "odds", "won",
                                          "days_since_last", "race_ok", "dead_heat"])
-    input_rows = {"path": str(ROWS.relative_to(ROOT)), "sha256": sha(ROWS), "row_count": int(len(raw)),
+    input_rows = {"path": str(rows_path.relative_to(ROOT)) if rows_path.is_relative_to(ROOT) else str(rows_path),
+                  "sha256": sha(rows_path), "row_count": int(len(raw)),
                   "min_date": str(raw.race_date.min()), "max_date": str(raw.race_date.max())}
     d = raw
     ens_inputs = []
-    for s, tag in ENS_RUNS.items():
+    for s, tag in ens_runs.items():
         f = RES / tag / "predictions.parquet"
         v = pd.read_parquet(f)[["race_id", "horse_id", "pred"]].rename(columns={"pred": f"pred{s}"})
         ens_inputs.append({"seed": s, "path": str(f.relative_to(ROOT)), "sha256": sha(f), "row_count": int(len(v))})
@@ -122,11 +134,29 @@ def main(argv=None) -> int:
     f = RES / SINGLE_RUN / "predictions.parquet"
     v = pd.read_parquet(f)[["race_id", "horse_id", "pred"]].rename(columns={"pred": "pred_single"})
     single_input = {"path": str(f.relative_to(ROOT)), "sha256": sha(f), "row_count": int(len(v))}
-    d = d.merge(v, on=["race_id", "horse_id"], how="left", validate="one_to_one")
+    if args.single_join_by_number:
+        own = pd.read_parquet(ROWS, columns=["race_id", "horse_id", "horse_number"])
+        v = v.merge(own, on=["race_id", "horse_id"], how="inner", validate="one_to_one").drop(columns="horse_id")
+        dup = v.duplicated(["race_id", "horse_number"], keep=False)  # double registrations: never guess
+        single_input["ambiguous_number_rows_dropped"] = int(dup.sum())
+        v = v[~dup]
+        single_input["joined_on"] = "race_id+horse_number via " + str(ROWS.relative_to(ROOT))
+        d = d.merge(v, on=["race_id", "horse_number"], how="left", validate="one_to_one")
+    else:
+        d = d.merge(v, on=["race_id", "horse_id"], how="left", validate="one_to_one")
     d = d[d.race_ok & ~d.dead_heat & (d.year >= 2010)].reset_index(drop=True)
-    missing = int(d[[f"pred{s}" for s in ENS_RUNS] + ["pred_single"]].isna().any(axis=1).sum())
-    if missing:
+    lack = d[[f"pred{s}" for s in ENS_RUNS] + ["pred_single"]].isna().any(axis=1)
+    missing = int(lack.sum())
+    dropped = {"rows_lacking_prediction": missing, "races_dropped": 0, "rows_dropped": 0}
+    if missing and not args.drop_incomplete_races:
         raise SystemExit(f"FAIL: {missing} evaluated rows lack a prediction (inputs out of sync)")
+    if missing:
+        bad = set(d.loc[lack, "race_id"])
+        keep = ~d.race_id.isin(bad)
+        dropped.update(races_dropped=len(bad), rows_dropped=int((~keep).sum()),
+                       races_dropped_by_year={str(k): int(v) for k, v in
+                                              pd.Series(sorted(bad)).str.slice(0, 4).value_counts().sort_index().items()})
+        d = d[keep].reset_index(drop=True)
 
     years = d.year.to_numpy()
     odds = d.odds.to_numpy(float)
@@ -199,6 +229,8 @@ def main(argv=None) -> int:
     out = {"created": "2026-10-01", "frozen_from": "production ens15 fits (--threads 1 --deterministic)",
            "freeze_script_sha256": sha(pathlib.Path(__file__)), "git_commit": git_commit(),
            "numpy_version": np.__version__, "input_rows": input_rows, "ens_prediction_inputs": ens_inputs,
+           "incomplete_races": dropped,
+           "displayed_model_version": ar.DISPLAYED_MARKET_EV_MODEL_VERSION, "ens_suffix": args.ens_suffix,
            "single_prediction_input": single_input,
            "evaluated_population": {"row_count": int(len(d)),
                                     "row_order_sha256": hashlib.sha256(order.encode()).hexdigest()},

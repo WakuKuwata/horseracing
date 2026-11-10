@@ -44,8 +44,13 @@ from horseracing_eval.bootstrap import (
 # =============================================================================================
 
 RULE_SET_VERSION = "attention-S1-S5-v1"
-#: the version the 期待回収率 column shows (the 15-seed average) — the single definition api reads
-DISPLAYED_MARKET_EV_MODEL_VERSION = "mev-ens15-v1"
+#: the version the 期待回収率 column shows (the 15-seed average) — the single definition api reads.
+#: 2026-11-10: mev-ens15-v1 → mev-ens15-jrdb-v5 (JRDB 正本 DB で学習・同じ精度の置き換え・
+#: 利用者決定で 174 の表示値の更新規則の例外。
+#: docs/plan/displayed-model-switch-jrdb-v5-20261110.md)。v1 の行は残る。
+DISPLAYED_MARKET_EV_MODEL_VERSION = "mev-ens15-jrdb-v5"
+#: the version displayed before the 2026-11-10 switch (its stored rows and records are kept)
+PREVIOUS_DISPLAYED_MARKET_EV_MODEL_VERSION = "mev-ens15-v1"
 #: the single-seed series kept for S5 and for the panel (137's model, unchanged)
 SINGLE_SEED_MODEL_VERSION = "mev-binary-v2"
 
@@ -267,14 +272,22 @@ def field_digest(horse_ids: Iterable[str]) -> str:
 #: Selection policy = selection + classification + settlement, versioned together (139 D12).
 #: v1 (2026-10-02..04): settled at the judged odds (``frozen_payout``). v2 (from 2026-10-05):
 #: settled at the official win payout (``official_payout``) and two payout classes added.
-SELECTION_POLICY_VERSION = "v2"
+#: v3 (from 2026-11-11): the same selection, classification and settlement as v2, on the switched
+#: displayed model (mev-ens15-v1 → mev-ens15-jrdb-v5) — a new version so v1-model picks are never
+#: pooled with v5-model picks (docs/plan/displayed-model-switch-jrdb-v5-20261110.md).
+SELECTION_POLICY_VERSION = "v3"
 #: v1's go-live date (138 T045, the day the market-ev job started writing picks). Kept for the
 #: record only: v1 counted picks computed 2026-10-02..04 (JST) and settled them at the judged odds.
 V1_START_DATE = datetime.date(2026, 10, 2)
 #: go-live date of the CURRENT policy (v2): picks computed on/after this JST date count. v2 counts
 #: from its own start (139 D12) — the v1-period picks are before_start and never mixed in. Moving
 #: it needs a new selection policy version. ``None`` means "before go-live" (all before_start).
-PROSPECTIVE_START_DATE: datetime.date | None = datetime.date(2026, 10, 5)
+#: v2's go-live date (139 D12). Kept for the record only: v2 counted picks computed
+#: 2026-10-05..11-10
+#: (JST) of the mev-ens15-v1 model; its stored picks and checkpoints stay under policy "v2".
+V2_START_DATE = datetime.date(2026, 10, 5)
+#: v3 starts the day after the 2026-11-10 switch (no race between 11-09 and 11-14).
+PROSPECTIVE_START_DATE: datetime.date | None = datetime.date(2026, 11, 11)
 LOCAL_TZ = ZoneInfo("Asia/Tokyo")
 OBSERVING_MIN = 100
 CHECKPOINTS = (300, 600)
@@ -652,8 +665,12 @@ class AttentionRule:
         return self.definition.id
 
 
-#: refrozen from the production 15-seed fits (T006, 2026-10-02): evidence/rules_S1_S5_freeze.json
-FROZEN_SOURCE = "production-ens15-refreeze-2026-10-02"
+#: refrozen from the production 15-seed fits (T006, 2026-10-02):
+#: evidence/rules_S1_S5_freeze_mev-ens15-v1.json.
+#: 2026-11-10: refrozen for the switched displayed model mev-ens15-jrdb-v5 by the same script and
+#: bootstrap (its walk-forward OOF on its own rows; S5 joined by horse number):
+#: evidence/rules_S1_S5_freeze.json. Definitions (thresholds, bands) are unchanged.
+FROZEN_SOURCE = "production-ens15-refreeze-2026-11-10-jrdb-v5"
 #: how the frozen backtest CIs / p-values were computed (= the evidence JSON's bootstrap / pvalue)
 FROZEN_BOOTSTRAP = {
     "impl": "horseracing_eval.bootstrap.race_block_ratio_bootstrap_ci_v1",
@@ -669,68 +686,68 @@ FROZEN_BOOTSTRAP = {
 RULES: tuple[AttentionRule, ...] = (
     AttentionRule(
         _BY_ID["S1"],
-        FrozenStats(1.210735, 1.053376, 1.371353, 0.0006, 5235, 225),
-        FrozenStats(1.176839, 0.854896, 1.517019, 0.114644, 1183, 47),
-        (97, 105, 102),
+        FrozenStats(1.19334, 1.038327, 1.357174, 0.00285, 5075, 215),
+        FrozenStats(1.165969, 0.835335, 1.512565, 0.129694, 1146, 46),
+        (84, 106, 101),
         (
-            PriceNoise(0.1, 1.166235, 6432, 0.586),
-            PriceNoise(0.2, 1.044695, 9981, 0.3),
-            PriceNoise(0.3, 0.966821, 14786, 0.165),
+            PriceNoise(0.1, 1.134243, 6201, 0.587),
+            PriceNoise(0.2, 1.052489, 9764, 0.296),
+            PriceNoise(0.3, 0.992575, 14613, 0.162),
         ),
-        SelectedCalibration(5235, 1.405512, 1.210735),
-        SelectedCalibration(1183, 1.32409, 1.176839),
+        SelectedCalibration(5075, 1.403277, 1.19334),
+        SelectedCalibration(1146, 1.318996, 1.165969),
     ),
     AttentionRule(
         _BY_ID["S2"],
-        FrozenStats(1.291924, 1.08847, 1.506363, 0.00015, 3108, 141),
-        FrozenStats(1.401758, 0.886217, 1.972972, 0.026799, 512, 24),
-        (43, 32, 46),
+        FrozenStats(1.207816, 1.00143, 1.426218, 0.011449, 2981, 124),
+        FrozenStats(1.206237, 0.692478, 1.793917, 0.189891, 481, 18),
+        (38, 39, 39),
         (
-            PriceNoise(0.1, 1.227577, 3899, 0.568),
-            PriceNoise(0.2, 1.076371, 6620, 0.264),
-            PriceNoise(0.3, 0.983593, 10844, 0.132),
+            PriceNoise(0.1, 1.205083, 3747, 0.569),
+            PriceNoise(0.2, 1.072197, 6436, 0.261),
+            PriceNoise(0.3, 1.0055, 10699, 0.128),
         ),
-        SelectedCalibration(3108, 1.515389, 1.291924),
-        SelectedCalibration(512, 1.430179, 1.401758),
+        SelectedCalibration(2981, 1.51459, 1.207816),
+        SelectedCalibration(481, 1.423337, 1.206237),
     ),
     AttentionRule(
         _BY_ID["S3"],
-        FrozenStats(1.064064, 0.9828, 1.151261, 0.059297, 22384, 1315),
-        FrozenStats(1.112789, 0.932525, 1.309569, 0.100795, 4848, 273),
-        (422, 413, 301),
+        FrozenStats(1.010639, 0.940683, 1.082528, 0.374881, 21806, 1254),
+        FrozenStats(1.050084, 0.890301, 1.217093, 0.259737, 4790, 264),
+        (409, 434, 324),
         (
-            PriceNoise(0.1, 1.033016, 28914, 0.62),
-            PriceNoise(0.2, 0.956798, 50134, 0.316),
-            PriceNoise(0.3, 0.907118, 81229, 0.18),
+            PriceNoise(0.1, 1.004019, 28090, 0.62),
+            PriceNoise(0.2, 0.961582, 49082, 0.313),
+            PriceNoise(0.3, 0.909583, 79856, 0.178),
         ),
-        SelectedCalibration(22384, 1.381646, 1.064064),
-        SelectedCalibration(4848, 1.309934, 1.112789),
+        SelectedCalibration(21806, 1.379269, 1.010639),
+        SelectedCalibration(4790, 1.307568, 1.050084),
     ),
     AttentionRule(
         _BY_ID["S4"],
-        FrozenStats(1.14284, 1.029091, 1.258316, 0.00275, 8987, 371),
-        FrozenStats(1.034672, 0.832284, 1.250163, 0.361282, 2515, 93),
-        (226, 240, 224),
+        FrozenStats(1.094086, 0.98219, 1.211094, 0.042098, 8742, 345),
+        FrozenStats(0.90376, 0.706475, 1.113058, 0.80026, 2447, 79),
+        (212, 254, 222),
         (
-            PriceNoise(0.1, 1.099928, 10611, 0.615),
-            PriceNoise(0.2, 1.00851, 14899, 0.349),
-            PriceNoise(0.3, 0.956266, 19986, 0.213),
+            PriceNoise(0.1, 1.103861, 10370, 0.612),
+            PriceNoise(0.2, 1.022918, 14718, 0.343),
+            PriceNoise(0.3, 0.97451, 19767, 0.21),
         ),
-        SelectedCalibration(8987, 1.296997, 1.14284),
-        SelectedCalibration(2515, 1.229117, 1.034672),
+        SelectedCalibration(8742, 1.295187, 1.094086),
+        SelectedCalibration(2447, 1.225884, 0.90376),
     ),
     AttentionRule(
         _BY_ID["S5"],
-        FrozenStats(1.008277, 0.943703, 1.076621, 0.39458, 30036, 1820),
-        FrozenStats(0.995144, 0.863715, 1.137162, 0.523174, 7682, 438),
-        (659, 689, 543),
+        FrozenStats(1.007271, 0.941608, 1.076991, 0.40453, 29363, 1775),
+        FrozenStats(0.992139, 0.859786, 1.13638, 0.539323, 7493, 424),
+        (625, 681, 543),
         (
-            PriceNoise(0.1, 0.984019, 36553, 0.669),
-            PriceNoise(0.2, 0.941295, 56691, 0.381),
-            PriceNoise(0.3, 0.890056, 85718, 0.233),
+            PriceNoise(0.1, 0.992998, 35765, 0.668),
+            PriceNoise(0.2, 0.950028, 55718, 0.378),
+            PriceNoise(0.3, 0.901998, 84493, 0.231),
         ),
-        SelectedCalibration(30036, 1.401886, 1.008277),
-        SelectedCalibration(7682, 1.334943, 0.995144),
+        SelectedCalibration(29363, 1.401021, 1.007271),
+        SelectedCalibration(7493, 1.333912, 0.992139),
     ),
 )
 _RULE_BY_ID: dict[str, AttentionRule] = {r.id: r for r in RULES}
@@ -825,6 +842,10 @@ BUY_TIME_EXPECTATION: dict[str, BuyTimeExpectation] = {
 #: verification is then named in ``BUY_TIME_EXPECTATION_SOURCE["status"]`` ("verified — ...") and
 #: a changed number gets a new version instead.
 BUY_TIME_EXPECTATION_VERIFIED = True
+#: The model whose selections these numbers were derived from and verified on. A different
+#: displayed model is NOT covered by this verification: nothing is served until a new version is
+#: derived and verified for it (2026-11-10 switch to mev-ens15-jrdb-v5 → "awaiting verification").
+BUY_TIME_EXPECTATION_MODEL_VERSION = "mev-ens15-v1"
 BUY_TIME_EXPECTATION_SOURCE = {
     "version": BUY_TIME_EXPECTATION_VERSION,
     "report": "docs/roi-missed-patterns-20261004/report.md R02",
@@ -867,6 +888,8 @@ def buy_time_expectation(rule_id: str) -> BuyTimeExpectation | None:
     """The rule's buy-time expectation to SERVE, or None while it is not independently verified
     (D6). Read at call time (the flag flips with a registry change, never at runtime)."""
     if not BUY_TIME_EXPECTATION_VERIFIED:
+        return None
+    if BUY_TIME_EXPECTATION_MODEL_VERSION != DISPLAYED_MARKET_EV_MODEL_VERSION:
         return None
     if not str(BUY_TIME_EXPECTATION_SOURCE["status"]).startswith("verified"):
         raise ValueError("BUY_TIME_EXPECTATION_VERIFIED is set but the source status is not")

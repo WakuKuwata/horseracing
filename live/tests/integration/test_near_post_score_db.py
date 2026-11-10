@@ -9,6 +9,7 @@ import uuid
 import pytest
 from horseracing_db.models import DecisionQuote, OfficialWinPayout, Race
 from horseracing_eval import decision_quote_scoring as dqs
+from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
 from sqlalchemy import func, select
 
 from horseracing_live import cli
@@ -21,7 +22,8 @@ pytestmark = pytest.mark.integration
 OTHER = "202607260102"
 
 
-def _seed_quote(session, race_id, *, post_time, p_ens, mix_status="no_coefficients", n=4):
+def _seed_quote(session, race_id, *, post_time, p_ens, mix_status="no_coefficients", n=4,
+                ensemble_version=None):
     """A 174 row: started field 1..n with the capture-time quote odds 2+number, 15-seed p_ens."""
     field = [{"horse_id": f"H{i:02d}", "horse_number": i, "win_odds": 2.0 + i, "popularity": i,
               "place_low": None, "place_high": None} for i in range(1, n + 1)]
@@ -35,7 +37,8 @@ def _seed_quote(session, race_id, *, post_time, p_ens, mix_status="no_coefficien
         post_time=post_time, seconds_to_post=181, capture_target="t_minus_3", source="netkeiba", n=n,
         field=field, pred=pred, quote_digest=np_.quote_digest(field, None),
         field_digest=np_.field_digest(started), features_sha256="f" * 64,
-        ensemble_version="mev-ens15-v1", ensemble_manifest="ensemble_2026.json",
+        ensemble_version=ensemble_version or DISPLAYED_MARKET_EV_MODEL_VERSION,
+        ensemble_manifest="ensemble_2026.json",
         ensemble_manifest_sha256="e" * 64, single_version="mev-binary-v2", single_booster="model_2026.txt",
         single_booster_sha256="b" * 64, mix_version=None, mix_status=mix_status, mix_coefficient_year=None,
         logic_version=np_.LOGIC_VERSION, policy_version=np_.POLICY_VERSION, run_id=uuid.uuid4(),
@@ -138,3 +141,34 @@ def test_cli_is_read_only_and_writes_one_new_json(session, database_url, tmp_pat
     # append-only: a second run to the same path is refused before touching the DB
     assert cli.main(["near-post-score", "--from", RACE_DATE.isoformat(), "--to", RACE_DATE.isoformat(),
                      "--database-url", database_url, "--out", str(out)]) == 2
+
+
+def test_quotes_of_another_ensemble_version_are_counted_not_scored(session, database_url, tmp_path):
+    """2026-11-10 (displayed-version switch): quotes captured with mev-ens15-v1 are never pooled
+    with the displayed version's quotes; the report says how many were left out."""
+    _seed_two_races(session)
+    third = "202605010103"
+    _seed_race_reusing_horses(session, third, post_time=POST_TIME + datetime.timedelta(minutes=60))
+    _seed_quote(session, third, post_time=POST_TIME + datetime.timedelta(minutes=60),
+                p_ens=(0.4, 0.3, 0.2, 0.1), ensemble_version="mev-ens15-v1")
+    session.commit()
+    recs = nps.load_quote_records(session, date_from=RACE_DATE, date_to=RACE_DATE,
+                                  ensemble_version=DISPLAYED_MARKET_EV_MODEL_VERSION)
+    assert len(recs) == 2
+    assert nps.count_other_ensemble_quotes(
+        session, date_from=RACE_DATE, date_to=RACE_DATE,
+        ensemble_version=DISPLAYED_MARKET_EV_MODEL_VERSION) == {"mev-ens15-v1": 1}
+    out = tmp_path / "score.json"
+    assert cli.main(["near-post-score", "--from", RACE_DATE.isoformat(), "--to", RACE_DATE.isoformat(),
+                     "--database-url", database_url, "--out", str(out),
+                     "--features-dir", str(tmp_path)]) == 0
+    doc = json.loads(out.read_text())
+    assert doc["inputs"]["n_rows"] == 2
+    assert doc["ensemble_version"] == DISPLAYED_MARKET_EV_MODEL_VERSION
+    assert doc["quotes_other_ensemble_version"] == {"mev-ens15-v1": 1}
+    # the v1 quotes are still scored when asked for explicitly (their own version)
+    out1 = tmp_path / "score-v1.json"
+    assert cli.main(["near-post-score", "--from", RACE_DATE.isoformat(), "--to", RACE_DATE.isoformat(),
+                     "--database-url", database_url, "--out", str(out1), "--features-dir", str(tmp_path),
+                     "--ensemble-version", "mev-ens15-v1"]) == 0
+    assert json.loads(out1.read_text())["inputs"]["n_rows"] == 1

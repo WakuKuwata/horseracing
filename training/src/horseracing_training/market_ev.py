@@ -41,6 +41,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 from horseracing_db.models import MarketEvPrediction, Race, RaceResult
+from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION as _DISPLAYED_VERSION
 from sqlalchemy import delete, insert, select, text
 from sqlalchemy.orm import Session
 
@@ -75,9 +76,10 @@ LOGIC_VERSION = (
 
 #: Feature 138: the logic version of the 15-seed average rows. ``EnsembleMarketEvModel.load``
 #: refuses an ensemble spec that does not match it (seeds 1-15, one thread, deterministic).
+#: 2026-11-10: the leading token is the displayed version (mev-ens15-v1 → mev-ens15-jrdb-v5).
 ENSEMBLE_LOGIC_VERSION = (
-    "mev-ens15-v1;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;"
-    "drop=sameday,weightlive;data>=2007;oddsobs=quote"
+    f"{_DISPLAYED_VERSION};seeds=1-15;threads=1;deterministic;"
+    "features=roi-explore-2026-09;drop=sameday,weightlive;data>=2007;oddsobs=quote"
 )
 ENSEMBLE_SEEDS = tuple(range(1, 16))
 

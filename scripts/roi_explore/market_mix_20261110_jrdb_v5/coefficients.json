@@ -1,0 +1,166 @@
+{
+ "version": "mix-ens15-jrdb-v5",
+ "source_model_version": "mev-ens15-jrdb-v5",
+ "inputs_sha256": {
+  "seed_01": "05f28e1b45c9d94878d393054a0938ae3c8f2655781312fbc25eabc3156c018a",
+  "seed_02": "a936e4169d7cab10448a7a8fab0a2e0b4ab5d5a2ff88a6735c69309c851b5b42",
+  "seed_03": "bde1b054e55fcbf4d0dc0c57cb61b4cc4e34407c9880d60953f99771d9fb7a8b",
+  "seed_04": "bc6fc784336a9d77321be976c49e721207f72751d057f25756ca0b01f9bbab92",
+  "seed_05": "d28a3318379312efd6a3d44a2edb96aecc436aa7f146914dcd6215bc3eb78eec",
+  "seed_06": "c18a05cac77fa0fe88b5fba0d2099d2b7e507af3e8809bc62c4043bbecee11cd",
+  "seed_07": "a5fd2a127dbe98efe927a4e257287d08c2bbd88fbe37fef9d4c65b0899a39897",
+  "seed_08": "634cc48ab023ca871482a759aaa78f0ea1c69a4e133ae854d1f56ad12ca8e93b",
+  "seed_09": "147facb28d51ab30ffe0f219bcd6a99a45d8b1a83738c83104fae220528c7557",
+  "seed_10": "ad9660c02003c27b7a9a2015ab18a553c6a917ae1c6a2248b32d979440c7b45e",
+  "seed_11": "667a6ce644c42f67f1e8668057f99e0ef6122592bbdc87169ce1142e6653195e",
+  "seed_12": "e032553a5da8249dd0fb139714beed525513d9d88ebb4eb06a90b88bc610a7f3",
+  "seed_13": "6fc210fdb79ed7897de0eb0b27e089492cb9a6f90d3bc72f9d3c05ae5e8986f5",
+  "seed_14": "7dc3dc217822fcf4a4283455d564cc1353121ccbd84a2c906408bc713e8fc8b1",
+  "seed_15": "8d90a479ce6f089428fe11e7b94ab68a5ec84eb0ad5a58de60a3f4b44f5fa0a0",
+  "rows_v5.parquet": "948d8dca0fb786a5e7c9b6b8646a339e0cdaaa230dc613a2ecb193534f7f1252"
+ },
+ "coefficients": {
+  "2013": {
+   "year": 2013,
+   "a": 0.38745429031094936,
+   "b": 0.6106376132355411,
+   "fit_from_year": 2010,
+   "fit_through_year": 2012,
+   "n_rows": 143474,
+   "n_races": 9962,
+   "converged": true
+  },
+  "2014": {
+   "year": 2014,
+   "a": 0.36686733964352003,
+   "b": 0.6328193045930007,
+   "fit_from_year": 2010,
+   "fit_through_year": 2013,
+   "n_rows": 191738,
+   "n_races": 13284,
+   "converged": true
+  },
+  "2015": {
+   "year": 2015,
+   "a": 0.34930978792446243,
+   "b": 0.6549001543681312,
+   "fit_from_year": 2010,
+   "fit_through_year": 2014,
+   "n_rows": 240230,
+   "n_races": 16605,
+   "converged": true
+  },
+  "2016": {
+   "year": 2016,
+   "a": 0.3506261092236005,
+   "b": 0.6547611151369003,
+   "fit_from_year": 2010,
+   "fit_through_year": 2015,
+   "n_rows": 288431,
+   "n_races": 19928,
+   "converged": true
+  },
+  "2017": {
+   "year": 2017,
+   "a": 0.3493197741656973,
+   "b": 0.6566500569845838,
+   "fit_from_year": 2010,
+   "fit_through_year": 2016,
+   "n_rows": 336689,
+   "n_races": 23249,
+   "converged": true
+  },
+  "2018": {
+   "year": 2018,
+   "a": 0.3518869009101326,
+   "b": 0.6557527589742378,
+   "fit_from_year": 2010,
+   "fit_through_year": 2017,
+   "n_rows": 384230,
+   "n_races": 26575,
+   "converged": true
+  },
+  "2019": {
+   "year": 2019,
+   "a": 0.33954890954706507,
+   "b": 0.6681117629215798,
+   "fit_from_year": 2010,
+   "fit_through_year": 2018,
+   "n_rows": 431011,
+   "n_races": 29897,
+   "converged": true
+  },
+  "2020": {
+   "year": 2020,
+   "a": 0.32180876216076,
+   "b": 0.6847926045429591,
+   "fit_from_year": 2010,
+   "fit_through_year": 2019,
+   "n_rows": 476719,
+   "n_races": 33217,
+   "converged": true
+  },
+  "2021": {
+   "year": 2021,
+   "a": 0.3148513346499469,
+   "b": 0.6904797102133489,
+   "fit_from_year": 2010,
+   "fit_through_year": 2020,
+   "n_rows": 523171,
+   "n_races": 36539,
+   "converged": true
+  },
+  "2022": {
+   "year": 2022,
+   "a": 0.30347582378201116,
+   "b": 0.7040494605662755,
+   "fit_from_year": 2010,
+   "fit_through_year": 2021,
+   "n_rows": 569226,
+   "n_races": 39859,
+   "converged": true
+  },
+  "2023": {
+   "year": 2023,
+   "a": 0.29385968680198354,
+   "b": 0.7160371929371583,
+   "fit_from_year": 2010,
+   "fit_through_year": 2022,
+   "n_rows": 614825,
+   "n_races": 43186,
+   "converged": true
+  },
+  "2024": {
+   "year": 2024,
+   "a": 0.2878138983303691,
+   "b": 0.7222282217982016,
+   "fit_from_year": 2010,
+   "fit_through_year": 2023,
+   "n_rows": 660823,
+   "n_races": 46512,
+   "converged": true
+  },
+  "2025": {
+   "year": 2025,
+   "a": 0.2864990952000774,
+   "b": 0.7247007576203676,
+   "fit_from_year": 2010,
+   "fit_through_year": 2024,
+   "n_rows": 706338,
+   "n_races": 49833,
+   "converged": true
+  },
+  "2026": {
+   "year": 2026,
+   "a": 0.28066846160510256,
+   "b": 0.7300589110605519,
+   "fit_from_year": 2010,
+   "fit_through_year": 2025,
+   "n_rows": 752586,
+   "n_races": 53163,
+   "converged": true
+  }
+ },
+ "disclaimer": "ROI の改善を示すものではない(確定オッズでの過去検証・記録のみ)",
+ "source_sha256": "95d08d104e8c7aa7915ce3cd3ee33c4a272fd17c5f042a1388f4ca5697125136"
+}

@@ -481,27 +481,27 @@ def test_a_race_whose_payout_disagrees_with_the_result_is_left_out_whole(client,
 
 def test_checkpoint_records_of_another_policy_are_ignored(client, session, go_live):
     picks = _counted_block(session, "S3", n_races=1)
-    _record(session, "S3", 300, "passed", last_pick_id=picks[-1].pick_id, policy="v1")
+    _record(session, "S3", 300, "passed", last_pick_id=picks[-1].pick_id, policy="v2")
     s3 = _rules(client)["S3"]["prospective"]
-    assert s3["policy_version"] == ar.SELECTION_POLICY_VERSION == "v2"
+    assert s3["policy_version"] == ar.SELECTION_POLICY_VERSION == "v3"
     assert s3["decisions"] == []
     assert (s3["stage"], s3["checkpoint"], s3["checkpoint_pending"]) == (
         "researching", None, False)
 
-    _record(session, "S3", 300, "failed", last_pick_id=picks[-1].pick_id)     # a v2 record
+    _record(session, "S3", 300, "failed", last_pick_id=picks[-1].pick_id)     # a v3 record
     s3 = _rules(client)["S3"]["prospective"]
     assert [d["decision"] for d in s3["decisions"]] == ["failed"]
     assert s3["decisions"][0]["valuation_basis"] == "official_win_payout"
     assert s3["stage"] == "failed"
 
 
-def test_v2_counts_from_its_own_start_date(client, session):
-    # the real go-live constant (no monkeypatch): a pick computed on the last v1 day (JST 10-04)
-    # stays before_start; one computed on JST 10-05 is counted and settled at the payout
-    day = datetime.date(2026, 10, 5)
+def test_v3_counts_from_its_own_start_date(client, session):
+    # the real go-live constant (no monkeypatch, 2026-11-10 switch): a pick computed on the last v2
+    # day (JST 11-10) stays before_start; one computed on JST 11-11 is counted and settled at the payout
+    day = datetime.date(2026, 11, 15)
     for race_id, computed in (
-        ("202610050601", datetime.datetime(2026, 10, 4, 14, 59, tzinfo=_UTC)),   # JST 10-04 23:59
-        ("202610050602", datetime.datetime(2026, 10, 4, 15, 0, tzinfo=_UTC)),    # JST 10-05 00:00
+        ("202611150601", datetime.datetime(2026, 11, 10, 14, 59, tzinfo=_UTC)),  # JST 11-10 23:59
+        ("202611150602", datetime.datetime(2026, 11, 10, 15, 0, tzinfo=_UTC)),   # JST 11-11 00:00
     ):
         post = _race(session, race_id, day=day, number=int(race_id[-2:]), odds={1: 15.0})
         _pick(session, race_id, 1, "S4", computed_at=computed, post_time=post,
@@ -509,7 +509,7 @@ def test_v2_counts_from_its_own_start_date(client, session):
         _results(session, race_id, {n: n for n in range(1, 7)})
         _payouts(session, race_id, {1: 1480})
     s4 = _rules(client)["S4"]["prospective"]
-    assert s4["start_date"] == "2026-10-05" and s4["policy_version"] == "v2"
+    assert s4["start_date"] == "2026-11-11" and s4["policy_version"] == "v3"
     assert s4["counts"]["before_start"] == 1 and s4["n_counted"] == 1
     assert s4["official"]["roi"] == pytest.approx(14.8)
     assert s4["frozen"]["roi"] == pytest.approx(15.0)
@@ -667,9 +667,16 @@ def test_rules_listing_is_rank_ordered_and_carries_the_frozen_values(client):
         assert item["prospective"]["official"]["valuation_basis"] == "official_win_payout"
 
 
-def test_rules_listing_serves_the_verified_buy_time_expectation(client):
+def test_rules_listing_has_no_buy_time_expectation_for_the_switched_model(client):
+    # 2026-11-10: buy-time-v2 was verified on mev-ens15-v1, not on the displayed mev-ens15-jrdb-v5
+    for item in client.get("/api/v1/attention-rules").json()["items"]:
+        assert item["buy_time_expectation"] is None
+
+
+def test_rules_listing_serves_the_verified_buy_time_expectation(client, monkeypatch):
     # 139 D13: buy-time-v2 passed the independent verification — served as registered (a 5% range
-    # with the CI envelope; S2 has no value of its own and points at S1)
+    # with the CI envelope; S2 has no value of its own and points at S1) for its own model
+    monkeypatch.setattr(ar, "DISPLAYED_MARKET_EV_MODEL_VERSION", ar.BUY_TIME_EXPECTATION_MODEL_VERSION)
     assert ar.BUY_TIME_EXPECTATION_VERIFIED is True
     for item in client.get("/api/v1/attention-rules").json()["items"]:
         reg = ar.BUY_TIME_EXPECTATION[item["id"]]

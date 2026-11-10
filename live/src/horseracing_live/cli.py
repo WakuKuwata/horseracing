@@ -25,6 +25,13 @@ from .chaos_capture import (
 from .orchestrate import collect_prospective, list_pending, live_serve, refresh_range
 
 
+def _displayed_ensemble_version() -> str:
+    """The displayed 期待回収率 version (eval registry) — default artifact dir name (2026-11-10)."""
+    from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
+
+    return DISPLAYED_MARKET_EV_MODEL_VERSION
+
+
 def _default_scrape_fn(session: Session, race_id):
     """Fresh pre-race odds capture for the prospective collection. Returns the CAPTURE completion
     timestamp (now) on success, or None to SKIP (never fall back to stale/closing odds). Uses the
@@ -399,7 +406,7 @@ def _cmd_near_post_capture(args) -> int:
         print(f"REFUSED: robots: {detail}")
         return 2
     ensemble_dir = (
-        Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
+        Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev" / _displayed_ensemble_version()
     )
     single_dir = (
         Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
@@ -508,17 +515,25 @@ def _cmd_near_post_score(args) -> int:
         print(f"REFUSED: {exc}")
         return 2
     features_dir = Path(args.features_dir) if args.features_dir else np_.DEFAULT_FEATURES_DIR
+    ens_version = args.ensemble_version or _displayed_ensemble_version()
     ensemble_dir = (
-        Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev/mev-ens15-v1"
+        Path(args.ensemble_dir) if args.ensemble_dir else repo / "artifacts/market_ev" / ens_version
     )
     single_dir = (
         Path(args.single_dir) if args.single_dir else repo / "artifacts/market_ev/mev-binary-v2"
     )
     engine = create_db_engine(args.database_url)
     with Session(engine) as session:
-        records = nps.load_quote_records(session, date_from=args.date_from, date_to=args.date_to)
+        # 2026-11-10: only the quotes of ONE ensemble version are scored (never pooled)
+        records = nps.load_quote_records(
+            session, date_from=args.date_from, date_to=args.date_to, ensemble_version=ens_version
+        )
+        other_versions = nps.count_other_ensemble_quotes(
+            session, date_from=args.date_from, date_to=args.date_to, ensemble_version=ens_version
+        )
         print(
-            f"near-post-score from={args.date_from} to={args.date_to} rows={len(records)} "
+            f"near-post-score from={args.date_from} to={args.date_to} ensemble={ens_version} "
+            f"rows={len(records)} other_ensemble_rows={other_versions} "
             f"candidates={[c.name for c in cands]}",
             flush=True,
         )
@@ -529,7 +544,8 @@ def _cmd_near_post_score(args) -> int:
             @functools.cache
             def predictor_for(year: int):
                 return np_.ProductionPredictor(
-                    ensemble_dir=ensemble_dir, single_dir=single_dir, year=year
+                    ensemble_dir=ensemble_dir, single_dir=single_dir, year=year,
+                    ensemble_version=ens_version,
                 )
 
             @functools.cache
@@ -578,6 +594,8 @@ def _cmd_near_post_score(args) -> int:
         computed_at=computed_at,
         replay_stats=replay_stats,
     )
+    doc["ensemble_version"] = ens_version
+    doc["quotes_other_ensemble_version"] = other_versions
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
         json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8"
@@ -698,7 +716,7 @@ def _cmd_source_trial(args) -> int:
     predictor = np_.ProductionPredictor(
         ensemble_dir=Path(args.ensemble_dir)
         if args.ensemble_dir
-        else repo / "artifacts/market_ev/mev-ens15-v1",
+        else repo / "artifacts/market_ev" / _displayed_ensemble_version(),
         single_dir=Path(args.single_dir)
         if args.single_dir
         else repo / "artifacts/market_ev/mev-binary-v2",
@@ -863,6 +881,10 @@ def main(argv: list[str] | None = None) -> int:
         "--features-dir", default=None, help="morning parquet dir (default artifacts/near_post)"
     )
     nps_p.add_argument("--ensemble-dir", default=None)
+    nps_p.add_argument(
+        "--ensemble-version", default=None,
+        help="score only the quotes captured with this ensemble (default: the displayed version)",
+    )
     nps_p.add_argument("--single-dir", default=None)
     nps_p.add_argument("--out", default=None, help="report JSON path (append-only: must not exist)")
     nps_p.add_argument("--database-url", default=None)

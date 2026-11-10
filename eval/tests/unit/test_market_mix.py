@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import json
 import math
 import pathlib
@@ -14,7 +15,7 @@ from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
 
 _FIT = (
     pathlib.Path(__file__).resolve().parents[3]
-    / "scripts/roi_explore/market_mix_20261019/coefficients.json"
+    / "scripts/roi_explore/market_mix_20261110_jrdb_v5/coefficients.json"
 )
 
 
@@ -26,9 +27,12 @@ def _hand(p, o, a, b):
 
 
 def test_constants():
-    assert mm.MIX_VERSION == "mix-ens15-v1"
+    assert mm.MIX_VERSION == "mix-ens15-jrdb-v5"
     assert mm.MIX_EV_THRESHOLD == 1.0
-    assert mm.MIX_SOURCE_MODEL_VERSION == DISPLAYED_MARKET_EV_MODEL_VERSION == "mev-ens15-v1"
+    # a literal (the model the coefficients were fit on), pinned equal to the displayed version:
+    # switching the display without a refit fails here (and the api reports model_mismatch)
+    assert mm.MIX_SOURCE_MODEL_VERSION == DISPLAYED_MARKET_EV_MODEL_VERSION == "mev-ens15-jrdb-v5"
+    assert mm.MIX_PROSPECTIVE_START_DATE == datetime.date(2026, 11, 11)
     assert set(mm.MIX_COEFFICIENTS) == {2025, 2026}
     for y, c in mm.MIX_COEFFICIENTS.items():
         assert c.year == y and c.fit_through_year == y - 1 and c.fit_from_year == 2010

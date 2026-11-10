@@ -39,8 +39,13 @@ EV_BANDS = ((-np.inf, 0.8), (0.8, 1.0), (1.0, 1.2), (1.2, 1.5), (1.5, np.inf))
 DISCLAIMER = "ROI の改善を示すものではない(確定オッズでの過去検証・記録のみ)"
 
 
+#: 2026-11-10(表示版の切替): run の接尾辞・入力行・出力先を引数で指定できるようにした。既定は従来どおり。
+ENS_SUFFIX = "_ens15"
+OUT_DIR = HERE
+
+
 def seed_path(s: int) -> pathlib.Path:
-    tag = "armC_binary" + ("" if s == 1 else f"_seed{s}") + "_drop-sameday+weightlive_from2007_ens15"
+    tag = "armC_binary" + ("" if s == 1 else f"_seed{s}") + "_drop-sameday+weightlive_from2007" + ENS_SUFFIX
     return RES / tag / "predictions.parquet"
 
 
@@ -71,7 +76,7 @@ def load() -> tuple[pd.DataFrame, dict]:
     df["pbar"] = np.clip(P.mean(1), 1e-6, 1 - 1e-6)
     df["won_f"] = df["won"].astype(float)
     df = df.sort_values(["race_id", "horse_id"], kind="stable").reset_index(drop=True)
-    shas["rows_2007"] = sha256(ROWS)
+    shas["rows_2007" if ROWS.name == "rows_2007.parquet" else ROWS.name] = sha256(ROWS)
     return df, shas
 
 
@@ -130,7 +135,16 @@ def summary(d: pd.DataFrame, pcol: str) -> dict:
     return out
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    import argparse
+    global ROWS, ENS_SUFFIX, OUT_DIR
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--rows", default=str(ROWS))
+    ap.add_argument("--ens-suffix", default=ENS_SUFFIX)
+    ap.add_argument("--out-dir", default=str(OUT_DIR))
+    args = ap.parse_args(argv)
+    ROWS, ENS_SUFFIX, OUT_DIR = pathlib.Path(args.rows), args.ens_suffix, pathlib.Path(args.out_dir)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     df, shas = load()
     codes, _ = pd.factorize(df.race_id.to_numpy())
@@ -161,7 +175,7 @@ def main() -> int:
     assert worst < 1e-12, worst
     d13 = df[df.year >= 2013]
     wf = {
-        "population": f"mev-ens15-v1 15-seed OOF, race_ok & !dead_heat & race_date <= {MAX_DATE}, years 2013..2026",
+        "population": f"{MM.MIX_SOURCE_MODEL_VERSION} 15-seed OOF ({ENS_SUFFIX}, rows {ROWS.name}), race_ok & !dead_heat & race_date <= {MAX_DATE}, years 2013..2026",
         "fit": f"per year Y: fit on {FIT_FROM}..Y-1, L-BFGS-B bounds [0,5]^2 start (1,0)",
         "shared_definition_parity_max_abs_diff": worst,
         "raw": summary(d13, "pbar"),
@@ -176,8 +190,8 @@ def main() -> int:
           "inputs_sha256": shas, "coefficients": {str(k): v for k, v in coefs.items()},
           "disclaimer": DISCLAIMER}
     cj["source_sha256"] = hashlib.sha256(json.dumps(shas, sort_keys=True).encode()).hexdigest()
-    (HERE / "coefficients.json").write_text(json.dumps(cj, ensure_ascii=False, indent=1), encoding="utf-8")
-    (HERE / "walkforward.json").write_text(json.dumps(wf, ensure_ascii=False, indent=1), encoding="utf-8")
+    (OUT_DIR / "coefficients.json").write_text(json.dumps(cj, ensure_ascii=False, indent=1), encoding="utf-8")
+    (OUT_DIR / "walkforward.json").write_text(json.dumps(wf, ensure_ascii=False, indent=1), encoding="utf-8")
     r, m = wf["raw"], wf["mix"]
     print(f"winner NLL raw {r['winner_nll_norm']:.6f} mix {m['winner_nll_norm']:.6f}")
     for k in ("1.0", "1.2"):

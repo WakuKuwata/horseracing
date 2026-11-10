@@ -28,8 +28,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
-
 __all__ = [
     "MIX_COEFFICIENTS",
     "MIX_DISPLAY_ENABLED",
@@ -44,10 +42,14 @@ __all__ = [
     "mix_probabilities",
 ]
 
-MIX_VERSION = "mix-ens15-v1"
+MIX_VERSION = "mix-ens15-jrdb-v5"
 
-#: The mixture is fitted on THIS model's p̄ only (another model's p̄ needs its own fit).
-MIX_SOURCE_MODEL_VERSION = DISPLAYED_MARKET_EV_MODEL_VERSION
+#: The mixture is fitted on THIS model's p̄ only (another model's p̄ needs its own fit). A literal,
+#: NOT an alias of the displayed version: when the displayed version changes without a refit, the
+#: stored rows no longer match and the column reports ``model_mismatch`` (a test pins the two
+#: equal).
+#: 2026-11-10: refit on mev-ens15-jrdb-v5 (was mix-ens15-v1 on mev-ens15-v1).
+MIX_SOURCE_MODEL_VERSION = "mev-ens15-jrdb-v5"
 
 #: Neutral marker threshold (ratio, STRICT ``>``). 1.0 and not 1.2: after mixing, EV_mix > 1.2 is
 #: still over-stated (Σwon/Σp_mix 0.77 on 2,330 horses) while EV_mix > 1.0 is 0.95 (24,737).
@@ -60,7 +62,9 @@ MIX_DISPLAY_ENABLED = True
 #: for the mixed column. The threshold (1.0) was chosen on data through 2026-06 and the one-shot
 #: held-out check used 2026-08-10..10-18, so nothing before 2026-10-19 is untouched. Races before
 #: this date are reported as ``before_start`` and never tallied (constitution III).
-MIX_PROSPECTIVE_START_DATE = datetime.date(2026, 10, 19)
+#: 2026-11-10: the v5 mixture counts from 2026-11-11 (the v1-mixture period 10-19..11-10 is kept
+#: under mix-ens15-v1 and never tallied with it).
+MIX_PROSPECTIVE_START_DATE = datetime.date(2026, 11, 11)
 
 
 @dataclass(frozen=True)
@@ -77,20 +81,25 @@ class MixCoefficients:
     source_sha256: str
 
 
-#: Frozen from scripts/roi_explore/market_mix_20261019/fit_mix.py (coefficients.json). The test
+#: Frozen from scripts/roi_explore/market_mix_20261019/fit_mix.py run on mev-ens15-jrdb-v5
+#: (2026-11-10: --rows artifacts/market_ev/mev-ens15-jrdb-v5/rows_v5.parquet
+#: --ens-suffix _ens15jrdb5;
+#: output scripts/roi_explore/market_mix_20261110_jrdb_v5/coefficients.json — the v1 fit in
+#: market_mix_20261019/ is kept). Same years, bounds and start as v1. The 141 one-shot held-out
+#: check was NOT redone for v5 (no untouched window is left): "available" means computable. The test
 #: ``test_market_mix_coefficients_match_fit`` pins these to the fit output when it is present.
 MIX_COEFFICIENTS: dict[int, MixCoefficients] = {
     2025: MixCoefficients(
-        year=2025, a=0.2833450347492916, b=0.7278063033935696,
+        year=2025, a=0.2864990952000774, b=0.7247007576203676,
         fit_from_year=2010, fit_through_year=2024,
-        n_races=49833, n_rows=705663,
-        source_sha256="c4637b87dd83e079a09b38d025ea38b0b8ae42fcd6e7ca8a04614a3809e15ae4",
+        n_races=49833, n_rows=706338,
+        source_sha256="95d08d104e8c7aa7915ce3cd3ee33c4a272fd17c5f042a1388f4ca5697125136",
     ),
     2026: MixCoefficients(
-        year=2026, a=0.2785412668821836, b=0.7320697007761336,
+        year=2026, a=0.28066846160510256, b=0.7300589110605519,
         fit_from_year=2010, fit_through_year=2025,
-        n_races=53162, n_rows=751870,
-        source_sha256="c4637b87dd83e079a09b38d025ea38b0b8ae42fcd6e7ca8a04614a3809e15ae4",
+        n_races=53163, n_rows=752586,
+        source_sha256="95d08d104e8c7aa7915ce3cd3ee33c4a272fd17c5f042a1388f4ca5697125136",
     ),
 }
 

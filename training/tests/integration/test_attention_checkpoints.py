@@ -391,7 +391,7 @@ def test_decisions_settle_at_the_official_payout_not_at_the_judged_odds(session,
     out = _evaluate(session, 30, days_after=5)
     assert out["written"] == [("S3", 300, "failed")] and out["error"] is None
     (rec,) = _records(session)
-    assert rec.selection_policy_version == ar.SELECTION_POLICY_VERSION == "v2"
+    assert rec.selection_policy_version == ar.SELECTION_POLICY_VERSION == "v3"
     assert rec.bootstrap["settlement"] == "official_win_payout"
     assert rec.n_hits == 30
     assert rec.roi_frozen == Decimal(repr(30 * 900 / 30000))
@@ -477,38 +477,40 @@ def test_a_winner_without_a_known_horse_number_makes_its_race_inconsistent(sessi
     assert _classes(session) == {"counted": 20, "payout_inconsistent": 10}
 
 
-V2_FIRST = datetime.date(2026, 10, 4)  # race 0 runs the day before policy v2's start
+V3_FIRST = datetime.date(2026, 11, 10)  # race 0 runs the day before policy v3's start
 
 
-def test_v2_counts_from_its_own_start_date_and_never_reads_a_v1_record(session):
-    """With the real constants: a pick computed on 2026-10-04 (JST) is ``before_start`` under v2;
-    a pick computed on 2026-10-05 counts even when its row was written under v1 (the selection is
-    the same); a v1 checkpoint record (start 2026-10-02) is neither read nor extended."""
-    assert ar.SELECTION_POLICY_VERSION == "v2"
-    assert ar.PROSPECTIVE_START_DATE == datetime.date(2026, 10, 5)
-    ids = seed_picks(session, 31, _alternating, first=V2_FIRST,
-                     policy=lambda i: "v1" if i <= 1 else "v2")
+def test_v3_counts_from_its_own_start_date_and_never_reads_a_v2_record(session):
+    """With the real constants (2026-11-10 switch): a pick computed on 2026-11-10 (JST) is
+    ``before_start`` under v3; a pick computed on 2026-11-11 counts even when its row was written
+    under v2 (the selection is the same — a stale writer is excluded operationally by the restart
+    and the post-switch check); a v2 checkpoint record (start 2026-10-05) is neither read nor
+    extended."""
+    assert ar.SELECTION_POLICY_VERSION == "v3"
+    assert ar.PROSPECTIVE_START_DATE == datetime.date(2026, 11, 11)
+    ids = seed_picks(session, 31, _alternating, first=V3_FIRST,
+                     policy=lambda i: "v2" if i <= 1 else "v3")
     assert _classes(session) == {"before_start": 10, "counted": 300}
     session.add(AttentionCheckpoint(
-        checkpoint_id=uuid.uuid4(), rule_id="S3", checkpoint=300, selection_policy_version="v1",
+        checkpoint_id=uuid.uuid4(), rule_id="S3", checkpoint=300, selection_policy_version="v2",
         rule_set_version=ar.RULE_SET_VERSION, decision="continue", n_counted=300, n_hits=30,
         roi_frozen=Decimal("1.0"), ci_low=Decimal("0.5"), ci_high=Decimal("1.5"),
         bootstrap={"settlement": "frozen_pick_odds"}, counted_pick_ids_sha256="0" * 64,
-        last_pick_id=uuid.UUID(ids[0]), settlement_cutoff=_post(0, V2_FIRST),
-        prospective_start_date=ar.V1_START_DATE, skipped_pending_before_last=0,
-        decided_at=_post(0, V2_FIRST),
+        last_pick_id=uuid.UUID(ids[0]), settlement_cutoff=_post(0, V3_FIRST),
+        prospective_start_date=ar.V2_START_DATE, skipped_pending_before_last=0,
+        decided_at=_post(0, V3_FIRST),
     ))
     session.commit()
 
-    out = _evaluate_at(session, _post(30, V2_FIRST) + datetime.timedelta(days=5))
-    assert out["error"] is None  # a v1 record under 2026-10-02 is not a v2 start-date mismatch
-    assert out["prospective_start_date"] == "2026-10-05"
+    out = _evaluate_at(session, _post(30, V3_FIRST) + datetime.timedelta(days=5))
+    assert out["error"] is None  # a v2 record under 2026-10-05 is not a v3 start-date mismatch
+    assert out["prospective_start_date"] == "2026-11-11"
     assert out["written"] == [("S3", 300, "continue")]
-    v2 = [r for r in _records(session) if r.selection_policy_version == "v2"]
-    (rec,) = v2
-    assert rec.prospective_start_date == datetime.date(2026, 10, 5)
+    v3 = [r for r in _records(session) if r.selection_policy_version == "v3"]
+    (rec,) = v3
+    assert rec.prospective_start_date == datetime.date(2026, 11, 11)
     assert rec.bootstrap["settlement"] == "official_win_payout"
-    race0 = {p.pick_id for p in _picks_of_race(session, 0, V2_FIRST)}
+    race0 = {p.pick_id for p in _picks_of_race(session, 0, V3_FIRST)}
     ordered = sorted(
         (p for p in _all_picks(session) if p.pick_id not in race0),
         key=lambda p: (p.post_time, p.race_id, p.horse_number, str(p.pick_id)),
@@ -516,9 +518,9 @@ def test_v2_counts_from_its_own_start_date_and_never_reads_a_v1_record(session):
     assert len(ordered) == 300
     expected = hashlib.sha256("\n".join(str(p.pick_id) for p in ordered).encode()).hexdigest()
     assert rec.counted_pick_ids_sha256 == expected
-    # the v1 record is left exactly as it was
-    (v1,) = [r for r in _records(session) if r.selection_policy_version == "v1"]
-    assert (v1.decision, v1.prospective_start_date) == ("continue", datetime.date(2026, 10, 2))
+    # the v2 record is left exactly as it was
+    (v2,) = [r for r in _records(session) if r.selection_policy_version == "v2"]
+    assert (v2.decision, v2.prospective_start_date) == ("continue", datetime.date(2026, 10, 5))
 
 
 def _evaluate_at(session, now: datetime.datetime) -> dict:

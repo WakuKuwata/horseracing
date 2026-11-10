@@ -28,6 +28,7 @@ from horseracing_db.enums import EntryStatus, ResultStatus
 from horseracing_db.models import DecisionQuote, OfficialWinPayout, Race, RaceHorse, RaceResult
 from horseracing_eval import decision_quote_scoring as dqs
 from horseracing_eval import display_update_rule as dur
+from horseracing_eval.attention_rules import DISPLAYED_MARKET_EV_MODEL_VERSION
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -70,18 +71,40 @@ def _f(x) -> float | None:
     return None if x is None else float(x)
 
 
+def count_other_ensemble_quotes(
+    session: Session, *, date_from: datetime.date, date_to: datetime.date, ensemble_version: str
+) -> dict[str, int]:
+    """decision_quotes of races in the range captured with an ensemble other than
+    ``ensemble_version``: {version: count} (reported, never scored)."""
+    rows = session.execute(
+        select(DecisionQuote.ensemble_version, func.count())
+        .join(Race, Race.race_id == DecisionQuote.race_id)
+        .where(Race.race_date >= date_from, Race.race_date <= date_to,
+               DecisionQuote.ensemble_version != ensemble_version)
+        .group_by(DecisionQuote.ensemble_version)
+    ).all()
+    return {str(v): int(n) for v, n in rows}
+
+
 def load_quote_records(
-    session: Session, *, date_from: datetime.date, date_to: datetime.date
+    session: Session, *, date_from: datetime.date, date_to: datetime.date,
+    ensemble_version: str | None = None,
 ) -> list[dqs.QuoteRecord]:
     """Every decision_quotes row of races held in [date_from, date_to], joined with the current
-    started field, results, official win payouts and (when final) the closing win odds."""
+    started field, results, official win payouts and (when final) the closing win odds.
+
+    ``ensemble_version`` (2026-11-10, displayed-version switch): only quotes captured with that
+    ensemble — quotes of another version are never pooled (count them with
+    :func:`count_other_ensemble_quotes`)."""
     if date_from > date_to:
         raise ScoreRefused("--from must not be after --to")
-    rows = session.execute(
+    stmt = (
         select(DecisionQuote, Race).join(Race, Race.race_id == DecisionQuote.race_id)
         .where(Race.race_date >= date_from, Race.race_date <= date_to)
-        .order_by(Race.race_date, DecisionQuote.race_id)
-    ).all()
+    )
+    if ensemble_version is not None:
+        stmt = stmt.where(DecisionQuote.ensemble_version == ensemble_version)
+    rows = session.execute(stmt.order_by(Race.race_date, DecisionQuote.race_id)).all()
     race_ids = [q.race_id for q, _r in rows]
     if not race_ids:
         return []
@@ -229,7 +252,7 @@ def load_candidates(path: Path = DEFAULT_CANDIDATES_PATH, *, names: Sequence[str
         kind = item["kind"]
         art = item.get("artifact_path")
         sha = str(item.get("artifact_sha256", ""))
-        version = str(item.get("artifact_version", "mev-ens15-v1"))
+        version = str(item.get("artifact_version", DISPLAYED_MARKET_EV_MODEL_VERSION))
         if kind == "postprocess":
             actual = file_sha256(EVAL_MODULE_PATH)
             if art is not None:

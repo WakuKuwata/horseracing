@@ -88,7 +88,9 @@ def test_rule_set_constants():
     assert [d.rank for d in ar.RULE_DEFINITIONS] == [1, 2, 3, 4, 5]
     assert [d.posthoc for d in ar.RULE_DEFINITIONS] == [True, True, False, False, False]
     assert [d.control for d in ar.RULE_DEFINITIONS] == [False, False, False, False, True]
-    assert ar.DISPLAYED_MARKET_EV_MODEL_VERSION == "mev-ens15-v1"
+    # 2026-11-10: switched (data-source replacement at equal accuracy; display-rule exception)
+    assert ar.DISPLAYED_MARKET_EV_MODEL_VERSION == "mev-ens15-jrdb-v5"
+    assert ar.PREVIOUS_DISPLAYED_MARKET_EV_MODEL_VERSION == "mev-ens15-v1"
     assert ar.SINGLE_SEED_MODEL_VERSION == "mev-binary-v2"
     with pytest.raises(ValueError):
         ar.definition("S9")
@@ -419,7 +421,9 @@ def test_chip_now():
 
 def test_levels_follow_the_spec_tables():
     got = {r.id: (ar.backtest_level(r), ar.price_noise_level(r)) for r in ar.RULES}
-    assert got == {"S1": (3, 2), "S2": (3, 2), "S3": (2, 2), "S4": (2, 2), "S5": (1, 1)}
+    # 2026-11-10 refreeze on mev-ens15-jrdb-v5: S4's 確認窓 ROI fell below 100% (0.904) → 過去検証 1
+    # (was (2, 2) on mev-ens15-v1). The other rules keep their levels.
+    assert got == {"S1": (3, 2), "S2": (3, 2), "S3": (2, 2), "S4": (1, 2), "S5": (1, 1)}
     # the price-noise axis never reaches 3 with the frozen values → emphasis 3 is unreachable
     assert max(ar.price_noise_level(r) for r in ar.RULES) == 2
 
@@ -488,21 +492,35 @@ def test_order_key_follows_checkpoint_order(monkeypatch):
 
 
 def test_go_live_date_is_pinned():
-    # policy v2 (139 D12) counts from its own start; moving it requires a new policy version.
-    # v1 ran 2026-10-02..04 (JST) and settled at the judged odds.
-    assert ar.SELECTION_POLICY_VERSION == "v2"
-    assert ar.PROSPECTIVE_START_DATE == dt.date(2026, 10, 5)
+    # each policy counts from its own start; moving it requires a new policy version.
+    # v1 ran 2026-10-02..04 (JST) and settled at the judged odds; v2 2026-10-05..11-10 on
+    # mev-ens15-v1; v3 from 2026-11-11 on mev-ens15-jrdb-v5 (the v2 picks are before_start).
+    assert ar.SELECTION_POLICY_VERSION == "v3"
+    assert ar.PROSPECTIVE_START_DATE == dt.date(2026, 11, 11)
     assert ar.V1_START_DATE == dt.date(2026, 10, 2)
-    assert ar.V1_START_DATE < ar.PROSPECTIVE_START_DATE
+    assert ar.V2_START_DATE == dt.date(2026, 10, 5)
+    assert ar.V1_START_DATE < ar.V2_START_DATE < ar.PROSPECTIVE_START_DATE
 
 
 def test_v1_period_picks_are_before_start_under_v2():
+    # the boundary rule as it ran for v2 (start 2026-10-05): the day before is before_start
     post = dt.datetime(2026, 10, 5, 6, tzinfo=_UTC)
     last_v1 = dt.datetime(2026, 10, 4, 14, 59, tzinfo=_UTC)  # 23:59 JST on 10/4
     first_v2 = dt.datetime(2026, 10, 4, 15, 0, tzinfo=_UTC)  # 00:00 JST on 10/5
     f = dict(post_time=post, odds_observed_at=last_v1 - dt.timedelta(minutes=5))
-    assert ar.classify_pick(_facts(computed_at=last_v1, **f)) == "before_start"
-    assert ar.classify_pick(_facts(computed_at=first_v2, **f)) == "counted"
+    assert ar.classify_pick(_facts(computed_at=last_v1, **f), start_date=ar.V2_START_DATE) == "before_start"
+    assert ar.classify_pick(_facts(computed_at=first_v2, **f), start_date=ar.V2_START_DATE) == "counted"
+
+
+def test_v2_period_picks_are_before_start_under_v3():
+    # 2026-11-10 switch: picks computed with mev-ens15-v1 (up to 23:59 JST on 11/10) never count
+    # under v3; the first v5 compute on 11/11 JST does
+    post = dt.datetime(2026, 11, 15, 1, tzinfo=_UTC)
+    last_v2 = dt.datetime(2026, 11, 10, 14, 59, tzinfo=_UTC)  # 23:59 JST on 11/10
+    first_v3 = dt.datetime(2026, 11, 10, 15, 0, tzinfo=_UTC)  # 00:00 JST on 11/11
+    f = dict(post_time=post, odds_observed_at=last_v2 - dt.timedelta(minutes=5))
+    assert ar.classify_pick(_facts(computed_at=last_v2, **f)) == "before_start"
+    assert ar.classify_pick(_facts(computed_at=first_v3, **f)) == "counted"
 
 
 # ---------------------------------------------------------------- buy-time expectation (139)
@@ -671,7 +689,8 @@ def test_every_recorded_buy_time_version_keeps_its_numbers():
     assert v1["verification"].startswith("superseded by buy-time-v2")
 
 
-def test_buy_time_v1_numbers_are_no_longer_served():
+def test_buy_time_v1_numbers_are_no_longer_served(monkeypatch):
+    monkeypatch.setattr(ar, "DISPLAYED_MARKET_EV_MODEL_VERSION", ar.BUY_TIME_EXPECTATION_MODEL_VERSION)
     assert ar.BUY_TIME_EXPECTATION_VERSION != "buy-time-v1"
     v1_numbers = {v for triple in _BUY_TIME_V1.values() for v in triple if v is not None}
     for rid in ar.RULE_IDS:
@@ -681,8 +700,21 @@ def test_buy_time_v1_numbers_are_no_longer_served():
         assert not (shown & v1_numbers), rid
 
 
+def test_buy_time_expectation_is_not_served_for_another_model(monkeypatch):
+    """2026-11-10: buy-time-v2 was derived and verified on mev-ens15-v1's selections; the switched
+    displayed model is not covered — nothing is served ("awaiting verification")."""
+    assert ar.BUY_TIME_EXPECTATION_MODEL_VERSION == "mev-ens15-v1"
+    assert ar.DISPLAYED_MARKET_EV_MODEL_VERSION != ar.BUY_TIME_EXPECTATION_MODEL_VERSION
+    assert all(ar.buy_time_expectation(rid) is None for rid in ar.RULE_IDS)
+    monkeypatch.setattr(ar, "DISPLAYED_MARKET_EV_MODEL_VERSION", "mev-ens15-v1")
+    assert all(ar.buy_time_expectation(rid) is ar.BUY_TIME_EXPECTATION[rid]
+               for rid in ar.RULE_IDS)
+
+
 def test_buy_time_expectation_is_served_once_verified(monkeypatch):
-    """D6: v2 passed the independent verification — served for every rule, as registered."""
+    """D6: v2 passed the independent verification — served for every rule, as registered (for
+    the model it was verified on)."""
+    monkeypatch.setattr(ar, "DISPLAYED_MARKET_EV_MODEL_VERSION", ar.BUY_TIME_EXPECTATION_MODEL_VERSION)
     assert ar.BUY_TIME_EXPECTATION_VERIFIED is True
     assert ar.BUY_TIME_EXPECTATION_SOURCE["status"].startswith("verified")
     assert all(ar.buy_time_expectation(rid) is ar.BUY_TIME_EXPECTATION[rid]

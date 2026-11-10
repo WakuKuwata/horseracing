@@ -27,7 +27,7 @@ pytestmark = pytest.mark.integration
 
 _URL = "/api/v1/market-ev/prospective"
 _UTC = datetime.UTC
-_DAY = datetime.date(2026, 10, 25)
+_DAY = datetime.date(2026, 11, 15)  # after the 2026-11-11 start (v3 / v5 mixture)
 _LV = f"mev-v1;features=test;{QUOTE_TOKEN}"
 _FIELD = {1: {"odds": 2.5}, 2: {"odds": 4.0}, 3: {"odds": 8.0}, 4: {"odds": 15.0}}
 # 0.36×2.5=0.9 / 0.25×4.0=1.0 / 0.16×8.0=1.28 / 0.09×15.0=1.35 → horses 3 and 4 exceed 1.2
@@ -124,9 +124,9 @@ def test_eligible_race_is_tallied_at_the_official_payout(client, session):
     assert mix["n_bets"] == len(flagged)
     assert mix["return_yen"] == sum(1500 for h in flagged if h["horse_number"] == 4)
     assert mix["stake_yen"] == 100 * len(flagged)
-    assert body["last_eligible_race_date"] == "2026-10-25"
+    assert body["last_eligible_race_date"] == "2026-11-15"
     assert body["by_day"] == [{
-        "race_date": "2026-10-25", "n_eligible": 1, "n_pending_result": 0,
+        "race_date": "2026-11-15", "n_eligible": 1, "n_pending_result": 0,
         "expected_return": {"n_races": 1, "n_bets": 2, "n_hits": 1, "stake_yen": 200,
                             "return_yen": 1500},
         "expected_return_mix": {"n_races": 1, "n_bets": len(flagged),
@@ -187,28 +187,28 @@ def test_funnel_counts_each_failing_race_once_under_its_first_failing_rule(clien
     assert f["payout_race_missing"] == 1 and f["payout_inconsistent"] == 1
     assert f["field_mismatch"] == 1 and f["jump_race"] == 1 and f["observed_after_compute"] == 1
     assert body["columns"][0]["n_races"] == 1
-    day_row = next(d for d in body["by_day"] if d["race_date"] == "2026-10-25")
+    day_row = next(d for d in body["by_day"] if d["race_date"] == "2026-11-15")
     assert day_row["n_eligible"] == 1 and day_row["n_pending_result"] == 1
     assert all(d["race_date"] != early.isoformat() for d in body["by_day"])
 
 
 def test_mixed_column_start_date_and_unavailable_mix(client, session):
     seed_model(session)
-    # between the two start dates: counts for expected_return only
-    mid = COLUMN_START_DATES["expected_return_mix"] - datetime.timedelta(days=1)
-    assert mid >= COLUMN_START_DATES["expected_return"]
-    _race(session, "202610180501", day=mid, number=1)
-    _ev(session, "202610180501", day=mid)
-    # after both start dates but with a booster the mixture was not fitted on
-    _race(session, "202610250501", number=1)
-    _ev(session, "202610250501", booster="model_2026.txt")
+    # 2026-11-10 switch: both columns start on 2026-11-11 (v1's columns started 10-05 / 10-19), so
+    # a race the day before counts for neither column
+    assert COLUMN_START_DATES["expected_return_mix"] == COLUMN_START_DATES["expected_return"]
+    before = COLUMN_START_DATES["expected_return_mix"] - datetime.timedelta(days=1)
+    _race(session, "202611100501", day=before, number=1)
+    _ev(session, "202611100501", day=before)
+    # on the shared start date, with a booster the mixture was not fitted on
+    _race(session, "202611110501", day=COLUMN_START_DATES["expected_return"], number=1)
+    _ev(session, "202611110501", day=COLUMN_START_DATES["expected_return"], booster="model_2026.txt")
 
     body = client.get(_URL).json()
-    assert body["funnel"]["eligible"] == 2
+    assert body["funnel"]["eligible"] == 1
     er, mix = body["columns"]
-    assert er["n_races"] == 2 and er["n_bets"] == 4 and er["n_hits"] == 2
-    assert er["recovery_rate"] == pytest.approx(3000 / 400)
-    assert er["n_days"] == 2 and er["ci"] is not None and er["p_one_sided"] is not None
+    assert er["n_races"] == 1 and er["n_bets"] == 2 and er["n_hits"] == 1
+    assert er["n_days"] == 1
     # the race after the mixed start date is an eligible race of the column with no bet
     assert mix["n_races"] == 1 and mix["n_races_mix_unavailable"] == 1
     assert mix["n_races_with_bets"] == 0 and mix["n_bets"] == 0
@@ -218,7 +218,7 @@ def test_mixed_column_start_date_and_unavailable_mix(client, session):
         for c in totals:
             totals[c]["n_bets"] += d[c]["n_bets"]
             totals[c]["return_yen"] += d[c]["return_yen"]
-    assert totals["expected_return"] == {"n_bets": 4, "return_yen": 3000}
+    assert totals["expected_return"] == {"n_bets": 2, "return_yen": 1500}
     assert totals["expected_return_mix"] == {"n_bets": 0, "return_yen": 0}
 
 

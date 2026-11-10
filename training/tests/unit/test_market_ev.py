@@ -256,7 +256,7 @@ def test_row_logic_version_marks_proxy_rows_and_is_fail_closed():
     assert market_ev.row_logic_version(lv, None).endswith("oddsobs=proxy")
     assert market_ev.row_logic_version(lv, float("nan")).endswith("oddsobs=proxy")
     ens = market_ev.row_logic_version(market_ev.ENSEMBLE_LOGIC_VERSION, True)
-    assert ens.startswith("mev-ens15-v1;") and ens.endswith("oddsobs=proxy")
+    assert ens.startswith("mev-ens15-jrdb-v5;") and ens.endswith("oddsobs=proxy")
     assert "oddsobs=quote" not in ens
 
 
@@ -518,13 +518,13 @@ def test_cli_exception_exits_nonzero_without_a_marker(fake_run, model_dir, capsy
 
 # --------------------------------------------------------------------------- Feature 138: ensemble
 
-ENS = "mev-ens15-v1"
+ENS = "mev-ens15-jrdb-v5"  # the displayed version (2026-11-10 switch from mev-ens15-v1)
 SINGLE = "mev-binary-v2"
 
 
 def test_ensemble_logic_version_is_the_contract_value():
     assert market_ev.ENSEMBLE_LOGIC_VERSION == (
-        "mev-ens15-v1;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;"
+        "mev-ens15-jrdb-v5;seeds=1-15;threads=1;deterministic;features=roi-explore-2026-09;"
         "drop=sameday,weightlive;data>=2007;oddsobs=quote"
     )
     assert market_ev.ENSEMBLE_SEEDS == tuple(range(1, 16))

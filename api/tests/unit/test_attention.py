@@ -617,21 +617,21 @@ def test_prospective_level_follows_the_official_point_roi(monkeypatch):
     assert level(9.0, 1300) == 2           # frozen 90%, official 130%
 
 
-def test_v2_counts_from_its_own_start_date():
-    # The real constant (no monkeypatch): v2 starts on 2026-10-05 JST; a pick computed on the last
-    # v1 day is before_start, never mixed into v2 (139 D12).
-    assert ar.SELECTION_POLICY_VERSION == "v2"
-    assert ar.PROSPECTIVE_START_DATE == datetime.date(2026, 10, 5)
-    last_v1 = datetime.datetime(2026, 10, 4, 14, 59, tzinfo=_UTC)     # JST 10-04 23:59
-    first_v2 = datetime.datetime(2026, 10, 4, 15, 0, tzinfo=_UTC)     # JST 10-05 00:00
-    post = datetime.datetime(2026, 10, 5, 6, 0, tzinfo=_UTC)
-    observed = datetime.datetime(2026, 10, 5, 5, 0, tzinfo=_UTC)
+def test_v3_counts_from_its_own_start_date():
+    # The real constant (no monkeypatch): v3 starts on 2026-11-11 JST (the 2026-11-10 displayed-model
+    # switch); a pick computed on the last v2 day is before_start, never mixed into v3.
+    assert ar.SELECTION_POLICY_VERSION == "v3"
+    assert ar.PROSPECTIVE_START_DATE == datetime.date(2026, 11, 11)
+    last_v2 = datetime.datetime(2026, 11, 10, 14, 59, tzinfo=_UTC)    # JST 11-10 23:59
+    first_v3 = datetime.datetime(2026, 11, 10, 15, 0, tzinfo=_UTC)    # JST 11-11 00:00
+    post = datetime.datetime(2026, 11, 15, 6, 0, tzinfo=_UTC)
+    observed = datetime.datetime(2026, 11, 15, 5, 0, tzinfo=_UTC)
     rows = [
-        _row(computed=last_v1, post=post, observed=observed, finish=1, payout=1500),
-        _row(computed=first_v2, post=post, observed=observed, finish=1, payout=1500),
+        _row(computed=last_v2, post=post, observed=observed, finish=1, payout=1500),
+        _row(computed=first_v3, post=post, observed=observed, finish=1, payout=1500),
     ]
     p = build_rule_tallies(["S3"], rows, {}, [])["S3"].prospective
-    assert p.start_date == datetime.date(2026, 10, 5) and p.policy_version == "v2"
+    assert p.start_date == datetime.date(2026, 11, 11) and p.policy_version == "v3"
     assert p.counts.before_start == 1 and p.n_counted == 1
     assert p.official.roi == pytest.approx(15.0)
 
@@ -721,9 +721,19 @@ def test_rules_response_serves_no_buy_time_expectation_while_unverified(monkeypa
     assert [item.buy_time_expectation for item in resp.items] == [None] * len(resp.items)
 
 
-def test_rules_response_carries_the_registry_buy_time_expectation():
+def test_rules_response_has_no_buy_time_expectation_for_the_switched_model():
+    # 2026-11-10: buy-time-v2 was verified on mev-ens15-v1; the displayed mev-ens15-jrdb-v5 is not
+    # covered -> nothing is served (front shows "awaiting verification")
+    assert ar.BUY_TIME_EXPECTATION_MODEL_VERSION != ar.DISPLAYED_MARKET_EV_MODEL_VERSION
+    resp = build_rules_response(_tallies())
+    assert all(item.buy_time_expectation is None for item in resp.items)
+
+
+def test_rules_response_carries_the_registry_buy_time_expectation(monkeypatch):
     # 139 D13 (buy-time-v2, independently verified): copied from the registry with its source and
     # version, never recomputed — a 5% range with the CI envelope, S2 only "included in S1"
+    # (for the model it was verified on)
+    monkeypatch.setattr(ar, "DISPLAYED_MARKET_EV_MODEL_VERSION", ar.BUY_TIME_EXPECTATION_MODEL_VERSION)
     assert ar.BUY_TIME_EXPECTATION_VERIFIED is True
     resp = build_rules_response(_tallies())
     for item in resp.items:

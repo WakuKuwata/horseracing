@@ -33,9 +33,10 @@ const unavailable = (reason: MarketEvUnavailable["reason"]): MarketEvUnavailable
   status: "unavailable", race_id: "202609270511", reason, threshold: 1.2,
 });
 
-// Feature 138 (T038): the column is the 15-seed average now — the summary is the refrozen S3 values.
+// Feature 138 (T038): the column is the 15-seed average — the summary is the refrozen S3 values
+// (2026-11-10: refrozen for mev-ens15-jrdb-v5).
 const VALIDATION =
-  "過去検証(2010〜2026 年、各年を前年までのデータで学習): 期待回収率 120% 超の馬の単勝回収率は 106.4%(95% 区間 98〜115%)、2019 年以降は 111.3%。参考として全馬は 72%。120% を超えても利益は確認できていません。";
+  "過去検証(2010〜2026 年、各年を前年までのデータで学習): 期待回収率 120% 超の馬の単勝回収率は 101.1%(95% 区間 94〜108%)、2019 年以降は 105.0%。参考として全馬は 72%。120% を超えても利益は確認できていません。";
 
 describe("ExpectedReturnNote (137)", () => {
   it("available: says it is a separate model, when the odds/compute were taken, and the record", () => {
@@ -51,7 +52,7 @@ describe("ExpectedReturnNote (137)", () => {
     );
     expect(screen.getByTestId("expected-return-validation").textContent).toBe(VALIDATION);
     expect(screen.getByTestId("expected-return-series").textContent).toBe(
-      "2026 年 10 月から表示を 15 seed 平均に切り替えたため、それ以前の表示(単 seed)とは比較できません。",
+      "2026 年 11 月 11 日から、JRDB のデータで学習したモデル(15 seed 平均)に切り替えました。精度は以前のモデルと同じ程度ですが、選ばれる馬は一部変わるため、それ以前の表示や注目条件の記録とは比較できません(2026 年 10 月の単 seed からの切替も同様です)。",
     );
     expect(screen.getByTestId("expected-return-uncertainty").textContent).toBe(
       "2025〜26 年は保存オッズに発走前の値が混ざるため検証の精度が落ちます。発走前オッズでの前向きの検証はまだ行っていません。",
@@ -169,12 +170,13 @@ describe("ExpectedReturnNote 市場混合 (141)", () => {
       /^『期待回収率\(市場混合\)』は、/,
     );
     const validation = screen.getByTestId("expected-return-mix-validation").textContent ?? "";
-    expect(validation).toContain("比が 0.95");
-    expect(validation).toContain("この検証の結果を見て決めました");
+    expect(validation).toContain("比が 0.97");
+    expect(validation).toContain("以前のモデルの検証の結果を見て決めました");
     // the in-sample return of the selected set is NOT shown (the boundary was chosen on it)
     expect(validation).not.toMatch(/106|回収率は/);
+    // 2026-11-10: the held-out check was v1's; v5's coefficients were not checked (said plainly)
     expect(screen.getByTestId("expected-return-mix-heldout").textContent).toContain(
-      "差の区間は改善と悪化の両方を含みます",
+      "この確認はしていません",
     );
     expect(screen.queryByTestId("expected-return-mix-unavailable")).toBeNull();
     expect(note.textContent).not.toMatch(EXPECTED_RETURN_SCOPE);
