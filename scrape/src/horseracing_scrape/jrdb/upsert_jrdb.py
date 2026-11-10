@@ -20,7 +20,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from horseracing_db.enums import BetType, EntityType, EntryStatus, MappingStatus, ResultStatus
-from horseracing_db.models import Horse, IdMapping, Race, RaceHorse
+from horseracing_db.models import Horse, IdMapping, Jockey, Race, RaceHorse
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
@@ -40,6 +40,7 @@ from ..upsert import (
     OFFICIAL_WIN_PAYOUT_SOURCE_JRDB,
     RACE_ATOMIC,
     Counts,
+    _insert_ignore,
     _insert_results,
     apply_final_odds,
     lock_race,
@@ -337,6 +338,17 @@ def upsert_jrdb_entries(
                         )
                     jockey_id = _person(person_map, EntityType.JOCKEY, e.jockey_code, c, rid)
                     trainer_id = _person(person_map, EntityType.TRAINER, e.trainer_code, c, rid)
+                    stored = snap.horses.get(sid)
+                    if (
+                        snap.has_results
+                        and stored is not None
+                        and stored.jockey_id is not None
+                        and jockey_id != stored.jockey_id
+                    ):
+                        # once the result file is in, the card's rider never replaces the rider
+                        # who rode (upsert_jrdb_results 1b); None keeps the stored value
+                        jockey_id = None
+                        c.bump("card_jockey_kept_after_results")
                     birth = ukc[hid].birth_date if hid in ukc and ukc[hid].birth_date else None
                     check_payload(
                         prof,
@@ -641,10 +653,15 @@ def upsert_jrdb_results(
     observed_at: datetime.datetime,
     job_id: uuid.UUID | None,
     race_status: RaceStatus,
+    person_map: PersonMap | None = None,
 ) -> Counts:
     """SED 正式版 → race_results (race-atomic), 確定単勝オッズ (``apply_final_odds`` rules), body
     weight,
-    取消/除外 corrections; SRB → race_laps. The 速報版 is refused before any write."""
+    取消/除外 corrections; SRB → race_laps. The 速報版 is refused before any write.
+
+    With ``person_map`` the SED rider (the one who actually rode) replaces the KYI rider on a
+    乗り替わり, under the same timed jockey rule as the entries step (an older observation is
+    refused). Without it the stored rider is left alone (the behaviour before 2026-11-10)."""
 
     prof = profile_from_arg(profile)
     c = Counts()
@@ -730,6 +747,64 @@ def upsert_jrdb_results(
                         )
                         c.bump("status_transitions")
                 snap = lock_race(session, rid)
+                # 1b) 騎手 = 実際の騎乗者 (SED). KYI carries the rider named on the card; a
+                #     乗り替わり after it is only in the result file. 取消/除外 never rode.
+                if person_map is not None:
+                    for r in rows:
+                        if r.abnormal_code in (1, 2) or r.jockey_code is None:
+                            continue
+                        rh = snap.horses.get(sid[r.horse_number])
+                        if rh is None:
+                            continue
+                        jid = person_map.get((EntityType.JOCKEY, r.jockey_code))
+                        if jid is None:
+                            c.bump("results_jockey_unresolved")
+                            continue
+                        ctx = P.TransitionContext(
+                            JRDB,
+                            observed_at,
+                            P.PAGE_RESULTS,
+                            snap.prov.horse_source(rh.horse_id, P.GROUP_JOCKEY),
+                            snap.prov.horse_observed_at(rh.horse_id, P.GROUP_JOCKEY),
+                        )
+                        t = P.field_transition(P.GROUP_JOCKEY, rh.jockey_id, jid, ctx)
+                        if t.decision != "write":
+                            c.bump(f"results_jockey_{t.reason or t.decision}")
+                            continue
+                        if jid == rh.jockey_id:  # same rider: only the observation advances
+                            write_horse_provenance(
+                                session,
+                                rid,
+                                rh.horse_id,
+                                P.GROUP_JOCKEY,
+                                source=JRDB,
+                                observed_at=observed_at,
+                                job_id=job_id,
+                            )
+                            continue
+                        check_payload(prof, "race_horses", {"jockey_id": jid})
+                        _insert_ignore(
+                            session,
+                            Jockey,
+                            {"jockey_id": jid, "jockey_name": r.jockey_name},
+                            ("jockey_id",),
+                        )
+                        session.execute(
+                            update(RaceHorse)
+                            .where(RaceHorse.race_id == rid, RaceHorse.horse_id == rh.horse_id)
+                            .values(jockey_id=jid)
+                        )
+                        write_horse_provenance(
+                            session,
+                            rid,
+                            rh.horse_id,
+                            P.GROUP_JOCKEY,
+                            source=JRDB,
+                            observed_at=observed_at,
+                            job_id=job_id,
+                        )
+                        c.bump("results_jockey_changes")
+                    snap = lock_race(session, rid)
                 # 2) race-atomic insert; the four JRDB-defined columns never reach ``current``
                 result_rows = []
                 for r in rows:

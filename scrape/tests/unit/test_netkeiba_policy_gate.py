@@ -55,10 +55,11 @@ def test_false_raises_netkeiba_disabled_with_the_path(tmp_path, monkeypatch):
 
 
 def test_the_committed_policy_keeps_netkeiba_enabled():
-    """The six 178 keys are in the committed file at their defaults (T069)."""
+    """The six 178 keys are in the committed file (T069); jrdb_enabled is on since R5 (2026-11-09)
+    and netkeiba stays on until R9."""
 
     doc = json.loads(npol.DEFAULT_POLICY_PATH.read_text(encoding="utf-8"))
-    assert doc["netkeiba_enabled"] is True and doc["jrdb_enabled"] is False
+    assert doc["netkeiba_enabled"] is True and doc["jrdb_enabled"] is True
     assert doc["jra_emergency_entries"] is False and doc["jrdb_archive_blackout"] is True
     assert doc["jrdb_interval_seconds"] == 5 and doc["near_post_source"] == "netkeiba"
 

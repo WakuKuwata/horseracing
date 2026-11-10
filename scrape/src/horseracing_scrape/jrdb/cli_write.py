@@ -290,6 +290,7 @@ def run_write(args, *, session_factory, artifacts: Path, production_url: str | N
                             observed_at=now,
                             job_id=job_id,
                             race_status=statuses[id(f)],
+                            person_map=person_map,
                         )
                     )
             elif args.command == "jrdb-payouts":

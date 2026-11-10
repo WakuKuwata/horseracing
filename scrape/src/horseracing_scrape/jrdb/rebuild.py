@@ -380,6 +380,7 @@ def _run_step(
                         observed_at=now,
                         job_id=job_id,
                         race_status=statuses[id(f)],
+                        person_map=person_map,
                     )
                 )
         elif step == "payouts":
