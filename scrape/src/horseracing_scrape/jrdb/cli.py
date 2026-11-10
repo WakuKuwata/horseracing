@@ -58,6 +58,7 @@ COMMANDS = (
     "jrdb-rebuild",
     "jrdb-apply-held",
     "jrdb-persons-collect",
+    "jrdb-vocab-repair",
     *WRITE_COMMANDS,
 )
 DAILY_KINDS_DEFAULT = ("BAC", "KYI", "UKC", "HJC", "SED", "TYB")
@@ -145,6 +146,20 @@ def register_jrdb_subcommands(sub: argparse._SubParsersAction) -> None:
     r.add_argument("--database-url", default=None)
     r.add_argument("--policy", default=None, help=f"policy file (default {DEFAULT_POLICY_PATH})")
     r.add_argument("--json", action="store_true")
+
+    vr = sub.add_parser(
+        "jrdb-vocab-repair",
+        help="現行 DB の脚質(2025-10-11 以降)と空欄の系統を JRDB から現行語彙で直す (計画→適用)",
+    )
+    vr.add_argument("--from", dest="date_from", help="YYYY-MM-DD (>= 2025-10-11)")
+    vr.add_argument("--to", dest="date_to", help="YYYY-MM-DD")
+    vr.add_argument("--apply", dest="apply_plan", default=None,
+                    help="計画 JSON を適用する (旧値が今も同じ行だけ書く)")
+    vr.add_argument("--artifacts", default=str(DEFAULT_ARTIFACTS), help="JRDB ファイルの置き場")
+    vr.add_argument(
+        "--out-dir", default=None, help=f"計画 JSON (default {DEFAULT_ARTIFACTS}/repair)"
+    )
+    vr.add_argument("--database-url", default=None)
 
     b = sub.add_parser(
         "jrdb-rebuild", help="段 3b: JRDB 正本の別 DB にアーカイブを取り込む (現行 DB は読むだけ)"
@@ -898,6 +913,42 @@ def run_rebuild(args, *, env_url: str | None) -> RunResult:
     return result
 
 
+# --------------------------------------------------------------------------- jrdb-vocab-repair
+
+
+def run_vocab_repair(args) -> int:
+    """Plan (default, read only) or apply (``--apply PLAN``) the running-style / line repair."""
+
+    from horseracing_db.session import create_db_engine
+
+    from . import vocab_repair as VR
+
+    engine = create_db_engine(args.database_url)
+    with Session(engine) as session:
+        if args.apply_plan:
+            plan = json.loads(Path(args.apply_plan).read_text(encoding="utf-8"))
+            out = VR.apply_plan(session, plan)
+            session.commit()
+            print(json.dumps({"applied": args.apply_plan, **out}, ensure_ascii=False))
+            return 0
+        if not (args.date_from and args.date_to):
+            print("REFUSED: --from and --to are required to build a plan")
+            return 2
+        plan = VR.build_plan(
+            session,
+            Path(args.artifacts),
+            datetime.date.fromisoformat(args.date_from),
+            datetime.date.fromisoformat(args.date_to),
+        )
+    out_dir = Path(args.out_dir) if args.out_dir else DEFAULT_ARTIFACTS / "repair"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
+    path = out_dir / f"vocab-plan-{args.date_from}-{args.date_to}-{stamp}.json"
+    path.write_text(json.dumps(plan, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps({"plan": str(path), **plan["counts"]}, ensure_ascii=False))
+    return 0
+
+
 # --------------------------------------------------------------------------- entry
 
 
@@ -920,6 +971,8 @@ def run_jrdb(args) -> int:
         )
     elif args.command == "jrdb-rebuild":
         result = run_rebuild(args, env_url=os.environ.get("DATABASE_URL"))
+    elif args.command == "jrdb-vocab-repair":
+        return run_vocab_repair(args)
     elif args.command == "jrdb-persons-collect":
         from ..jra.policy import StartupRefused
 

@@ -45,6 +45,22 @@ CANONICAL_ONLY_ATTRIBUTES: Mapping[str, tuple[str, ...]] = MappingProxyType(
     }
 )
 
+#: 2026-11-10: under ``current`` these columns accept ONLY a value translated into the current
+#: DB's vocabulary (jrdb/vocab.py: JRA-VAN running-style labels / the 8 bloodline families) —
+#: never JRDB's own code and never ``None`` (no erase). ``CURRENT.allows`` stays False for them, so
+#: every other path (decoder guard, raw canonical attributes) is still refused.
+def _translated_value_sets() -> Mapping[tuple[str, str], frozenset[str]]:
+    from .vocab import LINE_FAMILIES, RUNNING_STYLE_LABELS
+
+    return MappingProxyType(
+        {
+            ("race_horses", "running_style"): RUNNING_STYLE_LABELS,
+            ("horses", "sire_line"): LINE_FAMILIES,
+            ("horses", "damsire_line"): LINE_FAMILIES,
+        }
+    )
+
+
 _COMMON: dict[str, frozenset[str]] = {
     "races": frozenset(
         {
@@ -203,9 +219,14 @@ def check_payload(
     first column the profile does not allow; an empty payload is allowed."""
 
     p = profile_from_arg(profile)
-    for column in payload:
-        if not p.allows(table, column):
-            raise ProfileViolation(p.name, table, column)
+    translated = _translated_value_sets() if p is CURRENT else {}
+    for column, value in payload.items():
+        if p.allows(table, column):
+            continue
+        allowed = translated.get((table, column))
+        if allowed is not None and isinstance(value, str) and value in allowed:
+            continue  # a translated value of the current vocabulary (vocab.py)
+        raise ProfileViolation(p.name, table, column)
     return payload
 
 

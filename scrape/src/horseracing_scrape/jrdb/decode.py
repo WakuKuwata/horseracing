@@ -391,6 +391,7 @@ def _build_ukc(d, line_no, *, include_canonical: bool) -> JrdbHorse:
         data_date=d.get("data_date"),
         sire_line_code=d.get("sire_line_code") if include_canonical else None,
         damsire_line_code=d.get("damsire_line_code") if include_canonical else None,
+        line_codes=(d.get("sire_line_code"), d.get("damsire_line_code")),
     )
 
 
@@ -434,10 +435,9 @@ def _build_tyb(d, line_no) -> JrdbPreRace:
 
 
 def _build_sed(d, line_no, *, include_canonical: bool) -> JrdbResult:
-    corners = None
-    if include_canonical:
-        raw = tuple(d.get(f"corner_{i}") for i in range(1, 5))
-        corners = tuple(None if c in (None, 0) else int(c) for c in raw)  # type: ignore[assignment]
+    raw = tuple(d.get(f"corner_{i}") for i in range(1, 5))
+    packed = tuple(None if c in (None, 0) else int(c) for c in raw)
+    corners = packed if include_canonical else None
     return JrdbResult(
         key=_race_key(d, line_no),
         horse_number=int(_require(d, "horse_number", line_no)),
@@ -478,6 +478,10 @@ def _build_sed(d, line_no, *, include_canonical: bool) -> JrdbResult:
         first_3f=d.get("first_3f") if include_canonical else None,
         corner_orders=corners if include_canonical else None,
         running_style_code=d.get("running_style_code") if include_canonical else None,
+        style_inputs=(
+            d.get("running_style_code"),
+            tuple(c for c in packed if c is not None),
+        ),
     )
 
 
@@ -603,7 +607,9 @@ def decode_file(raw: bytes, meta: JrdbFileMeta, *, profile: str) -> DecodedFile:
         )
     rows = []
     for line_no, _record_no, data in records:
-        d = _decode_record(data, layout, include_canonical=include_canonical, line_no=line_no)
+        # the canonical-only FIELDS are always decoded (2026-11-10): under ``current`` the builders
+        # keep them only as translation inputs (style_inputs / line_codes), never as attributes
+        d = _decode_record(data, layout, include_canonical=True, line_no=line_no)
         row = _build_row(meta.kind, d, line_no=line_no, include_canonical=include_canonical)
         if not include_canonical:
             _assert_no_canonical(row, line_no)

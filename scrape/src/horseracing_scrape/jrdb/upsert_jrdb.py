@@ -43,6 +43,7 @@ from ..upsert import (
     _insert_ignore,
     _insert_results,
     apply_final_odds,
+    bloodline_for,
     lock_race,
     replace_exotic_dividends,
     upsert_laps,
@@ -50,6 +51,7 @@ from ..upsert import (
     write_entries,
 )
 from . import normalize as nz
+from . import vocab
 from .ids import horse_id_from_blood_no, race_id_from_key
 from .models import (
     JrdbEntry,
@@ -203,9 +205,12 @@ def write_horse_master(
     profile,
     name: str | None,
     sex_code: int | None,
+    counts: Counts | None = None,
 ) -> int:
     """INSERT the horse master when absent; otherwise fill NULL columns only (never overwrite).
-    Pedigree names / owner / breeder come from UKC; the line codes only under ``jrdb_canonical``."""
+    Pedigree names / owner / breeder come from UKC; the line codes only under ``jrdb_canonical``.
+    Under ``current`` (2026-11-10) the lines are the current DB's families: the exact sire-name
+    lookup netkeiba's profile step uses, else the JRDB code translated by vocab.py."""
 
     prof = profile_from_arg(profile)
     values: dict = {
@@ -222,6 +227,8 @@ def write_horse_master(
     if prof.includes_canonical and h is not None:
         values["sire_line"] = h.sire_line_code
         values["damsire_line"] = h.damsire_line_code
+    elif h is not None:
+        values.update(_current_lines(session, h, counts))
     values = {k: v for k, v in values.items() if v is not None}
     check_payload(prof, "horses", values)
     existing = session.get(Horse, hid)
@@ -234,6 +241,76 @@ def write_horse_master(
         session.execute(update(Horse).where(Horse.horse_id == hid).values(**fills))
         return 1
     return 0
+
+
+def _current_lines(session: Session, h: JrdbHorse, counts: Counts | None) -> dict:
+    """sire_line / damsire_line in the current DB's families for one UKC horse (fill-if-null by
+    the caller). Name lookup first (same rule as netkeiba's profile step: exact name, a single
+    known line, else None), then the translated JRDB code; disagreements are counted."""
+
+    out: dict = {}
+    tr = vocab.translator_or_none()
+    codes = h.line_codes or (None, None)
+    for col, name_col, name, code in (
+        ("sire_line", "sire_name", h.sire_name, codes[0]),
+        ("damsire_line", "damsire_name", h.damsire_name, codes[1]),
+    ):
+        by_name = (
+            bloodline_for(session, line_col=col, name_col=name_col, name=name) if name else None
+        )
+        by_code = tr.line_family(code) if tr is not None else None
+        if counts is not None:
+            if tr is None and code:
+                counts.bump("line_translation_unavailable")
+            if by_name and by_code and by_name != by_code:
+                counts.bump("line_name_code_disagree")
+        value = by_name or by_code
+        if value is not None and value in vocab.LINE_FAMILIES:
+            out[col] = value
+    return out
+
+
+def _write_translated_styles(
+    session: Session, rid: str, rows, sid: dict, snap, prof, c: Counts
+) -> None:
+    """``current`` only (2026-11-10): the JRA-VAN running-style label of each run translated from
+    the SED (vocab.py). From ``STYLE_OVERWRITE_FROM`` the label replaces netkeiba's first-corner
+    heuristic (or NULL); before it only a NULL is filled (JRA-VAN values are never changed). A run
+    without a JRDB style code writes nothing; 取消/除外 never ran."""
+
+    tr = vocab.translator_or_none()
+    if tr is None:
+        c.bump("style_translation_unavailable", len(rows))
+        c.error_messages.append(
+            f"{rid}: running-style translator unavailable (artifacts/jrdb/vocab)"
+        )
+        return
+    started = sum(1 for h in snap.horses.values() if h.entry_status == EntryStatus.STARTED)
+    race_date = rows[0].race_date
+    for r in rows:
+        if _result_status(r.abnormal_code) is None or r.style_inputs is None:
+            continue
+        rh = snap.horses.get(sid.get(r.horse_number))
+        if rh is None:
+            continue
+        code, corners = r.style_inputs
+        label = tr.style_label(code, corners, r.finish_order or None, started)
+        if label is None:
+            c.bump("style_no_code")
+            continue
+        if rh.running_style == label:
+            c.bump("style_unchanged")
+            continue
+        if race_date < vocab.STYLE_OVERWRITE_FROM and rh.running_style is not None:
+            c.bump("style_kept_before_cutover")
+            continue
+        check_payload(prof, "race_horses", {"running_style": label})
+        session.execute(
+            update(RaceHorse)
+            .where(RaceHorse.race_id == rid, RaceHorse.horse_id == rh.horse_id)
+            .values(running_style=label)
+        )
+        c.bump("style_written")
 
 
 # --------------------------------------------------------------------------- entries
@@ -335,6 +412,7 @@ def upsert_jrdb_entries(
                             profile=prof,
                             name=e.horse_name,
                             sex_code=e.sex_code,
+                            counts=c,
                         )
                     jockey_id = _person(person_map, EntityType.JOCKEY, e.jockey_code, c, rid)
                     trainer_id = _person(person_map, EntityType.TRAINER, e.trainer_code, c, rid)
@@ -849,6 +927,10 @@ def upsert_jrdb_results(
                 c.merge(ins)
                 if prof.includes_canonical and ins.extra.get("results_inserted_races"):
                     _write_canonical_only(session, rid, rows, sid, prof)
+                elif not prof.includes_canonical:
+                    # 2b) 脚質 in the current vocabulary (every re-ingest re-derives it: the label
+                    #     follows the accepted file version; a same label is not a write)
+                    _write_translated_styles(session, rid, rows, sid, snap, prof, c)
                 # 3) 確定単勝オッズ・人気 (the result-page repair's rules; ids already canonical)
                 fo = apply_final_odds(
                     session,

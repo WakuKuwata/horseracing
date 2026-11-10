@@ -148,6 +148,9 @@ class JrdbHorse:
     data_date: datetime.date | None
     sire_line_code: str | None = None  # canonical_only (JRDB 系統体系・DB とは別定義)
     damsire_line_code: str | None = None  # canonical_only
+    #: (sire, damsire) JRDB line codes kept under EVERY profile ONLY as translation inputs
+    #: (vocab.py → the current DB's families); never written as such (2026-11-10)
+    line_codes: tuple[str | None, str | None] | None = None
 
 
 @dataclass(frozen=True)
@@ -233,6 +236,9 @@ class JrdbResult:
         None  # canonical_only
     )
     running_style_code: str | None = None  # canonical_only
+    #: (JRDB style code, stored corner positions) kept under EVERY profile ONLY as the inputs of
+    #: the running-style translation (vocab.py → a JRA-VAN label); never written as such
+    style_inputs: tuple[str | None, tuple[int, ...]] | None = None
 
 
 @dataclass(frozen=True)

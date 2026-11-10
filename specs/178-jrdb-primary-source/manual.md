@@ -52,6 +52,12 @@ JRDB(有料会員・固定長ファイル)を第 3 の writer として入れ、
 ## 3. 止める・戻す・見る
 
 ### netkeiba を止める(段 4)
+0. 先に確認(2026-11-10 追加): 現行 DB の脚質・系統は JRDB の取込みが現行語彙に写して書く(`jrdb/vocab.py`)。変換表
+   `artifacts/jrdb/vocab/{running_style_tree.json,line_map.json}`(gitignore・会員配信由来)が在り、sha が `vocab.py` の固定値と
+   一致すること: `cd scrape && uv run python -c "from horseracing_scrape.jrdb import vocab; vocab.load_translator()"` が例外を出さない。
+   直前の木曜の成績取込みの集計に `style_written`/`style_unchanged` があり、`style_translation_unavailable` が 0 であること。
+   **通過順(`corner_orders`)とテン 3F は R9 後に現行 DB へ入らなくなる**(JRDB の定義が違うため書かない)。これらを使う比較用モデル
+   (mix-129・041 の通過順特徴)は値が欠ける。期待回収率の表示モデル(v5)は使っていない。
 1. `config/source-operations.json` の `netkeiba_enabled` を `false` に(`near_post_source` は先に `jra_official` に)。
 2. 以後、netkeiba の scrape CLI は `SKIPPED: netkeiba_disabled`・ops の refresh/day job は `status=skipped`・`summary.reason=netkeiba_disabled`、
    live の捕捉 fetcher は作られない(`near_post_source=netkeiba` のままなら `REFUSED: skipped:source_unavailable`)。
@@ -145,3 +151,12 @@ writer は `held` を読まない(`notes` に `held: <file>` が出るだけ)。
 - TYB・基準オッズを単複オッズの現在値に書かない(JRDB は市場値の供給元ではない)。
 - `race_date < 2025-10-11`(JRA-VAN 期)には通常取込で書かない(修復 CLI だけが列単位で NULL を埋める)。
 - 会員ファイルの raw・会員 URL・認証情報を repo・fixture・ログに置かない。
+
+
+## 脚質・系統の現行語彙への書込み(2026-11-10)
+- 日々の成績(SED 正式版)の取込みが、各馬の脚質を JRA-VAN の語に写して書く。2025-10-11 以降のレースは netkeiba の簡易版(第 1 コーナー
+  から作った値)を上書きし、それより前は空欄だけ埋める。netkeiba の簡易版は空欄のときだけ書くので、JRDB の値を上書きしない。
+- 馬の系統は、父の名前で既知の系統を引き、無ければ JRDB の系統コードを写す(空欄のときだけ)。
+- 過去分の修復: `scrape` で `uv run python -m horseracing_scrape.cli jrdb-vocab-repair --from 2025-10-11 --to <日>`(計画・読むだけ)
+  → `--apply <計画 JSON>`(旧値が今も同じ行だけ書く)。速報版しか無い日は脚質コードが無いので変わらない。2026-11-10 に
+  2025-10-11〜2026-11-01 を適用済み(脚質 29,716 行・系統 21 件)。2025-12-06・07 は JRDB に脚質コードが無く、netkeiba の値のまま。

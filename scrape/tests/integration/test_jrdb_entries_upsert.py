@@ -175,7 +175,7 @@ def test_c_one_colliding_race_fails_alone_and_is_reprocessed_alone(session):
     assert before_vals == after_vals and before_x == after_x
 
 
-def test_d_profile_current_never_writes_the_four_jrdb_defined_columns(session):
+def test_d_profile_current_never_writes_the_jrdb_defined_values(session):
     results = shifted_results(races=2)
     _ingest(session, results)
     status = W.RaceStatus()
@@ -200,8 +200,15 @@ def test_d_profile_current_never_writes_the_four_jrdb_defined_columns(session):
         )
     ).all()
     assert rows
+    from horseracing_scrape.jrdb.vocab import LINE_FAMILIES, RUNNING_STYLE_LABELS
+
     for first_3f, corners, style, sire_line, damsire_line, distance in rows:
-        assert corners is None and style is None and sire_line is None and damsire_line is None
+        assert corners is None
+        # 2026-11-10: running style / lines arrive only TRANSLATED into the current vocabulary
+        # (jrdb/vocab.py) — never JRDB's own code (None when the tables are not on this machine)
+        assert style is None or style in RUNNING_STYLE_LABELS
+        assert sire_line is None or sire_line in LINE_FAMILIES
+        assert damsire_line is None or damsire_line in LINE_FAMILIES
         if distance != 1200:
             assert (
                 first_3f is None
